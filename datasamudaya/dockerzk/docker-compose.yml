@@ -1,0 +1,41 @@
+version: "3"
+networks:
+    global:
+        driver: overlay
+services:
+    zookeeper-1:
+        networks:
+            global:
+                aliases: ["zookeeper_zookeeper-1"]
+        image: "arunsrajan/zookeeper:3.5.3-beta"
+        ports:
+            - "2181:2181"
+            - "2888:2888"
+            - "3888:3888"
+        environment:
+            - SERVER_ID=1
+            - MAX_SERVERS=3
+    zookeeper-2:
+        networks:
+            global:
+                aliases: ["zookeeper_zookeeper-2"]
+        image: "arunsrajan/zookeeper:3.5.3-beta"
+        ports:
+            - "2182:2182"
+            - "4888:4888"
+            - "5888:5888"
+        environment:
+            - SERVER_ID=2
+            - MAX_SERVERS=3
+    zookeeper-3:
+        networks:
+            global:
+                aliases: ["zookeeper_zookeeper-3"]
+        image: "arunsrajan/zookeeper:3.5.3-beta"
+        ports:
+            - "2183:2183"
+            - "6888:6888"
+            - "7888:7888"
+        environment:
+            - SERVER_ID=3
+            - MAX_SERVERS=3

@@ -1,0 +1,1180 @@
+package com.github.datasamudaya.tasks.scheduler.sql;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
+import java.io.Serializable;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.datasamudaya.common.Context;
+import com.github.datasamudaya.common.DataCruncherContext;
+import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.stream.utils.SQLUtils;
+import com.github.datasamudaya.tasks.executor.Combiner;
+import com.github.datasamudaya.tasks.executor.Mapper;
+import com.github.datasamudaya.tasks.executor.Reducer;
+import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationBuilder;
+
+import net.sf.jsqlparser.expression.BinaryExpression;
+import net.sf.jsqlparser.expression.DoubleValue;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
+import net.sf.jsqlparser.expression.Function;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.Parenthesis;
+import net.sf.jsqlparser.expression.StringValue;
+import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
+import net.sf.jsqlparser.parser.CCJSqlParserManager;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.Join;
+import net.sf.jsqlparser.statement.select.OrderByElement;
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.select.SelectExpressionItem;
+import net.sf.jsqlparser.statement.select.SelectItem;
+import net.sf.jsqlparser.util.validation.Validation;
+import net.sf.jsqlparser.util.validation.ValidationError;
+import net.sf.jsqlparser.util.validation.feature.DatabaseType;
+
+public class MapReduceApplicationSqlBuilder implements Serializable {
+	private static final long serialVersionUID = 6360524229924008489L;
+	private static Logger log = LoggerFactory.getLogger(MapReduceApplicationSqlBuilder.class);
+	String sql;
+	ConcurrentMap<String, String> tablefoldermap = new ConcurrentHashMap<>();
+	ConcurrentMap<String, List<String>> tablecolumnsmap = new ConcurrentHashMap<>();
+	ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap = new ConcurrentHashMap<>();
+	String hdfs;
+	transient JobConfiguration jc;
+
+	private MapReduceApplicationSqlBuilder() {
+
+	}
+
+	/**
+	 * Creates a new sql builder object.
+	 * 
+	 * @return sql builder object.
+	 */
+	public static MapReduceApplicationSqlBuilder newBuilder() {
+		return new MapReduceApplicationSqlBuilder();
+	}
+
+	/**
+	 * This function adds the sql parameters like folder, tablename, columns and
+	 * sqltypes.
+	 * 
+	 * @param folder
+	 * @param tablename
+	 * @param columns
+	 * @param sqltypes
+	 * @return sql builder object
+	 */
+	public MapReduceApplicationSqlBuilder add(String folder, String tablename, List<String> columns,
+			List<SqlTypeName> sqltypes) {
+		tablefoldermap.put(tablename, folder);
+		tablecolumnsmap.put(tablename, columns);
+		tablecolumntypesmap.put(tablename, sqltypes);
+		return this;
+	}
+
+	/**
+	 * Sets HDFS URI
+	 * 
+	 * @param hdfs
+	 * @return sql builder object
+	 */
+	public MapReduceApplicationSqlBuilder setHdfs(String hdfs) {
+		this.hdfs = hdfs;
+		return this;
+	}
+
+	/**
+	 * Sets the JobConfiguration object to run sql using the configuration.
+	 * 
+	 * @param jc
+	 * @return sql builder object
+	 */
+	public MapReduceApplicationSqlBuilder setJobConfiguration(JobConfiguration jc) {
+		this.jc = jc;
+		return this;
+	}
+
+	/**
+	 * Sets the sql query.
+	 * 
+	 * @param sql
+	 * @return sql builder object
+	 */
+	public MapReduceApplicationSqlBuilder setSql(String sql) {
+		this.sql = sql;
+		return this;
+	}
+
+	/**
+	 * The build method to create sql pipeline object.
+	 * 
+	 * @return SQL pipeline object
+	 * @throws Exception
+	 */
+	public Object build() throws Exception {
+		CCJSqlParserManager parserManager = new CCJSqlParserManager();
+		Validation validation = new Validation(
+				Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB, DatabaseType.POSTGRESQL, DatabaseType.H2),
+				sql);
+		List<ValidationError> errors = validation.validate();
+		if (!CollectionUtils.isEmpty(errors)) {
+			log.error("Syntax error in SQL {}", errors);
+			throw new Exception("Syntax error in SQL");
+		}
+		Statement statement = parserManager.parse(new StringReader(sql));
+		
+		return getMapperCombinerReducer(statement);
+	}	
+	protected Object getMapperCombinerReducer(Object statement) {
+		if (!(statement instanceof Select)) {
+			throw new IllegalArgumentException("Only SELECT statements are supported");
+		}
+		Select select = (Select) statement;
+		String tablename = ((Table) ((PlainSelect) select.getSelectBody()).getFromItem()).getName();
+		List<SelectItem> selectItems = ((PlainSelect) select.getSelectBody()).getSelectItems();
+		Expression whereexp = ((PlainSelect) select.getSelectBody()).getWhere();
+		List<String> functioncols = new ArrayList<>();
+		List<FunctionWithCols> functionwithcolumns = new ArrayList<>();		
+		boolean isonlycolumns = false;
+		PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
+
+		List<Function> functions = new ArrayList<>();
+		Map<String, Set<String>> tablerequiredcolumns = new ConcurrentHashMap<>();
+		Set<String> columnsselect = new LinkedHashSet<>();
+		Set<String> selectcolumnsresult = new LinkedHashSet<>();
+		boolean isdistinct = nonNull(plainSelect.getDistinct());
+		Table table = (Table) plainSelect.getFromItem();
+		if (plainSelect.getSelectItems().get(0).toString().equals("*")) {
+			tablerequiredcolumns.put(table.getName(), new LinkedHashSet<>(tablecolumnsmap.get(table.getName())));
+			columnsselect.addAll(tablecolumnsmap.get(table.getName()));
+			selectcolumnsresult.addAll(tablecolumnsmap.get(table.getName()));
+			List<Join> joins = plainSelect.getJoins();
+			if (CollectionUtils.isNotEmpty(joins)) {
+				joins.parallelStream().forEach((Serializable & Consumer<Join>) (join -> {
+					String jointablename = ((Table) join.getRightItem()).getName();
+					tablerequiredcolumns.put(tablename, new LinkedHashSet<>(tablecolumnsmap.get(jointablename)));
+					columnsselect.addAll(tablecolumnsmap.get(jointablename));
+					selectcolumnsresult.addAll(tablecolumnsmap.get(jointablename));
+				}));
+			}
+		} else {
+			for (SelectItem selectItem : selectItems) {
+				if (selectItem instanceof SelectExpressionItem selectExpressionItem) {
+					if (selectExpressionItem.getExpression() instanceof Column column) {
+						if (nonNull(column.getTable())) {
+							Set<String> requiredcolumns = tablerequiredcolumns.get(column.getTable().getName());
+							if (isNull(requiredcolumns)) {
+								requiredcolumns = new LinkedHashSet<>();
+								tablerequiredcolumns.put(column.getTable().getName(), requiredcolumns);
+							}
+							requiredcolumns.add(column.getColumnName());
+							columnsselect.add(column.getColumnName());
+							selectcolumnsresult.add(column.getColumnName());
+						}
+					} else if (selectExpressionItem.getExpression() instanceof Function function) {
+						functions.add(function);
+						if (nonNull(function.getParameters())) {
+							Column column = (Column) function.getParameters().getExpressions().get(0);
+							Set<String> requiredcolumns = tablerequiredcolumns.get(column.getTable().getName());
+							if (isNull(requiredcolumns)) {
+								requiredcolumns = new LinkedHashSet<>();
+								tablerequiredcolumns.put(column.getTable().getName(), requiredcolumns);
+							}
+							requiredcolumns.add(column.getColumnName());
+							columnsselect.add(column.getColumnName());
+							var functionwithcolsobj = new FunctionWithCols();
+							functionwithcolsobj.setName(function.getName().toLowerCase());
+							var params = function.getParameters().getExpressions().stream()
+									.map(col -> ((Column) col).getColumnName()).collect(Collectors.toList());
+							functionwithcolsobj.setParameters(params);
+							functionwithcolsobj.setAlias(
+									nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
+											: null);
+							functionwithcolsobj.setTablename(column.getTable().getName());
+							functionwithcolumns.add(functionwithcolsobj);
+							functioncols.add(column.getColumnName());
+							selectcolumnsresult.add(nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
+									:function.getName()+"("+column.getColumnName()+")");
+						}
+						else {
+							var functionwithcolsobj = new FunctionWithCols();
+							functionwithcolsobj.setName(function.getName().toLowerCase());
+							functionwithcolumns.add(functionwithcolsobj);
+							functionwithcolsobj.setAlias(
+									nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
+											: null);
+							selectcolumnsresult.add(nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
+									:function.getName()+"()");
+						}
+					}
+				}
+			}
+		}
+		Map<String, List<Expression>> expressionsTable = new ConcurrentHashMap<>();
+		Map<String, Set<String>> tablerequiredAllcolumns = new ConcurrentHashMap<>();
+		Map<String, List<Expression>> joinTableExpressions = new ConcurrentHashMap<>();
+		getRequiredColumnsForAllTables(plainSelect, tablerequiredAllcolumns, expressionsTable,
+				joinTableExpressions);
+		addAllRequiredColumnsFromSelectItems(tablerequiredAllcolumns, tablerequiredcolumns);
+		Set<String> columnsRootTable = isNull(tablerequiredAllcolumns.get(table.getName())) ? new LinkedHashSet<>()
+				: tablerequiredAllcolumns.get(table.getName());
+		Expression expressionRootTable = getFilterExpression(expressionsTable.get(table.getName()));
+		
+		Set<String> selectcolumns = new LinkedHashSet<>(columnsRootTable);
+		boolean isfunctions = !functionwithcolumns.isEmpty();
+		for(String col:functioncols) {
+			selectcolumns.remove(col);
+			selectcolumnsresult.remove(col);
+		}
+		class MapperReducerSqlMapper implements Mapper<Long, String, Context> {
+			private static final long serialVersionUID = 3328584603251312114L;
+			ConcurrentMap<String, List<String>> tablecolumns = new ConcurrentHashMap<>(tablecolumnsmap);
+			String maintablename;
+			Set<String> selectcols;
+			List<FunctionWithCols> functionwithcols;
+			Expression where; 
+			List<SqlTypeName> tablecolumntypes;
+			Map<String, Long> tablecolindexmap;
+			public MapperReducerSqlMapper(String maintablename, Set<String> selectcols,
+					List<FunctionWithCols> functionwithcols, Expression where,
+					List<SqlTypeName> tablecolumntypes, Map<String, Long> tablecolindexmap) {
+				this.maintablename = maintablename;
+				this.selectcols = selectcols;
+				this.functionwithcols = functionwithcols;
+				this.where = where;
+				this.tablecolumntypes = tablecolumntypes;
+				this.tablecolindexmap = tablecolindexmap;
+			}
+			@SuppressWarnings("unchecked")
+			@Override
+			public void map(Long index, String line, Context context) {
+				try {
+					var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
+					List<String> columns = tablecolumns.get(maintablename);
+					csvformat = csvformat.withDelimiter(',').withHeader(columns.toArray(new String[columns.size()]))
+							.withIgnoreHeaderCase().withIgnoreEmptyLines(true).withTrim();
+					CSVParser parser = csvformat.parse(new StringReader(line));
+					parser.forEach(csvrecord -> {
+						if(nonNull(where) && evaluateExpression(where, csvrecord) || isNull(where)) {
+							// Extract relevant columns
+							var valuemap = new HashMap<String,Object>();
+							for (String column:selectcols) {
+								// Output as key-value pair
+								valuemap.put(column, SQLUtils.getValueMR(csvrecord.get(column), tablecolumntypes.get(tablecolindexmap.get(column).intValue())));
+							}
+							valuemap.put("tablename()",maintablename);
+							if(!functionwithcols.isEmpty()) {
+								for(FunctionWithCols functionwithcols:functionwithcols) {
+									String funcname = functionwithcols.getName();
+									var map = new HashMap<String,Object>(valuemap);
+									String matchingtablename = functionwithcols.getTablename();
+									boolean istablenamematches = nonNull(matchingtablename)?matchingtablename.equalsIgnoreCase(maintablename):false;
+									if(istablenamematches) {
+										if(funcname.startsWith("sum")) {
+											String colname = functionwithcols.getParameters().get(0);
+											String value = csvrecord.get(colname);
+											map.put(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"sum("+colname+")",SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));										
+											context.put(maintablename, map);
+											continue;
+										}
+										if(funcname.startsWith("max")) {
+											String colname = functionwithcols.getParameters().get(0);
+											String value = csvrecord.get(colname);
+											map.put(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"max("+colname+")",SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
+											context.put(maintablename, map);
+											continue;
+										}
+										if(funcname.startsWith("min")) {
+											String colname = functionwithcols.getParameters().get(0);
+											String value = csvrecord.get(colname);
+											map.put(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"min("+colname+")",SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
+											context.put(maintablename, map);
+											continue;
+										}
+									}
+									else if(funcname.startsWith("count")) {
+										map.put(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"count()",1.0d);
+										context.put(maintablename, map);
+										continue;
+									} else {
+										context.put(maintablename, map);
+									}
+								}
+							} else {
+								context.put(maintablename,valuemap);
+							}
+						}
+					});
+				}
+				catch(Exception ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
+				}
+			}
+
+		}
+		class MapperReducerSqlCombinerReducer implements Combiner<String, Map<String, Object>, Context>,
+				Reducer<String, Map<String, Object>, Context> {
+			private static final long serialVersionUID = 3328584603251312114L;
+			List<FunctionWithCols> functionwithcols = functionwithcolumns;
+			public MapperReducerSqlCombinerReducer() {
+			}
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public void combine(String key, List<Map<String, Object>> values, Context context) {
+				boolean issum = false, iscount = false, ismin = false, ismax = false;
+				var funcsum = new ArrayList<String>();
+				var funcmax = new ArrayList<String>();
+				var funcmin = new ArrayList<String>();
+				var funccount = new ArrayList<String>();
+				var isfunction = false;
+				for (FunctionWithCols functionwithcols : functionwithcols) {
+					String funcname = functionwithcols.getName();
+					if (funcname.startsWith("sum")) {
+						String colname = functionwithcols.getParameters().get(0);
+						funcsum.add( nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"sum(" + colname + ")");
+						issum = true;
+						isfunction = true;
+					}
+					else if (funcname.startsWith("max")) {
+						String colname = functionwithcols.getParameters().get(0);
+						funcmax.add( nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"max(" + colname + ")");
+						ismax = true;
+						isfunction = true;
+					}
+					else if (funcname.startsWith("min")) {
+						String colname = functionwithcols.getParameters().get(0);
+						funcmin.add( nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"min(" + colname + ")");
+						ismin = true;
+						isfunction = true;
+
+					}
+					else if (funcname.startsWith("count")) {
+						funccount.add(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"count()");
+						iscount = true;
+						isfunction = true;
+					}
+				}
+				Map<Map<String,Object>, Double> valuemap = new HashMap<>();
+				outer:
+				for (Map<String, Object> keyreduce : values) {
+					if(isfunction) {
+						if(issum) {
+							for(String col:funcsum) {
+								if(keyreduce.containsKey(col)) {
+									Double valuetoadd = (Double) keyreduce.remove(col);
+									keyreduce.put(col, 0.0f);
+									Double valuefromvaluemap = valuemap.get(keyreduce);
+									if(valuefromvaluemap!=null) {
+										valuemap.put(keyreduce, valuetoadd + valuefromvaluemap);
+									} else {
+										valuemap.put(keyreduce, valuetoadd);
+									}
+									continue outer;
+								}
+							}
+							context.put("Reduce", keyreduce);
+						}
+						else if(ismax) {
+							for(String col:funcmax) {
+								if(keyreduce.containsKey(col)) {
+									Double valuetomax = (Double) keyreduce.remove(col);
+									keyreduce.put(col, 0.0f);
+									Double valuefromvaluemap = valuemap.get(keyreduce);
+									if(valuefromvaluemap!=null) {
+										valuemap.put(keyreduce, Math.max(valuetomax, valuefromvaluemap));
+									} else {
+										valuemap.put(keyreduce, valuetomax);
+									}
+									continue outer;
+								}
+							}
+							context.put("Reduce", keyreduce);
+						}
+						else if(ismin) {
+							for(String col:funcmin) {
+								if(keyreduce.containsKey(col)) {
+									Double valuetomin = (Double) keyreduce.remove(col);
+									keyreduce.put(col, 0.0f);
+									Double valuefromvaluemap = valuemap.get(keyreduce);
+									if(valuefromvaluemap!=null) {
+										valuemap.put(keyreduce, Math.min(valuetomin, valuefromvaluemap));
+									} else {
+										valuemap.put(keyreduce, valuetomin);
+									}
+									continue outer;
+								}
+							}
+							context.put("Reduce", keyreduce);
+						}
+						else if(iscount) {
+							for(String col:funccount) {
+								if(keyreduce.containsKey(col)) {
+									Double valuetocount = (Double) keyreduce.remove(col);
+									keyreduce.put(col, 0.0f);
+									Double valuefromvaluemap = valuemap.get(keyreduce);
+									if(valuefromvaluemap!=null) {
+										valuemap.put(keyreduce, valuetocount + valuefromvaluemap);
+									} else {
+										valuemap.put(keyreduce, valuetocount);
+									}
+									continue outer;
+								}
+							}
+							context.put("Reduce", keyreduce);
+						} else {
+							context.put("Reduce", keyreduce);
+						}
+					} else {
+						context.put("Reduce", keyreduce);
+					}
+				}
+				if (!valuemap.isEmpty()) {
+					if (!key.equals("Reducer")) {
+						for (Map<String, Object> keystoreduce : valuemap.keySet()) {
+							if (issum) {
+								for (String col : funcsum) {
+									if (keystoreduce.containsKey(col)) {
+										keystoreduce.put(col, valuemap.get(keystoreduce));
+									}
+								}
+							}
+							if (ismax) {
+								for (String col : funcmax) {
+									if (keystoreduce.containsKey(col)) {
+										keystoreduce.put(col, valuemap.get(keystoreduce));
+									}
+								}
+							}
+							if (ismin) {
+								for (String col : funcmin) {
+									if (keystoreduce.containsKey(col)) {
+										keystoreduce.put(col, valuemap.get(keystoreduce));
+									}
+								}
+							}
+							if (iscount) {
+								for (String col : funccount) {
+									if (keystoreduce.containsKey(col)) {
+										keystoreduce.put(col, valuemap.get(keystoreduce));
+									}
+								}
+							}
+							context.put("Reduce", keystoreduce);
+						}
+					} else {
+						Map<Map<String, Object>, Map<String, Object>> combine = new HashMap<>();
+						Map<String, Object> combinevalues;
+						for (Map<String, Object> keystoreduce : valuemap.keySet()) {
+							if (issum) {
+								for (String col : funcsum) {
+									if (keystoreduce.containsKey(col)) {										
+										Map<String, Object> mapcombine = new HashMap<>(keystoreduce);
+										mapcombine.remove(col);
+										combinevalues = combine.get(mapcombine);
+										Object funcval = valuemap.get(keystoreduce);										
+										if (combinevalues == null) {
+											combinevalues = new HashMap<>();
+											combine.put(mapcombine, combinevalues);
+										}
+										combinevalues.put(col, funcval);
+									}
+								}
+							}
+							if (ismax) {
+								for (String col : funcmax) {
+									if (keystoreduce.containsKey(col)) {										
+										Map<String, Object> mapcombine = new HashMap<>(keystoreduce);
+										mapcombine.remove(col);
+										combinevalues = combine.get(mapcombine);
+										Object funcval = valuemap.get(keystoreduce);										
+										if (combinevalues == null) {
+											combinevalues = new HashMap<>();
+											combine.put(mapcombine, combinevalues);
+										}
+										combinevalues.put(col, funcval);
+									}
+								}
+							}
+							if (ismin) {
+								for (String col : funcmin) {
+									if (keystoreduce.containsKey(col)) {										
+										Map<String, Object> mapcombine = new HashMap<>(keystoreduce);
+										mapcombine.remove(col);
+										combinevalues = combine.get(mapcombine);
+										Object funcval = valuemap.get(keystoreduce);										
+										if (combinevalues == null) {
+											combinevalues = new HashMap<>();
+											combine.put(mapcombine, combinevalues);
+										}
+										combinevalues.put(col, funcval);
+									}
+								}
+							}
+							if (iscount) {
+								for (String col : funccount) {
+									if (keystoreduce.containsKey(col)) {			
+										Map<String, Object> mapcombine = new HashMap<>(keystoreduce);
+										mapcombine.remove(col);
+										combinevalues = combine.get(mapcombine);
+										Object funcval = valuemap.get(keystoreduce);										
+										if (combinevalues == null) {
+											combinevalues = new HashMap<>();
+											combine.put(mapcombine, combinevalues);
+										}
+										combinevalues.put(col, funcval);
+									}
+								}
+							}
+						}
+						combine.keySet().stream().map(val->{
+							val.putAll(combine.get(val));
+							return val;
+						}).forEach(value->{
+							context.put("Reduce", value);
+						});
+						
+					}
+				}
+			}
+			PlainSelect ps = plainSelect;
+			Set<String> finalselectcolumns = selectcolumnsresult;
+			@Override
+			public void reduce(String key, List<Map<String, Object>> values, Context context) {
+				Map<String, List<Map<String, Object>>> mapListMap = new HashMap<>();
+
+		        for (Map<String, Object> map : values) {
+		            String groupByValue = (String) map.remove("tablename()");
+		            List<Map<String, Object>> groupList = mapListMap.getOrDefault(groupByValue, new ArrayList<>());
+		            groupList.add(map);
+		            mapListMap.put(groupByValue, groupList);
+		        }
+		        Map<String, List<Map<String, Object>>> processedmap = new HashMap<>(); 
+		        mapListMap.keySet().forEach(keytoproc->{
+		        	Context ctx = new DataCruncherContext<>();
+		        	combine("Reducer", mapListMap.get(keytoproc), ctx);
+		        	processedmap.put(keytoproc, (List<Map<String, Object>>) ctx.get("Reduce"));
+		        });
+		        String tablename = ((Table)ps.getFromItem()).getName();
+		        List<Map<String, Object>> maintableoutput = new ArrayList<>();
+		        maintableoutput.addAll(processedmap.get(tablename));
+		        List<Map<String, Object>> mergedoutput = new ArrayList<>();
+		        if(nonNull(ps.getJoins())) {
+			        List<Join> joins = ps.getJoins();			        
+		            for (Join join : joins) {
+		            	String jointable = ((Table) join.getRightItem()).getName();
+		            	List<Map<String, Object>> joinoutput = processedmap.get(jointable);
+		                if(join.isInner()) {
+		                	for(Map<String, Object> mainmap:maintableoutput) {
+		                		for(Map<String, Object> joinmap:joinoutput) {
+		                			if(evaluateExpressionJoin(join.getOnExpression(),jointable , mainmap, joinmap)) {
+		                				Map<String, Object> mergedOut = new HashMap<>();
+		                				mergedOut.putAll(mainmap);
+		                				mergedOut.putAll(joinmap);
+		                				mergedoutput.add(mergedOut);
+		                			}
+		                		}
+		                	}
+		                	maintableoutput = mergedoutput;
+		                } else if(join.isLeft()) {
+		                	for(Map<String, Object> mainmap:maintableoutput) {
+		                		for(Map<String, Object> joinmap:joinoutput) {
+		                			if(evaluateExpressionJoin(join.getOnExpression(),jointable , mainmap, joinmap)) {
+		                				Map<String, Object> mergedOut = new HashMap<>();
+		                				mergedOut.putAll(mainmap);
+		                				mergedOut.putAll(joinmap);
+		                				mergedoutput.add(mergedOut);
+		                			} else {
+		                				Map<String, Object> mergedOut = new HashMap<>();
+		                				mergedOut.putAll(mainmap);
+		                				mergedOut.keySet().addAll(joinmap.keySet());
+		                				mergedoutput.add(mergedOut);
+		                			}
+		                		}
+		                	}
+		                	maintableoutput = mergedoutput;
+		                } else if(join.isRight()) {
+		                	for(Map<String, Object> mainmap:maintableoutput) {
+		                		for(Map<String, Object> joinmap:joinoutput) {
+		                			if(evaluateExpressionJoin(join.getOnExpression(),jointable , mainmap, joinmap)) {
+		                				Map<String, Object> mergedOut = new HashMap<>();
+		                				mergedOut.putAll(mainmap);
+		                				mergedOut.putAll(joinmap);
+		                				mergedoutput.add(mergedOut);
+		                			} else {
+		                				Map<String, Object> mergedOut = new HashMap<>();
+		                				mergedOut.putAll(joinmap);
+		                				mergedOut.keySet().addAll(mainmap.keySet());
+		                				mergedoutput.add(mergedOut);
+		                			}
+		                		}
+		                	}
+		                	maintableoutput = mergedoutput;
+		                }
+		            }
+		        }
+	            if (nonNull(ps.getWhere())) {
+	            	Expression where = ps.getWhere();
+	            	maintableoutput = maintableoutput.stream().filter(val->
+	            	evaluateExpression(where, val)).collect(Collectors.toList());
+	            }
+				maintableoutput = maintableoutput.stream().map(val -> {
+					val.keySet().retainAll(finalselectcolumns);
+					return val;
+				}).collect(Collectors.toList());
+				if (CollectionUtils.isNotEmpty(ps.getOrderByElements())) {
+					var orderbyelements = ps.getOrderByElements();
+					List<Column> columns = new ArrayList<>();
+					List<String> directions = new ArrayList<>();
+					if (orderbyelements != null) {
+						for (OrderByElement orderByElement : orderbyelements) {
+							orderByElement.getExpression().accept(new ExpressionVisitorAdapter() {
+								@Override
+								public void visit(Column column) {
+									columns.add(column);
+								}
+							});
+
+							String direction = orderByElement.isAsc() ? "ASC" : "DESC";
+							directions.add(direction);
+						}
+					}
+					log.info("Order by {} {}", columns, directions);
+					Collections.sort(maintableoutput,(map1, map2) -> {
+
+						for (int i = 0; i < columns.size(); i++) {
+							String columnName = columns.get(i).getColumnName();
+							String sortOrder = directions.get(i);
+							Object value1 = map1.get(columnName);
+							Object value2 = map2.get(columnName);
+							int result = compareTo(value1, value2);
+							if (sortOrder.equals("DESC")) {
+								result = -result;
+							}
+							if (result != 0) {
+								return result;
+							}
+						}
+						return 0;
+					});
+				}
+	            context.addAll(key, maintableoutput);
+				log.info("In Reduce Output Values {}", maintableoutput.size());
+			}
+			/**
+			 * Compare two objects to sort in order.
+			 * @param obj1
+			 * @param obj2
+			 * @return value in Long for sorting.
+			 */
+			public int compareTo(Object obj1, Object obj2) {
+				if (obj1 instanceof Integer val1 && obj2 instanceof Integer val2) {
+					return val1.compareTo(val2);
+				} else if (obj1 instanceof Long val1 && obj2 instanceof Long val2) {
+					return val1.compareTo(val2);
+				} else if (obj1 instanceof Double val1 && obj2 instanceof Double val2) {
+					return val1.compareTo(val2);
+				} else if (obj1 instanceof Float val1 && obj2 instanceof Float val2) {
+					return val1.compareTo(val2);
+				} else if (obj1 instanceof String val1 && obj2 instanceof String val2) {
+					return val1.compareTo(val2);
+				}
+				return 0;
+			}
+		}
+		Map<String, Long> columnindexmap = new ConcurrentHashMap<>();
+		List<String> columnsfortable = tablecolumnsmap.get(tablename);
+		for (int originalcolumnindex = 0; originalcolumnindex < columnsfortable
+				.size(); originalcolumnindex++) {
+			columnindexmap.put(columnsfortable.get(originalcolumnindex), Long.valueOf(originalcolumnindex));
+		}
+		MapReduceApplicationBuilder mrab = MapReduceApplicationBuilder.newBuilder()
+		.addMapper(new MapperReducerSqlMapper(tablename,selectcolumns,functionwithcolumns, expressionRootTable,
+				tablecolumntypesmap.get(tablename), columnindexmap), tablefoldermap.get(tablename));
+		if(CollectionUtils.isNotEmpty(plainSelect.getJoins())) {
+			List<Join> joins = plainSelect.getJoins();
+            for (Join join : joins) {
+                Table rightItem = (Table) join.getRightItem();
+                Expression expressionJoinTable = getFilterExpression(expressionsTable.get(rightItem.getName()));
+                Set<String> columnsJoinTable = isNull(tablerequiredAllcolumns.get(table.getName())) ? new LinkedHashSet<>()
+        				: tablerequiredAllcolumns.get(rightItem.getName());
+                selectcolumns = new LinkedHashSet<>(columnsJoinTable);
+                for(String col:functioncols) {
+        			selectcolumns.remove(col);
+        		}
+                columnindexmap = new ConcurrentHashMap<>();
+        		columnsfortable = tablecolumnsmap.get(rightItem.getName());
+        		for (int originalcolumnindex = 0; originalcolumnindex < columnsfortable
+        				.size(); originalcolumnindex++) {
+        			columnindexmap.put(columnsfortable.get(originalcolumnindex), Long.valueOf(originalcolumnindex));
+        		}
+                mrab = mrab.addMapper(new MapperReducerSqlMapper(rightItem.getName(),selectcolumns,functionwithcolumns, expressionJoinTable,
+                		tablecolumntypesmap.get(rightItem.getName()), columnindexmap), tablefoldermap.get(rightItem.getName()));
+            }
+		}
+		mrab = mrab.addCombiner(new MapperReducerSqlCombinerReducer())
+			.addReducer(new MapperReducerSqlCombinerReducer());
+		return mrab.setJobConf(jc)
+				.setOutputfolder("/aircararrivaldelay").build();
+	}
+	/**
+	 * Evaluates the expression of object array. 
+	 * @param expression
+	 * @param row
+	 * @param columnsforeachjoin
+	 * @return evaluates to true if expression succeeds and false if fails.
+	 */
+	public static boolean evaluateExpression(Expression expression, Map<String, Object> row) {
+		if (expression instanceof BinaryExpression) {
+			BinaryExpression binaryExpression = (BinaryExpression) expression;
+			String operator = binaryExpression.getStringExpression();
+			Expression leftExpression = binaryExpression.getLeftExpression();
+			Expression rightExpression = binaryExpression.getRightExpression();
+
+			switch (operator.toUpperCase()) {
+			case "AND":
+				return evaluateExpression(leftExpression, row)
+						&& evaluateExpression(rightExpression, row);
+			case "OR":
+				return evaluateExpression(leftExpression, row)
+						|| evaluateExpression(rightExpression, row);
+			case ">":
+				String leftValue = getValueString(leftExpression, row);
+				String rightValue = getValueString(rightExpression, row);
+				return Double.valueOf(leftValue) > Double.valueOf(rightValue);
+			case ">=":
+				leftValue = getValueString(leftExpression, row);
+				rightValue = getValueString(rightExpression, row);
+				return Double.valueOf(leftValue) >= Double.valueOf(rightValue);
+			case "<":
+				leftValue = getValueString(leftExpression, row);
+				rightValue = getValueString(rightExpression, row);
+				return Double.valueOf(leftValue) < Double.valueOf(rightValue);
+			case "<=":
+				leftValue = getValueString(leftExpression, row);
+				rightValue = getValueString(rightExpression, row);
+				return Double.valueOf(leftValue) <= Double.valueOf(rightValue);
+			case "=":
+				Object leftValueO = getValueStringWhere(leftExpression, row);
+				Object rightValueO = getValueStringWhere(rightExpression, row);
+				return compareToWhere(leftValueO,rightValueO) == 0;
+			case "<>":
+				Object leftValue0 = getValueStringWhere(leftExpression, row);
+				Object rightValue0 = getValueStringWhere(rightExpression, row);
+				return compareToWhere(leftValue0,rightValue0) != 0;
+			default:
+				throw new UnsupportedOperationException("Unsupported operator: " + operator);
+			}
+		} else if (expression instanceof Parenthesis) {
+			Parenthesis parenthesis = (Parenthesis) expression;
+			Expression subExpression = parenthesis.getExpression();
+			return evaluateExpression(subExpression, row);
+		} else {
+			String value = getValueString(expression, row);
+			return Boolean.parseBoolean(value);
+		}
+	}
+	
+	/**
+	 * Evaluates the join condition or expression and returns true or false.
+	 * @param expression
+	 * @param jointable
+	 * @param row1
+	 * @param row2
+	 * @param leftablecolumns
+	 * @param righttablecolumns
+	 * @return true or false
+	 */
+	public static boolean evaluateExpressionJoin(Expression expression, String jointable, Map<String, Object> row1, Map<String, Object> row2) {
+		if (expression instanceof BinaryExpression) {
+			BinaryExpression binaryExpression = (BinaryExpression) expression;
+			String operator = binaryExpression.getStringExpression();
+			Expression leftExpression = binaryExpression.getLeftExpression();
+			Expression rightExpression = binaryExpression.getRightExpression();
+			Map<String, Object> rowleft = null;
+			List<String> columnsrowleft = null;
+			if (leftExpression instanceof Column column && column.getTable().getName().equals(jointable)) {
+				rowleft = row2;
+			} else {
+				rowleft = row1;
+			}
+			Map<String, Object> rowright = null;
+			List<String> columnsrowright = null;
+			if (rightExpression instanceof Column column && column.getTable().getName().equals(jointable)) {
+				rowright = row2;
+			} else {
+				rowright = row1;
+			}
+			switch (operator.toUpperCase()) {
+			case "AND":
+				return evaluateExpressionJoin(leftExpression, jointable, rowleft, rowright)
+						&& evaluateExpressionJoin(rightExpression, jointable, rowleft, rowright);
+			case "OR":
+				return evaluateExpressionJoin(leftExpression, jointable, rowleft, rowright)
+						|| evaluateExpressionJoin(rightExpression, jointable, rowleft, rowright);
+			case ">":
+				String leftValue = getValueString(leftExpression, rowleft);
+				String rightValue = getValueString(rightExpression, rowright);
+				return Double.valueOf(leftValue) > Double.valueOf(rightValue);
+			case ">=":
+				leftValue = getValueString(leftExpression, rowleft);
+				rightValue = getValueString(rightExpression, rowright);
+				return Double.valueOf(leftValue) >= Double.valueOf(rightValue);
+			case "<":
+				leftValue = getValueString(leftExpression, rowleft);
+				rightValue = getValueString(rightExpression, rowright);
+				return Double.valueOf(leftValue) < Double.valueOf(rightValue);
+			case "<=":
+				leftValue = getValueString(leftExpression, rowleft);
+				rightValue = getValueString(rightExpression, rowright);
+				return Double.valueOf(leftValue) <= Double.valueOf(rightValue);
+			case "=":
+				Object leftValueO = getValueString(leftExpression, rowleft);
+				Object rightValueO = getValueString(rightExpression, rowright);
+				return compareToWhere(leftValueO,rightValueO) == 0;
+			case "<>":
+				leftValue = getValueString(leftExpression, rowleft);
+				rightValue = getValueString(rightExpression, rowright);
+				return compareToWhere(leftValue,rightValue) != 0;
+			default:
+				throw new UnsupportedOperationException("Unsupported operator: " + operator);
+			}
+		} else if (expression instanceof Parenthesis) {
+			Parenthesis parenthesis = (Parenthesis) expression;
+			Expression subExpression = parenthesis.getExpression();
+			return evaluateExpressionJoin(subExpression, jointable, row1, row2);
+		} else {
+			Map<String, Object> row = null;
+			List<String> columnsrow = null;
+			if (expression instanceof Column column && column.getTable().getName().equals(jointable)) {
+				row = row2;
+			} else {
+				row = row1;
+			}
+			String value = getValueString(expression, row);
+			return Boolean.parseBoolean(value);
+		}
+	}
+	/**
+	 * Compare two objects to sort in order.
+	 * @param obj1
+	 * @param obj2
+	 * @return value in Long for sorting.
+	 */
+	public static int compareToWhere(Object obj1, Object obj2) {
+		if (obj1 instanceof Integer val1 && obj2 instanceof Integer val2) {
+			return val1.compareTo(val2);
+		} else if (obj1 instanceof Long val1 && obj2 instanceof Long val2) {
+			return val1.compareTo(val2);
+		} else if (obj1 instanceof Double val1 && obj2 instanceof Double val2) {
+			return val1.compareTo(val2);
+		} else if (obj1 instanceof Float val1 && obj2 instanceof Float val2) {
+			return val1.compareTo(val2);
+		} else if (obj1 instanceof String val1 && obj2 instanceof String val2) {
+			return val1.compareTo(val2);
+		}
+		return -1;
+	}
+	
+	/**
+	 * Gets the value of string given expression in column and records in map.
+	 * @param expression
+	 * @param row
+	 * @return string value
+	 */
+	private static Object getValueStringWhere(Expression expression, Map<String, Object> row) {
+		if (expression instanceof LongValue lv) {
+			return Double.valueOf(lv.getValue());
+		} else if (expression instanceof StringValue sv) {
+			return sv.getValue();
+		} else if (expression instanceof DoubleValue dv) {
+			return Double.toString(dv.getValue());
+		} else if(expression instanceof Column column) {
+			String columnName = column.getColumnName();
+			if(row.get(columnName) instanceof Double val)
+			return Double.valueOf(val);
+			else {
+				return Double.valueOf((String)row.get(columnName));
+			}
+		} else {
+			return Double.valueOf(0.0d);
+		}
+	}
+	
+	/**
+	 * Gets the value of string given expression in column and records in map.
+	 * @param expression
+	 * @param row
+	 * @return string value
+	 */
+	private static String getValueString(Expression expression, Map<String, Object> row) {
+		if (expression instanceof LongValue lv) {
+			return String.valueOf(lv.getValue());
+		} else if (expression instanceof StringValue sv) {
+			return sv.getValue();
+		} else if (expression instanceof DoubleValue dv) {
+			return Double.toString(dv.getValue());
+		} else if(expression instanceof Column column) {
+			String columnName = column.getColumnName();
+			return String.valueOf(row.get(columnName));
+		} else {
+			return String.valueOf(0.0d);
+		}
+	}
+	
+	/**
+	 * This function gets the column from single function.
+	 * @param functions
+	 * @return column referred in function like sum, min,max.
+	 */
+	public Column getColumn(Function function) {
+		List<Expression> parameters = function.getParameters().getExpressions();
+		return (Column) parameters.get(0);
+	}
+	
+	/**
+	 * This function evaluates the expression for a given row record.
+	 * @param expression
+	 * @param row
+	 * @return evaluates to true if expression satisfies the condition else false
+	 */
+	public static boolean evaluateExpression(Expression expression, CSVRecord row) {
+		if (expression instanceof BinaryExpression) {
+			BinaryExpression binaryExpression = (BinaryExpression) expression;
+			String operator = binaryExpression.getStringExpression();
+			Expression leftExpression = binaryExpression.getLeftExpression();
+			Expression rightExpression = binaryExpression.getRightExpression();
+
+			switch (operator.toUpperCase()) {
+			case "AND":
+				return evaluateExpression(leftExpression, row) && evaluateExpression(rightExpression, row);
+			case "OR":
+				return evaluateExpression(leftExpression, row) || evaluateExpression(rightExpression, row);
+			case ">":
+				String leftValue = getValueString(leftExpression, row);
+				String rightValue = getValueString(rightExpression, row);
+				return Double.valueOf(leftValue) > Double.valueOf(rightValue);
+			case ">=":
+				leftValue = getValueString(leftExpression, row);
+				rightValue = getValueString(rightExpression, row);
+				return Double.valueOf(leftValue) >= Double.valueOf(rightValue);
+			case "<":
+				leftValue = getValueString(leftExpression, row);
+				rightValue = getValueString(rightExpression, row);
+				return Double.valueOf(leftValue) < Double.valueOf(rightValue);
+			case "<=":
+				leftValue = getValueString(leftExpression, row);
+				rightValue = getValueString(rightExpression, row);
+				return Double.valueOf(leftValue) <= Double.valueOf(rightValue);
+			case "=":
+				Object leftValueO = getValueString(leftExpression, row);
+				Object rightValueO = getValueString(rightExpression, row);
+				return leftValueO.equals(rightValueO);
+			case "<>":
+				leftValue = getValueString(leftExpression, row);
+				rightValue = getValueString(rightExpression, row);
+				return !leftValue.equals(rightValue);
+			default:
+				throw new UnsupportedOperationException("Unsupported operator: " + operator);
+			}
+		} else if (expression instanceof Parenthesis) {
+			Parenthesis parenthesis = (Parenthesis) expression;
+			Expression subExpression = parenthesis.getExpression();
+			return evaluateExpression(subExpression, row);
+		} else {
+			String value = getValueString(expression, row);
+			return Boolean.parseBoolean(value);
+		}
+	}
+	
+	/**
+	 * Evaluates the expression with row to get value.
+	 * @param expression
+	 * @param row
+	 * @return get the record column data from expression.
+	 */
+	private static String getValueString(Expression expression, CSVRecord row) {
+		if (expression instanceof LongValue) {
+			return String.valueOf(((LongValue) expression).getValue());
+		} else if (expression instanceof StringValue) {
+			return ((StringValue) expression).getValue();
+		} else if (expression instanceof DoubleValue) {
+			return Double.toString(((DoubleValue) expression).getValue());
+		} else {
+			Column column = (Column) expression;
+			String columnName = column.getColumnName();
+			return String.valueOf(row.get(columnName));
+		}
+	}
+	
+	/**
+	 * Gets the required columns from all the join tables 
+	 * @param plainSelect
+	 * @param tablerequiredcolumns
+	 * @param expressionsTable
+	 * @param joinTableExpressions
+	 */
+	public void getRequiredColumnsForAllTables(PlainSelect plainSelect, Map<String, Set<String>> tablerequiredcolumns,
+			Map<String, List<Expression>> expressionsTable, Map<String, List<Expression>> joinTableExpressions) {
+
+		List<Expression> expressions = new Vector<>();
+
+		if (nonNull(plainSelect.getJoins())) {
+			plainSelect.getJoins().parallelStream()
+					.map((Serializable & java.util.function.Function<? super Join, ? extends Expression>) join -> join
+							.getOnExpression())
+					.forEach((Serializable & Consumer<Expression>) expression -> expressions.add(expression));
+		}
+		if (nonNull(plainSelect.getWhere())) {
+			getColumnsFromBinaryExpression(plainSelect.getWhere(), tablerequiredcolumns, expressionsTable,
+					expressionsTable);
+		}
+		for (Expression onExpression : expressions) {
+			getColumnsFromBinaryExpression(onExpression, tablerequiredcolumns, joinTableExpressions,
+					joinTableExpressions);
+		}
+	}
+	
+	/**
+	 * Gets all the columns from the expressions.
+	 * @param expression
+	 * @param tablerequiredcolumns
+	 * @param expressions
+	 * @param joinTableExpressions
+	 */
+	public void getColumnsFromBinaryExpression(Expression expression, Map<String, Set<String>> tablerequiredcolumns,
+			Map<String, List<Expression>> expressions, Map<String, List<Expression>> joinTableExpressions) {
+		if (expression instanceof BinaryExpression binaryExpression) {
+			Expression leftExpression = binaryExpression.getLeftExpression();
+			if (leftExpression instanceof BinaryExpression) {
+				getColumnsFromBinaryExpression(leftExpression, tablerequiredcolumns, expressions, joinTableExpressions);
+			}
+			Expression rightExpression = binaryExpression.getRightExpression();
+			if (rightExpression instanceof BinaryExpression) {
+				getColumnsFromBinaryExpression(rightExpression, tablerequiredcolumns, expressions,
+						joinTableExpressions);
+			}
+			if (leftExpression instanceof Column column1 && !(rightExpression instanceof Column)) {
+				if (nonNull(column1.getTable())) {
+					List<Expression> expressionsTable = expressions.get(column1.getTable().getName());
+					if (isNull(expressionsTable)) {
+						expressionsTable = new Vector<>();
+						expressions.put(column1.getTable().getName(), expressionsTable);
+					}
+					expressionsTable.add(binaryExpression);
+				}
+			} else if (!(leftExpression instanceof Column) && rightExpression instanceof Column column1) {
+				if (nonNull(column1.getTable())) {
+					List<Expression> expressionsTable = expressions.get(column1.getTable().getName());
+					if (isNull(expressionsTable)) {
+						expressionsTable = new Vector<>();
+						expressions.put(column1.getTable().getName(), expressionsTable);
+					}
+					expressionsTable.add(binaryExpression);
+				}
+			} else if (leftExpression instanceof Column col1 && rightExpression instanceof Column col2) {
+				List<Expression> expressionsTable = joinTableExpressions
+						.get(col1.getTable().getName() + "-" + col2.getTable().getName());
+				if (isNull(expressionsTable)) {
+					expressionsTable = new Vector<>();
+					joinTableExpressions.put(col1.getTable().getName() + "-" + col2.getTable().getName(),
+							expressionsTable);
+				}
+				expressionsTable.add(binaryExpression);
+			}
+			// Check if either left or right expression is a column
+			if (leftExpression instanceof Column column) {
+				if (nonNull(column.getTable())) {
+					Set<String> columns = tablerequiredcolumns.get(column.getTable().getName());
+					if (isNull(columns)) {
+						columns = new LinkedHashSet<>();
+						tablerequiredcolumns.put(column.getTable().getName(), columns);
+					}
+					columns.add(column.getColumnName());
+				}
+			}
+
+			if (rightExpression instanceof Column column) {
+				if (nonNull(column.getTable())) {
+					Set<String> columns = tablerequiredcolumns.get(column.getTable().getName());
+					if (isNull(columns)) {
+						columns = new LinkedHashSet<>();
+						tablerequiredcolumns.put(column.getTable().getName(), columns);
+					}
+					columns.add(column.getColumnName());
+				}
+			}
+		} else if (expression instanceof Column column) {
+			Set<String> columns = tablerequiredcolumns.get(column.getTable().getName());
+			if (isNull(columns)) {
+				columns = new LinkedHashSet<>();
+				tablerequiredcolumns.put(column.getTable().getName(), columns);
+			}
+			columns.add(column.getColumnName());
+		}
+	}
+	
+	/**
+	 * Adds all the required columns from select items.
+	 * @param allRequiredColumns
+	 * @param allColumnsSelectItems
+	 */
+	public void addAllRequiredColumnsFromSelectItems(Map<String, Set<String>> allRequiredColumns,
+			Map<String, Set<String>> allColumnsSelectItems) {
+		allColumnsSelectItems.keySet().parallelStream().forEach((Serializable & Consumer<String>) (key -> {
+			Set<String> allReqColumns = allRequiredColumns.get(key);
+			Set<String> allSelectItem = allColumnsSelectItems.get(key);
+			if (isNull(allReqColumns)) {
+				allRequiredColumns.put(key, allSelectItem);
+			} else {
+				allReqColumns.addAll(allSelectItem);
+			}
+		}));
+	}
+	
+	/**
+	 * This functions returns initial filter or expressions.
+	 * @param leftTableExpressions
+	 * @return expression
+	 */
+	public Expression getFilterExpression(List<Expression> leftTableExpressions) {
+		Expression expression = null;
+		if (CollectionUtils.isNotEmpty(leftTableExpressions)) {
+			expression = leftTableExpressions.get(0);
+			for (int expressioncount = 1; expressioncount < leftTableExpressions.size(); expressioncount++) {
+				expression = new OrExpression(expression, leftTableExpressions.get(expressioncount));
+			}
+			return expression;
+		}
+		return null;
+	}
+}

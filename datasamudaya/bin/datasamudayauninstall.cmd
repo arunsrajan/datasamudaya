@@ -1,0 +1,1 @@
+wrapper.exe -r ..\config\wrapper.conf

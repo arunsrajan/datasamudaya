@@ -1,0 +1,40 @@
+{
+	"kind": "Pod",
+	"apiVersion": "v1",
+	"metadata": {
+		"name": "zookeeper-3",
+		"labels": {
+			"name": "zookeeper",
+			"server-id": "3"
+		}
+	},
+	"spec": {
+		"containers": [
+			{
+				"name": "server",
+				"image": "registry-1.docker.io/arunsrajan/zookeeper:3.5",
+				"env": [
+					{
+						"name": "SERVER_ID",
+						"value": "3"
+					},
+					{
+						"name": "MAX_SERVERS",
+						"value": "3"
+					}
+				],
+				"ports": [
+					{
+						"containerPort": 2181
+					},
+					{
+						"containerPort": 2888
+					},
+					{
+						"containerPort": 3888
+					}
+				]
+			}
+		]
+	}
+}

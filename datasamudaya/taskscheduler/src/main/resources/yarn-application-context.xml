@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:yarn="http://www.springframework.org/schema/yarn"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/yarn jar:file:../modules/taskscheduler-2.0.jar!/xsd/spring-yarn-2.0.xsd
+		http://www.springframework.org/schema/beans jar:file:../modules/taskscheduler-2.0.jar!/xsd/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context jar:file:../modules/taskscheduler-2.0.jar!/xsd/spring-context-4.2.xsd
+		http://www.springframework.org/schema/util jar:file:../modules/taskscheduler-2.0.jar!/xsd/spring-util-4.2.xsd">
+
+	<context:property-placeholder
+		location="file:../yarn/datasamudayahadoop.properties"
+		system-properties-mode="OVERRIDE" />
+
+	<yarn:configuration>
+		fs.defaultFS=${hd.fs}
+		yarn.resourcemanager.address=${hd.rm}
+		fs.hdfs.impl=org.apache.hadoop.hdfs.DistributedFileSystem
+	</yarn:configuration>
+
+	<yarn:localresources>
+		<yarn:copy src="file:../appjar/*.jar" dest="/libdatasamudaya/" />
+		<yarn:hdfs path="/libdatasamudaya/*" />
+	</yarn:localresources>
+
+	<yarn:environment>
+		<yarn:classpath use-yarn-app-classpath="true"
+			delimiter=",">
+			./*
+		</yarn:classpath>
+	</yarn:environment>
+
+	<util:properties id="applicationArguments">
+		<prop key="container-count">${containercount}</prop>
+		<prop key="hdfs.namenode.url">${hd.fs}</prop>
+		<prop key="job-count">${jobcount}</prop>
+		<prop key="container-memory">${containermemory}</prop>
+	</util:properties>
+
+	<yarn:client app-name="MassiveDataCruncherMapReduce">
+		<yarn:master-runner
+			command="java --enable-preview --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-modules jdk.incubator.foreign --add-opens java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.sql/java.sql=ALL-UNNAMED"
+			arguments="applicationArguments"
+			context-file="yarn-appmaster-context.xml" />
+	</yarn:client>
+
+</beans>

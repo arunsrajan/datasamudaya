@@ -1,0 +1,47 @@
+import com.github.datasamudaya.common.*;
+import com.github.datasamudaya.stream.*;
+import org.jooq.lambda.tuple.*;
+import java.util.*;
+import java.util.concurrent.*;
+import com.esotericsoftware.kryo.io.Output;
+import org.apache.hadoop.fs.*;
+import java.net.*;
+
+org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
+Utils.loadLog4JSystemProperties("../config/","datasamudaya.properties");
+PipelineConfig pc = new PipelineConfig();
+pc.setBlocksize("64");
+pc.setNumberofcontainers("0");
+pc.setMaxmem("1024");
+pc.setMinmem("1024");
+pc.setJgroups("false");
+pc.setMesos("false");
+pc.setYarn("false");
+pc.setOutput(new Output(System.out));
+pc.setIsblocksuserdefined("true");
+pc.setBlocksize("64");
+pc.setMode(DataSamudayaConstants.MODE_NORMAL);
+Resources resources = new Resources();
+resources.setNumberofprocessors(12);
+resources.setFreememory(4294967296l);
+ConcurrentMap<String,Resources> mapres = new ConcurrentHashMap<>();
+mapres.put("127.0.0.1_12121",resources);
+resources.setNodeport("127.0.0.1_12121");
+DataSamudayaNodesResources.put(mapres);
+ByteBufferPoolDirect.init();
+CacheUtils.initBlockMetadataCache()
+pc.setLocal("false");
+pc.setClassLoader(jdk.jshell.JShell.class.getClassLoader());
+pc.setUseglobaltaskexecutors(true);
+var lc = Utils.launchContainers(1);
+StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000","/airline1989",pc);
+var mappair1 = datastream.map(dat -> dat.split(",")).filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14])).mapToPair(dat -> Tuple.tuple(dat[8], Long.parseLong(dat[14])));
+var airlinesamples = mappair1.reduceByKey((dat1, dat2) -> dat1 + dat2);
+List<List<Tuple2>> joinresult = (List) airlinesamples.collect(true,null);
+joinresult.stream().forEach(System.out::println)
+datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !dat[14].equals("ArrDelay") && !dat[14].equals("NA")).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).saveAsTextFile(new URI("hdfs://127.0.0.1:9000"), "/Coalesce/Coalesce-" + System.currentTimeMillis());
+MapPair<String,Tuple2<Long,Long>> mstll = datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !dat[14].equals("ArrDelay") && !dat[14].equals("NA")).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2));
+joinresult = mstll.collect(true,null);
+mstll.saveAsTextFile(new URI("hdfs://127.0.0.1:9000"), "/Coalesce/Coalesce-" + System.currentTimeMillis());
+Utils.destroyContainers(lc);

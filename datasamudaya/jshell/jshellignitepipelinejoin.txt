@@ -1,0 +1,45 @@
+import com.github.datasamudaya.common.*;
+import com.github.datasamudaya.stream.*;
+import org.jooq.lambda.tuple.*;
+import java.util.*;
+import java.util.concurrent.*;
+import com.esotericsoftware.kryo.io.Output;
+import org.apache.log4j.Logger;
+
+org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+String hdfsfilepath = "hdfs://127.0.0.1:9000";
+String airlinesample = "/airlines";
+PipelineConfig pc = new PipelineConfig();
+Utils.loadLog4JSystemProperties("../config/","datasamudaya.properties");
+pc.setBlocksize("64");
+pc.setNumberofcontainers("1");
+pc.setLocal("true")
+pc.setJgroups("false")
+pc.setMesos("false")
+pc.setYarn("false")
+pc.setOutput(new Output(System.out));
+pc.setLocal("false");
+pc.setIsblocksuserdefined("false");
+pc.setMode(DataSamudayaConstants.MODE_DEFAULT);
+Logger log = Logger.getLogger(IgnitePipeline.class);
+Resources resources = new Resources();
+resources.setNumberofprocessors(1);
+resources.setFreememory(4294967296l);
+ConcurrentMap<String,Resources> mapres = new ConcurrentHashMap<>();
+mapres.put("127.0.0.1_22222",resources);
+DataSamudayaNodesResources.put(mapres);
+DataSamudayaProperties.get().setProperty(DataSamudayaConstants.HDFSNAMENODEURL,"hdfs://127.0.0.1:9000");
+ByteBufferPoolDirect.init();
+CacheUtils.initBlockMetadataCache();
+IgnitePipeline<String> datastream = IgnitePipeline.newStreamHDFS(hdfsfilepath, airlinesample, pc);
+MapPairIgnite<String, Integer> mpi = datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !dat[14].equals("ArrDelay") && !dat[14].equals("NA")).mapToPair(dat->new Tuple2<String,Integer>(dat[8],Integer.parseInt(dat[14]))).cache(false);
+MapPairIgnite<String, Integer> tupresult = mpi.reduceByKey((a,b)->a+b).coalesce(1, (a,b)->a+b).cache(true);
+log.info(tupresult.job.results);
+MapPairIgnite<String, Integer> tupresult1 = mpi.reduceByKey((a,b)->a-b).coalesce(1, (a,b)->a-b).cache(true);
+log.info(tupresult1.job.results);
+MapPairIgnite<Tuple2<String,Integer>, Tuple2<String,Integer>> joinresult = (MapPairIgnite) tupresult.join(tupresult1, (tup1,tup2)->tup1.v1.equals(tup2.v1)).cache(true);
+log.info(joinresult.job.results);
+MapPairIgnite<Tuple2<String,Integer>, Tuple2<String,Integer>> joinresult1 = (MapPairIgnite) tupresult1.join(tupresult2, (tup1,tup2)->tup1.v1.equals(tup2.v1)).cache(true);
+log.info(joinresult1.job.results);
+MapPairIgnite<String, Integer> tupresult3 = mpi.reduceByKey((a,b)->b+a+a).coalesce(1, (a,b)->a+b+1).cache(true);
+log.info(tupresult3.job.results);

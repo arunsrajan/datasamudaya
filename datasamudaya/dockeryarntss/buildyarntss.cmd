@@ -1,0 +1,1 @@
+docker build -t arunsrajan/yarntss -f Dockerfile .

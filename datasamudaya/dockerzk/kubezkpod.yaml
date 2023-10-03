@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: zookeepercluster
+spec:
+  containers:
+  - name: zookeeper-0
+    image: arunsrajan/zookeeper
+    env:
+    - name: SERVER_ID
+      value: "0"
+    - name: MAX_SERVERS
+      value: "3"
+  - name: zookeeper-1
+    image: arunsrajan/zookeeper
+    env:
+    - name: SERVER_ID
+      value: "1"
+    - name: MAX_SERVERS
+      value: "3"
+  - name: zookeeper-2
+    image: arunsrajan/zookeeper   
+    env:
+    - name: SERVER_ID
+      value: "2"
+    - name: MAX_SERVERS
+      value: "3"
+  restartPolicy: Never

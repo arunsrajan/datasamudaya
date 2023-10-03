@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zookeeper-1
+  labels:
+    app: zookeeper-1
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper-1
+  template:
+    metadata:
+      labels:
+        app: zookeeper-1
+    spec:
+       containers:
+        - name: zookeeper-1
+          image: registry-1.docker.io/arunsrajan/zookeeper:3.5.3-beta
+          env:
+            -  name: SERVER_ID
+               value: "1"
+            -  name: MAX_SERVERS
+               value: "3"

@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: datasamudaya-pv1
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: /minikube-host/data1
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: datasamudaya-pv2
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: /minikube-host/data2
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: datasamudaya-pv3
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: /minikube-host/data3
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: datasamudaya-pv4
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: /minikube-host/data4

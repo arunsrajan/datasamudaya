@@ -1,0 +1,41 @@
+FROM openjdk:8
+
+MAINTAINER arunsrajan@gmail.com
+
+USER root
+
+ENV ZOOKEEPER_VERSION 3.4.14
+
+EXPOSE 2181 2888 3888
+
+ADD zookeeper-3.4.14.tar.gz /opt/zookeeper
+
+RUN chmod 777 /opt/zookeeper/zookeeper-3.4.14
+
+WORKDIR /opt/zookeeper/zookeeper-3.4.14/conf
+
+RUN chmod 777 /opt/zookeeper/zookeeper-3.4.14/conf
+
+COPY zoo_sample.cfg /opt/zookeeper/zookeeper-3.4.14/conf/zoo.cfg
+
+RUN chmod 777 /opt/zookeeper/zookeeper-3.4.14/conf/zoo.cfg
+
+WORKDIR /opt/zookeeper/zookeeper-3.4.14
+
+VOLUME ["/opt/zookeeper/zookeeper-3.4.14/conf", "/opt/zookeeper/zookeeper-3.4.14/log"]
+
+COPY config-and-run.sh ./bin/
+
+RUN mkdir /opt/zookeeper/zookeeper-3.4.14/data
+
+RUN chmod 777 /opt/zookeeper/zookeeper-3.4.14/data
+
+WORKDIR /opt/zookeeper/zookeeper-3.4.14/data
+
+COPY myid myid
+
+WORKDIR /opt/zookeeper/zookeeper-3.4.14
+
+RUN chmod 777 /opt/zookeeper/zookeeper-3.4.14/bin/config-and-run.sh
+
+CMD ["/opt/zookeeper/zookeeper-3.4.14/bin/config-and-run.sh"]
