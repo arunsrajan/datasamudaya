@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.Context;
-import com.github.datasamudaya.tasks.scheduler.MapReduceApplication;
 import com.github.datasamudaya.tasks.scheduler.sql.MapReduceApplicationSqlBuilder;
 
 public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {

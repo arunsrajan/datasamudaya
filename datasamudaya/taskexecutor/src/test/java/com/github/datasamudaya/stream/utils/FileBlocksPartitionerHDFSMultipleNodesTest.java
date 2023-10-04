@@ -16,6 +16,7 @@
 package com.github.datasamudaya.stream.utils;
 
 import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
@@ -31,6 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -44,23 +46,22 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.BlocksLocation;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.JobMetrics;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.StreamPipelineBaseTestCommon;
-import com.github.datasamudaya.stream.utils.FileBlocksPartitionerHDFS;
 import com.github.datasamudaya.tasks.executor.NodeRunner;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBaseTestCommon {
-	private static final int NOOFNODES = 5;
+	private static final int NOOFNODES = 2;
 	static int teport = 12121;
 	static ExecutorService escontainer;
 	static ConcurrentMap<String, List<ServerSocket>> containers;
@@ -96,9 +97,9 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		DataSamudayaNodesResources.put(noderesourcesmap);
 		for (; nodeindex < NOOFNODES; nodeindex++) {
 			Resources resource = new Resources();
-			int memory = 64;
-			resource.setFreememory(memory * 1024 * 1024 * 1024l);
-			resource.setNumberofprocessors(4);
+			int memory = 4;
+			resource.setFreememory(memory * DataSamudayaConstants.GB);
+			resource.setNumberofprocessors(2);
 			noderesourcesmap.put("127.0.0.1_" + (20000 + nodeindex), resource);
 			server = Utils.getRPCRegistry(20000+nodeindex,
 					new StreamDataCruncher() {
@@ -137,6 +138,7 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		if (!Objects.isNull(escontainer)) {
 			escontainer.shutdown();
 		}
+		DataSamudayaNodesResources.get().clear();
 	}
 
 	@Test
@@ -162,16 +164,16 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		fbp.filepaths = Arrays.asList(paths);
 		fbp.isblocksuserdefined = false;
 		fbp.pipelineconfig = new PipelineConfig();
-		fbp.pipelineconfig.setMaxmem("4096");
-		fbp.pipelineconfig.setNumberofcontainers("5");
+		fbp.pipelineconfig.setMaxmem("2048");
+		fbp.pipelineconfig.setNumberofcontainers("2");
 		fbp.job = new Job();
 		fbp.job.setId(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 		fbp.job.setJm(new JobMetrics());
 		fbp.isignite = false;
 		fbp.getDnXref(bls, false);
 		fbp.allocateContainersByResources(bls);
-		assertEquals(Integer.valueOf(5), Integer.valueOf(fbp.job.getNodes().size()));
-		assertEquals(Integer.valueOf(5), Integer.valueOf(fbp.job.getTaskexecutors().size()));
+		assertEquals(Integer.valueOf(2), Integer.valueOf(fbp.job.getNodes().size()));
+		assertEquals(Integer.valueOf(2), Integer.valueOf(fbp.job.getTaskexecutors().size()));
 		fbp.destroyTaskExecutors();
 		GlobalContainerAllocDealloc.getHportcrs().clear();
 		log.info("FileBlocksPartitionerHDFSMultipleNodesTest.testGetTaskExecutorsAuto() Exiting------------------------------");
@@ -182,8 +184,8 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		log.info("FileBlocksPartitionerHDFSMultipleNodesTest.testGetTaskExecutorsProperInput() Entered------------------------------");
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.pipelineconfig = new PipelineConfig();
-		fbp.pipelineconfig.setMaxmem("4096");
-		fbp.pipelineconfig.setNumberofcontainers("5");
+		fbp.pipelineconfig.setMaxmem("1024");
+		fbp.pipelineconfig.setNumberofcontainers("2");
 		fbp.job = new Job();
 		fbp.job.setId(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 		fbp.job.setJm(new JobMetrics());
@@ -193,8 +195,8 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		fbp.hdfs = hdfs;
 		fbp.getDnXref(bls, false);
 		fbp.allocateContainersByResources(bls);
-		assertEquals(Integer.valueOf(5), Integer.valueOf(fbp.job.getNodes().size()));
-		assertEquals(Integer.valueOf(5), Integer.valueOf(fbp.job.getTaskexecutors().size()));
+		assertEquals(Integer.valueOf(2), Integer.valueOf(fbp.job.getNodes().size()));
+		assertEquals(Integer.valueOf(2), Integer.valueOf(fbp.job.getTaskexecutors().size()));
 		fbp.destroyTaskExecutors();
 		GlobalContainerAllocDealloc.getHportcrs().clear();
 		log.info("FileBlocksPartitionerHDFSMultipleNodesTest.testGetTaskExecutorsProperInput() Exiting------------------------------");

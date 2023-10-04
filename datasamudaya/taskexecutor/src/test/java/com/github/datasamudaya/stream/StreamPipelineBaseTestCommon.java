@@ -230,7 +230,9 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 		if (threadpool != null) {
 			threadpool.shutdown();
 		}
-		testingserver.close();
+		if(testingserver != null) {
+			testingserver.close();
+		}
 		containerprocesses.keySet().stream().forEach(key -> {
 			containerprocesses.get(key).keySet().stream().forEach(port -> {
 				Process proc = containerprocesses.get(key).get(port);

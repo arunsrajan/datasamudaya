@@ -23,7 +23,7 @@ mvn -Dmaven.antrun.skip=true -Dmaven.test.skip.exec=true -Pmodules clean package
 To Run jacoco and sonar
 -----------------------
 
--Dmaven.antrun.skip=true -f pom.xml -Pmodules clean install sonar:sonar -Dsonar.login=a2f18857a3ec8c8302a1a405d22f40fd7194cde7 -Dsonar.host.url=http://localhost:8082 -Dsonar.sources=pom.xml,src/main -Dsonar.test.exclusions=**src/test/**/*.java -Dsonar.language=Java
+-Dmaven.antrun.skip=true -f pom.xml -Pmodules jacoco:report-aggregate sonar:sonar -Dsonar.projectKey=datasamudaya -Dsonar.projectName='datasamudaya' -Dsonar.host.url=http://localhost:9900 -Dsonar.token=sqp_821cb5fc68adfa589c838348c5fe1ab9049414d4 -Dsonar.sources=pom.xml,src/main -Dsonar.test.exclusions=**src/test/**/*.java -Dsonar.language=Java
 
 To compile only tests
 ---------------------------------------------------------------

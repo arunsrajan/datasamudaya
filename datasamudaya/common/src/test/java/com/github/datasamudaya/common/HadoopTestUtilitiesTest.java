@@ -9,7 +9,7 @@ public class HadoopTestUtilitiesTest {
 	
 	@Test
 	public void startHDFSCluster() throws Exception {
-		MiniDFSCluster cluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
+		MiniDFSCluster cluster = HadoopTestUtilities.initHdfsCluster(9001, 9880, 2);
 		cluster.shutdown();
 	}
 

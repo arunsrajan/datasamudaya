@@ -17,10 +17,13 @@ import java.util.stream.Stream;
 import org.apache.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.stream.IgnitePipeline;
 
 
@@ -30,6 +33,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
   boolean toexecute = true;
   int sum;
   static Logger log = Logger.getLogger(IgnitePipelineDepth2Test.class);
+  
+  	@BeforeClass
+	public static void initConfig() {
+		pipelineconfig.setLocal("false");
+		pipelineconfig.setIsblocksuserdefined("false");
+		pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
+		pipelineconfig.setStorage(STORAGE.INMEMORY);
+	}
+  
+  
   @Test
   public void testFilterFilterSaveToHdfs() throws Throwable {
     log.info("testFilterFilterSaveToHdfs Before---------------------------------------");
