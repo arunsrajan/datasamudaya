@@ -18,6 +18,7 @@ package com.github.datasamudaya.stream.utils;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
@@ -34,6 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -47,11 +49,11 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.BlocksLocation;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.JobMetrics;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.Resources;
@@ -59,7 +61,6 @@ import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.StreamPipelineBaseTestCommon;
-import com.github.datasamudaya.stream.utils.FileBlocksPartitionerHDFS;
 import com.github.datasamudaya.tasks.executor.NodeRunner;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -146,14 +147,13 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		fbp.nodeschoosen = new HashSet<>(Arrays.asList("127.0.0.1_30000"));
 		fbp.containers = Arrays.asList(DataSamudayaConstants.DUMMYCONTAINER);
 		List<BlocksLocation> bls = fbp.getHDFSParitions();
-		assertEquals(2, bls.size());
+		assertEquals(1, bls.size());
 		assertEquals(4270834, fbp.totallength);
 		fbp.job = new Job();
 		fbp.job.setJm(new JobMetrics());
 		fbp.getDnXref(bls, false);
 		fbp.allocateContainersLoadBalanced(bls);
 		assertEquals("127.0.0.1_10101", bls.get(0).getExecutorhp());
-		assertEquals("127.0.0.1_10101", bls.get(1).getExecutorhp());
 	}
 
 	@Test
@@ -174,12 +174,11 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		fbp.nodeschoosen = new HashSet<>(Arrays.asList("127.0.0.1_30000"));
 		fbp.containers = Arrays.asList(DataSamudayaConstants.DUMMYCONTAINER, "127.0.0.1_10102");
 		List<BlocksLocation> bls = fbp.getHDFSParitions();
-		assertEquals(2, bls.size());
+		assertEquals(1, bls.size());
 		assertEquals(4270834, fbp.totallength);
 		fbp.getDnXref(bls, false);
 		fbp.allocateContainersLoadBalanced(bls);
 		assertEquals("127.0.0.1_10101", bls.get(0).getExecutorhp());
-		assertEquals("127.0.0.1_10102", bls.get(1).getExecutorhp());
 	}
 
 	@Test
@@ -200,7 +199,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		fbp.nodeschoosen = new HashSet<>(Arrays.asList("127.0.0.1_30000"));
 		fbp.containers = Arrays.asList(DataSamudayaConstants.DUMMYCONTAINER);
 		List<BlocksLocation> bls = fbp.getHDFSParitions();
-		assertEquals(2, bls.size());
+		assertEquals(1, bls.size());
 		assertEquals(4270834, fbp.totallength);
 	}
 
@@ -213,7 +212,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
 		fbp.isblocksuserdefined = false;
-		List<BlocksLocation> bls = fbp.getBlocks(fbp.isblocksuserdefined, 128, null);
+		List<BlocksLocation> bls = fbp.getBlocks(null);
 		ConcurrentMap<String, Resources> noderesourcesmap = new ConcurrentHashMap<>();
 		Resources resource = new Resources();
 		resource.setFreememory(12 * 1024 * 1024 * 1024l);
@@ -241,7 +240,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
 		fbp.isblocksuserdefined = false;
-		List<BlocksLocation> bls = fbp.getBlocks(fbp.isblocksuserdefined, 128, null);
+		List<BlocksLocation> bls = fbp.getBlocks(null);
 		ConcurrentMap<String, Resources> noderesourcesmap = new ConcurrentHashMap<>();
 		Resources resource = new Resources();
 		resource.setFreememory(12 * 1024 * 1024 * 1024l);
@@ -286,7 +285,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		fbp.filepaths = Arrays.asList(paths);
 		fbp.isblocksuserdefined = false;
 		fbp.hdfs = hdfs;
-		List<BlocksLocation> bls = fbp.getBlocks(fbp.isblocksuserdefined, 128, null);
+		List<BlocksLocation> bls = fbp.getBlocks(null);
 		fbp.getDnXref(bls, false);
 		fbp.allocateContainersByResources(bls);
 		assertEquals(1, fbp.job.getTaskexecutors().size());
@@ -318,7 +317,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 			fbp.isblocksuserdefined = false;
 			fbp.hdfs = hdfs;
 			fbp.filepaths = Arrays.asList(paths);
-			List<BlocksLocation> bls = fbp.getBlocks(fbp.isblocksuserdefined, 128, null);
+			List<BlocksLocation> bls = fbp.getBlocks(null);
 			fbp.getDnXref(bls, false);
 			fbp.allocateContainersByResources(bls);
 		} catch (Exception ex) {
@@ -355,7 +354,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		fbp.hdfs = hdfs;
 		fbp.isblocksuserdefined = true;
 		fbp.filepaths = Arrays.asList(paths);
-		List<BlocksLocation> bls = fbp.getBlocks(fbp.isblocksuserdefined, 128 * DataSamudayaConstants.MB, null);
+		List<BlocksLocation> bls = fbp.getBlocks(null);
 		fbp.getDnXref(bls, false);
 		fbp.allocateContainersByResources(bls);
 		assertEquals(1, fbp.job.getTaskexecutors().size());

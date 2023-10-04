@@ -34,16 +34,14 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.DAGEdge;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.Stage;
 import com.github.datasamudaya.common.Task;
-import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.utils.Utils;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.scheduler.StreamJobScheduler;
 import com.github.datasamudaya.stream.scheduler.StreamPipelineTaskSubmitter;
 
@@ -132,8 +130,8 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 			js.generatePhysicalExecutionPlan(stage, nextstage, job.getStageoutputmap(), job.getId(), graph, taskgraph);
 			stagenumber++;
 		}
-		assertEquals(35, graph.vertexSet().size());
-		assertEquals(50, graph.edgeSet().size());
+		assertEquals(3, graph.vertexSet().size());
+		assertEquals(2, graph.edgeSet().size());
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -234,8 +232,8 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 			js.generatePhysicalExecutionPlan(stage, nextstage, job.getStageoutputmap(), job.getId(), graph, taskgraph);
 			stagenumber++;
 		}
-		assertEquals(35, graph.vertexSet().size());
-		assertEquals(50, graph.edgeSet().size());
+		assertEquals(3, graph.vertexSet().size());
+		assertEquals(2, graph.edgeSet().size());
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -337,8 +335,8 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 			js.generatePhysicalExecutionPlan(stage, nextstage, job.getStageoutputmap(), job.getId(), graph, taskgraph);
 			stagenumber++;
 		}
-		assertEquals(35, graph.vertexSet().size());
-		assertEquals(50, graph.edgeSet().size());
+		assertEquals(3, graph.vertexSet().size());
+		assertEquals(2, graph.edgeSet().size());
 	}
 
 	@Test
@@ -440,6 +438,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 
 		Job job = mdparr.createJob();
 		StreamJobScheduler js = new StreamJobScheduler();
+		js.islocal = true;
 		js.zo = zo;
 		job.setPipelineconfig(pc);
 		js.isignite = Objects.isNull(pc.getMode()) ? false
@@ -486,6 +485,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 
 		Job job = mdparr.createJob();
 		StreamJobScheduler js = new StreamJobScheduler();
+		js.islocal = true;
 		js.zo = zo;
 		job.setPipelineconfig(pc);
 		js.isignite = Objects.isNull(pc.getMode()) ? false
@@ -507,8 +507,8 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 			js.generatePhysicalExecutionPlan(stage, nextstage, job.getStageoutputmap(), job.getId(), graph, taskgraph);
 			stagenumber++;
 		}
-		assertEquals(6, graph.vertexSet().size());
-		assertEquals(5, graph.edgeSet().size());
+		assertEquals(2, graph.vertexSet().size());
+		assertEquals(1, graph.edgeSet().size());
 	}
 
 	@Test
@@ -530,6 +530,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 
 		Job job = mdparr.createJob();
 		StreamJobScheduler js = new StreamJobScheduler();
+		js.islocal = true;
 		js.zo = zo;
 		job.setPipelineconfig(pc);
 		js.isignite = Objects.isNull(pc.getMode()) ? false
@@ -551,7 +552,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 			js.generatePhysicalExecutionPlan(stage, nextstage, job.getStageoutputmap(), job.getId(), graph, taskgraph);
 			stagenumber++;
 		}
-		assertEquals(5, graph.vertexSet().size());
+		assertEquals(1, graph.vertexSet().size());
 		assertEquals(0, graph.edgeSet().size());
 	}
 
@@ -571,6 +572,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 
 		Job job = mdparr.createJob();
 		StreamJobScheduler js = new StreamJobScheduler();
+		js.islocal = true;
 		js.zo = zo;
 		job.setPipelineconfig(pc);
 		js.isignite = Objects.isNull(pc.getMode()) ? false
@@ -592,7 +594,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 			js.generatePhysicalExecutionPlan(stage, nextstage, job.getStageoutputmap(), job.getId(), graph, taskgraph);
 			stagenumber++;
 		}
-		assertEquals(5, graph.vertexSet().size());
+		assertEquals(1, graph.vertexSet().size());
 		assertEquals(0, graph.edgeSet().size());
 	}
 
@@ -696,8 +698,8 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 			js.generatePhysicalExecutionPlan(stage, nextstage, job.getStageoutputmap(), job.getId(), graph, taskgraph);
 			stagenumber++;
 		}
-		assertEquals(35, graph.vertexSet().size());
-		assertEquals(50, graph.edgeSet().size());
+		assertEquals(3, graph.vertexSet().size());
+		assertEquals(2, graph.edgeSet().size());
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -784,8 +786,8 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 			js.generatePhysicalExecutionPlan(stage, nextstage, job.getStageoutputmap(), job.getId(), graph, taskgraph);
 			stagenumber++;
 		}
-		assertEquals(35, graph.vertexSet().size());
-		assertEquals(50, graph.edgeSet().size());
+		assertEquals(3, graph.vertexSet().size());
+		assertEquals(2, graph.edgeSet().size());
 	}
 
 	@SuppressWarnings("resource")
@@ -837,6 +839,11 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		Job job = mdparr.createJob();
 		job.setTrigger(Job.TRIGGER.COLLECT);
 		StreamJobScheduler js = new StreamJobScheduler();
+		js.islocal = false;
+		js.isignite = false;
+		js.ismesos = false;
+		js.isyarn = false;
+		js.isjgroups = false;
 		js.zo = zo;
 		js.pipelineconfig = pc;
 		js.isignite = Objects.isNull(pc.getMode()) ? false
@@ -882,6 +889,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 			mdstst.getTask().hdfsurl = job.getUri();
 			mdstst.getTask().filepath = job.getSavepath() + DataSamudayaConstants.HYPHEN + partitionnumber++;
 		}
+		js.broadcastJobStageToTaskExecutors(new ArrayList<>(taskgraph.vertexSet()));
 		js.parallelExecutionPhaseDExecutor(graph);
 		List<List> results = js.getLastStageOutput(mdstts, graph, mdststs, false, false, false, false, js.resultstream);
 		int sum = 0;
@@ -1107,9 +1115,15 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		Job job = mdparr.createJob();
 		job.setTrigger(Job.TRIGGER.COLLECT);
 		StreamJobScheduler js = new StreamJobScheduler();
+		js.islocal = false;
+		js.isignite = false;
+		js.ismesos = false;
+		js.isyarn = false;
+		js.isjgroups = true;
 		js.zo = zo;
 		job.setPipelineconfig(pc);
 		js.pipelineconfig = pc;
+		js.pipelineconfig.setStorage(STORAGE.INMEMORY);
 		js.isignite = Objects.isNull(pc.getMode()) ? false
 				: pc.getMode().equals(DataSamudayaConstants.MODE_DEFAULT) ? true : false;
 		List<List> result = (List<List>) js.schedule(job);
@@ -1168,6 +1182,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
 	public void testScheduleJobStandalone2() throws Exception {
 		PipelineConfig pc = new PipelineConfig();
 		pc.setMode(DataSamudayaConstants.MODE_NORMAL);
@@ -1180,6 +1195,11 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		mdparr.mdsroots.add(mdp);
 		Job job = mdparr.createJob();
 		StreamJobScheduler js = new StreamJobScheduler();
+		js.islocal = false;
+		js.isignite = false;
+		js.ismesos = false;
+		js.isyarn = false;
+		js.isjgroups = false;
 		js.zo = zo;
 		job.setPipelineconfig(pc);
 		js.isignite = Objects.isNull(pc.getMode()) ? false

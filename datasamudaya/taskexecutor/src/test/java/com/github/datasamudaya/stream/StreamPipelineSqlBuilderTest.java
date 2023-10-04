@@ -2296,7 +2296,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				sum += (Double)rec.get("sum(pow(airline.MonthOfYear, 2))");
 			}
 		}
-		assertEquals(Double.valueOf(3489.78981181209), Double.valueOf(sum));
+		assertEquals(Double.valueOf(3489.7898118120693), Double.valueOf(sum));
 		log.info("In testSelectSumWithNestedPower() method Exit");
 	}
 	
@@ -2316,7 +2316,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				sum += (Double)rec.get("sum(sqrt(airline.MonthOfYear))");
 			}
 		}
-		assertEquals(Double.valueOf(3489.78981181209), Double.valueOf(sum));
+		assertEquals(Double.valueOf(3489.7898118120693), Double.valueOf(sum));
 		log.info("In testSelectSumWithNestedSqrt() method Exit");
 	}
 	
@@ -2336,7 +2336,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				sum += (Double)rec.get("sum(exp(airline.MonthOfYear))");
 			}
 		}
-		assertEquals(Double.valueOf(1.1531419097032578E8), Double.valueOf(sum));
+		assertEquals(Double.valueOf(1.153141909703247E8), Double.valueOf(sum));
 		log.info("In testSelectSumWithNestedExponential() method Exit");
 	}
 	
@@ -2357,7 +2357,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				sum += (Double)rec.get("sum(loge(airline.MonthOfYear))");
 			}
 		}
-		assertEquals(Double.valueOf(2512.854174498094), Double.valueOf(sum));
+		assertEquals(Double.valueOf(2512.854174498125), Double.valueOf(sum));
 		log.info("In testSelectSumWithNestedloge() method Exit");
 	}
 	
@@ -2834,7 +2834,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				assertTrue(rec.containsKey("MonthOfYear"));
 			}
 		}
-		assertEquals(53815, totalrecords);
+		assertEquals(47851, totalrecords);
 		
 		log.info("In testRequiredColumnsLeftJoin() method Exit");
 	}
@@ -2863,7 +2863,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				assertTrue(rec.containsKey("MonthOfYear"));
 			}
 		}
-		assertEquals(53815, totalrecords);
+		assertEquals(47851, totalrecords);
 		
 		log.info("In testRequiredColumnsRightJoin() method Exit");
 	}

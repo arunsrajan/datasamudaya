@@ -638,7 +638,7 @@
 							<reuseForks>true</reuseForks>
 							<argLine>
 								${argLine}
-								-Xms256m -Xmx2g
+								-Xms256m -Xmx6g
 								--add-opens
 								java.base/java.math=ALL-UNNAMED
 								--add-opens

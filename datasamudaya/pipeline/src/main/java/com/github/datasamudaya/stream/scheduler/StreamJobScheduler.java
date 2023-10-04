@@ -158,7 +158,7 @@ public class StreamJobScheduler {
 
   ExecutorService jobping = Executors.newWorkStealingPool();
   public Job job;
-  Boolean islocal;
+  public Boolean islocal;
   public Boolean isignite,ismesos,isyarn,isjgroups;
   JChannel chtssha;
   SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge> graph;

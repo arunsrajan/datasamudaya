@@ -188,11 +188,7 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 				var paths = FileUtil.stat2Paths(fileStatus);
 				blockpath.addAll(Arrays.asList(paths));
 				bls = new ArrayList<>();
-				if (isblocksuserdefined) {
-					bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, isblocksuserdefined, blocksize * DataSamudayaConstants.MB, null));
-				} else {
-					bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, isblocksuserdefined, 128 * DataSamudayaConstants.MB, null));
-				}
+				bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null));
 				getDnXref(bls);
 				mrtaskcount += bls.size();
 				folderfileblocksmap.put(hdfsdir, bls);

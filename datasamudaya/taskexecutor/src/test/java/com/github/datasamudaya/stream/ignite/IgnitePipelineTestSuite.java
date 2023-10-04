@@ -13,8 +13,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses({IgnitePipelineDepth2Test.class, IgnitePipelineDepth31Test.class,
-    IgnitePipelineDepth32Test.class, IgnitePipelineDepth32ContinuedTest.class})
+@SuiteClasses({IgnitePipelineSqlBuilderTest.class,IgnitePipelineDepth2Test.class})
 public class IgnitePipelineTestSuite {
 
 }

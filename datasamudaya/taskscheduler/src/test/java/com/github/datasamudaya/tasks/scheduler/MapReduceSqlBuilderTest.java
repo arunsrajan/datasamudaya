@@ -105,7 +105,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testRequiredColumnsWithWhereInOrder() throws Exception {
 		log.info("In testRequiredColumnsWithWhereInOrder() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.MonthOfYear,airline.DayofMonth FROM airline where airline.MonthOfYear=12 and airline.DayofMonth=19 order by airline.MonthOfYear,airline.DayofMonth desc";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add("/airline1989", "airline", airlineheader, airlineheadertypes)
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();

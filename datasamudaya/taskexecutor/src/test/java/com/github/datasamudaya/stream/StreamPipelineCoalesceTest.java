@@ -17,13 +17,12 @@ package com.github.datasamudaya.stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import java.util.List;
+
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.Test;
-
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamPipelineCoalesceTest extends StreamPipelineBaseTestCommon {
 

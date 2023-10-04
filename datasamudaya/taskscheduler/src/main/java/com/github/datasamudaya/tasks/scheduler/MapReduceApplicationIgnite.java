@@ -169,11 +169,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 				allfiles.addAll(Utils.getAllFilePaths(blockpath));
 				jm.setTotalfilesize(jm.getTotalfilesize() + Utils.getTotalLengthByFiles(hdfs, blockpath));
 				bls = new ArrayList<>();
-				if (isblocksuserdefined) {
-					bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, isblocksuserdefined, blocksize * DataSamudayaConstants.MB, null));
-				} else {
-					bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, isblocksuserdefined, 128 * DataSamudayaConstants.MB, null));
-				}
+				bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null));
 				folderfileblocksmap.put(hdfsdir, bls);
 				FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 				fbp.getDnXref(bls, false);

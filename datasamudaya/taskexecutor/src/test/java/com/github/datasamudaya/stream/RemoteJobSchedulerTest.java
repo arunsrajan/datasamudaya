@@ -26,7 +26,6 @@ import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 @SuppressWarnings({"unchecked", "serial", "rawtypes"})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)

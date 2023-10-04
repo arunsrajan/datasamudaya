@@ -84,7 +84,7 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.hdfs = hdfs;
 		fbp.filepaths = Arrays.asList(paths);
-		bls = fbp.getBlocks(true, 128 * DataSamudayaConstants.MB, null);
+		bls = fbp.getBlocks(null);
 		containers = new ConcurrentHashMap<>();
 		tes = new ConcurrentHashMap<>();
 		escontainer = Executors.newFixedThreadPool(100);

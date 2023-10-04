@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -123,7 +124,7 @@ public class FileBlocksPartitionerHDFS {
 			totallength = Utils.getTotalLengthByFiles(hdfs, filepaths);
 			var blocksize = totallength / numpartition;
 
-			return getBlocks(true, blocksize, null);
+			return getBlocks(null);
 		} catch (Exception ex) {
 			log.error(PipelineConstants.FILEIOERROR, ex);
 			throw new PipelineException(PipelineConstants.FILEIOERROR, ex);
@@ -173,7 +174,7 @@ public class FileBlocksPartitionerHDFS {
 			List<String> folderstolbcontainers = new ArrayList<>();
 			for (var rootstage : rootstages) {
 				var obj = roots.next();
-				if(rootstage.tasks.get(0) instanceof CsvOptionsSQL csvOptionsSQL) {
+				if(!CollectionUtils.isEmpty(rootstage.tasks) && rootstage.tasks.get(0) instanceof CsvOptionsSQL csvOptionsSQL) {
 					columns = csvOptionsSQL.getRequiredcolumns();
 				}
 				if (obj instanceof StreamPipeline mdp) {
@@ -214,7 +215,7 @@ public class FileBlocksPartitionerHDFS {
 							} else {
 								// Get block if HDFS protocol.
 								if (protocol.equals(FileSystemSupport.HDFS)) {
-									blocks = getBlocks(isblocksuserdefined, blocksize, columns);
+									blocks = getBlocks(columns);
 									if (pc.getUseglobaltaskexecutors()) {
 										GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
 									}
@@ -421,17 +422,11 @@ public class FileBlocksPartitionerHDFS {
 	 * @return
 	 * @throws PipelineException
 	 */
-	protected List<BlocksLocation> getBlocks(boolean isblocksuserdefined, long blocksize, List<String> columns) throws PipelineException {
+	protected List<BlocksLocation> getBlocks(List<String> columns) throws PipelineException {
 		try {
 			List<BlocksLocation> bls = null;
 			// Fetch the location of blocks for user defined block size.
-			if (isblocksuserdefined) {
-				bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths, isblocksuserdefined,
-						blocksize, columns);
-			} else {
-				bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths, true,
-						128 * DataSamudayaConstants.MB, columns);
-			}
+			bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths, columns);
 			return bls;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.FILEBLOCKSERROR, ex);

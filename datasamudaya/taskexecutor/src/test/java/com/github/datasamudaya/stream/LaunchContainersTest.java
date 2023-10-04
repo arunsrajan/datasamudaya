@@ -16,26 +16,41 @@
 package com.github.datasamudaya.stream;
 
 import static org.junit.Assert.assertNotNull;
+
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import org.apache.log4j.PropertyConfigurator;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
-import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
+import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.utils.Utils;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.StreamPipeline;
 
-public class LaunchContainersTest extends StreamPipelineBaseTestCommon {
+public class LaunchContainersTest extends StreamPipelineBaseTestCommon{
+	
+	private Logger log = LoggerFactory.getLogger(LaunchContainersTest.class);
 
+	@BeforeClass
+	public static void setup() throws Exception {
+		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+		PropertyConfigurator.configure(System.getProperty(DataSamudayaConstants.USERDIR) + DataSamudayaConstants.FORWARD_SLASH +
+				DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+	}
+	
+	
 	@Test
 	public void testLaunchContainersDestroy() throws Exception {
 		PipelineConfig pc = new PipelineConfig();		
@@ -43,7 +58,7 @@ public class LaunchContainersTest extends StreamPipelineBaseTestCommon {
 		pc.setNumberofcontainers("1");
 		pc.setMaxmem("1024");
 		pc.setMinmem("1024");
-		pc.setLocal("true");
+		pc.setLocal("false");
 		pc.setJgroups("false");
 		pc.setMesos("false");
 		pc.setYarn("false");
@@ -72,6 +87,7 @@ public class LaunchContainersTest extends StreamPipelineBaseTestCommon {
 		pc.setMaxmem("512");
 		pc.setMinmem("512");
 		pc.setJgroups("false");
+		pc.setUser("arun");
 		pc.setMesos("false");
 		pc.setYarn("false");
 		pc.setOutput(System.out);
@@ -85,19 +101,21 @@ public class LaunchContainersTest extends StreamPipelineBaseTestCommon {
 		mapres.put("127.0.0.1_12121", resources);
 		resources.setNodeport("127.0.0.1_12121");
 		DataSamudayaNodesResources.put(mapres);
+		pc.setTejobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
 		pc.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
-		List<LaunchContainers> lcs = Utils.launchContainers("arun", pc.getJobid());
+		List<LaunchContainers> lcs = Utils.launchContainers("arun", pc.getTejobid());
 		assertNotNull(lcs);
 		ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
 		pc.setLocal("false");
 		pc.setUseglobaltaskexecutors(true);		
-		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000", "/airline1989", pc);
+		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000", airlinesample, pc);
 		List<List<Tuple2>> joinresult = (List) datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14])).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).collect(true, null);
-		joinresult.stream().forEach(log::info);
+		joinresult.stream().forEach(result->log.info("{}",result));
+		pc.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
 		datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14])).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).saveAsTextFile(new URI("hdfs://127.0.0.1:9000"), "/Coalesce/Coalesce-" + System.currentTimeMillis());
 		MapPair<String, Tuple2<Long, Long>> mstll = datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14])).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2));
 		joinresult = mstll.collect(true, null);
-		joinresult.stream().forEach(log::info);
+		joinresult.stream().forEach(result->log.info("{}",result));
 		Utils.destroyContainers("arun",pc.getJobid());
 		pc.setLocal("true");
 	}

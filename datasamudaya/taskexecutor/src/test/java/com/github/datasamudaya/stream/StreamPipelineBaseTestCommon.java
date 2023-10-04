@@ -187,7 +187,6 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 		} catch (Throwable e) {
 			log.info("Error Uploading file", e);
 		}
-		Utils.launchContainers("arun", tejobid);
 		setupdone = true;
 	}
 

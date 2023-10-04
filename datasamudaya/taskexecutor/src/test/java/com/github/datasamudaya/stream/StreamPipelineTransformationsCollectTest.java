@@ -17,11 +17,13 @@ package com.github.datasamudaya.stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.util.Arrays;
 import java.util.List;
+
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.AfterClass;
@@ -29,8 +31,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamPipelineTransformationsCollectTest extends StreamPipelineBaseTestCommon {
 
@@ -392,7 +392,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				|| "3".equals(val.split(DataSamudayaConstants.COMMA)[2])
 				|| "4".equals(val.split(DataSamudayaConstants.COMMA)[2]));
 		StreamPipeline<String> datastream2 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
-				pipelineconfig);
+				pipelineconfig).map(val->val);
 		List<List<String>> data = datastream2.rightOuterjoin(datastream1, (val1, val2) -> val1.equals(val2)).collect(toexecute, null);
 		long sum = 0;
 		for (int index = 0; index < data.size(); index++) {
@@ -460,7 +460,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1987,
-				pipelineconfig);
+				pipelineconfig).map(val->val);
 		StreamPipeline<String> datastream2 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
 				pipelineconfig).filter(val -> "2".equals(val.split(DataSamudayaConstants.COMMA)[2])
 				|| "3".equals(val.split(DataSamudayaConstants.COMMA)[2])
@@ -531,7 +531,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
-				pipelineconfig);
+				pipelineconfig).map(val->val);
 		StreamPipeline<String> datastream2 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
 				pipelineconfig).filter(val -> "2".equals(val.split(DataSamudayaConstants.COMMA)[2])
 				|| "3".equals(val.split(DataSamudayaConstants.COMMA)[2])

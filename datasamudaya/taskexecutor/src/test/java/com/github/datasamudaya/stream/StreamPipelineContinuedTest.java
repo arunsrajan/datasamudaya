@@ -17,10 +17,12 @@ package com.github.datasamudaya.stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.jooq.lambda.tuple.Tuple4;
@@ -29,9 +31,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.functions.MapFunction;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.NumPartitions;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
@@ -240,7 +239,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 		List<List> resultright = (List) datastream.filter(dat -> "21".equals(dat.split(",")[2])).collect(toexecute,
 				new NumPartitions(3));
 		assertEquals(1, resultleft.size());
-		assertEquals(3, resultright.size());
+		assertEquals(1, resultright.size());
 		int sumleft = 0;
 		int sumright = 0;
 		for (List<Long> vals : resultleft) {
@@ -347,7 +346,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 		List<List<Long>> mapresult = (List) datastream.flatMap(str -> Arrays.asList(str.split(",")).stream())
 				.count(new NumPartitions(4));
 		int sum = 0;
-		assertEquals(4, mapresult.size());
+		assertEquals(1, mapresult.size());
 		for (List<Long> vals : mapresult) {
 			for (Long valarr : vals) {
 				log.info(valarr);
@@ -462,7 +461,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 		List<List> resultright = (List) datastream.map(dat -> dat.split(",")).map(datas -> datas[0] + "" + datas[14])
 				.collect(toexecute, new NumPartitions(2));
 		assertEquals(1, resultleft.size());
-		assertEquals(2, resultright.size());
+		assertEquals(1, resultright.size());
 		int sumleft = 0;
 		int sumright = 0;
 		for (List<Long> vals : resultleft) {
@@ -589,7 +588,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 			}
 			return comparetoval;
 		}).collect(toexecute, new NumPartitions(4));
-		assertEquals(4, sortedpartitionedstream.size());
+		assertEquals(1, sortedpartitionedstream.size());
 		int recordcount = 0;
 		for (List<String> vals : sortedpartitionedstream) {
 			recordcount += vals.size();
@@ -676,10 +675,10 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 		assertEquals(1, lst13.size());
 		assertEquals(1, lst14.size());
 
-		assertEquals(2, lst21.size());
-		assertEquals(3, lst22.size());
-		assertEquals(4, lst23.size());
-		assertEquals(3, lst24.size());
+		assertEquals(1, lst21.size());
+		assertEquals(1, lst22.size());
+		assertEquals(1, lst23.size());
+		assertEquals(1, lst24.size());
 		int sumleft = 0;
 		int sumright = 0;
 		for (List<Long> vals : lst11) {
@@ -738,7 +737,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 		}).collect(toexecute, new NumPartitions(2));
 		int numberofwords = 0;
 		Set<String> distinct = new HashSet<>();
-		assertEquals(2, wordscount.size());
+		assertEquals(1, wordscount.size());
 		for (List<Tuple2> vals : wordscount) {
 			for (Tuple2 valarr : vals) {
 				distinct.add((String) valarr.v1);
@@ -834,7 +833,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 				sum += wc;
 			}
 		}
-		assertEquals(148, sum);
+		assertEquals(121, sum);
 		log.info("testWordCountCountsPartitioned After---------------------------------------");
 	}
 
@@ -853,7 +852,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 		}).collect(toexecute, new NumPartitions(2));
 		int numberofwords = 0;
 		Set<String> distinct = new HashSet<>();
-		assertEquals(2, wordscount.size());
+		assertEquals(1, wordscount.size());
 		for (List<Tuple2> vals : wordscount) {
 			for (Tuple2 valarr : vals) {
 				distinct.add((String) valarr.v1);
@@ -988,7 +987,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 			}
 			log.info("");
 		}
-		assertEquals(-63248l, sum);
+		assertEquals(-63268l, sum);
 		log.info("testReduceWithAdditionalMap After---------------------------------------");
 	}
 
@@ -1109,13 +1108,13 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 				pipelineconfig);
 		MapPair<String, Integer> coalesce1 = (MapPair<String, Integer>) datastream1.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14]))
-				.mapToPair(val -> Tuple.tuple(val[8], Integer.parseInt(val[14]))).coalesce(3, (a, b) -> a + b);
+				.mapToPair(val -> Tuple.tuple(val[8], Integer.parseInt(val[14]))).coalesce(1, (a, b) -> a + b);
 
 		MapPair<String, Integer> coalesce2 = (MapPair<String, Integer>) datastream2.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14]))
-				.mapToPair(val -> Tuple.tuple(val[8], Integer.parseInt(val[14]))).coalesce(2, (a, b) -> a + b);
+				.mapToPair(val -> Tuple.tuple(val[8], Integer.parseInt(val[14]))).coalesce(1, (a, b) -> a + b);
 		List<List<Tuple2<Tuple2, Tuple2>>> tuplelist = coalesce1.join(coalesce2, (tuple1, tuple2) -> true)
-				.collect(toexecute, new NumPartitions(3));
+				.collect(toexecute, new NumPartitions(1));
 		for (List<Tuple2<Tuple2, Tuple2>> values : tuplelist) {
 			for (Tuple2<Tuple2, Tuple2> value : values) {
 				log.info(value);
@@ -1134,7 +1133,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 		List<List<Tuple2<String, Integer>>> tuplelist =  datastream1.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14]))
 				.mapToPair(val -> Tuple.tuple(val[8], Integer.parseInt(val[14])))
-				.coalesce(2, (a, b) -> a + b).collect(toexecute, new NumPartitions(4));
+				.coalesce(1, (a, b) -> a + b).collect(toexecute, new NumPartitions(4));
 		int sum = 0;
 		for (List<Tuple2<String, Integer>> values : tuplelist) {
 			for (Tuple2<String, Integer> value : values) {

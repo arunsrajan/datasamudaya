@@ -74,7 +74,7 @@ public class CacheUtilsTest {
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			blockpath.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, true, 128 * DataSamudayaConstants.MB, null);
+		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null);
 		assertNotNull(bls);
 		getDnXref(bls);
 		String cacheblock = "cacheblock";

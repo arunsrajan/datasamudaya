@@ -21,7 +21,6 @@ import org.junit.Test;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.utils.Utils;
-import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.pig.PigQueryExecutor;
 import com.github.datasamudaya.stream.pig.PigUtils;
 
@@ -54,6 +53,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 		pipelineconfig.setUser("arun");
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		Utils.launchContainers("arun", tejobid);
 	}
 	
 	@Test
