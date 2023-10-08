@@ -1,7 +1,6 @@
 package com.github.datasamudaya.stream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
@@ -69,9 +68,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 						map.put(column, csv.get(column));
 					}
 					return map;
-				}).load();
+				});
 		log.info(csp.getPigtasks());
-		assertNotNull(csp.getPigtasks());
+		
 		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 		pipelineconfig.setJobid(jobid);
 		StreamPipeline<Map<String, Object>> filtered = csp.filter(map->map.get("AirlineYear").equals("2007") &&  map.get("MonthOfYear").equals("12")).cache();
@@ -102,9 +101,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 						map.put(column, csv.get(column));
 					}
 					return map;
-				}).load();
+				});
 		log.info(csp.getPigtasks());
-		assertNotNull(csp.getPigtasks());
+		
 		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 		pipelineconfig.setJobid(jobid);
 		StreamPipeline<Map<String, Object>> filteredmonthofyear = csp.filter(map->map.get("AirlineYear").equals("2007") &&  map.get("MonthOfYear").equals("12")).cache();
@@ -137,9 +136,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 						map.put(column, csv.get(column));
 					}
 					return map;
-				}).load();
+				});
 		log.info(csp.getPigtasks());
-		assertNotNull(csp.getPigtasks());
+		
 		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 		pipelineconfig.setJobid(jobid);
 		StreamPipeline<Map<String, Object>> filteredmonthofyear = csp.filter(map->map.get("AirlineYear").equals("2007") &&  map.get("MonthOfYear").equals("12")).cache();
@@ -174,9 +173,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 						map.put(column, csv.get(column));
 					}
 					return map;
-				}).load();
+				});
 		log.info(csp.getPigtasks());
-		assertNotNull(csp.getPigtasks());
+		
 		
 		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 		pipelineconfig.setJobid(jobid);
@@ -237,7 +236,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 						map.put(column, csv.get(column));
 					}
 					return map;
-				}).load();
+				});
 		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 		pipelineconfig.setJobid(jobid);
 		StreamPipeline<Map<String, Object>> carriersstream = StreamPipeline.newCsvStreamHDFS(hdfsfilepath, carriers,
@@ -248,9 +247,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 						map.put(column, csv.get(column));
 					}
 					return map;
-				}).load();
+				});
 		log.info(csp.getPigtasks());
-		assertNotNull(csp.getPigtasks());
+		
 		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 		pipelineconfig.setJobid(jobid);
 		StreamPipeline<Map<String, Object>> filteredmonthofyear = csp.filter(map->map.get("AirlineYear").equals("2007") &&  map.get("MonthOfYear").equals("12")).cache();
@@ -260,7 +259,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 		StreamPipeline<Map<String, Object>> filteredmonthofyeardom = filteredmonthofyear.filter(map->map.get("DayofMonth").equals("4")).cache();
 		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 		pipelineconfig.setJobid(jobid);
-		List<List<Tuple2<Map<String,Object>,Map<String,Object>>>> records = filteredmonthofyeardom.map(rec->rec).join(carriersstream.map(rec->rec), (map1,map2)->{
+		List<List> records = filteredmonthofyeardom.map(rec->rec).join(carriersstream.map(rec->rec), (map1,map2)->{
 			return map1.get("UniqueCarrier").equals(map2.get("Code"));
 		}).collect(true, null);
 		for(List<Tuple2<Map<String,Object>,Map<String,Object>>> partitions:records) {

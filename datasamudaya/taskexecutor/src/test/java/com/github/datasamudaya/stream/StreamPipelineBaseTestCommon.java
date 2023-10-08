@@ -91,7 +91,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 				            + DataSamudayaConstants.CACHEBLOCKS);
 			CacheUtils.initBlockMetadataCache(DataSamudayaConstants.BLOCKCACHE);
-			hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
+			hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 1);
 			pipelineconfig.setBlocksize("20");
 			testingserver = new TestingServer(zookeeperport);
 			testingserver.start();

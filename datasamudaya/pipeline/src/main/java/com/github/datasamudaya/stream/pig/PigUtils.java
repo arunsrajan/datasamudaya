@@ -185,7 +185,7 @@ public class PigUtils {
 						columnindex++;
 					}
 					return map;
-				}).load();
+				});
 		return csp;
 	}
 	

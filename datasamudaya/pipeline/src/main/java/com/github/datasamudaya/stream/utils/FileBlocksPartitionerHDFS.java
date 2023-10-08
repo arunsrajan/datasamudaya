@@ -214,13 +214,11 @@ public class FileBlocksPartitionerHDFS {
 								totalblockslocation.addAll(blocks);
 							} else {
 								// Get block if HDFS protocol.
-								if (protocol.equals(FileSystemSupport.HDFS)) {
-									blocks = getBlocks(columns);
-									if (pc.getUseglobaltaskexecutors()) {
-										GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
-									}
-									totalblockslocation.addAll(blocks);
+								blocks = getBlocks(columns);
+								if (pc.getUseglobaltaskexecutors()) {
+									GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
 								}
+								totalblockslocation.addAll(blocks);
 							}
 							if (blocks == null) {
 								throw new PipelineException(DataSamudayaConstants.DATABLOCK_EXCEPTION);

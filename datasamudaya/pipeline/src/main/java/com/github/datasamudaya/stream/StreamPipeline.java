@@ -28,6 +28,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -1284,13 +1285,26 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			while (topostages.hasNext())
 				job.getTopostages().add(topostages.next());
 			job.getTopostages().retainAll(stages);
-			if(nonNull(root) && root instanceof StreamPipeline sp && nonNull(sp.pigtasks)) {
+			var abspipeline = new ArrayList<AbstractPipeline>();
+			Set<Stage> stagesblocks = new LinkedHashSet<>();
+			boolean allEmptyPigTasks = isAllEmptyPigTasks(mdsroots);
+			if(!allEmptyPigTasks) {
 				ConcurrentMap<Stage, Object> stageoutputmap = new ConcurrentHashMap<>();
 				Iterator<AbstractPipeline> sps = mdsroots.iterator();
 				for(Stage stage:rootstages) {
-					stageoutputmap.put(stage, new ArrayList<>(((StreamPipeline)sps.next()).pigtasks));
-				}
+					StreamPipeline sp = (StreamPipeline)sps.next();
+					if(nonNull(sp.pigtasks)) {
+						stageoutputmap.put(stage, new ArrayList<>(sp.pigtasks));
+					} else {
+						stagesblocks.add(stage);
+						abspipeline.add(sp);
+					}
+				}				
 				job.setStageoutputmap(stageoutputmap);
+				if(CollectionUtils.isNotEmpty(abspipeline)) {
+					var dbPartitioner = new FileBlocksPartitionerHDFS();
+					dbPartitioner.getJobStageBlocks(job, supplier, ((StreamPipeline)root).protocol, stagesblocks, abspipeline, ((StreamPipeline)root).blocksize, ((StreamPipeline)root).pipelineconfig);
+				}
 				job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser()));
 				List<String> containers = job.getLcs().stream().flatMap(lc -> {
 					var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
@@ -1323,6 +1337,22 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			log.error(PipelineConstants.DAGERROR,ex);
 			throw new PipelineException(PipelineConstants.DAGERROR, ex);
 		}
+	}
+	
+	/**
+	 * Check whether the pig tasks are available in all root
+	 * @param abspipelines
+	 * @return
+	 */
+	protected boolean isAllEmptyPigTasks(Collection<AbstractPipeline> abspipelines) {
+		Iterator<AbstractPipeline> iteratorpipelines = abspipelines.iterator();
+		while(iteratorpipelines.hasNext()) {
+			StreamPipeline<?> sp = (StreamPipeline<?>) iteratorpipelines.next();
+			if(CollectionUtils.isNotEmpty(sp.pigtasks)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
