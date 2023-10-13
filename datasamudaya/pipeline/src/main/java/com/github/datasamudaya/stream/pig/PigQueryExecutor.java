@@ -25,6 +25,9 @@ import org.apache.pig.parser.QueryParserDriver;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.stream.StreamPipeline;
+
+import static java.util.Objects.*;
+
 /**
  * Pig Query Executor
  * @author arun
@@ -63,30 +66,54 @@ public class PigQueryExecutor {
 			pigAliasExecutedObjectMap.put(loload.getAlias(), PigUtils.executeLOLoad(user, jobid, tejobid, loload, pipelineconfig));
 		} else if (operator instanceof LOFilter loFilter) {
 			PigParserNode node = (PigParserNode) loFilter.getLocation().node().getChildren().get(0);
+			if(isNull(pigAliasExecutedObjectMap
+					.get(node.getText()))) {
+				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+			}
 			pigAliasExecutedObjectMap.put(loFilter.getAlias(),PigUtils.executeLOFilter((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap
 					.get(node.getText()), loFilter));
 		} else if (operator instanceof LOStore lostore) {
 			PigParserNode node = (PigParserNode) lostore.getLocation().node().getChildren().get(0);
+			if(isNull(pigAliasExecutedObjectMap
+					.get(node.getText()))) {
+				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+			}
 			PigUtils.executeLOStore((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap
 					.get(node.getText()), lostore);
 		} else if (operator instanceof LOCogroup loCogroup) {
 			PigParserNode node = (PigParserNode) loCogroup.getLocation().node().getChildren().get(0);
+			if(isNull(pigAliasExecutedObjectMap
+					.get(node.getText()))) {
+				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+			}
 			pigAliasExecutedObjectMap.put(loCogroup.getAlias(),
 					PigUtils.executeLOCoGroup(
 							(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText()),
 							loCogroup));
 		} else if (operator instanceof LOForEach loForEach) {
 			PigParserNode node = (PigParserNode) loForEach.getLocation().node().getChildren().get(0);
+			if(isNull(pigAliasExecutedObjectMap
+					.get(node.getText()))) {
+				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+			}
 			pigAliasExecutedObjectMap.put(loForEach.getAlias(), PigUtils.executeLOForEach(
 					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText()),
 					loForEach));
 		} else if (operator instanceof LOSort loSort) {
 			PigParserNode node = (PigParserNode) loSort.getLocation().node().getChildren().get(0);
+			if(isNull(pigAliasExecutedObjectMap
+					.get(node.getText()))) {
+				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+			}
 			pigAliasExecutedObjectMap.put(loSort.getAlias(), PigUtils.executeLOSort(
 					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText()),
 					loSort));
 		} else if (operator instanceof LODistinct loDistinct) {
 			PigParserNode node = (PigParserNode) loDistinct.getLocation().node().getChildren().get(0);
+			if(isNull(pigAliasExecutedObjectMap
+					.get(node.getText()))) {
+				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+			}
 			pigAliasExecutedObjectMap.put(loDistinct.getAlias(), PigUtils.executeLODistinct(
 					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText())));
 		} else if (operator instanceof LOJoin loJoin) {
@@ -106,6 +133,14 @@ public class PigQueryExecutor {
 				for(LogicalExpressionPlan lep:leps) {
 					columnstojoin.add(((ProjectExpression)lep.getOperators().next()).getColAlias());
 				}
+			}
+			if(isNull(pigAliasExecutedObjectMap
+					.get(expjoinalias.get(0)))) {
+				throw new PigException(String.format(PigException.NOALIASFOUND, expjoinalias.get(0)));
+			}
+			if(isNull(pigAliasExecutedObjectMap
+					.get(expjoinalias.get(1)))) {
+				throw new PigException(String.format(PigException.NOALIASFOUND, expjoinalias.get(1)));
 			}
 			pigAliasExecutedObjectMap.put(loJoin.getAlias(), PigUtils.executeLOJoin(
 					(StreamPipeline<Map<String, Object>>)pigAliasExecutedObjectMap.get(expjoinalias.get(0)),

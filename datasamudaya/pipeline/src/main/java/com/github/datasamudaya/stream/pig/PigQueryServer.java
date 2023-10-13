@@ -105,6 +105,7 @@ public class PigQueryServer {
 										if (inputLine.startsWith("setmode")) {
 											String[] mode = inputLine.split(" ");
 											if(mode.length == 2) {
+												pigAliasExecutedObjectMap.clear();
 												if(mode[1].equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
 													isjgroups = true;
 													isignite = false;

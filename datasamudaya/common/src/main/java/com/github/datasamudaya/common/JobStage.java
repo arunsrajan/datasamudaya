@@ -17,6 +17,7 @@ package com.github.datasamudaya.common;
 
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,50 +31,13 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 public class JobStage implements Serializable,Cloneable {
 	private static final long serialVersionUID = 7292002084722232039L;
 	private String jobid;
 	private String stageid;
 	private Stage stage;
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((jobid == null) ? 0 : jobid.hashCode());
-		result = prime * result + ((stageid == null) ? 0 : stageid.hashCode());
-		return result;
-	}
-
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		JobStage other = (JobStage) obj;
-		if (jobid == null) {
-			if (other.jobid != null) {
-				return false;
-			}
-		} else if (!jobid.equals(other.jobid)) {
-			return false;
-		}
-		if (stageid == null) {
-			if (other.stageid != null) {
-				return false;
-			}
-		} else if (!stageid.equals(other.stageid)) {
-			return false;
-		}
-		return true;
-	}
+	private String tejobid;
 
 
 	@Override

@@ -126,7 +126,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 	public Boolean call() {
 		log.debug("Entered MassiveDataStreamJGroupsTaskExecutor.call");
 		var taskstatusmap = tasks.parallelStream()
-				.map(task -> task.taskid)
+				.map(task -> task.jobid + task.taskid)
 				.collect(Collectors.toMap(key -> key, value -> WhoIsResponse.STATUS.YETTOSTART));
 		var taskstatusconcmapreq = new ConcurrentHashMap<>(
 				taskstatusmap);
@@ -137,7 +137,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 		Semaphore semaphore = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try (var hdfscompute = FileSystem.newInstance(new URI(hdfsfilepath), new Configuration());) {
 			this.hdfs = hdfscompute;
-			channel = Utils.getChannelTaskExecutor(jobstage.getJobid(),
+			channel = Utils.getChannelTaskExecutor(jobstage.getTejobid(),
 					host,
 					port, taskstatusconcmapreq, taskstatusconcmapresp);
 			log.info("Work in Jgroups agent: " + tasks + " in host: " + host + " port: " + port);
@@ -365,12 +365,12 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 						task = tasktocompute;
 						executor = exec;
 						log.info("Submitting Task {} in hostport {}",task, task.hostport);
-						var stagePartition = task.taskid;
+						var stagePartition = task.jobid + task.taskid;
 						try {
 							var taskspredecessor = task.taskspredecessor;
 							log.info("Submitting Task {} in hostport {} with predecessor {}",task, task.hostport, taskspredecessor);
 							if (!taskspredecessor.isEmpty()) {
-								var taskids = taskspredecessor.parallelStream().map(tk -> tk.taskid)
+								var taskids = taskspredecessor.parallelStream().map(tk -> tk.jobid + tk.taskid)
 										.collect(Collectors.toList());
 								var breakloop = false;
 								while (true) {

@@ -31,6 +31,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.fs.Path;
+import org.apache.ignite.IgniteCache;
 import org.apache.log4j.Logger;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
@@ -55,6 +56,7 @@ import com.github.datasamudaya.common.GlobalContainerLaunchers;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.JobMetrics;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaIgniteClient;
 import com.github.datasamudaya.common.DataSamudayaJobMetrics;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.PipelineConfig;
@@ -143,7 +145,6 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			throw new PipelineException(errors.toString());
 		}
 		this.pipelineconfig = pipelineconfig;
-		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 		this.hdfspath = hdfspath;
 		this.folder = folder;
 		this.protocol = FileSystemSupport.HDFS;
@@ -1305,17 +1306,24 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 					var dbPartitioner = new FileBlocksPartitionerHDFS();
 					dbPartitioner.getJobStageBlocks(job, supplier, ((StreamPipeline)root).protocol, stagesblocks, abspipeline, ((StreamPipeline)root).blocksize, ((StreamPipeline)root).pipelineconfig);
 				}
-				job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser()));
-				List<String> containers = job.getLcs().stream().flatMap(lc -> {
-					var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
-					return lc.getCla().getCr().stream().map(cr -> {
-						return host[0] + DataSamudayaConstants.UNDERSCORE + cr.getPort();
-					}).collect(Collectors.toList()).stream();
-				}).collect(Collectors.toList());
-				job.setTaskexecutors(containers);
-				job.getJm().setContainersallocated(new ConcurrentHashMap<>());
-				// Get nodes
-				job.setNodes(job.getLcs().stream().map(lc -> lc.getNodehostport()).collect(Collectors.toSet()));
+				if(((StreamPipeline)root).pipelineconfig.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
+					var ignite = DataSamudayaIgniteClient.instance(((StreamPipeline)root).pipelineconfig);
+					IgniteCache<Object, byte[]> ignitecache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
+					job.setIgcache(ignitecache);
+					job.setIgnite(ignite);
+				} else {
+					job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser()));
+					List<String> containers = job.getLcs().stream().flatMap(lc -> {
+						var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
+						return lc.getCla().getCr().stream().map(cr -> {
+							return host[0] + DataSamudayaConstants.UNDERSCORE + cr.getPort();
+						}).collect(Collectors.toList()).stream();
+					}).collect(Collectors.toList());
+					job.setTaskexecutors(containers);
+					job.getJm().setContainersallocated(new ConcurrentHashMap<>());
+					// Get nodes
+					job.setNodes(job.getLcs().stream().map(lc -> lc.getNodehostport()).collect(Collectors.toSet()));
+				}
 			} else {
 				var dbPartitioner = new FileBlocksPartitionerHDFS();
 				dbPartitioner.getJobStageBlocks(job, supplier, ((StreamPipeline)root).protocol, rootstages, mdsroots, ((StreamPipeline)root).blocksize, ((StreamPipeline)root).pipelineconfig);
@@ -1496,6 +1504,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			if(toexecute && jobtrigger != Job.TRIGGER.PIGDUMP) {
 				results = (ArrayList) submitJob(job);
 			} else if(toexecute && jobtrigger == Job.TRIGGER.PIGDUMP) {
+				job.setIsresultrequired(true);
 				submitJob(job);
 			}
 			return (List) results;

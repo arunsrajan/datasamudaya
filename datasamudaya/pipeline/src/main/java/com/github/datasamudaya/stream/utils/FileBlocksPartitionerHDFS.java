@@ -238,7 +238,7 @@ public class FileBlocksPartitionerHDFS {
 				getDnXref(totalblockslocation, false);
 				if(pipelineconfig.getStorage() != STORAGE.COLUMNARSQL) {
 					sendDataToIgniteServer(totalblockslocation,
-						((IgnitePipeline) mdsroots.iterator().next()).getHdfspath());
+						((StreamPipeline) mdsroots.iterator().next()).getHdfspath());
 				} else {
 					initializeIgniteServer();
 				}

@@ -34,7 +34,7 @@ IF EXIST %DATASAMUDAYA_JAVA_HOME%\bin\java.exe (
 
 "%DATASAMUDAYA_JAVA_HOME%\bin\java" -version
 
-"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.tasks.scheduler.sql.SQLClientMR -user default
+"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.tasks.scheduler.sql.SQLClientMR -user arun
 
 ) ELSE (
  @echo on

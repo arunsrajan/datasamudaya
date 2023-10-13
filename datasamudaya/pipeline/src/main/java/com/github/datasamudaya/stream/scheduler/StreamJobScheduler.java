@@ -406,10 +406,10 @@ public class StreamJobScheduler {
           }
         }
         var stagepartids =
-            tasks.parallelStream().map(taskpart -> taskpart.taskid).collect(Collectors.toSet());
+            tasks.parallelStream().map(taskpart -> taskpart.jobid + taskpart.taskid).collect(Collectors.toSet());
         var stagepartidstatusmapresp = new ConcurrentHashMap<String, WhoIsResponse.STATUS>();
         var stagepartidstatusmapreq = new ConcurrentHashMap<String, WhoIsResponse.STATUS>();
-        try (var channel = Utils.getChannelTaskExecutor(job.getId(),
+        try (var channel = Utils.getChannelTaskExecutor(jobid,
             NetworkUtil.getNetworkAddress(
                 DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST)),
             Integer
@@ -564,6 +564,9 @@ public class StreamJobScheduler {
 		jobexecutorsmap.keySet().stream().forEach(key -> {
 			try (var baos = new ByteArrayOutputStream(); var output = new Output(baos)) {
 				JobStage js = (JobStage) jsidjsmap.get(key);
+				if(nonNull(js)) {
+					js.setTejobid(finaljobid);
+				}
 				kryo.writeClassAndObject(output, js);
 				output.flush();
 				for (String te : jobexecutorsmap.get(key)) {
@@ -1613,7 +1616,7 @@ public class StreamJobScheduler {
             boolean isJGroups = Boolean.parseBoolean(pipelineconfig.getJgroups());
             rdf.setMode(isJGroups ? DataSamudayaConstants.JGROUPS : DataSamudayaConstants.STANDALONE);
             RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
-            try (var input = new Input(pipelineconfig.getStorage()==STORAGE.INMEMORY || pipelineconfig.getStorage()==STORAGE.COLUMNARSQL?new ByteArrayInputStream(rdf.getData()):new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
+            try (var input = new Input(pipelineconfig.getStorage()==STORAGE.INMEMORY || pipelineconfig.getStorage()==STORAGE.COLUMNARSQL || isjgroups?new ByteArrayInputStream(rdf.getData()):new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
               var result = Utils.getKryo().readClassAndObject(input);;              
               if(job.getJobtype() == JOBTYPE.PIG) {
             	  PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
@@ -1805,6 +1808,9 @@ public class StreamJobScheduler {
         if (!Objects.isNull(job.getUri())) {
           job.setTrigger(job.getTrigger().SAVERESULTSTOFILE);
           writeOutputToFile(partition, obj);
+        } if(job.getJobtype() == JOBTYPE.PIG) {
+      	  PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
+      	  Utils.printTableOrError((List)obj, out, JOBTYPE.PIG);
         } else {
           stageoutput.add(obj);
         }

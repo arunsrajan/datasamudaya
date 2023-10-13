@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,10 +59,14 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Blocks;
 import com.github.datasamudaya.common.BlocksLocation;
+import com.github.datasamudaya.common.ByteBufferInputStream;
+import com.github.datasamudaya.common.ByteBufferOutputStream;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConstants;
+import com.github.datasamudaya.common.RemoteDataFetch;
+import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.functions.CalculateCount;
 import com.github.datasamudaya.common.functions.Coalesce;
@@ -824,18 +829,30 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 		var stagePartition = jobstage.getStageid();
 		try {
 			cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
-
-			if (task.input != null) {
-				var numinputs = task.input.length;
-				for (var inputindex = 0; inputindex < numinputs; inputindex++) {
-					var input = task.input[inputindex];
-					if (!Objects.isNull(input) && input instanceof Task) {
-						var inputtask = (Task) input;
-						task.input[inputindex] = new ByteArrayInputStream(
-								cache.get(inputtask.jobid + inputtask.stageid + inputtask.taskid));
+			
+			if (task.input != null && task.parentremotedatafetch != null) {
+				if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
+					var numinputs = task.parentremotedatafetch.length;
+					for (var inputindex = 0; inputindex<numinputs;inputindex++) {
+						var input = task.parentremotedatafetch[inputindex];
+						if(input != null) {
+							var rdf = (RemoteDataFetch) input;
+							task.input[inputindex] = new ByteArrayInputStream(
+									cache.get(rdf.getJobid() + rdf.getStageid() + rdf.getTaskid()));
+						}
+					}
+				} else if(task.input!=null && task.input[0]!=null) {
+					var numinputs = task.input.length;
+					for (var inputindex = 0; inputindex<numinputs;inputindex++) {
+						var input = task.input[inputindex];
+						if(input != null && input instanceof Task inputtask) {
+							task.input[inputindex] = new ByteArrayInputStream(
+									cache.get(inputtask.jobid + inputtask.stageid + inputtask.taskid));
+						}
 					}
 				}
 			}
+			
 			computeTasks(task);
 			log.info("Finished step: " + stagePartition);
 			completed = true;

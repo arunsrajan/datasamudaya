@@ -442,7 +442,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
    */
   public String getIntermediateDataFSFilePath(Task task) {
     return (DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH
-        + jobstage.getJobid() + DataSamudayaConstants.FORWARD_SLASH + task.taskid);
+        + task.jobid + DataSamudayaConstants.FORWARD_SLASH + task.taskid);
   }
 
   /**
