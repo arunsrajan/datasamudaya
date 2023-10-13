@@ -23,7 +23,7 @@ import org.jooq.lambda.tuple.Tuple2;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.stream.IgnitePipeline;
+import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.Pipeline;
 
 public class StreamReduceIgnite implements Serializable, Pipeline {
@@ -43,7 +43,7 @@ public class StreamReduceIgnite implements Serializable, Pipeline {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void testReduce(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("StreamReduceIgnite.testReduce Before---------------------------------------");
-		var datastream = IgnitePipeline.newStreamHDFS(args[0], args[1],
+		var datastream = StreamPipeline.newStreamHDFS(args[0], args[1],
 				pipelineconfig);
 		var mappair1 = datastream.map(dat -> dat.split(","))
 				.filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14]))
@@ -52,7 +52,7 @@ public class StreamReduceIgnite implements Serializable, Pipeline {
 		var airlinesamples = mappair1.reduceByKey((dat1, dat2) -> dat1 + dat2).coalesce(1,
 				(dat1, dat2) -> dat1 + dat2);
 
-		var datastream1 = IgnitePipeline.newStreamHDFS(args[0], args[2],
+		var datastream1 = StreamPipeline.newStreamHDFS(args[0], args[2],
 				pipelineconfig);
 
 		var carriers = datastream1.map(linetosplit -> linetosplit.split(","))

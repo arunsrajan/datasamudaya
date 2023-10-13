@@ -71,7 +71,6 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.AbstractPipeline;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
-import com.github.datasamudaya.stream.IgnitePipeline;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.StreamPipeline;
 
@@ -180,7 +179,7 @@ public class FileBlocksPartitionerHDFS {
 				if (obj instanceof StreamPipeline mdp) {
 					hdfspath = mdp.getHdfspath();
 					folder = mdp.getFolder();					
-				} else if (obj instanceof IgnitePipeline mdp) {
+				} else if (obj instanceof StreamPipeline mdp) {
 					hdfspath = mdp.getHdfspath();
 					folder = mdp.getFolder();
 				}

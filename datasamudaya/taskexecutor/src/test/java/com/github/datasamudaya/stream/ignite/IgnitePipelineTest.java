@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.functions.HashPartitioner;
-import com.github.datasamudaya.stream.IgnitePipeline;
+import com.github.datasamudaya.stream.StreamPipeline;
 
 @SuppressWarnings({ "unchecked", "rawtypes" })
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -34,7 +34,7 @@ public class IgnitePipelineTest extends StreamPipelineIgniteBase {
 	@Test
 	public void testHashPartitioner() throws Throwable {
 		log.info("testHashPartitioner Before---------------------------------------");
-		IgnitePipeline<String> datastream = IgnitePipeline.newStreamHDFS(hdfsfilepath, airlinesample,
+		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		List<List<Tuple2<Integer,List<Tuple2>>>> tupleslist = (List) datastream.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14])).mapToPair(str -> Tuple.tuple(str[1], str[14]))
@@ -54,7 +54,7 @@ public class IgnitePipelineTest extends StreamPipelineIgniteBase {
 	@Test
 	public void testHashPartitionerReduceByKey() throws Throwable {
 		log.info("testHashPartitionerReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datastream = IgnitePipeline.newStreamHDFS(hdfsfilepath, airlinesample,
+		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		List<List<Tuple2<String,Integer>>> tupleslist = (List) datastream.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14])).mapToPair(str -> new Tuple2<String,Integer>(str[1], Integer.parseInt(str[14])))
@@ -78,7 +78,7 @@ public class IgnitePipelineTest extends StreamPipelineIgniteBase {
 	@Test
 	public void testHashPartitionerReduceByKeyPartitioned() throws Throwable {
 		log.info("testHashPartitionerReduceByKeyPartitioned Before---------------------------------------");
-		IgnitePipeline<String> datastream = IgnitePipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		List<List<Tuple2<Integer, List<Tuple2<String, Integer>>>>> tupleslist = (List) datastream
 				.map(str -> str.split(",")).filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14]))
 				.mapToPair(str -> new Tuple2<String, Integer>(str[1], Integer.parseInt(str[14])))
@@ -102,7 +102,7 @@ public class IgnitePipelineTest extends StreamPipelineIgniteBase {
 	@Test
 	public void testGroupBy() throws Throwable {
 		log.info("testGroupBy Before---------------------------------------");
-		IgnitePipeline<String> datastream = IgnitePipeline.newStreamHDFS(hdfsfilepath, airlinesample,
+		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		List<List<Tuple2<Map, List<String[]>>>> tupleslist = (List) datastream.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14]))

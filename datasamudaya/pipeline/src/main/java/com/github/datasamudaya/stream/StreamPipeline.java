@@ -1502,6 +1502,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			job.setTrigger(jobtrigger);
 			var results=new ArrayList();
 			if(toexecute && jobtrigger != Job.TRIGGER.PIGDUMP) {
+				job.setIsresultrequired(true);
 				results = (ArrayList) submitJob(job);
 			} else if(toexecute && jobtrigger == Job.TRIGGER.PIGDUMP) {
 				job.setIsresultrequired(true);

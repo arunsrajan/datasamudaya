@@ -30,8 +30,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.stream.sql.build.IgnitePipelineSql;
-import com.github.datasamudaya.stream.sql.build.IgnitePipelineSqlBuilder;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 
 
 public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
@@ -62,7 +62,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT * FROM airline ";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -85,7 +85,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -109,7 +109,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DepDelay FROM airline ";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -136,7 +136,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnsWithWhere() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DepDelay FROM airline WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
 		
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -165,7 +165,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
 				+ "WHERE airline.DayofMonth>8.0 and airline.MonthOfYear>6.0";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -190,7 +190,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
 				+ "WHERE airline.DayofMonth<8 and airline.MonthOfYear<6";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -215,7 +215,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
 				+ "WHERE airline.DayofMonth>=8.0 and airline.MonthOfYear>=6.0";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -240,7 +240,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
 				+ "WHERE airline.DayofMonth<=8.0 and airline.MonthOfYear<=6.0";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -265,7 +265,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
 				+ "WHERE 8.0=airline.DayofMonth and 12.0=airline.MonthOfYear";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -290,7 +290,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
 				+ "WHERE airline.DayofMonth=airline.MonthOfYear";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -313,7 +313,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnsCount() method Entry");
 		
 		String statement = "SELECT count(*) FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -328,7 +328,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnsCountWithWhere() method Entry");
 		
 		String statement = "SELECT count(*) FROM airline WHERE airline.DayofMonth=airline.MonthOfYear";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -344,7 +344,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testAllColumnsSumWithWhere() method Entry");
 		
 		String statement = "SELECT sum(airline.ArrDelay) FROM airline WHERE 8=airline.DayofMonth and 12=airline.MonthOfYear";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -361,7 +361,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testAllColumnsMinWithWhere() method Entry");
 		
 		String statement = "SELECT min(airline.ArrDelay) FROM airline WHERE 8=airline.DayofMonth and 12=airline.MonthOfYear";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -376,7 +376,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testAllColumnsMaxWithWhere() method Entry");
 		
 		String statement = "SELECT max(airline.ArrDelay) FROM airline WHERE 8=airline.DayofMonth and 12=airline.MonthOfYear";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -394,7 +394,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		long totalrecords = 0;
@@ -422,7 +422,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT airline.ArrDelay,airline.DepDelay,airline.DayofMonth,airline.MonthOfYear,carriers.Code,carriers.Description "
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ'";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -449,7 +449,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT count(*) "
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ' and carriers.Code<>'Code'";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -472,7 +472,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT * "
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ' and carriers.Code<>'Code'";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -499,7 +499,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear,carriers.Description,airline.Origin,airports.airport "
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin ";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -523,7 +523,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin "
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -547,7 +547,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT count(*) "
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin ";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -571,7 +571,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin " 
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -595,7 +595,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin " 
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -619,7 +619,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin " 
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -644,7 +644,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin " 
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -668,7 +668,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin " 
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -692,7 +692,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin " 
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airports.iata,airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -716,7 +716,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumWhereNoFilter() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay) "
 				+ "FROM airline group by airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -740,7 +740,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,min(airline.ArrDelay),count(*),max(airline.ArrDelay),sum(airline.ArrDelay) "
 				+ "FROM airline where airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -771,7 +771,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
 				+ " inner join airports on airports.iata = airline.Origin " 
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airports.iata,airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.add(airportssample, "airports", airportsheader, airportstype)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -797,7 +797,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testMultipleAllColumnsAndOrCondition() method Entry");
 		String statement = "SELECT * from airline "				
 				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -824,7 +824,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testMultipleAllColumnsOrAndCondition() method Entry");
 		String statement = "SELECT * from airline "				
 				+ "WHERE (airline.DayofMonth=8 or airline.MonthOfYear=12)";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -848,7 +848,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testNumberOfFlightsByCarrier() throws Exception {
 		log.info("In testNumberOfFlightsByCarrier() method Entry");
 		String statement = "SELECT airline.UniqueCarrier, count(*) FROM airline GROUP BY airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -870,7 +870,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testNumberOfFlightsByDayOfWeek() throws Exception {
 		log.info("In testNumberOfFlightsByDayOfWeek() method Entry");
 		String statement = "SELECT airline.DayOfWeek, count(*) FROM airline GROUP BY airline.DayOfWeek";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -892,7 +892,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testNumberOfFlightsCancelled() throws Exception {
 		log.info("In testNumberOfFlightsCancelled() method Entry");
 		String statement = "SELECT count(*) FROM airline WHERE airline.Cancelled = 1";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -913,7 +913,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testNumberOfFlightsDiverted() throws Exception {
 		log.info("In testNumberOfFlightsDiverted() method Entry");
 		String statement = "SELECT count(*) FROM airline WHERE airline.Diverted = 1";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -935,7 +935,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testTotalDistanceFlownByCarrier() throws Exception {
 		log.info("In testTotalDistanceFlownByCarrier() method Entry");
 		String statement = "SELECT airline.UniqueCarrier, sum(airline.Distance) FROM airline GROUP BY airline.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -957,7 +957,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testDayOfWeekWithMostFlights() throws Exception {
 		log.info("In testDayOfWeekWithMostFlights() method Entry");
 		String statement = "SELECT airline.DayOfWeek, count(*) FROM airline GROUP BY airline.DayOfWeek";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -979,7 +979,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testMonthOfYearWithMostFlights() throws Exception {
 		log.info("In testMonthOfYearWithMostFlights() method Entry");
 		String statement = "SELECT airline.MonthOfYear, count(*) FROM airline GROUP BY airline.MonthOfYear";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1001,7 +1001,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testAirportsWithDepartures() throws Exception {
 		log.info("In testAirportsWithDepartures() method Entry");
 		String statement = "SELECT airline.Origin, count(*) FROM airline GROUP BY airline.Origin";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1023,7 +1023,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testAirportsWithArrivals() throws Exception {
 		log.info("In testAirportsWithArrivals() method Entry");
 		String statement = "SELECT airline.Dest, count(*) FROM airline GROUP BY airline.Dest";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1045,7 +1045,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testDelayTimeByDayOfWeek() throws Exception {
 		log.info("In testDelayTimeByDayOfWeek() method Entry");
 		String statement = "SELECT airline.DayOfWeek, sum(airline.ArrDelay),count(*) FROM airline GROUP BY airline.DayOfWeek";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1071,7 +1071,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testTotalDelayTimeByMonthOfYear() throws Exception {
 		log.info("In testTotalDelayTimeByMonthOfYear() method Entry");
 		String statement = "SELECT airline.MonthOfYear, sum(airline.ArrDelay), count(*) FROM airline GROUP BY airline.MonthOfYear";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1096,7 +1096,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testAverageDelayByDestinationAirport() throws Exception {
 		log.info("In testAverageDelayByDestinationAirport() method Entry");
 		String statement = "SELECT airline.Dest, sum(airline.ArrDelay),avg(airline.ArrDelay) AvgDelay FROM airline GROUP BY airline.Dest";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1121,7 +1121,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsCancelledAndCancellationCode() throws Exception {
 		log.info("In testFlightsCancelledAndCancellationCode() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.Cancelled,airline.CancellationCode FROM airline WHERE airline.Cancelled = 1";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1146,7 +1146,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsCancelledDueToWeather() throws Exception {
 		log.info("In testFlightsCancelledDueToWeather() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.Cancelled,airline.CancellationCode FROM airline WHERE airline.Cancelled = 1 AND airline.CancellationCode = 'B'";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1170,7 +1170,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsDivertedDueToWeather() throws Exception {
 		log.info("In testFlightsDivertedDueToWeather() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.Diverted,airline.WeatherDelay FROM airline WHERE airline.Diverted = 1";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1195,7 +1195,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsDivertedDueToWeatherSortBy() throws Exception {
 		log.info("In testFlightsDivertedDueToWeatherSortBy() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 or airline.MonthOfYear=12 ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1219,7 +1219,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsjoinGroupBy() throws Exception {
 		log.info("In testFlightsjoinGroupBy() method Entry");
 		String statement = "SELECT airlines.Origin,airports.airport,count(*) FROM airlines inner join airports on airports.iata = airlines.Origin GROUP BY airlines.Origin,airports.airport";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -1243,7 +1243,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsDistinctUniqueCarrier() throws Exception {
 		log.info("In testFlightsDistinctUniqueCarrier() method Entry");
 		String statement = "SELECT distinct airlines.UniqueCarrier from airlines";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1267,7 +1267,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsDistinctUniqueCarrierWithWhere() throws Exception {
 		log.info("In testFlightsDistinctUniqueCarrierWithWhere() method Entry");
 		String statement = "SELECT distinct airlines.UniqueCarrier from airlines where airlines.UniqueCarrier <> 'UniqueCarrier'";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1290,7 +1290,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere() throws Exception {
 		log.info("In testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere() method Entry");
 		String statement = "SELECT distinct airlines.UniqueCarrier,airlines.AirlineYear from airlines where airlines.UniqueCarrier <> 'UniqueCarrier' order by airlines.AirlineYear,airlines.UniqueCarrier";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1315,7 +1315,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testAllColumnsAvg() method Entry");
 		
 		String statement = "SELECT avg(airline.ArrDelay) FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -1331,7 +1331,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testAllColumnsAvgArrDelayPerCarrier() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,avg(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -1348,7 +1348,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testAllColumnsAvgArrDelayPerCarrierWithWhere() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,avg(airline.ArrDelay) FROM airline where airline.DayOfWeek=1 group by airline.UniqueCarrier";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -1367,7 +1367,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear,avg(airline.ArrDelay) avgarrdelay, "
 				+ "sum(airline.ArrDelay) as sumarrdelay, count(*) as ct, min(airline.ArrDelay) as minarrdelay, max(airline.ArrDelay) as maxarrdelay"
 				+ " FROM airline group by airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear order by airline.UniqueCarrier, avgarrdelay";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -1397,7 +1397,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT avg(airline.ArrDelay) avgarrdelay, "
 				+ "sum(airline.ArrDelay) as sumarrdelay, count(*) as ct, min(airline.ArrDelay) as minarrdelay, max(airline.ArrDelay) as maxarrdelay"
 				+ " FROM airline group by airline.MonthOfYear order by avgarrdelay";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -1423,7 +1423,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnLength() method Entry");
 		
 		String statement = "SELECT length(airline.Origin)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1443,7 +1443,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnWithLength() method Entry");
 		
 		String statement = "SELECT airline.Origin,length(airline.Origin)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1465,7 +1465,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnWithMultipleLengths() method Entry");
 		
 		String statement = "SELECT airline.Origin,length(airline.Origin),length(airline.Dest)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1488,7 +1488,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Entry");
 		
 		String statement = "SELECT lowercase(airline.Origin),lowercase(airline.Dest),length(airline.Origin),length(airline.Dest)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1511,7 +1511,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnWithLengthsAndUppercase() method Entry");
 		
 		String statement = "SELECT uppercase(airline.Origin),uppercase(airline.Dest),length(airline.Origin),length(airline.Dest)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1534,7 +1534,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnTrim() method Entry");
 		
 		String statement = "SELECT trim(airline.Origin),trim(airline.Dest)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1554,7 +1554,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnBase64Encode() method Entry");
 		
 		String statement = "SELECT base64encode(airline.Origin),base64encode(airline.Dest)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1574,7 +1574,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnSubStringAlias() method Entry");
 		
 		String statement = "SELECT airline.Origin,substring(airline.Origin,0,1) as substr  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1594,7 +1594,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnSubString() method Entry");
 		
 		String statement = "SELECT airline.Origin,substring(airline.Origin,0,1),airline.Dest,substring(airline.Dest,0,2) FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1616,7 +1616,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnNormailizeSpaces() method Entry");
 		
 		String statement = "SELECT normalizespaces(airline.Dest),normalizespaces(' This is   good  work') eg FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1636,7 +1636,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testDate() method Entry");
 		
 		String statement = "SELECT normalizespaces(' This is   good  work') normspace,currentisodate() isodate FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1657,7 +1657,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testDateWithCount() method Entry");
 		
 		String statement = "SELECT normalizespaces(' This is   good  work') normspace,currentisodate() isodate,count(*) numrec FROM airline group by airline.AirlineYear";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1678,7 +1678,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testDate() method Entry");
 		
 		String statement = "SELECT sum(airline.ArrDelay * 2) FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1692,7 +1692,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testSumWithAddition() method Entry");
 		
 		String statement = "SELECT sum(airline.ArrDelay + 2) FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1705,7 +1705,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testSumWithSubtraction() method Entry");
 		
 		String statement = "SELECT sum(airline.ArrDelay - 2) FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1718,7 +1718,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testSumWithBase64Encode() method Entry");
 		
 		String statement = "SELECT base64encode(airline.Origin) originalias,sum(airline.ArrDelay - 2) FROM airline group by airline.Origin";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1742,7 +1742,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testSumWithColumnAndLength() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,length(airline.UniqueCarrier),sum(airline.ArrDelay - 2) FROM airline group by airline.UniqueCarrier";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1764,7 +1764,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectWithAggFunctionWithGroupBy() throws Exception {
 		log.info("In testSelectWithAggFunctionColumnsWithoutGroupBy() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay - 2) FROM airline group by airline.MonthOfYear,airline.DayofMonth";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1786,7 +1786,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testSumWithDivision() method Entry");
 		
 		String statement = "SELECT sum(airline.ArrDelay / 2) FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1799,7 +1799,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testSumWithSubtractionAndMultiplication() method Entry");
 		
 		String statement = "SELECT sum((airline.ArrDelay - 2) * 3.5) FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1813,7 +1813,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testSumWithAdditionAndMultiplication() method Entry");
 		
 		String statement = "SELECT sum((airline.ArrDelay + 2) * 2.5) FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -1825,7 +1825,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectWithWhereIn() throws Exception {
 		log.info("In testSelectWithWhereIn() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (11,12) ";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1839,7 +1839,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		}
 		
 		statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (11) ";
-		spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1853,7 +1853,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		}
 		
 		statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (12) ";
-		spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1874,7 +1874,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectCountWithWhereLike() throws Exception {
 		log.info("In testSelectCountWithWhereLike() method Entry");
 		String statement = "SELECT count(*) FROM airline where airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1894,7 +1894,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithWhereLike() throws Exception {
 		log.info("In testSelectSumWithWhereLike() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1914,7 +1914,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithWhereInAndLikeClause() throws Exception {
 		log.info("In testSelectSumWithWhereInAndLikeClause() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (11,12) and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1935,7 +1935,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectCountWithWhereInAndLikeClause() throws Exception {
 		log.info("In testSelectCountWithWhereInAndLikeClause() method Entry");
 		String statement = "SELECT count(*) FROM airline where airline.MonthOfYear in (11,12) and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1955,7 +1955,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectCountWithWhereLikeAndBetweenClause() throws Exception {
 		log.info("In testSelectCountWithWhereLikeAndBetweenClause() method Entry");
 		String statement = "SELECT count(*) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1975,7 +1975,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithWhereLikeAndBetweenClause() throws Exception {
 		log.info("In testSelectSumWithWhereLikeAndBetweenClause() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -1996,7 +1996,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedAbsFunction() throws Exception {
 		log.info("In testSelectSumWithNestedAbsFunction() method Entry");
 		String statement = "SELECT sum(abs(airline.MonthOfYear) + airline.ArrDelay) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2017,7 +2017,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedAbsFunctions() throws Exception {
 		log.info("In testSelectSumWithNestedAbsFunctions() method Entry");
 		String statement = "SELECT sum(abs(airline.MonthOfYear) + abs(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2037,7 +2037,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedAbsAndLengthFunctions() throws Exception {
 		log.info("In testSelectSumWithNestedAbsAndLengthFunctions() method Entry");
 		String statement = "SELECT sum(abs(length(airline.Origin)) + abs(length(airline.Dest))) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2059,7 +2059,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnAbs() method Entry");
 		
 		String statement = "SELECT abs(airline.ArrDelay)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2079,7 +2079,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnRound() method Entry");
 		
 		String statement = "SELECT airline.ArrDelay, round(airline.ArrDelay)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2100,7 +2100,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnCeil() method Entry");
 		
 		String statement = "SELECT airline.ArrDelay, ceil(airline.ArrDelay)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2121,7 +2121,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnFloor() method Entry");
 		
 		String statement = "SELECT airline.ArrDelay,floor(airline.ArrDelay)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2142,7 +2142,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnPower() method Entry");
 		
 		String statement = "SELECT airline.ArrDelay, pow(airline.ArrDelay, 2) powcal  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2163,7 +2163,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnSqrt() method Entry");
 		
 		String statement = "SELECT airline.MonthOfYear, sqrt(airline.MonthOfYear)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2184,7 +2184,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnExponential() method Entry");
 		
 		String statement = "SELECT exp(airline.MonthOfYear)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2205,7 +2205,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnloge() method Entry");
 		
 		String statement = "SELECT loge(airline.MonthOfYear) as log  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2223,7 +2223,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedRound() throws Exception {
 		log.info("In testSelectSumWithNestedRound() method Entry");
 		String statement = "SELECT sum(round(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2243,7 +2243,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedCeil() throws Exception {
 		log.info("In testSelectSumWithNestedCeil() method Entry");
 		String statement = "SELECT sum(ceil(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2263,7 +2263,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedFloor() throws Exception {
 		log.info("In testSelectSumWithNestedFloor() method Entry");
 		String statement = "SELECT sum(floor(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2283,7 +2283,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedPower() throws Exception {
 		log.info("In testSelectSumWithNestedPower() method Entry");
 		String statement = "SELECT sum(pow(airline.MonthOfYear, 2)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2303,7 +2303,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedSqrt() throws Exception {
 		log.info("In testSelectSumWithNestedSqrt() method Entry");
 		String statement = "SELECT sum(sqrt(airline.MonthOfYear)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2323,7 +2323,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedExponential() throws Exception {
 		log.info("In testSelectSumWithNestedExponential() method Entry");
 		String statement = "SELECT sum(exp(airline.MonthOfYear)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2344,7 +2344,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectSumWithNestedloge() throws Exception {
 		log.info("In testSelectSumWithNestedloge() method Entry");
 		String statement = "SELECT sum(loge(airline.MonthOfYear)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2364,7 +2364,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testSelectGroupConcatGroupBy() throws Exception {
 		log.info("In testSelectGroupConcatGroupBy() method Entry");
 		String statement = "SELECT airline.DayofMonth, grpconcat(airline.TailNum, '||') FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG' group by airline.DayofMonth,airline.TailNum";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
@@ -2385,7 +2385,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnLengthWithExp() method Entry");
 		
 		String statement = "SELECT length(airline.Origin + airline.Dest)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2406,7 +2406,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnAbsLengthWithExp() method Entry");
 		
 		String statement = "SELECT abs(length(airline.Origin + airline.Dest))  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2426,7 +2426,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnRoundLengthWithExp() method Entry");
 		
 		String statement = "SELECT round(length(airline.Origin + airline.Dest) + 0.4)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2447,7 +2447,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnRoundLengthWithExpWithInc() method Entry");
 		
 		String statement = "SELECT round(length(airline.Origin + airline.Dest) + 0.6)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2467,7 +2467,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnCeilLengthWithExpWithInc() method Entry");
 		
 		String statement = "SELECT ceil(length(airline.Origin + airline.Dest) + 0.6)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2487,7 +2487,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnCeilLengthWithExp() method Entry");
 		
 		String statement = "SELECT ceil(length(airline.Origin + airline.Dest) + 0.4)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2508,7 +2508,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnFloorLengthWithExpWithInc() method Entry");
 		
 		String statement = "SELECT floor(length(airline.Origin + airline.Dest) + 0.6)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2528,7 +2528,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnFloorLengthWithExp() method Entry");
 		
 		String statement = "SELECT floor(length(airline.Origin + airline.Dest) + 0.4)  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2548,7 +2548,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnLengthWithParanthesisExp() method Entry");
 		
 		String statement = "SELECT (length(airline.Origin + airline.Dest) + 0.4) paransum  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2569,7 +2569,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnPowerLengthWithExp() method Entry");
 		
 		String statement = "SELECT pow(length(airline.Origin + airline.Dest), 2) powlen  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2589,7 +2589,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnSqrtLengthWithExp() method Entry");
 		
 		String statement = "SELECT sqrt(length(airline.Origin + airline.Dest)) sqrtlen  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2609,7 +2609,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnExpLengthWithExp() method Entry");
 		
 		String statement = "SELECT exp(length(airline.Origin + airline.Dest)) explen  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2629,7 +2629,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnLogLengthWithExp() method Entry");
 		
 		String statement = "SELECT loge(length(airline.Origin + airline.Dest)) loglen  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2650,7 +2650,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnLowerCaseWithUpperCaseWithExp() method Entry");
 		
 		String statement = "SELECT lowercase(uppercase(airline.Origin + airline.Dest + 'low') + 'UPP') lowup  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2670,7 +2670,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnUpperCaseWithLowerCaseWithExp() method Entry");
 		
 		String statement = "SELECT uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') uplow  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2690,7 +2690,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnTrimUpperCaseWithLowerCaseWithExp() method Entry");
 		
 		String statement = "SELECT trim('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ') uplow  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2712,7 +2712,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnBase64_EncUpperCaseWithLowerCaseWithExp() method Entry");
 		
 		String statement = "SELECT base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ') encstring  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2733,7 +2733,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 		
 		String statement = "SELECT base64decode(base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ')) decstring  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2754,7 +2754,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 		
 		String statement = "SELECT normalizespaces(base64decode(base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      '))) normalizedstring  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2774,7 +2774,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 		
 		String statement = "SELECT substring(base64decode(base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6) substr  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2795,7 +2795,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 		
 		String statement = "SELECT normalizespaces(substring(base64decode(base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6)) normsubstr  FROM airline";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
@@ -2816,7 +2816,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
 				+ "FROM carriers left join airline on airline.UniqueCarrier = carriers.Code";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		long totalrecords = 0;
@@ -2845,7 +2845,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
 				+ "FROM airline right join carriers on airline.UniqueCarrier = carriers.Code";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		long totalrecords = 0;
@@ -2871,7 +2871,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOr() throws Exception {
 		log.info("In testFlightsAndOr() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 or airline.DayOfWeek=3 ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2896,7 +2896,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOrAnd() throws Exception {
 		log.info("In testFlightsAndOrAnd() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 or airline.DayOfWeek=3 and airline.DayofMonth=1 ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2921,7 +2921,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOrAndParanthesis() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesis() method Entry");
 		String statement = "SELECT * FROM airline WHERE (airline.DayofMonth=8 and airline.MonthOfYear=12) or (airline.DayOfWeek=3 and airline.DayofMonth=1) ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2946,7 +2946,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOrAndParanthesisOr() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOr() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 and (airline.MonthOfYear=12 or airline.DayOfWeek=3) and airline.Origin='LIH' ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2971,7 +2971,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthPlus2() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth+2 = 8 and (airline.MonthOfYear=12 or airline.DayOfWeek=3) and airline.Origin='LIH' ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2996,7 +2996,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthPlus2ColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2ColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 8 = airline.DayofMonth+2 and (12=airline.MonthOfYear or 3=airline.DayOfWeek) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -3021,7 +3021,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthPlusDayOfWeekMultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlusDayOfWeekMultipleColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 8 = airline.DayofMonth + airline.DayOfWeek and (airline.MonthOfYear=12 or airline.DayOfWeek=3) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -3047,7 +3047,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthMinus2MultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMinus2MultipleColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 8 = airline.DayofMonth - 2 and (12=airline.MonthOfYear or 3=airline.DayOfWeek) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -3073,7 +3073,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthMultiply2MultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMultiply2MultipleColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 8 = airline.DayofMonth * 2 and (12=airline.MonthOfYear or 3=airline.DayOfWeek) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -3099,7 +3099,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthDivideBy2MultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthDivideBy2MultipleColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 4.0 <= airline.DayofMonth / 2 and (12=airline.MonthOfYear or 3=airline.DayOfWeek) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -3126,7 +3126,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT AirlineYear,MonthOfYear FROM (select * from airline)";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3149,7 +3149,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT UniqueCarrier,sum(ArrDelay) sumdelay FROM (select * from airline) group by UniqueCarrier";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3170,7 +3170,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT sumarrdelay FROM (select sum(airline.ArrDelay) sumarrdelay from airline  group by airline.UniqueCarrier)";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3192,7 +3192,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT sumarrdelay,countrec FROM (select sum(airline.ArrDelay) sumarrdelay, count(*) countrec from airline  group by airline.UniqueCarrier)";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3215,7 +3215,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT UniqueCarrier,DayofMonth,MonthOfYear,avg(ArrDelay) FROM (select airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear,airline.ArrDelay from airline) group by UniqueCarrier,DayofMonth,MonthOfYear";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3239,7 +3239,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT UniqueCarrier,DayofMonth,MonthOfYear,avg(ArrDelay),sum(ArrDelay),count(*) cnt FROM (select airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear,airline.ArrDelay from airline) group by UniqueCarrier,DayofMonth,MonthOfYear";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3264,7 +3264,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT avg(avgdelay) delay from(SELECT UniqueCarrier,DayofMonth,MonthOfYear,avg(ArrDelay) avgdelay,sum(ArrDelay) sumdelay,count(*) cnt FROM (select airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear,airline.ArrDelay from airline) group by UniqueCarrier,DayofMonth,MonthOfYear)";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3286,7 +3286,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT * FROM (select * from airline) ";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3311,7 +3311,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT * FROM (select * from airline where airline.DayofMonth = 12) ";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3336,7 +3336,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT * FROM (select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3362,7 +3362,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3387,7 +3387,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT sqrt(abs(ArrDelay)) sqrtabs FROM "
 				+ "(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3";
 		
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3409,7 +3409,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT * FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear)";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		long totalrecords = 0;
@@ -3437,7 +3437,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		
 		String statement = "SELECT ijres.DayofMonth,ijres.MonthOfYear,ijres.UniqueCarrier,ijres.Code FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear) ijres";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		long totalrecords = 0;
@@ -3466,7 +3466,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		String statement = "SELECT ijres.DayofMonth,ijres.MonthOfYear,ijres.UniqueCarrier,ijres.Code FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
 				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear) ijres inner "
 				+ "join carriers on ijres.UniqueCarrier = carriers.Code";				
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		long totalrecords = 0;
@@ -3495,7 +3495,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3)";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
@@ -3520,7 +3520,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				+ "(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3) where MonthOfYear=12";
 		
 		int total = 0;
-		IgnitePipelineSql spsql = IgnitePipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);

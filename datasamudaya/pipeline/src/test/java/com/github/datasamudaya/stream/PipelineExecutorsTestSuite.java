@@ -29,7 +29,6 @@ import com.github.datasamudaya.stream.utils.PipelineConfigValidatorTest;
 		StreamPipelineTest.class,
 		StreamPipelineTaskExecutorJGroupsTest.class,
 		PipelineConfigValidatorTest.class,
-		FileBlocksPartitionerTest.class,
 		StreamPipelineTaskExecutorIgniteTest.class})
 public class PipelineExecutorsTestSuite{
 

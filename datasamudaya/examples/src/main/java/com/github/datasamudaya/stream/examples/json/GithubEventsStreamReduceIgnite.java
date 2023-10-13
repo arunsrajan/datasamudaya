@@ -8,7 +8,7 @@ import org.jooq.lambda.tuple.Tuple;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.stream.IgnitePipeline;
+import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.Pipeline;
 
 public class GithubEventsStreamReduceIgnite implements Serializable, Pipeline {
@@ -26,7 +26,7 @@ public class GithubEventsStreamReduceIgnite implements Serializable, Pipeline {
 	}
 	public void testReduce(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("GithubEventsStreamReduceIgnite.testReduce Before---------------------------------------");
-		var datastream = IgnitePipeline.newJsonStreamHDFS(args[0], args[1], pipelineconfig);
+		var datastream = StreamPipeline.newJsonStreamHDFS(args[0], args[1], pipelineconfig);
 		var mappair1 = datastream
 				.mapToPair(dat -> Tuple.tuple(dat.get("type"), 1l));
 

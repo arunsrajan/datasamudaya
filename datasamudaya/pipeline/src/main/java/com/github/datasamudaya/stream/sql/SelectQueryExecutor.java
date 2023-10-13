@@ -15,8 +15,6 @@ import com.github.datasamudaya.common.ColumnMetadata;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.stream.sql.build.IgnitePipelineSql;
-import com.github.datasamudaya.stream.sql.build.IgnitePipelineSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 import com.github.datasamudaya.stream.utils.SQLUtils;
@@ -141,7 +139,7 @@ public class SelectQueryExecutor {
 			var tables = new ArrayList<Table>();
 			var tmpset = new HashSet<String>();			
 			SQLUtils.getAllTables(statement, tables, tmpset);
-			var builder = IgnitePipelineSqlBuilder.newBuilder()
+			var builder = StreamPipelineSqlBuilder.newBuilder()
 					.setHdfs(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);
@@ -161,7 +159,7 @@ public class SelectQueryExecutor {
 				}
 				builder = builder.add(hdfslocation, table.getName().toLowerCase(), tablecolumn, tablecolumnDataType);
 			}
-			IgnitePipelineSql ipsql = builder.build();
+			StreamPipelineSql ipsql = builder.build();
 			return (List) ipsql.collect(true, null);
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();

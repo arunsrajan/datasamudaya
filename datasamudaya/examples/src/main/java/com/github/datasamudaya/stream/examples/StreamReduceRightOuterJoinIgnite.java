@@ -22,7 +22,7 @@ import org.jooq.lambda.tuple.Tuple2;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.stream.IgnitePipeline;
+import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.Pipeline;
 
 public class StreamReduceRightOuterJoinIgnite implements Pipeline {
@@ -42,7 +42,7 @@ public class StreamReduceRightOuterJoinIgnite implements Pipeline {
 	public void testMassiveDataCollectExampleRightOuterJoin(String[] args, PipelineConfig pipelineconfig)
 			throws Exception {
 		log.info("StreamReduceRightOuterJoinIgnite.testMassiveDataCollectExampleRightOuterJoin Before---------------------------------------");
-		var datastream = IgnitePipeline.newStreamHDFS(args[0], args[1], pipelineconfig);
+		var datastream = StreamPipeline.newStreamHDFS(args[0], args[1], pipelineconfig);
 		var mappair1 = datastream.map(dat -> dat.split(","))
 				.filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14]))
 				.mapToPair(dat -> Tuple.tuple(dat[8], Long.parseLong(dat[14])));
@@ -50,7 +50,7 @@ public class StreamReduceRightOuterJoinIgnite implements Pipeline {
 		var airlinesamples = mappair1.reduceByKey((dat1, dat2) -> dat1 + dat2).coalesce(1,
 				(dat1, dat2) -> dat1 + dat2);
 
-		var datastream1 = IgnitePipeline.newStreamHDFS(args[0], args[2], pipelineconfig);
+		var datastream1 = StreamPipeline.newStreamHDFS(args[0], args[2], pipelineconfig);
 
 		var carriers = datastream1.map(linetosplit -> linetosplit.split(","))
 				.mapToPair(line -> new Tuple2(line[0].substring(1, line[0].length() - 1),

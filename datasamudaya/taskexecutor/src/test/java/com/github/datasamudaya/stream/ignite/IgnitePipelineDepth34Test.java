@@ -27,7 +27,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import com.github.datasamudaya.stream.IgnitePipeline;
+import com.github.datasamudaya.stream.StreamPipeline;
 
 @SuppressWarnings({"unchecked", "serial", "rawtypes"})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -39,7 +39,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyFilterForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -64,7 +64,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyFlatMapCollect() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -85,7 +85,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyFlatMapCount() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -108,7 +108,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyFlatMapForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -128,7 +128,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapCollect() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -149,7 +149,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapCount() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -172,7 +172,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -192,7 +192,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapPairCollect() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -219,7 +219,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapPairCount() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -248,7 +248,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapPairForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -274,7 +274,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -302,7 +302,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -331,7 +331,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -358,7 +358,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -387,7 +387,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -413,7 +413,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyPeekCollect() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -434,7 +434,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyPeekCount() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -457,7 +457,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyPeekForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -477,7 +477,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeySampleCollect() throws Throwable {
 		log.info("testSampleMapPairReduceByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -498,7 +498,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeySampleCount() throws Throwable {
 		log.info("testSampleMapPairReduceByKeySampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -521,7 +521,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeySampleForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -541,7 +541,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeySortedCollect() throws Throwable {
 		log.info("testSampleMapPairReduceByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -567,7 +567,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeySortedCount() throws Throwable {
 		log.info("testSampleMapPairReduceByKeySortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -595,7 +595,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeySortedForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -620,7 +620,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairSampleCollect() throws Throwable {
 		log.info("testSampleMapPairSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -641,7 +641,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairSampleCount() throws Throwable {
 		log.info("testSampleMapPairSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -664,7 +664,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairSampleForEach() throws Throwable {
 		log.info("testSampleMapPairSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -684,7 +684,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairSortedCollect() throws Throwable {
 		log.info("testSampleMapPairSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -709,7 +709,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairSortedCount() throws Throwable {
 		log.info("testSampleMapPairSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -736,7 +736,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairSortedForEach() throws Throwable {
 		log.info("testSampleMapPairSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).mapToPair(
@@ -760,7 +760,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekFilterCollect() throws Throwable {
 		log.info("testSamplePeekFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val))
 				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String>() {
@@ -781,7 +781,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekFilterCount() throws Throwable {
 		log.info("testSamplePeekFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val))
 				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String>() {
@@ -804,7 +804,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekFilterForEach() throws Throwable {
 		log.info("testSamplePeekFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val))
@@ -824,7 +824,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekFlatMapCollect() throws Throwable {
 		log.info("testSamplePeekFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val))
 				.flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String, java.lang.String>() {
@@ -845,7 +845,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekFlatMapCount() throws Throwable {
 		log.info("testSamplePeekFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val))
 				.flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String, java.lang.String>() {
@@ -868,7 +868,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekFlatMapForEach() throws Throwable {
 		log.info("testSamplePeekFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val))
@@ -888,7 +888,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapCollect() throws Throwable {
 		log.info("testSamplePeekMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val))
 				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
@@ -909,7 +909,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapCount() throws Throwable {
 		log.info("testSamplePeekMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val))
 				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
@@ -932,7 +932,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapForEach() throws Throwable {
 		log.info("testSamplePeekMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val))
@@ -952,7 +952,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapPairCollect() throws Throwable {
 		log.info("testSamplePeekMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -973,7 +973,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapPairCount() throws Throwable {
 		log.info("testSamplePeekMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -996,7 +996,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapPairForEach() throws Throwable {
 		log.info("testSamplePeekMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val)).mapToPair(
@@ -1016,7 +1016,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSamplePeekMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -1038,7 +1038,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSamplePeekMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val)).mapToPair(
@@ -1061,7 +1061,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSamplePeekMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -1082,7 +1082,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSamplePeekMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -1105,7 +1105,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSamplePeekMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val)).mapToPair(
@@ -1125,7 +1125,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekPeekCollect() throws Throwable {
 		log.info("testSamplePeekPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).peek(val -> System.out.println(val))
 				.collect(toexecute, null);
@@ -1142,7 +1142,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekPeekCount() throws Throwable {
 		log.info("testSamplePeekPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).peek(val -> System.out.println(val))
 				.count(null);
@@ -1161,7 +1161,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekPeekForEach() throws Throwable {
 		log.info("testSamplePeekPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val)).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -1176,7 +1176,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekSampleCollect() throws Throwable {
 		log.info("testSamplePeekSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).sample(46361).collect(toexecute,
 				null);
@@ -1193,7 +1193,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekSampleCount() throws Throwable {
 		log.info("testSamplePeekSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).sample(46361).count(null);
 		long sum = 0;
@@ -1211,7 +1211,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekSampleForEach() throws Throwable {
 		log.info("testSamplePeekSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val)).sample(46361).forEach(lis -> {
@@ -1226,7 +1226,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekSortedCollect() throws Throwable {
 		log.info("testSamplePeekSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val))
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1247,7 +1247,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekSortedCount() throws Throwable {
 		log.info("testSamplePeekSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val))
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1270,7 +1270,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekSortedForEach() throws Throwable {
 		log.info("testSamplePeekSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val))
@@ -1290,7 +1290,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleFilterCollect() throws Throwable {
 		log.info("testSampleSampleFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).sample(46361)
 				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String>() {
@@ -1311,7 +1311,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleFilterCount() throws Throwable {
 		log.info("testSampleSampleFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).sample(46361)
 				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String>() {
@@ -1334,7 +1334,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleFilterForEach() throws Throwable {
 		log.info("testSampleSampleFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361)
@@ -1354,7 +1354,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleFlatMapCollect() throws Throwable {
 		log.info("testSampleSampleFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).sample(46361)
 				.flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String, java.lang.String>() {
@@ -1375,7 +1375,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleFlatMapCount() throws Throwable {
 		log.info("testSampleSampleFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).sample(46361)
 				.flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String, java.lang.String>() {
@@ -1398,7 +1398,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleFlatMapForEach() throws Throwable {
 		log.info("testSampleSampleFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361)
@@ -1418,7 +1418,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapCollect() throws Throwable {
 		log.info("testSampleSampleMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).sample(46361)
 				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
@@ -1439,7 +1439,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapCount() throws Throwable {
 		log.info("testSampleSampleMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).sample(46361)
 				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
@@ -1462,7 +1462,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapForEach() throws Throwable {
 		log.info("testSampleSampleMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361)
@@ -1482,7 +1482,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapPairCollect() throws Throwable {
 		log.info("testSampleSampleMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -1503,7 +1503,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapPairCount() throws Throwable {
 		log.info("testSampleSampleMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -1526,7 +1526,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapPairForEach() throws Throwable {
 		log.info("testSampleSampleMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361).mapToPair(
@@ -1546,7 +1546,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSampleSampleMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.sample(46361).sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -1568,7 +1568,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSampleSampleMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361).mapToPair(
@@ -1591,7 +1591,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSampleSampleMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -1612,7 +1612,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSampleSampleMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).sample(46361).mapToPair(
 				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
@@ -1635,7 +1635,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSampleSampleMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361).mapToPair(
@@ -1655,7 +1655,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSamplePeekCollect() throws Throwable {
 		log.info("testSampleSamplePeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).sample(46361).peek(val -> System.out.println(val)).collect(toexecute,
 				null);
@@ -1672,7 +1672,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSamplePeekCount() throws Throwable {
 		log.info("testSampleSamplePeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).sample(46361).peek(val -> System.out.println(val)).count(null);
 		long sum = 0;
@@ -1690,7 +1690,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSamplePeekForEach() throws Throwable {
 		log.info("testSampleSamplePeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -1705,7 +1705,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleSampleCollect() throws Throwable {
 		log.info("testSampleSampleSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).sample(46361).sample(46361).collect(toexecute, null);
 		int sum = 0;
@@ -1721,7 +1721,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleSampleCount() throws Throwable {
 		log.info("testSampleSampleSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).sample(46361).sample(46361).count(null);
 		long sum = 0;
@@ -1739,7 +1739,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleSampleForEach() throws Throwable {
 		log.info("testSampleSampleSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361).sample(46361).forEach(lis -> {
@@ -1754,7 +1754,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleSortedCollect() throws Throwable {
 		log.info("testSampleSampleSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1775,7 +1775,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleSortedCount() throws Throwable {
 		log.info("testSampleSampleSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1798,7 +1798,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleSortedForEach() throws Throwable {
 		log.info("testSampleSampleSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361)
@@ -1818,7 +1818,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedFilterCollect() throws Throwable {
 		log.info("testSampleSortedFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1843,7 +1843,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedFilterCount() throws Throwable {
 		log.info("testSampleSortedFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1870,7 +1870,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedFilterForEach() throws Throwable {
 		log.info("testSampleSortedFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1893,7 +1893,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedFlatMapCollect() throws Throwable {
 		log.info("testSampleSortedFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1918,7 +1918,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedFlatMapCount() throws Throwable {
 		log.info("testSampleSortedFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1945,7 +1945,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedFlatMapForEach() throws Throwable {
 		log.info("testSampleSortedFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1968,7 +1968,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapCollect() throws Throwable {
 		log.info("testSampleSortedMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -1993,7 +1993,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapCount() throws Throwable {
 		log.info("testSampleSortedMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2020,7 +2020,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapForEach() throws Throwable {
 		log.info("testSampleSortedMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2043,7 +2043,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapPairCollect() throws Throwable {
 		log.info("testSampleSortedMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2070,7 +2070,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapPairCount() throws Throwable {
 		log.info("testSampleSortedMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2099,7 +2099,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapPairForEach() throws Throwable {
 		log.info("testSampleSortedMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2123,7 +2123,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSampleSortedMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2151,7 +2151,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSampleSortedMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2178,7 +2178,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSampleSortedMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2205,7 +2205,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSampleSortedMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2234,7 +2234,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSampleSortedMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2258,7 +2258,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedPeekCollect() throws Throwable {
 		log.info("testSampleSortedPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2279,7 +2279,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedPeekCount() throws Throwable {
 		log.info("testSampleSortedPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2302,7 +2302,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedPeekForEach() throws Throwable {
 		log.info("testSampleSortedPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2321,7 +2321,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedSampleCollect() throws Throwable {
 		log.info("testSampleSortedSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2342,7 +2342,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedSampleCount() throws Throwable {
 		log.info("testSampleSortedSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2365,7 +2365,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedSampleForEach() throws Throwable {
 		log.info("testSampleSortedSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2384,7 +2384,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedSortedCollect() throws Throwable {
 		log.info("testSampleSortedSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2409,7 +2409,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedSortedCount() throws Throwable {
 		log.info("testSampleSortedSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361)
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2436,7 +2436,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedSortedForEach() throws Throwable {
 		log.info("testSampleSortedSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2459,7 +2459,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterFilterCollect() throws Throwable {
 		log.info("testSortedFilterFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -2487,7 +2487,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterFilterCount() throws Throwable {
 		log.info("testSortedFilterFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2518,7 +2518,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterFilterForEach() throws Throwable {
 		log.info("testSortedFilterFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2545,7 +2545,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterFlatMapCollect() throws Throwable {
 		log.info("testSortedFilterFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -2573,7 +2573,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterFlatMapCount() throws Throwable {
 		log.info("testSortedFilterFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2604,7 +2604,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterFlatMapForEach() throws Throwable {
 		log.info("testSortedFilterFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2631,7 +2631,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapCollect() throws Throwable {
 		log.info("testSortedFilterMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -2659,7 +2659,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapCount() throws Throwable {
 		log.info("testSortedFilterMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2690,7 +2690,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapForEach() throws Throwable {
 		log.info("testSortedFilterMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2717,7 +2717,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapPairCollect() throws Throwable {
 		log.info("testSortedFilterMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -2746,7 +2746,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapPairCount() throws Throwable {
 		log.info("testSortedFilterMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2779,7 +2779,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapPairForEach() throws Throwable {
 		log.info("testSortedFilterMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2807,7 +2807,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedFilterMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2839,7 +2839,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedFilterMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2870,7 +2870,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedFilterMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -2899,7 +2899,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSortedFilterMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2932,7 +2932,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedFilterMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -2960,7 +2960,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterPeekCollect() throws Throwable {
 		log.info("testSortedFilterPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -2984,7 +2984,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterPeekCount() throws Throwable {
 		log.info("testSortedFilterPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3011,7 +3011,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterPeekForEach() throws Throwable {
 		log.info("testSortedFilterPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3034,7 +3034,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterSampleCollect() throws Throwable {
 		log.info("testSortedFilterSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3058,7 +3058,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterSampleCount() throws Throwable {
 		log.info("testSortedFilterSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3085,7 +3085,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterSampleForEach() throws Throwable {
 		log.info("testSortedFilterSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3108,7 +3108,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterSortedCollect() throws Throwable {
 		log.info("testSortedFilterSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3136,7 +3136,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterSortedCount() throws Throwable {
 		log.info("testSortedFilterSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3167,7 +3167,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterSortedForEach() throws Throwable {
 		log.info("testSortedFilterSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3194,7 +3194,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapFilterCollect() throws Throwable {
 		log.info("testSortedFlatMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3222,7 +3222,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapFilterCount() throws Throwable {
 		log.info("testSortedFlatMapFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3253,7 +3253,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapFilterForEach() throws Throwable {
 		log.info("testSortedFlatMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3280,7 +3280,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapFlatMapCollect() throws Throwable {
 		log.info("testSortedFlatMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3308,7 +3308,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapFlatMapCount() throws Throwable {
 		log.info("testSortedFlatMapFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3339,7 +3339,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapFlatMapForEach() throws Throwable {
 		log.info("testSortedFlatMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3366,7 +3366,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapCollect() throws Throwable {
 		log.info("testSortedFlatMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3394,7 +3394,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapCount() throws Throwable {
 		log.info("testSortedFlatMapMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3425,7 +3425,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapForEach() throws Throwable {
 		log.info("testSortedFlatMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3452,7 +3452,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapPairCollect() throws Throwable {
 		log.info("testSortedFlatMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3481,7 +3481,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapPairCount() throws Throwable {
 		log.info("testSortedFlatMapMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3514,7 +3514,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapPairForEach() throws Throwable {
 		log.info("testSortedFlatMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3542,7 +3542,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedFlatMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3574,7 +3574,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedFlatMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3605,7 +3605,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedFlatMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3634,7 +3634,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSortedFlatMapMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3667,7 +3667,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedFlatMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3695,7 +3695,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapPeekCollect() throws Throwable {
 		log.info("testSortedFlatMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3719,7 +3719,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapPeekCount() throws Throwable {
 		log.info("testSortedFlatMapPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3746,7 +3746,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapPeekForEach() throws Throwable {
 		log.info("testSortedFlatMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3769,7 +3769,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapSampleCollect() throws Throwable {
 		log.info("testSortedFlatMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3793,7 +3793,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapSampleCount() throws Throwable {
 		log.info("testSortedFlatMapSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3820,7 +3820,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapSampleForEach() throws Throwable {
 		log.info("testSortedFlatMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3843,7 +3843,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapSortedCollect() throws Throwable {
 		log.info("testSortedFlatMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3871,7 +3871,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapSortedCount() throws Throwable {
 		log.info("testSortedFlatMapSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3902,7 +3902,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapSortedForEach() throws Throwable {
 		log.info("testSortedFlatMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3929,7 +3929,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapFilterCollect() throws Throwable {
 		log.info("testSortedMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -3957,7 +3957,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapFilterCount() throws Throwable {
 		log.info("testSortedMapFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -3988,7 +3988,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapFilterForEach() throws Throwable {
 		log.info("testSortedMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4015,7 +4015,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapFlatMapCollect() throws Throwable {
 		log.info("testSortedMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -4043,7 +4043,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapFlatMapCount() throws Throwable {
 		log.info("testSortedMapFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4074,7 +4074,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapFlatMapForEach() throws Throwable {
 		log.info("testSortedMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4101,7 +4101,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapCollect() throws Throwable {
 		log.info("testSortedMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -4129,7 +4129,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapCount() throws Throwable {
 		log.info("testSortedMapMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4160,7 +4160,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapForEach() throws Throwable {
 		log.info("testSortedMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4187,7 +4187,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapPairCollect() throws Throwable {
 		log.info("testSortedMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -4216,7 +4216,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapPairCount() throws Throwable {
 		log.info("testSortedMapMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4249,7 +4249,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapPairForEach() throws Throwable {
 		log.info("testSortedMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4277,7 +4277,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4309,7 +4309,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4340,7 +4340,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -4369,7 +4369,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSortedMapMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4402,7 +4402,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4430,7 +4430,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPeekCollect() throws Throwable {
 		log.info("testSortedMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -4454,7 +4454,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPeekCount() throws Throwable {
 		log.info("testSortedMapPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4481,7 +4481,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPeekForEach() throws Throwable {
 		log.info("testSortedMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4504,7 +4504,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapSampleCollect() throws Throwable {
 		log.info("testSortedMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -4528,7 +4528,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapSampleCount() throws Throwable {
 		log.info("testSortedMapSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4555,7 +4555,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapSampleForEach() throws Throwable {
 		log.info("testSortedMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4578,7 +4578,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapSortedCollect() throws Throwable {
 		log.info("testSortedMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -4606,7 +4606,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapSortedCount() throws Throwable {
 		log.info("testSortedMapSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4637,7 +4637,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapSortedForEach() throws Throwable {
 		log.info("testSortedMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4664,7 +4664,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairFilterCollect() throws Throwable {
 		log.info("testSortedMapPairFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -4693,7 +4693,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairFilterCount() throws Throwable {
 		log.info("testSortedMapPairFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4726,7 +4726,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairFilterForEach() throws Throwable {
 		log.info("testSortedMapPairFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4754,7 +4754,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairFlatMapCollect() throws Throwable {
 		log.info("testSortedMapPairFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -4779,7 +4779,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairFlatMapCount() throws Throwable {
 		log.info("testSortedMapPairFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4808,7 +4808,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairFlatMapForEach() throws Throwable {
 		log.info("testSortedMapPairFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4832,7 +4832,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyFilterCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4864,7 +4864,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyFilterForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4896,7 +4896,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyFlatMapCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4924,7 +4924,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyFlatMapForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4951,7 +4951,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyMapCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -4979,7 +4979,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyMapForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5006,7 +5006,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyMapPairCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5040,7 +5040,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyMapPairForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5073,7 +5073,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5107,7 +5107,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5140,7 +5140,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5174,7 +5174,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5207,7 +5207,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyPeekCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5235,7 +5235,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyPeekForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5262,7 +5262,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeySampleCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5290,7 +5290,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeySampleForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5317,7 +5317,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeySortedCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5349,7 +5349,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeySortedForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5380,7 +5380,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapCollect() throws Throwable {
 		log.info("testSortedMapPairMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -5405,7 +5405,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapCount() throws Throwable {
 		log.info("testSortedMapPairMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5434,7 +5434,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapForEach() throws Throwable {
 		log.info("testSortedMapPairMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5458,7 +5458,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapPairCollect() throws Throwable {
 		log.info("testSortedMapPairMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -5489,7 +5489,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapPairCount() throws Throwable {
 		log.info("testSortedMapPairMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5524,7 +5524,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapPairForEach() throws Throwable {
 		log.info("testSortedMapPairMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5554,7 +5554,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedMapPairMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5588,7 +5588,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedMapPairMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5621,7 +5621,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedMapPairMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -5652,7 +5652,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSortedMapPairMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5687,7 +5687,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedMapPairMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5717,7 +5717,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairPeekCollect() throws Throwable {
 		log.info("testSortedMapPairPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -5742,7 +5742,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairPeekCount() throws Throwable {
 		log.info("testSortedMapPairPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5771,7 +5771,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairPeekForEach() throws Throwable {
 		log.info("testSortedMapPairPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5795,7 +5795,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyFilterCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -5825,7 +5825,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyFilterCount() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5859,7 +5859,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyFilterForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5888,7 +5888,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyFlatMapCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -5913,7 +5913,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyFlatMapCount() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5942,7 +5942,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyFlatMapForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -5966,7 +5966,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -5991,7 +5991,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapCount() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6020,7 +6020,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6044,7 +6044,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapPairCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6075,7 +6075,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapPairCount() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6110,7 +6110,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapPairForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6140,7 +6140,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6174,7 +6174,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6207,7 +6207,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6238,7 +6238,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6273,7 +6273,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6303,7 +6303,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyPeekCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6328,7 +6328,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyPeekCount() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6357,7 +6357,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyPeekForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6381,7 +6381,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeySampleCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6406,7 +6406,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeySampleCount() throws Throwable {
 		log.info("testSortedMapPairReduceByKeySampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6435,7 +6435,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeySampleForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6459,7 +6459,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeySortedCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6489,7 +6489,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeySortedCount() throws Throwable {
 		log.info("testSortedMapPairReduceByKeySortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6523,7 +6523,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeySortedForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6552,7 +6552,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairSampleCollect() throws Throwable {
 		log.info("testSortedMapPairSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6577,7 +6577,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairSampleCount() throws Throwable {
 		log.info("testSortedMapPairSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6606,7 +6606,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairSampleForEach() throws Throwable {
 		log.info("testSortedMapPairSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6630,7 +6630,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairSortedCollect() throws Throwable {
 		log.info("testSortedMapPairSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6659,7 +6659,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairSortedCount() throws Throwable {
 		log.info("testSortedMapPairSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6692,7 +6692,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairSortedForEach() throws Throwable {
 		log.info("testSortedMapPairSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6720,7 +6720,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekFilterCollect() throws Throwable {
 		log.info("testSortedPeekFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6744,7 +6744,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekFilterCount() throws Throwable {
 		log.info("testSortedPeekFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6772,7 +6772,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekFilterForEach() throws Throwable {
 		log.info("testSortedPeekFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6795,7 +6795,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekFlatMapCollect() throws Throwable {
 		log.info("testSortedPeekFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6820,7 +6820,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekFlatMapCount() throws Throwable {
 		log.info("testSortedPeekFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6848,7 +6848,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekFlatMapForEach() throws Throwable {
 		log.info("testSortedPeekFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6872,7 +6872,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapCollect() throws Throwable {
 		log.info("testSortedPeekMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6897,7 +6897,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapCount() throws Throwable {
 		log.info("testSortedPeekMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6925,7 +6925,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapForEach() throws Throwable {
 		log.info("testSortedPeekMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -6949,7 +6949,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapPairCollect() throws Throwable {
 		log.info("testSortedPeekMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -6974,7 +6974,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapPairCount() throws Throwable {
 		log.info("testSortedPeekMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7003,7 +7003,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapPairForEach() throws Throwable {
 		log.info("testSortedPeekMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7027,7 +7027,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedPeekMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7055,7 +7055,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedPeekMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7082,7 +7082,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedPeekMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7107,7 +7107,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSortedPeekMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7136,7 +7136,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedPeekMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7160,7 +7160,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekPeekCollect() throws Throwable {
 		log.info("testSortedPeekPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7180,7 +7180,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekPeekCount() throws Throwable {
 		log.info("testSortedPeekPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7203,7 +7203,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekPeekForEach() throws Throwable {
 		log.info("testSortedPeekPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7222,7 +7222,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekSampleCollect() throws Throwable {
 		log.info("testSortedPeekSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7242,7 +7242,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekSampleCount() throws Throwable {
 		log.info("testSortedPeekSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7265,7 +7265,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekSampleForEach() throws Throwable {
 		log.info("testSortedPeekSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7284,7 +7284,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekSortedCollect() throws Throwable {
 		log.info("testSortedPeekSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7308,7 +7308,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekSortedCount() throws Throwable {
 		log.info("testSortedPeekSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7335,7 +7335,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekSortedForEach() throws Throwable {
 		log.info("testSortedPeekSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7358,7 +7358,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleFilterCollect() throws Throwable {
 		log.info("testSortedSampleFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7382,7 +7382,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleFilterCount() throws Throwable {
 		log.info("testSortedSampleFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7409,7 +7409,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleFilterForEach() throws Throwable {
 		log.info("testSortedSampleFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7432,7 +7432,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleFlatMapCollect() throws Throwable {
 		log.info("testSortedSampleFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7456,7 +7456,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleFlatMapCount() throws Throwable {
 		log.info("testSortedSampleFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7484,7 +7484,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleFlatMapForEach() throws Throwable {
 		log.info("testSortedSampleFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7507,7 +7507,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapCollect() throws Throwable {
 		log.info("testSortedSampleMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7531,7 +7531,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapCount() throws Throwable {
 		log.info("testSortedSampleMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7558,7 +7558,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapForEach() throws Throwable {
 		log.info("testSortedSampleMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7581,7 +7581,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapPairCollect() throws Throwable {
 		log.info("testSortedSampleMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7606,7 +7606,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapPairCount() throws Throwable {
 		log.info("testSortedSampleMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7635,7 +7635,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapPairForEach() throws Throwable {
 		log.info("testSortedSampleMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7659,7 +7659,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedSampleMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7687,7 +7687,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedSampleMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7714,7 +7714,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedSampleMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7739,7 +7739,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSortedSampleMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7768,7 +7768,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedSampleMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7792,7 +7792,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSamplePeekCollect() throws Throwable {
 		log.info("testSortedSamplePeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7812,7 +7812,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSamplePeekCount() throws Throwable {
 		log.info("testSortedSamplePeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7835,7 +7835,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSamplePeekForEach() throws Throwable {
 		log.info("testSortedSamplePeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7854,7 +7854,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleSampleCollect() throws Throwable {
 		log.info("testSortedSampleSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7874,7 +7874,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleSampleCount() throws Throwable {
 		log.info("testSortedSampleSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7897,7 +7897,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleSampleForEach() throws Throwable {
 		log.info("testSortedSampleSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7916,7 +7916,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleSortedCollect() throws Throwable {
 		log.info("testSortedSampleSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -7940,7 +7940,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleSortedCount() throws Throwable {
 		log.info("testSortedSampleSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7967,7 +7967,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleSortedForEach() throws Throwable {
 		log.info("testSortedSampleSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -7990,7 +7990,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedFilterCollect() throws Throwable {
 		log.info("testSortedSortedFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -8018,7 +8018,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedFilterCount() throws Throwable {
 		log.info("testSortedSortedFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8049,7 +8049,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedFilterForEach() throws Throwable {
 		log.info("testSortedSortedFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8076,7 +8076,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedFlatMapCollect() throws Throwable {
 		log.info("testSortedSortedFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -8104,7 +8104,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedFlatMapCount() throws Throwable {
 		log.info("testSortedSortedFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8135,7 +8135,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedFlatMapForEach() throws Throwable {
 		log.info("testSortedSortedFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8162,7 +8162,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapCollect() throws Throwable {
 		log.info("testSortedSortedMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -8190,7 +8190,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapCount() throws Throwable {
 		log.info("testSortedSortedMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8221,7 +8221,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapForEach() throws Throwable {
 		log.info("testSortedSortedMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8248,7 +8248,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapPairCollect() throws Throwable {
 		log.info("testSortedSortedMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -8277,7 +8277,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapPairCount() throws Throwable {
 		log.info("testSortedSortedMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8310,7 +8310,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapPairForEach() throws Throwable {
 		log.info("testSortedSortedMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8338,7 +8338,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedSortedMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8370,7 +8370,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedSortedMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8401,7 +8401,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedSortedMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -8430,7 +8430,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSortedSortedMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8463,7 +8463,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedSortedMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8491,7 +8491,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedPeekCollect() throws Throwable {
 		log.info("testSortedSortedPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -8515,7 +8515,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedPeekCount() throws Throwable {
 		log.info("testSortedSortedPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8542,7 +8542,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedPeekForEach() throws Throwable {
 		log.info("testSortedSortedPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8565,7 +8565,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedSampleCollect() throws Throwable {
 		log.info("testSortedSortedSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -8589,7 +8589,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedSampleCount() throws Throwable {
 		log.info("testSortedSortedSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8616,7 +8616,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedSampleForEach() throws Throwable {
 		log.info("testSortedSortedSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8639,7 +8639,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedSortedCollect() throws Throwable {
 		log.info("testSortedSortedSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
 			public int compare(java.lang.String value1, java.lang.String value2) {
@@ -8667,7 +8667,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedSortedCount() throws Throwable {
 		log.info("testSortedSortedSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
 				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {
@@ -8698,7 +8698,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedSortedForEach() throws Throwable {
 		log.info("testSortedSortedSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String>() {

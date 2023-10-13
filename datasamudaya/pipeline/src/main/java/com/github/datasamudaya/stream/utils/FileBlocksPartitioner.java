@@ -26,19 +26,20 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
 import org.apache.ignite.IgniteCache;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.github.datasamudaya.common.Block;
 import com.github.datasamudaya.common.BlocksLocation;
-import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaIgniteClient;
+import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.Stage;
 import com.github.datasamudaya.stream.AbstractPipeline;
-import com.github.datasamudaya.stream.IgnitePipeline;
 import com.github.datasamudaya.stream.PipelineException;
+import com.github.datasamudaya.stream.StreamPipeline;
 
 /**
  * File blocks partitioning for ignite caching.
@@ -74,7 +75,7 @@ public class FileBlocksPartitioner {
 		job.setStageoutputmap(new ConcurrentHashMap<>());
 		for (var rootstage : rootstages) {
 			var obj = roots.next();
-			if (obj instanceof IgnitePipeline mdp) {
+			if (obj instanceof StreamPipeline mdp) {
 				folder = mdp.getFolder();
 			}
 
