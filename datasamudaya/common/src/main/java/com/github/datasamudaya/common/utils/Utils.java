@@ -949,7 +949,7 @@ public class Utils {
 	}
 
 	/**
-	 * This function launches containers for sql console.
+	 * This function launches containers for mapreduce sql console.
 	 * 
 	 * @param user
 	 * @param jobid
@@ -1075,7 +1075,170 @@ public class Utils {
 		GlobalContainerLaunchers.put(user, globallaunchcontainers);
 		return globallaunchcontainers;
 	}
+	
+	/**
+	 * This method launches and returns containers as per user specs 
+	 * @param user
+	 * @param jobid
+	 * @param cpuuser
+	 * @param memoryuser
+	 * @param numberofcontainers
+	 * @return containers
+	 * @throws Exception
+	 */
+	public static List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws Exception {
+		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
+		long memoryuserbytes = Long.valueOf(memoryuser) * DataSamudayaConstants.MB;
+		if (nonNull(GlobalContainerLaunchers.get(user))) {
+			var lcs = GlobalContainerLaunchers.get(user);
+			var lcscloned = new ArrayList<LaunchContainers>();
+			for (var lc : lcs) {
+				var clonedlc = SerializationUtils.clone(lc);
+				clonedlc.setJobid(jobid);
+				lcscloned.add(clonedlc);
+			}
+			return lcscloned;
+		}		
+		var nrs = DataSamudayaNodesResources.get();
+		var resources = nrs.values();
+		int numavailable = resources.size();
+		Iterator<Resources> res = resources.iterator();
+		var globallaunchcontainers = new ArrayList<LaunchContainers>();
+		var usersshare = DataSamudayaUsers.get();
+		if (isNull(usersshare)) {
+			throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
+		}
+		PipelineConfig pc = new PipelineConfig();
+		for (int container = 0; container < numavailable; container++) {
+			Resources restolaunch = res.next();
+			var usershare = usersshare.get(user);
+			if (isNull(usershare)) {
+				throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
+			}
+			if (nonNull(usershare.getIsallocated().get(restolaunch.getNodeport()))
+					&& usershare.getIsallocated().get(restolaunch.getNodeport())) {
+				throw new Exception(String.format(PipelineConstants.USERALLOCATEDSHARE, user));
+			}
+			int cpu = (restolaunch.getNumberofprocessors() - 1) * usershare.getPercentage() / 100;
+			cpu = cpu / numberofcontainers;
+			if(cpu == 0) {
+				cpu = 1;
+			}
+			cpu = cpu<cpuuser?cpu:cpuuser;
+			var actualmemory = restolaunch.getFreememory() - DataSamudayaConstants.GB;
+			if (actualmemory < (128 * DataSamudayaConstants.MB)) {
+				throw new Exception(PipelineConstants.MEMORYALLOCATIONERROR);
+			}
+			var memoryrequire = actualmemory * usershare.getPercentage() / 100;
+			memoryrequire = memoryrequire / numberofcontainers;
+			memoryrequire = memoryrequire<memoryuserbytes?memoryrequire:memoryuserbytes;
+			var heapmem = memoryrequire * Integer.valueOf(
+					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
+					/ 100;
+						
+			var directmem = (memoryrequire - heapmem);
+			var ac = new AllocateContainers();
+			ac.setJobid(jobid);
+			ac.setNumberofcontainers(numberofcontainers);
+			List<Integer> ports = (List<Integer>) Utils.getResultObjectByInput(restolaunch.getNodeport(), ac,
+					DataSamudayaConstants.EMPTY);
+			if (Objects.isNull(ports)) {
+				throw new ContainerException("Port Allocation Error From Container");
+			}
+			log.info("Chamber alloted with node: " + restolaunch.getNodeport() + " amidst ports: " + ports);
+			
+			var cla = new ContainerLaunchAttributes();			
+			var crl = new ArrayList<ContainerResources>();
+			for(Integer port:ports) {
+				var crs = new ContainerResources();
+				crs.setPort(port);
+				crs.setCpu(cpu);			
+				crs.setMinmemory(heapmem);
+				crs.setMaxmemory(heapmem);
+				crs.setDirectheap(directmem);
+				crs.setGctype(DataSamudayaConstants.ZGC);
+				crl.add(crs);
+				String conthp = restolaunch.getNodeport().split(DataSamudayaConstants.UNDERSCORE)[0] + DataSamudayaConstants.UNDERSCORE
+						+ port;
+				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
+				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
+			}
+			usershare.getIsallocated().put(restolaunch.getNodeport(), true);						
+			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
+			cla.setCr(crl);
+			cla.setNumberofcontainers(numberofcontainers);
+			LaunchContainers lc = new LaunchContainers();
+			lc.setCla(cla);
+			lc.setNodehostport(restolaunch.getNodeport());
+			lc.setJobid(jobid);
+			List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
+					lc, DataSamudayaConstants.EMPTY);
+			globallaunchcontainers.add(lc);
+			if (Objects.isNull(launchedcontainerports)) {
+				throw new ContainerException("Task Executor Launch Error From Container");
+			}
+			int index = 0;
+			while (index < launchedcontainerports.size()) {
+				while (true) {
+					String tehost = lc.getNodehostport().split("_")[0];
+					try (var sock = new Socket(tehost, launchedcontainerports.get(index));) {
+						break;
+					} catch (Exception ex) {
+						try {
+							log.info("Waiting for chamber " + tehost + DataSamudayaConstants.UNDERSCORE
+									+ launchedcontainerports.get(index) + " to replete dispatch....");
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							log.warn("Interrupted!", e);
+							// Restore interrupted state...
+							Thread.currentThread().interrupt();
+						} catch (Exception e) {
+							log.error(DataSamudayaConstants.EMPTY, e);
+						}
+					}
+				}
+				index++;
+			}
+			log.info(
+					"Chamber dispatched node: " + restolaunch.getNodeport() + " with ports: " + launchedcontainerports);
+		}
+		GlobalContainerLaunchers.put(user, globallaunchcontainers);
+		return globallaunchcontainers;
+	}
 
+	/**
+	 * This method configures pipeline as per schedulers;
+	 * @param scheduler
+	 * @param pipelineconfig
+	 */
+	public static void setConfigForScheduler(String scheduler, PipelineConfig pipelineconfig) {
+		if (scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+			pipelineconfig.setLocal("false");
+			pipelineconfig.setYarn("false");
+			pipelineconfig.setMesos("false");
+			pipelineconfig.setJgroups("true");
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.YARN)) {
+			pipelineconfig.setLocal("false");
+			pipelineconfig.setYarn("true");
+			pipelineconfig.setMesos("false");
+			pipelineconfig.setJgroups("false");
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
+			pipelineconfig.setLocal("false");
+			pipelineconfig.setYarn("false");
+			pipelineconfig.setMesos("false");
+			pipelineconfig.setJgroups("false");
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE)) {
+			pipelineconfig.setLocal("false");
+			pipelineconfig.setYarn("false");
+			pipelineconfig.setMesos("false");
+			pipelineconfig.setJgroups("false");
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
+		}
+	}
+	
 	/**
 	 * This function returns true if user exists with the allocation share
 	 * percentage. returns false if no configuration for the given user exists.

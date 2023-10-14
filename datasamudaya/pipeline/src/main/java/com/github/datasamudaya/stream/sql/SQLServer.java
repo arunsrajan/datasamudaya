@@ -9,6 +9,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -47,6 +48,10 @@ public class SQLServer {
 					sock = serverSocket.accept();
 					executors.execute(() -> {
 						String user = "";
+						int numberofcontainers = 1;
+						int cpupercontainer = 1;
+						int memorypercontainer = 1024;
+						String scheduler = "";
 						String tejobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 						boolean iscontainerlaunched = false;
 						try (Socket clientSocket = sock;
@@ -54,24 +59,50 @@ public class SQLServer {
 								BufferedReader in = new BufferedReader(
 										new InputStreamReader(clientSocket.getInputStream()));) {
 							user = in.readLine();
+							numberofcontainers = Integer.valueOf(in.readLine());
+							cpupercontainer = Integer.valueOf(in.readLine());							
+							memorypercontainer = Integer.valueOf(in.readLine());
+							scheduler = in.readLine();
 							if(!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User "+user+" is not configured. Exiting...";
 								out.println(usernotexistsmessage);
 								out.println("Quit");
 								throw new Exception(usernotexistsmessage);
 							}
-							List<LaunchContainers> containers = Utils.launchContainers(user, tejobid);
-							var cpumemory = Utils.getAllocatedContainersResources(containers);
-							out.println("User '"+user +"' connected with cpu "+cpumemory.get(DataSamudayaConstants.CPUS) +" and memory "+cpumemory.get(DataSamudayaConstants.MEM) +" mb");
-							Utils.printNodesAndContainers(containers, out);
-							out.println("Welcome to the SQL Server!");
-							out.println("Type 'quit' to exit.");
-							out.println("Done");
-							iscontainerlaunched = true;
-							String inputLine;
+							List<LaunchContainers> containers = null;
+							Map<String, Object> cpumemory = null;
+							if(scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT) || 
+									scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+								containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+								cpumemory = Utils.getAllocatedContainersResources(containers);
+								out.println("User '"+user +"' connected with cpu "+cpumemory.get(DataSamudayaConstants.CPUS) +" and memory "+cpumemory.get(DataSamudayaConstants.MEM) +" mb");
+								Utils.printNodesAndContainers(containers, out);
+								iscontainerlaunched = true;
+							}
 							boolean isjgroups = false;
 							boolean isignite = false;
 							boolean isyarn = false;
+							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+								isjgroups = true;
+								isignite = false;
+								isyarn = false;
+							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.YARN)) {
+								isjgroups = false;
+								isignite = false;
+								isyarn = true;
+							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
+								isjgroups = false;
+								isignite = false;
+								isyarn = false;
+							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE)) {
+								isjgroups = false;
+								isignite = true;
+								isyarn = false;
+							}						
+							out.println("Welcome to the SQL Server!");
+							out.println("Type 'quit' to exit.");
+							out.println("Done");							
+							String inputLine;							
 							String dbdefault = DataSamudayaProperties.get()
 									.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
 							outer:
@@ -92,10 +123,12 @@ public class SQLServer {
 													isignite = false;
 													isyarn = false;
 													if(!iscontainerlaunched) {
-														containers = Utils.launchContainers(user, tejobid);
+														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '"+user +"' connected with cpu "+cpumemory.get(DataSamudayaConstants.CPUS) +" and memory "+cpumemory.get(DataSamudayaConstants.MEM) +" mb");
+														Utils.printNodesAndContainers(containers, out);
+														iscontainerlaunched = true;
 													}
 													out.println("jgroups mode set");
 												} else if(mode[1].equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
@@ -129,10 +162,12 @@ public class SQLServer {
 													isignite = false;
 													isyarn = false;
 													if(!iscontainerlaunched) {
-														containers = Utils.launchContainers(user, tejobid);
+														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '"+user +"' connected with cpu "+cpumemory.get(DataSamudayaConstants.CPUS) +" and memory "+cpumemory.get(DataSamudayaConstants.MEM) +" mb");
+														Utils.printNodesAndContainers(containers, out);
+														iscontainerlaunched = true;
 													}
 													out.println("jgroups, ignite and yarn mode unset");
 												}

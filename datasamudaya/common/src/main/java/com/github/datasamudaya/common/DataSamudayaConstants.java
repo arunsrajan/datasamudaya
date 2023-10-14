@@ -390,7 +390,7 @@ public class DataSamudayaConstants {
   public static final String IGNITEMULTICASTGROUP_DEFAULT = "228.10.10.157";
 
   public static final String EXECMODE = "taskscheduler.execmode";
-  public static final String EXECMODE_DEFAULT = "standlalone";
+  public static final String EXECMODE_DEFAULT = "standalone";
   public static final String EXECMODE_YARN = "yarn";
   public static final String EXECMODE_IGNITE = "ignite";
 
@@ -417,9 +417,17 @@ public class DataSamudayaConstants {
   
   public static final String USERSQL = "user";
   public static final String USERSQLREQUIRED = "User need to be provided to execute sql";
+  public static final String SQLCONTAINERS = "containerssql";
+  public static final String MEMORYPERCONTAINER = "containermemory";
+  public static final String CPUPERCONTAINER = "containercpu";
+  public static final String SQLWORKERMODE = "sqlworkermode";
+  public static final String SQLWORKERMODE_DEFAULT = "standalone";
   
   public static final String USERPIG = "piguser";
   public static final String USERPIGREQUIRED = "User need to be provided to execute pig commands";
+  public static final String PIGCONTAINERS = "containerspig";
+  public static final String PIGWORKERMODE = "pigworkermode";
+  public static final String PIGWORKERMODE_DEFAULT = "standalone";
 
   public static final String YARNRM = "yarn.rm";
   public static final String YARNRM_DEFAULT = "127.0.0.1:8032";
