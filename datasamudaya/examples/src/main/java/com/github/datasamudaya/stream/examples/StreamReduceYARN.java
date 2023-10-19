@@ -37,6 +37,7 @@ public class StreamReduceYARN implements Serializable, Pipeline {
 		pipelineconfig.setYarn("true");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		pipelineconfig.setJobname(StreamReduceYARN.class.getName());
 		testReduce(args, pipelineconfig);
 	}
 

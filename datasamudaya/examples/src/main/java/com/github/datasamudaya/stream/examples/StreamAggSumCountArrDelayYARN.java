@@ -43,6 +43,7 @@ public class StreamAggSumCountArrDelayYARN implements Serializable, Pipeline {
 		pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 		pipelineconfig.setBatchsize(args[4]);
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		pipelineconfig.setJobname(StreamAggSumCountArrDelayYARN.class.getName());
 		testMapValuesReduceByValues(args, pipelineconfig);
 	}
 

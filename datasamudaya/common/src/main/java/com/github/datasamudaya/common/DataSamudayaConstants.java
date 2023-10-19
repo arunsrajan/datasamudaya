@@ -17,7 +17,7 @@ package com.github.datasamudaya.common;
 public class DataSamudayaConstants {
   private DataSamudayaConstants() {}
 
-  static final String DATASAMUDAYA = "DATASAMUDAYA";
+  public static final String DATASAMUDAYA = "DATASAMUDAYA";
   public static final String NEWLINE = "\n";
   public static final String HYPHEN = "-";
   public static final String TAB = "\t";

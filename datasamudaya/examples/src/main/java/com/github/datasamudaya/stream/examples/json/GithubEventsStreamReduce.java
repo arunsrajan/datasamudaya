@@ -31,6 +31,7 @@ public class GithubEventsStreamReduce implements Serializable, Pipeline {
 			pipelineconfig.setMesos("false");
 			pipelineconfig.setYarn("true");
 			pipelineconfig.setJgroups("false");
+			pipelineconfig.setJobname(GithubEventsStreamReduce.class.getName());
 		} else {
 			pipelineconfig.setLocal("false");
 			pipelineconfig.setMesos("false");

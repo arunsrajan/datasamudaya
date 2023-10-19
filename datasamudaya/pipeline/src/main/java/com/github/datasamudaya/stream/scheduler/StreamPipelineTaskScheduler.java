@@ -34,6 +34,8 @@ import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.Pipeline;
 
+import static java.util.Objects.*;
+
 /**
  * 
  * @author Arun
@@ -94,7 +96,9 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			classes.add(main);
 			pipelineconfig.setOutput(tss.getOutputStream());
 			var pipeline = (Pipeline) main.getDeclaredConstructor().newInstance();
-			pipelineconfig.setJobname(main.getSimpleName());
+			if(isNull(pipelineconfig.getJobname())) {
+				pipelineconfig.setJobname(main.getSimpleName());
+			}
 			pipeline.runPipeline(args, pipelineconfig);
 			message = "Successfully Completed executing the Job from main class " + mainclass;
 			Utils.writeToOstream(tss.getOutputStream(), message);

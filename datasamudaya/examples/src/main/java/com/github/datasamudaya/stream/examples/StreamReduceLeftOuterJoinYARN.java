@@ -26,6 +26,7 @@ import com.github.datasamudaya.stream.Pipeline;
 import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceLeftOuterJoinYARN implements Pipeline {
+	private static final long serialVersionUID = 2670336699129016987L;
 	private Logger log = Logger.getLogger(StreamReduceLeftOuterJoinYARN.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
@@ -35,6 +36,7 @@ public class StreamReduceLeftOuterJoinYARN implements Pipeline {
 		pipelineconfig.setYarn("true");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		pipelineconfig.setJobname(StreamReduceLeftOuterJoinYARN.class.getName());
 		testMassiveDataCollectExampleLeftOuterJoin(args, pipelineconfig);
 	}
 

@@ -1431,6 +1431,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			}
 			var jobcreated = mdscollect.createJob();
 			jobcreated.setTrigger(Job.TRIGGER.SAVERESULTSTOFILE);
+			jobcreated.setIsresultrequired(true);
 			jobcreated.setUri(uri.toString());
 			jobcreated.setSavepath(path);
 			mdscollect.submitJob(jobcreated);

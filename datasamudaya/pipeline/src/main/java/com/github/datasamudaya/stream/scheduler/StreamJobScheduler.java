@@ -347,6 +347,11 @@ public class StreamJobScheduler {
             getClass());
         pipelineconfig.setOutput(os);
         var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
+        if(nonNull(pipelineconfig.getJobname())) {
+        	client.setAppName(pipelineconfig.getJobname());
+        } else {
+        	client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
+        }
         client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, job.getId());
         var appid = client.submitApplication(true);
         var appreport = client.getApplicationReport(appid);
