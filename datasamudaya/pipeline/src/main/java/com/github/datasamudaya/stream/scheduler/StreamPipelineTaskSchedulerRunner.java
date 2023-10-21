@@ -35,6 +35,7 @@ import com.github.datasamudaya.common.WebResourcesServlet;
 import com.github.datasamudaya.common.utils.JShellServer;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
+import com.github.datasamudaya.stream.pig.PigQueryServer;
 import com.github.datasamudaya.stream.sql.SQLServer;
 import com.github.datasamudaya.stream.utils.PipelineGraphWebServlet;
 
@@ -126,6 +127,8 @@ public class StreamPipelineTaskSchedulerRunner {
 		su.start();
 		
 		SQLServer.start();
+		
+		PigQueryServer.start();
 	    
 	    JShellServer.startJShell();
 	    

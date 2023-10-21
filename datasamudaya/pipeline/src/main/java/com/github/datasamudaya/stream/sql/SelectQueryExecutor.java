@@ -3,6 +3,7 @@ package com.github.datasamudaya.stream.sql;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -10,11 +11,13 @@ import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.github.datasamudaya.common.ColumnMetadata;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.PipelineConfig;
+import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 import com.github.datasamudaya.stream.utils.SQLUtils;
@@ -98,6 +101,12 @@ public class SelectQueryExecutor {
 			}
 			StreamPipelineSql mdpsql = builder.build();
 			return (List) mdpsql.collect(true, null);
+		} catch (PipelineException ex) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();
+			error.add(ExceptionUtils.getRootCauseMessage(ex));
+			errors.add(error);
+			return errors;
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
