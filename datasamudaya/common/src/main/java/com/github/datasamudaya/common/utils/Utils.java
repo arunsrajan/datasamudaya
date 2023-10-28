@@ -31,6 +31,7 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -70,6 +71,8 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -1706,4 +1709,59 @@ public class Utils {
 	public static String getIntermediateResultFS(Task task) throws Exception {
 		return task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid;
 	}
+	
+	
+	/**
+	 * Writes the map object to csv with given output stream 
+	 * @param data
+	 * @param ostream
+	 * @throws IOException
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
+	 */
+	public static void convertToCsv(List<?> data, OutputStream ostream) throws IOException, IllegalArgumentException, IllegalAccessException {
+		log.info("Writing data to csv Start");
+		if (data.isEmpty()) {
+            return;
+        }		
+		Object firstdataobject = data.get(0);
+		
+        // Prepare CSV data
+        String[] header = null;
+        Field[] fields = firstdataobject.getClass().getDeclaredFields();
+        boolean ismap = false;
+        if(firstdataobject instanceof Map map) {
+        	ismap = true;
+	        header = (String[]) map.keySet().toArray(new String[0]);
+        } else {
+        	 // Get the fields of the object using reflection
+        	 header = new String[fields.length];
+        	 for (int i = 0; i < fields.length; i++) {
+                 header[i] = fields[i].getName();
+             }
+        }
+        try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(ostream)
+        		, CSVFormat.DEFAULT.withHeader(header))) {
+        	if(ismap) {
+	            for (Map<String, Object> map : (List<Map>)data) {
+	                printer.printRecord(map.values());
+	            }
+        	} else {
+        		List<Object> rowData = new ArrayList<>();
+        		for (Object obj : data) {                    
+
+                    for (int i = 0; i < fields.length; i++) {
+                        fields[i].setAccessible(true);
+                        Object value = fields[i].get(obj);
+                        rowData.add(value);
+                    }
+
+                    printer.printRecord(rowData);
+                    rowData.clear();
+                }
+        	}
+        }
+        log.info("Writing data to csv End");
+    }
+	
 }

@@ -288,27 +288,22 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									var standardDeviation = Math.sqrt(variance);
 									out.add(standardDeviation);
 
-								} else if (task.finalphase && task.saveresulttohdfs) {
-									try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-											Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-													DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-										int ch = (int) '\n';
-										((Stream) streammap).forEach(val -> {
-											try {
-												os.write(val.toString().getBytes());
-												os.write(ch);
-											} catch (IOException e) {
-											}
-										});
-									}
-									var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-									return timetaken;
 								} else {
 									log.info("Map assembly deriving");
 									CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
-											.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-													executor, Runtime.getRuntime().availableProcessors()));
+											.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
+													Runtime.getRuntime().availableProcessors()));
 									out = cf.get();
+									if (task.finalphase && task.saveresulttohdfs) {
+										try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+												Short.parseShort(
+														DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+																DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+											Utils.convertToCsv((List) out, os);
+										}
+										var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
+										return timetaken;
+									}
 									log.info("Map assembly concluded");
 								}
 								Utils.getKryo().writeClassAndObject(output, out);

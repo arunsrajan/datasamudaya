@@ -2337,7 +2337,10 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(reducebykeytask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
 
-		Task reducebykeytask2 = new Task(); reducebykeytask2.setTaskid(DataSamudayaConstants.TASK+DataSamudayaConstants.HYPHEN+System.currentTimeMillis());
+		Task reducebykeytask2 = new Task(); 
+		reducebykeytask2.setTaskid(DataSamudayaConstants.TASK+DataSamudayaConstants.HYPHEN+System.currentTimeMillis());
+		reducebykeytask2.jobid = js.getJobid();
+		reducebykeytask2.stageid = js.getStageid();
 		js.getStage().tasks.clear();
 		js.getStage().tasks.add(map);
 		js.getStage().tasks.add(filter);
