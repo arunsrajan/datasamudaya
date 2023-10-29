@@ -620,7 +620,7 @@ public class StreamJobScheduler {
           }
           if (nonNull(loadjar.getMrjar())) {
         	  log.debug("{}", Utils.getResultObjectByInput(
-                tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar, job.getId()));
+                tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar, pipelineconfig.getUseglobaltaskexecutors()?pipelineconfig.getTejobid():job.getId()));
           }
           index++;
         }

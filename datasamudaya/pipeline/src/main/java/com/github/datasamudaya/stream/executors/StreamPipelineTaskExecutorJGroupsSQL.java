@@ -31,6 +31,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -168,6 +169,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 						ArrowStreamReader readerarrowstream = null;
 						List<VectorSchemaRoot> vectorschemaroottoprocess = new ArrayList<>();
 						List<ArrowStreamReader> readerarrowstreamtoprocess = new ArrayList<>();
+						Map<String, ValueVector> colvalvectormap = null;
 						try (var output = new Output(fsdos);) {
 							Stream intermediatestreamobject;
 							try {
@@ -176,13 +178,14 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									new LinkedHashSet<>();
 								Set<String> columsvectorschemaroottoprocess = new LinkedHashSet<>(columsvectorschemaroot);
 								List<String> columsfromsql = blockslocation.getColumns();
+								CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
+								columsvectorschemaroottoprocess.addAll(Arrays.asList(csvoptions.getHeader()));
 								columsvectorschemaroottoprocess.addAll(columsfromsql);
 								columsvectorschemaroottoprocess.removeAll(columsvectorschemaroot);
 								if(isNull(compvectorschemaroot) || CollectionUtils.isNotEmpty(columsvectorschemaroottoprocess)) {
 									log.info("Unable To Find vector for blocks {}",blockslocation);
 									try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
-									var buffer = new BufferedReader(new InputStreamReader(bais));){
-										CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
+									var buffer = new BufferedReader(new InputStreamReader(bais));){										
 										var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
 										csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader()).withIgnoreHeaderCase()
 												.withTrim();
@@ -217,15 +220,16 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									
 									final int totalrecords = compvectorschemaroot.getRecordcount();
 									List<String> columntoquery = blockslocation.getColumns();
-									Map<String, ValueVector> colvalvectormap = columntoquery.stream().collect(Collectors.toMap(val->val, val->{
+									Map<String, ValueVector> colvalvectormapl = columntoquery.stream().collect(Collectors.toMap(val->val, val->{
 										ValueVector valuevector = columnvectorschemaroot.get(val).getVector((String) val);
 										return valuevector;
 									}));
+									colvalvectormap = colvalvectormapl;
 									log.info("Processing Data for blockslocation {}",blockslocation);
 									intermediatestreamobject = IntStream.range(0, totalrecords).mapToObj(recordIndex -> {
 										Map<String, Object> valuemap = new ConcurrentHashMap<>();
 										columntoquery.stream().forEach(column->{
-											Object arrowvectorvalue = colvalvectormap.get(column);
+											Object arrowvectorvalue = colvalvectormapl.get(column);
 											valuemap.put(column, SQLUtils.getVectorValue(recordIndex, arrowvectorvalue));
 										});					
 										return valuemap;
@@ -331,6 +335,13 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									vsr.close();
 								}
 							});
+							if (Objects.nonNull(colvalvectormap)) {
+								for(String key:new HashSet<>(colvalvectormap.keySet())) {
+									colvalvectormap.get(key).clear();
+									colvalvectormap.get(key).close();
+									colvalvectormap.remove(key);
+								}
+							}
 							readerarrowstreamtoprocess.stream().forEach(reader -> {
 								if (nonNull(reader)) {
 									try {

@@ -132,11 +132,11 @@ call streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya
 
 REM Stream Reduce SQL
 
-call streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.StreamingSqlExamples hdfs://127.0.0.1:9000 /airline1989 /sqlexamplestandaloneoutput standalone
+call streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.StreamingSqlExamples hdfs://127.0.0.1:9000 /airline1989 /sqlexamplestandaloneoutput standalone true arun 2 4096
 
-call streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.StreamingSqlExamples hdfs://127.0.0.1:9000 /airline1989 /sqlexamplejgroupsoutput jgroups
+call streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.StreamingSqlExamples hdfs://127.0.0.1:9000 /airline1989 /sqlexamplejgroupsoutput jgroups true arun 2 4096
 
-call streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.StreamingSqlExamples hdfs://127.0.0.1:9000 /airline1989 /sqlexampleyarnoutput yarn
+call streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.StreamingSqlExamples hdfs://127.0.0.1:9000 /airline1989 /sqlexampleyarnoutput yarn false
 
 call streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.SqlSumLocal hdfs://127.0.0.1:9000 /airline1989 /carriers 128 11
 
