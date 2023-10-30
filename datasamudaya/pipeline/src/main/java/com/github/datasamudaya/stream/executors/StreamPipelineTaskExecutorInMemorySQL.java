@@ -74,6 +74,7 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
+import com.google.common.collect.MapMaker;
 import com.pivovarit.collectors.ParallelCollectors;
 
 import gnu.trove.map.TMap;
@@ -180,12 +181,17 @@ public class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineTaskExe
 					}));
 					colvalvectormap = colvalvectormapl;
 					log.info("Processing Data for blockslocation {}",blockslocation);
-					intermediatestreamobject = IntStream.range(0, totalrecords).mapToObj(recordIndex -> {
-						Map<String, Object> valuemap = new gnu.trove.map.hash.THashMap<String, Object>(columntoquery.size());
-						columntoquery.parallelStream().forEach(column->{
+					intermediatestreamobject = IntStream.range(0, totalrecords).boxed().map(recordIndex -> {
+						List<String> columntoqueryl = columntoquery;
+						Map<String, Object> valuemap = new MapMaker()
+							    .concurrencyLevel(4) // Adjust as needed
+							    .initialCapacity(16) // Adjust as needed
+							    .weakKeys()
+							    .makeMap();
+						columntoqueryl.parallelStream().forEach(column->{
 							Object arrowvectorvalue = colvalvectormapl.get(column);
 							valuemap.put(column, SQLUtils.getVectorValue(recordIndex, arrowvectorvalue));
-						});					
+						});
 						return valuemap;
 					});
 				} finally {}

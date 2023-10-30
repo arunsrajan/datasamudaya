@@ -344,15 +344,15 @@ public class SQLUtils {
 				records.sequential().forEach(record -> {
 					int index = ai.getAndIncrement();
 					if(index<reccount) {
-						for (int columnindex = 0; columnindex < columns.size(); columnindex++) {
-							Object vector = root.getVector(columns.get(columnindex));
+						columns.parallelStream().forEach(column->{
+							Object vector = root.getVector(column);
 							try {
 								setValue(index, vector,
-										SQLUtils.getValue(record.get(columns.get(columnindex)), sqltypenames.get(columnindexmap.get(columns.get(columnindex)))));
+										SQLUtils.getValue(record.get(column), sqltypenames.get(columnindexmap.get(column))));
 							} catch (Exception e) {
 								log.error("{}", e);
 							}
-						}
+						});
 					} else {
 						log.info("Index {} Exceeded Limit {}", index,reccount);
 					}

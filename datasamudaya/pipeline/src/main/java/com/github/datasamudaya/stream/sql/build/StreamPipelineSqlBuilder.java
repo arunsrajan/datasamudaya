@@ -19,6 +19,7 @@ import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
@@ -39,6 +40,7 @@ import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.utils.SQLUtils;
+import com.google.common.collect.MapMaker;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
@@ -395,16 +397,22 @@ public class StreamPipelineSqlBuilder implements Serializable {
 				});
 			}
 			Set<String> colsel = new LinkedHashSet<>(columnsforeachjoin);
+			log.info("Selected Columns With Function Columns Removed {}", colsel);
 			StreamPipeline<Map<String, Object>> pipelinemap = pipeline
 					.map(new MapFunction<Map<String, Object>, Map<String, Object>>() {
 						private static final long serialVersionUID = 8102198486566760753L;
 						Set<String> selcolumnsfunccolsremoved = colsel;
 
 						@Override
-						public Map<String, Object> apply(Map<String, Object> mapvalues) {
-							Map<String, Object> objectValuesMap = new gnu.trove.map.hash.THashMap<>();
-							selcolumnsfunccolsremoved.stream()
-									.forEach(key -> objectValuesMap.put(key, mapvalues.get(key)));
+						public Map<String, Object> apply(Map<String, Object> mapvalues) {							
+							Map<String, Object> objectValuesMap = new MapMaker()
+								    .concurrencyLevel(4) // Adjust as needed
+								    .initialCapacity(16) // Adjust as needed
+								    .weakKeys() // Use weak references for keys to save memory
+								    .makeMap();
+							Map<String,Object> values = mapvalues.entrySet().parallelStream().collect(Collectors.toMap(entry->entry.getKey(), entry->entry.getValue()));
+							selcolumnsfunccolsremoved.parallelStream()
+							.forEach(key -> objectValuesMap.put(key, values.get(key)));
 							return objectValuesMap;
 
 						}

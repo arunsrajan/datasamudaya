@@ -74,6 +74,7 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
+import com.google.common.collect.MapMaker;
 import com.pivovarit.collectors.ParallelCollectors;
 
 /**
@@ -111,6 +112,8 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 		ArrowStreamReader readerarrowstream = null;
 		List<VectorSchemaRoot> vectorschemaroottoprocess = new ArrayList<>();
 		List<ArrowStreamReader> readerarrowstreamtoprocess = new ArrayList<>();
+		Map<String, ValueVector> colvalvectormap = null;
+		Map<String, VectorSchemaRoot> columnvectorschemaroot = new ConcurrentHashMap<>();
 		try (var output = new Output(fsdos);) {
 			Stream intermediatestreamobject;
 			try {
@@ -119,58 +122,73 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 					new LinkedHashSet<>();
 				Set<String> columsvectorschemaroottoprocess = new LinkedHashSet<>(columsvectorschemaroot);
 				List<String> columsfromsql = blockslocation.getColumns();
+				CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
+				columsvectorschemaroottoprocess.addAll(Arrays.asList(csvoptions.getHeader()));
 				columsvectorschemaroottoprocess.addAll(columsfromsql);
 				columsvectorschemaroottoprocess.removeAll(columsvectorschemaroot);
-				if(isNull(compvectorschemaroot) || CollectionUtils.isNotEmpty(columsvectorschemaroottoprocess)) {
-					log.info("Unable To Find vector for blocks {}",blockslocation);
-					try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
-					var buffer = new BufferedReader(new InputStreamReader(bais));){
-						CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
-						var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
-						csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader()).withIgnoreHeaderCase()
-								.withTrim();
-						records = csvformat.parse(buffer);
-						Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
-						CompressedVectorSchemaRoot compressedvectorschemaroot = nonNull(compvectorschemaroot)?
-								compvectorschemaroot:new CompressedVectorSchemaRoot();
-						Map<String, Integer> columnindexmap = SQLUtils.getColumnIndexMap(Arrays.asList(csvoptions.getHeader()));
-						SQLUtils.getArrowVectors(streamcsv,new ArrayList<>(columsvectorschemaroottoprocess), columnindexmap, csvoptions.getTypes(), compressedvectorschemaroot);
-						blvectorsmap.put(blockslocation, compressedvectorschemaroot);
-					}
-				}				
 				try {
-					compvectorschemaroot = blvectorsmap.get(blockslocation);
-					Map<String, String> columnvectorschemarootkeymap = compvectorschemaroot.getColumnvectorschemarootkeymap();
-					Map<String, String> vectorschemarootkeyfilemap = compvectorschemaroot.getVectorschemarootkeybytesmap();
-					List<String> processedkeys = new ArrayList<>();
-					Map<String, VectorSchemaRoot> keyvectorschemaroot = new ConcurrentHashMap<>();
-					Map<String, VectorSchemaRoot> columnvectorschemaroot = new ConcurrentHashMap<>();
-					for(String columnsql:columsfromsql) {
-						String vectorschemarootkey = columnvectorschemarootkeymap.get(columnsql);
-						if(!processedkeys.contains(vectorschemarootkey)) {
-							readerarrowstream = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));
-							readerarrowstreamtoprocess.add(readerarrowstream);
-							vectorschemaroot = readerarrowstream.getVectorSchemaRoot();
-							vectorschemaroottoprocess.add(vectorschemaroot);
-							keyvectorschemaroot.put(vectorschemarootkey, vectorschemaroot);
-							processedkeys.add(vectorschemarootkey);
-						} 
-						columnvectorschemaroot.put(columnsql, keyvectorschemaroot.get(vectorschemarootkey));
+					if(isNull(compvectorschemaroot) || CollectionUtils.isNotEmpty(columsvectorschemaroottoprocess)) {
+						log.info("Unable To Find vector for blocks {}",blockslocation);
+						try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+						var buffer = new BufferedReader(new InputStreamReader(bais));
+								var baisrec = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+								var bufferrec = new BufferedReader(new InputStreamReader(baisrec));){						
+							var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
+							csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader()).withIgnoreHeaderCase()
+									.withTrim();
+							records = csvformat.parse(buffer);
+							Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
+							int reccount = Long.valueOf(streamcsv.count()).intValue();
+							log.info("Records to process {}", reccount);
+							streamcsv = StreamSupport.stream(csvformat.parse(bufferrec).spliterator(), false);
+							CompressedVectorSchemaRoot compressedvectorschemaroot = nonNull(compvectorschemaroot)?
+									compvectorschemaroot:new CompressedVectorSchemaRoot();
+							Map<String, Integer> columnindexmap = SQLUtils.getColumnIndexMap(Arrays.asList(csvoptions.getHeader()));
+							VectorSchemaRoot root = SQLUtils.getArrowVectors(streamcsv,new ArrayList<>(columsvectorschemaroottoprocess), columnindexmap, csvoptions.getTypes(), compressedvectorschemaroot, reccount);
+							blvectorsmap.put(blockslocation, compressedvectorschemaroot);
+							compvectorschemaroot = compressedvectorschemaroot;
+							for(String columnsql:columsfromsql) {
+								columnvectorschemaroot.put(columnsql, root);
+							}
+						}
+					} else {
+						compvectorschemaroot = blvectorsmap.get(blockslocation);
+						Map<String, String> columnvectorschemarootkeymap = compvectorschemaroot.getColumnvectorschemarootkeymap();
+						Map<String, String> vectorschemarootkeyfilemap = compvectorschemaroot.getVectorschemarootkeybytesmap();
+						List<String> processedkeys = new ArrayList<>();
+						Map<String, VectorSchemaRoot> keyvectorschemaroot = new ConcurrentHashMap<>();						
+						for(String columnsql:columsfromsql) {
+							String vectorschemarootkey = columnvectorschemarootkeymap.get(columnsql);
+							if(!processedkeys.contains(vectorschemarootkey)) {
+								readerarrowstream = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));
+								readerarrowstreamtoprocess.add(readerarrowstream);
+								vectorschemaroot = readerarrowstream.getVectorSchemaRoot();
+								vectorschemaroottoprocess.add(vectorschemaroot);
+								keyvectorschemaroot.put(vectorschemarootkey, vectorschemaroot);
+								processedkeys.add(vectorschemarootkey);
+							} 
+							columnvectorschemaroot.put(columnsql, keyvectorschemaroot.get(vectorschemarootkey));
+						}
 					}
-					
 					final int totalrecords = compvectorschemaroot.getRecordcount();
 					List<String> columntoquery = blockslocation.getColumns();
-					Map<String, ValueVector> colvalvectormap = columntoquery.stream().collect(Collectors.toMap(val->val, val->{
+					Map<String, ValueVector> colvalvectormapl = columntoquery.stream().collect(Collectors.toMap(val->val, val->{
 						ValueVector valuevector = columnvectorschemaroot.get(val).getVector((String) val);
 						return valuevector;
 					}));
+					colvalvectormap = colvalvectormapl;
 					log.info("Processing Data for blockslocation {}",blockslocation);
-					intermediatestreamobject = IntStream.range(0, totalrecords).mapToObj(recordIndex -> {
-						Map<String, Object> valuemap = new ConcurrentHashMap<>();
-						columntoquery.stream().forEach(column->{
-							Object arrowvectorvalue = colvalvectormap.get(column);
+					intermediatestreamobject = IntStream.range(0, totalrecords).boxed().map(recordIndex -> {
+						List<String> columntoqueryl = columntoquery;
+						Map<String, Object> valuemap = new MapMaker()
+							    .concurrencyLevel(4) // Adjust as needed
+							    .initialCapacity(16) // Adjust as needed
+							    .weakKeys()
+							    .makeMap();
+						columntoqueryl.parallelStream().forEach(column->{
+							Object arrowvectorvalue = colvalvectormapl.get(column);
 							valuemap.put(column, SQLUtils.getVectorValue(recordIndex, arrowvectorvalue));
-						});					
+						});
 						return valuemap;
 					});
 				} finally {}
