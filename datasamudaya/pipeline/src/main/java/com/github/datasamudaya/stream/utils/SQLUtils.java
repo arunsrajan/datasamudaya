@@ -39,7 +39,6 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.DictionaryEncoding;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
-import org.apache.arrow.vector.util.Text;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
@@ -70,10 +69,9 @@ import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.github.datasamudaya.common.CompressedVectorSchemaRoot;
-import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.stream.StreamPipeline;
+import com.github.datasamudaya.common.FileSystemSupport;
 
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.DoubleValue;
@@ -264,11 +262,16 @@ public class SQLUtils {
 					int index = ai.getAndIncrement();
 					for (int columnindex = 0; columnindex < columns.size(); columnindex++) {
 						Object vector = root.getVector(columns.get(columnindex));
-						setValue(index, vector,
-								SQLUtils.getValue(record.get(columns.get(columnindex)), sqltypenames.get(columnindexmap.get(columns.get(columnindex)))));
+						try {
+							setValue(index, vector,
+									SQLUtils.getValue(record.get(columns.get(columnindex)), sqltypenames.get(columnindexmap.get(columns.get(columnindex)))));
+						} catch (Exception e) {
+							log.error(DataSamudayaConstants.EMPTY, e);
+						}
 					}
 				});
 				final int totalrecordcount = ai.get();
+				log.info("Total Record Count in arrow getArrowVector method {}",totalrecordcount);
 				compressedvectorschemaroot.setRecordcount(totalrecordcount);
 				columns.stream().forEachOrdered(col -> {
 					Object vector =  root.getVector(col);
@@ -305,6 +308,94 @@ public class SQLUtils {
 		} finally {
 
 		}
+	}
+	
+	/**
+	 * Get Columnar data from Csv
+	 * @param records
+	 * @param columns
+	 * @param columnindexmap
+	 * @param sqltypenames
+	 * @param compressedvectorschemaroot
+	 * @param reccount
+	 * @return schemaroot
+	 */
+	public static VectorSchemaRoot getArrowVectors(Stream<CSVRecord> records, List<String> columns,
+			Map<String, Integer> columnindexmap
+			, List<SqlTypeName> sqltypenames ,
+			CompressedVectorSchemaRoot compressedvectorschemaroot,
+			int reccount) {		
+		try {
+			RootAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+			List<Field> fields = new ArrayList<>();
+			for (int columnindex = 0; columnindex < columns.size(); columnindex++) {
+				fields.add(getSchemaField(columns.get(columnindex), sqltypenames.get(columnindexmap.get(columns.get(columnindex)))));
+			}
+			Schema schema = new Schema(fields);
+			try {
+				VectorSchemaRoot root = VectorSchemaRoot.create(schema, allocator);	
+				root.allocateNew();
+				for(String column:columns) {
+					Object vector = root.getVector(column);
+					allocateNewCapacity(vector, reccount);
+					log.info("Allocating {} for new capacity {} for column {}", vector.getClass().getName(), reccount, column);					
+				}
+				AtomicInteger ai = new AtomicInteger(0);
+				records.sequential().forEach(record -> {
+					int index = ai.getAndIncrement();
+					if(index<reccount) {
+						for (int columnindex = 0; columnindex < columns.size(); columnindex++) {
+							Object vector = root.getVector(columns.get(columnindex));
+							try {
+								setValue(index, vector,
+										SQLUtils.getValue(record.get(columns.get(columnindex)), sqltypenames.get(columnindexmap.get(columns.get(columnindex)))));
+							} catch (Exception e) {
+								log.error("{}", e);
+							}
+						}
+					} else {
+						log.info("Index {} Exceeded Limit {}", index,reccount);
+					}
+				});
+				final int totalrecordcount = ai.get();
+				compressedvectorschemaroot.setRecordcount(reccount);
+				columns.stream().forEachOrdered(col -> {
+					Object vector =  root.getVector(col);
+					if (vector instanceof IntVector iv) {
+						iv.setValueCount(totalrecordcount);
+					} else if (vector instanceof VarCharVector vcv) {
+						vcv.setValueCount(totalrecordcount);
+					} else if (vector instanceof Float4Vector f4v) {
+						f4v.setValueCount(totalrecordcount);
+					} else if (vector instanceof Float8Vector f8v) {
+						f8v.setValueCount(totalrecordcount);
+					} else if (vector instanceof DecimalVector dv) {
+						dv.setValueCount(totalrecordcount);
+					}
+				});
+				String arrowfilewithpath = getArrowFilePath();
+				File file = new File(arrowfilewithpath);				
+				try(FileOutputStream out = new FileOutputStream(file);
+						SnappyOutputStream snappyOutputStream = new SnappyOutputStream(out);
+				ArrowStreamWriter writer = new ArrowStreamWriter(root,null, snappyOutputStream);){
+					writer.start();
+					writer.writeBatch();
+					writer.end();
+					String key = UUID.randomUUID().toString();
+					columns.stream().forEachOrdered(col -> {
+						compressedvectorschemaroot.getColumnvectorschemarootkeymap().put(col, key);
+						compressedvectorschemaroot.getVectorschemarootkeybytesmap().put(key, arrowfilewithpath);
+					});
+					file.deleteOnExit();
+				}
+				return root;
+			} catch (IOException e) {
+				log.error(DataSamudayaConstants.EMPTY, e);
+			}finally {}
+		} finally {
+
+		}
+		return null;
 	}
 	
 	/**
@@ -397,18 +488,35 @@ public class SQLUtils {
 	 * @param index
 	 * @param vector
 	 * @param value
+	 * @throws Exception 
 	 */
-	protected static void setValue(int index, Object vector, Object value) {
+	protected static void setValue(int index, Object vector, Object value) throws Exception {
 		if(vector instanceof IntVector iv) {
 			iv.setSafe(index, (int) value);
 		} else if(vector instanceof VarCharVector vcv) {
-			Text text = new Text();
-			text.set((String)value);
-			vcv.setSafe(index, text);
+			byte[] bt = ((String)value).getBytes();
+			vcv.setSafe(index, bt);
 		} else if(vector instanceof Float4Vector f4v) {			
 			f4v.setSafe(index, (float) value);
 		} else if(vector instanceof Float8Vector f8v) {			
 			f8v.setSafe(index, (double) value);
+		}
+	}
+	
+	/**
+	 * Allocates vector for capacity
+	 * @param vector
+	 * @param capacity
+	 */
+	protected static void allocateNewCapacity(Object vector, int capacity) {
+		if(vector instanceof IntVector iv) {
+			iv.allocateNew(capacity);
+		} else if(vector instanceof VarCharVector vcv) {
+			vcv.allocateNew(capacity);
+		} else if(vector instanceof Float4Vector f4v) {			
+			f4v.allocateNew(capacity);
+		} else if(vector instanceof Float8Vector f8v) {			
+			f8v.allocateNew(capacity);
 		}
 	}
 	
