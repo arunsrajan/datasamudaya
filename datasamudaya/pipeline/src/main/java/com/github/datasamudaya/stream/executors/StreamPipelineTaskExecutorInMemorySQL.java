@@ -15,11 +15,11 @@ import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -35,7 +35,6 @@ import java.util.stream.StreamSupport;
 
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -52,10 +51,10 @@ import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.CompressedVectorSchemaRoot;
-import com.github.datasamudaya.common.HdfsBlockReader;
-import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.HdfsBlockReader;
+import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
 import com.github.datasamudaya.common.RemoteDataFetcher;
@@ -74,10 +73,7 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
-import com.google.common.collect.MapMaker;
 import com.pivovarit.collectors.ParallelCollectors;
-
-import gnu.trove.map.TMap;
 
 /**
  * 
@@ -112,9 +108,7 @@ public class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineTaskExe
 		CSVParser records = null;
 		var fsdos = new ByteArrayOutputStream();
 		VectorSchemaRoot vectorschemaroot = null;
-		ArrowStreamReader readerarrowstream = null;
 		List<VectorSchemaRoot> vectorschemaroottoprocess = new ArrayList<>();
-		List<ArrowStreamReader> readerarrowstreamtoprocess = new ArrayList<>();
 		Map<String, ValueVector> colvalvectormap = null;
 		Map<String, VectorSchemaRoot> columnvectorschemaroot = new ConcurrentHashMap<>();
 		try (var output = new Output(fsdos);) {
@@ -163,9 +157,7 @@ public class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineTaskExe
 						for(String columnsql:columsfromsql) {
 							String vectorschemarootkey = columnvectorschemarootkeymap.get(columnsql);
 							if(!processedkeys.contains(vectorschemarootkey)) {
-								readerarrowstream = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));
-								readerarrowstreamtoprocess.add(readerarrowstream);
-								vectorschemaroot = readerarrowstream.getVectorSchemaRoot();
+								vectorschemaroot = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));;
 								vectorschemaroottoprocess.add(vectorschemaroot);
 								keyvectorschemaroot.put(vectorschemarootkey, vectorschemaroot);
 								processedkeys.add(vectorschemarootkey);
@@ -183,12 +175,8 @@ public class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineTaskExe
 					log.info("Processing Data for blockslocation {}",blockslocation);
 					intermediatestreamobject = IntStream.range(0, totalrecords).boxed().map(recordIndex -> {
 						List<String> columntoqueryl = columntoquery;
-						Map<String, Object> valuemap = new MapMaker()
-							    .concurrencyLevel(4) // Adjust as needed
-							    .initialCapacity(16) // Adjust as needed
-							    .weakKeys()
-							    .makeMap();
-						columntoqueryl.parallelStream().forEach(column->{
+						Map<String, Object> valuemap = new ConcurrentHashMap<>();
+						columntoqueryl.stream().forEach(column->{
 							Object arrowvectorvalue = colvalvectormapl.get(column);
 							valuemap.put(column, SQLUtils.getVectorValue(recordIndex, arrowvectorvalue));
 						});
@@ -304,15 +292,6 @@ public class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineTaskExe
 					colvalvectormap.remove(key);
 				}
 			}
-			readerarrowstreamtoprocess.stream().forEach(reader -> {
-				if (nonNull(reader)) {
-					try {
-						reader.close();
-					} catch (IOException e) {
-						log.error(DataSamudayaConstants.EMPTY, e);
-					}
-				}
-			});
 			if (!(task.finalphase && task.saveresulttohdfs)) {
 				writeIntermediateDataToDirectByteBuffer(fsdos);
 			}

@@ -143,10 +143,8 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 					Map<String, VectorSchemaRoot> columnvectorschemaroot = new ConcurrentHashMap<>();
 					for(String columnsql:columsfromsql) {
 						String vectorschemarootkey = columnvectorschemarootkeymap.get(columnsql);
-						if(!processedkeys.contains(vectorschemarootkey)) {
-							readerarrowstream = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));
-							readerarrowstreamtoprocess.add(readerarrowstream);
-							vectorschemaroot = readerarrowstream.getVectorSchemaRoot();
+						if(!processedkeys.contains(vectorschemarootkey)) {							
+							vectorschemaroot = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));
 							vectorschemaroottoprocess.add(vectorschemaroot);
 							keyvectorschemaroot.put(vectorschemarootkey, vectorschemaroot);
 							processedkeys.add(vectorschemarootkey);

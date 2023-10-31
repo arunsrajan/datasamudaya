@@ -26,6 +26,7 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -109,9 +110,7 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 		CSVParser records = null;
 		var fsdos = new ByteArrayOutputStream();
 		VectorSchemaRoot vectorschemaroot = null;
-		ArrowStreamReader readerarrowstream = null;
 		List<VectorSchemaRoot> vectorschemaroottoprocess = new ArrayList<>();
-		List<ArrowStreamReader> readerarrowstreamtoprocess = new ArrayList<>();
 		Map<String, ValueVector> colvalvectormap = null;
 		Map<String, VectorSchemaRoot> columnvectorschemaroot = new ConcurrentHashMap<>();
 		try (var output = new Output(fsdos);) {
@@ -160,9 +159,7 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 						for(String columnsql:columsfromsql) {
 							String vectorschemarootkey = columnvectorschemarootkeymap.get(columnsql);
 							if(!processedkeys.contains(vectorschemarootkey)) {
-								readerarrowstream = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));
-								readerarrowstreamtoprocess.add(readerarrowstream);
-								vectorschemaroot = readerarrowstream.getVectorSchemaRoot();
+								vectorschemaroot = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));;
 								vectorschemaroottoprocess.add(vectorschemaroot);
 								keyvectorschemaroot.put(vectorschemarootkey, vectorschemaroot);
 								processedkeys.add(vectorschemarootkey);
@@ -180,12 +177,8 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 					log.info("Processing Data for blockslocation {}",blockslocation);
 					intermediatestreamobject = IntStream.range(0, totalrecords).boxed().map(recordIndex -> {
 						List<String> columntoqueryl = columntoquery;
-						Map<String, Object> valuemap = new MapMaker()
-							    .concurrencyLevel(4) // Adjust as needed
-							    .initialCapacity(16) // Adjust as needed
-							    .weakKeys()
-							    .makeMap();
-						columntoqueryl.parallelStream().forEach(column->{
+						Map<String, Object> valuemap = new ConcurrentHashMap<>();
+						columntoqueryl.stream().forEach(column->{
 							Object arrowvectorvalue = colvalvectormapl.get(column);
 							valuemap.put(column, SQLUtils.getVectorValue(recordIndex, arrowvectorvalue));
 						});
@@ -299,15 +292,13 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 					vsr.close();
 				}
 			});
-			readerarrowstreamtoprocess.stream().forEach(reader -> {
-				if (nonNull(reader)) {
-					try {
-						reader.close();
-					} catch (IOException e) {
-						log.error(DataSamudayaConstants.EMPTY, e);
-					}
+			if (Objects.nonNull(colvalvectormap)) {
+				for(String key:new HashSet<>(colvalvectormap.keySet())) {
+					colvalvectormap.get(key).clear();
+					colvalvectormap.get(key).close();
+					colvalvectormap.remove(key);
 				}
-			});
+			}
 			if (!(task.finalphase && task.saveresulttohdfs)) {
 				writeIntermediateDataToDirectByteBuffer(fsdos);
 			}

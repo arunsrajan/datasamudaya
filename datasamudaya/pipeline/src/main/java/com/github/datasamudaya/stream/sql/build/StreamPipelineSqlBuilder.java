@@ -375,7 +375,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 								@Override
 								public Map<String, Object> apply(
 										Tuple2<Map<String, Object>, Map<String, Object>> tuple2) {
-									Map<String, Object> columnvaluemap = new gnu.trove.map.hash.THashMap<>(tuple2.v1);
+									Map<String, Object> columnvaluemap = new HashMap<>(tuple2.v1);
 									columnvaluemap.putAll(tuple2.v2);
 									return columnvaluemap;
 								}
@@ -405,14 +405,9 @@ public class StreamPipelineSqlBuilder implements Serializable {
 
 						@Override
 						public Map<String, Object> apply(Map<String, Object> mapvalues) {							
-							Map<String, Object> objectValuesMap = new MapMaker()
-								    .concurrencyLevel(4) // Adjust as needed
-								    .initialCapacity(16) // Adjust as needed
-								    .weakKeys() // Use weak references for keys to save memory
-								    .makeMap();
-							Map<String,Object> values = mapvalues.entrySet().parallelStream().collect(Collectors.toMap(entry->entry.getKey(), entry->entry.getValue()));
-							selcolumnsfunccolsremoved.parallelStream()
-							.forEach(key -> objectValuesMap.put(key, values.get(key)));
+							Map<String, Object> objectValuesMap = new HashMap<>();							
+							selcolumnsfunccolsremoved.stream()
+							.forEach(key -> objectValuesMap.put(key, mapvalues.get(key)));
 							return objectValuesMap;
 
 						}
@@ -452,7 +447,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 
 					@Override
 					public Map<String, Object> apply(Map<String, Object> mapvalues) {
-						Map<String, Object> nonaggfnvalues = new gnu.trove.map.hash.THashMap<>();
+						Map<String, Object> nonaggfnvalues = new HashMap<>();
 						for (Expression exp : nonagg) {
 							if (exp instanceof Function fn) {
 								List<Expression> exps = SQLUtils.getExpressions(fn);
@@ -583,7 +578,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 					List<String> orderedcolumns = orderedselectcolumns;
 					@Override
 					public Map<String, Object> apply(Tuple2<Tuple,Tuple> tuple2) {
-						Map<String, Object> mapwithfinalvalues = new gnu.trove.map.hash.THashMap<>();
+						Map<String, Object> mapwithfinalvalues = new HashMap<>();
 						SQLUtils.populateMapFromTuple(mapwithfinalvalues, tuple2.v1, new ArrayList<>(grpby));
 						SQLUtils.populateMapFromFunctions(mapwithfinalvalues, tuple2.v2, aggregatefunc, funcalias);								
 						if(!fnaverages.isEmpty()) {
@@ -611,7 +606,6 @@ public class StreamPipelineSqlBuilder implements Serializable {
 						for (String column : orderedcolumns) {
 							orderedvalues.put(column, mapwithfinalvalues.get(column));
 						}
-						mapwithfinalvalues.clear();
 						return orderedvalues;
 					}
 				});

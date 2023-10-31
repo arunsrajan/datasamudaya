@@ -53,7 +53,6 @@ import java.util.stream.StreamSupport;
 
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -92,7 +91,6 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
-import com.google.common.collect.MapMaker;
 import com.pivovarit.collectors.ParallelCollectors;
 
 /**
@@ -167,9 +165,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 						CSVParser records = null;
 						var fsdos = new ByteArrayOutputStream();
 						VectorSchemaRoot vectorschemaroot = null;
-						ArrowStreamReader readerarrowstream = null;
 						List<VectorSchemaRoot> vectorschemaroottoprocess = new ArrayList<>();
-						List<ArrowStreamReader> readerarrowstreamtoprocess = new ArrayList<>();
 						Map<String, ValueVector> colvalvectormap = null;
 						Map<String, VectorSchemaRoot> columnvectorschemaroot = new ConcurrentHashMap<>();
 						try (var output = new Output(fsdos);) {
@@ -218,9 +214,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 										for(String columnsql:columsfromsql) {
 											String vectorschemarootkey = columnvectorschemarootkeymap.get(columnsql);
 											if(!processedkeys.contains(vectorschemarootkey)) {
-												readerarrowstream = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));
-												readerarrowstreamtoprocess.add(readerarrowstream);
-												vectorschemaroot = readerarrowstream.getVectorSchemaRoot();
+												vectorschemaroot = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));;
 												vectorschemaroottoprocess.add(vectorschemaroot);
 												keyvectorschemaroot.put(vectorschemarootkey, vectorschemaroot);
 												processedkeys.add(vectorschemarootkey);
@@ -238,12 +232,8 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									log.info("Processing Data for blockslocation {}",blockslocation);
 									intermediatestreamobject = IntStream.range(0, totalrecords).boxed().map(recordIndex -> {
 										List<String> columntoqueryl = columntoquery;
-										Map<String, Object> valuemap = new MapMaker()
-											    .concurrencyLevel(4) // Adjust as needed
-											    .initialCapacity(16) // Adjust as needed
-											    .weakKeys()
-											    .makeMap();
-										columntoqueryl.parallelStream().forEach(column->{
+										Map<String, Object> valuemap = new ConcurrentHashMap<>();
+										columntoqueryl.stream().forEach(column->{
 											Object arrowvectorvalue = colvalvectormapl.get(column);
 											valuemap.put(column, SQLUtils.getVectorValue(recordIndex, arrowvectorvalue));
 										});
@@ -360,16 +350,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									colvalvectormap.get(key).close();
 									colvalvectormap.remove(key);
 								}
-							}
-							readerarrowstreamtoprocess.stream().forEach(reader -> {
-								if (nonNull(reader)) {
-									try {
-										reader.close();
-									} catch (IOException e) {
-										log.error(DataSamudayaConstants.EMPTY, e);
-									}
-								}
-							});
+							}							
 							if (!(task.finalphase && task.saveresulttohdfs)) {
 								writeIntermediateDataToDirectByteBuffer(fsdos);
 							}
