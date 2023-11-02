@@ -34,14 +34,13 @@ import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.CacheUtils;
-import com.github.datasamudaya.common.CompressedVectorSchemaRoot;
-import com.github.datasamudaya.common.Job;
-import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.Job;
+import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.ServerUtils;
 import com.github.datasamudaya.common.StreamDataCruncher;
@@ -70,7 +69,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
   Queue<Object> taskqueue = new LinkedBlockingQueue<Object>();
   static ExecutorService es;
   static CountDownLatch shutdown = new CountDownLatch(1);
-  static ConcurrentMap<BlocksLocation, CompressedVectorSchemaRoot> blvectorsmap = new ConcurrentHashMap<>();
+  static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
 
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {						
@@ -200,7 +199,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
         	  log.info("Deserialized object:{} ",deserobj);
             TaskExecutor taskexecutor = new TaskExecutor(cl, port, es, configuration,
                 apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
-                jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blvectorsmap);
+                jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap);
             return taskexecutor.call();
           }
         } catch (Throwable ex) {

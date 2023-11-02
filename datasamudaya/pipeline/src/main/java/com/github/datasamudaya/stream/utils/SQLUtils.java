@@ -5,53 +5,52 @@ import static java.util.Objects.nonNull;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.DecimalVector;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.Float4Vector;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.dictionary.Dictionary;
-import org.apache.arrow.vector.dictionary.DictionaryProvider;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
-import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.FloatingPointPrecision;
 import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.types.pojo.DictionaryEncoding;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
-import org.apache.arrow.vector.util.TransferPair;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.exec.vector.BytesColumnVector;
+import org.apache.hadoop.hive.ql.exec.vector.ColumnVector;
+import org.apache.hadoop.hive.ql.exec.vector.LongColumnVector;
+import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
+import org.apache.orc.OrcFile;
+import org.apache.orc.OrcFile.WriterOptions;
+import org.apache.orc.RecordReader;
+import org.apache.orc.TypeDescription;
+import org.apache.orc.Writer;
 import org.jgroups.util.UUID;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple1;
@@ -73,9 +72,7 @@ import org.jooq.lambda.tuple.Tuple9;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyInputStream;
-import org.xerial.snappy.SnappyOutputStream;
 
-import com.github.datasamudaya.common.CompressedVectorSchemaRoot;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
@@ -238,181 +235,6 @@ public class SQLUtils {
 				return String.valueOf(DataSamudayaConstants.EMPTY);
 			}
 		}
-	}
-	
-	/**
-	 * Get Columnar data from Csv
-	 * @param records
-	 * @param columns
-	 * @param sqltypenames
-	 * @return arrow vectors
-	 */
-	public static void getArrowVectors(Stream<CSVRecord> records, List<String> columns,
-			Map<String, Integer> columnindexmap
-			, List<SqlTypeName> sqltypenames ,
-			CompressedVectorSchemaRoot compressedvectorschemaroot) {		
-		try {
-			RootAllocator allocator = new RootAllocator(Long.MAX_VALUE);
-			List<Field> fields = new ArrayList<>();
-			List<Dictionary> dictionaries = new ArrayList<>();
-			for (int columnindex = 0; columnindex < columns.size(); columnindex++) {
-				fields.add(getSchemaField(columns.get(columnindex), sqltypenames.get(columnindexmap.get(columns.get(columnindex)))));
-			}
-			Schema schema = new Schema(fields);
-			try {
-				VectorSchemaRoot root = VectorSchemaRoot.create(schema, allocator);
-				for (Field field:fields) {
-					dictionaries.add(new Dictionary(root.getVector(field), new DictionaryEncoding(666L, false,new ArrowType.Int(32, true))));
-				}
-				AtomicInteger ai = new AtomicInteger(0);
-				records.forEach(record -> {
-					int index = ai.getAndIncrement();
-					for (int columnindex = 0; columnindex < columns.size(); columnindex++) {
-						Object vector = root.getVector(columns.get(columnindex));
-						try {
-							setValue(index, vector,
-									SQLUtils.getValue(record.get(columns.get(columnindex)), sqltypenames.get(columnindexmap.get(columns.get(columnindex)))));
-						} catch (Exception e) {
-							log.error(DataSamudayaConstants.EMPTY, e);
-						}
-					}
-				});
-				final int totalrecordcount = ai.get();
-				log.info("Total Record Count in arrow getArrowVector method {}",totalrecordcount);
-				compressedvectorschemaroot.setRecordcount(totalrecordcount);
-				columns.stream().forEachOrdered(col -> {
-					Object vector =  root.getVector(col);
-					if (vector instanceof IntVector iv) {
-						iv.setValueCount(totalrecordcount);
-					} else if (vector instanceof VarCharVector vcv) {
-						vcv.setValueCount(totalrecordcount);
-					} else if (vector instanceof Float4Vector f4v) {
-						f4v.setValueCount(totalrecordcount);
-					} else if (vector instanceof Float8Vector f8v) {
-						f8v.setValueCount(totalrecordcount);
-					} else if (vector instanceof DecimalVector dv) {
-						dv.setValueCount(totalrecordcount);
-					}
-				});
-				String arrowfilewithpath = getArrowFilePath();
-				File file = new File(arrowfilewithpath);				
-				try(FileOutputStream out = new FileOutputStream(file);
-						SnappyOutputStream snappyOutputStream = new SnappyOutputStream(out);
-				ArrowStreamWriter writer = new ArrowStreamWriter(root,null, snappyOutputStream);){
-					writer.start();
-					writer.writeBatch();
-					writer.end();
-					String key = UUID.randomUUID().toString();
-					columns.stream().forEachOrdered(col -> {
-						compressedvectorschemaroot.getColumnvectorschemarootkeymap().put(col, key);
-						compressedvectorschemaroot.getVectorschemarootkeybytesmap().put(key, arrowfilewithpath);
-					});
-					file.deleteOnExit();
-				}
-			} catch (IOException e) {
-				log.error(DataSamudayaConstants.EMPTY, e);
-			}finally {}
-		} finally {
-
-		}
-	}
-	
-	/**
-	 * Get Columnar data from Csv
-	 * @param records
-	 * @param columns
-	 * @param columnindexmap
-	 * @param sqltypenames
-	 * @param compressedvectorschemaroot
-	 * @param reccount
-	 * @return schemaroot
-	 * @throws InterruptedException 
-	 */
-	public static VectorSchemaRoot getArrowVectors(Stream<CSVRecord> records, List<String> columns,
-			Map<String, Integer> columnindexmap
-			, List<SqlTypeName> sqltypenames ,
-			CompressedVectorSchemaRoot compressedvectorschemaroot,
-			int reccount) throws InterruptedException {		
-		try {
-			RootAllocator allocator = new RootAllocator(Long.MAX_VALUE);
-			RootAllocator allocatorroottoprocess = new RootAllocator(Long.MAX_VALUE);
-			List<Field> fields = new ArrayList<>();
-			for (int columnindex = 0; columnindex < columns.size(); columnindex++) {
-				fields.add(getSchemaField(columns.get(columnindex), sqltypenames.get(columnindexmap.get(columns.get(columnindex)))));
-			}
-			Schema schema = new Schema(fields);
-			ExecutorService es = Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
-			try {
-				VectorSchemaRoot root = VectorSchemaRoot.create(schema, allocator);
-				VectorSchemaRoot roottoprocess = VectorSchemaRoot.create(schema, allocatorroottoprocess);
-				root.allocateNew();
-				String arrowfilewithpath = getArrowFilePath();
-				File file = new File(arrowfilewithpath);
-				DictionaryProvider.MapDictionaryProvider dictProvider = new DictionaryProvider.MapDictionaryProvider();
-				try(FileOutputStream out = new FileOutputStream(file);
-						SnappyOutputStream snappyOutputStream = new SnappyOutputStream(out);
-				ArrowStreamWriter writer = new ArrowStreamWriter(root,dictProvider, snappyOutputStream);){
-					writer.start();
-					AtomicInteger ai = new AtomicInteger(0);					
-					columns.stream().forEachOrdered(col -> {
-						Object vector =  root.getVector(col);
-						allocateNewCapacity(vector);
-					});
-					int batchsize = 1000;
-					records.forEach(record -> {					
-						try {
-							int index = ai.getAndIncrement();
-							columns.stream().forEach(column -> {
-								Object vector = root.getVector(column);
-								Object vectortoprocess = roottoprocess.getVector(column);
-								try {
-									Object value = SQLUtils.getValue(record.get(column),
-											sqltypenames.get(columnindexmap.get(column)));
-									setValue(index%batchsize, vector, value);
-									setValue(index, vectortoprocess, value);
-								} catch (Exception e) {
-									log.error("{}", e);
-								}
-							});
-							if((index+1)%batchsize == 0) {
-								root.setRowCount(batchsize);
-								writer.writeBatch();
-								columns.stream().forEachOrdered(col -> {
-									Object vector =  root.getVector(col);
-									allocateNewCapacity(vector);
-								});	
-							}
-						} catch (Exception e) {
-							log.error("{}", e);
-						}
-					});
-					final int totalrecordcount = ai.get();
-					if(totalrecordcount%batchsize!=0) {
-						root.setRowCount(totalrecordcount%batchsize);						
-						writer.writeBatch();
-					}					
-					writer.end();
-					compressedvectorschemaroot.setRecordcount(totalrecordcount);
-					String key = UUID.randomUUID().toString();
-					columns.stream().forEachOrdered(col -> {
-						compressedvectorschemaroot.getColumnvectorschemarootkeymap().put(col, key);
-						compressedvectorschemaroot.getVectorschemarootkeybytesmap().put(key, arrowfilewithpath);
-					});
-					file.deleteOnExit();
-				}
-				return roottoprocess;
-			} catch (IOException e) {
-				log.error(DataSamudayaConstants.EMPTY, e);
-			} finally {
-				if (!Objects.isNull(es)) {
-					es.shutdownNow();
-					es.awaitTermination(1, TimeUnit.SECONDS);
-				}
-			}
-		} finally {
-
-		}
-		return null;
 	}
 	
 	/**
@@ -2690,6 +2512,144 @@ public class SQLUtils {
 				tmptables.add(table.getName());
 			}
 		}
+	}
+	
+	/**
+	 * Get orc file to store columnar data
+	 * @return path
+	 */
+	protected static String getORCFilePath() {
+		String tmpdir = isNull(DataSamudayaProperties.get())?System.getProperty(DataSamudayaConstants.TMPDIR):
+			DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR, System.getProperty(DataSamudayaConstants.TMPDIR));
+		new File(tmpdir + DataSamudayaConstants.FORWARD_SLASH + 
+				FileSystemSupport.MDS).mkdirs();
+		return tmpdir + DataSamudayaConstants.FORWARD_SLASH + 
+				FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + UUID.randomUUID().toString() 
+				+ DataSamudayaConstants.ORCFILE_EXT;
+	}
+	
+	/**
+	 * Creates ORC file for given CSV Record and returns path
+	 * @param airlineheader
+	 * @param headertypes
+	 * @param records
+	 * @return filepath
+	 * @throws Exception
+	 */
+	public static String createORCFile(List<String> airlineheader, 
+			List<SqlTypeName> headertypes, Stream<CSVRecord> records) throws Exception {
+		Configuration configuration = new Configuration();
+		TypeDescription schema = TypeDescription.fromString(convertFieldsToString(airlineheader, headertypes));
+
+		// Create ORC WriterOptions
+		WriterOptions options = OrcFile.writerOptions(configuration).setSchema(schema);
+		String orcfilepath = getORCFilePath();
+		// Create an ORC file writer
+		try (Writer writer = OrcFile.createWriter(new Path(orcfilepath), options);) {
+			VectorizedRowBatch batch = schema.createRowBatch();
+			records.forEach(csvrecord -> {
+				try {
+					// Create a row batch and populate it with data
+					for (int index = 0; index < airlineheader.size(); index++) {
+						batch.cols[index].noNulls = true;
+						batch.cols[index].isNull[batch.size] = false;
+						writeValueToVector(batch.size, batch.cols[index], csvrecord.get(airlineheader.get(index)));
+					}
+					if (batch.size == batch.getMaxSize() - 1) {
+						batch.size++;
+						writer.addRowBatch(batch);
+						batch.reset();
+					} else {
+						batch.size++;
+					}
+					if (batch.size != 0) {
+						writer.addRowBatch(batch);
+						batch.reset();
+					}
+				} catch (Exception ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
+				}
+			});
+			new File(orcfilepath).deleteOnExit();
+			return orcfilepath;
+		} finally {
+
+		}
+	}
+	
+	/**
+	 * Convert header and types to string in orc format
+	 * @param airlineheader
+	 * @param headertypes
+	 * @return String in struct format
+	 */
+	public static String convertFieldsToString(List<String> airlineheader, List<SqlTypeName> headertypes) {
+		StringBuilder builder = new StringBuilder();
+		builder.append("struct<");
+		for (int index = 0; index < airlineheader.size(); index++) {
+			builder.append(airlineheader.get(index));
+			builder.append(":");
+			builder.append(convertSqlTypesToString(headertypes.get(index)));
+			if (index < airlineheader.size() - 1) {
+				builder.append(",");
+			}
+		}
+		builder.append(">");
+		return builder.toString();
+
+	}
+
+	/**
+	 * Converts SQL Types to string
+	 * @param sqltypename
+	 * @return string
+	 */
+	public static String convertSqlTypesToString(SqlTypeName sqltypename) {
+		if (sqltypename == SqlTypeName.VARCHAR) {
+			return "string";
+		} else if (sqltypename == SqlTypeName.INTEGER) {
+			return "int";
+		} else if (sqltypename == SqlTypeName.DOUBLE) {
+			return "double";
+		}
+		return "string";
+	}
+
+	/**
+	 * Writes value to value vector for index
+	 * @param index
+	 * @param cv
+	 * @param value
+	 */
+	public static void writeValueToVector(int index, ColumnVector cv, Object value) {
+		if (cv instanceof LongColumnVector lcv) {
+			if (NumberUtils.isCreatable((String) value)) {
+				lcv.vector[index] = Long.valueOf((String) value);
+			} else {
+				lcv.vector[index] = 0l;
+			}
+		} else if (cv instanceof BytesColumnVector bcv) {			
+			byte[] values = ((String) value).getBytes();
+			bcv.setRef(index, values, 0, values.length);			
+		}
+	}
+	
+	/**
+	 * Loads the record reader object
+	 * @param orcfilepath
+	 * @return orc rrr object
+	 * @throws Exception
+	 */
+	public static OrcReaderRecordReader getOrcStreamRecords(String orcfilepath) throws Exception{
+		Configuration configuration = new Configuration();
+        org.apache.orc.Reader reader = OrcFile.createReader(new Path(orcfilepath),
+                OrcFile.readerOptions(configuration));
+        RecordReader rows = reader.rows();
+        VectorizedRowBatch batch = reader.getSchema().createRowBatch();
+        Stream<Map<String, Object>> mapStream = StreamSupport.stream(
+                new ORCRecordSpliterator(rows, reader.getSchema(), batch), false);
+        OrcReaderRecordReader orrr = new OrcReaderRecordReader(reader, rows, mapStream);
+        return orrr;
 	}
 	
 }

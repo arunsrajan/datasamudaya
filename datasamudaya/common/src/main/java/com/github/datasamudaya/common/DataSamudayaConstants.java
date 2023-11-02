@@ -558,5 +558,7 @@ public class DataSamudayaConstants {
   public static final String DATASAMUDAYA_HOME = "DATASAMUDAYA_HOME";
   
   public static final String ARROWFILE_EXT = ".arrow";
+  
+  public static final String ORCFILE_EXT = ".orc";
 
 }

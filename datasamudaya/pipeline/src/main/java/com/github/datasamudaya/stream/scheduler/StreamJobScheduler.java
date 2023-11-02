@@ -73,15 +73,18 @@ import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
 import com.github.datasamudaya.common.CloseStagesGraphExecutor;
 import com.github.datasamudaya.common.DAGEdge;
+import com.github.datasamudaya.common.DataSamudayaCache;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.FreeResourcesCompletedJob;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.Job;
+import com.github.datasamudaya.common.Job.JOBTYPE;
+import com.github.datasamudaya.common.Job.TRIGGER;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LoadJar;
-import com.github.datasamudaya.common.DataSamudayaCache;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
@@ -94,9 +97,6 @@ import com.github.datasamudaya.common.TasksGraphExecutor;
 import com.github.datasamudaya.common.TssHAChannel;
 import com.github.datasamudaya.common.TssHAHostPorts;
 import com.github.datasamudaya.common.WhoIsResponse;
-import com.github.datasamudaya.common.Job.JOBTYPE;
-import com.github.datasamudaya.common.Job.TRIGGER;
-import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.functions.AggregateReduceFunction;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.GroupByFunction;
@@ -116,7 +116,7 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutor;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgnite;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgniteSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocal;
-import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocalSQL;
+import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocalSQLORC;
 import com.github.datasamudaya.stream.mesos.scheduler.MesosScheduler;
 import com.github.dexecutor.core.DefaultDexecutor;
 import com.github.dexecutor.core.DexecutorConfig;
@@ -1002,7 +1002,7 @@ public class StreamJobScheduler {
             semaphore.acquire();
             StreamPipelineTaskExecutorLocal sptel = null;
             if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
-            	sptel = new StreamPipelineTaskExecutorLocalSQL(
+            	sptel = new StreamPipelineTaskExecutorLocalSQLORC(
                         jsidjsmap.get(task.jobid + task.stageid), resultstream, cache);
             } else {
             	sptel = new StreamPipelineTaskExecutorLocal(

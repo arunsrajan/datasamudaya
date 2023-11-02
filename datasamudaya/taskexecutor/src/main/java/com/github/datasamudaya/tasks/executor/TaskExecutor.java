@@ -19,6 +19,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.ehcache.Cache;
@@ -30,14 +31,14 @@ import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
 import com.github.datasamudaya.common.CloseStagesGraphExecutor;
-import com.github.datasamudaya.common.CompressedVectorSchemaRoot;
 import com.github.datasamudaya.common.Context;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.FreeResourcesCompletedJob;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.ReducerValues;
 import com.github.datasamudaya.common.RemoteDataFetch;
@@ -48,7 +49,6 @@ import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskStatus;
 import com.github.datasamudaya.common.TaskType;
 import com.github.datasamudaya.common.TasksGraphExecutor;
-import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutor;
@@ -78,7 +78,7 @@ public class TaskExecutor implements Callable<Object> {
   Map<String, JobStage> jobidstageidjobstagemap;
   Task tasktoreturn;
   ZookeeperOperations zo;
-  ConcurrentMap<BlocksLocation, CompressedVectorSchemaRoot> blvectorsmap;
+  ConcurrentMap<BlocksLocation, String> blorcmap;
   @SuppressWarnings({"rawtypes"})
   public TaskExecutor(ClassLoader cl, int port, ExecutorService es, Configuration configuration,
       Map<String, Object> apptaskexecutormap, Map<String, Object> jobstageexecutormap,
@@ -86,7 +86,7 @@ public class TaskExecutor implements Callable<Object> {
       
       Map<String, Map<String, Object>> jobidstageidexecutormap, Task tasktoreturn,
       Map<String, JobStage> jobidstageidjobstagemap,
-      ZookeeperOperations zo, ConcurrentMap<BlocksLocation, CompressedVectorSchemaRoot> blvectorsmap) {
+      ZookeeperOperations zo, ConcurrentMap<BlocksLocation, String> blorcmap) {
     this.cl = cl;
     this.port = port;
     this.es = es;
@@ -100,7 +100,7 @@ public class TaskExecutor implements Callable<Object> {
     this.tasktoreturn = tasktoreturn;
     this.jobidstageidjobstagemap = jobidstageidjobstagemap;
     this.zo = zo;
-    this.blvectorsmap = blvectorsmap;
+    this.blorcmap = blorcmap;
   }
 
   ClassLoader cl;
@@ -155,7 +155,7 @@ public class TaskExecutor implements Callable<Object> {
                       resultstream, inmemorycache)
                   : task.storage == STORAGE.COLUMNARSQL
                           ? new StreamPipelineTaskExecutorInMemorySQL(jobidstageidjobstagemap.get(key),
-                                  resultstream, inmemorycache, blvectorsmap):new StreamPipelineTaskExecutor(jobidstageidjobstagemap.get(key), inmemorycache);
+                                  resultstream, inmemorycache, blorcmap):new StreamPipelineTaskExecutor(jobidstageidjobstagemap.get(key), inmemorycache);
           spte.setTask(task);
           spte.setExecutor(es);
           jobstageexecutormap.remove(key + task.taskid);
@@ -191,7 +191,7 @@ public class TaskExecutor implements Callable<Object> {
 			StreamPipelineTaskExecutor sptej = null;
 			if (stagesgraph.getStorage() == STORAGE.COLUMNARSQL) {
 				sptej = new StreamPipelineTaskExecutorJGroupsSQL(jobidstageidjobstagemap, stagesgraph.getTasks(), port,
-						inmemorycache, blvectorsmap);
+						inmemorycache, blorcmap);
 				log.info("In JGroups Storage Columnar Object {}", sptej);
 			} else {
 				sptej = new StreamPipelineTaskExecutorJGroups(jobidstageidjobstagemap, stagesgraph.getTasks(), port,

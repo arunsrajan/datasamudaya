@@ -24,14 +24,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,10 +37,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.apache.arrow.vector.ValueVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.ArrowStreamReader;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -57,11 +48,10 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
-import com.github.datasamudaya.common.CompressedVectorSchemaRoot;
-import com.github.datasamudaya.common.HdfsBlockReader;
-import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.HdfsBlockReader;
+import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.functions.CalculateCount;
 import com.github.datasamudaya.common.functions.Max;
@@ -73,9 +63,9 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
+import com.github.datasamudaya.stream.utils.OrcReaderRecordReader;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
-import com.google.common.collect.MapMaker;
 import com.pivovarit.collectors.ParallelCollectors;
 
 /**
@@ -84,12 +74,12 @@ import com.pivovarit.collectors.ParallelCollectors;
  * Task executors thread for standalone task executors daemon.  
  */
 @SuppressWarnings("rawtypes")
-public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTaskExecutorLocal  {
-	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorLocalSQL.class);
+public final class StreamPipelineTaskExecutorLocalSQLORC extends StreamPipelineTaskExecutorLocal  {
+	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorLocalSQLORC.class);
 
-	static ConcurrentMap<BlocksLocation, CompressedVectorSchemaRoot> blvectorsmap = new ConcurrentHashMap<>();
+	static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
 	
-	public StreamPipelineTaskExecutorLocalSQL(JobStage jobstage,
+	public StreamPipelineTaskExecutorLocalSQLORC(JobStage jobstage,
 			ConcurrentMap<String, OutputStream> resultstream, Cache cache) {
 		super(jobstage, resultstream, cache);
 	}
@@ -108,25 +98,15 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
 		log.info("BlocksLocation Columns: {}"+blockslocation.getColumns());
 		CSVParser records = null;
-		var fsdos = new ByteArrayOutputStream();
-		VectorSchemaRoot vectorschemaroot = null;
-		List<VectorSchemaRoot> vectorschemaroottoprocess = new ArrayList<>();
-		Map<String, ValueVector> colvalvectormap = null;
-		Map<String, VectorSchemaRoot> columnvectorschemaroot = new ConcurrentHashMap<>();
+		var fsdos = new ByteArrayOutputStream();		
+		OrcReaderRecordReader orrr = null;
 		try (var output = new Output(fsdos);) {
 			Stream intermediatestreamobject;
 			try {
-				CompressedVectorSchemaRoot compvectorschemaroot = blvectorsmap.get(blockslocation);
-				Set<String> columsvectorschemaroot = nonNull(compvectorschemaroot)? compvectorschemaroot.getColumnvectorschemarootkeymap().keySet():
-					new LinkedHashSet<>();
-				Set<String> columsvectorschemaroottoprocess = new LinkedHashSet<>(columsvectorschemaroot);
-				List<String> columsfromsql = blockslocation.getColumns();
+				String orcfilepath = blorcmap.get(blockslocation);				
 				CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
-				columsvectorschemaroottoprocess.addAll(Arrays.asList(csvoptions.getHeader()));
-				columsvectorschemaroottoprocess.addAll(columsfromsql);
-				columsvectorschemaroottoprocess.removeAll(columsvectorschemaroot);
 				try {
-					if(isNull(compvectorschemaroot) || CollectionUtils.isNotEmpty(columsvectorschemaroottoprocess)) {
+					if(isNull(orcfilepath)) {
 						log.info("Unable To Find vector for blocks {}",blockslocation);
 						try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 						var buffer = new BufferedReader(new InputStreamReader(bais));
@@ -137,53 +117,11 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 									.withTrim();
 							records = csvformat.parse(buffer);
 							Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
-							int reccount = Long.valueOf(streamcsv.count()).intValue();
-							log.info("Records to process {}", reccount);
-							streamcsv = StreamSupport.stream(csvformat.parse(bufferrec).spliterator(), false);
-							CompressedVectorSchemaRoot compressedvectorschemaroot = nonNull(compvectorschemaroot)?
-									compvectorschemaroot:new CompressedVectorSchemaRoot();
-							Map<String, Integer> columnindexmap = SQLUtils.getColumnIndexMap(Arrays.asList(csvoptions.getHeader()));
-							VectorSchemaRoot root = SQLUtils.getArrowVectors(streamcsv,new ArrayList<>(columsvectorschemaroottoprocess), columnindexmap, csvoptions.getTypes(), compressedvectorschemaroot, reccount);
-							blvectorsmap.put(blockslocation, compressedvectorschemaroot);
-							compvectorschemaroot = compressedvectorschemaroot;
-							for(String columnsql:columsfromsql) {
-								columnvectorschemaroot.put(columnsql, root);
-							}
-						}
-					} else {
-						compvectorschemaroot = blvectorsmap.get(blockslocation);
-						Map<String, String> columnvectorschemarootkeymap = compvectorschemaroot.getColumnvectorschemarootkeymap();
-						Map<String, String> vectorschemarootkeyfilemap = compvectorschemaroot.getVectorschemarootkeybytesmap();
-						List<String> processedkeys = new ArrayList<>();
-						Map<String, VectorSchemaRoot> keyvectorschemaroot = new ConcurrentHashMap<>();						
-						for(String columnsql:columsfromsql) {
-							String vectorschemarootkey = columnvectorschemarootkeymap.get(columnsql);
-							if(!processedkeys.contains(vectorschemarootkey)) {
-								vectorschemaroot = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));;
-								vectorschemaroottoprocess.add(vectorschemaroot);
-								keyvectorschemaroot.put(vectorschemarootkey, vectorschemaroot);
-								processedkeys.add(vectorschemarootkey);
-							} 
-							columnvectorschemaroot.put(columnsql, keyvectorschemaroot.get(vectorschemarootkey));
+							blorcmap.put(blockslocation, SQLUtils.createORCFile(Arrays.asList(csvoptions.getHeader()), csvoptions.getTypes(), streamcsv));
 						}
 					}
-					final int totalrecords = compvectorschemaroot.getRecordcount();
-					List<String> columntoquery = blockslocation.getColumns();
-					Map<String, ValueVector> colvalvectormapl = columntoquery.stream().collect(Collectors.toMap(val->val, val->{
-						ValueVector valuevector = columnvectorschemaroot.get(val).getVector((String) val);
-						return valuevector;
-					}));
-					colvalvectormap = colvalvectormapl;
-					log.info("Processing Data for blockslocation {}",blockslocation);
-					intermediatestreamobject = IntStream.range(0, totalrecords).boxed().map(recordIndex -> {
-						List<String> columntoqueryl = columntoquery;
-						Map<String, Object> valuemap = new ConcurrentHashMap<>();
-						columntoqueryl.stream().forEach(column->{
-							Object arrowvectorvalue = colvalvectormapl.get(column);
-							valuemap.put(column, SQLUtils.getVectorValue(recordIndex, arrowvectorvalue));
-						});
-						return valuemap;
-					});
+					orrr = SQLUtils.getOrcStreamRecords(blorcmap.get(blockslocation));
+					intermediatestreamobject = orrr.getValuesmapstream();
 				} finally {}
 			} catch (IOException ioe) {
 				log.error(PipelineConstants.FILEIOERROR, ioe);
@@ -286,17 +224,12 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 			log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 			throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 		} finally {
-			vectorschemaroottoprocess.stream().forEach(vsr -> {
-				if (nonNull(vsr)) {
-					vsr.clear();
-					vsr.close();
-				}
-			});
-			if (Objects.nonNull(colvalvectormap)) {
-				for(String key:new HashSet<>(colvalvectormap.keySet())) {
-					colvalvectormap.get(key).clear();
-					colvalvectormap.get(key).close();
-					colvalvectormap.remove(key);
+			if(nonNull(orrr) && nonNull(orrr.getReader())) {
+				try {
+					orrr.getReader().close();
+					orrr.getRows().close();
+				} catch (IOException e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
 				}
 			}
 			if (!(task.finalphase && task.saveresulttohdfs)) {
