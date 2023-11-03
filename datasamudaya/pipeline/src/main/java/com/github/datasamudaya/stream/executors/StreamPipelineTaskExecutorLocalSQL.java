@@ -74,12 +74,12 @@ import com.pivovarit.collectors.ParallelCollectors;
  * Task executors thread for standalone task executors daemon.  
  */
 @SuppressWarnings("rawtypes")
-public final class StreamPipelineTaskExecutorLocalSQLORC extends StreamPipelineTaskExecutorLocal  {
-	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorLocalSQLORC.class);
+public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTaskExecutorLocal  {
+	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorLocalSQL.class);
 
 	static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
 	
-	public StreamPipelineTaskExecutorLocalSQLORC(JobStage jobstage,
+	public StreamPipelineTaskExecutorLocalSQL(JobStage jobstage,
 			ConcurrentMap<String, OutputStream> resultstream, Cache cache) {
 		super(jobstage, resultstream, cache);
 	}

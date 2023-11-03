@@ -3,6 +3,8 @@ package com.github.datasamudaya.stream.sql;
 import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -21,8 +23,11 @@ import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.utils.UnixTerminal;
 import com.github.datasamudaya.common.utils.Utils;
 
+import jline.TerminalFactory;
+import jline.TerminalFactory.Flavor;
 import jline.console.ConsoleReader;
 
 /**
@@ -40,7 +45,8 @@ public class SQLClient {
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {		
+	public static void main(String[] args) throws Exception {
+		TerminalFactory.registerFlavor(Flavor.UNIX, UnixTerminal.class);
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);

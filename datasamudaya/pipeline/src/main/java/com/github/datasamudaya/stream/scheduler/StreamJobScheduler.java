@@ -116,7 +116,7 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutor;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgnite;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgniteSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocal;
-import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocalSQLORC;
+import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocalSQL;
 import com.github.datasamudaya.stream.mesos.scheduler.MesosScheduler;
 import com.github.dexecutor.core.DefaultDexecutor;
 import com.github.dexecutor.core.DexecutorConfig;
@@ -1002,7 +1002,7 @@ public class StreamJobScheduler {
             semaphore.acquire();
             StreamPipelineTaskExecutorLocal sptel = null;
             if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
-            	sptel = new StreamPipelineTaskExecutorLocalSQLORC(
+            	sptel = new StreamPipelineTaskExecutorLocalSQL(
                         jsidjsmap.get(task.jobid + task.stageid), resultstream, cache);
             } else {
             	sptel = new StreamPipelineTaskExecutorLocal(

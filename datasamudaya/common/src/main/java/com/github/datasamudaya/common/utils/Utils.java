@@ -338,9 +338,7 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void loadPropertiesMesos(String propertyfile) throws Exception {
-		log.debug("Entered Utils.loadPropertiesMesos");
-		PropertyConfigurator
-				.configure(Utils.class.getResourceAsStream(DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES));
+		log.debug("Entered Utils.loadPropertiesMesos");		
 		var prop = new Properties();
 		try (var fis = Utils.class.getResourceAsStream(DataSamudayaConstants.FORWARD_SLASH + propertyfile);) {
 			prop.load(fis);
