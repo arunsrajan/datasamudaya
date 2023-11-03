@@ -560,5 +560,9 @@ public class DataSamudayaConstants {
   public static final String ARROWFILE_EXT = ".arrow";
   
   public static final String ORCFILE_EXT = ".orc";
+  
+  public static final String SO_TIMEOUT = "socket.timeout";
+  
+  public static final String SO_TIMEOUT_DEFAULT = "4000";
 
 }

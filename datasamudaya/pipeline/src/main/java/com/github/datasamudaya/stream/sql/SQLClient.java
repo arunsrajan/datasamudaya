@@ -3,14 +3,13 @@ package com.github.datasamudaya.stream.sql;
 import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,25 +104,40 @@ public class SQLClient {
 		int portNumber = Integer
 				.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SQLPORT, DataSamudayaConstants.SQLPORT_DEFAULT));
 
-		try (Socket socket = new Socket(hostName, portNumber);
-				PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-				BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
-			out.println(user);
-			out.println(numberofcontainers);
-			out.println(cpupercontainer);
-			out.println(memorypercontainer);
-			out.println(mode);
-			printServerResponse(in);
-			String messagestorefile = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SQLMESSAGESSTORE,
-					DataSamudayaConstants.SQLMESSAGESSTORE_DEFAULT) + DataSamudayaConstants.UNDERSCORE + user;
-			try {
-				processMessage(out, in, messagestorefile);
-			} catch (Exception ex) {
-				log.info("Aborting Connection");
-				out.println("quit");
+		int timeout = Integer
+				.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SO_TIMEOUT, DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
+		while (true) {
+			try (Socket sock = new Socket();) {
+				sock.connect(new InetSocketAddress(hostName, portNumber), timeout);
+				if (sock.isConnected()) {
+					try (Socket socket = sock;
+							PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+							BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
+						out.println(user);
+						out.println(numberofcontainers);
+						out.println(cpupercontainer);
+						out.println(memorypercontainer);
+						out.println(mode);
+						printServerResponse(in);
+						String messagestorefile = DataSamudayaProperties.get().getProperty(
+								DataSamudayaConstants.SQLMESSAGESSTORE, DataSamudayaConstants.SQLMESSAGESSTORE_DEFAULT)
+								+ DataSamudayaConstants.UNDERSCORE + user;
+						try {
+							processMessage(out, in, messagestorefile);
+						} catch (Exception ex) {
+							log.info("Aborting Connection");
+							out.println("quit");
+						}
+						break;
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+					}
+				}
+			} catch (Throwable ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
-		} catch (Exception ex) {
-			log.error(DataSamudayaConstants.EMPTY, ex);
+			log.info("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
+			Thread.sleep(2000);
 		}
 	}
 

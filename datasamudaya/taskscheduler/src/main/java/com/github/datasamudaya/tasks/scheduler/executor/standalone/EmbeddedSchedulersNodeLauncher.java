@@ -62,6 +62,7 @@ public class EmbeddedSchedulersNodeLauncher {
 
 	public static final String STOPPINGANDCLOSECONNECTION = "Stopping and closes all the connections...";
 	private static final Semaphore lock = new Semaphore(1);
+	private static final CountDownLatch cdlcl = new CountDownLatch(1);
 	public static void main(String[] args) throws Exception {		
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
@@ -96,11 +97,10 @@ public class EmbeddedSchedulersNodeLauncher {
 				            + DataSamudayaConstants.CACHEBLOCKS);
 			CacheUtils.initBlockMetadataCache(cacheid);
 			ExecutorService es = Executors.newFixedThreadPool(3);
-			var cdlte = new CountDownLatch(1);
 			es.execute(new Runnable() {
 				public void run() {
 					try {
-						startTaskScheduler(zo, cdl, cdlte);
+						startContainerLauncher(zo, cdl);
 					} catch (Exception e) {
 						log.error(DataSamudayaConstants.EMPTY, e);
 					}
@@ -109,7 +109,8 @@ public class EmbeddedSchedulersNodeLauncher {
 			es.execute(new Runnable() {
 				public void run() {
 					try {
-						startTaskSchedulerStream(zo, cdl, cdlte);
+						cdlcl.await();
+						startTaskScheduler(zo, cdl);
 					} catch (Exception e) {
 						log.error(DataSamudayaConstants.EMPTY, e);
 					}
@@ -118,13 +119,13 @@ public class EmbeddedSchedulersNodeLauncher {
 			es.execute(new Runnable() {
 				public void run() {
 					try {
-						startContainerLauncher(zo, cdl, cdlte);
+						cdlcl.await();
+						startTaskSchedulerStream(zo, cdl);
 					} catch (Exception e) {
 						log.error(DataSamudayaConstants.EMPTY, e);
 					}
 				}
 			});
-			
 			String nodeport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT);
 			String streamport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_PORT);
 			String streamwebport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_WEB_PORT);
@@ -148,10 +149,8 @@ public class EmbeddedSchedulersNodeLauncher {
 
 	static Registry server = null;
 
-	public static void startContainerLauncher(ZookeeperOperations zo,CountDownLatch cdl,
-			CountDownLatch cdlte) {
+	public static void startContainerLauncher(ZookeeperOperations zo,CountDownLatch cdl) {
 		try {
-			cdlte.await();
 			var port = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
 			var host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
 			var escontainer = Executors.newWorkStealingPool();
@@ -201,6 +200,7 @@ public class EmbeddedSchedulersNodeLauncher {
 			server = Utils.getRPCRegistry(port, datacruncher, DataSamudayaConstants.EMPTY);
 			log.debug("NodeLauncher started at port....." + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
 			log.debug("Adding Shutdown Hook...");
+			cdlcl.countDown();
 			Utils.addShutdownHook(() -> {
 				try {
 					containerprocesses
@@ -238,8 +238,7 @@ public class EmbeddedSchedulersNodeLauncher {
 	static StreamDataCruncher stub = null;
 	static StreamDataCruncher datacruncher = null;
 
-	public static void startTaskSchedulerStream(ZookeeperOperations zo, CountDownLatch cdl,
-			CountDownLatch cdlte) throws Exception {
+	public static void startTaskSchedulerStream(ZookeeperOperations zo, CountDownLatch cdl) throws Exception {
 		var cdlstream = new CountDownLatch(1);
 		var zookeeperid = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST))
 				+ DataSamudayaConstants.UNDERSCORE + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_PORT);
@@ -262,7 +261,6 @@ public class EmbeddedSchedulersNodeLauncher {
 		});
 		log.info("Streaming Scheduler Waiting to elect as a leader...");
 		cdlstream.await();
-		cdlte.countDown();
 		var esstream = Executors.newFixedThreadPool(1);
 		var es = Executors.newFixedThreadPool(100);
 		var su = new ServerUtils();
@@ -271,10 +269,7 @@ public class EmbeddedSchedulersNodeLauncher {
 				new WebResourcesServlet(),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH);
-		su.start();		
-		SQLServer.start();
-		PigQueryServer.start();
-		JShellServer.startJShell();
+		su.start();				
 		var lbq = new LinkedBlockingQueue<StreamPipelineTaskScheduler>(Integer.valueOf(
 				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE, DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE_DEFAULT)));
 
@@ -370,10 +365,12 @@ public class EmbeddedSchedulersNodeLauncher {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		});
+		SQLServer.start();
+		PigQueryServer.start();
+		JShellServer.startJShell();
 	}
 
-	public static void startTaskScheduler(ZookeeperOperations zo, CountDownLatch cdl,
-			CountDownLatch cdlte) throws Exception {
+	public static void startTaskScheduler(ZookeeperOperations zo, CountDownLatch cdl) throws Exception {
 		var cdlmr = new CountDownLatch(1);
 		var zookeeperid = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST))
 				+ DataSamudayaConstants.UNDERSCORE + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PORT);
@@ -396,7 +393,6 @@ public class EmbeddedSchedulersNodeLauncher {
 		});
 		log.info("Scheduler Waiting to elect as a leader...");
 		cdlmr.await();
-		cdlte.countDown();
 		var su = new ServerUtils();
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_WEB_PORT)),
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
