@@ -2518,14 +2518,28 @@ public class SQLUtils {
 	 * Get orc file to store columnar data
 	 * @return path
 	 */
-	protected static String getORCFilePath() {
+	protected static String getORCFilePath(String randomuuid) {
 		String tmpdir = isNull(DataSamudayaProperties.get())?System.getProperty(DataSamudayaConstants.TMPDIR):
 			DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR, System.getProperty(DataSamudayaConstants.TMPDIR));
 		new File(tmpdir + DataSamudayaConstants.FORWARD_SLASH + 
 				FileSystemSupport.MDS).mkdirs();
 		return tmpdir + DataSamudayaConstants.FORWARD_SLASH + 
-				FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + UUID.randomUUID().toString() 
+				FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + randomuuid 
 				+ DataSamudayaConstants.ORCFILE_EXT;
+	}
+	
+	/**
+	 * Get the orcs crc with path
+	 * @return crcpath
+	 */
+	protected static String getORCCRCFilePath(String uuid) {
+		String tmpdir = isNull(DataSamudayaProperties.get())?System.getProperty(DataSamudayaConstants.TMPDIR):
+			DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR, System.getProperty(DataSamudayaConstants.TMPDIR));
+		new File(tmpdir + DataSamudayaConstants.FORWARD_SLASH + 
+				FileSystemSupport.MDS).mkdirs();
+		return tmpdir + DataSamudayaConstants.FORWARD_SLASH + 
+				FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DOT + uuid
+				+ DataSamudayaConstants.ORCFILE_EXT+DataSamudayaConstants.CRCFILE_EXT;
 	}
 	
 	/**
@@ -2543,7 +2557,8 @@ public class SQLUtils {
 
 		// Create ORC WriterOptions
 		WriterOptions options = OrcFile.writerOptions(configuration).setSchema(schema);
-		String orcfilepath = getORCFilePath();
+		String fileuuid = UUID.randomUUID().toString();
+		String orcfilepath = getORCFilePath(fileuuid);
 		// Create an ORC file writer
 		try (Writer writer = OrcFile.createWriter(new Path(orcfilepath), options);) {
 			VectorizedRowBatch batch = schema.createRowBatch();
@@ -2571,6 +2586,7 @@ public class SQLUtils {
 				}
 			});
 			new File(orcfilepath).deleteOnExit();
+			new File(getORCCRCFilePath(fileuuid)).deleteOnExit();
 			return orcfilepath;
 		} finally {
 

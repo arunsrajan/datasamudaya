@@ -31,7 +31,7 @@ public class DataSamudayaConstants {
   public static final String EQUAL = "=";
   public static final String UNDERSCORE = "_";
   public static final String EMPTY = "";
-  static final char DOT = '.';
+  public static final char DOT = '.';
   public static final String ASTERIX = "*";
   public static final String COMMA = ",";
   public static final String SINGLE_QUOTES = "'";
@@ -560,6 +560,7 @@ public class DataSamudayaConstants {
   public static final String ARROWFILE_EXT = ".arrow";
   
   public static final String ORCFILE_EXT = ".orc";
+  public static final String CRCFILE_EXT = ".crc";
   
   public static final String SO_TIMEOUT = "socket.timeout";
   
