@@ -90,6 +90,7 @@ public class SQLServer {
 								isjgroups = false;
 								isignite = false;
 								isyarn = true;
+								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
 								isjgroups = false;
 								isignite = false;

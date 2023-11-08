@@ -15,6 +15,7 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.retry.RetryForever;
 import org.apache.zookeeper.CreateMode;
@@ -47,7 +48,7 @@ public class ZookeeperOperations implements AutoCloseable{
         curator = CuratorFrameworkFactory.newClient(DataSamudayaProperties.get()
         		.getProperty(DataSamudayaConstants.ZOOKEEPER_HOSTPORT, DataSamudayaConstants.ZK_DEFAULT), 
         		new RetryForever(
-						Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_RETRYDELAY))));
+						Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_RETRYDELAY, DataSamudayaConstants.ZOOKEEPER_RETRYDELAY_DEFAULT))));
         curator.start();
         curator.blockUntilConnected();
         objectMapper = new ObjectMapper();
@@ -106,6 +107,15 @@ public class ZookeeperOperations implements AutoCloseable{
         curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
     			+DataSamudayaConstants.LEADERZK+DataSamudayaConstants.LEADERSCHEDULERSTREAMZK);
     	}
+    }
+    
+    /**
+     * Creates distributed queue
+     * @param path
+     * @return Distributed queue object
+     */
+    public SimpleDistributedQueue createDistributedQueue(String path) {
+    	return new SimpleDistributedQueue(curator, path);
     }
 
     /**

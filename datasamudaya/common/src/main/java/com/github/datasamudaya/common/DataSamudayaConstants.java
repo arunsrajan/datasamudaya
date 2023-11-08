@@ -170,6 +170,7 @@ public class DataSamudayaConstants {
 
   public static final String ZOOKEEPER_HOSTPORT = "zookeeper.hostport";
   public static final String ZOOKEEPER_RETRYDELAY = "zookeeper.retrydelay";
+  public static final String ZOOKEEPER_RETRYDELAY_DEFAULT = "500";
   public static final String ZOOKEEPER_STANDALONE_CLIENTPORT = "zookeeper.standalone.clientport";
   public static final String ZOOKEEPER_STANDALONE_NUMCONNECTIONS =
       "zookeeper.standalone.numconnections";
@@ -565,5 +566,8 @@ public class DataSamudayaConstants {
   public static final String SO_TIMEOUT = "socket.timeout";
   
   public static final String SO_TIMEOUT_DEFAULT = "4000";
+  
+  public static final String YARN_INPUT_QUEUE = "/inputqueue";
+  public static final String YARN_OUTPUT_QUEUE = "/outputqueue";
 
 }

@@ -55,6 +55,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -74,15 +75,17 @@ import javax.net.ssl.TrustManagerFactory;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgrapht.Graph;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.io.ComponentNameProvider;
 import org.jgrapht.io.DOTExporter;
 import org.jgrapht.io.ExportException;
@@ -98,41 +101,49 @@ import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.yarn.YarnSystemConstants;
+import org.springframework.yarn.client.CommandYarnClient;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.ClosureSerializer.Closure;
-import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.StringArraySerializer;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
+import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.StringArraySerializer;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.EnumSerializer;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.datasamudaya.common.AllocateContainers;
 import com.github.datasamudaya.common.ContainerException;
 import com.github.datasamudaya.common.ContainerLaunchAttributes;
 import com.github.datasamudaya.common.ContainerResources;
 import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataCruncherContext;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaNodesResources;
+import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.DataSamudayaUsers;
 import com.github.datasamudaya.common.DestroyContainer;
 import com.github.datasamudaya.common.DestroyContainers;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
 import com.github.datasamudaya.common.GlobalJobFolderBlockLocations;
+import com.github.datasamudaya.common.GlobalYARNResources;
 import com.github.datasamudaya.common.Job;
+import com.github.datasamudaya.common.Job.JOBTYPE;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LaunchContainers;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaNodesResources;
-import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.DataSamudayaUsers;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
+import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.Stage;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.TaskInfoYARN;
 import com.github.datasamudaya.common.TaskStatus;
 import com.github.datasamudaya.common.Tuple2Serializable;
 import com.github.datasamudaya.common.User;
@@ -140,7 +151,6 @@ import com.github.datasamudaya.common.WhoAreRequest;
 import com.github.datasamudaya.common.WhoAreResponse;
 import com.github.datasamudaya.common.WhoIsRequest;
 import com.github.datasamudaya.common.WhoIsResponse;
-import com.github.datasamudaya.common.Job.JOBTYPE;
 import com.github.datasamudaya.common.functions.Coalesce;
 
 import jdk.jshell.JShell;
@@ -1205,6 +1215,113 @@ public class Utils {
 		}
 		GlobalContainerLaunchers.put(user, globallaunchcontainers);
 		return globallaunchcontainers;
+	}
+	
+	private static Semaphore yarnmutex = new Semaphore(1);
+	/**
+	 * launches the YARN Executors creating containers
+	 * @param pipelineconfig
+	 * @param cpuuser
+	 * @param memoryuser
+	 * @param numberofcontainers
+	 * @throws Exception
+	 */
+	public static void launchYARNExecutors(String teid, 
+			int cpuuser, int memoryuser, int numberofcontainers) throws Exception {
+		yarnmutex.acquire();
+		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
+		System.setProperty("jobcount", "1");
+		System.setProperty("containercount", "" + numberofcontainers);
+	    System.setProperty("containermemory", "" + memoryuser);
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+				DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT, Utils.class);
+		var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);		
+		client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
+		client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, teid);
+		ApplicationId appid = client.submitApplication(true);
+		try {
+			var zo = new ZookeeperOperations();
+		 	zo.connect();
+			SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.YARN_INPUT_QUEUE
+					+ DataSamudayaConstants.FORWARD_SLASH + teid);
+			SimpleDistributedQueue outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.YARN_OUTPUT_QUEUE
+					+ DataSamudayaConstants.FORWARD_SLASH + teid);
+			Map<String, Object> yarnresourcesmap = new ConcurrentHashMap<>();
+			yarnresourcesmap.put("appid", appid);
+			yarnresourcesmap.put("client", client);
+			yarnresourcesmap.put("inputqueue", inputqueue);
+			yarnresourcesmap.put("outputqueue", outputqueue);
+			yarnresourcesmap.put("zk", zo);
+			GlobalYARNResources.setYarnResourcesByTeId(teid, yarnresourcesmap);
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		yarnmutex.release();
+	}
+	
+	/**
+	 * creates Job in HDFS to execute in YARN
+	 * @param pipelineconfig
+	 * @param sptsl
+	 * @param graph
+	 * @param tasksptsthread
+	 * @param jsidjsmap
+	 * @throws Exception
+	 */
+	public static void createJobInHDFS(PipelineConfig pipelineconfig,
+			List<?> sptsl,
+			SimpleDirectedGraph<?, DAGEdge> graph,
+			Map<String, ?> tasksptsthread,
+			Map<String, JobStage> jsidjsmap
+			) throws Exception {
+		OutputStream os = pipelineconfig.getOutput();
+        pipelineconfig.setOutput(null);
+        new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
+        Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
+            DataSamudayaConstants.YARNOUTJAR);
+        var yarninputfolder =
+            DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH + pipelineconfig.getJobid();
+        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(sptsl, yarninputfolder,
+            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE, pipelineconfig);
+        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(graph, yarninputfolder,
+            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE, pipelineconfig);
+        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(tasksptsthread, yarninputfolder,
+            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE, pipelineconfig);
+        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jsidjsmap, yarninputfolder,
+            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE, pipelineconfig);
+        pipelineconfig.setOutput(os);
+	}
+	
+	/**
+	 * Sends Job Information to DistributedQueue
+	 * @param teid
+	 * @param jobid
+	 * @throws Exception 
+	 */
+	public static void sendJobToYARNDistributedQueue(String teid, String jobid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		var taskInfo  = new TaskInfoYARN(jobid, false, false); 
+		((SimpleDistributedQueue)GlobalYARNResources.getYarnResourcesByTeId(teid).get("inputqueue")).offer(objectMapper.writeValueAsBytes(taskInfo));
+	}
+	
+	/**
+	 * get Job Status
+	 * @param teid
+	 * @param jobid
+	 * @return
+	 * @throws Exception
+	 */
+	public static TaskInfoYARN getJobOutputStatusYARNDistributedQueueBlocking(String teid) throws Exception {
+		
+		SimpleDistributedQueue outputqueue = (SimpleDistributedQueue) GlobalYARNResources.getYarnResourcesByTeId(teid).get("outputqueue");
+		while(outputqueue.peek() == null) {
+			Thread.sleep(1000);
+		}
+		var objectMapper = new ObjectMapper();
+		TaskInfoYARN tinfoyarn = objectMapper.readValue(outputqueue.poll(), TaskInfoYARN.class);
+		return tinfoyarn;
 	}
 
 	/**

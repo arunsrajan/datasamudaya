@@ -92,6 +92,7 @@ import com.github.datasamudaya.common.RemoteDataFetch;
 import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.Stage;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.TaskInfoYARN;
 import com.github.datasamudaya.common.TaskStatus;
 import com.github.datasamudaya.common.TasksGraphExecutor;
 import com.github.datasamudaya.common.TssHAChannel;
@@ -325,41 +326,34 @@ public class StreamJobScheduler {
       // framework.
       else if (Boolean.TRUE.equals(isyarn)) {
         yarnmutex.acquire();
-        OutputStream os = pipelineconfig.getOutput();
-        pipelineconfig.setOutput(null);
-        new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
-        Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
-            DataSamudayaConstants.YARNOUTJAR);
-        var yarninputfolder =
-            DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH + job.getId();
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(sptsl, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE, pipelineconfig);
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(graph, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE, pipelineconfig);
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(tasksptsthread, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE, pipelineconfig);
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jsidjsmap, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE, pipelineconfig);
-        decideContainerCountAndPhysicalMemoryByBlockSize(sptsl.size(),
-            Integer.parseInt(pipelineconfig.getBlocksize()));
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-            DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT,
-            getClass());
-        pipelineconfig.setOutput(os);
-        var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
-        if(nonNull(pipelineconfig.getJobname())) {
-        	client.setAppName(pipelineconfig.getJobname());
+        if(!pipelineconfig.getUseglobaltaskexecutors()) {
+	        Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
+	        decideContainerCountAndPhysicalMemoryByBlockSize(sptsl.size(),
+	            Integer.parseInt(pipelineconfig.getBlocksize()));
+	        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+	            DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT,
+	            getClass());	        
+	        var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
+	        if(nonNull(pipelineconfig.getJobname())) {
+	        	client.setAppName(pipelineconfig.getJobname());
+	        } else {
+	        	client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
+	        }
+	        client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, job.getId());
+	        var appid = client.submitApplication(true);
+	        var appreport = client.getApplicationReport(appid);
+	        yarnmutex.release();
+	        while (appreport.getYarnApplicationState() != YarnApplicationState.FINISHED
+	            && appreport.getYarnApplicationState() != YarnApplicationState.FAILED) {
+	          appreport = client.getApplicationReport(appid);
+	          Thread.sleep(1000);
+	        }
         } else {
-        	client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
-        }
-        client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, job.getId());
-        var appid = client.submitApplication(true);
-        var appreport = client.getApplicationReport(appid);
-        yarnmutex.release();
-        while (appreport.getYarnApplicationState() != YarnApplicationState.FINISHED
-            && appreport.getYarnApplicationState() != YarnApplicationState.FAILED) {
-          appreport = client.getApplicationReport(appid);
-          Thread.sleep(1000);
+        	 Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
+        	 Utils.sendJobToYARNDistributedQueue(pipelineconfig.getTejobid(), job.getId());
+        	 TaskInfoYARN tinfoyarn= Utils.getJobOutputStatusYARNDistributedQueueBlocking(pipelineconfig.getTejobid());
+        	 log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(), job.getId().equals(tinfoyarn.getJobid()));
+        	 log.info("Is output available {}", tinfoyarn.isIsresultavailable());
         }
       }
       // If Jgroups is the scheduler;
