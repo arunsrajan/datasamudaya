@@ -81,6 +81,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
+import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.burningwave.core.assembler.StaticComponentContainer;
@@ -1233,6 +1234,7 @@ public class Utils {
 		System.setProperty("jobcount", "1");
 		System.setProperty("containercount", "" + numberofcontainers);
 	    System.setProperty("containermemory", "" + memoryuser);
+	    System.setProperty("containercpu", "" + cpuuser);
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT, Utils.class);
 		var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);		
@@ -1255,6 +1257,11 @@ public class Utils {
 			yarnresourcesmap.put("outputqueue", outputqueue);
 			yarnresourcesmap.put("zk", zo);
 			GlobalYARNResources.setYarnResourcesByTeId(teid, yarnresourcesmap);
+			var appreport = client.getApplicationReport(appid);
+			while (appreport.getYarnApplicationState() != YarnApplicationState.RUNNING) {
+				appreport = client.getApplicationReport(appid);
+				Thread.sleep(1000);
+			}
 		} catch(Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
@@ -1303,6 +1310,18 @@ public class Utils {
 	public static void sendJobToYARNDistributedQueue(String teid, String jobid) throws Exception {
 		var objectMapper = new ObjectMapper();
 		var taskInfo  = new TaskInfoYARN(jobid, false, false); 
+		((SimpleDistributedQueue)GlobalYARNResources.getYarnResourcesByTeId(teid).get("inputqueue")).offer(objectMapper.writeValueAsBytes(taskInfo));
+	}
+	
+	/**
+	 * Sends Job Information to DistributedQueue
+	 * @param teid
+	 * @param jobid
+	 * @throws Exception 
+	 */
+	public static void shutDownYARNContainer(String teid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		var taskInfo  = new TaskInfoYARN(null, true, false); 
 		((SimpleDistributedQueue)GlobalYARNResources.getYarnResourcesByTeId(teid).get("inputqueue")).offer(objectMapper.writeValueAsBytes(taskInfo));
 	}
 	

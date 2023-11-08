@@ -112,7 +112,13 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 			es.execute(()->pollQueue());
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);			
+			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);	
+			var containerallocator = (DefaultContainerAllocator) getAllocator();
+			log.debug("Parameters: " + getParameters());
+			log.info("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
+			log.info("Container-Cpu: " + getParameters().getProperty("container-cpu", "1"));
+			containerallocator.setVirtualcores(Integer.parseInt(getParameters().getProperty("container-cpu", "1")));
+			containerallocator.setMemory(Integer.parseInt(getParameters().getProperty("container-memory", "1024")));
 		} catch (Exception ex) {
 			log.debug("Submit Application Error, See cause below \n", ex);
 		}
@@ -158,11 +164,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 						+ tinfo.getJobid();
 				log.debug("Yarn Input Folder: " + yarninputfolder);
 				log.debug("AppMaster HDFS: " + getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
-				var namenodeurl = getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL);
-				var containerallocator = (DefaultContainerAllocator) getAllocator();
-				log.debug("Parameters: " + getParameters());
-				log.info("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
-				containerallocator.setMemory(Integer.parseInt(getParameters().getProperty("container-memory", "1024")));
+				var namenodeurl = getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL);				
 				System.setProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 						getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
 				// Thread containing the job stage information.

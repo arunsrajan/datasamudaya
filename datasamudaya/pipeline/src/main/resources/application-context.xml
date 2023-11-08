@@ -36,6 +36,7 @@
 		<prop key="job-count">${jobcount}</prop>
 		<prop key="hdfs.namenode.url">${hd.fs}</prop>
 		<prop key="container-memory">${containermemory}</prop>
+		<prop key="container-cpu">${containercpu}</prop>
 	</util:properties>
 
 	<yarn:client>

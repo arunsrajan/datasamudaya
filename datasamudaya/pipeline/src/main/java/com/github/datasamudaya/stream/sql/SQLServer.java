@@ -54,6 +54,7 @@ public class SQLServer {
 						String scheduler = "";
 						String tejobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 						boolean iscontainerlaunched = false;
+						boolean isyarncontainerlaunched = false;
 						try (Socket clientSocket = sock;
 								PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 								BufferedReader in = new BufferedReader(
@@ -91,6 +92,7 @@ public class SQLServer {
 								isignite = false;
 								isyarn = true;
 								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+								isyarncontainerlaunched = true;
 							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
 								isjgroups = false;
 								isignite = false;
@@ -123,6 +125,14 @@ public class SQLServer {
 													isjgroups = true;
 													isignite = false;
 													isyarn = false;
+													if(isyarncontainerlaunched) {
+														try {
+															Utils.shutDownYARNContainer(tejobid);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = false;
+													}
 													if(!iscontainerlaunched) {
 														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
@@ -144,6 +154,14 @@ public class SQLServer {
 														}
 														iscontainerlaunched = false;
 													}
+													if(isyarncontainerlaunched) {
+														try {
+															Utils.shutDownYARNContainer(tejobid);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = false;
+													}
 													out.println("ignite mode set");
 												} else if(mode[1].equalsIgnoreCase(DataSamudayaConstants.YARN)) {
 													isjgroups = false;
@@ -157,11 +175,27 @@ public class SQLServer {
 														}
 														iscontainerlaunched = false;
 													}
+													if(!isyarncontainerlaunched) {
+														try {
+															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = true;
+													}
 													out.println("yarn mode set");
 												} else {
 													isjgroups = false;
 													isignite = false;
 													isyarn = false;
+													if(isyarncontainerlaunched) {
+														try {
+															Utils.shutDownYARNContainer(tejobid);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = false;
+													}
 													if(!iscontainerlaunched) {
 														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
@@ -237,6 +271,12 @@ public class SQLServer {
 							if(iscontainerlaunched) {
 								try {
 									Utils.destroyContainers(user, tejobid);
+								} catch (Exception ex) {
+									log.error(DataSamudayaConstants.EMPTY, ex);
+								}
+							} else if(isyarncontainerlaunched) {
+								try {
+									Utils.shutDownYARNContainer(tejobid);
 								} catch (Exception ex) {
 									log.error(DataSamudayaConstants.EMPTY, ex);
 								}
