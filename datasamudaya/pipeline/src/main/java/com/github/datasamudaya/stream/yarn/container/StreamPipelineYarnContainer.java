@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,7 +53,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 	private ExecutorService executor;
 	private static final Log log = LogFactory.getLog(StreamPipelineYarnContainer.class);
 	private Map<String, JobStage> jsidjsmap;
-
+	private MindAppmasterServiceClient client = null;
 	/**
 	 * Pull the Job to perform MR operation execution requesting 
 	 * the Yarn App Master Service. The various Yarn operation What operation
@@ -65,12 +66,13 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 		Task task;
 		JobRequest request;
 		byte[] job = null;
-		var containerid = getEnvironment().get(DataSamudayaConstants.SHDP_CONTAINERID);
-		MindAppmasterServiceClient client = null;
+		var containerid = getEnvironment().get(DataSamudayaConstants.SHDP_CONTAINERID);		
 		executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+		Semaphore lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
 			var prop = new Properties();
 			prop.putAll(System.getProperties());
+			prop.putAll(containerprops);
 			DataSamudayaProperties.put(prop);
 			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
 			while (true) {
@@ -110,30 +112,37 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 				}
 				else if (response.getState().equals(JobResponse.State.RUNJOB)) {
 					log.debug(containerid + ": Environment " + getEnvironment());
-					job = response.getJob();
-					
-					var input = new Input(new ByteArrayInputStream(job));
-					var object = Utils.getKryo().readClassAndObject(input);
-					task = (Task) object;
-					System.setProperty(DataSamudayaConstants.HDFSNAMENODEURL, containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL));
-					prop.putAll(containerprops);
-					DataSamudayaProperties.put(prop);
-					StreamPipelineTaskExecutorYarn yarnexecutor = null;
-					if(nonNull(task.getStorage()) && task.getStorage() == STORAGE.COLUMNARSQL) {
-						yarnexecutor = new StreamPipelineTaskExecutorYarnSQL( containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL), jsidjsmap.get(task.jobid + task.stageid));						
-					} else {
-						yarnexecutor = new StreamPipelineTaskExecutorYarn( containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL), jsidjsmap.get(task.jobid + task.stageid));
-					}
-					yarnexecutor.setTask(task);
-					yarnexecutor.setExecutor(executor);
-					yarnexecutor.call();
-					request = new JobRequest();
-					request.setState(JobRequest.State.JOBDONE);
-					request.setJob(job);
-					request.setContainerid(containerid);
-					response = (JobResponse) client.doMindRequest(request);
-					log.debug(containerid + ": Task Completed=" + task);
-					sleep(1);
+					executor.execute(() -> {
+						try {
+							lock.acquire();
+						} catch (InterruptedException e) {
+							log.error(DataSamudayaConstants.EMPTY, e);
+						}
+						byte[] jobtoprocess = response.getJob();
+						var input = new Input(new ByteArrayInputStream(jobtoprocess));
+						var object = Utils.getKryo().readClassAndObject(input);
+						Task tasktoprocess = (Task) object;						
+						StreamPipelineTaskExecutorYarn yarnexecutor = null;
+						if (nonNull(tasktoprocess.getStorage()) && tasktoprocess.getStorage() == STORAGE.COLUMNARSQL) {
+							yarnexecutor = new StreamPipelineTaskExecutorYarnSQL(
+									containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL),
+									jsidjsmap.get(tasktoprocess.jobid + tasktoprocess.stageid));
+						} else {
+							yarnexecutor = new StreamPipelineTaskExecutorYarn(
+									containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL),
+									jsidjsmap.get(tasktoprocess.jobid + tasktoprocess.stageid));
+						}
+						yarnexecutor.setTask(tasktoprocess);
+						yarnexecutor.setExecutor(executor);
+						yarnexecutor.call();
+						JobRequest jr = new JobRequest();
+						jr.setState(JobRequest.State.JOBDONE);
+						jr.setJob(jobtoprocess);
+						jr.setContainerid(containerid);
+						JobResponse jresp = (JobResponse) client.doMindRequest(jr);
+						log.debug(containerid + ": Task Completed=" + tasktoprocess);
+						lock.release();
+					});
 				}
 				else if (response.getState().equals(JobResponse.State.DIE)) {
 					log.debug(containerid + ": Container dies: " + response.getState());
