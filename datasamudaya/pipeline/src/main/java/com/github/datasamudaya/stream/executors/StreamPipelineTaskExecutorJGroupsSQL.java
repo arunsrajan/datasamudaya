@@ -178,7 +178,8 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 											blorcmap.put(blockslocation, SQLUtils.createORCFile(Arrays.asList(csvoptions.getHeader()), csvoptions.getTypes(), streamcsv));
 										}
 									}
-									orrr = SQLUtils.getOrcStreamRecords(blorcmap.get(blockslocation));
+									orrr = SQLUtils.getOrcStreamRecords(blorcmap.get(blockslocation), csvoptions.getHeader(), 
+											csvoptions.getRequiredcolumns(), csvoptions.getTypes());
 									intermediatestreamobject = orrr.getValuesmapstream();
 								} finally {}
 							} catch (IOException ioe) {

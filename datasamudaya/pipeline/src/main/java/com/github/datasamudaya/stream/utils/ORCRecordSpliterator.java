@@ -1,6 +1,7 @@
 package com.github.datasamudaya.stream.utils;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.function.Consumer;
@@ -16,12 +17,15 @@ public class ORCRecordSpliterator extends java.util.Spliterators.AbstractSpliter
     private final RecordReader recordReader;
     private final TypeDescription schema;
     VectorizedRowBatch batch;
+    Map<String, Integer> colindex;
     public ORCRecordSpliterator(RecordReader recordReader, TypeDescription schema,
-    		VectorizedRowBatch batch) {
+    		VectorizedRowBatch batch,
+    		Map<String, Integer> colindex) {
         super(Long.MAX_VALUE, Spliterator.ORDERED);
         this.recordReader = recordReader;
         this.schema = schema;
         this.batch = batch;
+        this.colindex = colindex;
     }
     public Object getValueFromVector(int index, ColumnVector cv) {
 		if (cv instanceof LongColumnVector lcv) {
@@ -37,15 +41,15 @@ public class ORCRecordSpliterator extends java.util.Spliterators.AbstractSpliter
             if (!recordReader.nextBatch(batch)) {
                 return false; // No more records
             }
-
+            final AtomicInteger atomint = new AtomicInteger();
             // Read the next record into the row array
             for (int r = 0; r < batch.size; ++r) {
-            	Map<String, Object> record = new HashMap<>();
-                for (int i = 0; i < schema.getMaximumId(); i++) {
-                    String fieldName = schema.getFieldNames().get(i);
-                    Object value = getValueFromVector(r, batch.cols[i]);
-                    record.put(fieldName, value);
-                }
+            	atomint.set(r);
+            	Map<String, Object> record = new ConcurrentHashMap<>();
+            	schema.getFieldNames().parallelStream().forEach(column->{
+                    Object value = getValueFromVector(atomint.get(), batch.cols[colindex.get(column).intValue()]);
+                    record.put(column, value);
+                });
                 action.accept(record);
 			}            
             return true;

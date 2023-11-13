@@ -2658,16 +2658,53 @@ public class SQLUtils {
 	 * @return orc rrr object
 	 * @throws Exception
 	 */
-	public static OrcReaderRecordReader getOrcStreamRecords(String orcfilepath) throws Exception{
+	public static OrcReaderRecordReader getOrcStreamRecords(String orcfilepath, String[] allcolumns, List<String> requiredcolumns, List<SqlTypeName> sqltypes) throws Exception{
 		Configuration configuration = new Configuration();
         org.apache.orc.Reader reader = OrcFile.createReader(new Path(orcfilepath),
                 OrcFile.readerOptions(configuration));
         RecordReader rows = reader.rows();
         VectorizedRowBatch batch = reader.getSchema().createRowBatch();
+        Map<String,Integer> colindex = getColumnIndex(allcolumns);
+        TypeDescription schema = TypeDescription.fromString(convertFieldsToString(requiredcolumns, 
+        		getRequiredColumnTypes(colindex, requiredcolumns, sqltypes)));
         Stream<Map<String, Object>> mapStream = StreamSupport.stream(
-                new ORCRecordSpliterator(rows, reader.getSchema(), batch), false);
+                new ORCRecordSpliterator(rows, schema, batch, colindex), false);
         OrcReaderRecordReader orrr = new OrcReaderRecordReader(reader, rows, mapStream);
         return orrr;
 	}
+	
+	
+	/**
+	 * This function returns required column types
+	 * @param colindex
+	 * @param requiredcolumns
+	 * @param sqltypes
+	 * @return get required column types
+	 */
+	public static List<SqlTypeName> getRequiredColumnTypes(Map<String, Integer> colindex, List<String> requiredcolumns, List<SqlTypeName> sqltypes){
+    	List<SqlTypeName> sqltypesrequiredcolumns = new ArrayList<>();
+		if(CollectionUtils.isNotEmpty(requiredcolumns)) {
+			for (String reqcols:requiredcolumns) {
+				sqltypesrequiredcolumns.add(sqltypes.get(colindex.get(reqcols).intValue()));
+			}
+		}
+		return sqltypesrequiredcolumns;
+    }
+	
+	/**
+	 * This function returns column with index in map 
+	 * @param tablecolumns
+	 * @return column with index
+	 */
+	public static Map<String, Integer> getColumnIndex(String[] tablecolumns){
+    	Map<String, Integer> roottablecolumnindexmap = new ConcurrentHashMap<>();
+		if(nonNull(tablecolumns)) {
+			for (int originalcolumnindex = 0; originalcolumnindex < tablecolumns.length; originalcolumnindex++) {
+				roottablecolumnindexmap.put(tablecolumns[originalcolumnindex],
+						Integer.valueOf(originalcolumnindex));
+			}
+		}
+		return roottablecolumnindexmap;
+    }
 	
 }
