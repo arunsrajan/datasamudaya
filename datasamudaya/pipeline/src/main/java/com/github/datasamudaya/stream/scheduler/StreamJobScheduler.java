@@ -13,7 +13,6 @@ import static java.util.Objects.nonNull;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -324,9 +323,10 @@ public class StreamJobScheduler {
       }
       // If Yarn is scheduler run yarn scheduler via spring yarn
       // framework.
-      else if (Boolean.TRUE.equals(isyarn)) {
-        yarnmutex.acquire();
+      else if (Boolean.TRUE.equals(isyarn)) {        
         if(!pipelineconfig.getUseglobaltaskexecutors()) {
+        	yarnmutex.acquire();
+        	pipelineconfig.setJobid(job.getId());
 	        Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
 	        decideContainerCountAndPhysicalMemoryByBlockSize(sptsl.size(),
 	            Integer.parseInt(pipelineconfig.getBlocksize()));
@@ -343,11 +343,14 @@ public class StreamJobScheduler {
 	        var appid = client.submitApplication(true);
 	        var appreport = client.getApplicationReport(appid);
 	        yarnmutex.release();
-	        while (appreport.getYarnApplicationState() != YarnApplicationState.FINISHED
-	            && appreport.getYarnApplicationState() != YarnApplicationState.FAILED) {
-	          appreport = client.getApplicationReport(appid);
-	          Thread.sleep(1000);
-	        }
+	        while (appreport.getYarnApplicationState() != YarnApplicationState.RUNNING) {
+				appreport = client.getApplicationReport(appid);
+				Thread.sleep(1000);
+			}
+	        Utils.sendJobToYARNDistributedQueue(zo, job.getId());
+       	 	TaskInfoYARN tinfoyarn= Utils.getJobOutputStatusYARNDistributedQueueBlocking(zo, job.getId());
+       	 	Utils.shutDownYARNContainer(zo, job.getId());
+       	 	log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(), job.getId().equals(tinfoyarn.getJobid()));
         } else {
         	 Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
         	 Utils.sendJobToYARNDistributedQueue(pipelineconfig.getTejobid(), job.getId());
@@ -1156,17 +1159,18 @@ public class StreamJobScheduler {
    * @param stagecount
    */
   private void decideContainerCountAndPhysicalMemoryByBlockSize(int stagecount, int blocksize) {
-    com.sun.management.OperatingSystemMXBean os =
-        (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory
-            .getOperatingSystemMXBean();
-    var availablememorysize = os.getFreePhysicalMemorySize();
-    var processors = os.getAvailableProcessors();
-    blocksize = blocksize * 1024 * 1024;
-    availablememorysize = (availablememorysize - blocksize) / processors;
-    availablememorysize = availablememorysize / (1024 * 1024);
-    System.setProperty("jobcount", "" + stagecount);
-    System.setProperty("containercount", "" + processors);
-    System.setProperty("containermemory", "" + availablememorysize);
+    System.setProperty("jobcount", "1");
+    System.setProperty("containercount", "" + pipelineconfig.getNumberofcontainers());
+    long containermemory;
+    System.setProperty("containercpu", "" + pipelineconfig.getImplicitcontainercpu());
+    if(pipelineconfig.getImplicitcontainermemory().equals(DataSamudayaConstants.GB)) {
+    	containermemory = Long.valueOf(pipelineconfig.getImplicitcontainermemorysize()).longValue() * 1024;
+    } else if(pipelineconfig.getImplicitcontainermemory().equals(DataSamudayaConstants.MB)) {
+    	containermemory = Long.valueOf(pipelineconfig.getImplicitcontainermemorysize()).longValue();
+    } else {
+    	containermemory = Long.valueOf(pipelineconfig.getImplicitcontainermemorysize()).longValue()/DataSamudayaConstants.MB;
+    }
+    System.setProperty("containermemory", "" + containermemory);
   }
 
   private Map<String, StreamPipelineTaskSubmitter> tasksptsthread = new ConcurrentHashMap<>();

@@ -46,6 +46,7 @@ import org.apache.hadoop.hive.ql.exec.vector.BytesColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.ColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.LongColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
+import org.apache.orc.CompressionKind;
 import org.apache.orc.OrcFile;
 import org.apache.orc.OrcFile.WriterOptions;
 import org.apache.orc.RecordReader;
@@ -2550,13 +2551,14 @@ public class SQLUtils {
 	 * @return filepath
 	 * @throws Exception
 	 */
-	public static String createORCFile(List<String> airlineheader, 
+	public static String createORCFile(List<String> headers, 
 			List<SqlTypeName> headertypes, Stream<CSVRecord> records) throws Exception {
 		Configuration configuration = new Configuration();
-		TypeDescription schema = TypeDescription.fromString(convertFieldsToString(airlineheader, headertypes));
+		TypeDescription schema = TypeDescription.fromString(convertFieldsToString(headers, headertypes));
 
 		// Create ORC WriterOptions
-		WriterOptions options = OrcFile.writerOptions(configuration).setSchema(schema);
+		WriterOptions options = OrcFile.writerOptions(configuration).setSchema(schema)
+				.compress(CompressionKind.LZ4).blockPadding(true).blockSize(128 * DataSamudayaConstants.MB);
 		String fileuuid = UUID.randomUUID().toString();
 		String orcfilepath = getORCFilePath(fileuuid);
 		// Create an ORC file writer
@@ -2565,10 +2567,10 @@ public class SQLUtils {
 			records.forEach(csvrecord -> {
 				try {
 					// Create a row batch and populate it with data
-					for (int index = 0; index < airlineheader.size(); index++) {
+					for (int index = 0; index < headers.size(); index++) {
 						batch.cols[index].noNulls = true;
 						batch.cols[index].isNull[batch.size] = false;
-						writeValueToVector(batch.size, batch.cols[index], csvrecord.get(airlineheader.get(index)));
+						writeValueToVector(batch.size, batch.cols[index], csvrecord.get(headers.get(index)));
 					}
 					if (batch.size == batch.getMaxSize() - 1) {
 						batch.size++;

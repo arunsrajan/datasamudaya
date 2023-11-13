@@ -100,7 +100,7 @@ public class ContainerLauncher {
       argumentsForSpawn.add("-Xms" + cr.getMinmemory() + "m");
       argumentsForSpawn.add("-Xmx" + cr.getMaxmemory() + "m");
       argumentsForSpawn.add("-XX:ActiveProcessorCount=" + cr.getCpu());
-      argumentsForSpawn.add("-XX:InitiatingHeapOccupancyPercent=80");
+      argumentsForSpawn.add("-XX:InitiatingHeapOccupancyPercent=40");
       argumentsForSpawn.add("-Xrunjdwp:server=y,transport=dt_socket,address="
           + (Integer.parseInt(port) + 100) + ",suspend=n");
       argumentsForSpawn.add(cr.getGctype());

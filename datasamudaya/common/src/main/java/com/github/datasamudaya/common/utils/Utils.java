@@ -1038,7 +1038,7 @@ public class Utils {
 				crs.setMinmemory(heapmem);
 				crs.setMaxmemory(heapmem);
 				crs.setDirectheap(directmem);
-				crs.setGctype(DataSamudayaConstants.ZGC);
+				crs.setGctype(pc.getGctype());
 				crl.add(crs);
 				String conthp = restolaunch.getNodeport().split(DataSamudayaConstants.UNDERSCORE)[0] + DataSamudayaConstants.UNDERSCORE
 						+ port;
@@ -1168,7 +1168,7 @@ public class Utils {
 				crs.setMinmemory(heapmem);
 				crs.setMaxmemory(heapmem);
 				crs.setDirectheap(directmem);
-				crs.setGctype(DataSamudayaConstants.ZGC);
+				crs.setGctype(pc.getGctype());
 				crl.add(crs);
 				String conthp = restolaunch.getNodeport().split(DataSamudayaConstants.UNDERSCORE)[0] + DataSamudayaConstants.UNDERSCORE
 						+ port;
@@ -1314,6 +1314,21 @@ public class Utils {
 	}
 	
 	/**
+	 * Send Job Information to Distributed queue
+	 * @param zo
+	 * @param jobid
+	 * @throws Exception
+	 */
+	public static void sendJobToYARNDistributedQueue(ZookeeperOperations zo, String jobid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		var taskInfo  = new TaskInfoYARN(jobid, false, false); 
+		SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_INPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+		inputqueue.offer(objectMapper.writeValueAsBytes(taskInfo));
+	}
+	
+	/**
 	 * Sends Job Information to DistributedQueue
 	 * @param teid
 	 * @param jobid
@@ -1326,19 +1341,52 @@ public class Utils {
 	}
 	
 	/**
+	 * Shutdown YARN resources like container
+	 * @param zo
+	 * @param jobid
+	 * @throws Exception
+	 */
+	public static void shutDownYARNContainer(ZookeeperOperations zo, String jobid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		var taskInfo  = new TaskInfoYARN(null, true, false); 
+		SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_INPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+		inputqueue.offer(objectMapper.writeValueAsBytes(taskInfo));
+	}
+	
+	/**
 	 * get Job Status
 	 * @param teid
 	 * @param jobid
-	 * @return
+	 * @return task info yarn
 	 * @throws Exception
 	 */
-	public static TaskInfoYARN getJobOutputStatusYARNDistributedQueueBlocking(String teid) throws Exception {
-		
+	public static TaskInfoYARN getJobOutputStatusYARNDistributedQueueBlocking(String teid) throws Exception {		
 		SimpleDistributedQueue outputqueue = (SimpleDistributedQueue) GlobalYARNResources.getYarnResourcesByTeId(teid).get("outputqueue");
 		while(outputqueue.peek() == null) {
 			Thread.sleep(1000);
 		}
 		var objectMapper = new ObjectMapper();
+		TaskInfoYARN tinfoyarn = objectMapper.readValue(outputqueue.poll(), TaskInfoYARN.class);
+		return tinfoyarn;
+	}
+	
+	/**
+	 * Get Submitted YARN Job Status
+	 * @param zo
+	 * @param jobid
+	 * @return taskinfoyarn
+	 * @throws Exception
+	 */
+	public static TaskInfoYARN getJobOutputStatusYARNDistributedQueueBlocking(ZookeeperOperations zo, String jobid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		SimpleDistributedQueue outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_OUTPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+		while(outputqueue.peek() == null) {
+			Thread.sleep(1000);
+		}
 		TaskInfoYARN tinfoyarn = objectMapper.readValue(outputqueue.poll(), TaskInfoYARN.class);
 		return tinfoyarn;
 	}
