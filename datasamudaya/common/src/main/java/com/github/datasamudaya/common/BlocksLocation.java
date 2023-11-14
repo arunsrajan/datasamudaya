@@ -68,4 +68,10 @@ public class BlocksLocation implements Serializable, Cloneable {
 		return super.clone();
 	}
 
+	public String toBlString() {
+		return "BlocksLocation [block=" + Arrays.toString(block) + "]";
+	}
+
+	
+	
 }

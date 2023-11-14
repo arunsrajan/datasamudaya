@@ -3,11 +3,16 @@ package com.github.datasamudaya.stream.utils;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +83,13 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
 
+import jp.co.yahoo.yosegi.message.objects.DoubleObj;
+import jp.co.yahoo.yosegi.message.objects.FloatObj;
+import jp.co.yahoo.yosegi.message.objects.IntegerObj;
+import jp.co.yahoo.yosegi.message.objects.LongObj;
+import jp.co.yahoo.yosegi.message.objects.StringObj;
+import jp.co.yahoo.yosegi.reader.YosegiSchemaReader;
+import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
@@ -2706,5 +2718,124 @@ public class SQLUtils {
 		}
 		return roottablecolumnindexmap;
     }
+	
+	/**
+	 * csv records to yosegi byte array
+	 * @param streamcsv
+	 * @param sqltypes
+	 * @param cols
+	 * @return yosegi byte array
+	 * @throws Exception
+	 */
+	public static byte[] getYosegiRecordWriter(Stream<CSVRecord> streamcsv, List<SqlTypeName> sqltypes, List<String> cols) throws Exception {
+		try(var baos = new ByteArrayOutputStream();
+				YosegiRecordWriter writer = new YosegiRecordWriter(baos);){			
+			Map<String,SqlTypeName> sqltypename = getColumnTypesByColumn(sqltypes, cols);			
+			streamcsv.forEach(csvrecord -> {
+				try {
+					Map data = new ConcurrentHashMap<>();
+					cols.stream().forEach(col->{
+						data.put(col, getYosegiObjectByValue(csvrecord.get(col), sqltypename.get(col)));
+					});
+					writer.addRow(data);
+				} catch(Exception ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
+				}
+			});
+			writer.close();
+			return baos.toByteArray();
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	}
+	
+	/**
+	 * Converts sqltypes and colums to column map
+	 * @param sqltypes
+	 * @param cols
+	 * @return column types map
+	 */
+	public static Map<String,SqlTypeName> getColumnTypesByColumn(List<SqlTypeName> sqltypes, List<String> cols){
+		Map<String,SqlTypeName> colsqltypenamemap = new ConcurrentHashMap<>();
+		for(int index=0;index<cols.size();index++) {
+			colsqltypenamemap.put(cols.get(index), sqltypes.get(index));
+		}
+		return colsqltypenamemap;
+	}
+	
+	/**
+	 * 
+	 * @param value
+	 * @param type
+	 * @return
+	 */
+	public static Object getYosegiObjectByValue(String value, SqlTypeName type) {
+		try {
+			if(type == SqlTypeName.INTEGER) {
+				if (NumberUtils.isCreatable((String) value)) {
+					return new IntegerObj(Integer.valueOf(value));
+				} else {
+					return new IntegerObj(Integer.valueOf(0));
+				}
+			} else if(type == SqlTypeName.BIGINT) {
+				if (NumberUtils.isCreatable((String) value)) {
+					return new LongObj(Long.valueOf(value));
+				} else {
+					return new LongObj(Long.valueOf(0l));
+				}
+			} else if(type == SqlTypeName.VARCHAR){
+				return new StringObj(value);
+			} else if(type == SqlTypeName.FLOAT) {
+				if (NumberUtils.isCreatable((String) value)) {
+					return new FloatObj(Float.valueOf(value));
+				} else {
+					return new FloatObj(Float.valueOf(0.0f));
+				}
+			} else if(type == SqlTypeName.DOUBLE) {
+				if (NumberUtils.isCreatable((String) value)) {
+					return new DoubleObj(Double.valueOf(value));
+				} else {
+					return new DoubleObj(Double.valueOf(0.0d));
+				}
+			} else {
+				return new StringObj(value);
+			}
+		} catch(Exception ex) {
+			if(type == SqlTypeName.INTEGER) {
+				return new IntegerObj(Integer.valueOf(0));
+			} else if(type == SqlTypeName.BIGINT) {
+				return new LongObj(Long.valueOf(0));
+			} else if(type == SqlTypeName.VARCHAR){
+				return new StringObj(String.valueOf(DataSamudayaConstants.EMPTY));
+			} else if(type == SqlTypeName.FLOAT) {
+				return new FloatObj(Float.valueOf(0.0f));			
+			} else if(type == SqlTypeName.DOUBLE) {
+				return new DoubleObj(Double.valueOf(0.0d));
+			} else {
+				return new StringObj(DataSamudayaConstants.EMPTY);
+			}
+		}
+	}
+	
+	/**
+	 * Converts yosegi bytes to stream of records 
+	 * @param yosegibytes
+	 * @param reqcols
+	 * @param allcols
+	 * @param sqltypes
+	 * @return stream of map
+	 * @throws Exception
+	 */
+	public static Stream<Map<String, Object>> getYosegiStreamRecords(byte[] yosegibytes, 
+			List<String> reqcols, List<String> allcols, List<SqlTypeName> sqltypes) throws Exception {
+		InputStream in = new ByteArrayInputStream(yosegibytes);
+		YosegiSchemaReader reader = new YosegiSchemaReader();
+		reader.setNewStream(in, Long.valueOf(yosegibytes.length), new jp.co.yahoo.yosegi.config.Configuration());
+		Map<String, SqlTypeName> sqltypesallcols = getColumnTypesByColumn(sqltypes, allcols);
+		return StreamSupport.stream(new YosegiRecordSpliterator(reader, reqcols, sqltypesallcols), false);
+
+	}
+	
 	
 }

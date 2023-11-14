@@ -103,10 +103,10 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 		try (var output = new Output(fsdos);) {
 			Stream intermediatestreamobject;
 			try {
-				String orcfilepath = blorcmap.get(blockslocation);				
+				byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString());				
 				CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
 				try {
-					if(isNull(orcfilepath)) {
+					if(isNull(yosegibytes) || yosegibytes.length==0) {
 						log.info("Unable To Find vector for blocks {}",blockslocation);
 						try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 						var buffer = new BufferedReader(new InputStreamReader(bais));
@@ -117,12 +117,12 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 									.withTrim();
 							records = csvformat.parse(buffer);
 							Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
-							blorcmap.put(blockslocation, SQLUtils.createORCFile(Arrays.asList(csvoptions.getHeader()), csvoptions.getTypes(), streamcsv));
+							yosegibytes = SQLUtils.getYosegiRecordWriter(streamcsv, csvoptions.getTypes(),Arrays.asList(csvoptions.getHeader()));
+							cache.put(blockslocation.toBlString(), yosegibytes);
 						}
-					}
-					orrr = SQLUtils.getOrcStreamRecords(blorcmap.get(blockslocation), csvoptions.getHeader(), 
-							csvoptions.getRequiredcolumns(), csvoptions.getTypes());
-					intermediatestreamobject = orrr.getValuesmapstream();
+					}					 
+					intermediatestreamobject = SQLUtils.getYosegiStreamRecords(yosegibytes, csvoptions.getRequiredcolumns(), Arrays.asList(csvoptions.getHeader()), 
+							 csvoptions.getTypes());
 				} finally {}
 			} catch (IOException ioe) {
 				log.error(PipelineConstants.FILEIOERROR, ioe);
