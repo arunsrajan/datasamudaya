@@ -16,6 +16,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
@@ -74,12 +75,9 @@ import com.pivovarit.collectors.ParallelCollectors;
 public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineTaskExecutorInMemory {
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorInMemorySQL.class);
 	public double timetaken = 0.0;
-	private ConcurrentMap<BlocksLocation, String> blorcmap;
-
 	public StreamPipelineTaskExecutorInMemorySQL(JobStage jobstage, ConcurrentMap<String, OutputStream> resultstream,
 			Cache cache,ConcurrentMap<BlocksLocation, String> blorcmap) throws Exception {
 		super(jobstage, resultstream, cache);
-		this.blorcmap = blorcmap;
 	}	
 	/**
 	 * Perform map operation to obtain intermediate stage result.
@@ -93,15 +91,17 @@ public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineT
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
-		log.info("BlocksLocation Columns: {}"+blockslocation.getColumns());
+		log.info("BlocksLocation Columns: {}",blockslocation.getColumns());
 		CSVParser records = null;
 		var fsdos = new ByteArrayOutputStream();
 		OrcReaderRecordReader orrr = null;
 		try (var output = new Output(fsdos);) {
 			Stream intermediatestreamobject;
-			try {
-				byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString());				
+			try {				
 				CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
+				List<String> reqcols = new Vector<>(csvoptions.getRequiredcolumns());
+				Collections.sort(reqcols);
+				byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString() + reqcols.toString());
 				try {
 					if(isNull(yosegibytes) || yosegibytes.length==0) {
 						log.info("Unable To Find vector for blocks {}",blockslocation);
@@ -114,8 +114,8 @@ public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineT
 									.withTrim();
 							records = csvformat.parse(buffer);
 							Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
-							yosegibytes = SQLUtils.getYosegiRecordWriter(streamcsv, csvoptions.getTypes(),Arrays.asList(csvoptions.getHeader()));
-							cache.put(blockslocation.toBlString(), yosegibytes);
+							yosegibytes = SQLUtils.getYosegiRecordWriter(streamcsv, csvoptions.getTypes(), csvoptions.getRequiredcolumns(), Arrays.asList(csvoptions.getHeader()));
+							cache.put(blockslocation.toBlString() + reqcols.toString(), yosegibytes);
 						}
 					}					 
 					intermediatestreamobject = SQLUtils.getYosegiStreamRecords(yosegibytes, csvoptions.getRequiredcolumns(), Arrays.asList(csvoptions.getHeader()), 

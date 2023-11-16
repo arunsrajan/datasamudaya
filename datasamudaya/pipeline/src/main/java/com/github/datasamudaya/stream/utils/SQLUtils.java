@@ -2727,14 +2727,14 @@ public class SQLUtils {
 	 * @return yosegi byte array
 	 * @throws Exception
 	 */
-	public static byte[] getYosegiRecordWriter(Stream<CSVRecord> streamcsv, List<SqlTypeName> sqltypes, List<String> cols) throws Exception {
+	public static byte[] getYosegiRecordWriter(Stream<CSVRecord> streamcsv, List<SqlTypeName> sqltypes, List<String> reqcols, List<String> allcols) throws Exception {
 		try(var baos = new ByteArrayOutputStream();
 				YosegiRecordWriter writer = new YosegiRecordWriter(baos);){			
-			Map<String,SqlTypeName> sqltypename = getColumnTypesByColumn(sqltypes, cols);			
+			Map<String,SqlTypeName> sqltypename = getColumnTypesByColumn(sqltypes, allcols);			
 			streamcsv.forEach(csvrecord -> {
 				try {
 					Map data = new ConcurrentHashMap<>();
-					cols.stream().forEach(col->{
+					reqcols.stream().forEach(col->{
 						data.put(col, getYosegiObjectByValue(csvrecord.get(col), sqltypename.get(col)));
 					});
 					writer.addRow(data);

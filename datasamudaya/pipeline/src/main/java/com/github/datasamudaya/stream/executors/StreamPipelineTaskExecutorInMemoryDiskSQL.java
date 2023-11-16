@@ -1,18 +1,3 @@
-/*
- * Copyright 2021 the original author or authors.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * https://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.github.datasamudaya.stream.executors;
 
 import static java.util.Objects.isNull;
@@ -32,7 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
@@ -47,8 +31,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
@@ -67,27 +51,22 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
-import com.github.datasamudaya.stream.utils.OrcReaderRecordReader;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 import com.pivovarit.collectors.ParallelCollectors;
 
 /**
  * 
- * @author Arun
- * Task executors thread for standalone task executors daemon.  
+ * @author Arun Task executors thread for standalone task executors daemon.
  */
 @SuppressWarnings("rawtypes")
-public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTaskExecutorLocal  {
-	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorLocalSQL.class);
-
-	static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
-	
-	public StreamPipelineTaskExecutorLocalSQL(JobStage jobstage,
-			ConcurrentMap<String, OutputStream> resultstream, Cache cache) {
+public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipelineTaskExecutorInMemoryDisk {
+	private static org.slf4j.Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorInMemoryDiskSQL.class);
+	public double timetaken = 0.0;
+	public StreamPipelineTaskExecutorInMemoryDiskSQL(JobStage jobstage, ConcurrentMap<String, OutputStream> resultstream,
+			Cache cache) throws Exception {
 		super(jobstage, resultstream, cache);
-	}
-
+	}	
 	/**
 	 * Perform map operation to obtain intermediate stage result.
 	 * 
@@ -99,13 +78,14 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 	@SuppressWarnings("unchecked")
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
-		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
+		log.debug("Entered StreamPipelineTaskExecutorInMemoryDiskSQL.processBlockHDFSMap");
 		log.info("BlocksLocation Columns: {}",blockslocation.getColumns());
 		CSVParser records = null;
-		var fsdos = new ByteArrayOutputStream();		
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
-		try (var output = new Output(fsdos);) {
+		try (var fsdos = new ByteArrayOutputStream();
+				var sos = new SnappyOutputStream(fsdos);
+				var output = new Output(sos);) {
 			Stream intermediatestreamobject;
 			try {				
 				CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
@@ -194,27 +174,22 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 					var standardDeviation = Math.sqrt(variance);
 					out.add(standardDeviation);
 
-				} else if (task.finalphase && task.saveresulttohdfs) {
-					try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-							Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-									DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-						int ch = (int) '\n';
-						((Stream) streammap).forEach(val -> {
-							try {
-								os.write(val.toString().getBytes());
-								os.write(ch);
-							} catch (IOException e) {
-							}
-						});
-					}
-					var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-					return timetaken;
 				} else {
 					log.info("Map assembly deriving");
 					CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
-							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-									executor, Runtime.getRuntime().availableProcessors()));
+							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
+									Runtime.getRuntime().availableProcessors()));
 					out = cf.get();
+					if (task.finalphase && task.saveresulttohdfs) {
+						try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+								Short.parseShort(
+										DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+												DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+							Utils.convertToCsv((List) out, os);
+						}
+						var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
+						return timetaken;
+					}
 					log.info("Map assembly concluded");
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
@@ -222,7 +197,7 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 				cacheAble(fsdos);
 				var wr = new WeakReference<List>(out);
 				out = null;
-				log.debug("Exiting StreamPipelineTaskExecutor.processBlockHDFSMap");
+				log.debug("Exiting StreamPipelineTaskExecutorInMemoryDiskSQL.processBlockHDFSMap");
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 				log.debug("Time taken to compute the Map Task is " + timetaken + " seconds");
 				log.debug("GC Status Map task:" + Utils.getGCStats());
@@ -252,9 +227,6 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 					log.error(DataSamudayaConstants.EMPTY, e);
 				}
 			}
-			if (!(task.finalphase && task.saveresulttohdfs)) {
-				writeIntermediateDataToDirectByteBuffer(fsdos);
-			}
 			if (!Objects.isNull(records)) {
 				try {
 					records.close();
@@ -265,5 +237,4 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 		}
 
 	}
-	
 }

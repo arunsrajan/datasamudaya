@@ -1619,7 +1619,7 @@ public class StreamJobScheduler {
             boolean isJGroups = Boolean.parseBoolean(pipelineconfig.getJgroups());
             rdf.setMode(isJGroups ? DataSamudayaConstants.JGROUPS : DataSamudayaConstants.STANDALONE);
             RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
-            try (var input = new Input(pipelineconfig.getStorage()==STORAGE.INMEMORY || pipelineconfig.getStorage()==STORAGE.COLUMNARSQL || isjgroups?new ByteArrayInputStream(rdf.getData()):new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
+            try (var input = new Input(pipelineconfig.getStorage()==STORAGE.INMEMORY || isjgroups?new ByteArrayInputStream(rdf.getData()):new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
               var result = Utils.getKryo().readClassAndObject(input);;              
               if(job.getJobtype() == JOBTYPE.PIG) {
             	  PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());

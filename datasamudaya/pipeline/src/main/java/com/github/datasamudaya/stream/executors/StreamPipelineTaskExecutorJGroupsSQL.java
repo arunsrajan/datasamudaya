@@ -29,6 +29,8 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,6 +55,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
 import org.jgroups.JChannel;
 import org.slf4j.Logger;
@@ -156,31 +159,40 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 						log.debug("Entered StreamPipelineTaskExecutorJGroupsSQL.processBlockHDFSMap");
 						log.info("BlocksLocation Columns: {}" + blockslocation.getColumns());
 						CSVParser records = null;
+						InputStream istreamnocols = null;
+						BufferedReader buffernocols = null;
 						var fsdos = new ByteArrayOutputStream();
-						OrcReaderRecordReader orrr = null;
 						try (var output = new Output(fsdos);) {
 							Stream intermediatestreamobject;
-							try {
-								String orcfilepath = blorcmap.get(blockslocation);				
+							try {				
 								CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
+								List<String> reqcols = new Vector<>(csvoptions.getRequiredcolumns());
+								Collections.sort(reqcols);
+								byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString() + reqcols.toString());
 								try {
-									if(isNull(orcfilepath)) {
-										log.info("Unable To Find vector for blocks {}",blockslocation);
-										try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
-										var buffer = new BufferedReader(new InputStreamReader(bais));
-												var baisrec = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
-												var bufferrec = new BufferedReader(new InputStreamReader(baisrec));){						
-											var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
-											csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader()).withIgnoreHeaderCase()
-													.withTrim();
-											records = csvformat.parse(buffer);
-											Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
-											blorcmap.put(blockslocation, SQLUtils.createORCFile(Arrays.asList(csvoptions.getHeader()), csvoptions.getTypes(), streamcsv));
-										}
+									if(CollectionUtils.isNotEmpty(csvoptions.getRequiredcolumns())) {
+										if(isNull(yosegibytes) || yosegibytes.length==0) {
+											log.info("Unable To Find vector for blocks {}",blockslocation);
+											try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+											var buffer = new BufferedReader(new InputStreamReader(bais));
+													var baisrec = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+													var bufferrec = new BufferedReader(new InputStreamReader(baisrec));){						
+												var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
+												csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader()).withIgnoreHeaderCase()
+														.withTrim();
+												records = csvformat.parse(buffer);
+												Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
+												yosegibytes = SQLUtils.getYosegiRecordWriter(streamcsv, csvoptions.getTypes(), csvoptions.getRequiredcolumns(), Arrays.asList(csvoptions.getHeader()));
+												cache.put(blockslocation.toBlString() + reqcols.toString(), yosegibytes);
+											}
+										}					 
+										intermediatestreamobject = SQLUtils.getYosegiStreamRecords(yosegibytes, csvoptions.getRequiredcolumns(), Arrays.asList(csvoptions.getHeader()), 
+												 csvoptions.getTypes());
+									} else {
+										istreamnocols = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+										buffernocols = new BufferedReader(new InputStreamReader(istreamnocols));
+										intermediatestreamobject = buffernocols.lines().map(line -> new HashMap<>());
 									}
-									orrr = SQLUtils.getOrcStreamRecords(blorcmap.get(blockslocation), csvoptions.getHeader(), 
-											csvoptions.getRequiredcolumns(), csvoptions.getTypes());
-									intermediatestreamobject = orrr.getValuesmapstream();
 								} finally {}
 							} catch (IOException ioe) {
 								log.error(PipelineConstants.FILEIOERROR, ioe);
@@ -280,14 +292,20 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 							log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 							throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 						} finally {
-							if(nonNull(orrr) && nonNull(orrr.getReader())) {
+							if(nonNull(buffernocols)) {
 								try {
-									orrr.getReader().close();
-									orrr.getRows().close();
-								} catch (IOException e) {
+									buffernocols.close();
+								} catch (Exception e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
 								}
-							}					
+							}
+							if(nonNull(istreamnocols)) {
+								try {
+									istreamnocols.close();
+								} catch (Exception e) {
+									log.error(DataSamudayaConstants.EMPTY, e);
+								}
+							}				
 							if (!(task.finalphase && task.saveresulttohdfs)) {
 								writeIntermediateDataToDirectByteBuffer(fsdos);
 							}

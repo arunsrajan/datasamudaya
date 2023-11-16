@@ -103,7 +103,7 @@ import com.pivovarit.collectors.ParallelCollectors;
  * @author Arun Task executors thread for standalone task executors daemon.
  */
 @SuppressWarnings("rawtypes")
-public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelineTaskExecutorInMemory {
+public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelineTaskExecutorInMemory permits StreamPipelineTaskExecutorInMemoryDiskSQL {
 	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorInMemoryDisk.class);
 
 	public StreamPipelineTaskExecutorInMemoryDisk(JobStage jobstage, ConcurrentMap<String, OutputStream> resultstream,
