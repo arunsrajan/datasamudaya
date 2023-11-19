@@ -469,7 +469,7 @@ public class SQLUtils {
 	public static Object evaluateFunctionsWithType(Object value, Object powerval, String name) {
 		switch (name) {
 		case "abs":
-			// Get the absolute value of the first parameter
+			
 			if (value instanceof Double dv) {
 				return Math.abs(dv);
 			} else if (value instanceof Long lv) {
@@ -484,9 +484,13 @@ public class SQLUtils {
 			String val = (String) value;
 			// return the result to the stack
 			return Long.valueOf(val.length());
-
+		case "trim":
+			// Get the length of string value
+			val = (String) value;
+			// return the result to the stack
+			return val.trim();
 		case "round":
-			// Get the absolute value of the first parameter
+			
 			if (value instanceof Double dv) {
 				return Math.round(dv);
 			} else if (value instanceof Long lv) {
@@ -497,7 +501,7 @@ public class SQLUtils {
 				return Math.round(iv);
 			}
 		case "ceil":
-			// Get the absolute value of the first parameter
+			
 			if (value instanceof Double dv) {
 				return Math.ceil(dv);
 			} else if (value instanceof Long lv) {
@@ -508,7 +512,7 @@ public class SQLUtils {
 				return Math.ceil(iv);
 			}
 		case "floor":
-			// Get the absolute value of the first parameter
+			
 			if (value instanceof Double dv) {
 				return Math.floor(dv);
 			} else if (value instanceof Long lv) {
@@ -519,7 +523,7 @@ public class SQLUtils {
 				return Math.floor(iv);
 			}
 		case "pow":
-			// Get the absolute value of the first parameter
+			
 			if (value instanceof Double dv && powerval instanceof Integer powval) {
 				return Math.pow(dv, powval);
 			} else if (value instanceof Long lv && powerval instanceof Integer powval) {
@@ -530,7 +534,7 @@ public class SQLUtils {
 				return Math.pow(iv, powval);
 			}
 		case "sqrt":
-			// Get the absolute value of the first parameter
+			
 			if (value instanceof Double dv) {
 				return Math.sqrt(dv);
 			} else if (value instanceof Long lv) {
@@ -541,7 +545,7 @@ public class SQLUtils {
 				return Math.sqrt(iv);
 			}
 		case "exp":
-			// Get the absolute value of the first parameter
+			
 			if (value instanceof Double dv) {
 				return Math.exp(dv);
 			} else if (value instanceof Long lv) {
@@ -552,7 +556,7 @@ public class SQLUtils {
 				return Math.exp(iv);
 			}
 		case "loge":
-			// Get the absolute value of the first parameter
+			
 			if (value instanceof Double dv) {
 				return Math.log(dv);
 			} else if (value instanceof Long lv) {
@@ -563,19 +567,19 @@ public class SQLUtils {
 				return Math.log(iv);
 			}
 		case "lowercase":
-			// Get the absolute value of the first parameter
+			
 			return ((String) value).toLowerCase();
 		case "uppercase":
-			// Get the absolute value of the first parameter
+			
 			return ((String) value).toUpperCase();
 		case "base64encode":
-			// Get the absolute value of the first parameter
+			
 			return Base64.getEncoder().encodeToString(((String) value).getBytes());
 		case "base64decode":
-			// Get the absolute value of the first parameter
+			
 			return new String(Base64.getDecoder().decode(((String) value).getBytes()));
 		case "normalizespaces":
-			// Get the absolute value of the first parameter
+			
 			return StringUtils.normalizeSpace((String) value);
 		}
 		return name;
@@ -594,50 +598,53 @@ public class SQLUtils {
 			List<Expression> expfunc = fn.getParameters().getExpressions();
 			switch (name) {
 				case "abs":
-	                // Get the absolute value of the first parameter	               
+	                	               
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "abs");
 				case "length":
 	                // Get the length of string value	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "length");
 	                
 				case "round":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "round");
 				case "ceil":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "ceil");
 				case "floor":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "floor");
 				case "pow":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), evaluateBinaryExpression(expfunc.get(1), row), "pow");
 				case "sqrt":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "sqrt");
 				case "exp":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "exp");
 				case "loge":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "loge");
 				case "lowercase":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "lowercase");
 				case "uppercase":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "uppercase");
 				case "base64encode":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "base64encode");
 				case "base64decode":
-	                // Get the absolute value of the first parameter
+	                
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "base64decode");
 				case "normalizespaces":
-	                // Get the absolute value of the first parameter
+					
 	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "normalizespaces");
+				case "trim":
+					
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "trim");
 				case "substring":
-	                // Get the absolute value of the first parameter
+	                
 					LongValue pos = (LongValue) expfunc.get(1);
 					LongValue length = (LongValue) expfunc.get(2);
 					String val = (String)evaluateBinaryExpression(expfunc.get(0), row);
@@ -1015,148 +1022,138 @@ public class SQLUtils {
 	}
 
 	public static boolean evaluatePredicate(Object leftvalue,Object rightvalue, String operator) {
-		switch (operator.trim()) {
-		case ">":
-			if(leftvalue instanceof Double lv && rightvalue instanceof Double rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Long lv && rightvalue instanceof Double rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Double lv && rightvalue instanceof Long rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Integer lv && rightvalue instanceof Double rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Double lv && rightvalue instanceof Integer rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Integer lv && rightvalue instanceof Integer rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Integer lv && rightvalue instanceof Long rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Long lv && rightvalue instanceof Integer rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Long lv && rightvalue instanceof Long rv) {
-				return lv > rv;
-			} else {
-				return false;
+		try {
+			switch (operator.trim()) {
+			case ">":
+				return compare(leftvalue, rightvalue, ComparisonOperator.GREATER_THAN);
+			case ">=":
+				return compare(leftvalue, rightvalue, ComparisonOperator.GREATER_THAN_OR_EQUAL);
+			case "<":
+				return compare(leftvalue, rightvalue, ComparisonOperator.LESS_THAN);
+			case "<=":
+				return compare(leftvalue, rightvalue, ComparisonOperator.LESS_THAN_OR_EQUAL);
+			case "=":
+				return compare(leftvalue, rightvalue, ComparisonOperator.EQUAL);
+			case "<>":
+				return compare(leftvalue, rightvalue, ComparisonOperator.NOT_EQUAL);
+			default:
+				throw new UnsupportedOperationException("Unsupported operator: " + operator);
 			}
-		case ">=":
-			if(leftvalue instanceof Double lvgt && rightvalue instanceof Double rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Long lvgt && rightvalue instanceof Double rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Double lvgt && rightvalue instanceof Long rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Integer lvgt && rightvalue instanceof Double rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Double lvgt && rightvalue instanceof Integer rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Integer lvgt && rightvalue instanceof Integer rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Integer lvgt && rightvalue instanceof Long rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Long lvgt && rightvalue instanceof Integer rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Long lvgt && rightvalue instanceof Long rvgt) {
-				return lvgt >= rvgt;
-			} else {
-				return false;
-			}
-		case "<":
-			if(leftvalue instanceof Double lvlt && rightvalue instanceof Double rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Long lvlt && rightvalue instanceof Double rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Double lvlt && rightvalue instanceof Long rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Integer lvlt && rightvalue instanceof Double rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Double lvlt && rightvalue instanceof Integer rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Integer lvlt && rightvalue instanceof Integer rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Integer lvlt && rightvalue instanceof Long rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Long lvlt && rightvalue instanceof Integer rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Long lvlt && rightvalue instanceof Long rvlt) {
-				return lvlt < rvlt;
-			} else {
-				return false;
-			}
-		case "<=":
-			if(leftvalue instanceof Double lvle && rightvalue instanceof Double rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Long lvle && rightvalue instanceof Double rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Double lvle && rightvalue instanceof Long rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Integer lvle && rightvalue instanceof Double rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Double lvle && rightvalue instanceof Integer rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Integer lvle && rightvalue instanceof Integer rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Integer lvle && rightvalue instanceof Long rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Long lvle && rightvalue instanceof Integer rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Long lvle && rightvalue instanceof Long rvle) {
-				return lvle <= rvle;
-			} else {
-				return false;
-			}
-		case "=":
-			if(leftvalue instanceof Double lveq && rightvalue instanceof Double rveq) {
-				return lveq == rveq;
-			} else if(leftvalue instanceof Long lveq && rightvalue instanceof Double rveq) {
-				return lveq.doubleValue() == rveq.doubleValue();
-			} else if(leftvalue instanceof Double lveq && rightvalue instanceof Long rveq) {
-				return lveq.doubleValue() == rveq.doubleValue();
-			} else if(leftvalue instanceof Integer lveq && rightvalue instanceof Double rveq) {
-				return lveq.doubleValue() == rveq.doubleValue();
-			} else if(leftvalue instanceof Double lveq && rightvalue instanceof Integer rveq) {
-				return lveq.doubleValue() == rveq.doubleValue();
-			} else if(leftvalue instanceof Integer lveq && rightvalue instanceof Long rveq) {
-				return lveq.longValue() == rveq.longValue();
-			} else if(leftvalue instanceof Long lveq && rightvalue instanceof Integer rveq) {
-				return lveq.longValue() == rveq.longValue();
-			} else if(leftvalue instanceof Integer lveq && rightvalue instanceof Integer rveq) {
-				return lveq.intValue() == rveq.intValue();
-			} else if(leftvalue instanceof Long lveq && rightvalue instanceof Long rveq) {
-				return lveq.longValue() == rveq.longValue();
-			} else if(leftvalue instanceof String lveq && rightvalue instanceof String rveq) {
-				return lveq.equals(rveq);
-			} else {
-				return false;
-			}
-		case "<>":
-			if(leftvalue instanceof Double lvne && rightvalue instanceof Double rvne) {
-				return lvne != rvne;
-			} else if(leftvalue instanceof Long lvne && rightvalue instanceof Double rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Double lvne && rightvalue instanceof Long rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Integer lvne && rightvalue instanceof Double rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Double lvne && rightvalue instanceof Integer rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Long lvne && rightvalue instanceof Integer rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Integer lvne && rightvalue instanceof Long rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Integer lvne && rightvalue instanceof Integer rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Long lvne && rightvalue instanceof Long rvne) {
-				return lvne != rvne;
-			} else if(leftvalue instanceof String lvne && rightvalue instanceof String rvne) {
-				return !lvne.equals(rvne);
-			} else {
-				return false;
-			}
-		default:
-			throw new UnsupportedOperationException("Unsupported operator: " + operator);
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
+		return false;
 	}
 
+	
+	/**
+	 * Performs the string comparison and returns true or false
+	 * @param str1
+	 * @param str2
+	 * @param operator
+	 * @return true or false
+	 */
+	private static boolean performStringComparison(String str1, String str2, ComparisonOperator operator) {
+        int comparisonResult = str1.compareTo(str2);
+
+        switch (operator) {
+            case EQUAL:
+                return comparisonResult == 0;
+            case NOT_EQUAL:
+                return comparisonResult != 0;
+            case GREATER_THAN:
+                return comparisonResult > 0;
+            case LESS_THAN:
+                return comparisonResult < 0;
+            case GREATER_THAN_OR_EQUAL:
+                return comparisonResult >= 0;
+            case LESS_THAN_OR_EQUAL:
+                return comparisonResult <= 0;
+            default:
+                throw new IllegalArgumentException("Unsupported comparison operator.");
+        }
+    }
+	
+	/**
+	 * Compare two values using reflection
+	 * @param obj1
+	 * @param obj2
+	 * @param operator
+	 * @return true if two objects statisfy the condition else false
+	 * @throws NoSuchFieldException
+	 * @throws IllegalAccessException
+	 */
+	public static boolean compare(Object obj1, Object obj2, ComparisonOperator operator)
+            throws NoSuchFieldException, IllegalAccessException {
+        // Get the Class objects for the wrapper classes
+        Class<?> wrapperClass1 = obj1.getClass();
+        Class<?> wrapperClass2 = obj2.getClass();
+
+        if (wrapperClass1 == String.class || wrapperClass2 == String.class) {
+            String str1 = String.valueOf(obj1);
+            String str2 = String.valueOf(obj2);
+            return performStringComparison(str1, str2, operator);
+        }
+
+        // Ensure that both objects are comparable
+        if (!(obj1 instanceof Comparable) || !(obj2 instanceof Comparable)) {
+            throw new IllegalArgumentException("Both objects must implement the Comparable interface.");
+        }
+        
+        // Ensure that both objects are instances of wrapper classes
+        if (!isWrapperClass(wrapperClass1) || !isWrapperClass(wrapperClass2)) {
+            throw new IllegalArgumentException("Both objects must be instances of wrapper classes.");
+        }
+
+        // Get the value fields for the wrapper classes
+        java.lang.reflect.Field valueField1 = wrapperClass1.getDeclaredField("value");
+        java.lang.reflect.Field valueField2 = wrapperClass2.getDeclaredField("value");
+
+        // Make the fields accessible, since they are private
+        valueField1.setAccessible(true);
+        valueField2.setAccessible(true);
+
+        // Get the values of the fields for the instances
+        Comparable<Object> value1 = (Comparable<Object>) valueField1.get(obj1);
+        Comparable<Object> value2 = (Comparable<Object>) valueField2.get(obj2);
+
+        // Perform the specified comparison
+        int comparisonResult = value1.compareTo(value2);
+
+        switch (operator) {
+            case EQUAL:
+                return comparisonResult == 0;
+            case NOT_EQUAL:
+                return comparisonResult != 0;
+            case GREATER_THAN:
+                return comparisonResult > 0;
+            case LESS_THAN:
+                return comparisonResult < 0;
+            case GREATER_THAN_OR_EQUAL:
+                return comparisonResult >= 0;
+            case LESS_THAN_OR_EQUAL:
+                return comparisonResult <= 0;
+            default:
+                throw new IllegalArgumentException("Unsupported comparison operator.");
+        }
+    }
+
+    private static boolean isWrapperClass(Class<?> clazz) {
+        return clazz == Integer.class || clazz == Double.class ||
+               clazz == Float.class || clazz == Long.class ||
+               clazz == Short.class || clazz == Byte.class ||
+               clazz == Character.class || clazz == Boolean.class;
+    }
+
+    private enum ComparisonOperator {
+        EQUAL,
+        NOT_EQUAL,
+        GREATER_THAN,
+        LESS_THAN,
+        GREATER_THAN_OR_EQUAL,
+        LESS_THAN_OR_EQUAL
+    }
+	
 	/**
 	 * Compare two objects to sort in order.
 	 * 
@@ -1489,7 +1486,7 @@ public class SQLUtils {
 	 */
 	private static Object getValueString(Expression expression,Map<String, Object> row, List<String> columns) {
 		if (expression instanceof LongValue) {
-			return Double.valueOf(((LongValue) expression).getValue());
+			return Long.valueOf(((LongValue) expression).getValue());
 		} else if (expression instanceof StringValue) {
 			return ((StringValue) expression).getValue();
 		} else if (expression instanceof DoubleValue) {

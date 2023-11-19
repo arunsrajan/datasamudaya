@@ -165,7 +165,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereGreaterThan() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth>8.0 and airline.MonthOfYear>6.0";
+				+ "WHERE airline.DayofMonth>8 and airline.MonthOfYear>6";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -215,7 +215,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereGreaterThanEquals() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth>=8.0 and airline.MonthOfYear>=6.0";
+				+ "WHERE airline.DayofMonth>=8 and airline.MonthOfYear>=6";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -240,7 +240,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereLessThanEquals() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth<=8.0 and airline.MonthOfYear<=6.0";
+				+ "WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -262,10 +262,10 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@SuppressWarnings({"unchecked"})
 	@Test
 	public void testRequiredColumnsWithWhereLiteralFirst() throws Exception {
-		log.info("In RequiredColumnsWithWhere() method Entry");
+		log.info("In testRequiredColumnsWithWhereLiteralFirst() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE 8.0=airline.DayofMonth and 12.0=airline.MonthOfYear";
+				+ "WHERE 8=airline.DayofMonth and 12=airline.MonthOfYear";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -281,7 +281,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		
-		log.info("In RequiredColumnsWithWhere() method Exit");
+		log.info("In testRequiredColumnsWithWhereLiteralFirst() method Exit");
 	}
 
 	@SuppressWarnings({"unchecked"})
@@ -1534,7 +1534,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testRequiredColumnTrim() throws Exception {
 		log.info("In testRequiredColumnTrim() method Entry");
 		
-		String statement = "SELECT trim(airline.Origin),trim(airline.Dest)  FROM airline";				
+		String statement = "SELECT trim(airline.Origin + ' ') trmorig ,trim(' ' + airline.Dest) trimdest FROM airline";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1543,8 +1543,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(2,rec.size());
-				assertTrue(rec.containsKey("trim(airline.Origin)"));
-				assertTrue(rec.containsKey("trim(airline.Dest)"));
+				assertTrue(rec.containsKey("trmorig"));
+				assertTrue(rec.containsKey("trimdest"));
 			}
 		}
 		log.info("In testRequiredColumnTrim() method Exit");

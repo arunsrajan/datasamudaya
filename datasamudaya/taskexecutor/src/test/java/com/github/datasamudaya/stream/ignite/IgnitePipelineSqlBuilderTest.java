@@ -93,7 +93,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for(Map<String,Object> record: recs) {
 				total++;
 				assertTrue(record.keySet().size() == 29);
-				assertTrue(((Integer)record.get("DayofMonth")) == 8 && ((Integer)record.get("MonthOfYear")) == 12);
+				assertTrue(((Long)record.get("DayofMonth")) == 8 && ((Long)record.get("MonthOfYear")) == 12);
 				log.info(record);
 			}
 		}
@@ -164,7 +164,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnsWithWhereGreaterThan() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth>8.0 and airline.MonthOfYear>6.0";
+				+ "WHERE airline.DayofMonth>8 and airline.MonthOfYear>6";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -175,8 +175,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.keySet().size() == 4);
 				assertTrue(rec.containsKey("UniqueCarrier"));
 				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(((Integer)rec.get("DayofMonth")) > 8);
-				assertTrue(((Integer)rec.get("MonthOfYear")) > 6);
+				assertTrue(((Long)rec.get("DayofMonth")) > 8);
+				assertTrue(((Long)rec.get("MonthOfYear")) > 6);
 			}
 		}
 		
@@ -200,8 +200,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.keySet().size() == 4);
 				assertTrue(rec.containsKey("UniqueCarrier"));
 				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(((Integer)rec.get("DayofMonth")) < 8);
-				assertTrue(((Integer)rec.get("MonthOfYear")) < 6);
+				assertTrue(((Long)rec.get("DayofMonth")) < 8);
+				assertTrue(((Long)rec.get("MonthOfYear")) < 6);
 			}
 		}
 		
@@ -214,7 +214,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnsWithWhereGreaterThanEquals() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth>=8.0 and airline.MonthOfYear>=6.0";
+				+ "WHERE airline.DayofMonth>=8 and airline.MonthOfYear>=6";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -225,8 +225,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.keySet().size() == 4);
 				assertTrue(rec.containsKey("UniqueCarrier"));
 				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(((Integer)rec.get("DayofMonth")) >= 8.0);
-				assertTrue(((Integer)rec.get("MonthOfYear")) >= 6.0);
+				assertTrue(((Long)rec.get("DayofMonth")) >= 8.0);
+				assertTrue(((Long)rec.get("MonthOfYear")) >= 6.0);
 			}
 		}
 		
@@ -239,7 +239,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnsWithWhereLessThanEquals() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth<=8.0 and airline.MonthOfYear<=6.0";
+				+ "WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -250,8 +250,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.keySet().size() == 4);
 				assertTrue(rec.containsKey("UniqueCarrier"));
 				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(((Integer)rec.get("DayofMonth")) <= 8);
-				assertTrue(((Integer)rec.get("MonthOfYear")) <= 6);
+				assertTrue(((Long)rec.get("DayofMonth")) <= 8);
+				assertTrue(((Long)rec.get("MonthOfYear")) <= 6);
 			}
 		}
 		
@@ -261,10 +261,10 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	@SuppressWarnings({"unchecked"})
 	@Test
 	public void testRequiredColumnsWithWhereLiteralFirst() throws Exception {
-		log.info("In RequiredColumnsWithWhere() method Entry");
+		log.info("In testRequiredColumnsWithWhereLiteralFirst() method Entry");
 		
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE 8.0=airline.DayofMonth and 12.0=airline.MonthOfYear";
+				+ "WHERE 8=airline.DayofMonth and 12=airline.MonthOfYear";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -274,13 +274,13 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.keySet().size() == 4);
 				assertTrue(rec.containsKey("UniqueCarrier"));
 				assertTrue(rec.containsKey("ArrDelay"));
-				assertEquals(8, rec.get("DayofMonth"));
-				assertEquals(12, rec.get("MonthOfYear"));
+				assertEquals(8l, rec.get("DayofMonth"));
+				assertEquals(12l, rec.get("MonthOfYear"));
 				log.info(rec);
 			}
 		}
 		
-		log.info("In RequiredColumnsWithWhere() method Exit");
+		log.info("In testRequiredColumnsWithWhereLiteralFirst() method Exit");
 	}
 
 	@SuppressWarnings({"unchecked"})
@@ -349,7 +349,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
 		
-		assertEquals(-362, records.get(0).get(0).get("sum(airline.ArrDelay)"));
+		assertEquals(-362l, records.get(0).get(0).get("sum(airline.ArrDelay)"));
 		
 		log.info("In testAllColumnsSumWithWhere() method Exit");
 	}
@@ -365,7 +365,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);		
-		assertEquals(-27, records.get(0).get(0).get("min(airline.ArrDelay)"));
+		assertEquals(Long.valueOf(-27), records.get(0).get(0).get("min(airline.ArrDelay)"));
 		
 		log.info("In testAllColumnsMinWithWhere() method Exit");
 	}
@@ -380,7 +380,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(Integer.valueOf(44), records.get(0).get(0).get("max(airline.ArrDelay)"));
+		assertEquals(Long.valueOf(44), records.get(0).get(0).get("max(airline.ArrDelay)"));
 		
 		log.info("In testAllColumnsMaxWithWhere() method Exit");
 	}
@@ -406,8 +406,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.keySet().size() == 4);
 				assertTrue(rec.containsKey("UniqueCarrier"));
 				assertTrue(rec.containsKey("Code"));
-				assertEquals(8, rec.get("DayofMonth"));
-				assertEquals(12, rec.get("MonthOfYear"));
+				assertEquals(8l, rec.get("DayofMonth"));
+				assertEquals(12l, rec.get("MonthOfYear"));
 			}
 		}
 		assertEquals(132, totalrecords);
@@ -434,8 +434,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.containsKey("ArrDelay"));
 				assertTrue(rec.containsKey("Code"));
 				assertTrue(rec.containsKey("Description"));
-				assertEquals(8, rec.get("DayofMonth"));
-				assertEquals(8, rec.get("MonthOfYear"));
+				assertEquals(8l, rec.get("DayofMonth"));
+				assertEquals(8l, rec.get("MonthOfYear"));
 			}
 		}
 		
@@ -481,8 +481,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				total++;
 				assertTrue(rec.keySet().size() == 31);
-				assertTrue(((Integer)rec.get("DayofMonth")) == 8);
-				assertTrue(((Integer)rec.get("MonthOfYear")) == 8);
+				assertTrue(((Long)rec.get("DayofMonth")) == 8);
+				assertTrue(((Long)rec.get("MonthOfYear")) == 8);
 				assertTrue(rec.get("Code").equals("AQ"));
 				log.info(rec);
 			}
@@ -628,7 +628,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		for (List<Map<String,Object>> recs : records) {
 			for (Map<String,Object> rec : recs) {
 				assertTrue(rec.size() == 2);
-				sum += (Integer)rec.get("sum(airline.ArrDelay)");
+				sum += (Long)rec.get("sum(airline.ArrDelay)");
 				log.info(rec);				
 			}
 		}
@@ -649,11 +649,11 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
-		Integer arrdelaymin = 0;
+		Long arrdelaymin = 0l;
 		for (List<Map<String,Object>> recs : records) {
 			for (Map<String,Object> rec : recs) {
 				assertTrue(rec.size() == 2);
-				arrdelaymin = (Integer)rec.get("min(airline.ArrDelay)");
+				arrdelaymin = (Long)rec.get("min(airline.ArrDelay)");
 				log.info(rec);				
 			}
 		}
@@ -673,11 +673,11 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String,Object>>>) spsql.collect(true, null);
-		Integer arrdelaymax = 0;
+		Long arrdelaymax = 0l;
 		for (List<Map<String,Object>> recs : records) {
 			for (Map<String,Object> rec : recs) {
 				assertTrue(rec.size() == 2);
-				arrdelaymax = (Integer)rec.get("max(airline.ArrDelay)");
+				arrdelaymax = (Long)rec.get("max(airline.ArrDelay)");
 				log.info(rec);				
 			}
 		}
@@ -701,7 +701,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		for (List<Map<String,Object>> recs : records) {
 			for (Map<String,Object> rec : recs) {
 				assertTrue(rec.size() == 3);
-				sum += (Integer)rec.get("sum(airline.ArrDelay)");
+				sum += (Long)rec.get("sum(airline.ArrDelay)");
 				log.info(rec);				
 			}
 		}
@@ -725,7 +725,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String, Object> rec : recs) {
 				log.info(rec);
 				assertTrue(rec.size() == 2);
-				sum += (Integer) rec.get("sum(airline.ArrDelay)");
+				sum += (Long) rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		assertTrue(-63278.0 == sum);
@@ -744,14 +744,14 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		Integer sum = 0, min=0,max=0; Long count=0l;
+		Long sum = 0l, min=0l,max=0l; Long count=0l;
 		for (List<Map<String, Object>> recs : records) {
 			for (Map<String, Object> rec : recs) {
 				log.info(rec);
 				assertTrue(rec.size() == 5);
-				min = (Integer) rec.get("min(airline.ArrDelay)");
-				sum = (Integer) rec.get("sum(airline.ArrDelay)");
-				max = (Integer) rec.get("max(airline.ArrDelay)");
+				min = (Long) rec.get("min(airline.ArrDelay)");
+				sum = (Long) rec.get("sum(airline.ArrDelay)");
+				max = (Long) rec.get("max(airline.ArrDelay)");
 				count = (Long) rec.get("count(*)");
 			}
 		}
@@ -781,7 +781,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String, Object> rec : recs) {
 				log.info(rec);
 				assertTrue(rec.size() == 6);
-				sum += (Integer) rec.get("sum(airline.ArrDelay)");
+				sum += (Long) rec.get("sum(airline.ArrDelay)");
 				count += (Long) rec.get("count(*)");
 			}
 		}
@@ -806,8 +806,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String, Object> rec : recs) {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
-				assertTrue(((Integer)rec.get("DayofMonth")) == 8
-				&& ((Integer)rec.get("MonthOfYear")) == 12 ||
+				assertTrue(((Long)rec.get("DayofMonth")) == 8
+				&& ((Long)rec.get("MonthOfYear")) == 12 ||
 				rec.get("ArrDelay").equals("ArrDelay")||
 				rec.get("ArrDelay").equals("NA"));
 				sum++;
@@ -833,8 +833,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String, Object> rec : recs) {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
-				assertTrue(((Integer)rec.get("DayofMonth")) == 8
-				|| ((Integer)rec.get("MonthOfYear")) == 12);
+				assertTrue(((Long)rec.get("DayofMonth")) == 8
+				|| ((Long)rec.get("MonthOfYear")) == 12);
 				sum++;
 			}
 		}
@@ -945,7 +945,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertTrue(rec.size() == 2);
-				sum += (Integer)rec.get("sum(airline.Distance)");
+				sum += (Long)rec.get("sum(airline.Distance)");
 			}
 		}
 		assertTrue(sum == 19882075.0);
@@ -1057,7 +1057,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 3);
 				sum += (Long)rec.get("count(*)");
-				arrdelay += (Integer)rec.get("sum(airline.ArrDelay)");
+				arrdelay += (Long)rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		assertTrue(sum == 46360.0);
@@ -1083,7 +1083,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 3);
 				sum += (Long)rec.get("count(*)");
-				arrdelay += (Integer)rec.get("sum(airline.ArrDelay)");
+				arrdelay += (Long)rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		assertTrue(sum == 46360.0);
@@ -1108,7 +1108,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 3);
 				avgarrdelay += (Double)rec.get("AvgDelay");
-				sum += (Integer)rec.get("sum(airline.ArrDelay)");
+				sum += (Long)rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		assertTrue(sum == -63278.0);
@@ -1132,7 +1132,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 3);
 				sum++;
-				assertTrue(((Integer)rec.get("Cancelled")) == 1 && 
+				assertTrue(((Long)rec.get("Cancelled")) == 1 && 
 						!rec.get("CancellationCode").equals("NA"));
 			}
 		}
@@ -1157,7 +1157,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 3);
 				sum++;
-				assertTrue(((Integer)rec.get("Cancelled")) == 1 && 
+				assertTrue(((Long)rec.get("Cancelled")) == 1 && 
 						rec.get("CancellationCode").equals("B"));
 			}
 		}
@@ -1181,7 +1181,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 3);
 				sum++;
-				assertTrue(((Integer)rec.get("Diverted")) == 1 && 
+				assertTrue(((Long)rec.get("Diverted")) == 1 && 
 						!rec.get("WeatherDelay").equals("NA"));
 			}
 		}
@@ -1206,8 +1206,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) == 8 || 
-						((Integer)rec.get("MonthOfYear")) == 12);
+				assertTrue(((Long)rec.get("DayofMonth")) == 8 || 
+						((Long)rec.get("MonthOfYear")) == 12);
 			}
 		}
 		log.info("In testFlightsDivertedDueToWeatherSortBy() method Exit");
@@ -1533,7 +1533,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 	public void testRequiredColumnTrim() throws Exception {
 		log.info("In testRequiredColumnTrim() method Entry");
 		
-		String statement = "SELECT trim(airline.Origin),trim(airline.Dest)  FROM airline";				
+		String statement = "SELECT trim(airline.Origin + ' ') trmorig ,trim(' ' + airline.Dest) trimdest FROM airline";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1542,8 +1542,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(2,rec.size());
-				assertTrue(rec.containsKey("trim(airline.Origin)"));
-				assertTrue(rec.containsKey("trim(airline.Dest)"));
+				assertTrue(rec.containsKey("trmorig"));
+				assertTrue(rec.containsKey("trimdest"));
 			}
 		}
 		log.info("In testRequiredColumnTrim() method Exit");
@@ -1834,7 +1834,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(1,rec.size());
-				sum += (Integer)rec.get("sum(airline.ArrDelay)");
+				sum += (Long)rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		
@@ -1848,7 +1848,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(1,rec.size());
-				sum11 += (Integer)rec.get("sum(airline.ArrDelay)");
+				sum11 += (Long)rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		
@@ -1862,7 +1862,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(1,rec.size());
-				sum12 += (Integer)rec.get("sum(airline.ArrDelay)");
+				sum12 += (Long)rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		
@@ -1903,7 +1903,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(1,rec.size());
-				sum += (Integer)rec.get("sum(airline.ArrDelay)");
+				sum += (Long)rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		assertEquals(Double.valueOf(-6500.0), Double.valueOf(sum));
@@ -1923,7 +1923,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(1,rec.size());
-				sum += (Integer)rec.get("sum(airline.ArrDelay)");
+				sum += (Long)rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		assertEquals(Double.valueOf(-1199.0), Double.valueOf(sum));
@@ -1984,7 +1984,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(1,rec.size());
-				sum += (Integer)rec.get("sum(airline.ArrDelay)");
+				sum += (Long)rec.get("sum(airline.ArrDelay)");
 			}
 		}
 		assertEquals(Double.valueOf(-1199.0), Double.valueOf(sum));
@@ -2005,7 +2005,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(1,rec.size());
-				sum += (Integer)rec.get("sum(abs(airline.MonthOfYear) + airline.ArrDelay)");
+				sum += (Long)rec.get("sum(abs(airline.MonthOfYear) + airline.ArrDelay)");
 			}
 		}
 		assertEquals(Double.valueOf(10642.0), Double.valueOf(sum));
@@ -2026,7 +2026,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for (Map<String,Object> rec : recs) {
 				log.info(rec);
 				assertEquals(1,rec.size());
-				sum += (Integer)rec.get("sum(abs(airline.MonthOfYear) + abs(airline.ArrDelay))");
+				sum += (Long)rec.get("sum(abs(airline.MonthOfYear) + abs(airline.ArrDelay))");
 			}
 		}
 		assertEquals(Double.valueOf(18896.0), Double.valueOf(sum));
@@ -2809,6 +2809,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Exit");
 	}
 	
+	
 	@SuppressWarnings({"unchecked"})
 	@Test
 	public void testRequiredColumnsLeftJoin() throws Exception {
@@ -2866,6 +2867,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 		log.info("In testRequiredColumnsRightJoin() method Exit");
 	}
 	
+	
 	@SuppressWarnings({"unchecked"})
 	@Test
 	public void testFlightsAndOr() throws Exception {
@@ -2882,9 +2884,9 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) == 8 && 
-						((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3);
+				assertTrue(((Long)rec.get("DayofMonth")) == 8 && 
+						((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3);
 			}
 		}
 		log.info("In testFlightsAndOr() method Exit");
@@ -2907,10 +2909,10 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) == 8 && 
-						((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3 &&
-						((Integer)rec.get("DayofMonth")) == 1);
+				assertTrue(((Long)rec.get("DayofMonth")) == 8 && 
+						((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3 &&
+						((Long)rec.get("DayofMonth")) == 1);
 			}
 		}
 		log.info("In testFlightsAndOrAnd() method Exit");
@@ -2932,10 +2934,10 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) == 8 && 
-						((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3 &&
-						((Integer)rec.get("DayofMonth")) == 1);
+				assertTrue(((Long)rec.get("DayofMonth")) == 8 && 
+						((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3 &&
+						((Long)rec.get("DayofMonth")) == 1);
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesis() method Exit");
@@ -2957,9 +2959,9 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) == 8 && 
-						(((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3) &&
+				assertTrue(((Long)rec.get("DayofMonth")) == 8 && 
+						(((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3) &&
 						((String)rec.get("Origin")).equals("LIH"));
 			}
 		}
@@ -2982,9 +2984,9 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) == 6 && 
-						(((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3) &&
+				assertTrue(((Long)rec.get("DayofMonth")) == 6 && 
+						(((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3) &&
 						((String)rec.get("Origin")).equals("LIH"));
 			}
 		}
@@ -3007,9 +3009,9 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) == 6 && 
-						(((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3) &&
+				assertTrue(((Long)rec.get("DayofMonth")) == 6 && 
+						(((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3) &&
 						((String)rec.get("Origin")).equals("LIH"));
 			}
 		}
@@ -3032,10 +3034,10 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) 
-						 + ((Integer)rec.get("DayOfWeek")) == 8 && 
-						(((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3) &&
+				assertTrue(((Long)rec.get("DayofMonth")) 
+						 + ((Long)rec.get("DayOfWeek")) == 8 && 
+						(((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3) &&
 						((String)rec.get("Origin")).equals("LIH"));
 			}
 		}
@@ -3058,9 +3060,9 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) == 10 && 
-						(((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3) &&
+				assertTrue(((Long)rec.get("DayofMonth")) == 10 && 
+						(((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3) &&
 						((String)rec.get("Origin")).equals("LIH"));
 			}
 		}
@@ -3084,9 +3086,9 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) == 4 && 
-						(((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3) &&
+				assertTrue(((Long)rec.get("DayofMonth")) == 4 && 
+						(((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3) &&
 						((String)rec.get("Origin")).equals("LIH"));
 			}
 		}
@@ -3110,9 +3112,9 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				log.info(rec);
 				assertTrue(rec.size() == 29);
 				sum++;
-				assertTrue(((Integer)rec.get("DayofMonth")) >= 8 && 
-						(((Integer)rec.get("MonthOfYear")) == 12 
-						||((Integer)rec.get("DayOfWeek")) == 3) &&
+				assertTrue(((Long)rec.get("DayofMonth")) >= 8 && 
+						(((Long)rec.get("MonthOfYear")) == 12 
+						||((Long)rec.get("DayOfWeek")) == 3) &&
 						((String)rec.get("Origin")).equals("LIH"));
 			}
 		}
@@ -3319,7 +3321,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for(Map<String,Object> record: recs) {
 				total++;
 				assertTrue(record.keySet().size() == 29);
-				assertTrue((Integer)record.get("DayofMonth") == 12);
+				assertTrue((Long)record.get("DayofMonth") == 12);
 				log.info(record);
 			}
 		}
@@ -3344,7 +3346,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for(Map<String,Object> record: recs) {
 				total++;
 				assertTrue(record.keySet().size() == 29);
-				assertTrue((Integer)record.get("DayofMonth") == 12 && (Integer)record.get("DayOfWeek") == 3);
+				assertTrue((Long)record.get("DayofMonth") == 12 && (Long)record.get("DayOfWeek") == 3);
 				log.info(record);
 			}
 		}
@@ -3370,7 +3372,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for(Map<String,Object> record: recs) {
 				total++;
 				assertTrue(record.keySet().size() == 4);
-				assertTrue((Integer)record.get("DayofMonth") == 12 && (Integer)record.get("DayOfWeek") == 3);
+				assertTrue((Long)record.get("DayofMonth") == 12 && (Long)record.get("DayOfWeek") == 3);
 				log.info(record);
 			}
 		}
@@ -3421,8 +3423,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.keySet().size() == 4);
 				assertTrue(rec.containsKey("UniqueCarrier"));
 				assertTrue(rec.containsKey("Code"));
-				assertEquals(8, rec.get("DayofMonth"));
-				assertEquals(12, rec.get("MonthOfYear"));
+				assertEquals(8l, rec.get("DayofMonth"));
+				assertEquals(12l, rec.get("MonthOfYear"));
 			}
 		}
 		assertEquals(132, totalrecords);
@@ -3449,8 +3451,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.keySet().size() == 4);
 				assertTrue(rec.containsKey("UniqueCarrier"));
 				assertTrue(rec.containsKey("Code"));
-				assertEquals(8, rec.get("DayofMonth"));
-				assertEquals(12, rec.get("MonthOfYear"));
+				assertEquals(8l, rec.get("DayofMonth"));
+				assertEquals(12l, rec.get("MonthOfYear"));
 			}
 		}
 		assertEquals(132, totalrecords);
@@ -3478,8 +3480,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 				assertTrue(rec.keySet().size() == 4);
 				assertTrue(rec.containsKey("UniqueCarrier"));
 				assertTrue(rec.containsKey("Code"));
-				assertEquals(8, rec.get("DayofMonth"));
-				assertEquals(12, rec.get("MonthOfYear"));
+				assertEquals(8l, rec.get("DayofMonth"));
+				assertEquals(12l, rec.get("MonthOfYear"));
 			}
 		}
 		assertEquals(132, totalrecords);
@@ -3503,7 +3505,7 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for(Map<String,Object> record: recs) {
 				total++;
 				assertTrue(record.keySet().size() == 3);
-				assertTrue((Integer)record.get("DayofMonth") == 12 && (Integer)record.get("DayOfWeek") == 3);
+				assertTrue((Long)record.get("DayofMonth") == 12 && (Long)record.get("DayOfWeek") == 3);
 				log.info(record);
 			}
 		}
@@ -3528,8 +3530,8 @@ public class IgnitePipelineSqlBuilderTest extends StreamPipelineIgniteBase {
 			for(Map<String,Object> record: recs) {
 				total++;
 				assertTrue(record.keySet().size() == 4);
-				assertTrue((Integer)record.get("DayofMonth") == 12 && (Integer)record.get("DayOfWeek") == 3
-						&& (Integer)record.get("MonthOfYear") == 12);
+				assertTrue((Long)record.get("DayofMonth") == 12 && (Long)record.get("DayOfWeek") == 3
+						&& (Long)record.get("MonthOfYear") == 12);
 				log.info(record);
 			}
 		}

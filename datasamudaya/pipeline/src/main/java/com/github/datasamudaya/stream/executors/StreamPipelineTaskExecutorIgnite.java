@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import java.util.stream.Stream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
@@ -823,7 +825,8 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	public void run() {
 		log.debug("Entered MassiveDataStreamTaskIgnite.call");
 		var stagePartition = jobstage.getStageid();
-		try {
+		try (var hdfs = FileSystem.newInstance(new URI(hdfspath), new Configuration());) {
+			this.hdfs = hdfs;
 			cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
 			
 			if (task.input != null && task.parentremotedatafetch != null) {

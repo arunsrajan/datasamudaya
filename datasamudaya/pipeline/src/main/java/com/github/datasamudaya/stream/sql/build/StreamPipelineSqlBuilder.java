@@ -443,7 +443,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 					Map<Function, String> aliasfn = functionalias;
 					Map<Parenthesis, String> parenthealias = parenthesisalias;
 					boolean isaggfuncqueried = isaggfunc;
-					SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+					SimpleDateFormat dateFormat = new SimpleDateFormat();
 
 					@Override
 					public Map<String, Object> apply(Map<String, Object> mapvalues) {
@@ -458,6 +458,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 									nonaggfnvalues.put(alias, value);
 								} else if (fn.getName().toLowerCase().startsWith("currentisodate")) {
 									String alias = nonNull(aliasfunction) ? aliasfunction : "currentisodate()";
+									dateFormat.applyPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 									nonaggfnvalues.put(alias, dateFormat.format(new Date(System.currentTimeMillis())));
 								}
 							} else if (exp instanceof Parenthesis parenthesis) {

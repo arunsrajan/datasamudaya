@@ -110,10 +110,10 @@ public class MassiveDataMRJobBase {
 	
 	@BeforeClass
 	public static void setServerUp() throws Exception {		
-		try (InputStream istream = MassiveDataMRJobBase.class.getResourceAsStream("/log4j.properties");) {
+		try {
 			System.setProperty("HIBCFG", "../config/datasamudayahibernate.cfg.xml");
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
-			PropertyConfigurator.configure(istream);
+			PropertyConfigurator.configure("./config/log4j.properties");
 			Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
 			org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
