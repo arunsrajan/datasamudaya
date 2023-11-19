@@ -18,6 +18,5 @@ import lombok.Setter;
 public class User {
 	private String user;
 	private Integer percentage;
-	private Map<String,Boolean> isallocated;
 	private Map<String, List<ContainerResources>> nodecontainersmap;
 }

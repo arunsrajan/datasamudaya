@@ -363,7 +363,6 @@ public class FileBlocksPartitionerHDFS {
 							} else {
 								var usersshare = DataSamudayaUsers.get();
 								var user = usersshare.get(pipelineconfig.getUser());
-								user.getIsallocated().remove(node);
 							}
 						} else {
 							deallocateall = false;
@@ -728,7 +727,7 @@ public class FileBlocksPartitionerHDFS {
 	 * Get container and nodes from LaunchContainers list object.
 	 */
 	protected void getContainersGlobal() {
-		job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser()));
+		job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser(), pipelineconfig.getTejobid()));
 		job.setId(pipelineconfig.getJobid());
 		// Get containers
 		containers = job.getLcs().stream().flatMap(lc -> {
@@ -911,11 +910,6 @@ public class FileBlocksPartitionerHDFS {
 				throw new PipelineException(
 						String.format(PipelineConstants.USERNOTCONFIGURED, pipelineconfig.getUser()));
 			}
-			if (nonNull(user.getIsallocated().get(resources.getNodeport()))
-					&& user.getIsallocated().get(resources.getNodeport())) {
-				throw new PipelineException(
-						String.format(PipelineConstants.USERALLOCATEDSHARE, pipelineconfig.getUser()));
-			}
 			cpu = cpu * user.getPercentage() / 100;
 			res.setCpu(cpu);
 			var memoryrequire = actualmemory * user.getPercentage() / 100;
@@ -925,7 +919,6 @@ public class FileBlocksPartitionerHDFS {
 			res.setDirectheap(memoryrequire - heapmem);
 			res.setGctype(gctype);
 			cr.add(res);
-			user.getIsallocated().put(resources.getNodeport(), true);
 			return cr;
 		} else {
 			throw new PipelineException(PipelineConstants.UNSUPPORTEDMEMORYALLOCATIONMODE);

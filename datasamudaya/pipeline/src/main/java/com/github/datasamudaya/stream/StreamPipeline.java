@@ -1312,7 +1312,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 					job.setIgcache(ignitecache);
 					job.setIgnite(ignite);
 				} else {
-					job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser()));
+					job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser(), pipelineconfig.getTejobid()));
 					List<String> containers = job.getLcs().stream().flatMap(lc -> {
 						var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
 						return lc.getCla().getCr().stream().map(cr -> {

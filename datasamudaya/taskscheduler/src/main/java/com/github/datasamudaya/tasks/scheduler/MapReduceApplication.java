@@ -556,7 +556,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			}
 			
 			if(nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
-				var lcs = GlobalContainerLaunchers.get(jobconf.getUser());
+				var lcs = GlobalContainerLaunchers.get(jobconf.getUser(), jobconf.getTeappid());
 				containers = lcs.stream().flatMap(lc -> {
 					var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
 					return lc.getCla().getCr().stream().map(cr -> {
@@ -628,7 +628,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					}
 				}
 			} else {
-				var lcs = GlobalContainerLaunchers.get(jobconf.getUser());
+				var lcs = GlobalContainerLaunchers.get(jobconf.getUser(), jobconf.getTeappid());
 				lcs.stream().forEach(lc->{
 					String[] nodehp = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
 					for(ContainerResources cr: lc.getCla().getCr()) {

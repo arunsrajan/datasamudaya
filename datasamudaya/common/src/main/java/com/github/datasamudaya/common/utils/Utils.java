@@ -74,7 +74,6 @@ import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -248,7 +247,7 @@ public class Utils {
 					for (int usercount = 0; usercount < noofusers; usercount++) {
 						int sharepercentage = Integer.valueOf(cus[usercount * 2 + 1]);
 						String username = cus[usercount * 2];
-						User user = new User(username, sharepercentage, new ConcurrentHashMap<>(),
+						User user = new User(username, sharepercentage,
 								new ConcurrentHashMap<>());
 						userssharepercentage.put(username, user);
 						sharepercentagetotal += sharepercentage;
@@ -971,16 +970,6 @@ public class Utils {
 	@SuppressWarnings("unchecked")
 	public static List<LaunchContainers> launchContainers(String user, String jobid) throws Exception {
 		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
-		if (nonNull(GlobalContainerLaunchers.get(user))) {
-			var lcs = GlobalContainerLaunchers.get(user);
-			var lcscloned = new ArrayList<LaunchContainers>();
-			for (var lc : lcs) {
-				var clonedlc = SerializationUtils.clone(lc);
-				clonedlc.setJobid(jobid);
-				lcscloned.add(clonedlc);
-			}
-			return lcscloned;
-		}		
 		var nrs = DataSamudayaNodesResources.get();
 		var resources = nrs.values();
 		int numavailable = resources.size();
@@ -998,10 +987,6 @@ public class Utils {
 			var usershare = usersshare.get(user);
 			if (isNull(usershare)) {
 				throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
-			}
-			if (nonNull(usershare.getIsallocated().get(restolaunch.getNodeport()))
-					&& usershare.getIsallocated().get(restolaunch.getNodeport())) {
-				throw new Exception(String.format(PipelineConstants.USERALLOCATEDSHARE, user));
 			}
 			cpu = cpu * usershare.getPercentage() / 100;
 			cpu = cpu / numberofcontainerpernode;
@@ -1045,7 +1030,6 @@ public class Utils {
 				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
 				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
 			}
-			usershare.getIsallocated().put(restolaunch.getNodeport(), true);						
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
 			cla.setCr(crl);
 			cla.setNumberofcontainers(numberofcontainerpernode);
@@ -1084,7 +1068,7 @@ public class Utils {
 			log.info(
 					"Chamber dispatched node: " + restolaunch.getNodeport() + " with ports: " + launchedcontainerports);
 		}
-		GlobalContainerLaunchers.put(user, globallaunchcontainers);
+		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
 		return globallaunchcontainers;
 	}
 	
@@ -1101,16 +1085,6 @@ public class Utils {
 	public static List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws Exception {
 		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
 		long memoryuserbytes = Long.valueOf(memoryuser) * DataSamudayaConstants.MB;
-		if (nonNull(GlobalContainerLaunchers.get(user))) {
-			var lcs = GlobalContainerLaunchers.get(user);
-			var lcscloned = new ArrayList<LaunchContainers>();
-			for (var lc : lcs) {
-				var clonedlc = SerializationUtils.clone(lc);
-				clonedlc.setJobid(jobid);
-				lcscloned.add(clonedlc);
-			}
-			return lcscloned;
-		}		
 		var nrs = DataSamudayaNodesResources.get();
 		var resources = nrs.values();
 		int numavailable = resources.size();
@@ -1126,10 +1100,6 @@ public class Utils {
 			var usershare = usersshare.get(user);
 			if (isNull(usershare)) {
 				throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
-			}
-			if (nonNull(usershare.getIsallocated().get(restolaunch.getNodeport()))
-					&& usershare.getIsallocated().get(restolaunch.getNodeport())) {
-				throw new Exception(String.format(PipelineConstants.USERALLOCATEDSHARE, user));
 			}
 			int cpu = (restolaunch.getNumberofprocessors() - 1) * usershare.getPercentage() / 100;
 			cpu = cpu / numberofcontainers;
@@ -1174,8 +1144,9 @@ public class Utils {
 						+ port;
 				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
 				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
+				restolaunch.setFreememory(restolaunch.getFreememory()-heapmem-directmem);
+				restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpu);
 			}
-			usershare.getIsallocated().put(restolaunch.getNodeport(), true);						
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
 			cla.setCr(crl);
 			cla.setNumberofcontainers(numberofcontainers);
@@ -1214,7 +1185,7 @@ public class Utils {
 			log.info(
 					"Chamber dispatched node: " + restolaunch.getNodeport() + " with ports: " + launchedcontainerports);
 		}
-		GlobalContainerLaunchers.put(user, globallaunchcontainers);
+		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
 		return globallaunchcontainers;
 	}
 	
@@ -1477,17 +1448,20 @@ public class Utils {
 		if (isNull(usersshare)) {
 			throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
 		}
-		var usershare = usersshare.get(user);
-		var lcs = GlobalContainerLaunchers.get(user);
+		var lcs = GlobalContainerLaunchers.get(user, jobid);
 		lcs.stream().forEach(lc -> {
 			try {
+				Resources restolaunch = DataSamudayaNodesResources.get().get(lc.getNodehostport());
 				Utils.getResultObjectByInput(lc.getNodehostport(), dc, DataSamudayaConstants.EMPTY);
-				usershare.getIsallocated().put(lc.getNodehostport(), false);
+				lc.getCla().getCr().stream().forEach(cr->{
+					restolaunch.setFreememory(restolaunch.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
+					restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() + cr.getCpu());
+				});
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		});
-		GlobalContainerLaunchers.remove(user);
+		GlobalContainerLaunchers.remove(user, jobid);
 		GlobalJobFolderBlockLocations.remove(jobid);
 	}
 
@@ -1846,7 +1820,6 @@ public class Utils {
 							} else {
 								var usersshare = DataSamudayaUsers.get();
 								var user = usersshare.get(job.getPipelineconfig().getUser());
-								user.getIsallocated().remove(node);
 							}
 						} else {
 							deallocateall = false;
