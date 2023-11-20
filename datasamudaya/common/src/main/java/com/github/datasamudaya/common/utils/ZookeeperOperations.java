@@ -186,8 +186,16 @@ public class ZookeeperOperations implements AutoCloseable{
                     	if(isNull(DataSamudayaNodesResources.get())) {
                     		DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
                     	}
-                    	DataSamudayaNodesResources.get().put(nodeadded[nodeadded.length-1], 
-                    			objectMapper.readValue(event.getData().getData(), Resources.class));
+                    	if(isNull(DataSamudayaNodesResources.getAllocatedResources())) {
+                    		DataSamudayaNodesResources.putAllocatedResources(new ConcurrentHashMap<>());
+                    	}
+                    	String currentnode = nodeadded[nodeadded.length-1];
+                    	Resources resources = objectMapper.readValue(event.getData().getData(), Resources.class);
+                    	DataSamudayaNodesResources.get().put(currentnode, resources);
+                    	if(isNull(DataSamudayaNodesResources.getAllocatedResources().get(currentnode))) {
+                    		DataSamudayaNodesResources.getAllocatedResources().put(currentnode, new ConcurrentHashMap<>());
+                    	}
+                    	Utils.allocateResourcesByUser(resources, DataSamudayaNodesResources.getAllocatedResources().get(currentnode));
                         log.info("Master node added: " + event.getData().getPath());
                         break;
                     case CHILD_REMOVED:
@@ -195,7 +203,10 @@ public class ZookeeperOperations implements AutoCloseable{
                     	if(isNull(DataSamudayaNodesResources.get())) {
                     		DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
                     	}
-                    	DataSamudayaNodesResources.get().remove(nodetoberemoved[nodetoberemoved.length-1]);
+                    	String nodetoremove = nodetoberemoved[nodetoberemoved.length-1];
+                    	DataSamudayaNodesResources.get().remove(nodetoremove);
+                    	DataSamudayaNodesResources.getAllocatedResources().remove(nodetoremove);
+                    	
                         log.info("Master node removed: " + event.getData().getPath());
                         break;
                     default:

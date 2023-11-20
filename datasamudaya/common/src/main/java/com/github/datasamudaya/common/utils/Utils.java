@@ -55,6 +55,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Attributes;
@@ -968,12 +969,12 @@ public class Utils {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unchecked")
-	public static List<LaunchContainers> launchContainers(String user, String jobid) throws Exception {
+	public static synchronized List<LaunchContainers> launchContainers(String user, String jobid) throws Exception {
 		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
-		var nrs = DataSamudayaNodesResources.get();
+		var nrs = DataSamudayaNodesResources.getAllocatedResources();
 		var resources = nrs.values();
 		int numavailable = resources.size();
-		Iterator<Resources> res = resources.iterator();
+		Iterator<ConcurrentMap<String, Resources>> res = resources.iterator();
 		var globallaunchcontainers = new ArrayList<LaunchContainers>();
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
@@ -982,22 +983,22 @@ public class Utils {
 		PipelineConfig pc = new PipelineConfig();
 		int numberofcontainerpernode = Integer.parseInt(pc.getNumberofcontainers());
 		for (int container = 0; container < numavailable; container++) {
-			Resources restolaunch = res.next();
-			var cpu = restolaunch.getNumberofprocessors() - 1;
+			ConcurrentMap<String, Resources> userrestolaunch = res.next();
+			Resources restolaunch = userrestolaunch.get(user);
+			var cpu = restolaunch.getNumberofprocessors();
 			var usershare = usersshare.get(user);
 			if (isNull(usershare)) {
 				throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
-			}
-			cpu = cpu * usershare.getPercentage() / 100;
+			}			
 			cpu = cpu / numberofcontainerpernode;
-			if(cpu == 0) {
-				cpu = 1;
+			if(cpu<=0) {
+				throw new Exception(PipelineConstants.INSUFFCPUALLOCATIONERROR);
 			}
-			var actualmemory = restolaunch.getFreememory() - DataSamudayaConstants.GB;
+			var actualmemory = restolaunch.getFreememory();
 			if (actualmemory < (128 * DataSamudayaConstants.MB)) {
 				throw new Exception(PipelineConstants.MEMORYALLOCATIONERROR);
 			}
-			var memoryrequire = actualmemory * usershare.getPercentage() / 100;
+			var memoryrequire = actualmemory;
 			var heapmem = memoryrequire * Integer.valueOf(
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
 					/ 100;
@@ -1029,6 +1030,8 @@ public class Utils {
 						+ port;
 				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
 				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
+				restolaunch.setFreememory(restolaunch.getFreememory()-heapmem-directmem);
+				restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpu);
 			}
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
 			cla.setCr(crl);
@@ -1082,13 +1085,13 @@ public class Utils {
 	 * @return containers
 	 * @throws Exception
 	 */
-	public static List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws Exception {
+	public static synchronized List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws Exception {
 		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
 		long memoryuserbytes = Long.valueOf(memoryuser) * DataSamudayaConstants.MB;
-		var nrs = DataSamudayaNodesResources.get();
+		var nrs = DataSamudayaNodesResources.getAllocatedResources();
 		var resources = nrs.values();
 		int numavailable = resources.size();
-		Iterator<Resources> res = resources.iterator();
+		Iterator<ConcurrentMap<String, Resources>> res = resources.iterator();
 		var globallaunchcontainers = new ArrayList<LaunchContainers>();
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
@@ -1096,22 +1099,23 @@ public class Utils {
 		}
 		PipelineConfig pc = new PipelineConfig();
 		for (int container = 0; container < numavailable; container++) {
-			Resources restolaunch = res.next();
+			ConcurrentMap<String, Resources> noderesmap = res.next();
+			Resources restolaunch = noderesmap.get(user);
 			var usershare = usersshare.get(user);
 			if (isNull(usershare)) {
 				throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
 			}
-			int cpu = (restolaunch.getNumberofprocessors() - 1) * usershare.getPercentage() / 100;
+			int cpu = restolaunch.getNumberofprocessors();			
 			cpu = cpu / numberofcontainers;
-			if(cpu == 0) {
-				cpu = 1;
+			if(cpu<=0) {
+				throw new Exception(PipelineConstants.INSUFFCPUALLOCATIONERROR);
 			}
 			cpu = cpu<cpuuser?cpu:cpuuser;
-			var actualmemory = restolaunch.getFreememory() - DataSamudayaConstants.GB;
+			var actualmemory = restolaunch.getFreememory();
 			if (actualmemory < (128 * DataSamudayaConstants.MB)) {
 				throw new Exception(PipelineConstants.MEMORYALLOCATIONERROR);
 			}
-			var memoryrequire = actualmemory * usershare.getPercentage() / 100;
+			var memoryrequire = actualmemory;
 			memoryrequire = memoryrequire / numberofcontainers;
 			memoryrequire = memoryrequire<memoryuserbytes?memoryrequire:memoryuserbytes;
 			var heapmem = memoryrequire * Integer.valueOf(
@@ -1187,6 +1191,20 @@ public class Utils {
 		}
 		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
 		return globallaunchcontainers;
+	}
+	
+	/**
+	 * Allocate resources based on user allocation percentage for the nodes
+	 * @param resources
+	 * @param userresourcesmap
+	 */
+	public static void allocateResourcesByUser(Resources resources, Map<String, Resources> userresourcesmap) {
+		var usersshare = DataSamudayaUsers.get();
+		usersshare.entrySet().stream().forEach(es->{
+			Resources resperuser = new Resources(resources.getNodeport(), resources.getTotalmemory(), resources.getFreememory() * es.getValue().getPercentage() / 100,
+					resources.getNumberofprocessors() * es.getValue().getPercentage() / 100, resources.getTotaldisksize(), resources.getUsabledisksize(), resources.getPhysicalmemorysize());
+			userresourcesmap.put(es.getKey(), resperuser);
+		});
 	}
 	
 	private static Semaphore yarnmutex = new Semaphore(1);
@@ -1441,7 +1459,7 @@ public class Utils {
 	 * @param jobid
 	 * @throws Exception
 	 */
-	public static void destroyContainers(String user, String jobid) throws Exception {
+	public static synchronized void destroyContainers(String user, String jobid) throws Exception {
 		var dc = new DestroyContainers();
 		dc.setJobid(jobid);
 		var usersshare = DataSamudayaUsers.get();
@@ -1451,11 +1469,12 @@ public class Utils {
 		var lcs = GlobalContainerLaunchers.get(user, jobid);
 		lcs.stream().forEach(lc -> {
 			try {
-				Resources restolaunch = DataSamudayaNodesResources.get().get(lc.getNodehostport());
+				ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources.getAllocatedResources().get(lc.getNodehostport());
+				Resources resallocated = nodesresallocated.get(user);
 				Utils.getResultObjectByInput(lc.getNodehostport(), dc, DataSamudayaConstants.EMPTY);
 				lc.getCla().getCr().stream().forEach(cr->{
-					restolaunch.setFreememory(restolaunch.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
-					restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() + cr.getCpu());
+					resallocated.setFreememory(resallocated.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
+					resallocated.setNumberofprocessors(resallocated.getNumberofprocessors() + cr.getCpu());
 				});
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
