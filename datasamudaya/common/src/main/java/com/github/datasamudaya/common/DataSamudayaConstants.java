@@ -417,6 +417,7 @@ public class DataSamudayaConstants {
   public static final String ANTFORMATTER = "ant";
   
   public static final String USERSQL = "user";
+  public static final String SQL = "SQL";
   public static final String USERSQLREQUIRED = "User need to be provided to execute sql";
   public static final String SQLCONTAINERS = "containerssql";
   public static final String MEMORYPERCONTAINER = "containermemory";
@@ -425,6 +426,7 @@ public class DataSamudayaConstants {
   public static final String SQLWORKERMODE_DEFAULT = "standalone";
   
   public static final String USERPIG = "piguser";
+  public static final String PIG = "PIG";
   public static final String USERPIGREQUIRED = "User need to be provided to execute pig commands";
   public static final String PIGCONTAINERS = "containerspig";
   public static final String PIGWORKERMODE = "pigworkermode";

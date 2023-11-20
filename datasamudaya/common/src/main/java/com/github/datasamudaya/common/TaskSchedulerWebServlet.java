@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServlet;
@@ -23,6 +24,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.springframework.util.CollectionUtils;
+
+import static java.util.Objects.*;
 
 /**
  * Data master servlet to display all the available chunks.
@@ -100,6 +103,61 @@ public class TaskSchedulerWebServlet extends HttpServlet {
           builder.append("</tr>");
         }
         builder.append("</tbody></table>");
+      }
+      
+      if(!CollectionUtils.isEmpty(DataSamudayaNodesResources.getAllocatedResources())) {
+    	  ConcurrentMap<String, ConcurrentMap<String, Resources>> userres = DataSamudayaNodesResources.getAllocatedResources();
+    	  userres.entrySet().stream().forEach(userresmap->{
+    		  builder.append("<BR/>");
+    		  builder.append("<h1 align=\"center\">");
+    		  builder.append(userresmap.getKey());
+    		  builder.append("</h1>");
+    		  String[] nodeport = userresmap.getKey().split(DataSamudayaConstants.UNDERSCORE);
+    		  builder.append(
+    	            """
+    	                		<table style=\"color:#ff0000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\">
+    	                <thead><th>User</th><th>Node</th><th>FreeMemory</th><th>TotalProcessors</th><th>Physicalmemorysize</th><th>Totaldisksize</th><th>Totalmemory</th><th>Usabledisksize</th></thead>
+    	                <tbody>""");
+    	        int i = 0;
+    	        ConcurrentMap<String, Resources> nodeallocated = userresmap.getValue();
+    	        for (var user : nodeallocated.keySet()) {
+    	          Resources resources = nodeallocated.get(user);    	         
+    	          builder.append("<tr bgcolor=\"" + getColor(i++) + "\">");
+    	          builder.append("<td>");
+    	          builder.append(user);
+    	          builder.append("</td>");
+    	          builder.append("<td>");
+    	          builder.append(resources.getNodeport());
+    	          builder.append("</td>");
+    	          builder.append("<td>");
+    	          builder.append(resources.getFreememory());
+    	          builder.append("</td>");
+    	          builder.append("<td>");
+    	          builder.append(resources.getNumberofprocessors());
+    	          builder.append("</td>");
+    	          builder.append("<td>");
+    	          builder.append(resources.getPhysicalmemorysize());
+    	          builder.append("</td>");
+    	          builder.append("<td>");
+    	          builder.append(resources.getTotaldisksize());
+    	          builder.append("</td>");
+    	          builder.append("<td>");
+    	          builder.append(resources.getTotalmemory());
+    	          builder.append("</td>");
+    	          builder.append("<td>");
+    	          builder.append(resources.getUsabledisksize());
+    	          builder.append("</td>");
+    	          builder.append("<td>");
+    	          builder.append("<a href=\"http://" + nodeport[0] + DataSamudayaConstants.COLON
+    	              + (Integer.parseInt(nodeport[1]) + DataSamudayaConstants.PORT_OFFSET) + "\">");
+    	          builder.append(nodeport[0] + DataSamudayaConstants.COLON
+    	              + (Integer.parseInt(nodeport[1]) + DataSamudayaConstants.PORT_OFFSET));
+    	          builder.append("</a>");
+    	          builder.append("</td>");
+    	          builder.append("</tr>");
+    	        }
+    	        builder.append("</tbody></table>");
+    	  });
       }
 
       if (DataSamudayaJobMetrics.get().keySet().size() > 0) {

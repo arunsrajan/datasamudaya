@@ -61,6 +61,7 @@ public class SelectQueryExecutor {
 			} else {
 				pc.setYarn("false");
 			}
+			pc.setJobname(DataSamudayaConstants.SQL);
 			pc.setMesos("false");
 			pc.setMode(DataSamudayaConstants.MODE_NORMAL);
 			pc.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
@@ -126,6 +127,7 @@ public class SelectQueryExecutor {
 			String tejobid) throws Exception {
 		try {
 			PipelineConfig pc = new PipelineConfig();
+			pc.setJobname(DataSamudayaConstants.SQL);
 			pc.setLocal("false");
 			pc.setJgroups("false");
 			pc.setYarn("false");

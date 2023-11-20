@@ -75,6 +75,7 @@ public class PigQueryServer {
 								BufferedReader in = new BufferedReader(
 										new InputStreamReader(clientSocket.getInputStream()));) {
 							pipelineconfig.setPigoutput(ostream);
+							pipelineconfig.setJobname(DataSamudayaConstants.PIG);
 							user = in.readLine();
 							numberofcontainers = Integer.valueOf(in.readLine());
 							cpupercontainer = Integer.valueOf(in.readLine());							
