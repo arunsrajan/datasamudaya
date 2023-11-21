@@ -36,8 +36,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 public class PigQueryServer {
 	static Logger log = LoggerFactory.getLogger(PigQueryServer.class);
 	static ServerSocket serverSocket = null;		
-	static QueryParserDriver queryParserDriver = null;	
-	static PipelineConfig pipelineconfig = new PipelineConfig();
+	static QueryParserDriver queryParserDriver = null;		
 	/**
 	 * Start the Pig server.
 	 * @throws Exception
@@ -46,19 +45,20 @@ public class PigQueryServer {
 		ExecutorService executors = Executors.newFixedThreadPool(10);
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.PIGPORT,DataSamudayaConstants.PIGPORT_DEFAULT)));
-		queryParserDriver = PigUtils.getQueryParserDriver("pig");
-		pipelineconfig.setLocal("false");
-		pipelineconfig.setYarn("false");
-		pipelineconfig.setMesos("false");
-		pipelineconfig.setJgroups("false");
-		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-		pipelineconfig.setStorage(STORAGE.INMEMORY_DISK);
+		queryParserDriver = PigUtils.getQueryParserDriver("pig");		
 		executors.execute(() -> {
 			while (true) {
 				Socket sock;
 				try {
 					sock = serverSocket.accept();
 					executors.execute(() -> {
+						PipelineConfig pipelineconfig = new PipelineConfig();
+						pipelineconfig.setLocal("false");
+						pipelineconfig.setYarn("false");
+						pipelineconfig.setMesos("false");
+						pipelineconfig.setJgroups("false");
+						pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+						pipelineconfig.setStorage(STORAGE.INMEMORY_DISK);
 						String user = "";
 						int numberofcontainers = 1;
 						int cpupercontainer = 1;

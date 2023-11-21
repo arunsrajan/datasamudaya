@@ -952,10 +952,8 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws Exception
 	 */
 	public StreamPipeline<I1> load() throws Exception{
-		var csp = new StreamPipeline<>(root, new Cache());
-		csp.parents.add(this);
-		this.childs.add(csp);
-		return loadInternal();
+		this.childs.clear();
+		return this;
 	}
 	
 	/**
@@ -990,7 +988,6 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			mdscollect.finaltasks.clear();
 			mdscollect.mdsroots.clear();
 			mdscollect.graph = new DirectedAcyclicGraph<>(DAGEdge.class);
-			mdscollect.childs.clear();
 			mdscollect.task = new Dummy();
 			csp.root = csp;
 			csp.pipelineconfig = sp.pipelineconfig;
@@ -1721,6 +1718,10 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 
 	public Set<Task> getPigtasks() {
 		return pigtasks;
+	}
+	
+	public void clearChild() {
+		this.childs.clear();
 	}
 	
 }
