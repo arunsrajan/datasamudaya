@@ -460,6 +460,7 @@ public class StreamJobScheduler {
       }
 
       if(job.getJobtype() == JOBTYPE.PIG && job.getTrigger()!=TRIGGER.PIGDUMP) {
+    	  printStats();
     	  return getFinalPhasesWithNoSuccessors(taskgraph);
       }
       // Obtain the final stage job results after final stage is
@@ -474,19 +475,7 @@ public class StreamJobScheduler {
       if (Boolean.TRUE.equals(isjgroups)) {
         closeResourcesTaskExecutor(tasksgraphexecutor);
       }
-      job.setIscompleted(true);
-      job.getJm().setJobcompletiontime(System.currentTimeMillis());
-      Utils.writeToOstream(pipelineconfig.getOutput(),
-          "\nConcluded job in "
-              + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
-              + " seconds");
-      log.info("Concluded job in "
-          + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
-          + " seconds");
-      job.getJm().setTotaltimetaken(
-          (job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0);
-      Utils.writeToOstream(pipelineconfig.getOutput(), "Job stats " + job.getJm());
-      log.info("Job stats " + job.getJm());
+      printStats();
       return finalstageoutput;
     } catch (InterruptedException e) {
       log.warn("Interrupted!", e);
@@ -532,6 +521,23 @@ public class StreamJobScheduler {
 
   }
 
+  /**
+   * Print Status of job
+   * @throws Exception
+   */
+  protected void printStats() throws Exception {
+	  job.setIscompleted(true);
+      job.getJm().setJobcompletiontime(System.currentTimeMillis());
+      Utils.writeToOstream(pipelineconfig.getOutput(),
+          "\nConcluded job in "
+              + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
+              + " seconds");
+      log.info("Concluded job in "
+          + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
+          + " seconds");
+      job.getJm().setTotaltimetaken(
+          (job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0);
+  }
   
   /**
    * Get final stages which has no successors.
