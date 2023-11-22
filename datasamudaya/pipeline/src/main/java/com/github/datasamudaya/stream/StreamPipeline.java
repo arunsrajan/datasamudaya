@@ -123,6 +123,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	public PipelineConfig pipelineconfig;
 	private String hdfspath;
 	private String folder;
+	protected CsvOptions csvoptions;
 	private static Logger log = Logger.getLogger(StreamPipeline.class);
 	
 	protected StreamPipeline() {
@@ -990,6 +991,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			mdscollect.graph = new DirectedAcyclicGraph<>(DAGEdge.class);
 			mdscollect.task = new Dummy();
 			csp.root = csp;
+			csp.csvoptions = ((StreamPipeline<?>)root).getCsvOptions();
 			csp.pipelineconfig = sp.pipelineconfig;
 			csp.graph = new DirectedAcyclicGraph<>(DAGEdge.class);
 			return csp;
@@ -1722,6 +1724,10 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	
 	public void clearChild() {
 		this.childs.clear();
+	}
+	
+	public CsvOptions getCsvOptions() {
+		return ((StreamPipeline<?>)root).csvoptions;
 	}
 	
 }

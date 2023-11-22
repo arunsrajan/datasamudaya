@@ -8,9 +8,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -20,6 +23,7 @@ import org.apache.pig.PigServer;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.LocalExecType;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.PigContext;
+import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.newplan.Operator;
 import org.apache.pig.newplan.OperatorPlan;
 import org.apache.pig.newplan.logical.expression.BinaryExpression;
@@ -60,6 +64,7 @@ import org.jooq.lambda.tuple.Tuple9;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.common.GlobalPigServer;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -172,20 +177,10 @@ public class PigUtils {
 	 */
 	public static StreamPipeline<Map<String, Object>> executeLOLoad(String user, String jobid, String tejobid, LOLoad loload, PipelineConfig pipelineconfig) throws Exception {		
 		String[] airlinehead = getHeaderFromSchema(loload.getSchema());
-		Class<?>[] schematypes = getTypesFromSchema(loload.getSchema());
-		StreamPipeline<Map<String, Object>> csp = StreamPipeline.newCsvStreamHDFS(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+		List<SqlTypeName> schematypes = getTypesFromSchema(loload.getSchema());
+		StreamPipeline<Map<String, Object>> csp = StreamPipeline.newCsvStreamHDFSSQL(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT), loload.getSchemaFile(),
-				pipelineconfig, airlinehead).map(csv->{
-					String[] header = airlinehead;
-					Class<?>[] types = schematypes;
-					Map<String, Object> map = new HashMap<>();
-					int columnindex=0;
-					for(String column:header) {
-						map.put(column, getValue(csv.get(column), types[columnindex]));
-						columnindex++;
-					}
-					return map;
-				}).load();
+				pipelineconfig, airlinehead, schematypes, Arrays.asList(airlinehead)).load();
 		return csp;
 	}
 	
@@ -377,14 +372,32 @@ public class PigUtils {
 	public static StreamPipeline<Map<String, Object>> executeLOForEach(StreamPipeline<Map<String, Object>> sp, LOForEach loForEach) throws Exception {
 		sp.clearChild();
 		List<FunctionParams> functionparams = getFunctionsWithParamsGrpBy(loForEach);
+		LogicalExpression[] lexp = getLogicalExpressions(functionparams);
 		LogicalExpression[] headers = getHeaders(functionparams);
-		List<String> aliases = getAlias(functionparams);
-		List<String> colheaders = new ArrayList<>();
+		
+		Set<String> grpbyheader = new LinkedHashSet<>();
+		
 		if(nonNull(headers)) {
+			List<String> columns = new ArrayList<>();
 			for(LogicalExpression lex:headers) {
-				colheaders.add(lex.getFieldSchema().alias);
+				getColumnsFromExpressions(lex, columns);
+				grpbyheader.addAll(columns);
+				columns.clear();
 			}
 		}
+		
+		List<String> aliases = getAlias(functionparams);
+		Set<String> colheaders = new LinkedHashSet<>();
+		if(nonNull(lexp)) {
+			List<String> columns = new ArrayList<>();
+			for(LogicalExpression lex:lexp) {
+				getColumnsFromExpressions(lex, columns);
+				colheaders.addAll(columns);
+				columns.clear();
+			}
+		}
+		((CsvOptionsSQL)sp.getCsvOptions()).getRequiredcolumns().clear();
+		((CsvOptionsSQL)sp.getCsvOptions()).getRequiredcolumns().addAll(colheaders);
 		List<FunctionParams> aggfunctions = getAggFunctions(functionparams);
 		List<FunctionParams> nonaggfunctions = getNonAggFunctions(functionparams);
 		final AtomicBoolean iscount = new AtomicBoolean(false), isaverage = new AtomicBoolean(false);
@@ -393,7 +406,7 @@ public class PigUtils {
 					Map<String, Object> formattedmap = new HashMap<>();
 					List<String> aliasesl = aliases;
 				try {
-					LogicalExpression[] headera = headers;
+					LogicalExpression[] headera = lexp;
 					Iterator<String> aliasi = aliasesl.iterator();
 					for (LogicalExpression exp : headera) {
 						formattedmap.put(aliasi.next(), evaluateBinaryExpression(exp, map, null));
@@ -527,7 +540,7 @@ public class PigUtils {
 				}).map(new MapFunction<Tuple2<Tuple, Tuple>, Map<String, Object>>() {							
 					private static final long serialVersionUID = 9098846821052824347L;
 					List<FunctionParams> functionParam = functionrealign;
-					List<String> grpby = colheaders;
+					List<String> grpby = new ArrayList<>(grpbyheader);
 					List<FunctionParams> fnaverages = functionaverages;
 					AtomicBoolean iscnt = iscount;
 					AtomicBoolean isavg = isaverage;
@@ -642,7 +655,7 @@ public class PigUtils {
 		    }
 		    
 		    if(rightExpression instanceof UserFuncExpression fn) {
-		    	rightValue = evaluateBinaryExpression(leftExpression, row, null);
+		    	rightValue = evaluateBinaryExpression(rightExpression, row, null);
 		    }
 		    else if (rightExpression instanceof ConstantExpression lv) {
 		    	rightValue =  lv.getValue();
@@ -651,7 +664,7 @@ public class PigUtils {
 				Object value = row.get(columnName);
 				rightValue =  value;
 		    } else if (rightExpression instanceof BinaryExpression) {
-		    	rightValue = evaluateBinaryExpression(leftExpression, row, null);
+		    	rightValue = evaluateBinaryExpression(rightExpression, row, null);
 		    }
 		    switch (operator) {
 		        case "Add":
@@ -675,6 +688,45 @@ public class PigUtils {
 		return Double.valueOf(0.0d);
 	}
 
+	/**
+	 * This function collects all columns from expression
+	 * @param lexp
+	 * @param columns
+	 * @throws FrontendException 
+	 */
+	public static void getColumnsFromExpressions(LogicalExpression lexp, List<String> columns) throws FrontendException{
+		if(lexp instanceof BinaryExpression bex) {
+			LogicalExpression leftExpression = bex.getLhs();
+			LogicalExpression rightExpression = bex.getRhs();
+		    if (leftExpression instanceof ProjectExpression pex) {
+		        columns.add(pex.getFieldSchema().alias);
+		    } else if (leftExpression instanceof BinaryExpression) {
+		    	getColumnsFromExpressions(leftExpression, columns);
+		    } else if (leftExpression instanceof UserFuncExpression) {
+		    	getColumnsFromExpressions(leftExpression, columns);
+		    }
+		    
+		    if (rightExpression instanceof ProjectExpression pex) {
+		    	 columns.add(pex.getFieldSchema().alias);
+		    } else if (rightExpression instanceof BinaryExpression) {
+		    	getColumnsFromExpressions(rightExpression, columns);
+		    } else if (leftExpression instanceof UserFuncExpression) {
+		    	getColumnsFromExpressions(leftExpression, columns);
+		    }	   
+		} else if(lexp instanceof ProjectExpression pex) {
+			columns.add(pex.getFieldSchema().alias);
+		} else if (lexp instanceof UserFuncExpression) {
+			Iterator<Operator> operators= lexp.getPlan().getOperators();
+			for(;operators.hasNext();) {
+				Object pexp = operators.next();
+				if(pexp instanceof ProjectExpression) {
+					getColumnsFromExpressions((LogicalExpression)pexp, columns);
+				}
+			}
+	    }
+	}
+	
+	
 	/**
 	 * Evaluates value with for the function 
 	 * @param value
@@ -1238,6 +1290,19 @@ public class PigUtils {
 			return null;
 		}
 	}
+	/**
+	 * This functions returns all the expressions including columns
+	 * @param functionparams
+	 * @return allexpressions
+	 */
+	public static LogicalExpression[] getLogicalExpressions(List<FunctionParams> functionparams) {
+		List<LogicalExpression> headersl = functionparams.stream().map(fp->fp.getParams()).collect(Collectors.toList());
+		if(headersl.size()>0) {
+			return headersl.toArray(new LogicalExpression[1]);
+		} else {
+			return null;
+		}
+	}
 	
 	/**
 	 * get aliases by passing list of function params
@@ -1310,10 +1375,9 @@ public class PigUtils {
 					schemaindex++;
 					functionParams.add(param);
 					while (funcoper.hasNext()) {
-						Operator operexp = funcoper.next();									
+						Operator operexp = funcoper.next();	
 						if (operexp instanceof UserFuncExpression) {
 							UserFuncExpression funcExpression = (UserFuncExpression) operexp;
-
 							// Check if this is the function call with your custom function
 							if (funcExpression.getFuncSpec().getClassName()
 									.equals("org.apache.pig.builtin.COUNT")) {
@@ -1469,16 +1533,16 @@ public class PigUtils {
 	 * @param schema
 	 * @return array of data types
 	 */
-	public static Class<?>[] getTypesFromSchema(LogicalSchema schema) {
-		List<Class<?>> schemafields = schema.getFields().stream().map(loschemafields->{
+	public static List<SqlTypeName> getTypesFromSchema(LogicalSchema schema) {
+		List<SqlTypeName> schemafields = schema.getFields().stream().map(loschemafields->{
 			if(loschemafields.type == 10) {
-				return Integer.class;
+				return SqlTypeName.INTEGER;
 			} else if(loschemafields.type == 55) {
-				return String.class;
+				return SqlTypeName.VARCHAR;
 			} 
-			return String.class;
+			return SqlTypeName.VARCHAR;
 		}).collect(Collectors.toList());
-		return schemafields.toArray(new Class[1]);
+		return schemafields;
 		
 	}
 	

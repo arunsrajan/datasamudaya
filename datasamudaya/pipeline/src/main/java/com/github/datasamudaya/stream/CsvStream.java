@@ -28,6 +28,7 @@ public final class CsvStream<I1> extends StreamPipeline<I1> {
 	@SuppressWarnings({"rawtypes"})
 	public CsvStream(StreamPipeline root, CsvOptions csvOptions) {
 		this.root = root;
+		root.csvoptions = csvOptions; 
 		this.task = csvOptions;
 		root.childs.add(this);
 		this.parents.add(root);

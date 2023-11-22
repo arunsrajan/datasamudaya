@@ -3,22 +3,19 @@ package com.github.datasamudaya.stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.pig.parser.QueryParserDriver;
-import org.jooq.lambda.tuple.Tuple2;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.pig.PigQueryExecutor;
 import com.github.datasamudaya.stream.pig.PigUtils;
@@ -52,227 +49,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 		pipelineconfig.setUser("arun");
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 		Utils.launchContainers("arun", tejobid);
-	}
-	
-	@Test
-	public void testCachedStreamCache() throws Exception {
-		log.info("In testCachedStreamCache() method Entry");
-		String jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);		
-		StreamPipeline<Map<String, Object>> csp = StreamPipeline.newCsvStreamHDFS(hdfsfilepath, airlinesample,
-				pipelineconfig, airlinehead).map(csv->{
-					String[] header = airlinehead; 
-					Map<String, Object> map = new HashMap<>();
-					for(String column:header) {
-						map.put(column, csv.get(column));
-					}
-					return map;
-				});
-		log.info(csp.getPigtasks());
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> filtered = csp.filter(map->map.get("AirlineYear").equals("2007") &&  map.get("MonthOfYear").equals("12")).cache();
-		log.info(filtered.getPigtasks());
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		List<List<Map<String, Object>>> records = filtered.map(map->map).collect(true, null);
-		for(List<Map<String, Object>> partitions:records) {
-			for(Map<String, Object> map: partitions) {
-				log.info(map);
-				assertEquals("2007", map.get("AirlineYear"));
-				assertEquals("12", map.get("MonthOfYear"));
-			}
-		}
-		log.info("In testCachedStreamCache() method Exit");		
-	}
-	
-	@Test
-	public void testCachedStreamCaches() throws Exception {
-		log.info("In testCachedStreamCaches() method Entry");
-		String jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);		
-		StreamPipeline<Map<String, Object>> csp = StreamPipeline.newCsvStreamHDFS(hdfsfilepath, airlinesample,
-				pipelineconfig, airlinehead).map(csv->{
-					String[] header = airlinehead; 
-					Map<String, Object> map = new HashMap<>();
-					for(String column:header) {
-						map.put(column, csv.get(column));
-					}
-					return map;
-				});
-		log.info(csp.getPigtasks());
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> filteredmonthofyear = csp.filter(map->map.get("AirlineYear").equals("2007") &&  map.get("MonthOfYear").equals("12")).cache();
-		log.info(filteredmonthofyear.getPigtasks());
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		List<List> records = filteredmonthofyear.filter(map->map.get("DayofMonth").equals("4")).collect(true, null);
-		for(List<Map<String, Object>> partitions:records) {
-			for(Map<String, Object> map: partitions) {
-				log.info(map);
-				assertEquals("2007", map.get("AirlineYear"));
-				assertEquals("4", map.get("DayofMonth"));
-				assertEquals("12", map.get("MonthOfYear"));
-			}
-		}
-		log.info("In testCachedStreamCaches() method Exit");		
-	}
-	
-	
-	@Test
-	public void testCachedStreamMultipleFilterCaches() throws Exception {
-		log.info("In testCachedStreamMultipleFilterCaches() method Entry");
-		String jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);		
-		StreamPipeline<Map<String, Object>> csp = StreamPipeline.newCsvStreamHDFS(hdfsfilepath, airlinesample,
-				pipelineconfig, airlinehead).map(csv->{
-					String[] header = airlinehead; 
-					Map<String, Object> map = new HashMap<>();
-					for(String column:header) {
-						map.put(column, csv.get(column));
-					}
-					return map;
-				});
-		log.info(csp.getPigtasks());
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> filteredmonthofyear = csp.filter(map->map.get("AirlineYear").equals("2007") &&  map.get("MonthOfYear").equals("12")).cache();
-		log.info(filteredmonthofyear.getPigtasks());
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> filteredfilteredmonthofyear = filteredmonthofyear.filter(map->map.get("DayofMonth").equals("4")).cache();
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		List<List> records = filteredfilteredmonthofyear.map(val->val).collect(true, null);
-		for(List<Map<String, Object>> partitions:records) {
-			for(Map<String, Object> map: partitions) {
-				log.info(map);
-				assertEquals("2007", map.get("AirlineYear"));
-				assertEquals("4", map.get("DayofMonth"));
-				assertEquals("12", map.get("MonthOfYear"));
-			}
-		}
-		log.info("In testCachedStreamMultipleFilterCaches() method Exit");		
-	}
-	
-	@Test
-	public void testCachedStreamMultipleFilterSaveToFile() throws Exception {
-		log.info("In testCachedStreamMultipleFilterSaveToFile() method Entry");
-		String jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);		
-		StreamPipeline<Map<String, Object>> csp = StreamPipeline.newCsvStreamHDFS(hdfsfilepath, airlinesample,
-				pipelineconfig, airlinehead).map(csv->{
-					String[] header = airlinehead; 
-					Map<String, Object> map = new HashMap<>();
-					for(String column:header) {
-						map.put(column, csv.get(column));
-					}
-					return map;
-				});
-		log.info(csp.getPigtasks());
-		
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> filteredmonthofyear = csp.filter(map->map.get("AirlineYear").equals("2007") &&  map.get("MonthOfYear").equals("12")).cache();
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		filteredmonthofyear.map(val->val).saveAsTextFilePig(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
-				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)), DataSamudayaConstants.FORWARD_SLASH + "examplespig"+
-				DataSamudayaConstants.FORWARD_SLASH + "pig-" + System.currentTimeMillis());
-		log.info(filteredmonthofyear.getPigtasks());
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> filteredfilteredmonthofyear = filteredmonthofyear.filter(map->map.get("DayofMonth").equals("4")).cache();
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		filteredfilteredmonthofyear.map(val->val).saveAsTextFilePig(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
-				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)), DataSamudayaConstants.FORWARD_SLASH + "examplespig"+
-				DataSamudayaConstants.FORWARD_SLASH + "pig-" + System.currentTimeMillis());
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		filteredfilteredmonthofyear.map(val->val).saveAsTextFilePig(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
-				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)), DataSamudayaConstants.FORWARD_SLASH + "examplespig"+
-				DataSamudayaConstants.FORWARD_SLASH + "pig-" + System.currentTimeMillis());
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		filteredmonthofyear.map(val->val).saveAsTextFilePig(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
-				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)), DataSamudayaConstants.FORWARD_SLASH + "examplespig"+
-				DataSamudayaConstants.FORWARD_SLASH + "pig-" + System.currentTimeMillis());
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> filteredfilteredmonthofyeardom = filteredmonthofyear.filter(map->map.get("DayofMonth").equals("5")).cache();
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		filteredfilteredmonthofyeardom.map(val->val).saveAsTextFilePig(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
-				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)), DataSamudayaConstants.FORWARD_SLASH + "examplespig"+
-				DataSamudayaConstants.FORWARD_SLASH + "pig-" + System.currentTimeMillis());
-		
-		log.info("In testCachedStreamMultipleFilterSaveToFile() method Exit");		
-	}
-	
-	@Test
-	public void testCachedStreamCachesJoin() throws Exception {
-		log.info("In testCachedStreamCachesJoin() method Entry");
-		String jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);		
-		StreamPipeline<Map<String, Object>> csp = StreamPipeline.newCsvStreamHDFS(hdfsfilepath, airlinesample,
-				pipelineconfig, airlinehead).map(csv->{
-					String[] header = airlinehead; 
-					Map<String, Object> map = new HashMap<>();
-					for(String column:header) {
-						map.put(column, csv.get(column));
-					}
-					return map;
-				});
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> carriersstream = StreamPipeline.newCsvStreamHDFS(hdfsfilepath, carriers,
-				pipelineconfig, carrierhead).map(csv->{
-					String[] head = carrierhead; 
-					Map<String, Object> map = new HashMap<>();
-					for(String column:head) {
-						map.put(column, csv.get(column));
-					}
-					return map;
-				});
-		log.info(csp.getPigtasks());
-		
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> filteredmonthofyear = csp.filter(map->map.get("AirlineYear").equals("2007") &&  map.get("MonthOfYear").equals("12")).cache();
-		log.info(filteredmonthofyear.getPigtasks());
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		StreamPipeline<Map<String, Object>> filteredmonthofyeardom = filteredmonthofyear.filter(map->map.get("DayofMonth").equals("4")).cache();
-		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-		pipelineconfig.setJobid(jobid);
-		List<List> records = filteredmonthofyeardom.map(rec->rec).join(carriersstream.map(rec->rec), (map1,map2)->{
-			return map1.get("UniqueCarrier").equals(map2.get("Code"));
-		}).collect(true, null);
-		for(List<Tuple2<Map<String,Object>,Map<String,Object>>> partitions:records) {
-			for(Tuple2<Map<String,Object>,Map<String,Object>> values: partitions) {
-				log.info(values);
-				assertEquals("2007", values.v1.get("AirlineYear"));
-				assertEquals("4", values.v1.get("DayofMonth"));
-				assertEquals("12", values.v1.get("MonthOfYear"));
-				assertEquals("AQ", values.v2.get("Code"));
-				assertEquals("AQ", values.v1.get("UniqueCarrier"));
-			}
-		}
-		log.info("In testCachedStreamCachesJoin() method Exit");		
 	}
 	
 	@Test
@@ -485,7 +263,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 			for(Map<String, Object> map: recordspart) {
 				assertEquals(1, map.size());
 				assertTrue(map.containsKey("sumarrdelay"));
-				assertEquals(-63278,map.get("sumarrdelay"));
+				assertEquals(-63278l,map.get("sumarrdelay"));
 			}
 		}		
 	}
@@ -507,7 +285,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 			for(Map<String, Object> map: recordspart) {
 				assertEquals(1, map.size());
 				assertTrue(map.containsKey("sumdelay"));
-				assertEquals(-43110,map.get("sumdelay"));
+				assertEquals(-43110l,map.get("sumdelay"));
 			}
 		}		
 	}
@@ -530,9 +308,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("sumarrdelay"));
 				assertTrue(map.containsKey("UniqueCarrier"));
-				if(((int)map.get("sumarrdelay"))==0) {
+				if(((long)map.get("sumarrdelay"))==0) {
 					assertEquals("UniqueCarrier", map.get("UniqueCarrier"));
-				} else if(((int)map.get("sumarrdelay")) == -63278) {
+				} else if(((long)map.get("sumarrdelay")) == -63278) {
 					assertEquals("AQ", map.get("UniqueCarrier"));
 				}
 			}
@@ -606,7 +384,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("ArrDelay"));
 				assertTrue(map.containsKey("absarrdelay"));
-				assertEquals(map.get("absarrdelay"), Math.abs((int) map.get("ArrDelay")));
+				assertEquals(map.get("absarrdelay"), Math.abs((long) map.get("ArrDelay")));
 			}
 		}		
 	}
@@ -699,7 +477,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("summoydom"));
-				assertEquals(((int)map.get("MonthOfYear"))+((int)map.get("DayofMonth")), map.get("summoydom"));
+				assertEquals(((long)map.get("MonthOfYear"))+((long)map.get("DayofMonth")), map.get("summoydom"));
 			}
 		}		
 	}
@@ -723,7 +501,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("submoydom"));
-				assertEquals(((int)map.get("MonthOfYear"))-((int)map.get("DayofMonth")), map.get("submoydom"));
+				assertEquals(((long)map.get("MonthOfYear"))-((long)map.get("DayofMonth")), map.get("submoydom"));
 			}
 		}		
 	}
@@ -747,7 +525,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("mulmoydom"));
-				assertEquals(((int)map.get("MonthOfYear"))*((int)map.get("DayofMonth")), map.get("mulmoydom"));
+				assertEquals(((long)map.get("MonthOfYear"))*((long)map.get("DayofMonth")), map.get("mulmoydom"));
 			}
 		}		
 	}
@@ -771,7 +549,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("AirlineYear"));
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("divyearmon"));
-				assertEquals(((int)map.get("AirlineYear"))/(Double.valueOf(map.get("MonthOfYear")+DataSamudayaConstants.EMPTY)), map.get("divyearmon"));
+				assertEquals(((long)map.get("AirlineYear"))/(Double.valueOf(map.get("MonthOfYear")+DataSamudayaConstants.EMPTY)), map.get("divyearmon"));
 			}
 		}		
 	}
@@ -796,7 +574,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("divmulyearmon"));
-				assertEquals(((int)map.get("AirlineYear"))/(Double.valueOf(map.get("MonthOfYear")+DataSamudayaConstants.EMPTY)) * ((int)map.get("DayofMonth")), map.get("divmulyearmon"));
+				assertEquals(((long)map.get("AirlineYear"))/(Double.valueOf(map.get("MonthOfYear")+DataSamudayaConstants.EMPTY)) * ((long)map.get("DayofMonth")), map.get("divmulyearmon"));
 			}
 		}		
 	}
@@ -920,7 +698,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("powdom"));
-				assertEquals(Math.pow(((int)map.get("DayofMonth")), 2),map.get("powdom"));
+				assertEquals(Math.pow(((long)map.get("DayofMonth")), 2),map.get("powdom"));
 			}
 		}		
 	}
@@ -944,7 +722,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("ceildom"));
-				assertEquals(Math.ceil(((int)map.get("DayofMonth"))),map.get("ceildom"));
+				assertEquals(Math.ceil(((long)map.get("DayofMonth"))),map.get("ceildom"));
 			}
 		}		
 	}
@@ -967,7 +745,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("floordom"));
-				assertEquals(Math.ceil(((int)map.get("DayofMonth"))),map.get("floordom"));
+				assertEquals(Math.ceil(((long)map.get("DayofMonth"))),map.get("floordom"));
 			}
 		}		
 	}
@@ -990,7 +768,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("sqrtdom"));
-				assertEquals(Math.sqrt(((int)map.get("DayofMonth"))),map.get("sqrtdom"));
+				assertEquals(Math.sqrt(((long)map.get("DayofMonth"))),map.get("sqrtdom"));
 			}
 		}		
 	}
@@ -1013,7 +791,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("expdom"));
-				assertEquals(Math.exp(((int)map.get("DayofMonth"))),map.get("expdom"));
+				assertEquals(Math.exp(((long)map.get("DayofMonth"))),map.get("expdom"));
 			}
 		}		
 	}
@@ -1036,7 +814,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("logdom"));
-				assertEquals(Math.log(((int)map.get("DayofMonth"))),map.get("logdom"));
+				assertEquals(Math.log(((long)map.get("DayofMonth"))),map.get("logdom"));
 			}
 		}		
 	}

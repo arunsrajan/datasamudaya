@@ -58,7 +58,7 @@ public class PigQueryServer {
 						pipelineconfig.setMesos("false");
 						pipelineconfig.setJgroups("false");
 						pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-						pipelineconfig.setStorage(STORAGE.INMEMORY_DISK);
+						pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 						String user = "";
 						int numberofcontainers = 1;
 						int cpupercontainer = 1;
