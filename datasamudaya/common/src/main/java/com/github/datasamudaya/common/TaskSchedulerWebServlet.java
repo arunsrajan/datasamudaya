@@ -25,10 +25,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.springframework.util.CollectionUtils;
 
+import com.github.datasamudaya.common.utils.Utils;
+
 import static java.util.Objects.*;
 
 /**
- * Data master servlet to display all the available chunks.
+ * Task Scheduler Servlet
  * @author Arun
  */
 public class TaskSchedulerWebServlet extends HttpServlet {
@@ -71,7 +73,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
         for (var node : lists.keySet()) {
           Resources resources = lists.get(node);
           String[] nodeport = node.split(DataSamudayaConstants.UNDERSCORE);
-          builder.append("<tr bgcolor=\"" + getColor(i++) + "\">");
+          builder.append("<tr bgcolor=\"" + Utils.getColor(i++) + "\">");
           builder.append("<td>");
           builder.append(resources.getNodeport());
           builder.append("</td>");
@@ -122,7 +124,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
     	        ConcurrentMap<String, Resources> nodeallocated = userresmap.getValue();
     	        for (var user : nodeallocated.keySet()) {
     	          Resources resources = nodeallocated.get(user);    	         
-    	          builder.append("<tr bgcolor=\"" + getColor(i++) + "\">");
+    	          builder.append("<tr bgcolor=\"" + Utils.getColor(i++) + "\">");
     	          builder.append("<td>");
     	          builder.append(user);
     	          builder.append("</td>");
@@ -190,7 +192,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
           return (int) (jm2.getJobstarttime() - jm1.getJobstarttime());
         }).collect(Collectors.toList());
         for (var jm : jobmetrics) {
-          builder.append("<tr bgcolor=\"" + getColor(i++) + "\">");
+          builder.append("<tr bgcolor=\"" + Utils.getColor(i++) + "\">");
           builder.append("<td>");
           builder.append(jm.getJobid());
           builder.append("</td>");
@@ -241,7 +243,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
           builder.append("</td>");
           
           builder.append("<td>");
-          builder.append(summary(jm));
+          builder.append("<a href=\""+contextpath+DataSamudayaConstants.FORWARD_SLASH+DataSamudayaConstants.SUMMARY+"?jobId="+jm.getJobid()+"\">SUMMARY</a>");
           builder.append("</td>");
           builder.append("</tr>");
         }
@@ -252,60 +254,6 @@ public class TaskSchedulerWebServlet extends HttpServlet {
       writer.write(builder.toString());
     } catch (Exception ex) {
       log.debug("TaskScheduler Web servlet error, See cause below \n", ex);
-    }
-  }
-
-  /**
-   * Summary of tasks information 
-   * @param jm
-   * @return Tasks metrics information in HTML format.
-   */
-  private String summary(JobMetrics jm) {
-    SimpleDateFormat formatstartenddate = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-    StringBuilder tasksummary = new StringBuilder();
-    tasksummary.append("<p>");
-    if (!CollectionUtils.isEmpty(jm.getTaskexcutortasks())) {
-      jm.getTaskexcutortasks().entrySet().stream().forEachOrdered(entry -> {
-        tasksummary.append(entry.getKey());
-        tasksummary.append(":<BR/>");
-        double totaltimetakenexecutor = 0d;
-        for (Task task : entry.getValue()) {
-          tasksummary.append(task.taskid);
-          tasksummary.append("<BR/>");
-          tasksummary.append(formatstartenddate.format(new Date(task.taskexecutionstartime)));
-          tasksummary.append("<BR/>");
-          tasksummary.append(formatstartenddate.format(new Date(task.taskexecutionendtime)));
-          tasksummary.append("<BR/>");
-          tasksummary.append(task.timetakenseconds);
-          tasksummary.append("<BR/>");
-          tasksummary.append(task.numbytesprocessed/DataSamudayaConstants.MB);
-          tasksummary.append("<BR/>");
-          totaltimetakenexecutor += task.timetakenseconds;
-        }
-        tasksummary.append(totaltimetakenexecutor / entry.getValue().size());
-        tasksummary.append("<BR/>");
-        tasksummary.append("<BR/>");
-      });
-    }
-    tasksummary.append("</p>");
-    return tasksummary.toString();
-  }
-
-  /**
-   * Color for primary and alternate
-   * 
-   * @param i
-   * @return
-   */
-  private String getColor(int i) {
-    {
-      if (i % 2 == 0) {
-        return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_PRIMARY,
-            DataSamudayaConstants.COLOR_PICKER_PRIMARY_DEFAULT);
-      } else {
-        return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_ALTERNATE,
-            DataSamudayaConstants.COLOR_PICKER_ALTERNATE_DEFAULT);
-      }
     }
   }
 

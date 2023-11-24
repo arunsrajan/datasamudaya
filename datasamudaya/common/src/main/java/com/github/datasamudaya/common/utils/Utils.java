@@ -1950,5 +1950,21 @@ public class Utils {
 		return totalbytes;
 	}
 	
-	
+	/**
+	   * Color for primary and alternate
+	   * 
+	   * @param i
+	   * @return colorvalue
+	   */
+	public static String getColor(int i) {
+	    {
+	      if (i % 2 == 0) {
+	        return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_PRIMARY,
+	            DataSamudayaConstants.COLOR_PICKER_PRIMARY_DEFAULT);
+	      } else {
+	        return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_ALTERNATE,
+	            DataSamudayaConstants.COLOR_PICKER_ALTERNATE_DEFAULT);
+	      }
+	    }
+	  }
 }

@@ -305,6 +305,7 @@ public class DataSamudayaConstants {
   public static final String WEB_FOLDER = "web";
   public static final String RESOURCES = "resources";
   public static final String GRAPH = "graph";
+  public static final String SUMMARY = "summary";
   public static final String DATA = "data";
 
   static final String THISHOST = "0.0.0.0";
@@ -322,6 +323,7 @@ public class DataSamudayaConstants {
 
   public static final String STAGEEXECUTORS = "se";
   public static final String DATASAMUDAYAJOBID = "datasamudayajobid";
+  public static final String JOBID = "jobId";
 
   // Jgroups Cluster
   public static final String CLUSTERNAME = "jgroups.clustername";
