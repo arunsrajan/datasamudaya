@@ -176,6 +176,10 @@ public class TaskExecutor implements Callable<Object> {
           tasktoreturn.tasktype = TaskType.EXECUTEUSERTASK;
           tasktoreturn.taskid = task.taskid;
           tasktoreturn.piguuid = task.piguuid;
+          tasktoreturn.taskexecutionstartime = task.taskexecutionstartime;
+          tasktoreturn.taskexecutionendtime = task.taskexecutionendtime;
+          tasktoreturn.timetakenseconds = task.timetakenseconds;
+          tasktoreturn.numbytesprocessed = task.numbytesprocessed;
           if(tasktoreturn.taskstatus == TaskStatus.FAILED) {
         	  tasktoreturn.stagefailuremessage = task.stagefailuremessage;
           }

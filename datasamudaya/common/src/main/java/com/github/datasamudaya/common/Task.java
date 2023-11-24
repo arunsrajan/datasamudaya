@@ -53,7 +53,7 @@ public class Task implements Serializable, Cloneable {
   public Long taskexecutionendtime;
   public String hbphysicaladdress;
   public String piguuid;
-  
+  public long numbytesprocessed;
   
   
   @Override

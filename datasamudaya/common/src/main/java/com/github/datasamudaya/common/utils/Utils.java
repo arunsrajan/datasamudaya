@@ -117,6 +117,7 @@ import com.esotericsoftware.kryo.serializers.DefaultSerializers.EnumSerializer;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.datasamudaya.common.AllocateContainers;
+import com.github.datasamudaya.common.Block;
 import com.github.datasamudaya.common.ContainerException;
 import com.github.datasamudaya.common.ContainerLaunchAttributes;
 import com.github.datasamudaya.common.ContainerResources;
@@ -1937,5 +1938,17 @@ public class Utils {
         }
         log.info("Writing data to csv End");
     }
+	
+	/**
+	 * This function returns number of bytes to process for the given blocks
+	 * @param block
+	 * @return numberofbytesprocessed
+	 */
+	public static long numBytesBlocks(Block[] block) {
+		long totalbytes = nonNull(block[0])?block[0].getBlockend()-block[0].getBlockstart():0l;
+		totalbytes += nonNull(block[1])?block[1].getBlockend()-block[1].getBlockstart():0l;
+		return totalbytes;
+	}
+	
 	
 }

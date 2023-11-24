@@ -28,6 +28,8 @@ import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.StreamPipeline;
 
+import static java.util.Objects.*;
+
 /**
  * Pig server to process pig commands.
  * @author arun
@@ -205,6 +207,9 @@ public class PigQueryServer {
 												out.println("standalone");
 											}
 										} else if (inputLine.startsWith("dump") || inputLine.startsWith("DUMP")) {
+											if(nonNull(pipelineconfig)) {
+												pipelineconfig.setSqlpigquery(inputLine);
+									    	}
 											inputLine = inputLine.replace(";", "");
 											String[] dumpwithalias = inputLine.split(" ");
 											long starttime = System.currentTimeMillis();
@@ -220,6 +225,9 @@ public class PigQueryServer {
 											pigQueriesToExecute.addAll(pigQueries);
 											pigQueriesToExecute.add(inputLine);
 											pigQueriesToExecute.add("\n");
+											if(nonNull(pipelineconfig)) {
+												pipelineconfig.setSqlpigquery(inputLine);
+									    	}
 									    	PigQueryExecutor.execute(pigAliasExecutedObjectMap, queryParserDriver, pigQueriesToExecute, user, jobid, tejobid, pipelineconfig);
 									    	pigQueries.add(inputLine);
 									    	pigQueries.add("\n");

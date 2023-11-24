@@ -169,6 +169,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
                 <thead>
                 <th>Job<Br/>Id</th>
                 <th>Job<Br/>Name</th>
+                <th>SQL/PIG<BR/>Query</th>
                 <th>Files<Br/>Used</th>
                 <th>Job<Br/>Mode</th>
                 <th>Total<Br/>Files<Br/>Size (MB)</th>
@@ -195,6 +196,9 @@ public class TaskSchedulerWebServlet extends HttpServlet {
           builder.append("</td>");
           builder.append("<td>");
           builder.append(Objects.isNull(jm.getJobname()) ? DataSamudayaConstants.EMPTY : jm.getJobname());
+          builder.append("</td>");
+          builder.append("<td>");
+          builder.append(Objects.isNull(jm.getSqlpigquery()) ? DataSamudayaConstants.EMPTY : jm.getSqlpigquery());
           builder.append("</td>");
           builder.append("<td>");
           builder.append(toHtml(jm.getFiles()));
@@ -274,6 +278,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
           tasksummary.append("<BR/>");
           tasksummary.append(task.timetakenseconds);
           tasksummary.append("<BR/>");
+          tasksummary.append(task.numbytesprocessed/DataSamudayaConstants.MB);
           tasksummary.append("<BR/>");
           totaltimetakenexecutor += task.timetakenseconds;
         }

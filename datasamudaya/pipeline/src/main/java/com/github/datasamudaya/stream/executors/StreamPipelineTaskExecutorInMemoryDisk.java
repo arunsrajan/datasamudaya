@@ -1068,6 +1068,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 	@Override
 	public Boolean call() {
 		starttime = System.currentTimeMillis();
+		task.taskexecutionstartime = starttime;
 		log.debug("Entered StreamPipelineTaskExecutorInMemoryDisk.call");
 		var stageTasks = getStagesTask();
 		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
@@ -1109,9 +1110,10 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				}
 			}
 			log.debug("Running Stage " + task.jobid + " " + task.stageid + " " + jobstage);
-			timetakenseconds = computeTasks(task, hdfs);
+			task.timetakenseconds = timetakenseconds = computeTasks(task, hdfs);
 			completed = true;
 			endtime = System.currentTimeMillis();
+			task.taskexecutionendtime = endtime;
 			log.debug("Completed JobStage " + task.jobid + " " + task.stageid + " in " + timetakenseconds);
 		} catch (Throwable ex) {
 			completed = false;
@@ -1119,7 +1121,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			try (var baos = new ByteArrayOutputStream();) {
 				var failuremessage = new PrintWriter(baos, true, StandardCharsets.UTF_8);
 				ex.printStackTrace(failuremessage);
-				endtime = System.currentTimeMillis();
+				task.taskexecutionendtime = endtime = System.currentTimeMillis();
 				task.taskstatus = TaskStatus.FAILED;
 				task.tasktype = TaskType.EXECUTEUSERTASK;
 				task.stagefailuremessage = new String(baos.toByteArray());

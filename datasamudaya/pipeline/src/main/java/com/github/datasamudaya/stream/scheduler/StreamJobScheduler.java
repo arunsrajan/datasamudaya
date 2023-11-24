@@ -1129,6 +1129,10 @@ public class StreamJobScheduler {
 						Utils.writeToOstream(pipelineconfig.getOutput(), "\nPercentage Completed TE("
 								+ spts.getHostPort() + ") " + percentagecompleted + "% \n");
 						job.getJm().getContainersallocated().put(spts.getHostPort(), percentagecompleted);
+						if(Objects.isNull(job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()))) {
+							job.getJm().getTaskexcutortasks().put(spts.getTask().getHostport(), new ArrayList<>());
+						}
+						job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()).add(result);
 						printresult.release();
 						if(result.taskstatus == TaskStatus.FAILED) {
 							spts.getTask().setTaskstatus(TaskStatus.FAILED);

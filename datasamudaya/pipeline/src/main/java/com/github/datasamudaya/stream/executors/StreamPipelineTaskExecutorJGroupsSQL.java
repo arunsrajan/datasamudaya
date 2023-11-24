@@ -174,9 +174,8 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 										if(isNull(yosegibytes) || yosegibytes.length==0) {
 											log.info("Unable To Find vector for blocks {}",blockslocation);
 											try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
-											var buffer = new BufferedReader(new InputStreamReader(bais));
-													var baisrec = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
-													var bufferrec = new BufferedReader(new InputStreamReader(baisrec));){						
+											var buffer = new BufferedReader(new InputStreamReader(bais));){
+												task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
 												var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
 												csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader()).withIgnoreHeaderCase()
 														.withTrim();

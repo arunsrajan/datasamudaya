@@ -78,6 +78,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	private String jobid;
 	private String tejobid;
 	private Boolean isremotescheduler;
+	private String sqlpigquery;
 
 	public void setOutput(OutputStream  output) {
 		this.output = output;
@@ -463,6 +464,14 @@ public class PipelineConfig implements Serializable, Cloneable {
 
 	public void setTejobid(String tejobid) {
 		this.tejobid = tejobid;
+	}
+	
+	public String getSqlpigquery() {
+		return sqlpigquery;
+	}
+
+	public void setSqlpigquery(String sqlpigquery) {
+		this.sqlpigquery = sqlpigquery;
 	}
 
 	@Override

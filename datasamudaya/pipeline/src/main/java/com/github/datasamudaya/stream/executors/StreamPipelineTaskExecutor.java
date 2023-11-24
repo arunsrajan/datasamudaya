@@ -1156,11 +1156,12 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
           }
         }
       }
-      endtime = System.currentTimeMillis();
+      task.taskexecutionstartime = starttime;
       timetakenseconds = computeTasks(task, hdfs);
       log.debug("Completed Stage: " + stagePartition);
       completed = true;
-      endtime = System.currentTimeMillis();
+      endtime = System.currentTimeMillis();     
+      task.taskexecutionendtime = endtime;
     } catch (Throwable ex) {
       log.error("Failed Stage: " + stagePartition, ex);
       completed = false;
@@ -1169,6 +1170,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         var failuremessage = new PrintWriter(baos, true, StandardCharsets.UTF_8);
         ex.printStackTrace(failuremessage);
         endtime = System.currentTimeMillis();
+        task.taskexecutionendtime = endtime;
         task.taskstatus = TaskStatus.FAILED;
         task.tasktype = TaskType.EXECUTEUSERTASK;
         task.stagefailuremessage = new String(baos.toByteArray());

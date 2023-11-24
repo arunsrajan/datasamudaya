@@ -165,6 +165,9 @@ public class StreamPipelineSqlBuilder implements Serializable {
 	 * @throws Exception
 	 */
 	public StreamPipelineSql build() throws Exception {
+		if(nonNull(pc)) {
+			pc.setSqlpigquery(sql);
+		}
 		CCJSqlParserManager parserManager = new CCJSqlParserManager();
 		Validation validation = new Validation(
 				Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB, DatabaseType.POSTGRESQL, DatabaseType.H2),

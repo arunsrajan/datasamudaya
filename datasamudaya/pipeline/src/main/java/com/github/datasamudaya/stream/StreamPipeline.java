@@ -975,10 +975,11 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		mdscollect.finaltasks.add(mdscollect.finaltask);
 		mdscollect.mdsroots.add(root);
 		mdscollect.job = null;
-		var job = mdscollect.createJob();
+		var job = mdscollect.createJob();		
 		job.setJobtype(JOBTYPE.PIG);
 		var sp = (StreamPipeline) root;
 		sp.pipelineconfig.setJobid(job.getId());
+		job.getJm().setSqlpigquery(sp.pipelineconfig.getSqlpigquery());
 		if (sp.pipelineconfig.getIsremotescheduler()) {
 			RemoteJobScheduler rjs = new RemoteJobScheduler();
 			return new StreamPipeline<I1>(root, (Set<Task>) rjs.scheduleJob(job));
@@ -1496,6 +1497,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	private List collect(boolean toexecute,Job.TRIGGER jobtrigger) throws PipelineException  {
 		try {
 			var job = createJob();
+			job.getJm().setSqlpigquery(((StreamPipeline)root).pipelineconfig.getSqlpigquery());
 			if(jobtrigger == Job.TRIGGER.PIGDUMP) {
 				job.setJobtype(JOBTYPE.PIG);
 			}
@@ -1548,7 +1550,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 				mdscollect.reexecutealltasks = true;
 			} else {
 				mdscollect.reexecutealltasks = false;
-			}		
+			}
 			var result = mdscollect.collect(toexecute,Job.TRIGGER.COLLECT);
 			log.debug("Collect task ended.");
 			Utils.writeToOstream(sp.pipelineconfig.getOutput(), "Collect task ended.");

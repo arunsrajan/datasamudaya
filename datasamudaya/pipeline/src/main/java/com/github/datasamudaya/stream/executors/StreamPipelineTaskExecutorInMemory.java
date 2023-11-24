@@ -198,7 +198,10 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 			log.info("Functioning Task " + task);
 			log.info("Task Input length" + task.input.length);
 			log.info("Task Input " + task.input[0]);
+			task.taskexecutionstartime = starttime;
 			timetaken = computeTasks(task, hdfs);
+			endtime = task.taskexecutionendtime = System.currentTimeMillis();
+			task.timetakenseconds = timetaken;
 			log.info("Completed Task: " + task);
 			task.piguuid = UUID.randomUUID().toString();
 			completed = true;
