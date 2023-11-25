@@ -2,6 +2,7 @@ package com.github.datasamudaya.common;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Date;
 
 import javax.servlet.http.HttpServlet;
@@ -36,12 +37,18 @@ public class SummaryWebServlet extends HttpServlet {
 			builder.append(String.format("""
 					<html>
 					<head>
-					<link rel="stylesheet" href="%s/resources/jquery-ui.css">
-					<script src="%s/resources/jquery-1.11.1.min.js"></script>
-					<script src="%s/resources/jquery.canvasjs.min.js"></script>
-					<script src="%s/resources/jquery-ui.js"></script>
-					</head>
-					<body>""", contextpath, contextpath, contextpath, contextpath));
+					<link href="%s/resources/datatables/DataTables-1.13.8/css/jquery.dataTables.css" rel="stylesheet">
+					<link href="%s/resources/datatables/Buttons-2.4.2/css/buttons.dataTables.css" rel="stylesheet">
+					 
+					<script src="%s/resources/jquery-3.7.0.js"></script>
+					<script src="%s/resources/datatables/jQuery-1.12.4/jquery-1.12.4.js"></script>
+					<script src="%s/resources/datatables/JSZip-3.10.1/jszip.js"></script>
+					<script src="%s/resources/datatables/pdfmake-0.2.7/pdfmake.js"></script>
+					<script src="%s/resources/datatables/pdfmake-0.2.7/vfs_fonts.js"></script>
+					<script src="%s/resources/datatables/DataTables-1.13.8/js/jquery.dataTables.js"></script>
+					<script src="%s/resources/datatables/Buttons-2.4.2/js/dataTables.buttons.js"></script>
+					<script src="%s/resources/datatables/Buttons-2.4.2/js/buttons.html5.js"></script>          
+					</head><body>""", contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath));
 			builder.append(summary(jm.get(jobid)));
 			builder.append("""
 					</body>
@@ -63,6 +70,7 @@ public class SummaryWebServlet extends HttpServlet {
 	    SimpleDateFormat formatstartenddate = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	    StringBuilder tasksummary = new StringBuilder();
 	    tasksummary.append("<p>");
+	    var aint = new AtomicInteger(0);
 	    if (!CollectionUtils.isEmpty(jm.getTaskexcutortasks())) {
 	      jm.getTaskexcutortasks().entrySet().stream().forEachOrdered(entry -> {
 	    	  tasksummary.append("<H1 align=\"center\">");
@@ -70,9 +78,19 @@ public class SummaryWebServlet extends HttpServlet {
 	        tasksummary.append(":");
 	        tasksummary.append("</H1>");
 	        tasksummary.append("<BR/>");
-	        tasksummary.append(
+	        tasksummary.append(String.format(
 	                """
-	                    		<table style=\"color:#000000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\">
+	        			<script language="Javascript" type="text/javascript">
+			      		$(document).ready(function(){
+			      			var res%s = $('#summary%s').DataTable({
+							  			    dom: 'Bflrtip',
+							    buttons: [
+							        'copy', 'excel', 'pdf'
+							    ]
+							});							
+			      		});
+			          </script>
+	                    <table style="color:#000000;border-collapse:collapse;width:800px;height:30px" align="center" border="1.0" id="summary%s">
 	                    <thead>
 	                    <th>Task<Br/>Id</th>
 	                    <th>Task<Br/>Start</th>
@@ -81,7 +99,7 @@ public class SummaryWebServlet extends HttpServlet {
 	                    <th>Block<Br/>Size (MB)</th>
 	                    <th>Task<Br/>Status</th>	                    
 	                    </thead>
-	                    <tbody>""");
+	                    <tbody>""",aint.get(), aint.get(), aint.getAndIncrement()));
 	        double totaltimetakenexecutor = 0d;
 	        double totalmbprocessed = 0d;
 	        double blocksinmb = 0d;
