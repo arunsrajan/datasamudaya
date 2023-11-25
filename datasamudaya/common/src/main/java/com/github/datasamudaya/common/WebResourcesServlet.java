@@ -35,14 +35,14 @@ public class WebResourcesServlet extends HttpServlet {
       throws IOException {
 
     response.setStatus(HttpServletResponse.SC_OK);
-    String filename = FilenameUtils.getName(request.getRequestURL().toString());
+    String filename = request.getPathInfo();
     if (filename.endsWith(DataSamudayaConstants.JAVASCRIPT)) {
       response.setContentType(DataSamudayaConstants.TEXTJAVASCRIPT);
     } else if (filename.endsWith(DataSamudayaConstants.CSS)) {
       response.setContentType(DataSamudayaConstants.TEXTCSS);
     }
     File file = new File(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
-        + DataSamudayaConstants.WEB_FOLDER + DataSamudayaConstants.FORWARD_SLASH + filename);
+        + DataSamudayaConstants.WEB_FOLDER + filename);
     try (FileInputStream fis = new FileInputStream(file);
         ServletOutputStream sos = response.getOutputStream();) {
 

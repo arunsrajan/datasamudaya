@@ -56,18 +56,24 @@ public class TaskSchedulerWebServlet extends HttpServlet {
       builder.append(String.format("""
           <html>
           <head>
-          <link rel="stylesheet" href="%s/resources/jquery-ui.css">
-          <script src="%s/resources/jquery-1.11.1.min.js"></script>
-          <script src="%s/resources/jquery.canvasjs.min.js"></script>
-          <script src="%s/resources/jquery-ui.js"></script>
+          <link rel="stylesheet" href="%s/resources/datatables/DataTables-1.13.8/css/jquery.dataTables.css">
+          <script src="%s/resources/jquery-3.7.0.js"></script>
+          <script src="%s/resources/datatables/DataTables-1.13.8/js/jquery.dataTables.js"></script>
+          <script>
+      		$(document).ready(function(){
+      			$('#resources').DataTable();
+      			$('#allocatedresources').DataTable();
+      			$('#metrics').DataTable();
+      		});
+          </script>
           </head>
           <body>""", contextpath, contextpath, contextpath, contextpath));
 
       if (!Objects.isNull(lists) && lists.keySet().size() > 0) {
         builder.append(
             """
-                		<table style=\"color:#000000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\">
-                <thead><th>Node</th><th>FreeMemory</th><th>TotalProcessors</th><th>Physicalmemorysize</th><th>Totaldisksize</th><th>Totalmemory</th><th>Usabledisksize</th></thead>
+                		<table style=\"color:#000000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\" id="resources" class="display">
+                <thead><th>Node</th><th>FreeMemory</th><th>TotalProcessors</th><th>Physicalmemorysize</th><th>Totaldisksize</th><th>Totalmemory</th><th>Usabledisksize</th><th></th></thead>
                 <tbody>""");
         int i = 0;
         for (var node : lists.keySet()) {
@@ -117,8 +123,8 @@ public class TaskSchedulerWebServlet extends HttpServlet {
     		  String[] nodeport = userresmap.getKey().split(DataSamudayaConstants.UNDERSCORE);
     		  builder.append(
     	            """
-    	                		<table style=\"color:#ff0000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\">
-    	                <thead><th>User</th><th>Node</th><th>FreeMemory</th><th>TotalProcessors</th><th>Physicalmemorysize</th><th>Totaldisksize</th><th>Totalmemory</th><th>Usabledisksize</th></thead>
+    	                		<table style=\"color:#ff0000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\" id="allocatedresources" class="display">
+    	                <thead><th>User</th><th>Node</th><th>FreeMemory</th><th>TotalProcessors</th><th>Physicalmemorysize</th><th>Totaldisksize</th><th>Totalmemory</th><th>Usabledisksize</th><th></th></thead>
     	                <tbody>""");
     	        int i = 0;
     	        ConcurrentMap<String, Resources> nodeallocated = userresmap.getValue();
@@ -167,7 +173,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
         builder.append("<br/>");
         builder.append(
             """
-                		<table style=\"color:#000000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\">
+                		<table style=\"color:#000000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\" id="metrics" class="display">
                 <thead>
                 <th>Job<Br/>Id</th>
                 <th>Job<Br/>Name</th>
