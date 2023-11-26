@@ -264,7 +264,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
             
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<Object>(result);
       result = null;
@@ -330,7 +330,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }      
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<Object>(result);
       result = null;
@@ -393,6 +393,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }      
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<Object>(result);
       result = null;
@@ -508,7 +509,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(result);
       result = null;
@@ -584,7 +585,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(result);
       result = null;
@@ -657,6 +658,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(result);
       result = null;
@@ -799,6 +801,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 		}
         Utils.getKryo().writeClassAndObject(output, out);
         output.flush();
+        task.setNumbytesgenerated(fsdos.toByteArray().length);
         cacheAble(fsdos);
         var wr = new WeakReference<List>(out);
         out = null;
@@ -942,6 +945,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(out);
       out = null;
@@ -1008,7 +1012,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(out);
       out = null;
@@ -1076,7 +1080,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(out);
       out = null;
@@ -1536,7 +1540,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -1642,7 +1646,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }      
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -1748,7 +1752,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }      
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -1891,6 +1895,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -2050,7 +2055,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -2210,7 +2215,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -2306,7 +2311,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       log.debug("Exiting StreamPipelineTaskExecutor.processGroupByKeyTuple2");
       var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2401,6 +2406,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       var wr = new WeakReference<List>(out);
       out = null;
       cacheAble(fsdos);
@@ -2480,6 +2486,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }   
       Utils.getKryo().writeClassAndObject(output,intermediatelist);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(intermediatelist);
       intermediatelist = null;
@@ -2559,6 +2566,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output,intermediatelist);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(intermediatelist);
       intermediatelist = null;
@@ -2659,7 +2667,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }
       Utils.getKryo().writeClassAndObject(currentoutput,outpairs);
       currentoutput.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(outpairs);
       outpairs = null;
@@ -2728,6 +2736,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }
       Utils.getKryo().writeClassAndObject(currentoutput,output);
       currentoutput.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(output);
       output = null;
@@ -2796,6 +2805,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }
       Utils.getKryo().writeClassAndObject(currentoutput,output);
       currentoutput.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       log.debug("Exiting StreamPipelineTaskExecutor.processHashPartition");
       var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;

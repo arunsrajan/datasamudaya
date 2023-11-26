@@ -97,7 +97,9 @@ public class SummaryWebServlet extends HttpServlet {
 	                    <th>Task<BR/>End</th>
 	                    <th>Time<Br/>Taken</th>
 	                    <th>Block<Br/>Size (MB)</th>
-	                    <th>Task<Br/>Status</th>	                    
+	                    <th>Task<Br/>Status</th>
+	                    <th>Generated<Br/>Output<BR/>Size</th>
+	                    <th>Converted<Br/>Input<BR/>Size</th>
 	                    </thead>
 	                    <tbody>""",aint.get(), aint.get(), aint.getAndIncrement()));
 	        double totaltimetakenexecutor = 0d;
@@ -125,6 +127,12 @@ public class SummaryWebServlet extends HttpServlet {
 	          tasksummary.append("</td>");
 	          tasksummary.append("<td>");
 	          tasksummary.append(task.taskstatus);
+	          tasksummary.append("</td>");
+	          tasksummary.append("<td>");
+	          tasksummary.append(task.numbytesgenerated);
+	          tasksummary.append("</td>");
+	          tasksummary.append("<td>");
+	          tasksummary.append(task.numbytesconverted);
 	          tasksummary.append("</td>");
 	          tasksummary.append("</tr>");
 	          totaltimetakenexecutor += task.timetakenseconds;

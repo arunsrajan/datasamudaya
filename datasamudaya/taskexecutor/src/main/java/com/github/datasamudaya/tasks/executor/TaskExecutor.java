@@ -180,6 +180,8 @@ public class TaskExecutor implements Callable<Object> {
           tasktoreturn.taskexecutionendtime = task.taskexecutionendtime;
           tasktoreturn.timetakenseconds = task.timetakenseconds;
           tasktoreturn.numbytesprocessed = task.numbytesprocessed;
+          tasktoreturn.numbytesconverted = task.numbytesconverted;
+          tasktoreturn.numbytesgenerated = task.numbytesgenerated;
           if(tasktoreturn.taskstatus == TaskStatus.FAILED) {
         	  tasktoreturn.stagefailuremessage = task.stagefailuremessage;
           }

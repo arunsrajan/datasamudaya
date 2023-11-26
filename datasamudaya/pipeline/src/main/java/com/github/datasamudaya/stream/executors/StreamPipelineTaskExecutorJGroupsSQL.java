@@ -274,6 +274,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 								}
 								Utils.getKryo().writeClassAndObject(output, out);
 								output.flush();
+								task.setNumbytesgenerated(fsdos.toByteArray().length);
 								cacheAble(fsdos);
 								log.debug("Exiting StreamPipelineTaskExecutorJGroupsSQL.processBlockHDFSMap");
 								var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;

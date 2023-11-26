@@ -121,6 +121,7 @@ public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineT
 								Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
 								yosegibytes = SQLUtils.getYosegiRecordWriter(streamcsv, csvoptions.getTypes(), csvoptions.getRequiredcolumns(), Arrays.asList(csvoptions.getHeader()));
 								cache.put(blockslocation.toBlString() + reqcols.toString(), yosegibytes);
+								task.numbytesconverted = yosegibytes.length;
 							}
 						}					 
 						intermediatestreamobject = SQLUtils.getYosegiStreamRecords(yosegibytes, csvoptions.getRequiredcolumns(), Arrays.asList(csvoptions.getHeader()), 
@@ -208,6 +209,7 @@ public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineT
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
 				output.flush();
+				task.setNumbytesgenerated(fsdos.toByteArray().length);
 				cacheAble(fsdos);
 				var wr = new WeakReference<List>(out);
 				out = null;

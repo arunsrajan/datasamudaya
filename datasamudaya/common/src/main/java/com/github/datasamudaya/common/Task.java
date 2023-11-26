@@ -54,7 +54,8 @@ public class Task implements Serializable, Cloneable {
   public String hbphysicaladdress;
   public String piguuid;
   public long numbytesprocessed;
-  
+  public long numbytesgenerated;
+  public long numbytesconverted;
   
   @Override
   public Object clone() throws CloneNotSupportedException {

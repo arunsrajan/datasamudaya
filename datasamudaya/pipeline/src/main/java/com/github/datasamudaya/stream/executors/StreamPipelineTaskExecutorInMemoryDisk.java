@@ -215,7 +215,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			Object result = cf.get();
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<Object>(result);
 			result = null;
@@ -284,7 +284,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			Object result = cf.get();
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<Object>(result);
 			result = null;
@@ -349,6 +349,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			Object result = cf.get();
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<Object>(result);
 			result = null;
@@ -440,7 +441,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(result);
 			result = null;
@@ -521,7 +522,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(result);
 			result = null;
@@ -603,6 +604,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(result);
 			result = null;
@@ -746,6 +748,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
 				output.flush();
+				task.setNumbytesgenerated(fsdos.toByteArray().length);
 				cacheAble(fsdos);
 				var wr = new WeakReference<List>(out);
 				out = null;
@@ -897,6 +900,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, out);
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(out);
 			out = null;
@@ -969,7 +973,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, out);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(out);
 			out = null;
@@ -1043,7 +1047,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, out);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(out);
 			out = null;
@@ -1229,7 +1233,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1338,7 +1342,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1447,7 +1451,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1594,6 +1598,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1758,7 +1763,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1923,7 +1928,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -2033,7 +2038,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				Utils.getKryo().writeClassAndObject(output, new Vector<>());
 			}
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			log.debug("Exiting StreamPipelineTaskExecutor.processGroupByKeyTuple2");
 			var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2159,7 +2164,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var wr = new WeakReference<List>(out);
 				out = null;
 			}
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			log.debug("Exiting StreamPipelineTaskExecutor.processFoldByKeyTuple2");
 			var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2251,7 +2256,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				Utils.getKryo().writeClassAndObject(output, intermediatelist);
 			}
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(intermediatelist);
 			intermediatelist = null;
@@ -2346,6 +2351,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				Utils.getKryo().writeClassAndObject(output, intermediatelist);
 			}
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(intermediatelist);
 			intermediatelist = null;
@@ -2461,7 +2467,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(currentoutput, outpairs);
 			currentoutput.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(outpairs);
 			outpairs = null;
@@ -2548,6 +2554,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(currentoutput, output);
 			currentoutput.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(output);
 			output = null;
@@ -2631,6 +2638,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			Utils.getKryo().writeClassAndObject(currentoutput, output);
 			currentoutput.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			log.debug("Exiting StreamPipelineTaskExecutor.processHashPartition");
 			var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
