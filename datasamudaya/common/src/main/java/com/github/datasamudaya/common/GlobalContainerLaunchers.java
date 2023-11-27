@@ -62,6 +62,14 @@ public class GlobalContainerLaunchers {
 	public static List<LaunchContainers> getAll() {
 		return lcsmap.keySet().stream().flatMap(userid -> lcsmap.get(userid).entrySet().stream()).flatMap(es->es.getValue().stream()).collect(Collectors.toList());
 	}
+	
+	/**
+	 * Get All Users Job Containers Map for printing in web console
+	 * @return map of User Job Containers
+	 */
+	public static Map<String, Map<String,List<LaunchContainers>>> getUserContainersMap() {
+		return lcsmap;
+	}
 
 	/**
 	 * Thie method returns list of LaunchContainers objects for a given userid.  

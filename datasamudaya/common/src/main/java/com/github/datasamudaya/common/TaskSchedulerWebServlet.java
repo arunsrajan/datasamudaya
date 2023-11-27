@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServlet;
@@ -79,12 +80,6 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					        'copy', 'excel', 'pdf'
 					    ]
 					});
-							var allocres = $('#allocatedresources').DataTable({
-					  			    dom: 'Bflrtip',
-					    buttons: [
-					        'copy', 'excel', 'pdf'
-					    ]
-					});
 							var metrics = $('#metrics').DataTable({
 					  			    dom: 'Bflrtip',
 					    buttons: [
@@ -143,22 +138,34 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 			if (!CollectionUtils.isEmpty(DataSamudayaNodesResources.getAllocatedResources())) {
 				ConcurrentMap<String, ConcurrentMap<String, Resources>> userres = DataSamudayaNodesResources
 						.getAllocatedResources();
+				var aint = new AtomicInteger(0);
 				userres.entrySet().stream().forEach(userresmap -> {
 					builder.append("<BR/>");
 					builder.append("<h1 align=\"center\">");
 					builder.append(userresmap.getKey());
 					builder.append("</h1>");
 					String[] nodeport = userresmap.getKey().split(DataSamudayaConstants.UNDERSCORE);
-					builder.append(
+					builder.append(String.format(
 							"""
-											<table style=\"color:#ff0000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\" id="allocatedresources" class="display">
-									<thead><th>User</th><th>Node</th><th>FreeMemory</th><th>TotalProcessors</th><th>Physicalmemorysize</th><th>Totaldisksize</th><th>Totalmemory</th><th>Usabledisksize</th><th></th></thead>
-									<tbody>""");
+									<script language="Javascript" type="text/javascript">
+											$(document).ready(function(){
+											var allocres%s = $('#allocatedresources%s').DataTable({
+									 			    dom: 'Bflrtip',
+													    buttons: [
+													        'copy', 'excel', 'pdf'
+													    ]
+													});
+													});
+													</script>
+													<table style=\"color:#ff0000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\" id="allocatedresources%s" class="display">
+											<thead><th>User</th><th>Node</th><th>FreeMemory</th><th>TotalProcessors</th><th>Physicalmemorysize</th><th>Totaldisksize</th><th>Totalmemory</th><th>Usabledisksize</th><th></th></thead>
+											<tbody>""",
+							aint.get(), aint.get(), aint.getAndIncrement()));
 					int i = 0;
 					ConcurrentMap<String, Resources> nodeallocated = userresmap.getValue();
 					for (var user : nodeallocated.keySet()) {
 						Resources resources = nodeallocated.get(user);
-						builder.append("<tr bgcolor=\"" + Utils.getColor(i++) + "\">");
+						builder.append("<tr>");
 						builder.append("<td>");
 						builder.append(user);
 						builder.append("</td>");
@@ -193,6 +200,48 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 						builder.append("</tr>");
 					}
 					builder.append("</tbody></table>");
+				});
+			}
+
+			Map<String, Map<String, List<LaunchContainers>>> userjobcontainersmap = GlobalContainerLaunchers
+					.getUserContainersMap();
+			if (nonNull(userjobcontainersmap)) {
+				var aint = new AtomicInteger(0);
+				userjobcontainersmap.keySet().forEach(user -> {
+					builder.append("<br/>");
+					builder.append("<br/>");
+					builder.append("<H1 align=\"center\">");
+					builder.append(user);
+					builder.append("</H1>");
+					Map<String, List<LaunchContainers>> usercontainersmap = userjobcontainersmap.get(user);
+					usercontainersmap.keySet().forEach(jobid -> {
+						builder.append("<br/>");
+						builder.append(String.format(
+								"""
+										  			<script language="Javascript" type="text/javascript">
+										  		$(document).ready(function(){
+										  			var te%s = $('#taskexecutors%s').DataTable({
+										  			    dom: 'Bflrtip',
+										    buttons: [
+										        'copy', 'excel', 'pdf'
+										    ]
+										});
+										  		});
+										      </script>
+										              <table style="color:#000000;border-collapse:collapse;width:800px;height:30px" align="center" border="1.0" id="taskexecutors%s" class="display">
+										              <thead>
+										              <th>User</th>
+										              <th>Executor</th>
+										              <th>Node</th>
+										              <th>Cpu</th>
+										              <th>Memory (MB)</th>
+										              </thead>
+										              <tbody>""",
+								aint.get(), aint.get(), aint.getAndIncrement()));
+						summaryTes(user, jobid, usercontainersmap.get(jobid), builder);
+						builder.append("</tbody></table>");
+						builder.append("<br/>");
+					});
 				});
 			}
 
@@ -293,6 +342,40 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 			writer.write(builder.toString());
 		} catch (Exception ex) {
 			log.debug("TaskScheduler Web servlet error, See cause below \n", ex);
+		}
+	}
+
+	/**
+	 * Summary of Executors per user per executors id
+	 * 
+	 * @param user
+	 * @param execid
+	 * @param lcs
+	 * @param buffer
+	 */
+	private void summaryTes(String user, String execid, List<LaunchContainers> lcs, StringBuilder buffer) {
+		for (LaunchContainers lc : lcs) {
+			List<ContainerResources> crsalloc = lc.getCla().getCr();
+			for (ContainerResources crs : crsalloc) {
+				buffer.append("<tr>");
+				buffer.append("<td>");
+				buffer.append(user);
+				buffer.append("</td>");
+				buffer.append("<td>");
+				buffer.append(execid);
+				buffer.append("</td>");
+				buffer.append("<td>");
+				buffer.append(lc.getNodehostport());
+				buffer.append("</td>");
+				buffer.append("<td>");
+				buffer.append(crs.getCpu());
+				buffer.append("</td>");
+				buffer.append("<td>");
+				buffer.append((crs.getMaxmemory() + crs.getDirectheap()) / DataSamudayaConstants.MB);
+				buffer.append("</td>");
+				buffer.append("</tr>");
+			}
+
 		}
 	}
 
