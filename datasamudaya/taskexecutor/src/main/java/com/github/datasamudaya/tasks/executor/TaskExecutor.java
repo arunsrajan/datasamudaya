@@ -55,7 +55,6 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutor;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemory;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemoryDisk;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemoryDiskSQL;
-import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemorySQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroups;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroupsSQL;
 

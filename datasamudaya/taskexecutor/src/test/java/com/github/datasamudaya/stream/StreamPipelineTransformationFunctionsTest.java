@@ -37,10 +37,6 @@ import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.SToIntFunction;
 import com.github.datasamudaya.common.functions.SortedComparator;
 import com.github.datasamudaya.common.functions.UnionFunction;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.PipelineIntStream;
-import com.github.datasamudaya.stream.SampleSupplierInteger;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBaseTestCommon {
 	PipelineConfig pipelineconfig = new PipelineConfig();

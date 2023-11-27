@@ -34,7 +34,7 @@ import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.Pipeline;
 
-import static java.util.Objects.*;
+import static java.util.Objects.isNull;
 
 /**
  * 

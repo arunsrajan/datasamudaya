@@ -28,7 +28,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.StreamPipeline;
 
-import static java.util.Objects.*;
+import static java.util.Objects.nonNull;
 
 /**
  * Pig server to process pig commands.

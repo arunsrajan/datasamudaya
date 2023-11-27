@@ -10,12 +10,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
-import com.github.datasamudaya.common.CacheUtils;
-import com.github.datasamudaya.common.DataSamudayaCache;
-import com.github.datasamudaya.common.DataSamudayaCacheManager;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.utils.Utils;
 
 public class ByteBufferPoolDirectTest {

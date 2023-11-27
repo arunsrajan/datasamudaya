@@ -3,7 +3,6 @@ package com.github.datasamudaya.stream.sql;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;

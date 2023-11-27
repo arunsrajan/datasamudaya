@@ -26,8 +26,6 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 

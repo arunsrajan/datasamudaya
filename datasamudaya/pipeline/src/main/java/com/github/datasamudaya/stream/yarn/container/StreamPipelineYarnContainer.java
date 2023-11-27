@@ -40,7 +40,7 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorYarnSQ
 import com.github.datasamudaya.stream.yarn.appmaster.JobRequest;
 import com.github.datasamudaya.stream.yarn.appmaster.JobResponse;
 
-import static java.util.Objects.*;
+import static java.util.Objects.nonNull;
 
 /**
  * 

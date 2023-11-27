@@ -20,8 +20,6 @@ import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.Test;
 
-import com.github.datasamudaya.stream.StreamPipeline;
-
 public class StreamPipelineExceptionTest extends StreamPipelineBaseException {
 
 

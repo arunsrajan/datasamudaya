@@ -44,18 +44,6 @@ import org.junit.Test;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.DataSamudayaUsers;
-import com.github.datasamudaya.common.Stage;
-import com.github.datasamudaya.common.StreamDataCruncher;
-import com.github.datasamudaya.common.Tuple2Serializable;
-import com.github.datasamudaya.common.User;
-import com.github.datasamudaya.common.WhoAreRequest;
-import com.github.datasamudaya.common.WhoAreResponse;
-import com.github.datasamudaya.common.WhoIsRequest;
-import com.github.datasamudaya.common.WhoIsResponse;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.utils.Utils;
 

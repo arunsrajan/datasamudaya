@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
 
-import static java.util.Objects.*;
+import static java.util.Objects.isNull;
 
 /**
  * Holds LaunchContainer object globally.

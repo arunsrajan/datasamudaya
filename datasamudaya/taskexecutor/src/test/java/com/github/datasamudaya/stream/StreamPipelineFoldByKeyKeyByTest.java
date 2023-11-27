@@ -24,10 +24,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.SampleSupplierPartition;
-import com.github.datasamudaya.stream.StreamPipeline;
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipelineFoldByKeyKeyByTest extends StreamPipelineBaseTestCommon {
 

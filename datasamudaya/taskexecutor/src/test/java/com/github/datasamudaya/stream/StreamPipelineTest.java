@@ -34,11 +34,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.functions.HashPartitioner;
-import com.github.datasamudaya.stream.CsvStream;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.NumPartitions;
-import com.github.datasamudaya.stream.NumPartitionsEachFile;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipelineTest extends StreamPipelineBaseTestCommon {

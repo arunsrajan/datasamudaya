@@ -26,7 +26,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.stream.StreamPipeline;
 
-import static java.util.Objects.*;
+import static java.util.Objects.isNull;
 
 /**
  * Pig Query Executor

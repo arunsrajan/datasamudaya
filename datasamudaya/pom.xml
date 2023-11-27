@@ -442,7 +442,7 @@
 			<plugin>
 				<groupId>org.openrewrite.maven</groupId>
 				<artifactId>rewrite-maven-plugin</artifactId>
-				<version>4.26.0</version>
+				<version>5.14.0</version>
 				<configuration>
 					<activeRecipes>
 						<receipe>org.openrewrite.java.RemoveUnusedImports</receipe>
@@ -458,7 +458,7 @@
 					<dependency>
 						<groupId>org.openrewrite</groupId>
 						<artifactId>rewrite-java-17</artifactId>
-						<version>7.25.0</version>
+						<version>8.9.9</version>
 					</dependency>
 				</dependencies>
 			</plugin>

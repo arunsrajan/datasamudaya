@@ -37,15 +37,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.github.datasamudaya.common.BlocksLocation;
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
-import com.github.datasamudaya.common.CacheUtils;
-import com.github.datasamudaya.common.HDFSBlockUtils;
-import com.github.datasamudaya.common.HdfsBlockReader;
-import com.github.datasamudaya.common.DataSamudayaCache;
-import com.github.datasamudaya.common.DataSamudayaCacheManager;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.utils.Utils;
 
 public class CacheUtilsTest {

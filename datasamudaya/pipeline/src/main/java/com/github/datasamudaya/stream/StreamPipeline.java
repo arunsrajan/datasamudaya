@@ -107,7 +107,8 @@ import com.github.datasamudaya.stream.scheduler.StreamPipelineTaskSubmitter;
 import com.github.datasamudaya.stream.utils.FileBlocksPartitionerHDFS;
 import com.github.datasamudaya.stream.utils.PipelineConfigValidator;
 
-import static java.util.Objects.*;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 /**
  * 

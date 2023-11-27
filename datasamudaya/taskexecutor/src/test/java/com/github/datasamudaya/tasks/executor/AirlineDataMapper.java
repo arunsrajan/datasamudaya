@@ -18,9 +18,6 @@ package com.github.datasamudaya.tasks.executor;
 import java.util.List;
 
 import com.github.datasamudaya.common.Context;
-import com.github.datasamudaya.tasks.executor.Combiner;
-import com.github.datasamudaya.tasks.executor.Mapper;
-import com.github.datasamudaya.tasks.executor.Reducer;
 
 @SuppressWarnings("rawtypes")
 public class AirlineDataMapper implements Mapper<Long, String, Context>, Combiner<String, Long, Context>,

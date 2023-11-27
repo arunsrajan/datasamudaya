@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.functions.HashPartitioner;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipeline1Test extends StreamPipelineBaseTestCommon {

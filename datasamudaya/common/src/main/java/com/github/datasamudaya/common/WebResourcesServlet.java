@@ -17,14 +17,13 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 
 /**
  * Web Resources servlet to fetch the file for example (HTML,js) etc
  * and sends to the browser.
- * @author Arun 
- * 
+ * @author Arun
+ *  
  */
 public class WebResourcesServlet extends HttpServlet {
 

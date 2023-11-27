@@ -22,7 +22,6 @@ import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.JobMetrics;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamPipelineTest extends StreamPipelineTestCommon {
 
