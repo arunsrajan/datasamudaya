@@ -37,8 +37,8 @@ import static java.util.Objects.nonNull;
  */
 public class PigQueryServer {
 	static Logger log = LoggerFactory.getLogger(PigQueryServer.class);
-	static ServerSocket serverSocket = null;		
-	static QueryParserDriver queryParserDriver = null;		
+	static ServerSocket serverSocket;		
+	static QueryParserDriver queryParserDriver;		
 	/**
 	 * Start the Pig server.
 	 * @throws Exception
@@ -46,7 +46,7 @@ public class PigQueryServer {
 	public static void start() throws Exception {		
 		ExecutorService executors = Executors.newFixedThreadPool(10);
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.PIGPORT,DataSamudayaConstants.PIGPORT_DEFAULT)));
+				.getProperty(DataSamudayaConstants.PIGPORT, DataSamudayaConstants.PIGPORT_DEFAULT)));
 		queryParserDriver = PigUtils.getQueryParserDriver("pig");		
 		executors.execute(() -> {
 			while (true) {
@@ -66,8 +66,8 @@ public class PigQueryServer {
 						int cpupercontainer = 1;
 						int memorypercontainer = 1024;
 						String scheduler = "";
-						String tejobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
-						Map<String, Object> pigAliasExecutedObjectMap  = new ConcurrentHashMap<>();
+						String tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+						Map<String, Object> pigAliasExecutedObjectMap = new ConcurrentHashMap<>();
 						List<String> pigQueries = new ArrayList<>();
 						List<String> pigQueriesToExecute = new ArrayList<>();
 						boolean iscontainerlaunched = false;
@@ -83,19 +83,19 @@ public class PigQueryServer {
 							cpupercontainer = Integer.valueOf(in.readLine());							
 							memorypercontainer = Integer.valueOf(in.readLine());
 							scheduler = in.readLine();
-							if(!Utils.isUserExists(user)) {
-								String usernotexistsmessage = "User "+user+" is not configured. Exiting...";
+							if (!Utils.isUserExists(user)) {
+								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
 								out.println(usernotexistsmessage);
 								out.println("Quit");
 								throw new Exception(usernotexistsmessage);
 							}
 							List<LaunchContainers> containers = null;
 							Map<String, Object> cpumemory = null;
-							if(scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT) || 
-									scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT) 
+									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
 								containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 								cpumemory = Utils.getAllocatedContainersResources(containers);
-								out.println("User '"+user +"' connected with cpu "+cpumemory.get(DataSamudayaConstants.CPUS) +" and memory "+cpumemory.get(DataSamudayaConstants.MEM) +" mb");
+								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 								Utils.printNodesAndContainers(containers, out);
 								iscontainerlaunched = true;
 							}
@@ -111,7 +111,7 @@ public class PigQueryServer {
 							while (true) {
 								try {
 									while ((inputLine = in.readLine()) != null) {
-										if (inputLine.equalsIgnoreCase("quit")) {
+										if ("quit".equalsIgnoreCase(inputLine)) {
 											out.println("Quit");
 											break outer;
 										}
@@ -119,9 +119,9 @@ public class PigQueryServer {
 										inputLine = StringUtils.normalizeSpace(inputLine.trim());
 										if (inputLine.startsWith("setmode")) {
 											String[] mode = inputLine.split(" ");
-											if(mode.length == 2) {
+											if (mode.length == 2) {
 												pigAliasExecutedObjectMap.clear();
-												if(mode[1].equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+												if (mode[1].equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
 													isjgroups = true;
 													isignite = false;
 													isyarn = false;
@@ -130,16 +130,16 @@ public class PigQueryServer {
 													pipelineconfig.setMesos("false");
 													pipelineconfig.setJgroups("true");
 													pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-													if(!iscontainerlaunched) {
+													if (!iscontainerlaunched) {
 														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
-														out.println("User '"+user +"' connected with cpu "+cpumemory.get(DataSamudayaConstants.CPUS) +" and memory "+cpumemory.get(DataSamudayaConstants.MEM) +" mb");
+														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 														Utils.printNodesAndContainers(containers, out);
 														iscontainerlaunched = true;
 													}
 													out.println("jgroups mode set");
-												} else if(mode[1].equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
+												} else if (mode[1].equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
 													isjgroups = false;
 													isignite = true;
 													isyarn = false;
@@ -148,7 +148,7 @@ public class PigQueryServer {
 													pipelineconfig.setMesos("false");
 													pipelineconfig.setJgroups("false");
 													pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
-													if(iscontainerlaunched) {
+													if (iscontainerlaunched) {
 														try {
 															Utils.destroyContainers(user, tejobid);
 														} catch (Exception ex) {
@@ -157,7 +157,7 @@ public class PigQueryServer {
 														iscontainerlaunched = false;
 													}
 													out.println("ignite mode set");
-												} else if(mode[1].equalsIgnoreCase(DataSamudayaConstants.YARN)) {
+												} else if (mode[1].equalsIgnoreCase(DataSamudayaConstants.YARN)) {
 													isjgroups = false;
 													isignite = false;
 													isyarn = true;
@@ -166,7 +166,7 @@ public class PigQueryServer {
 													pipelineconfig.setMesos("false");
 													pipelineconfig.setJgroups("false");
 													pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-													if(iscontainerlaunched) {
+													if (iscontainerlaunched) {
 														try {
 															Utils.destroyContainers(user, tejobid);
 														} catch (Exception ex) {
@@ -184,11 +184,11 @@ public class PigQueryServer {
 													pipelineconfig.setMesos("false");
 													pipelineconfig.setJgroups("false");
 													pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-													if(!iscontainerlaunched) {
+													if (!iscontainerlaunched) {
 														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
-														out.println("User '"+user +"' connected with cpu "+cpumemory.get(DataSamudayaConstants.CPUS) +" and memory "+cpumemory.get(DataSamudayaConstants.MEM) +" mb");
+														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 														Utils.printNodesAndContainers(containers, out);
 														iscontainerlaunched = true;
 													}
@@ -196,7 +196,7 @@ public class PigQueryServer {
 												}
 											}
 										} else if (inputLine.startsWith("getmode")) {
-											if(isignite) {
+											if (isignite) {
 												out.println("ignite");
 											}
 											else if (isjgroups) {
@@ -207,37 +207,37 @@ public class PigQueryServer {
 												out.println("standalone");
 											}
 										} else if (inputLine.startsWith("dump") || inputLine.startsWith("DUMP")) {
-											if(nonNull(pipelineconfig)) {
+											if (nonNull(pipelineconfig)) {
 												pipelineconfig.setSqlpigquery(inputLine);
 									    	}
 											inputLine = inputLine.replace(";", "");
 											String[] dumpwithalias = inputLine.split(" ");
 											long starttime = System.currentTimeMillis();
-											String jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();											
+											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();											
 									    	PigUtils.executeDump((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(dumpwithalias[1].trim()), user, jobid, tejobid, pipelineconfig);
-											double timetaken = ((System.currentTimeMillis()-starttime)/1000.0);											
-											out.println("Time taken " + timetaken +" seconds");
+											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;											
+											out.println("Time taken " + timetaken + " seconds");
 											out.println("");
 										} else {
 											long starttime = System.currentTimeMillis();
-											String jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
+											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 											pigQueriesToExecute.clear();
 											pigQueriesToExecute.addAll(pigQueries);
 											pigQueriesToExecute.add(inputLine);
 											pigQueriesToExecute.add("\n");
-											if(nonNull(pipelineconfig)) {
+											if (nonNull(pipelineconfig)) {
 												pipelineconfig.setSqlpigquery(inputLine);
 									    	}
 									    	PigQueryExecutor.execute(pigAliasExecutedObjectMap, queryParserDriver, pigQueriesToExecute, user, jobid, tejobid, pipelineconfig);
 									    	pigQueries.add(inputLine);
 									    	pigQueries.add("\n");
-											double timetaken = ((System.currentTimeMillis()-starttime)/1000.0);											
-											out.println("Time taken " + timetaken +" seconds");
+											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;											
+											out.println("Time taken " + timetaken + " seconds");
 											out.println("");
 										}
 										out.println("Done");
 									}
-								} catch(SocketException socketexception) {
+								} catch (SocketException socketexception) {
 									log.error(DataSamudayaConstants.EMPTY, socketexception);
 									out.println(socketexception.getMessage());
 									out.println("Done");
@@ -251,7 +251,7 @@ public class PigQueryServer {
 						} catch (Exception ex) {
 							log.error(DataSamudayaConstants.EMPTY, ex);							
 						} finally {
-							if(iscontainerlaunched) {
+							if (iscontainerlaunched) {
 								try {
 									Utils.destroyContainers(user, tejobid);
 								} catch (Exception ex) {
@@ -265,5 +265,8 @@ public class PigQueryServer {
 				}
 			}
 		});
+	}
+
+	private PigQueryServer() {
 	}
 }

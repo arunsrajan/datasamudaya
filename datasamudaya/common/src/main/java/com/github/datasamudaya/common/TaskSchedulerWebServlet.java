@@ -38,7 +38,7 @@ import static java.util.Objects.*;
 public class TaskSchedulerWebServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 8713220540678338208L;
-	private static Logger log = Logger.getLogger(TaskSchedulerWebServlet.class);
+	private static final Logger log = Logger.getLogger(TaskSchedulerWebServlet.class);
 
 	/**
 	 * The implementation method doGet of HttpServlet class implements for getting
@@ -55,7 +55,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 		try {
 			var lists = DataSamudayaNodesResources.get();
 			StringBuilder builder = new StringBuilder();
-			builder.append(String.format("""
+			builder.append("""
 					<html>
 					<head>
 					<link href="%s/resources/datatables/DataTables-1.13.8/css/jquery.dataTables.css" rel="stylesheet">
@@ -69,7 +69,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					<script src="%s/resources/datatables/DataTables-1.13.8/js/jquery.dataTables.js"></script>
 					<script src="%s/resources/datatables/Buttons-2.4.2/js/dataTables.buttons.js"></script>
 					<script src="%s/resources/datatables/Buttons-2.4.2/js/buttons.html5.js"></script>
-					""", contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath,
+					""".formatted(contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath,
 					contextpath, contextpath, contextpath));
 			builder.append("""
 					   <script>
@@ -101,7 +101,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 				for (var node : lists.keySet()) {
 					Resources resources = lists.get(node);
 					String[] nodeport = node.split(DataSamudayaConstants.UNDERSCORE);
-					builder.append("<tr bgcolor=\"" + Utils.getColor(i++) + "\">");
+					builder.append("<tr bgcolor=\"").append(Utils.getColor(i++)).append("\">");
 					builder.append("<td>");
 					builder.append(resources.getNodeport());
 					builder.append("</td>");
@@ -145,7 +145,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					builder.append(userresmap.getKey());
 					builder.append("</h1>");
 					String[] nodeport = userresmap.getKey().split(DataSamudayaConstants.UNDERSCORE);
-					builder.append(String.format(
+					builder.append(
 							"""
 									<script language="Javascript" type="text/javascript">
 											$(document).ready(function(){
@@ -159,7 +159,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 													</script>
 													<table style=\"color:#ff0000;border-collapse:collapse;width:800px;height:30px\" align=\"center\" border=\"1.0\" id="allocatedresources%s" class="display">
 											<thead><th>User</th><th>Node</th><th>FreeMemory</th><th>TotalProcessors</th><th>Physicalmemorysize</th><th>Totaldisksize</th><th>Totalmemory</th><th>Usabledisksize</th><th></th></thead>
-											<tbody>""",
+											<tbody>""".formatted(
 							aint.get(), aint.get(), aint.getAndIncrement()));
 					int i = 0;
 					ConcurrentMap<String, Resources> nodeallocated = userresmap.getValue();
@@ -216,7 +216,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					Map<String, List<LaunchContainers>> usercontainersmap = userjobcontainersmap.get(user);
 					usercontainersmap.keySet().forEach(jobid -> {
 						builder.append("<br/>");
-						builder.append(String.format(
+						builder.append(
 								"""
 										  			<script language="Javascript" type="text/javascript">
 										  		$(document).ready(function(){
@@ -236,7 +236,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 										              <th>Cpu</th>
 										              <th>Memory (MB)</th>
 										              </thead>
-										              <tbody>""",
+										              <tbody>""".formatted(
 								aint.get(), aint.get(), aint.getAndIncrement()));
 						summaryTes(user, jobid, usercontainersmap.get(jobid), builder);
 						builder.append("</tbody></table>");
@@ -275,7 +275,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					return (int) (jm2.getJobstarttime() - jm1.getJobstarttime());
 				}).collect(Collectors.toList());
 				for (var jm : jobmetrics) {
-					builder.append("<tr bgcolor=\"" + Utils.getColor(i++) + "\">");
+					builder.append("<tr bgcolor=\"").append(Utils.getColor(i++)).append("\">");
 					builder.append("<td>");
 					builder.append(jm.getJobid());
 					builder.append("</td>");
@@ -385,7 +385,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 	 * @param data
 	 * @return
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	private String toHtml(Object data) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("<p>");

@@ -42,6 +42,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -96,17 +97,17 @@ public class MassiveDataMRJobBase {
 	static String bicyclecrash = "/bicyclecrash";
 	static String airlinemultiplefilesfolder = "/airlinemultiplefilesfolder";
 	static String githubevents = "/githubevents";
-	private static int numberofnodes = 1;
+	private static final int numberofnodes = 1;
 	private static int port;
 	static ExecutorService executorpool;
 	static int zookeeperport = 2181;
-	static boolean issetupdone = false;
+	static boolean issetupdone;
 
 	private static TestingServer testingserver;
 
 	private static Registry server;
 
-	private static ZookeeperOperations zo = null;
+	private static ZookeeperOperations zo;
 	
 	@BeforeClass
 	public static void setServerUp() throws Exception {		
@@ -116,8 +117,8 @@ public class MassiveDataMRJobBase {
 			PropertyConfigurator.configure("./config/log4j.properties");
 			Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
-			org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+			StaticComponentContainer.Modules.exportAllToAll();
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, 
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
@@ -155,7 +156,7 @@ public class MassiveDataMRJobBase {
 				resource.setTotaldisksize(Utils.totaldiskspace());
 				resource.setUsabledisksize(Utils.usablediskspace());
 				resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
-				zo.createNodesNode(host+DataSamudayaConstants.UNDERSCORE+nodeport, resource, (event)->{
+				zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource, event -> {
 					log.info(event);
 				});
 				while(isNull(DataSamudayaNodesResources.get()) || nonNull(DataSamudayaNodesResources.get()) && DataSamudayaNodesResources.get().size()!=numberofnodes) {

@@ -1,5 +1,5 @@
 package com.github.datasamudaya.stream.utils;
-
+import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Map;
@@ -13,7 +13,7 @@ import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
 import org.apache.orc.RecordReader;
 import org.apache.orc.TypeDescription;
 
-public class ORCRecordSpliterator extends java.util.Spliterators.AbstractSpliterator<Map<String, Object>> {
+public class ORCRecordSpliterator extends Spliterators.AbstractSpliterator<Map<String, Object>> {
     private final RecordReader recordReader;
     private final TypeDescription schema;
     VectorizedRowBatch batch;
@@ -43,10 +43,10 @@ public class ORCRecordSpliterator extends java.util.Spliterators.AbstractSpliter
             }
             final AtomicInteger atomint = new AtomicInteger();
             // Read the next record into the row array
-            for (int r = 0; r < batch.size; ++r) {
+            for (int r = 0;r < batch.size;r++) {
             	atomint.set(r);
             	Map<String, Object> record = new ConcurrentHashMap<>();
-            	schema.getFieldNames().parallelStream().forEach(column->{
+            	schema.getFieldNames().parallelStream().forEach(column -> {
                     Object value = getValueFromVector(atomint.get(), batch.cols[colindex.get(column).intValue()]);
                     record.put(column, value);
                 });

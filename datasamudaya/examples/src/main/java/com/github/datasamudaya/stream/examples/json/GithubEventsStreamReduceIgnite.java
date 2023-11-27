@@ -13,7 +13,7 @@ import com.github.datasamudaya.stream.Pipeline;
 
 public class GithubEventsStreamReduceIgnite implements Serializable, Pipeline {
 	private static final long serialVersionUID = -7163128367640941539L;
-	private Logger log = Logger.getLogger(GithubEventsStreamReduceIgnite.class);
+	private final Logger log = Logger.getLogger(GithubEventsStreamReduceIgnite.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");

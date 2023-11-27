@@ -64,9 +64,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param conditionrightouterjoin
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <T, O1, O2> MapPair(AbstractPipeline root,
-			RightOuterJoinPredicate<? super I1, ? super I2> conditionrightouterjoin)  {
+			RightOuterJoinPredicate<? super I1, ? super I2> conditionrightouterjoin) {
 		this.task = conditionrightouterjoin;
 		this.root = root;
 		root.finaltask=task;
@@ -79,9 +79,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param conditionleftouterjoin
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <T, O1, O2> MapPair(AbstractPipeline root,
-			LeftOuterJoinPredicate<? super I1, ? super I2> conditionleftouterjoin)  {
+			LeftOuterJoinPredicate<? super I1, ? super I2> conditionleftouterjoin) {
 		this.task = conditionleftouterjoin;
 		this.root = root;
 		root.finaltask=task;
@@ -94,8 +94,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param keybyfunction
 	 */
-	@SuppressWarnings({ "unchecked", "hiding" }) <I1,I2> MapPair(AbstractPipeline root,
-			KeyByFunction<I1,I2> keybyfunction)  {
+	@SuppressWarnings({"unchecked", "hiding"}) <I1, I2> MapPair(AbstractPipeline root,
+			KeyByFunction<I1,I2> keybyfunction) {
 		this.task = keybyfunction;
 		this.root = root;
 		root.finaltask=task;
@@ -109,8 +109,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public <I3,I4> MapValues<I1,Tuple2<I3,I4>> mapValues(MapValuesFunction<? super I2, ? extends Tuple2<I3,I4>> mvf) throws PipelineException {
+	@SuppressWarnings({"unchecked"})
+	public <I3, I4> MapValues<I1, Tuple2<I3, I4>> mapValues(MapValuesFunction<? super I2, ? extends Tuple2<I3, I4>> mvf) throws PipelineException {
 		if(Objects.isNull(mvf)) {
 			throw new PipelineException(PipelineConstants.MAPVALUESNULL);
 		}
@@ -127,9 +127,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param pf
 	 */
-	@SuppressWarnings({ "unchecked" })
-	protected <I3,I4> MapPair(AbstractPipeline root,
-			MapToPairFunction<? super I2, ? extends Tuple2<? super I3,? super I4>> pf)  {
+	@SuppressWarnings({"unchecked"})
+	protected <I3, I4> MapPair(AbstractPipeline root,
+			MapToPairFunction<? super I2, ? extends Tuple2<? super I3,? super I4>> pf) {
 		this.task = pf;
 		this.root = root;
 		root.finaltask=task;
@@ -142,12 +142,12 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public <T> StreamPipeline<T> map(MapFunction<? super Tuple2<I1,I2> ,? extends T> map) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public <T> StreamPipeline<T> map(MapFunction<? super Tuple2<I1, I2> , ? extends T> map) throws PipelineException {
 		if(Objects.isNull(map)) {
 			throw new PipelineException(PipelineConstants.MAPFUNCTIONNULL);
 		}
-		var mapobj = new StreamPipeline(root,map);
+		var mapobj = new StreamPipeline(root, map);
 		this.childs.add(mapobj);
 		mapobj.parents.add(this);
 		return mapobj;
@@ -159,9 +159,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param peekConsumer
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <T> MapPair(AbstractPipeline root,
-			PeekConsumer peekConsumer)  {
+			PeekConsumer peekConsumer) {
 		this.task = peekConsumer;
 		this.root = root;
 		root.mdsroots.add(root);
@@ -176,9 +176,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param joinpredicate
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <T, O1, O2> MapPair(AbstractPipeline root,
-			JoinPredicate joinpredicate)  {
+			JoinPredicate joinpredicate) {
 		this.task = joinpredicate;
 		this.root = root;
 		root.mdsroots.add(root);
@@ -190,9 +190,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param calculatecount
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	protected MapPair(AbstractPipeline root,
-			CalculateCount calculatecount)  {
+			CalculateCount calculatecount) {
 		this.task = calculatecount;
 		this.root = root;
 		root.mdsroots.add(root);
@@ -207,8 +207,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public <T> MapPair<T,T> join(AbstractPipeline mapright,JoinPredicate<Tuple2<I1,I2>,Tuple2<I1,I2>> conditioninnerjoin) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public <T> MapPair<T, T> join(AbstractPipeline mapright, JoinPredicate<Tuple2<I1,I2>,Tuple2<I1,I2>> conditioninnerjoin) throws PipelineException {
 		if(Objects.isNull(mapright)) {
 			throw new PipelineException(PipelineConstants.INNERJOIN);
 		}
@@ -231,7 +231,7 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param join
 	 */
 	protected MapPair(AbstractPipeline root,
-			Join join)  {
+			Join join) {
 		this.task = join;
 		this.root = root;
 		root.mdsroots.add(root);
@@ -245,8 +245,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public <I3> MapPair<I1,Tuple2<I2,I3>> join(MapPair<I1,I3> mapright) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public <I3> MapPair<I1, Tuple2<I2, I3>> join(MapPair<I1, I3> mapright) throws PipelineException {
 		if(Objects.isNull(mapright)) {
 			throw new PipelineException(PipelineConstants.INNERJOIN);
 		}
@@ -266,7 +266,7 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param join
 	 */
 	protected MapPair(AbstractPipeline root,
-			LeftJoin join)  {
+			LeftJoin join) {
 		this.task = join;
 		this.root = root;
 		root.mdsroots.add(root);
@@ -280,8 +280,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public <I3> MapPair<I1,Tuple2<I2,I3>> leftJoin(MapPair<I1,I3> mapright) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public <I3> MapPair<I1, Tuple2<I2, I3>> leftJoin(MapPair<I1, I3> mapright) throws PipelineException {
 		if(Objects.isNull(mapright)) {
 			throw new PipelineException(PipelineConstants.INNERJOIN);
 		}
@@ -301,7 +301,7 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param join
 	 */
 	protected MapPair(AbstractPipeline root,
-			RightJoin join)  {
+			RightJoin join) {
 		this.task = join;
 		this.root = root;
 		root.mdsroots.add(root);
@@ -315,8 +315,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public <I3> MapPair<I1,Tuple2<I2,I3>> rightJoin(MapPair<I1,I3> mapright) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public <I3> MapPair<I1, Tuple2<I2, I3>> rightJoin(MapPair<I1, I3> mapright) throws PipelineException {
 		if(Objects.isNull(mapright)) {
 			throw new PipelineException(PipelineConstants.INNERJOIN);
 		}
@@ -334,7 +334,7 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param distinct
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private MapPair(AbstractPipeline root,
 			Distinct distinct) {
 		this.task = distinct;
@@ -346,9 +346,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * MapPair accepts distinct
 	 * @return MapPair objet
 	 */
-	public MapPair<I1,I2> distinct()  {
+	public MapPair<I1, I2> distinct() {
 		var distinct = new Distinct();
-		var map = new MapPair<I1,I2>(root,distinct);
+		var map = new MapPair<I1, I2>(root, distinct);
 		map.parents.add(this);
 		this.childs.add(map);
 		return map;
@@ -359,9 +359,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param predicate
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private MapPair(AbstractPipeline root,
-			PredicateSerializable<I1> predicate)  {
+			PredicateSerializable<I1> predicate) {
 		this.task = predicate;
 		this.root = root;
 		root.finaltask=task;
@@ -373,12 +373,12 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I1> filter(PredicateSerializable<? super Tuple2> predicate) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I1> filter(PredicateSerializable<? super Tuple2> predicate) throws PipelineException {
 		if(Objects.isNull(predicate)) {
 			throw new PipelineException(PipelineConstants.PREDICATENULL);
 		}
-		var filter = new MapPair(root,predicate);
+		var filter = new MapPair(root, predicate);
 		this.childs.add(filter);
 		filter.parents.add(this);
 		return filter;
@@ -389,9 +389,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param unionfunction
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private MapPair(AbstractPipeline root,
-			UnionFunction unionfunction)  {
+			UnionFunction unionfunction) {
 		this.task = unionfunction;
 		this.root = root;
 		root.finaltask=task;
@@ -403,13 +403,13 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I1> union(MapPair union) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I1> union(MapPair union) throws PipelineException {
 		if(Objects.isNull(union)) {
 			throw new PipelineException(PipelineConstants.UNIONNULL);
 		}
 		var unionfunction = new UnionFunction();
-		var unionchild =new  MapPair(root,unionfunction);
+		var unionchild =new  MapPair(root, unionfunction);
 		this.childs.add(unionchild);
 		unionchild.parents.add(this);
 		union.childs.add(unionchild);
@@ -423,9 +423,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param intersectionfunction
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private MapPair(AbstractPipeline root,
-			IntersectionFunction intersectionfunction)  {
+			IntersectionFunction intersectionfunction) {
 		this.task = intersectionfunction;
 		this.root = root;
 		root.finaltask=task;
@@ -437,13 +437,13 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I1> intersection(MapPair intersection) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I1> intersection(MapPair intersection) throws PipelineException {
 		if(Objects.isNull(intersection)) {
 			throw new PipelineException(PipelineConstants.INTERSECTIONNULL);
 		}
 		var intersectionfunction = new IntersectionFunction();
-		var intersectionchild =new  MapPair(root,intersectionfunction);
+		var intersectionchild =new  MapPair(root, intersectionfunction);
 		this.childs.add(intersectionchild);
 		intersectionchild.parents.add(this);
 		intersection.childs.add(intersectionchild);
@@ -460,8 +460,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public <I3,I4> MapPair<I3,I4> mapToPair(MapToPairFunction<? super Tuple2<I1,I2>, Tuple2<I3,I4>> pf) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public <I3, I4> MapPair<I3, I4> mapToPair(MapToPairFunction<? super Tuple2<I1, I2>, Tuple2<I3, I4>> pf) throws PipelineException {
 		if(Objects.isNull(pf)) {
 			throw new PipelineException(PipelineConstants.MAPPAIRNULL);
 		}
@@ -476,9 +476,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param sampleintegersupplier
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private MapPair(AbstractPipeline root,
-			SampleSupplierInteger sampleintegersupplier)  {
+			SampleSupplierInteger sampleintegersupplier) {
 		this.task = sampleintegersupplier;
 		this.root = root;
 		root.finaltask=task;
@@ -490,13 +490,13 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I2> sample(Integer numsample) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I2> sample(Integer numsample) throws PipelineException {
 		if(Objects.isNull(numsample)) {
 			throw new PipelineException(PipelineConstants.SAMPLENULL);
 		}
 		var sampleintegersupplier = new SampleSupplierInteger(numsample);
-		var samplesupplier = new MapPair(root,sampleintegersupplier);
+		var samplesupplier = new MapPair(root, sampleintegersupplier);
 		this.childs.add(samplesupplier);
 		samplesupplier.parents.add(this);
 		return samplesupplier;
@@ -509,8 +509,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I2> rightOuterjoin(AbstractPipeline mappair,RightOuterJoinPredicate<Tuple2<I1,I2>,Tuple2<I1,I2>> conditionrightouterjoin) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I2> rightOuterjoin(AbstractPipeline mappair, RightOuterJoinPredicate<Tuple2<I1,I2>,Tuple2<I1,I2>> conditionrightouterjoin) throws PipelineException {
 		if(Objects.isNull(mappair)) {
 			throw new PipelineException(PipelineConstants.RIGHTOUTERJOIN);
 		}
@@ -533,8 +533,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I2> leftOuterjoin(AbstractPipeline mappair,LeftOuterJoinPredicate<Tuple2<I1,I2>,Tuple2<I1,I2>> conditionleftouterjoin) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I2> leftOuterjoin(AbstractPipeline mappair, LeftOuterJoinPredicate<Tuple2<I1,I2>,Tuple2<I1,I2>> conditionleftouterjoin) throws PipelineException {
 		if(Objects.isNull(mappair)) {
 			throw new PipelineException(PipelineConstants.LEFTOUTERJOIN);
 		}
@@ -555,9 +555,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param fmf
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private MapPair(AbstractPipeline root,
-			FlatMapFunction fmf)  {
+			FlatMapFunction fmf) {
 		this.task = fmf;
 		this.root = root;
 		root.finaltask=task;
@@ -570,8 +570,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public <I3,I4> MapPair<I3,I4> flatMap(FlatMapFunction<? super Tuple2<I1,I2>, ? extends Tuple2<I3,I4>> fmf) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public <I3, I4> MapPair<I3, I4> flatMap(FlatMapFunction<? super Tuple2<I1, I2>, ? extends Tuple2<I3, I4>> fmf) throws PipelineException {
 		if(Objects.isNull(fmf)) {
 			throw new PipelineException(PipelineConstants.FLATMAPNULL);
 		}
@@ -589,8 +589,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public <I3,I4> MapPair<I3,I4> flatMapToTuple(TupleFlatMapFunction<? super I1, ? extends Tuple2<I3,I4>> pfmf) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public <I3, I4> MapPair<I3, I4> flatMapToTuple(TupleFlatMapFunction<? super I1, ? extends Tuple2<I3, I4>> pfmf) throws PipelineException {
 		if(Objects.isNull(pfmf)) {
 			throw new PipelineException(PipelineConstants.FLATMAPPAIRNULL);
 		}
@@ -605,9 +605,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param lfmf
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private MapPair(AbstractPipeline root,
-			LongTupleFlatMapFunction lfmf)  {
+			LongTupleFlatMapFunction lfmf) {
 		this.task = lfmf;
 		this.root = root;
 		root.finaltask=task;
@@ -619,8 +619,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<Long,Long> flatMapToLong(LongTupleFlatMapFunction<Tuple2<I1,I2>> lfmf) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<Long, Long> flatMapToLong(LongTupleFlatMapFunction<Tuple2<I1, I2>> lfmf) throws PipelineException {
 		if(Objects.isNull(lfmf)) {
 			throw new PipelineException(PipelineConstants.LONGFLATMAPNULL);
 		}
@@ -635,9 +635,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param dfmf
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private MapPair(AbstractPipeline root,
-			DoubleTupleFlatMapFunction dfmf)  {
+			DoubleTupleFlatMapFunction dfmf) {
 		this.task = dfmf;
 		this.root = root;
 		root.finaltask=task;
@@ -649,8 +649,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<Double,Double> flatMapToDouble(DoubleTupleFlatMapFunction<Tuple2<I1,I2>> dfmf) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<Double, Double> flatMapToDouble(DoubleTupleFlatMapFunction<Tuple2<I1, I2>> dfmf) throws PipelineException {
 		if(Objects.isNull(dfmf)) {
 			throw new PipelineException(PipelineConstants.DOUBLEFLATMAPNULL);
 		}
@@ -666,12 +666,12 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I1> peek(PeekConsumer consumer) throws PipelineException {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I1> peek(PeekConsumer consumer) throws PipelineException {
 		if(Objects.isNull(consumer)) {
 			throw new PipelineException(PipelineConstants.PEEKNULL);
 		}
-		var map = new MapPair(root,consumer);
+		var map = new MapPair(root, consumer);
 		map.parents.add(this);
 		this.childs.add(map);
 		return map;
@@ -682,9 +682,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param sortedcomparator
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private MapPair(AbstractPipeline root,
-			SortedComparator<Tuple2<I1,I2>> sortedcomparator)  {
+			SortedComparator<Tuple2<I1,I2>> sortedcomparator) {
 		this.task = sortedcomparator;
 		this.root = root;
 		root.finaltask=task;
@@ -698,9 +698,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param mdp
 	 * @param rightouterjoinpredicate
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	protected <T, O1, O2> MapPair(MapPair mdp,
-			RightOuterJoinPredicate rightouterjoinpredicate)  {
+			RightOuterJoinPredicate rightouterjoinpredicate) {
 		this.task = rightouterjoinpredicate;
 		this.root = mdp.root;
 		root.mdsroots.add(mdp.root);
@@ -715,9 +715,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param mdp
 	 * @param leftouterjoinpredicate
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	protected <T, O1, O2> MapPair(MapPair mdp,
-			LeftOuterJoinPredicate leftouterjoinpredicate)  {
+			LeftOuterJoinPredicate leftouterjoinpredicate) {
 		this.task = leftouterjoinpredicate;
 		this.root = mdp.root;
 		root.mdsroots.add(mdp.root);
@@ -730,12 +730,12 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I2> sorted(SortedComparator<? super Tuple2> sortedcomparator) throws PipelineException{
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I2> sorted(SortedComparator<? super Tuple2> sortedcomparator) throws PipelineException {
 		if(Objects.isNull(sortedcomparator)) {
 			throw new PipelineException(PipelineConstants.SORTEDNULL);
 		}
-		var map = new MapPair(root,sortedcomparator);
+		var map = new MapPair(root, sortedcomparator);
 		map.parents.add(this);
 		this.childs.add(map);
 		return map;
@@ -747,9 +747,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param rf
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <O1> MapPair(AbstractPipeline root,
-			ReduceByKeyFunction<I1> rf)  {
+			ReduceByKeyFunction<I1> rf) {
 		this.task = rf;
 		this.root = root;
 		root.finaltask=task;
@@ -761,9 +761,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param cf
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <O1> MapPair(AbstractPipeline root,
-			Coalesce<I1> cf)  {
+			Coalesce<I1> cf) {
 		this.task = cf;
 		this.root = root;
 		root.finaltask=task;
@@ -776,8 +776,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I2> coalesce(int partition,CoalesceFunction<I2> cf) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I2> coalesce(int partition, CoalesceFunction<I2> cf) throws PipelineException {
 		if(Objects.isNull(cf)) {
 			throw new PipelineException(PipelineConstants.COALESCENULL);
 		}
@@ -793,8 +793,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I2> coalesce(int partition) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I2> coalesce(int partition) throws PipelineException {
 		var mappaircoalesce = new MapPair(root, new Coalesce(partition, null));
 		this.childs.add(mappaircoalesce);
 		mappaircoalesce.parents.add(this);
@@ -806,8 +806,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I2> coalesce() throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I2> coalesce() throws PipelineException {
 		var mappaircoalesce = new MapPair(root, new Coalesce(1, null));
 		this.childs.add(mappaircoalesce);
 		mappaircoalesce.parents.add(this);
@@ -820,8 +820,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I2> reduceByKey(ReduceByKeyFunction<I2> rf) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I2> reduceByKey(ReduceByKeyFunction<I2> rf) throws PipelineException {
 		if(Objects.isNull(rf)) {
 			throw new PipelineException(PipelineConstants.REDUCENULL);
 		}
@@ -837,9 +837,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param cf
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <O1> MapPair(AbstractPipeline root,
-			FoldByKey cf)  {
+			FoldByKey cf) {
 		this.task = cf;
 		this.root = root;
 		root.finaltask=task;
@@ -854,8 +854,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,I2> foldLeft(Object value,ReduceByKeyFunction<I2> rf,int partition,CoalesceFunction<I2> cf) throws PipelineException  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, I2> foldLeft(Object value, ReduceByKeyFunction<I2> rf, int partition, CoalesceFunction<I2> cf) throws PipelineException {
 		if(Objects.isNull(rf)) {
 			throw new PipelineException(PipelineConstants.FOLDLEFTREDUCENULL);
 		}
@@ -883,7 +883,7 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @return MapPair object.
 	 * @throws PipelineException
 	 */
-	public MapPair<I1,I2> foldRight(Object value,ReduceByKeyFunction<I2> rf,int partition,CoalesceFunction<I2> cf) throws PipelineException  {
+	public MapPair<I1, I2> foldRight(Object value, ReduceByKeyFunction<I2> rf, int partition, CoalesceFunction<I2> cf) throws PipelineException {
 		if(Objects.isNull(rf)) {
 			throw new PipelineException(PipelineConstants.FOLDRIGHTREDUCENULL);
 		}
@@ -910,9 +910,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param gbkf
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <T, O1, O2> MapPair(AbstractPipeline root,
-			GroupByKeyFunction gbkf)  {
+			GroupByKeyFunction gbkf) {
 		this.task = gbkf;
 		this.root = root;
 		root.finaltask=task;
@@ -922,8 +922,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * MapPair accepts the groupbykey.
 	 * @return MapPair object.
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,List<I2>> groupByKey()  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, List<I2>> groupByKey() {
 		
 		var mappair = new MapPair(root, new GroupByKeyFunction());
 		this.childs.add(mappair);
@@ -938,11 +938,11 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unchecked")
-	public MapPair<I1,Tuple2<List<I2>,List<I2>>> cogroup(MapPair<I1,I2> mappair2){
+	public MapPair<I1, Tuple2<List<I2>, List<I2>>> cogroup(MapPair<I1, I2> mappair2) {
 		var gbkleft = this.groupByKey();
 		var gbkright = mappair2.groupByKey();
-		var mdp = new MapPair(root, (LeftOuterJoinPredicate<Tuple2<I1,List<I2>>, Tuple2<I1,List<I2>>>)
-				((Tuple2<I1,List<I2>> tuple1, Tuple2<I1,List<I2>> tuple2)->tuple1.v1.equals(tuple2.v1)));
+		var mdp = new MapPair(root, (LeftOuterJoinPredicate<Tuple2<I1, List<I2>>, Tuple2<I1, List<I2>>>)
+				((Tuple2<I1, List<I2>> tuple1, Tuple2<I1, List<I2>> tuple2) -> tuple1.v1.equals(tuple2.v1)));
 		gbkleft.childs.add(mdp);
 		mdp.parents.add(gbkleft);
 		gbkright.childs.add(mdp);
@@ -960,9 +960,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param cbkf
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <T, O1, O2> MapPair(AbstractPipeline root,
-			CountByKeyFunction cbkf)  {
+			CountByKeyFunction cbkf) {
 		this.task = cbkf;
 		this.root = root;
 		root.finaltask=task;
@@ -972,8 +972,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * MapPair accepts the CountByKey function.
 	 * @return MapPair object.
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I1,Long> countByKey()  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I1, Long> countByKey() {
 		
 		var mappair = new MapPair(root, new CountByKeyFunction());
 		this.childs.add(mappair);
@@ -988,7 +988,7 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param cf
 	 */
 	private <O1> MapPair(AbstractPipeline root,
-			HashPartitioner hp)  {
+			HashPartitioner hp) {
 		this.task = hp;
 		this.root = root;
 		root.finaltask=task;
@@ -998,8 +998,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * MapPair accepts the HashPartition object.
 	 * @return MapPair object.
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<Integer,List<Tuple2<I1,I2>>> partition(HashPartitioner partitoner)  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<Integer, List<Tuple2<I1, I2>>> partition(HashPartitioner partitoner) {
 		var mappair = new MapPair(root, partitoner);
 		this.childs.add(mappair);
 		mappair.parents.add(this);
@@ -1014,9 +1014,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param cbkf
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	private <T, O1, O2> MapPair(AbstractPipeline root,
-			CountByValueFunction cbkf)  {
+			CountByValueFunction cbkf) {
 		this.task = cbkf;
 		this.root = root;
 		root.finaltask=task;
@@ -1026,8 +1026,8 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * MapPair accepts the CountByValue function.
 	 * @return MapPair object.
 	 */
-	@SuppressWarnings({ "unchecked" })
-	public MapPair<I2,Long> countByValue()  {
+	@SuppressWarnings({"unchecked"})
+	public MapPair<I2, Long> countByValue() {
 		
 		var mappair = new MapPair(root, new CountByValueFunction());
 		this.childs.add(mappair);
@@ -1040,9 +1040,9 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @param root
 	 * @param tfmf
 	 */
-	@SuppressWarnings({ })
+	@SuppressWarnings({})
 	protected MapPair(AbstractPipeline root,
-			TupleFlatMapFunction<I1,Tuple> tfmf)  {
+			TupleFlatMapFunction<I1,Tuple> tfmf) {
 		this.task = tfmf;
 		this.root = root;
 		root.finaltask=task;
@@ -1057,17 +1057,17 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @throws PipelineException
 	 */
 	@SuppressWarnings("unchecked")
-	public List collect(boolean toexecute,IntSupplier supplier) throws PipelineException {
+	public List collect(boolean toexecute, IntSupplier supplier) throws PipelineException {
 		try {
 			var mdscollect = (StreamPipeline) root;
 			mdscollect.finaltasks.clear();
 			mdscollect.finaltasks.add(task);
 			root.mdsroots.add(root);
-			return mdscollect.collect(toexecute,supplier);
+			return mdscollect.collect(toexecute, supplier);
 		}
 		catch(Exception ex) {
 			log.error(PipelineConstants.PIPELINECOLLECTERROR, ex);
-			throw new PipelineException(PipelineConstants.PIPELINECOLLECTERROR,ex);
+			throw new PipelineException(PipelineConstants.PIPELINECOLLECTERROR, ex);
 		}
 	}
 	
@@ -1106,7 +1106,7 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 		}
 		catch(Exception ex) {
 			log.error(PipelineConstants.PIPELINECOUNTERROR, ex);
-			throw new PipelineException(PipelineConstants.PIPELINECOUNTERROR,ex);
+			throw new PipelineException(PipelineConstants.PIPELINECOUNTERROR, ex);
 		}
 	}
 	
@@ -1126,7 +1126,7 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 			mdscollect.saveAsTextFile(uri, path);
 		} catch (Exception e) {
 			log.error(PipelineConstants.FILEIOERROR, e);
-			throw new PipelineException(PipelineConstants.FILEIOERROR,e);
+			throw new PipelineException(PipelineConstants.FILEIOERROR, e);
 		}
 	}
 	
@@ -1137,16 +1137,16 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 	 * @throws PipelineException
 	 */
 	@SuppressWarnings("unchecked")
-	public void forEach(Consumer<List<Tuple2>> consumer,IntSupplier supplier) throws PipelineException {
+	public void forEach(Consumer<List<Tuple2>> consumer, IntSupplier supplier) throws PipelineException {
 		try {
 			var mdscollect = (StreamPipeline) root;
 			mdscollect.finaltasks.clear();
 			mdscollect.finaltasks.add(task);
 			root.mdsroots.add(root);
-			mdscollect.forEach(consumer,supplier);
+			mdscollect.forEach(consumer, supplier);
 		} catch (Exception e) {
 			log.error(PipelineConstants.PIPELINEFOREACHERROR, e);
-			throw new PipelineException(PipelineConstants.PIPELINEFOREACHERROR,e);
+			throw new PipelineException(PipelineConstants.PIPELINEFOREACHERROR, e);
 		}
 	}
 

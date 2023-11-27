@@ -45,7 +45,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @param tointfunction
 	 */
 	PipelineIntStream(AbstractPipeline root,
-			SToIntFunction<I1> tointfunction)  {
+			SToIntFunction<I1> tointfunction) {
 		this.task = tointfunction;
 		this.root = root;
 		root.finaltask = task;
@@ -58,7 +58,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @param intunaryoperator
 	 */
 	private PipelineIntStream(AbstractPipeline root,
-			IntUnaryOperator intunaryoperator)  {
+			IntUnaryOperator intunaryoperator) {
 		this.task = intunaryoperator;
 		this.root = root;
 		root.finaltask = task;
@@ -71,7 +71,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @param summarystatistics
 	 */
 	private PipelineIntStream(AbstractPipeline root,
-			SummaryStatistics summarystatistics)  {
+			SummaryStatistics summarystatistics) {
 		this.task = summarystatistics;
 		this.root = root;
 		root.finaltask = task;
@@ -84,7 +84,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @param sum
 	 */
 	private PipelineIntStream(AbstractPipeline root,
-			Sum sum)  {
+			Sum sum) {
 		this.task = sum;
 		this.root = root;
 		root.finaltask = task;
@@ -96,7 +96,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @param max
 	 */
 	private PipelineIntStream(AbstractPipeline root,
-			Max max)  {
+			Max max) {
 		this.task = max;
 		this.root = root;
 		root.finaltask = task;
@@ -108,7 +108,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @param min
 	 */
 	private PipelineIntStream(AbstractPipeline root,
-			Min min)  {
+			Min min) {
 		this.task = min;
 		this.root = root;
 		root.finaltask = task;
@@ -119,7 +119,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @param min
 	 */
 	private PipelineIntStream(AbstractPipeline root,
-			StandardDeviation stddev)  {
+			StandardDeviation stddev) {
 		this.task = stddev;
 		this.root = root;
 		root.finaltask = task;
@@ -131,7 +131,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @return
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	public PipelineIntStream<I1> map(IntUnaryOperator intunaryoperator)  {
+	public PipelineIntStream<I1> map(IntUnaryOperator intunaryoperator) {
 		var map = new PipelineIntStream(root, intunaryoperator);
 		map.parents.add(this);
 		this.childs.add(map);
@@ -155,7 +155,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @return integer stream pipeline object
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	public PipelineIntStream<I1> distinct()  {
+	public PipelineIntStream<I1> distinct() {
 		var distinct = new Distinct();
 		var map = new PipelineIntStream(root, distinct);
 		map.parents.add(this);
@@ -170,7 +170,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @param piplinint
 	 */
 	private PipelineIntStream(AbstractPipeline root,
-			PipelineIntStreamCollect piplinint)  {
+			PipelineIntStreamCollect piplinint) {
 		this.task = piplinint;
 		this.root = root;
 		root.finaltask = task;
@@ -189,7 +189,7 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public <R> List collect(boolean toexecute, AtomicIntegerSupplier<R> supplier,
 			AtomicObjIntConsumer<R> objintconsumer,
-			AtomicBiConsumer<R, R> biconsumer) throws PipelineException  {
+			AtomicBiConsumer<R, R> biconsumer) throws PipelineException {
 		log.debug("Collect task begin...");
 		var pintstr = new PipelineIntStream(root, new PipelineIntStreamCollect(supplier,
 				objintconsumer, biconsumer));

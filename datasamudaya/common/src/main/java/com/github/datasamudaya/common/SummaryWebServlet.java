@@ -16,7 +16,7 @@ import com.github.datasamudaya.common.utils.Utils;
 
 public class SummaryWebServlet extends HttpServlet {
 	private static final long serialVersionUID = -1208090049509225305L;
-	private static Logger log = Logger.getLogger(TaskSchedulerWebServlet.class);
+	private static final Logger log = Logger.getLogger(TaskSchedulerWebServlet.class);
 
 	/**
 	 * The implementation method doGet of HttpServlet class implements for getting
@@ -34,7 +34,7 @@ public class SummaryWebServlet extends HttpServlet {
 		try {
 			var jm = DataSamudayaJobMetrics.get();
 			StringBuilder builder = new StringBuilder();
-			builder.append(String.format("""
+			builder.append("""
 					<html>
 					<head>
 					<link href="%s/resources/datatables/DataTables-1.13.8/css/jquery.dataTables.css" rel="stylesheet">
@@ -48,7 +48,7 @@ public class SummaryWebServlet extends HttpServlet {
 					<script src="%s/resources/datatables/DataTables-1.13.8/js/jquery.dataTables.js"></script>
 					<script src="%s/resources/datatables/Buttons-2.4.2/js/dataTables.buttons.js"></script>
 					<script src="%s/resources/datatables/Buttons-2.4.2/js/buttons.html5.js"></script>          
-					</head><body>""", contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath));
+					</head><body>""".formatted(contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath));
 			builder.append(summary(jm.get(jobid)));
 			builder.append("""
 					</body>
@@ -78,8 +78,8 @@ public class SummaryWebServlet extends HttpServlet {
 	        tasksummary.append(":");
 	        tasksummary.append("</H1>");
 	        tasksummary.append("<BR/>");
-	        tasksummary.append(String.format(
-	                """
+	        tasksummary.append(
+							"""
 	        			<script language="Javascript" type="text/javascript">
 			      		$(document).ready(function(){
 			      			var res%s = $('#summary%s').DataTable({
@@ -101,13 +101,13 @@ public class SummaryWebServlet extends HttpServlet {
 	                    <th>Generated<Br/>Output<BR/>Size</th>
 	                    <th>Converted<Br/>Input<BR/>Size</th>
 	                    </thead>
-	                    <tbody>""",aint.get(), aint.get(), aint.getAndIncrement()));
+	                    <tbody>""".formatted(aint.get(), aint.get(), aint.getAndIncrement()));
 	        double totaltimetakenexecutor = 0d;
 	        double totalmbprocessed = 0d;
 	        double blocksinmb = 0d;
-	        int i=0;
+	        int i = 0;
 	        for (Task task : entry.getValue()) {
-	          tasksummary.append("<tr bgcolor=\"" + Utils.getColor(i++) + "\">");
+	          tasksummary.append("<tr bgcolor=\"").append(Utils.getColor(i++)).append("\">");
 	          tasksummary.append("<td>");
 	          tasksummary.append(task.taskid);
 	          tasksummary.append("</td>");
@@ -120,7 +120,7 @@ public class SummaryWebServlet extends HttpServlet {
 	          tasksummary.append("<td>");
 	          tasksummary.append(task.timetakenseconds);
 	          tasksummary.append("</td>");
-	          blocksinmb = task.numbytesprocessed/DataSamudayaConstants.MB;
+	          blocksinmb = task.numbytesprocessed / DataSamudayaConstants.MB;
 	          totalmbprocessed += blocksinmb;
 	          tasksummary.append("<td>");
 	          tasksummary.append(blocksinmb);
@@ -140,9 +140,9 @@ public class SummaryWebServlet extends HttpServlet {
 	        tasksummary.append("</tbody></table>");
 	        tasksummary.append("<H3 align=\"center\">");
 	        tasksummary.append("<BR/>");
-	        tasksummary.append("Total Block Size:"+totalmbprocessed);
+	        tasksummary.append("Total Block Size:").append(totalmbprocessed);
 	        tasksummary.append("<BR/>");
-	        tasksummary.append("Average Time Per Task:"+(totaltimetakenexecutor / entry.getValue().size()));
+	        tasksummary.append("Average Time Per Task:" + (totaltimetakenexecutor / entry.getValue().size()));
 	        tasksummary.append("</H3>");
 	        tasksummary.append("<BR/>");
 	      });

@@ -30,13 +30,13 @@ import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 
 public class SqlUniqueCarrierSumCountDepDelayLocal implements Serializable, Pipeline {
 	private static final long serialVersionUID = -7001849661976107123L;
-	private Logger log = Logger.getLogger(SqlUniqueCarrierSumCountDepDelayLocal.class);
+	private final Logger log = Logger.getLogger(SqlUniqueCarrierSumCountDepDelayLocal.class);
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
 			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime",
 			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
 			"Cancelled", "CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
 			"LateAircraftDelay");
-	List<SqlTypeName> airsqltype = Arrays.asList(SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT, SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.VARCHAR,SqlTypeName.BIGINT,SqlTypeName.VARCHAR,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.VARCHAR,SqlTypeName.VARCHAR,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.VARCHAR,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT);
+	List<SqlTypeName> airsqltype = Arrays.asList(SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT);
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carriersqltype = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
 
@@ -55,8 +55,10 @@ public class SqlUniqueCarrierSumCountDepDelayLocal implements Serializable, Pipe
 	@SuppressWarnings({"unchecked"})
 	public void testSql(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("SqlUniqueCarrierSumCountDepDelayLocal.testSql Before---------------------------------------");
-		String statement = "SELECT airline.UniqueCarrier,sum(airline.DepDelay),count(*) "
-				+ "FROM airline where airline.DepDelay<>'NA' and airline.DepDelay<>'DepDelay' group by airline.UniqueCarrier";
+		String statement = """
+				SELECT airline.UniqueCarrier,sum(airline.DepDelay),count(*) \
+				FROM airline where airline.DepDelay<>'NA' and airline.DepDelay<>'DepDelay' group by airline.UniqueCarrier\
+				""";
 		StreamPipelineSql mdpsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airsqltype)
 				.setHdfs(args[0])
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();

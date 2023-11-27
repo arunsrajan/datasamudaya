@@ -37,7 +37,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
  * The configuration for pipeline interfaces.
  */
 public class PipelineConfig implements Serializable, Cloneable {
-	private static Logger log = LoggerFactory.getLogger(PipelineConfig.class);
+	private static final Logger log = LoggerFactory.getLogger(PipelineConfig.class);
 	private static final long serialVersionUID = 1L;
 	transient private OutputStream  output, pigoutput;
 	private String blocksize;

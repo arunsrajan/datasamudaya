@@ -170,7 +170,7 @@ public class Optimizer {
 		);
 	}
 	
-	private static List<SqlFunction> getAllSqlFunctions(){
+	private static List<SqlFunction> getAllSqlFunctions() {
 		
 		SqlFunction sqrtFunction = new SqlFunction("sqrt",
                 SqlKind.OTHER_FUNCTION,
@@ -298,7 +298,7 @@ public class Optimizer {
                 SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces,
-				substring,base64encode, base64decode,
+				substring, base64encode, base64decode,
 				uppercase, lowercase, loge, pow, sqrt,
 				ceil, floor, round, abs, current_iso_date, grp_concat);
 		

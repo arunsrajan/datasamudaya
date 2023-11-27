@@ -18,9 +18,10 @@ import org.ehcache.config.builders.CacheConfigurationBuilder;
 import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.config.units.MemoryUnit;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.isNull;;
+import static java.util.Objects.isNull;
 
 /**
  * 
@@ -28,7 +29,7 @@ import static java.util.Objects.isNull;;
  */
 public class CacheUtils {
 
-  static org.slf4j.Logger log = LoggerFactory.getLogger(CacheUtils.class);
+  static Logger log = LoggerFactory.getLogger(CacheUtils.class);
 
   private CacheUtils() {}
 
@@ -75,8 +76,8 @@ public class CacheUtils {
     }
   }
 
-  private static Cache<?,?> createCache(CacheManager cacheManager, String cachename, Class<?> keytype
-		  , Class<?> valuetype, long numbuffsize, int disksizeingb){
+  private static Cache<?, ?> createCache(CacheManager cacheManager, String cachename, Class<?> keytype
+		  , Class<?> valuetype, long numbuffsize, int disksizeingb) {
 	  return cacheManager.createCache(cachename,
               CacheConfigurationBuilder.newCacheConfigurationBuilder(
             		  keytype, valuetype,
@@ -89,7 +90,7 @@ public class CacheUtils {
   /**
    * This function initializes cache for the entire JVM.
    */
-  public static void initCache(String cacheName,String diskpath) {
+  public static void initCache(String cacheName, String diskpath) {
     log.debug("Entered CacheUtils.initCache");
     String cacheduration = (String) DataSamudayaProperties.get().get(DataSamudayaConstants.CACHEDURATION);
     DataSamudayaCache

@@ -60,7 +60,7 @@ import org.apache.log4j.Logger;
  */
 public class HdfsBlockReader {
 
-	private static Logger log = Logger.getLogger(HdfsBlockReader.class);
+	private static final Logger log = Logger.getLogger(HdfsBlockReader.class);
 
 	/**
 	 * This method gets the data in bytes from hdfs given the blocks location.

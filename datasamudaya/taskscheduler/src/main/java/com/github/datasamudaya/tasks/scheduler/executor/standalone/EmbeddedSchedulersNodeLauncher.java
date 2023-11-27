@@ -26,6 +26,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.log4j.PropertyConfigurator;
+import org.burningwave.core.assembler.StaticComponentContainer;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.io.Input;
@@ -53,13 +55,14 @@ import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 import com.github.datasamudaya.tasks.scheduler.TaskScheduler;
 import com.github.datasamudaya.tasks.scheduler.sql.SQLServerMR;
+
 /**
  * This class starts the stream scheduler, mr scheduler and node launcher.
  * @author arun
  *
  */
 public class EmbeddedSchedulersNodeLauncher {
-	static org.slf4j.Logger log = LoggerFactory.getLogger(EmbeddedSchedulersNodeLauncher.class);
+	static Logger log = LoggerFactory.getLogger(EmbeddedSchedulersNodeLauncher.class);
 
 	public static final String STOPPINGANDCLOSECONNECTION = "Stopping and closes all the connections...";
 	private static final Semaphore lock = new Semaphore(1);
@@ -82,15 +85,15 @@ public class EmbeddedSchedulersNodeLauncher {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		var cdl = new CountDownLatch(3);		
 		try (var zo = new ZookeeperOperations();) {			
 			zo.connect();
-			zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), (event)->{
+			zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
 				log.info("Node Created");
 			});
 			zo.watchNodes();
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			String cacheid = DataSamudayaConstants.BLOCKCACHE;
 			CacheUtils.initCache(cacheid, 
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
@@ -148,9 +151,9 @@ public class EmbeddedSchedulersNodeLauncher {
 		Runtime.getRuntime().halt(0);
 	}
 
-	static Registry server = null;
+	static Registry server;
 
-	public static void startContainerLauncher(ZookeeperOperations zo,CountDownLatch cdl) {
+	public static void startContainerLauncher(ZookeeperOperations zo, CountDownLatch cdl) {
 		try {
 			var port = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
 			var host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
@@ -163,8 +166,8 @@ public class EmbeddedSchedulersNodeLauncher {
 			resource.setTotaldisksize(Utils.totaldiskspace());
 			resource.setUsabledisksize(Utils.usablediskspace());
 			resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
-			zo.createNodesNode(host+DataSamudayaConstants.UNDERSCORE+port, resource, (event)->{
-				log.info("{}",event);
+			zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + port, resource, event -> {
+				log.info("{}", event);
 			});
 			var hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					new Configuration());
@@ -236,18 +239,18 @@ public class EmbeddedSchedulersNodeLauncher {
 		}
 	}
 
-	static StreamDataCruncher stub = null;
-	static StreamDataCruncher datacruncher = null;
+	static StreamDataCruncher stub;
+	static StreamDataCruncher datacruncher;
 
 	public static void startTaskSchedulerStream(ZookeeperOperations zo, CountDownLatch cdl) throws Exception {
 		var cdlstream = new CountDownLatch(1);
 		var zookeeperid = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST))
 				+ DataSamudayaConstants.UNDERSCORE + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_PORT);
-		zo.leaderElectionSchedulerStream(zookeeperid,new LeaderLatchListener(){
+		zo.leaderElectionSchedulerStream(zookeeperid, new LeaderLatchListener(){
 
 			@Override
 			public void isLeader() {
-				log.info("Stream Scheduler Node {} elected as leader",zookeeperid);
+				log.info("Stream Scheduler Node {} elected as leader", zookeeperid);
 				try {
 					zo.setLeaderStream(zookeeperid.getBytes());
 					cdlstream.countDown();
@@ -269,7 +272,7 @@ public class EmbeddedSchedulersNodeLauncher {
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
-				new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH,new SummaryWebServlet(),
+				new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH, new SummaryWebServlet(),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.ASTERIX);
 		su.start();				
@@ -292,19 +295,21 @@ public class EmbeddedSchedulersNodeLauncher {
 						while (true) {
 							var len = in.readInt();
 							byte buffer[] = new byte[len]; // this could be reused !
-							while (len > 0)
+							while (len > 0) {
 								len -= in.read(buffer, buffer.length - len, len);
+							}
 							// skipped: check for stream close
 							Object obj = Utils.getKryo().readClassAndObject(new Input(buffer));
-							if (obj instanceof Integer brkintval && brkintval == -1)
+							if (obj instanceof Integer brkintval && brkintval == -1) {
 								break;
+							}
 							bytesl.add((byte[]) obj);
 						}
 						String[] arguments = null;
 						if (bytesl.size() > 2) {
 							var totalargs = bytesl.size();
 							arguments = new String[totalargs - 1];
-							for (var index = 2; index < totalargs; index++) {
+							for (var index = 2;index < totalargs;index++) {
 								arguments[index - 2] = new String(bytesl.get(index));
 							}
 						}
@@ -377,11 +382,11 @@ public class EmbeddedSchedulersNodeLauncher {
 		var cdlmr = new CountDownLatch(1);
 		var zookeeperid = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST))
 				+ DataSamudayaConstants.UNDERSCORE + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PORT);
-		zo.leaderElectionScheduler(zookeeperid,new LeaderLatchListener(){
+		zo.leaderElectionScheduler(zookeeperid, new LeaderLatchListener(){
 
 			@Override
 			public void isLeader() {
-				log.info("Scheduler Node {} elected as leader",zookeeperid);
+				log.info("Scheduler Node {} elected as leader", zookeeperid);
 				try {
 					zo.setLeader(zookeeperid.getBytes());
 					cdlmr.countDown();
@@ -400,7 +405,7 @@ public class EmbeddedSchedulersNodeLauncher {
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_WEB_PORT)),
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
-						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,new SummaryWebServlet(),
+						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new SummaryWebServlet(),
 						DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY + DataSamudayaConstants.FORWARD_SLASH
 						+ DataSamudayaConstants.ASTERIX);
 		su.start();
@@ -419,19 +424,21 @@ public class EmbeddedSchedulersNodeLauncher {
 					while (true) {
 						var len = in.readInt();
 						byte buffer[] = new byte[len]; // this could be reused !
-						while (len > 0)
+						while (len > 0) {
 							len -= in.read(buffer, buffer.length - len, len);
+						}
 						// skipped: check for stream close
 						Object obj = Utils.getKryo().readClassAndObject(new Input(buffer));
-						if (obj instanceof Integer brkintval && brkintval == -1)
+						if (obj instanceof Integer brkintval && brkintval == -1) {
 							break;
+						}
 						bytesl.add((byte[]) obj);
 					}
 					String[] arguments = null;
 					if (bytesl.size() > 2) {
 						var totalargs = bytesl.size();
 						arguments = new String[totalargs - 1];
-						for (var index = 2; index < totalargs; index++) {
+						for (var index = 2;index < totalargs;index++) {
 							arguments[index - 2] = new String(bytesl.get(index));
 						}
 					}

@@ -34,6 +34,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.client.HdfsDataInputStream;
 import org.apache.hadoop.hdfs.protocol.LocatedBlock;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -45,9 +46,9 @@ public class HDFSBlockUtils {
 
 	private HDFSBlockUtils() {
 	}
-	static org.slf4j.Logger log = LoggerFactory.getLogger(HDFSBlockUtils.class);
-	
-	private static Semaphore lock = new Semaphore(1);
+	static Logger log = LoggerFactory.getLogger(HDFSBlockUtils.class);
+
+	private static final Semaphore lock = new Semaphore(1);
 
 	/**
 	 * This function returns list of blocks location using the block size obtained from HDFS.
@@ -110,7 +111,7 @@ public class HDFSBlockUtils {
 									bls = blocklocationsl.get(blocklocationsl.size() - 1);
 									bls.getBlock()[1] = new Block();
 									bls.getBlock()[1].setBlockstart(0);
-									bls.getBlock()[1].setBlockend(skipbytes );
+									bls.getBlock()[1].setBlockend(skipbytes);
 									bls.getBlock()[1].setBlockOffset(lb.getStartOffset());
 									bls.getBlock()[1].setFilename(filepath.toUri().toString());
 									bls.getBlock()[1].setDnxref(dninfos.stream().map(dninfo -> dninfo.getXferAddr())

@@ -64,7 +64,7 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroup
  *
  */
 public class TaskExecutor implements Callable<Object> {
-  private static Logger log = LoggerFactory.getLogger(TaskExecutor.class);
+	private static final Logger log = LoggerFactory.getLogger(TaskExecutor.class);
   int port;
   ExecutorService es;
   ConcurrentMap<String, OutputStream> resultstream;
@@ -119,8 +119,8 @@ public class TaskExecutor implements Callable<Object> {
 	
 	var hp = host+DataSamudayaConstants.UNDERSCORE+port;
 	
-	zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), (event)->{
-		log.info("TaskExecutor {} initialized and started",hp);
+	zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
+		log.info("TaskExecutor {} initialized and started", hp);
 	});
 
   }

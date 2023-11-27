@@ -56,7 +56,7 @@ public class SelectQueryExecutorMR {
 					.setIsuseglobalte(!isyarn)
 					.setUser(user)
 					.setTeappid(teappid)
-					.setExecmode(isyarn?DataSamudayaConstants.EXECMODE_YARN:DataSamudayaConstants.EXECMODE_DEFAULT)
+					.setExecmode(isyarn ? DataSamudayaConstants.EXECMODE_YARN : DataSamudayaConstants.EXECMODE_DEFAULT)
 					.build();
 			CCJSqlParserManager parserManager = new CCJSqlParserManager();
 			Validation validation = new Validation(Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB,
@@ -89,7 +89,7 @@ public class SelectQueryExecutorMR {
 					List<String> tablecolumn = new ArrayList<>();
 					List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 					for (ColumnMetadata columnMetadata : columnMetadatas) {
-						if (columnMetadata.getColumnName().toLowerCase().equals("hdfslocation")) {
+						if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 							hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
 						} else {
 							tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
@@ -163,7 +163,7 @@ public class SelectQueryExecutorMR {
 					List<String> tablecolumn = new ArrayList<>();
 					List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 					for (ColumnMetadata columnMetadata : columnMetadatas) {
-						if (columnMetadata.getColumnName().toLowerCase().equals("hdfslocation")) {
+						if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 							hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
 						} else {
 							tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
@@ -190,6 +190,9 @@ public class SelectQueryExecutorMR {
 			return errors;
 		}
 		return new ArrayList<>();
+	}
+
+	private SelectQueryExecutorMR() {
 	}
 
 }

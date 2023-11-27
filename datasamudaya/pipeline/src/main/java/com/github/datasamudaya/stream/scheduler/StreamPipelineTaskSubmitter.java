@@ -73,7 +73,7 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 			String hostport[] = hp.split(DataSamudayaConstants.UNDERSCORE);
 			Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
 			StreamDataCruncher sdc = (StreamDataCruncher) registry.lookup(DataSamudayaConstants.BINDTESTUB
-					+ DataSamudayaConstants.HYPHEN+jobid);
+					+ DataSamudayaConstants.HYPHEN + jobid);
 			return sdc.postObject(task);
 		} catch (Exception ex) {
 			log.error("Unable to connect and submit tasks to executor with host and port: " + hp, ex);
@@ -85,7 +85,7 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((task == null) ? 0 : task.hashCode());
+		result = prime * result + (task == null ? 0 : task.hashCode());
 		return result;
 	}
 

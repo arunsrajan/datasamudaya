@@ -72,7 +72,7 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 	static FileSystem hdfs;
 	static Path[] paths;
 	static List<BlocksLocation> bls;
-	static Registry server = null;
+	static Registry server;
 	private static ZookeeperOperations zo;
 	
 	@BeforeClass
@@ -95,13 +95,13 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		ConcurrentMap<String, Resources> noderesourcesmap = new ConcurrentHashMap<>();
 		zo = new ZookeeperOperations();
 		DataSamudayaNodesResources.put(noderesourcesmap);
-		for (; nodeindex < NOOFNODES; nodeindex++) {
+		for (;nodeindex < NOOFNODES;nodeindex++) {
 			Resources resource = new Resources();
 			int memory = 4;
 			resource.setFreememory(memory * DataSamudayaConstants.GB);
 			resource.setNumberofprocessors(2);
 			noderesourcesmap.put("127.0.0.1_" + (20000 + nodeindex), resource);
-			server = Utils.getRPCRegistry(20000+nodeindex,
+			server = Utils.getRPCRegistry(20000 + nodeindex,
 					new StreamDataCruncher() {
 				public Object postObject(Object object)throws RemoteException {
 						try {

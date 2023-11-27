@@ -150,7 +150,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	 * 
 	 * @return
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	protected List getFunctions() {
 		log.debug("Entered MassiveDataStreamTaskIgnite.getFunctions");
 		var tasks = jobstage.getStage().tasks;
@@ -226,7 +226,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	 * @return timetaken in seconds
 	 * @throws Exception
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSIntersection(Set<InputStream> fsstreamfirst, List<BlocksLocation> blockssecond,
 			FileSystem hdfs) throws Exception {
 		var starttime = System.currentTimeMillis();
@@ -269,7 +269,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSIntersection(List<InputStream> fsstreamfirst, List<InputStream> fsstreamsecond)
 			throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -352,7 +352,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSUnion(BlocksLocation blocksfirst, BlocksLocation blockssecond, FileSystem hdfs)
 			throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -373,10 +373,10 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			List result;
 			if (terminalCount) {
 				result = new Vector<>();
-				result.add(java.util.stream.Stream.concat(streamfirst, streamsecond).distinct().count());
+				result.add(Stream.concat(streamfirst, streamsecond).distinct().count());
 			} else {
 				// parallel stream union operation result
-				result = (List) java.util.stream.Stream.concat(streamfirst, streamsecond).distinct()
+				result = (List) Stream.concat(streamfirst, streamsecond).distinct()
 						.collect(Collectors.toCollection(Vector::new));
 			}
 
@@ -405,7 +405,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSUnion(Set<InputStream> fsstreamfirst, List<BlocksLocation> blockssecond,
 			FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -427,10 +427,10 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			List result;
 			if (terminalCount) {
 				result = new Vector<>();
-				result.add(java.util.stream.Stream.concat(datafirst.parallelStream(), streamsecond).distinct().count());
+				result.add(Stream.concat(datafirst.parallelStream(), streamsecond).distinct().count());
 			} else {
 				// parallel stream union operation result
-				result = (List) java.util.stream.Stream.concat(datafirst.parallelStream(), streamsecond).distinct()
+				result = (List) Stream.concat(datafirst.parallelStream(), streamsecond).distinct()
 						.collect(Collectors.toCollection(Vector::new));
 			}
 			Utils.getKryo().writeClassAndObject(output, result);
@@ -457,7 +457,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSUnion(List<InputStream> fsstreamfirst, List<InputStream> fsstreamsecond)
 			throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -480,11 +480,11 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 
 			if (terminalCount) {
 				result = new ArrayList<>();
-				result.add(java.util.stream.Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
+				result.add(Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
 						.distinct().count());
 			} else {
 				// parallel stream union operation result
-				result = (List) java.util.stream.Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
+				result = (List) Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
 						.distinct().collect(Collectors.toCollection(Vector::new));
 			}
 
@@ -594,7 +594,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 
 				} else if (function instanceof StandardDeviation) {
 					out = new Vector<>();
-					var streamtmp = ((java.util.stream.IntStream) streammap).boxed().collect(Collectors.toList());
+					var streamtmp = ((IntStream) streammap).boxed().collect(Collectors.toList());
 					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
 					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
@@ -681,7 +681,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 
 						} else if (function instanceof StandardDeviation) {
 							out = new Vector<>();
-							var streamtmp = (List) ((java.util.stream.IntStream) streammap).boxed()
+							var streamtmp = (List) ((IntStream) streammap).boxed()
 									.collect(Collectors.toList());
 							var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
 							var variance = (double) streamtmp.stream().mapToInt(Integer.class::cast)
@@ -832,9 +832,9 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			if (task.input != null && task.parentremotedatafetch != null) {
 				if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
 					var numinputs = task.parentremotedatafetch.length;
-					for (var inputindex = 0; inputindex<numinputs;inputindex++) {
+					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.parentremotedatafetch[inputindex];
-						if(input != null) {
+						if (input != null) {
 							var rdf = (RemoteDataFetch) input;
 							task.input[inputindex] = new ByteArrayInputStream(
 									cache.get(rdf.getJobid() + rdf.getStageid() + rdf.getTaskid()));
@@ -842,9 +842,9 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 					}
 				} else if(task.input!=null && task.input[0]!=null) {
 					var numinputs = task.input.length;
-					for (var inputindex = 0; inputindex<numinputs;inputindex++) {
+					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.input[inputindex];
-						if(input != null && input instanceof Task inputtask) {
+						if (input != null && input instanceof Task inputtask) {
 							task.input[inputindex] = new ByteArrayInputStream(
 									cache.get(inputtask.jobid + inputtask.stageid + inputtask.taskid));
 						}
@@ -879,11 +879,11 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				streamsecond = HdfsBlockReader.getBlockDataInputStream(blsecond, hdfs);
 			} else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
 					|| ((task.input[0] instanceof InputStream) && task.input[1] instanceof BlocksLocation)) {
-				streamfirst = task.input[0] instanceof BlocksLocation
-						? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[0], hdfs)
+				streamfirst = task.input[0] instanceof BlocksLocation bl
+						? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
 						: (InputStream) task.input[0];
-				streamsecond = task.input[1] instanceof BlocksLocation
-						? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[1], hdfs)
+				streamsecond = task.input[1] instanceof BlocksLocation bl
+						? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
 						: (InputStream) task.input[1];
 			} else {
 				streamfirst = (InputStream) task.input[0];
@@ -910,11 +910,11 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				streamsecond = HdfsBlockReader.getBlockDataInputStream(blsecond, hdfs);
 			} else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
 					|| ((task.input[0] instanceof InputStream) && task.input[1] instanceof BlocksLocation)) {
-				streamfirst = task.input[0] instanceof BlocksLocation
-						? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[0], hdfs)
+				streamfirst = task.input[0] instanceof BlocksLocation bl
+						? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
 						: (InputStream) task.input[0];
-				streamsecond = task.input[1] instanceof BlocksLocation
-						? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[1], hdfs)
+				streamsecond = task.input[1] instanceof BlocksLocation bl
+						? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
 						: (InputStream) task.input[1];
 			} else {
 				streamfirst = (InputStream) task.input[0];
@@ -940,11 +940,11 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				streamsecond = HdfsBlockReader.getBlockDataInputStream(blsecond, hdfs);
 			} else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
 					|| ((task.input[0] instanceof InputStream) && task.input[1] instanceof BlocksLocation)) {
-				streamfirst = task.input[0] instanceof BlocksLocation
-						? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[0], hdfs)
+				streamfirst = task.input[0] instanceof BlocksLocation bl
+						? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
 						: (InputStream) task.input[0];
-				streamsecond = task.input[1] instanceof BlocksLocation
-						? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[1], hdfs)
+				streamsecond = task.input[1] instanceof BlocksLocation bl
+						? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
 						: (InputStream) task.input[1];
 			} else {
 				streamfirst = (InputStream) task.input[0];
@@ -1333,13 +1333,13 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			            		&& tuple2.v2 instanceof Map) {
 			            	Map<String,Object> keyvaluemap = (Map<String, Object>) inputs1.get(0);
 			            	Map<String,Object> nullmap = new HashMap<>();
-			            	keyvaluemap.keySet().forEach(key->nullmap.put(key, null));
+			            	keyvaluemap.keySet().forEach(key -> nullmap.put(key, null));
 			            	joinpairsout = (List) joinpairsout.stream()
 			                        .filter(val -> val instanceof Tuple2).map(value -> {
 			                          Tuple2 maprec = (Tuple2) value;
-			                          Map<String,Object> rec1 = (Map<String, Object>) maprec.v1;
-			                          Map<String,Object> rec2 = (Map<String, Object>) maprec.v2;
-			                          if(rec1 == null) {
+			                          Map<String, Object> rec1 = (Map<String, Object>) maprec.v1;
+			                          Map<String, Object> rec2 = (Map<String, Object>) maprec.v2;
+			                          if (rec1 == null) {
 			                        	  return new Tuple2(nullmap, rec2); 
 			                          }
 			                          return maprec;
@@ -1726,7 +1726,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 						.collect(Collectors.groupingBy(tup2 -> tup2.v1.hashCode() % partitionnumber, HashMap::new,
 								Collectors.mapping(tup2 -> tup2, Collectors.toList())));
 				output = new ArrayList<Tuple2<Integer, List<Tuple2>>>();
-				for (int partitionindex = 0; partitionindex < partitionnumber; partitionindex++) {
+				for (int partitionindex = 0;partitionindex < partitionnumber;partitionindex++) {
 					output.add(new Tuple2<Integer, List<Tuple2>>(Integer.valueOf(partitionindex),
 							mappartitoned.get(partitionindex)));
 				}
@@ -1778,15 +1778,15 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	          Map<Object, List<Object>> mapgroupby =
 	              keyvaluepairs.parallelStream()
 	                  .collect(Collectors.groupingBy(
-	                		  obj->gbf.apply(obj), 
+	                		  obj -> gbf.apply(obj), 
 	                		  HashMap::new,
-	                		  Collectors.mapping(obj->obj, Collectors.toList())));
+	                		  Collectors.mapping(obj -> obj, Collectors.toList())));
 	          output = mapgroupby.keySet().stream()
-	          .map(key->new Tuple2<Object,List<Object>>(key,mapgroupby.get(key)))
+	          .map(key -> new Tuple2<Object, List<Object>>(key, mapgroupby.get(key)))
 	          .collect(Collectors.toList());
 	          
 	        }     
-	      Utils.getKryo().writeClassAndObject(currentoutput,output);
+	      Utils.getKryo().writeClassAndObject(currentoutput, output);
 	      currentoutput.flush();
 	      cache.put(task.jobid + task.stageid + task.taskid, fsdos.toByteArray());
 	      log.debug("Exiting StreamPipelineTaskExecutor.processHashPartition");

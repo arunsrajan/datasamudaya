@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -62,11 +63,11 @@ public class JShellServer {
 
 							String line;
 							while ((line = in.readLine()) != null) {
-								if (line.equalsIgnoreCase("quit")) {
+								if ("quit".equalsIgnoreCase(line)) {
 									out.println("Quit");
 									break;
 								}
-								java.util.List<SnippetEvent> events = jshell.eval(line);
+								List<SnippetEvent> events = jshell.eval(line);
 								for (SnippetEvent event : events) {
 									if (event.status() == Snippet.Status.REJECTED && nonNull(event.exception())) {
 										out.println(event.exception().getMessage());
@@ -85,5 +86,8 @@ public class JShellServer {
 				}
 			}
 		});
+	}
+
+	private JShellServer() {
 	}
 }

@@ -23,6 +23,7 @@ import java.net.URI;
 import java.util.LinkedHashSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.log4j.Logger;
@@ -43,7 +44,7 @@ import static java.util.Objects.*;
 public class RemoteDataFetcher {
 	private RemoteDataFetcher() {
 	}
-	private static Logger log = Logger.getLogger(RemoteDataFetcher.class);
+	private static final Logger log = Logger.getLogger(RemoteDataFetcher.class);
 
 	/**
 	 * Write the intermediate and final stage output to HDFS.
@@ -58,8 +59,8 @@ public class RemoteDataFetcher {
 		log.debug("Entered RemoteDataFetcher.writerIntermediatePhaseOutputToDFS");
 		var configuration = new Configuration();
 		configuration.set(DataSamudayaConstants.HDFS_DEFAULTFS, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT));
-		configuration.set(DataSamudayaConstants.HDFS_IMPL, org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-		configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, org.apache.hadoop.fs.LocalFileSystem.class.getName());
+		configuration.set(DataSamudayaConstants.HDFS_IMPL, DistributedFileSystem.class.getName());
+		configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, LocalFileSystem.class.getName());
 		var jobpath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 				+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + jobid;
 		var filepath = jobpath + DataSamudayaConstants.FORWARD_SLASH + filename;
@@ -154,8 +155,8 @@ public class RemoteDataFetcher {
 		log.debug("Entered RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS");
 		var configuration = new Configuration();
 		configuration.set(DataSamudayaConstants.HDFS_DEFAULTFS, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT));
-		configuration.set(DataSamudayaConstants.HDFS_IMPL, org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-		configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, org.apache.hadoop.fs.LocalFileSystem.class.getName());
+		configuration.set(DataSamudayaConstants.HDFS_IMPL, DistributedFileSystem.class.getName());
+		configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, LocalFileSystem.class.getName());
 
 		var jobpath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + dirtowrite;
 		var filepath = jobpath + DataSamudayaConstants.FORWARD_SLASH + filename;

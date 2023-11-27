@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 public class WebResourcesServlet extends HttpServlet {
 
   private static final long serialVersionUID = 8713220540678338208L;
-  private static Logger log = Logger.getLogger(WebResourcesServlet.class);
+	private static final Logger log = Logger.getLogger(WebResourcesServlet.class);
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws IOException {

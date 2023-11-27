@@ -109,12 +109,12 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 		var dnxrefs = bls.stream().parallel().flatMap(bl -> {
 			var xrefs = new LinkedHashSet<String>();
 			Iterator<Set<String>> xref = bl.getBlock()[0].getDnxref().values().iterator();
-			for (; xref.hasNext(); ) {
+			for (;xref.hasNext();) {
 				xrefs.addAll(xref.next());
 			}
 			if (bl.getBlock().length > 1 && !Objects.isNull(bl.getBlock()[1])) {
 				xref = bl.getBlock()[0].getDnxref().values().iterator();
-				for (; xref.hasNext(); ) {
+				for (;xref.hasNext();) {
 					xrefs.addAll(xref.next());
 				}
 			}

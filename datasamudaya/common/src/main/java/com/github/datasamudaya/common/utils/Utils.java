@@ -73,6 +73,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import com.sun.management.OperatingSystemMXBean;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
@@ -101,6 +102,7 @@ import org.jgroups.util.UUID;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.objenesis.strategy.StdInstantiatorStrategy;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.yarn.YarnSystemConstants;
@@ -166,7 +168,7 @@ import net.sf.jsqlparser.schema.Table;
  *         socket.
  */
 public class Utils {
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(Utils.class);
+	private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
 	private Utils() {
 	}
@@ -246,7 +248,7 @@ public class Utils {
 					int noofusers = userswithshare / 2;
 					var userssharepercentage = new ConcurrentHashMap<String, User>();
 					double sharepercentagetotal = 0;
-					for (int usercount = 0; usercount < noofusers; usercount++) {
+					for (int usercount = 0;usercount < noofusers;usercount++) {
 						int sharepercentage = Integer.valueOf(cus[usercount * 2 + 1]);
 						String username = cus[usercount * 2];
 						User user = new User(username, sharepercentage,
@@ -815,7 +817,7 @@ public class Utils {
 			values.add(driveGB);
 		}
 		var totalHDSize = 0d;
-		for (var i = 0; i < values.size(); i++) {
+		for (var i = 0;i < values.size();i++) {
 			totalHDSize += values.get(i);
 		}
 		log.debug("Exiting HeartBeatServer.usablediskspace");
@@ -829,7 +831,7 @@ public class Utils {
 	 */
 	public static Long getTotalAvailablePhysicalMemory() {
 		log.debug("Entered HeartBeatServer.getTotalAvailablePhysicalMemory");
-		var os = (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory
+		var os = (OperatingSystemMXBean) ManagementFactory
 				.getOperatingSystemMXBean();
 		var availablePhysicalMemorySize = os.getFreePhysicalMemorySize();
 		if (nonNull(DataSamudayaProperties.get().get(DataSamudayaConstants.MEMORY_FROM_NODE))) {
@@ -870,7 +872,7 @@ public class Utils {
 	 */
 	public static Long getPhysicalMemory() {
 		log.debug("Entered HeartBeatServer.getPhysicalMemory");
-		var os = (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory
+		var os = (OperatingSystemMXBean) ManagementFactory
 				.getOperatingSystemMXBean();
 		var physicalMemorySize = os.getTotalPhysicalMemorySize();
 		log.debug("Exiting HeartBeatServer.getPhysicalMemory");
@@ -892,7 +894,7 @@ public class Utils {
 			values.add(driveGB);
 		}
 		var totalHDSize = 0d;
-		for (var i = 0; i < values.size(); i++) {
+		for (var i = 0;i < values.size();i++) {
 			totalHDSize += values.get(i);
 		}
 		log.debug("Exiting HeartBeatServer.totaldiskspace");
@@ -979,20 +981,20 @@ public class Utils {
 		var globallaunchcontainers = new ArrayList<LaunchContainers>();
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
-			throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
+			throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		PipelineConfig pc = new PipelineConfig();
 		int numberofcontainerpernode = Integer.parseInt(pc.getNumberofcontainers());
-		for (int container = 0; container < numavailable; container++) {
+		for (int container = 0;container < numavailable;container++) {
 			ConcurrentMap<String, Resources> userrestolaunch = res.next();
 			Resources restolaunch = userrestolaunch.get(user);
 			var cpu = restolaunch.getNumberofprocessors();
 			var usershare = usersshare.get(user);
 			if (isNull(usershare)) {
-				throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
+				throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 			}			
 			cpu = cpu / numberofcontainerpernode;
-			if(cpu<=0) {
+			if (cpu <= 0) {
 				throw new Exception(PipelineConstants.INSUFFCPUALLOCATIONERROR);
 			}
 			var actualmemory = restolaunch.getFreememory();
@@ -1018,7 +1020,7 @@ public class Utils {
 			
 			var cla = new ContainerLaunchAttributes();			
 			var crl = new ArrayList<ContainerResources>();
-			for(Integer port:ports) {
+			for (Integer port :ports) {
 				var crs = new ContainerResources();
 				crs.setPort(port);
 				crs.setCpu(cpu);			
@@ -1031,7 +1033,7 @@ public class Utils {
 						+ port;
 				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
 				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
-				restolaunch.setFreememory(restolaunch.getFreememory()-heapmem-directmem);
+				restolaunch.setFreememory(restolaunch.getFreememory() - heapmem - directmem);
 				restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpu);
 			}
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
@@ -1096,34 +1098,34 @@ public class Utils {
 		var globallaunchcontainers = new ArrayList<LaunchContainers>();
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
-			throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
+			throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		PipelineConfig pc = new PipelineConfig();
-		for (int container = 0; container < numavailable; container++) {
+		for (int container = 0;container < numavailable;container++) {
 			ConcurrentMap<String, Resources> noderesmap = res.next();
 			Resources restolaunch = noderesmap.get(user);
 			var usershare = usersshare.get(user);
 			if (isNull(usershare)) {
-				throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
+				throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 			}
 			int cpu = restolaunch.getNumberofprocessors();			
 			cpu = cpu / numberofcontainers;
-			if(cpu<=0) {
+			if (cpu <= 0) {
 				throw new Exception(PipelineConstants.INSUFFCPUALLOCATIONERROR);
 			}
-			cpu = cpu<cpuuser?cpu:cpuuser;
+			cpu = cpu < cpuuser ? cpu : cpuuser;
 			var actualmemory = restolaunch.getFreememory();
 			if (actualmemory < (128 * DataSamudayaConstants.MB)) {
 				throw new Exception(PipelineConstants.MEMORYALLOCATIONERROR);
 			}
 			var memoryrequire = actualmemory;
 			memoryrequire = memoryrequire / numberofcontainers;
-			memoryrequire = memoryrequire<memoryuserbytes?memoryrequire:memoryuserbytes;
+			memoryrequire = memoryrequire < memoryuserbytes ? memoryrequire : memoryuserbytes;
 			var heapmem = memoryrequire * Integer.valueOf(
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
 					/ 100;
 						
-			var directmem = (memoryrequire - heapmem);
+			var directmem = memoryrequire - heapmem;
 			var ac = new AllocateContainers();
 			ac.setJobid(jobid);
 			ac.setNumberofcontainers(numberofcontainers);
@@ -1136,7 +1138,7 @@ public class Utils {
 			
 			var cla = new ContainerLaunchAttributes();			
 			var crl = new ArrayList<ContainerResources>();
-			for(Integer port:ports) {
+			for (Integer port :ports) {
 				var crs = new ContainerResources();
 				crs.setPort(port);
 				crs.setCpu(cpu);			
@@ -1149,7 +1151,7 @@ public class Utils {
 						+ port;
 				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
 				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
-				restolaunch.setFreememory(restolaunch.getFreememory()-heapmem-directmem);
+				restolaunch.setFreememory(restolaunch.getFreememory() - heapmem - directmem);
 				restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpu);
 			}
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
@@ -1201,14 +1203,14 @@ public class Utils {
 	 */
 	public static void allocateResourcesByUser(Resources resources, Map<String, Resources> userresourcesmap) {
 		var usersshare = DataSamudayaUsers.get();
-		usersshare.entrySet().stream().forEach(es->{
+		usersshare.entrySet().stream().forEach(es -> {
 			Resources resperuser = new Resources(resources.getNodeport(), resources.getTotalmemory(), resources.getFreememory() * es.getValue().getPercentage() / 100,
 					resources.getNumberofprocessors() * es.getValue().getPercentage() / 100, resources.getTotaldisksize(), resources.getUsabledisksize(), resources.getPhysicalmemorysize());
 			userresourcesmap.put(es.getKey(), resperuser);
 		});
 	}
-	
-	private static Semaphore yarnmutex = new Semaphore(1);
+
+	private static final Semaphore yarnmutex = new Semaphore(1);
 	/**
 	 * launches the YARN Executors creating containers
 	 * @param pipelineconfig
@@ -1300,7 +1302,7 @@ public class Utils {
 	public static void sendJobToYARNDistributedQueue(String teid, String jobid) throws Exception {
 		var objectMapper = new ObjectMapper();
 		var taskInfo  = new TaskInfoYARN(jobid, false, false); 
-		((SimpleDistributedQueue)GlobalYARNResources.getYarnResourcesByTeId(teid).get("inputqueue")).offer(objectMapper.writeValueAsBytes(taskInfo));
+		((SimpleDistributedQueue) GlobalYARNResources.getYarnResourcesByTeId(teid).get("inputqueue")).offer(objectMapper.writeValueAsBytes(taskInfo));
 	}
 	
 	/**
@@ -1327,7 +1329,7 @@ public class Utils {
 	public static void shutDownYARNContainer(String teid) throws Exception {
 		var objectMapper = new ObjectMapper();
 		var taskInfo  = new TaskInfoYARN(null, true, false); 
-		((SimpleDistributedQueue)GlobalYARNResources.getYarnResourcesByTeId(teid).get("inputqueue")).offer(objectMapper.writeValueAsBytes(taskInfo));
+		((SimpleDistributedQueue) GlobalYARNResources.getYarnResourcesByTeId(teid).get("inputqueue")).offer(objectMapper.writeValueAsBytes(taskInfo));
 	}
 	
 	/**
@@ -1465,7 +1467,7 @@ public class Utils {
 		dc.setJobid(jobid);
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
-			throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
+			throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		var lcs = GlobalContainerLaunchers.get(user, jobid);
 		lcs.stream().forEach(lc -> {
@@ -1473,7 +1475,7 @@ public class Utils {
 				ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources.getAllocatedResources().get(lc.getNodehostport());
 				Resources resallocated = nodesresallocated.get(user);
 				Utils.getResultObjectByInput(lc.getNodehostport(), dc, DataSamudayaConstants.EMPTY);
-				lc.getCla().getCr().stream().forEach(cr->{
+				lc.getCla().getCr().stream().forEach(cr -> {
 					resallocated.setFreememory(resallocated.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
 					resallocated.setNumberofprocessors(resallocated.getNumberofprocessors() + cr.getCpu());
 				});
@@ -1546,7 +1548,7 @@ public class Utils {
 		SSLServerSocketFactory ssf = sc.getServerSocketFactory();
 		SSLServerSocket sslserversocket = (SSLServerSocket) ssf.createServerSocket();
 		sslserversocket.bind(
-				new InetSocketAddress(InetAddress.getByAddress(new byte[] { 0x00, 0x00, 0x00, 0x00 }), port), 256);
+				new InetSocketAddress(InetAddress.getByAddress(new byte[]{0x00, 0x00, 0x00, 0x00}), port), 256);
 		return sslserversocket;
 	}
 
@@ -1611,10 +1613,10 @@ public class Utils {
 	public static void printNodesAndContainers(List<LaunchContainers> lcs, PrintWriter out) {
 		for(LaunchContainers lc:lcs) {
 			out.println();
-			out.println(lc.getNodehostport()+":");
+			out.println(lc.getNodehostport() + ":");
 			for(ContainerResources crs:lc.getCla().getCr()) {
 				out.print(DataSamudayaConstants.TAB);
-				out.println("cpu: "+crs.getCpu()+" memory: "+(crs.getMaxmemory()/DataSamudayaConstants.MB+crs.getDirectheap()/DataSamudayaConstants.MB)+" mb port:"+crs.getPort());
+				out.println("cpu: " + crs.getCpu() + " memory: " + (crs.getMaxmemory() / DataSamudayaConstants.MB + crs.getDirectheap() / DataSamudayaConstants.MB) + " mb port:" + crs.getPort());
 			}
 		}
 	}
@@ -1666,7 +1668,7 @@ public class Utils {
 			}
 			out.println();
 			Iterator<Map<String, Object>> ite = dcc.get("Reduce").iterator();
-			for (; ite.hasNext();) {
+			for (;ite.hasNext();) {
 				Map<String, Object> row = (Map<String, Object>) ite.next();
 				for (String header : headers) {
 					out.printf("%-20s", row.get(header));
@@ -1911,21 +1913,21 @@ public class Utils {
         } else {
         	 // Get the fields of the object using reflection
         	 header = new String[fields.length];
-        	 for (int i = 0; i < fields.length; i++) {
+        	 for (int i = 0;i < fields.length;i++) {
                  header[i] = fields[i].getName();
              }
         }
         try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(ostream)
         		, CSVFormat.DEFAULT.withHeader(header))) {
         	if(ismap) {
-	            for (Map<String, Object> map : (List<Map>)data) {
+	            for (Map<String, Object> map : (List<Map>) data) {
 	                printer.printRecord(map.values());
 	            }
         	} else {
         		List<Object> rowData = new ArrayList<>();
         		for (Object obj : data) {                    
 
-                    for (int i = 0; i < fields.length; i++) {
+                    for (int i = 0;i < fields.length;i++) {
                         fields[i].setAccessible(true);
                         Object value = fields[i].get(obj);
                         rowData.add(value);

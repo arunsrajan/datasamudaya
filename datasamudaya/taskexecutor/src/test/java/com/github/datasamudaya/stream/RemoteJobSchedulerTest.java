@@ -26,6 +26,7 @@ import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
+import com.github.datasamudaya.common.functions.PredicateSerializable;
 
 @SuppressWarnings({"unchecked", "serial", "rawtypes"})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -43,12 +44,12 @@ public class RemoteJobSchedulerTest extends StreamPipelineBaseTestCommon impleme
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pc);
 		List<List> data = (List) datapipeline
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String>() {
-					public boolean test(java.lang.String value) {
+				.filter(new PredicateSerializable<String>() {
+					public boolean test(String value) {
 						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String>() {
-			public boolean test(java.lang.String value) {
+				}).filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
 		}).collect(toexecute, null);
@@ -72,12 +73,12 @@ public class RemoteJobSchedulerTest extends StreamPipelineBaseTestCommon impleme
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pc);
 		List<List<Long>> data = (List) datapipeline
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String>() {
-					public boolean test(java.lang.String value) {
+				.filter(new PredicateSerializable<String>() {
+					public boolean test(String value) {
 						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String>() {
-			public boolean test(java.lang.String value) {
+				}).filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
 		}).count(null);

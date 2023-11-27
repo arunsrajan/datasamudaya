@@ -48,7 +48,7 @@ import com.github.datasamudaya.stream.scheduler.StreamPipelineTaskSubmitter;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanIntersection() throws Exception {
 
@@ -91,7 +91,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(2, graph.edgeSet().size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanIntersectionPartitioned() throws Exception {
 
@@ -134,7 +134,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(2, graph.edgeSet().size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanJoin() throws Exception {
 
@@ -184,7 +184,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(2, graph.edgeSet().size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanJoinPartitioned() throws Exception {
 
@@ -236,7 +236,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(2, graph.edgeSet().size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanLeftJoin() throws Exception {
 
@@ -286,7 +286,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(2, graph.edgeSet().size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanLeftJoinPartitioned() throws Exception {
 
@@ -598,7 +598,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(0, graph.edgeSet().size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanRightJoin() throws Exception {
 
@@ -649,7 +649,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(2, graph.edgeSet().size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanRightJoinPartitioned() throws Exception {
 
@@ -702,7 +702,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(2, graph.edgeSet().size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanUnion() throws Exception {
 
@@ -747,7 +747,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(2, graph.edgeSet().size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testGeneratePhysicalExecutionPlanUnionPartitioned() throws Exception {
 
@@ -819,7 +819,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		pc.setLocal("true");
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked", "resource" })
+	@SuppressWarnings({"rawtypes", "unchecked", "resource"})
 	@Test
 	public void testParallelExecutionPhaseDExecutor() throws Exception {
 
@@ -901,7 +901,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		pc.setLocal("true");
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testParallelExecutionPhaseDExecutorLocalMode() throws Exception {
 
@@ -963,7 +963,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(46361, result.get(0).size());
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testParallelExecutionPhaseDExecutorLocalModeMultiplePartition() throws Exception {
 
@@ -1030,7 +1030,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(46361, sum);
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testParallelExecutionPhaseDExecutorLocalModeMultiplePartitionBatchSize() throws Exception {
 
@@ -1098,7 +1098,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(46361, sum);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testScheduleJobJGroups() throws Exception {
 
@@ -1133,7 +1133,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		pc.setLocal("true");
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testScheduleJobLocal() throws Exception {
 
@@ -1156,7 +1156,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		assertEquals(46361, result.get(0).size());
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testScheduleJobStandalone1() throws Exception {
 
@@ -1181,7 +1181,7 @@ public class StreamJobSchedulerTest extends StreamPipelineBaseTestCommon {
 		pc.setLocal("true");
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testScheduleJobStandalone2() throws Exception {
 		PipelineConfig pc = new PipelineConfig();

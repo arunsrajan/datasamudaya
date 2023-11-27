@@ -237,9 +237,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("cnt"));
 				assertTrue(map.containsKey("UniqueCarrier"));
-				if(((int)map.get("cnt"))==1) {
+				if(((int) map.get("cnt"))==1) {
 					assertEquals("UniqueCarrier", map.get("UniqueCarrier"));
-				} else if(((int)map.get("cnt")) == 46360) {
+				} else if(((int) map.get("cnt")) == 46360) {
 					assertEquals("AQ", map.get("UniqueCarrier"));
 				}
 			}
@@ -263,7 +263,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 			for(Map<String, Object> map: recordspart) {
 				assertEquals(1, map.size());
 				assertTrue(map.containsKey("sumarrdelay"));
-				assertEquals(-63278l,map.get("sumarrdelay"));
+				assertEquals(-63278l, map.get("sumarrdelay"));
 			}
 		}		
 	}
@@ -285,7 +285,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 			for(Map<String, Object> map: recordspart) {
 				assertEquals(1, map.size());
 				assertTrue(map.containsKey("sumdelay"));
-				assertEquals(-43110l,map.get("sumdelay"));
+				assertEquals(-43110l, map.get("sumdelay"));
 			}
 		}		
 	}
@@ -308,9 +308,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("sumarrdelay"));
 				assertTrue(map.containsKey("UniqueCarrier"));
-				if(((long)map.get("sumarrdelay"))==0) {
+				if(((long) map.get("sumarrdelay"))==0) {
 					assertEquals("UniqueCarrier", map.get("UniqueCarrier"));
-				} else if(((long)map.get("sumarrdelay")) == -63278) {
+				} else if(((long) map.get("sumarrdelay")) == -63278) {
 					assertEquals("AQ", map.get("UniqueCarrier"));
 				}
 			}
@@ -334,7 +334,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 			for(Map<String, Object> map: recordspart) {
 				assertEquals(1, map.size());
 				assertTrue(map.containsKey("avgarrdelay"));
-				assertEquals(-1.364897219645823,map.get("avgarrdelay"));
+				assertEquals(-1.364897219645823, map.get("avgarrdelay"));
 			}
 		}		
 	}
@@ -357,9 +357,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("avgarrdelay"));
 				assertTrue(map.containsKey("UniqueCarrier"));
-				if(((double)map.get("avgarrdelay"))==0) {
+				if(((double) map.get("avgarrdelay"))==0) {
 					assertEquals("UniqueCarrier", map.get("UniqueCarrier"));
-				} else if(((double)map.get("avgarrdelay")) == -1.364897219645823) {
+				} else if(((double) map.get("avgarrdelay")) == -1.364897219645823) {
 					assertEquals("AQ", map.get("UniqueCarrier"));
 				}
 			}
@@ -407,7 +407,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("UniqueCarrier"));
 				assertTrue(map.containsKey("lenuc"));
-				assertEquals(Long.valueOf(((String)map.get("UniqueCarrier")).length()), map.get("lenuc"));
+				assertEquals(Long.valueOf(((String) map.get("UniqueCarrier")).length()), map.get("lenuc"));
 			}
 		}		
 	}
@@ -477,7 +477,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("summoydom"));
-				assertEquals(((long)map.get("MonthOfYear"))+((long)map.get("DayofMonth")), map.get("summoydom"));
+				assertEquals(((long) map.get("MonthOfYear")) + ((long) map.get("DayofMonth")), map.get("summoydom"));
 			}
 		}		
 	}
@@ -501,7 +501,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("submoydom"));
-				assertEquals(((long)map.get("MonthOfYear"))-((long)map.get("DayofMonth")), map.get("submoydom"));
+				assertEquals(((long) map.get("MonthOfYear")) - ((long) map.get("DayofMonth")), map.get("submoydom"));
 			}
 		}		
 	}
@@ -525,7 +525,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("mulmoydom"));
-				assertEquals(((long)map.get("MonthOfYear"))*((long)map.get("DayofMonth")), map.get("mulmoydom"));
+				assertEquals(((long) map.get("MonthOfYear")) * ((long) map.get("DayofMonth")), map.get("mulmoydom"));
 			}
 		}		
 	}
@@ -549,7 +549,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("AirlineYear"));
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("divyearmon"));
-				assertEquals(((long)map.get("AirlineYear"))/(Double.valueOf(map.get("MonthOfYear")+DataSamudayaConstants.EMPTY)), map.get("divyearmon"));
+				assertEquals(((long) map.get("AirlineYear")) / (Double.valueOf(map.get("MonthOfYear") + DataSamudayaConstants.EMPTY)), map.get("divyearmon"));
 			}
 		}		
 	}
@@ -574,7 +574,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("divmulyearmon"));
-				assertEquals(((long)map.get("AirlineYear"))/(Double.valueOf(map.get("MonthOfYear")+DataSamudayaConstants.EMPTY)) * ((long)map.get("DayofMonth")), map.get("divmulyearmon"));
+				assertEquals(((long) map.get("AirlineYear")) / (Double.valueOf(map.get("MonthOfYear") + DataSamudayaConstants.EMPTY)) * ((long) map.get("DayofMonth")), map.get("divmulyearmon"));
 			}
 		}		
 	}
@@ -597,7 +597,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("UniqueCarrier"));
 				assertTrue(map.containsKey("ucuc"));
-				assertEquals(((String)map.get("UniqueCarrier")).toUpperCase(), map.get("ucuc"));
+				assertEquals(((String) map.get("UniqueCarrier")).toUpperCase(), map.get("ucuc"));
 			}
 		}		
 	}
@@ -621,7 +621,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("UniqueCarrier"));
 				assertTrue(map.containsKey("lcuc"));
-				assertEquals(((String)map.get("UniqueCarrier")).toLowerCase(), map.get("lcuc"));
+				assertEquals(((String) map.get("UniqueCarrier")).toLowerCase(), map.get("lcuc"));
 			}
 		}		
 	}
@@ -646,7 +646,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("UniqueCarrier"));
 				assertTrue(map.containsKey("base64uc"));
-				assertEquals(map.get("base64uc"), Base64.getEncoder().encodeToString(((String)map.get("UniqueCarrier")).getBytes()));
+				assertEquals(map.get("base64uc"), Base64.getEncoder().encodeToString(((String) map.get("UniqueCarrier")).getBytes()));
 			}
 		}		
 	}
@@ -698,7 +698,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("powdom"));
-				assertEquals(Math.pow(((long)map.get("DayofMonth")), 2),map.get("powdom"));
+				assertEquals(Math.pow(((long) map.get("DayofMonth")), 2), map.get("powdom"));
 			}
 		}		
 	}
@@ -722,7 +722,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("ceildom"));
-				assertEquals(Math.ceil(((long)map.get("DayofMonth"))),map.get("ceildom"));
+				assertEquals(Math.ceil(((long) map.get("DayofMonth"))), map.get("ceildom"));
 			}
 		}		
 	}
@@ -745,7 +745,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("floordom"));
-				assertEquals(Math.ceil(((long)map.get("DayofMonth"))),map.get("floordom"));
+				assertEquals(Math.ceil(((long) map.get("DayofMonth"))), map.get("floordom"));
 			}
 		}		
 	}
@@ -768,7 +768,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("sqrtdom"));
-				assertEquals(Math.sqrt(((long)map.get("DayofMonth"))),map.get("sqrtdom"));
+				assertEquals(Math.sqrt(((long) map.get("DayofMonth"))), map.get("sqrtdom"));
 			}
 		}		
 	}
@@ -791,7 +791,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("expdom"));
-				assertEquals(Math.exp(((long)map.get("DayofMonth"))),map.get("expdom"));
+				assertEquals(Math.exp(((long) map.get("DayofMonth"))), map.get("expdom"));
 			}
 		}		
 	}
@@ -814,7 +814,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("logdom"));
-				assertEquals(Math.log(((long)map.get("DayofMonth"))),map.get("logdom"));
+				assertEquals(Math.log(((long) map.get("DayofMonth"))), map.get("logdom"));
 			}
 		}		
 	}

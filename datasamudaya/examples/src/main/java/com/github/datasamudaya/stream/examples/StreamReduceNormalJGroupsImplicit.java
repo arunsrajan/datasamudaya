@@ -28,7 +28,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceNormalJGroupsImplicit implements Serializable, Pipeline {
 	private static final long serialVersionUID = 7337295603814470196L;
-	private Logger log = Logger.getLogger(StreamReduceNormalJGroupsImplicit.class);
+	private final Logger log = Logger.getLogger(StreamReduceNormalJGroupsImplicit.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");

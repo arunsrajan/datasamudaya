@@ -68,15 +68,15 @@ public class PigQueryExecutor {
 			PigParserNode node = (PigParserNode) loFilter.getLocation().node().getChildren().get(0);
 			if(isNull(pigAliasExecutedObjectMap
 					.get(node.getText()))) {
-				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+				throw new PigException(PigException.NOALIASFOUND.formatted(node.getText()));
 			}
-			pigAliasExecutedObjectMap.put(loFilter.getAlias(),PigUtils.executeLOFilter((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap
+			pigAliasExecutedObjectMap.put(loFilter.getAlias(), PigUtils.executeLOFilter((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap
 					.get(node.getText()), loFilter));
 		} else if (operator instanceof LOStore lostore) {
 			PigParserNode node = (PigParserNode) lostore.getLocation().node().getChildren().get(0);
 			if(isNull(pigAliasExecutedObjectMap
 					.get(node.getText()))) {
-				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+				throw new PigException(PigException.NOALIASFOUND.formatted(node.getText()));
 			}
 			PigUtils.executeLOStore((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap
 					.get(node.getText()), lostore);
@@ -84,7 +84,7 @@ public class PigQueryExecutor {
 			PigParserNode node = (PigParserNode) loCogroup.getLocation().node().getChildren().get(0);
 			if(isNull(pigAliasExecutedObjectMap
 					.get(node.getText()))) {
-				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+				throw new PigException(PigException.NOALIASFOUND.formatted(node.getText()));
 			}
 			pigAliasExecutedObjectMap.put(loCogroup.getAlias(),
 					PigUtils.executeLOCoGroup(
@@ -94,7 +94,7 @@ public class PigQueryExecutor {
 			PigParserNode node = (PigParserNode) loForEach.getLocation().node().getChildren().get(0);
 			if(isNull(pigAliasExecutedObjectMap
 					.get(node.getText()))) {
-				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+				throw new PigException(PigException.NOALIASFOUND.formatted(node.getText()));
 			}
 			pigAliasExecutedObjectMap.put(loForEach.getAlias(), PigUtils.executeLOForEach(
 					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText()),
@@ -103,7 +103,7 @@ public class PigQueryExecutor {
 			PigParserNode node = (PigParserNode) loSort.getLocation().node().getChildren().get(0);
 			if(isNull(pigAliasExecutedObjectMap
 					.get(node.getText()))) {
-				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+				throw new PigException(PigException.NOALIASFOUND.formatted(node.getText()));
 			}
 			pigAliasExecutedObjectMap.put(loSort.getAlias(), PigUtils.executeLOSort(
 					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText()),
@@ -112,7 +112,7 @@ public class PigQueryExecutor {
 			PigParserNode node = (PigParserNode) loDistinct.getLocation().node().getChildren().get(0);
 			if(isNull(pigAliasExecutedObjectMap
 					.get(node.getText()))) {
-				throw new PigException(String.format(PigException.NOALIASFOUND, node.getText()));
+				throw new PigException(PigException.NOALIASFOUND.formatted(node.getText()));
 			}
 			pigAliasExecutedObjectMap.put(loDistinct.getAlias(), PigUtils.executeLODistinct(
 					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText())));
@@ -126,30 +126,33 @@ public class PigQueryExecutor {
 			int noofjoinexp = expjoinalias.size();
 			MultiMap<Integer, LogicalExpressionPlan> expplans = loJoin.getExpressionPlans();
 			List<List<String>> joincolumns = new ArrayList<>();
-			for(int mapindex=0;mapindex<noofjoinexp; mapindex++) {
+			for (int mapindex = 0;mapindex < noofjoinexp;mapindex++) {
 				List<LogicalExpressionPlan> leps = expplans.get(mapindex);
 				List<String> columnstojoin = new ArrayList<>();
 				joincolumns.add(columnstojoin);
-				for(LogicalExpressionPlan lep:leps) {
-					columnstojoin.add(((ProjectExpression)lep.getOperators().next()).getColAlias());
+				for (LogicalExpressionPlan lep :leps) {
+					columnstojoin.add(((ProjectExpression) lep.getOperators().next()).getColAlias());
 				}
 			}
 			if(isNull(pigAliasExecutedObjectMap
 					.get(expjoinalias.get(0)))) {
-				throw new PigException(String.format(PigException.NOALIASFOUND, expjoinalias.get(0)));
+				throw new PigException(PigException.NOALIASFOUND.formatted(expjoinalias.get(0)));
 			}
 			if(isNull(pigAliasExecutedObjectMap
 					.get(expjoinalias.get(1)))) {
-				throw new PigException(String.format(PigException.NOALIASFOUND, expjoinalias.get(1)));
+				throw new PigException(PigException.NOALIASFOUND.formatted(expjoinalias.get(1)));
 			}
 			pigAliasExecutedObjectMap.put(loJoin.getAlias(), PigUtils.executeLOJoin(
-					(StreamPipeline<Map<String, Object>>)pigAliasExecutedObjectMap.get(expjoinalias.get(0)),
-					(StreamPipeline<Map<String, Object>>)pigAliasExecutedObjectMap.get(expjoinalias.get(1)),
+					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(expjoinalias.get(0)),
+					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(expjoinalias.get(1)),
 					joincolumns.get(0),
 					joincolumns.get(1),
 					loJoin));
 		}
 		return "";
+	}
+
+	private PigQueryExecutor() {
 	}
 
 }

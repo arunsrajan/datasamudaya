@@ -42,9 +42,9 @@ import static java.util.Objects.isNull;
  * The stream pipelining API task scheduler thread to execut the MR jar file.
  */
 public class StreamPipelineTaskScheduler implements Runnable {
-	private static Logger log = Logger.getLogger(StreamPipelineTaskScheduler.class);
-	private byte[] mrjar;
-	private Socket tss;
+	private static final Logger log = Logger.getLogger(StreamPipelineTaskScheduler.class);
+	private final byte[] mrjar;
+	private final Socket tss;
 	private String[] args;
 	String filename;
 

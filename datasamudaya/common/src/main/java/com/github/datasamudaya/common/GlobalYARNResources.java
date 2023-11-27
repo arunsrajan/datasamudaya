@@ -11,8 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GlobalYARNResources {
 	
 	private GlobalYARNResources() {}
-	
-	private static Map<String,Map<String,Object>> yarnresources = new ConcurrentHashMap<>();
+
+	private static final Map<String, Map<String, Object>> yarnresources = new ConcurrentHashMap<>();
 	
 
 	/**
@@ -20,7 +20,7 @@ public class GlobalYARNResources {
 	 * @param teid
 	 * @return YARN resources
 	 */
-	public static Map<String,Object> getYarnResourcesByTeId(String teid) {
+	public static Map<String, Object> getYarnResourcesByTeId(String teid) {
 		return yarnresources.get(teid);
 	}
 	

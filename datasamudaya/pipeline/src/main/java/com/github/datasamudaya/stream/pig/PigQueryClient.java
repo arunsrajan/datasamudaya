@@ -17,6 +17,7 @@ import java.util.List;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,9 +34,9 @@ import jline.console.ConsoleReader;
  *
  */
 public class PigQueryClient {
-	private static Logger log = LoggerFactory.getLogger(PigQueryClient.class);
-	private static List<String> history = new ArrayList<>();
-	private static int historyIndex = 0;
+	private static final Logger log = LoggerFactory.getLogger(PigQueryClient.class);
+	private static final List<String> history = new ArrayList<>();
+	private static int historyIndex;
 
 	/**
 	 * Main method which starts sql client in terminal.
@@ -96,7 +97,7 @@ public class PigQueryClient {
 		if (cmd.hasOption(DataSamudayaConstants.PIGWORKERMODE)) {
 			mode = cmd.getOptionValue(DataSamudayaConstants.PIGWORKERMODE);
 		}
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		// get the hostname of the sql server
 		String hostName = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST);
 		// get the port number of the sql server
@@ -169,7 +170,7 @@ public class PigQueryClient {
 		reader.setPrompt("\nPIG>");
 		while (true) {
 			String input = readLineWithHistory(reader);
-			if (input.equals("Quit")) {
+			if ("Quit".equals(input)) {
 				break;
 			}
 			processInput(input, out);
@@ -287,9 +288,7 @@ public class PigQueryClient {
 							sb.deleteCharAt(curPos);
 						}
 					}
-				} else if (key == 126) {
-
-				} else {
+				} else if (key != 126) {
 					historyIndex = history.size();
 					sb.delete(0, sb.length());
 					sb.append(reader.getCursorBuffer().toString());
@@ -298,6 +297,7 @@ public class PigQueryClient {
 					reader.setConsoleBuffer(sb.toString());
 					reader.setCursorPosition(curPos + 1);
 					reader.flush();
+
 				}
 			}
 			line = sb.toString();

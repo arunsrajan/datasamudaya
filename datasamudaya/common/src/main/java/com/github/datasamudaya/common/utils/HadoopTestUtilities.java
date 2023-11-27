@@ -16,7 +16,7 @@ public class HadoopTestUtilities {
 
   private HadoopTestUtilities() {}
 
-  private static Logger log = LoggerFactory.getLogger(HadoopTestUtilities.class);
+	private static final Logger log = LoggerFactory.getLogger(HadoopTestUtilities.class);
   
   /**
    * Initialize and start hdfs cluster for the given parameters port, httpport and 

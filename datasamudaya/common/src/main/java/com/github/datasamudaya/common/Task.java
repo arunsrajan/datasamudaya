@@ -75,12 +75,15 @@ public class Task implements Serializable, Cloneable {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		Task other = (Task) obj;
 		return Objects.equals(jobid, other.jobid) && Objects.equals(stageid, other.stageid)
 				&& Objects.equals(taskid, other.taskid);

@@ -62,7 +62,7 @@ import net.sf.jsqlparser.util.validation.feature.DatabaseType;
 
 public class MapReduceApplicationSqlBuilder implements Serializable {
 	private static final long serialVersionUID = 6360524229924008489L;
-	private static Logger log = LoggerFactory.getLogger(MapReduceApplicationSqlBuilder.class);
+	private static final Logger log = LoggerFactory.getLogger(MapReduceApplicationSqlBuilder.class);
 	String sql;
 	ConcurrentMap<String, String> tablefoldermap = new ConcurrentHashMap<>();
 	ConcurrentMap<String, List<String>> tablecolumnsmap = new ConcurrentHashMap<>();
@@ -173,7 +173,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		Set<String> selectcolumnsresult = new LinkedHashSet<>();
 		boolean isdistinct = nonNull(plainSelect.getDistinct());
 		Table table = (Table) plainSelect.getFromItem();
-		if (plainSelect.getSelectItems().get(0).toString().equals("*")) {
+		if ("*".equals(plainSelect.getSelectItems().get(0).toString())) {
 			tablerequiredcolumns.put(table.getName(), new LinkedHashSet<>(tablecolumnsmap.get(table.getName())));
 			columnsselect.addAll(tablecolumnsmap.get(table.getName()));
 			selectcolumnsresult.addAll(tablecolumnsmap.get(table.getName()));
@@ -223,7 +223,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							functionwithcolumns.add(functionwithcolsobj);
 							functioncols.add(column.getColumnName());
 							selectcolumnsresult.add(nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
-									:function.getName()+"("+column.getColumnName()+")");
+									: function.getName() + "(" + column.getColumnName() + ")");
 						}
 						else {
 							var functionwithcolsobj = new FunctionWithCols();
@@ -233,7 +233,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 									nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
 											: null);
 							selectcolumnsresult.add(nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
-									:function.getName()+"()");
+									: function.getName() + "()");
 						}
 					}
 				}
@@ -284,45 +284,45 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							.withIgnoreHeaderCase().withIgnoreEmptyLines(true).withTrim();
 					CSVParser parser = csvformat.parse(new StringReader(line));
 					parser.forEach(csvrecord -> {
-						if(nonNull(where) && evaluateExpression(where, csvrecord) || isNull(where)) {
+						if (nonNull(where) && evaluateExpression(where, csvrecord) || isNull(where)) {
 							// Extract relevant columns
-							var valuemap = new HashMap<String,Object>();
-							for (String column:selectcols) {
+							var valuemap = new HashMap<String, Object>();
+							for (String column :selectcols) {
 								// Output as key-value pair
 								valuemap.put(column, SQLUtils.getValueMR(csvrecord.get(column), tablecolumntypes.get(tablecolindexmap.get(column).intValue())));
 							}
-							valuemap.put("tablename()",maintablename);
-							if(!functionwithcols.isEmpty()) {
-								for(FunctionWithCols functionwithcols:functionwithcols) {
+							valuemap.put("tablename()", maintablename);
+							if (!functionwithcols.isEmpty()) {
+								for (FunctionWithCols functionwithcols :functionwithcols) {
 									String funcname = functionwithcols.getName();
-									var map = new HashMap<String,Object>(valuemap);
+									var map = new HashMap<String, Object>(valuemap);
 									String matchingtablename = functionwithcols.getTablename();
-									boolean istablenamematches = nonNull(matchingtablename)?matchingtablename.equalsIgnoreCase(maintablename):false;
-									if(istablenamematches) {
-										if(funcname.startsWith("sum")) {
+									boolean istablenamematches = nonNull(matchingtablename) ? matchingtablename.equalsIgnoreCase(maintablename) : false;
+									if (istablenamematches) {
+										if (funcname.startsWith("sum")) {
 											String colname = functionwithcols.getParameters().get(0);
 											String value = csvrecord.get(colname);
-											map.put(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"sum("+colname+")",SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));										
+											map.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "sum(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));										
 											context.put(maintablename, map);
 											continue;
 										}
-										if(funcname.startsWith("max")) {
+										if (funcname.startsWith("max")) {
 											String colname = functionwithcols.getParameters().get(0);
 											String value = csvrecord.get(colname);
-											map.put(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"max("+colname+")",SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
+											map.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "max(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
 											context.put(maintablename, map);
 											continue;
 										}
-										if(funcname.startsWith("min")) {
+										if (funcname.startsWith("min")) {
 											String colname = functionwithcols.getParameters().get(0);
 											String value = csvrecord.get(colname);
-											map.put(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"min("+colname+")",SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
+											map.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "min(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
 											context.put(maintablename, map);
 											continue;
 										}
 									}
-									else if(funcname.startsWith("count")) {
-										map.put(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"count()",1.0d);
+									else if (funcname.startsWith("count")) {
+										map.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "count()", 1.0d);
 										context.put(maintablename, map);
 										continue;
 									} else {
@@ -330,7 +330,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 									}
 								}
 							} else {
-								context.put(maintablename,valuemap);
+								context.put(maintablename, valuemap);
 							}
 						}
 					});
@@ -361,25 +361,25 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 					String funcname = functionwithcols.getName();
 					if (funcname.startsWith("sum")) {
 						String colname = functionwithcols.getParameters().get(0);
-						funcsum.add( nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"sum(" + colname + ")");
+						funcsum.add(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "sum(" + colname + ")");
 						issum = true;
 						isfunction = true;
 					}
 					else if (funcname.startsWith("max")) {
 						String colname = functionwithcols.getParameters().get(0);
-						funcmax.add( nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"max(" + colname + ")");
+						funcmax.add(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "max(" + colname + ")");
 						ismax = true;
 						isfunction = true;
 					}
 					else if (funcname.startsWith("min")) {
 						String colname = functionwithcols.getParameters().get(0);
-						funcmin.add( nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"min(" + colname + ")");
+						funcmin.add(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "min(" + colname + ")");
 						ismin = true;
 						isfunction = true;
 
 					}
 					else if (funcname.startsWith("count")) {
-						funccount.add(nonNull(functionwithcols.getAlias())?functionwithcols.getAlias():"count()");
+						funccount.add(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "count()");
 						iscount = true;
 						isfunction = true;
 					}
@@ -459,7 +459,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 					}
 				}
 				if (!valuemap.isEmpty()) {
-					if (!key.equals("Reducer")) {
+					if (!"Reducer".equals(key)) {
 						for (Map<String, Object> keystoreduce : valuemap.keySet()) {
 							if (issum) {
 								for (String col : funcsum) {
@@ -556,10 +556,10 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 								}
 							}
 						}
-						combine.keySet().stream().map(val->{
+						combine.keySet().stream().map(val -> {
 							val.putAll(combine.get(val));
 							return val;
-						}).forEach(value->{
+						}).forEach(value -> {
 							context.put("Reduce", value);
 						});
 						
@@ -579,12 +579,12 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		            mapListMap.put(groupByValue, groupList);
 		        }
 		        Map<String, List<Map<String, Object>>> processedmap = new HashMap<>(); 
-		        mapListMap.keySet().forEach(keytoproc->{
+		        mapListMap.keySet().forEach(keytoproc -> {
 		        	Context ctx = new DataCruncherContext<>();
 		        	combine("Reducer", mapListMap.get(keytoproc), ctx);
 		        	processedmap.put(keytoproc, (List<Map<String, Object>>) ctx.get("Reduce"));
 		        });
-		        String tablename = ((Table)ps.getFromItem()).getName();
+		        String tablename = ((Table) ps.getFromItem()).getName();
 		        List<Map<String, Object>> maintableoutput = new ArrayList<>();
 		        maintableoutput.addAll(processedmap.get(tablename));
 		        List<Map<String, Object>> mergedoutput = new ArrayList<>();
@@ -596,7 +596,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		                if(join.isInner()) {
 		                	for(Map<String, Object> mainmap:maintableoutput) {
 		                		for(Map<String, Object> joinmap:joinoutput) {
-		                			if(evaluateExpressionJoin(join.getOnExpression(),jointable , mainmap, joinmap)) {
+		                			if(evaluateExpressionJoin(join.getOnExpression(), jointable, mainmap, joinmap)) {
 		                				Map<String, Object> mergedOut = new HashMap<>();
 		                				mergedOut.putAll(mainmap);
 		                				mergedOut.putAll(joinmap);
@@ -608,7 +608,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		                } else if(join.isLeft()) {
 		                	for(Map<String, Object> mainmap:maintableoutput) {
 		                		for(Map<String, Object> joinmap:joinoutput) {
-		                			if(evaluateExpressionJoin(join.getOnExpression(),jointable , mainmap, joinmap)) {
+		                			if(evaluateExpressionJoin(join.getOnExpression(), jointable, mainmap, joinmap)) {
 		                				Map<String, Object> mergedOut = new HashMap<>();
 		                				mergedOut.putAll(mainmap);
 		                				mergedOut.putAll(joinmap);
@@ -625,7 +625,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		                } else if(join.isRight()) {
 		                	for(Map<String, Object> mainmap:maintableoutput) {
 		                		for(Map<String, Object> joinmap:joinoutput) {
-		                			if(evaluateExpressionJoin(join.getOnExpression(),jointable , mainmap, joinmap)) {
+		                			if(evaluateExpressionJoin(join.getOnExpression(), jointable, mainmap, joinmap)) {
 		                				Map<String, Object> mergedOut = new HashMap<>();
 		                				mergedOut.putAll(mainmap);
 		                				mergedOut.putAll(joinmap);
@@ -644,7 +644,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		        }
 	            if (nonNull(ps.getWhere())) {
 	            	Expression where = ps.getWhere();
-	            	maintableoutput = maintableoutput.stream().filter(val->
+	            	maintableoutput = maintableoutput.stream().filter(val ->
 	            	evaluateExpression(where, val)).collect(Collectors.toList());
 	            }
 				maintableoutput = maintableoutput.stream().map(val -> {
@@ -669,15 +669,15 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 						}
 					}
 					log.info("Order by {} {}", columns, directions);
-					Collections.sort(maintableoutput,(map1, map2) -> {
+					Collections.sort(maintableoutput, (map1, map2) -> {
 
-						for (int i = 0; i < columns.size(); i++) {
+						for (int i = 0;i < columns.size();i++) {
 							String columnName = columns.get(i).getColumnName();
 							String sortOrder = directions.get(i);
 							Object value1 = map1.get(columnName);
 							Object value2 = map2.get(columnName);
 							int result = compareTo(value1, value2);
-							if (sortOrder.equals("DESC")) {
+							if ("DESC".equals(sortOrder)) {
 								result = -result;
 							}
 							if (result != 0) {
@@ -713,12 +713,12 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		}
 		Map<String, Long> columnindexmap = new ConcurrentHashMap<>();
 		List<String> columnsfortable = tablecolumnsmap.get(tablename);
-		for (int originalcolumnindex = 0; originalcolumnindex < columnsfortable
-				.size(); originalcolumnindex++) {
+		for (int originalcolumnindex = 0;originalcolumnindex < columnsfortable
+				.size();originalcolumnindex++) {
 			columnindexmap.put(columnsfortable.get(originalcolumnindex), Long.valueOf(originalcolumnindex));
 		}
 		MapReduceApplicationBuilder mrab = MapReduceApplicationBuilder.newBuilder()
-		.addMapper(new MapperReducerSqlMapper(tablename,selectcolumns,functionwithcolumns, expressionRootTable,
+		.addMapper(new MapperReducerSqlMapper(tablename, selectcolumns, functionwithcolumns, expressionRootTable,
 				tablecolumntypesmap.get(tablename), columnindexmap), tablefoldermap.get(tablename));
 		if(CollectionUtils.isNotEmpty(plainSelect.getJoins())) {
 			List<Join> joins = plainSelect.getJoins();
@@ -733,11 +733,11 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
         		}
                 columnindexmap = new ConcurrentHashMap<>();
         		columnsfortable = tablecolumnsmap.get(rightItem.getName());
-        		for (int originalcolumnindex = 0; originalcolumnindex < columnsfortable
-        				.size(); originalcolumnindex++) {
+        		for (int originalcolumnindex = 0;originalcolumnindex < columnsfortable
+        				.size();originalcolumnindex++) {
         			columnindexmap.put(columnsfortable.get(originalcolumnindex), Long.valueOf(originalcolumnindex));
         		}
-                mrab = mrab.addMapper(new MapperReducerSqlMapper(rightItem.getName(),selectcolumns,functionwithcolumns, expressionJoinTable,
+                mrab = mrab.addMapper(new MapperReducerSqlMapper(rightItem.getName(), selectcolumns, functionwithcolumns, expressionJoinTable,
                 		tablecolumntypesmap.get(rightItem.getName()), columnindexmap), tablefoldermap.get(rightItem.getName()));
             }
 		}
@@ -754,8 +754,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	 * @return evaluates to true if expression succeeds and false if fails.
 	 */
 	public static boolean evaluateExpression(Expression expression, Map<String, Object> row) {
-		if (expression instanceof BinaryExpression) {
-			BinaryExpression binaryExpression = (BinaryExpression) expression;
+		if (expression instanceof BinaryExpression binaryExpression) {
 			String operator = binaryExpression.getStringExpression();
 			Expression leftExpression = binaryExpression.getLeftExpression();
 			Expression rightExpression = binaryExpression.getRightExpression();
@@ -786,16 +785,15 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			case "=":
 				Object leftValueO = getValueStringWhere(leftExpression, row);
 				Object rightValueO = getValueStringWhere(rightExpression, row);
-				return compareToWhere(leftValueO,rightValueO) == 0;
+				return compareToWhere(leftValueO, rightValueO) == 0;
 			case "<>":
 				Object leftValue0 = getValueStringWhere(leftExpression, row);
 				Object rightValue0 = getValueStringWhere(rightExpression, row);
-				return compareToWhere(leftValue0,rightValue0) != 0;
+				return compareToWhere(leftValue0, rightValue0) != 0;
 			default:
 				throw new UnsupportedOperationException("Unsupported operator: " + operator);
 			}
-		} else if (expression instanceof Parenthesis) {
-			Parenthesis parenthesis = (Parenthesis) expression;
+		} else if (expression instanceof Parenthesis parenthesis) {
 			Expression subExpression = parenthesis.getExpression();
 			return evaluateExpression(subExpression, row);
 		} else {
@@ -815,8 +813,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	 * @return true or false
 	 */
 	public static boolean evaluateExpressionJoin(Expression expression, String jointable, Map<String, Object> row1, Map<String, Object> row2) {
-		if (expression instanceof BinaryExpression) {
-			BinaryExpression binaryExpression = (BinaryExpression) expression;
+		if (expression instanceof BinaryExpression binaryExpression) {
 			String operator = binaryExpression.getStringExpression();
 			Expression leftExpression = binaryExpression.getLeftExpression();
 			Expression rightExpression = binaryExpression.getRightExpression();
@@ -860,16 +857,15 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			case "=":
 				Object leftValueO = getValueString(leftExpression, rowleft);
 				Object rightValueO = getValueString(rightExpression, rowright);
-				return compareToWhere(leftValueO,rightValueO) == 0;
+				return compareToWhere(leftValueO, rightValueO) == 0;
 			case "<>":
 				leftValue = getValueString(leftExpression, rowleft);
 				rightValue = getValueString(rightExpression, rowright);
-				return compareToWhere(leftValue,rightValue) != 0;
+				return compareToWhere(leftValue, rightValue) != 0;
 			default:
 				throw new UnsupportedOperationException("Unsupported operator: " + operator);
 			}
-		} else if (expression instanceof Parenthesis) {
-			Parenthesis parenthesis = (Parenthesis) expression;
+		} else if (expression instanceof Parenthesis parenthesis) {
 			Expression subExpression = parenthesis.getExpression();
 			return evaluateExpressionJoin(subExpression, jointable, row1, row2);
 		} else {
@@ -920,10 +916,10 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			return Double.toString(dv.getValue());
 		} else if(expression instanceof Column column) {
 			String columnName = column.getColumnName();
-			if(row.get(columnName) instanceof Double val)
-			return Double.valueOf(val);
-			else {
-				return Double.valueOf((String)row.get(columnName));
+			if (row.get(columnName) instanceof Double val) {
+				return Double.valueOf(val);
+			} else {
+				return Double.valueOf((String) row.get(columnName));
 			}
 		} else {
 			return Double.valueOf(0.0d);
@@ -968,8 +964,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	 * @return evaluates to true if expression satisfies the condition else false
 	 */
 	public static boolean evaluateExpression(Expression expression, CSVRecord row) {
-		if (expression instanceof BinaryExpression) {
-			BinaryExpression binaryExpression = (BinaryExpression) expression;
+		if (expression instanceof BinaryExpression binaryExpression) {
 			String operator = binaryExpression.getStringExpression();
 			Expression leftExpression = binaryExpression.getLeftExpression();
 			Expression rightExpression = binaryExpression.getRightExpression();
@@ -1006,8 +1001,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			default:
 				throw new UnsupportedOperationException("Unsupported operator: " + operator);
 			}
-		} else if (expression instanceof Parenthesis) {
-			Parenthesis parenthesis = (Parenthesis) expression;
+		} else if (expression instanceof Parenthesis parenthesis) {
 			Expression subExpression = parenthesis.getExpression();
 			return evaluateExpression(subExpression, row);
 		} else {
@@ -1023,12 +1017,12 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	 * @return get the record column data from expression.
 	 */
 	private static String getValueString(Expression expression, CSVRecord row) {
-		if (expression instanceof LongValue) {
-			return String.valueOf(((LongValue) expression).getValue());
-		} else if (expression instanceof StringValue) {
-			return ((StringValue) expression).getValue();
-		} else if (expression instanceof DoubleValue) {
-			return Double.toString(((DoubleValue) expression).getValue());
+		if (expression instanceof LongValue value) {
+			return String.valueOf(value.getValue());
+		} else if (expression instanceof StringValue value) {
+			return value.getValue();
+		} else if (expression instanceof DoubleValue value) {
+			return Double.toString(value.getValue());
 		} else {
 			Column column = (Column) expression;
 			String columnName = column.getColumnName();
@@ -1170,7 +1164,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		Expression expression = null;
 		if (CollectionUtils.isNotEmpty(leftTableExpressions)) {
 			expression = leftTableExpressions.get(0);
-			for (int expressioncount = 1; expressioncount < leftTableExpressions.size(); expressioncount++) {
+			for (int expressioncount = 1;expressioncount < leftTableExpressions.size();expressioncount++) {
 				expression = new OrExpression(expression, leftTableExpressions.get(expressioncount));
 			}
 			return expression;

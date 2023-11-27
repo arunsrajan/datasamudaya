@@ -28,7 +28,7 @@ import com.github.datasamudaya.stream.Pipeline;
 
 public class StreamReduceIgnite implements Serializable, Pipeline {
 	private static final long serialVersionUID = 33623853570356905L;
-	private Logger log = Logger.getLogger(StreamReduceIgnite.class);
+	private final Logger log = Logger.getLogger(StreamReduceIgnite.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");

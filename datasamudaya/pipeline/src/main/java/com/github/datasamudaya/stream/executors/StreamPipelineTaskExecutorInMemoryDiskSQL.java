@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
@@ -61,7 +62,7 @@ import com.pivovarit.collectors.ParallelCollectors;
  */
 @SuppressWarnings("rawtypes")
 public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipelineTaskExecutorInMemoryDisk {
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorInMemoryDiskSQL.class);
+	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorInMemoryDiskSQL.class);
 	public double timetaken = 0.0;
 	public StreamPipelineTaskExecutorInMemoryDiskSQL(JobStage jobstage, ConcurrentMap<String, OutputStream> resultstream,
 			Cache cache) throws Exception {
@@ -79,7 +80,7 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutorInMemoryDiskSQL.processBlockHDFSMap");
-		log.info("BlocksLocation Columns: {}",blockslocation.getColumns());
+		log.info("BlocksLocation Columns: {}", blockslocation.getColumns());
 		CSVParser records = null;
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
@@ -95,7 +96,7 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 				try {
 					if(CollectionUtils.isNotEmpty(csvoptions.getRequiredcolumns())) {
 						if(isNull(yosegibytes) || yosegibytes.length==0) {
-							log.info("Unable To Find vector for blocks {}",blockslocation);
+							log.info("Unable To Find vector for blocks {}", blockslocation);
 							try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 							var buffer = new BufferedReader(new InputStreamReader(bais));){
 								task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
@@ -164,12 +165,12 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 
 				} else if (finaltask instanceof StandardDeviation) {
 					out = new Vector<>();
-					CompletableFuture<List> cf = (CompletableFuture) ((java.util.stream.IntStream) streammap).boxed()
+					CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
 							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
 					var streamtmp = cf.get();
-					var mean = (streamtmp).stream().mapToInt(Integer.class::cast).average().getAsDouble();
-					var variance = (streamtmp).stream().mapToInt(Integer.class::cast)
+					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
+					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
 					var standardDeviation = Math.sqrt(variance);
 					out.add(standardDeviation);

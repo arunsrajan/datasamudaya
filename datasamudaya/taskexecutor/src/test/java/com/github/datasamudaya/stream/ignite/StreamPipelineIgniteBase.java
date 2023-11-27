@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.log4j.Logger;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -39,7 +40,7 @@ import com.github.datasamudaya.common.utils.Utils;
 
 public class StreamPipelineIgniteBase {
   static MiniDFSCluster hdfsLocalCluster;
-  String[] airlineheader = new String[] {"Year", "Month", "DayofMonth", "DayOfWeek", "DepTime",
+  String[] airlineheader = new String[]{"Year", "Month", "DayofMonth", "DayOfWeek", "DepTime",
       "CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum",
       "ActualElapsedTime", "CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest",
       "Distance", "TaxiIn", "TaxiOut", "Cancelled", "CancellationCode", "Diverted", "CarrierDelay",
@@ -87,7 +88,7 @@ public class StreamPipelineIgniteBase {
   static ConcurrentMap<String, List<Process>> containerprocesses = new ConcurrentHashMap<>();
   protected static PipelineConfig pipelineconfig = new PipelineConfig();
   static Logger log = Logger.getLogger(StreamPipelineIgniteBase.class);
-  private static TestingServer testingserver = null;
+  private static TestingServer testingserver;
    
   @SuppressWarnings({"unused"})
   @BeforeClass
@@ -95,8 +96,8 @@ public class StreamPipelineIgniteBase {
 	try {		
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
-		ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+		StaticComponentContainer.Modules.exportAllToAll();
+		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 		testingserver  = new TestingServer(zookeeperport);
 		testingserver.start();		
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,

@@ -53,12 +53,15 @@ public class BlocksLocation implements Serializable, Cloneable {
 	}
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		BlocksLocation other = (BlocksLocation) obj;
 		return Arrays.equals(block, other.block);
 	}

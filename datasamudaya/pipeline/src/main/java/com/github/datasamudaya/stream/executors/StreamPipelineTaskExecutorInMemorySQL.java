@@ -37,6 +37,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
@@ -76,10 +77,10 @@ import com.pivovarit.collectors.ParallelCollectors;
  */
 @SuppressWarnings("rawtypes")
 public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineTaskExecutorInMemory {
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorInMemorySQL.class);
+	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorInMemorySQL.class);
 	public double timetaken = 0.0;
 	public StreamPipelineTaskExecutorInMemorySQL(JobStage jobstage, ConcurrentMap<String, OutputStream> resultstream,
-			Cache cache,ConcurrentMap<BlocksLocation, String> blorcmap) throws Exception {
+			Cache cache, ConcurrentMap<BlocksLocation, String> blorcmap) throws Exception {
 		super(jobstage, resultstream, cache);
 	}	
 	/**
@@ -94,7 +95,7 @@ public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineT
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
-		log.info("BlocksLocation Columns: {}",blockslocation.getColumns());
+		log.info("BlocksLocation Columns: {}", blockslocation.getColumns());
 		CSVParser records = null;
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
@@ -110,7 +111,7 @@ public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineT
 				try {
 					if(CollectionUtils.isNotEmpty(csvoptions.getRequiredcolumns())) {
 						if(isNull(yosegibytes) || yosegibytes.length==0) {
-							log.info("Unable To Find vector for blocks {}",blockslocation);
+							log.info("Unable To Find vector for blocks {}", blockslocation);
 							try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 							var buffer = new BufferedReader(new InputStreamReader(bais));){
 								task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
@@ -179,12 +180,12 @@ public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineT
 
 				} else if (finaltask instanceof StandardDeviation) {
 					out = new Vector<>();
-					CompletableFuture<List> cf = (CompletableFuture) ((java.util.stream.IntStream) streammap).boxed()
+					CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
 							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
 					var streamtmp = cf.get();
-					var mean = (streamtmp).stream().mapToInt(Integer.class::cast).average().getAsDouble();
-					var variance = (streamtmp).stream().mapToInt(Integer.class::cast)
+					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
+					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
 					var standardDeviation = Math.sqrt(variance);
 					out.add(standardDeviation);
@@ -263,7 +264,7 @@ public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineT
 	 */
 	public OutputStream getIntermediateInputStreamRDF(RemoteDataFetch rdf) throws Exception {
 		log.debug("Entered MassiveDataStreamTaskExecutorInMemory.getIntermediateInputStreamRDF");
-		var path = (rdf.getJobid() + DataSamudayaConstants.HYPHEN + rdf.getStageid() + DataSamudayaConstants.HYPHEN + rdf.getTaskid());
+		var path = rdf.getJobid() + DataSamudayaConstants.HYPHEN + rdf.getStageid() + DataSamudayaConstants.HYPHEN + rdf.getTaskid();
 		OutputStream os = resultstream.get(path);
 		log.debug("Exiting MassiveDataStreamTaskExecutorInMemory.getIntermediateInputStreamFS");
 		if (isNull(os)) {
@@ -339,7 +340,7 @@ public final class StreamPipelineTaskExecutorInMemorySQL extends StreamPipelineT
 			log.info("Submitted Task " + task);
 			if (task.input != null && task.parentremotedatafetch != null) {
 				var numinputs = task.parentremotedatafetch.length;
-				for (var inputindex = 0; inputindex < numinputs; inputindex++) {
+				for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 					var input = task.parentremotedatafetch[inputindex];
 					if (input != null) {
 						var rdf = (RemoteDataFetch) input;

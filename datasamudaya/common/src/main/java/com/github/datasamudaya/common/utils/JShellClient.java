@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.net.URL;
 
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
+import org.burningwave.core.assembler.StaticComponentContainer;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -21,7 +22,7 @@ public class JShellClient {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		String hostName = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST);
 		// set the hostname of the sql server
 		int portNumber = Integer

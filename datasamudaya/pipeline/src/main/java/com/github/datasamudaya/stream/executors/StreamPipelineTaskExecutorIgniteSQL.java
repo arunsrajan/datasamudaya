@@ -95,7 +95,7 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
-		log.info("BlocksLocation Columns: {}"+blockslocation.getColumns());
+		log.info("BlocksLocation Columns: {}" + blockslocation.getColumns());
 		CSVParser records = null;
 		var fsdos = new ByteArrayOutputStream();		
 		InputStream istreamnocols = null;
@@ -110,7 +110,7 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 				try {
 					if(CollectionUtils.isNotEmpty(csvoptions.getRequiredcolumns())) {
 						if(isNull(yosegibytes) || yosegibytes.length==0) {
-							log.info("Unable To Find vector for blocks {}",blockslocation);
+							log.info("Unable To Find vector for blocks {}", blockslocation);
 							try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 							var buffer = new BufferedReader(new InputStreamReader(bais));
 									var baisrec = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
@@ -179,7 +179,7 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 
 				} else if (finaltask instanceof StandardDeviation) {
 					out = new Vector<>();
-					var streamtmp = ((java.util.stream.IntStream) streammap).boxed().collect(Collectors.toList());
+					var streamtmp = ((IntStream) streammap).boxed().collect(Collectors.toList());
 					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
 					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();

@@ -42,12 +42,15 @@ public class Block implements Serializable, Cloneable {
 	}
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		Block other = (Block) obj;
 		return blockOffset == other.blockOffset && blockend == other.blockend && blockstart == other.blockstart
 				&& Objects.equals(filename, other.filename);

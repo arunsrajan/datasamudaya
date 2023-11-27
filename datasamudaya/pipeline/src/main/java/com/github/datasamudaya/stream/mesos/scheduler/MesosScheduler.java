@@ -56,16 +56,16 @@ import com.google.protobuf.ByteString;
  * The mesos scheduler to schedule the tasks.
  */
 public class MesosScheduler implements Scheduler {
-	private static Logger log = Logger.getLogger(MesosScheduler.class);
-	private List<StreamPipelineTaskSubmitter> mdststs;
-	private SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge> graph;
+	private static final Logger log = Logger.getLogger(MesosScheduler.class);
+	private final List<StreamPipelineTaskSubmitter> mdststs;
+	private final SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge> graph;
 	private int taskIdCounter;
 
 	private Protos.Credential credential;
 	private ExecutorInfo executorinfo;
 	private int finishedTasks;
-	private MesosThirdPartyLibraryDistributor mtpld;
-	private Map<String, StreamPipelineTaskSubmitter> jobstagemdsthread;
+	private final MesosThirdPartyLibraryDistributor mtpld;
+	private final Map<String, StreamPipelineTaskSubmitter> jobstagemdsthread;
 	int port;
 	byte[] mrjar;
 
@@ -101,7 +101,7 @@ public class MesosScheduler implements Scheduler {
 	 * The offers will be CPU_PER_TASK and MEM_PER_TASK
 	 */
 	@Override
-	public void resourceOffers(SchedulerDriver driver, List<Offer> offers)  {
+	public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
 		final var CPUS_PER_TASK = 1;
 		final var MEM_PER_TASK = 2048;
 		//Offers list.
@@ -134,7 +134,7 @@ public class MesosScheduler implements Scheduler {
 					var toexecute = true;
 					//Get the predecessor list (i.e parent tasks) of the current node task in grap.
 					var predessorslist = Graphs.predecessorListOf(graph, mdstst);
-					for (var succcount = 0; succcount < predessorslist.size(); succcount++) {
+					for (var succcount = 0;succcount < predessorslist.size();succcount++) {
 						var predthread = predessorslist.get(succcount);
 						if (!predthread.isCompletedexecution()) {
 							toexecute = false;

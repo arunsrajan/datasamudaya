@@ -24,6 +24,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.springframework.yarn.integration.container.AbstractIntegrationYarnContainer;
 import org.springframework.yarn.integration.ip.mind.MindAppmasterServiceClient;
 
@@ -53,7 +54,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 	private ExecutorService executor;
 	private static final Log log = LogFactory.getLog(StreamPipelineYarnContainer.class);
 	private Map<String, JobStage> jsidjsmap;
-	private MindAppmasterServiceClient client = null;
+	private MindAppmasterServiceClient client;
 	/**
 	 * Pull the Job to perform MR operation execution requesting 
 	 * the Yarn App Master Service. The various Yarn operation What operation
@@ -62,7 +63,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 	 */
 	@Override
 	protected void runInternal() {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		Task task;
 		JobRequest request;
 		byte[] job = null;
@@ -74,7 +75,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 			prop.putAll(System.getProperties());
 			prop.putAll(containerprops);
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			while (true) {
 				request = new JobRequest();
 				request.setState(JobRequest.State.WHATTODO);

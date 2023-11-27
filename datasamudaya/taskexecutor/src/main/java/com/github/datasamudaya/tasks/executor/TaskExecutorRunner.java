@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.log4j.PropertyConfigurator;
+import org.burningwave.core.assembler.StaticComponentContainer;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -60,7 +62,7 @@ import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
  */
 public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 
-  static org.slf4j.Logger log = LoggerFactory.getLogger(TaskExecutorRunner.class);
+  static Logger log = LoggerFactory.getLogger(TaskExecutorRunner.class);
   Map<String, Object> apptaskexecutormap = new ConcurrentHashMap<>();
   Map<String, Object> jobstageexecutormap = new ConcurrentHashMap<>();
   ConcurrentMap<String, OutputStream> resultstream = new ConcurrentHashMap<>();
@@ -98,7 +100,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 						+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 			}
-			org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+			StaticComponentContainer.Modules.exportAllToAll();
 			zo.connect();
 			ByteBufferPoolDirect.init(Long.parseLong(args[1]));
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
@@ -135,14 +137,14 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	
 	var hp = host+DataSamudayaConstants.UNDERSCORE+port;
 	
-	zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), (event)->{
-		log.info("TaskExecutor {} initialized and started",hp);
+	zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
+		log.info("TaskExecutor {} initialized and started", hp);
 	});
 
   }
 
   ClassLoader cl;
-  static Registry server = null;
+  static Registry server;
 
   /**
    * Starts and executes the tasks from scheduler via rpc registry.
@@ -196,7 +198,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
         	  StreamJobScheduler js = new StreamJobScheduler();
         	  return js.schedule(job);
           } else if (!Objects.isNull(deserobj)) {
-        	  log.info("Deserialized object:{} ",deserobj);
+        	  log.info("Deserialized object:{} ", deserobj);
             TaskExecutor taskexecutor = new TaskExecutor(cl, port, es, configuration,
                 apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
                 jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap);
@@ -204,7 +206,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
           }
         } catch (Throwable ex) {
           log.error(DataSamudayaConstants.EMPTY, ex);
-          if(ex instanceof Exception e) {
+          if (ex instanceof Exception e) {
           	Utils.getStackTrace(e, task);
           }
         }
@@ -216,8 +218,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
     log.info("RPC Registry for port: {} Obtained", port);
   }
 
-  static StreamDataCruncher stub = null;
-  static StreamDataCruncher dataCruncher = null;
+  static StreamDataCruncher stub;
+  static StreamDataCruncher dataCruncher;
 
   /**
    * Destroy the thread pool.

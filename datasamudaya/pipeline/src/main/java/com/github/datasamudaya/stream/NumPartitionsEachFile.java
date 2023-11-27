@@ -24,7 +24,7 @@ import java.util.function.IntSupplier;
  *
  */
 public class NumPartitionsEachFile implements IntSupplier, Serializable {
-	private Integer numpartition;
+	private final Integer numpartition;
 	private static final long serialVersionUID = 3903225461279785284L;
 
 	public NumPartitionsEachFile(Integer numpartition) {

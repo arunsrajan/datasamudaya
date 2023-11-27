@@ -31,7 +31,7 @@ import com.github.datasamudaya.stream.sql.TableCreator;
  */
 public class SQLServerMR {
 	static Logger log = LoggerFactory.getLogger(SQLServerMR.class);
-	static ServerSocket serverSocket = null;
+	static ServerSocket serverSocket;
 	
 	/**
 	 * Start the SQL server.
@@ -40,7 +40,7 @@ public class SQLServerMR {
 	public static void start() throws Exception {		
 		ExecutorService executors = Executors.newFixedThreadPool(10);
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.SQLPORTMR,DataSamudayaConstants.SQLPORTMR_DEFAULT)));
+				.getProperty(DataSamudayaConstants.SQLPORTMR, DataSamudayaConstants.SQLPORTMR_DEFAULT)));
 		executors.execute(() -> {
 			while (true) {
 				Socket sock;
@@ -55,15 +55,15 @@ public class SQLServerMR {
 								BufferedReader in = new BufferedReader(
 										new InputStreamReader(clientSocket.getInputStream()));) {
 							user = in.readLine();
-							if(!Utils.isUserExists(user)) {
-								String usernotexistsmessage = "User "+user+" is not configured. Exiting...";
+							if (!Utils.isUserExists(user)) {
+								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
 								out.println(usernotexistsmessage);
 								out.println("Quit");
 								throw new Exception(usernotexistsmessage);
 							}
 							List<LaunchContainers> containers = Utils.launchContainers(user, teappid);
 							var cpumemory = Utils.getAllocatedContainersResources(containers);
-							out.println("User '"+user +"' connected with cpu "+cpumemory.get(DataSamudayaConstants.CPUS) +" and memory "+cpumemory.get(DataSamudayaConstants.MEM) +" mb");
+							out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 							Utils.printNodesAndContainers(containers, out);
 							out.println("Welcome to the Map Reduce SQL Server!");
 							out.println("Type 'quit' to exit.");
@@ -78,19 +78,19 @@ public class SQLServerMR {
 							while (true) {
 								try {
 									while ((inputLine = in.readLine()) != null) {
-										if (inputLine.equalsIgnoreCase("quit")) {
+										if ("quit".equalsIgnoreCase(inputLine)) {
 											out.println("Quit");
 											break outer;
 										}
-										out.println(Utils.formatDate(new Date()) +"> " + inputLine);
+										out.println(Utils.formatDate(new Date()) + "> " + inputLine);
 										inputLine = inputLine.trim();
 										if (inputLine.startsWith("setmode")) {
 											String[] mode = inputLine.split(" ");
-											if(mode.length == 2) {
-												if(mode[1].equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
+											if (mode.length == 2) {
+												if (mode[1].equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
 													isignite = true;
 													isyarn = false;
-													if(iscontainerlaunched) {
+													if (iscontainerlaunched) {
 														try {
 															Utils.destroyContainers(user, teappid);
 														} catch (Exception ex) {
@@ -99,10 +99,10 @@ public class SQLServerMR {
 														iscontainerlaunched = false;
 													}
 													out.println("ignite mode set");
-												} else if(mode[1].equalsIgnoreCase(DataSamudayaConstants.YARN)) {
+												} else if (mode[1].equalsIgnoreCase(DataSamudayaConstants.YARN)) {
 													isignite = false;
 													isyarn = true;
-													if(iscontainerlaunched) {
+													if (iscontainerlaunched) {
 														try {
 															Utils.destroyContainers(user, teappid);
 														} catch (Exception ex) {
@@ -111,14 +111,14 @@ public class SQLServerMR {
 														iscontainerlaunched = false;
 													}
 													out.println("yarn mode set");
-												}  else {
+												} else {
 													isignite = false;
 													isyarn = false;
-													if(!iscontainerlaunched) {
+													if (!iscontainerlaunched) {
 														containers = Utils.launchContainers(user, teappid);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
-														out.println("User '"+user +"' connected with cpu "+cpumemory.get(DataSamudayaConstants.CPUS) +" and memory "+cpumemory.get(DataSamudayaConstants.MEM) +" mb");
+														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 													}
 													out.println("yarn and ignite mode unset");
 												}
@@ -135,8 +135,8 @@ public class SQLServerMR {
 											dbdefault = StringUtils.normalizeSpace(inputLine.trim()).split(" ")[1];
 										} else if (inputLine.startsWith("getdb")) {
 											out.println(dbdefault);
-										} else if (inputLine.startsWith("create") || 
-												inputLine.startsWith("alter")) {
+										} else if (inputLine.startsWith("create") 
+												|| inputLine.startsWith("alter")) {
 											out.println(TableCreator.createAlterTable(dbdefault, inputLine));
 										} else if (inputLine.startsWith("drop")) {
 											out.println(TableCreator.dropTable(dbdefault, inputLine));
@@ -152,24 +152,24 @@ public class SQLServerMR {
 											long starttime = System.currentTimeMillis();
 											String appid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
 											List results = null; 
-											if(isignite) {
+											if (isignite) {
 												results = SelectQueryExecutorMR.executeSelectQueryIgnite(dbdefault, inputLine, user, appid, teappid);
 											} else {
 												results = SelectQueryExecutorMR.executeSelectQuery(dbdefault, inputLine, user, appid, teappid, isyarn);
 											}
-											double timetaken = ((System.currentTimeMillis()-starttime)/1000.0);
+											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 											int partitionno = 1;
 											out.println("Partition" + partitionno);
 											Utils.printTableOrError(results, out, JOBTYPE.NORMAL);
 											partitionno++;
-											out.println("Time taken " + timetaken +" seconds");
+											out.println("Time taken " + timetaken + " seconds");
 											out.println("");
 										} else {
 											out.println("Enter use,getdb,create,alter,drop,show,describe,select,setmode to execute");
 										}
 										out.println("Done");
 									}
-								} catch(SocketException socketexception) {
+								} catch (SocketException socketexception) {
 									log.error(DataSamudayaConstants.EMPTY, socketexception);
 									break outer;
 								} catch (Exception exception) {
@@ -179,7 +179,7 @@ public class SQLServerMR {
 						} catch (Exception ex) {
 							log.error(DataSamudayaConstants.EMPTY, ex);							
 						} finally {
-							if(iscontainerlaunched) {
+							if (iscontainerlaunched) {
 								try {
 									Utils.destroyContainers(user, teappid);
 								} catch (Exception ex) {
@@ -193,5 +193,8 @@ public class SQLServerMR {
 				}
 			}
 		});
+	}
+
+	private SQLServerMR() {
 	}
 }

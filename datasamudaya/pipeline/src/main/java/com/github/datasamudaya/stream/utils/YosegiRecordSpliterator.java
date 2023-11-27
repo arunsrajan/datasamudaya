@@ -3,6 +3,7 @@ package com.github.datasamudaya.stream.utils;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -19,7 +20,7 @@ import jp.co.yahoo.yosegi.message.objects.StringObj;
 import jp.co.yahoo.yosegi.message.parser.IParser;
 import jp.co.yahoo.yosegi.reader.YosegiSchemaReader;
 
-public class YosegiRecordSpliterator extends java.util.Spliterators.AbstractSpliterator<Map<String, Object>> {
+public class YosegiRecordSpliterator extends Spliterators.AbstractSpliterator<Map<String, Object>> {
     private final YosegiSchemaReader reader;
     List<String> reqcols;
     Map<String,SqlTypeName> sqltypename;
@@ -61,7 +62,7 @@ public class YosegiRecordSpliterator extends java.util.Spliterators.AbstractSpli
         	while (reader.hasNext()) {
     			IParser parser = reader.next();
     			Map<String, Object> map = new ConcurrentHashMap<>();
-    			reqcols.stream().forEach(col->{
+    			reqcols.stream().forEach(col -> {
     				getValueFromIParser(map, col, parser);
     			});
     			action.accept(map);

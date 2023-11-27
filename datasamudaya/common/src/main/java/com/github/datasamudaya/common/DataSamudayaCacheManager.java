@@ -23,7 +23,7 @@ import org.ehcache.CacheManager;
  * This class holds the CacheMaganer object for whole JVM.
  */
 public class DataSamudayaCacheManager {
-	private static CacheManager cachemanager = null;
+	private static CacheManager cachemanager;
 
 	public static void put(CacheManager cachemanager) {
 		DataSamudayaCacheManager.cachemanager = cachemanager;

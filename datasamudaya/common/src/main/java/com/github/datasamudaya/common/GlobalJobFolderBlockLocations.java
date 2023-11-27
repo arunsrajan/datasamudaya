@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
  */
 public class GlobalJobFolderBlockLocations {
 
-	private static Logger log = Logger.getLogger(GlobalJobFolderBlockLocations.class);
+	private static final Logger log = Logger.getLogger(GlobalJobFolderBlockLocations.class);
 
 	private GlobalJobFolderBlockLocations() {
 	}
@@ -46,14 +46,14 @@ public class GlobalJobFolderBlockLocations {
 		GlobalJobFolderBlockLocations.isResetBlocksLocation = isResetBlocksLocation;
 	}
 
-	private static Map<String, Map<String, List<BlocksLocation>>> lcsmap = new ConcurrentHashMap<>();
+	private static final Map<String, Map<String, List<BlocksLocation>>> lcsmap = new ConcurrentHashMap<>();
 
 	/**
 	 * The put method for holding userid as key and list of BlocksLocation object as values.
 	 * @param hdfsfolder
 	 * @param lbls
 	 */
-	public static void put(String jobid,String hdfsfolder, List<BlocksLocation> lbls) {
+	public static void put(String jobid, String hdfsfolder, List<BlocksLocation> lbls) {
 		Map<String, List<BlocksLocation>> folderblockslocationmap = lcsmap.get(jobid);
 		if (isNull(folderblockslocationmap)) {
 			folderblockslocationmap = new ConcurrentHashMap<>();

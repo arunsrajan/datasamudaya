@@ -89,7 +89,7 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
-		log.info("BlocksLocation Columns: {}"+blockslocation.getColumns());
+		log.info("BlocksLocation Columns: {}" + blockslocation.getColumns());
 		CSVParser records = null;
 		var fsdos = new ByteArrayOutputStream();
 		OrcReaderRecordReader orrr = null;
@@ -100,7 +100,7 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 				CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
 				try {
 					if(isNull(orcfilepath)) {
-						log.info("Unable To Find vector for blocks {}",blockslocation);
+						log.info("Unable To Find vector for blocks {}", blockslocation);
 						try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 						var buffer = new BufferedReader(new InputStreamReader(bais));
 								var baisrec = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
@@ -164,7 +164,7 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 
 				} else if (finaltask instanceof StandardDeviation) {
 					out = new Vector<>();
-					var streamtmp = ((java.util.stream.IntStream) streammap).boxed().collect(Collectors.toList());
+					var streamtmp = ((IntStream) streammap).boxed().collect(Collectors.toList());
 					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
 					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();

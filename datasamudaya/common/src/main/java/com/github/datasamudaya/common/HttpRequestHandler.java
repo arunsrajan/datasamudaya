@@ -28,9 +28,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
  */
 public class HttpRequestHandler extends AbstractHandler {
 
-  private static Logger log = Logger.getLogger(HttpRequestHandler.class);
+	private static final Logger log = Logger.getLogger(HttpRequestHandler.class);
 
-  private String dir;
+	private final String dir;
 
   HttpRequestHandler(String dir) {
     this.dir = dir;
@@ -59,7 +59,7 @@ public class HttpRequestHandler extends AbstractHandler {
 
       // forces download
       var headerKey = "Content-Disposition";
-      var headerValue = String.format("attachment; filename=\"%s\"", downloadFile.getName());
+      var headerValue = "attachment; filename=\"%s\"".formatted(downloadFile.getName());
       response.setHeader(headerKey, headerValue);
 
       // obtains response's output stream

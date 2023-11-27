@@ -85,8 +85,8 @@ import com.github.datasamudaya.stream.utils.SQLUtils;
 public class PigUtils {
 	
 	private PigUtils() {}
-	
-	private static Logger log = LoggerFactory.getLogger(PigUtils.class);
+
+	private static final Logger log = LoggerFactory.getLogger(PigUtils.class);
 	
 	/**
 	 * Get the Pig Query parser by passing scope
@@ -266,7 +266,7 @@ public class PigUtils {
 		return sp.sorted((map1, map2) -> {
 			List<SortOrderColumns> columnssortorder = sortordercolumns;
 
-			for (int i = 0; i < columnssortorder.size(); i++) {
+			for (int i = 0;i < columnssortorder.size();i++) {
 				String columnName = columnssortorder.get(i).getColumn();
 				Boolean isAsc = columnssortorder.get(i).isIsasc();
 				Object value1 = map1.get(columnName);
@@ -331,19 +331,19 @@ public class PigUtils {
 	 */
 	public static StreamPipeline<Map<String, Object>> executeLOJoin(StreamPipeline<Map<String, Object>> sp1,
 			StreamPipeline<Map<String, Object>> sp2,
-			List<String> columnsleft,List<String> columnsright,
-			LOJoin loJoin) throws Exception{
+			List<String> columnsleft, List<String> columnsright,
+			LOJoin loJoin) throws Exception {
 		sp1.clearChild();
 		sp2.clearChild();
-		return sp1.map(value->value).join(sp2.map(val->val), new JoinPredicate<Map<String, Object>, Map<String, Object>>() {
+		return sp1.map(value -> value).join(sp2.map(val -> val), new JoinPredicate<Map<String, Object>, Map<String, Object>>() {
 			private static final long serialVersionUID = -2218859526944624786L;
 			List<String> leftablecol = columnsleft;
 			List<String> righttablecol = columnsright;
 
 			public boolean test(Map<String, Object> rowleft, Map<String, Object> rowright) {
-				for(int columnindex=0;columnindex<leftablecol.size();columnindex++) {
-					if(!rowleft.get(leftablecol.get(columnindex))
-					.equals(rowright.get(righttablecol.get(columnindex)))){
+				for (int columnindex = 0;columnindex < leftablecol.size();columnindex++) {
+					if (!rowleft.get(leftablecol.get(columnindex))
+					.equals(rowright.get(righttablecol.get(columnindex)))) {
 						return false;
 					}
 				}
@@ -396,13 +396,13 @@ public class PigUtils {
 				columns.clear();
 			}
 		}
-		((CsvOptionsSQL)sp.getCsvOptions()).getRequiredcolumns().clear();
-		((CsvOptionsSQL)sp.getCsvOptions()).getRequiredcolumns().addAll(colheaders);
+		((CsvOptionsSQL) sp.getCsvOptions()).getRequiredcolumns().clear();
+		((CsvOptionsSQL) sp.getCsvOptions()).getRequiredcolumns().addAll(colheaders);
 		List<FunctionParams> aggfunctions = getAggFunctions(functionparams);
 		List<FunctionParams> nonaggfunctions = getNonAggFunctions(functionparams);
 		final AtomicBoolean iscount = new AtomicBoolean(false), isaverage = new AtomicBoolean(false);
 		if(CollectionUtils.isEmpty(aggfunctions) && CollectionUtils.isEmpty(nonaggfunctions)) {
-			return sp.map(map->{
+			return sp.map(map -> {
 					Map<String, Object> formattedmap = new HashMap<>();
 					List<String> aliasesl = aliases;
 				try {
@@ -411,7 +411,7 @@ public class PigUtils {
 					for (LogicalExpression exp : headera) {
 						formattedmap.put(aliasi.next(), evaluateBinaryExpression(exp, map, null));
 					}
-				} catch(Exception ex) {
+				} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
 					return formattedmap;
@@ -428,7 +428,7 @@ public class PigUtils {
 					@Override
 					public Map<String, Object> apply(Map<String, Object> mapvalues) {
 						Map<String, Object> nonaggfnvalues = new HashMap<>();
-						if(nonNull(grpby) && grpby.length>0) {
+						if (nonNull(grpby) && grpby.length > 0) {
 							for (LogicalExpression grpobj : grpby) {
 								try {
 									nonaggfnvalues.put(grpobj.getFieldSchema().alias, evaluateBinaryExpression(grpobj, mapvalues, null));
@@ -490,7 +490,7 @@ public class PigUtils {
 						Object[] grpbyobj = null;
 
 						int index = 0;
-						if(nonNull(grpby) && grpby.length > 0) {
+						if (nonNull(grpby) && grpby.length > 0) {
 							grpbyobj = new Object[grpby.length];
 							for (LogicalExpression grpobj : grpby) {
 								try {
@@ -502,8 +502,8 @@ public class PigUtils {
 							}
 						}
 						index = 0;
-						for(FunctionParams functionParam: functionParams) {
-							if(functionParam.getFunctionName().equals("count")) {
+						for (FunctionParams functionParam : functionParams) {
+							if (functionParam.getFunctionName().equals("count")) {
 								fnobj[index] = 1;
 							} else {
 								try {
@@ -545,17 +545,17 @@ public class PigUtils {
 					AtomicBoolean iscnt = iscount;
 					AtomicBoolean isavg = isaverage;
 					@Override
-					public Map<String, Object> apply(Tuple2<Tuple,Tuple> tuple2) {
+					public Map<String, Object> apply(Tuple2<Tuple, Tuple> tuple2) {
 						Map<String, Object> mapwithfinalvalues = new HashMap<>();
 						SQLUtils.populateMapFromTuple(mapwithfinalvalues, tuple2.v1, grpby);
 						populateMapFromFunctions(mapwithfinalvalues, tuple2.v2, functionParam);
-						if(!iscnt.get() && isavg.get()) {							
+						if (!iscnt.get() && isavg.get()) {							
 							mapwithfinalvalues.remove("count");
 						}
-						if(!fnaverages.isEmpty()) {
+						if (!fnaverages.isEmpty()) {
 							long count = Long.valueOf(getCountFromTuple(tuple2.v2));
-							for(FunctionParams fnaverage:fnaverages) {
-								mapwithfinalvalues.put(fnaverage.getAlias(), SQLUtils.evaluateValuesByOperator(mapwithfinalvalues.get(fnaverage.getAlias()),count,"/"));
+							for (FunctionParams fnaverage :fnaverages) {
+								mapwithfinalvalues.put(fnaverage.getAlias(), SQLUtils.evaluateValuesByOperator(mapwithfinalvalues.get(fnaverage.getAlias()), count, "/"));
 							}
 						}						
 						return mapwithfinalvalues;
@@ -632,8 +632,8 @@ public class PigUtils {
 	                // Get the absolute value of the first parameter
 					ConstantExpression pos = (ConstantExpression) fn.getArguments().get(1);
 					ConstantExpression length = (ConstantExpression) fn.getArguments().get(2);
-					String val = (String)evaluateBinaryExpression(fn.getArguments().get(0), row, name);
-	                return (val).substring((int)pos.getValue(), Math.min(((String)val).length(),(int)pos.getValue()+(int)length.getValue()));
+					String val = (String) evaluateBinaryExpression(fn.getArguments().get(0), row, name);
+	                return val.substring((int) pos.getValue(), Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
 			}
 		} else if(expression instanceof BinaryExpression bex) {
 			String operator = expression.getName();
@@ -668,13 +668,13 @@ public class PigUtils {
 		    }
 		    switch (operator) {
 		        case "Add":
-		            return evaluateValuesByOperator(leftValue,rightValue, "+");
+		            return evaluateValuesByOperator(leftValue, rightValue, "+");
 		        case "Subtract":
-		            return evaluateValuesByOperator(leftValue,rightValue, "-");
+		            return evaluateValuesByOperator(leftValue, rightValue, "-");
 		        case "Multiply":
-		            return evaluateValuesByOperator(leftValue,rightValue, "*");
+		            return evaluateValuesByOperator(leftValue, rightValue, "*");
 		        case "Divide":
-		            return evaluateValuesByOperator(leftValue,rightValue, "/");
+		            return evaluateValuesByOperator(leftValue, rightValue, "/");
 		        default:
 		            throw new IllegalArgumentException("Invalid operator: " + operator);
 		    }
@@ -694,7 +694,7 @@ public class PigUtils {
 	 * @param columns
 	 * @throws FrontendException 
 	 */
-	public static void getColumnsFromExpressions(LogicalExpression lexp, List<String> columns) throws FrontendException{
+	public static void getColumnsFromExpressions(LogicalExpression lexp, List<String> columns) throws FrontendException {
 		if(lexp instanceof BinaryExpression bex) {
 			LogicalExpression leftExpression = bex.getLhs();
 			LogicalExpression rightExpression = bex.getRhs();
@@ -717,10 +717,10 @@ public class PigUtils {
 			columns.add(pex.getFieldSchema().alias);
 		} else if (lexp instanceof UserFuncExpression) {
 			Iterator<Operator> operators= lexp.getPlan().getOperators();
-			for(;operators.hasNext();) {
+			for (;operators.hasNext();) {
 				Object pexp = operators.next();
-				if(pexp instanceof ProjectExpression) {
-					getColumnsFromExpressions((LogicalExpression)pexp, columns);
+				if (pexp instanceof ProjectExpression expression) {
+					getColumnsFromExpressions(expression, columns);
 				}
 			}
 	    }
@@ -1002,7 +1002,7 @@ public class PigUtils {
 	 * @param aggfunctions
 	 * @return Tuple
 	 */
-	public static Tuple evaluateTuple(Tuple tuple1,Tuple tuple2, List<FunctionParams> aggfunctions) {
+	public static Tuple evaluateTuple(Tuple tuple1, Tuple tuple2, List<FunctionParams> aggfunctions) {
 		if(tuple1 instanceof Tuple1 tup11 && tuple2 instanceof Tuple1 tup21) {
 			return Tuple.tuple(evaluateFunction(tup11.v1(), tup21.v1(), aggfunctions.get(0)));
 		} else if(tuple1 instanceof Tuple2 tup12 && tuple2 instanceof Tuple2 tup22) {
@@ -1263,13 +1263,13 @@ public class PigUtils {
 			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
 				return lv / rv;
 			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
-				return lv / (double)rv;
+				return lv / (double) rv;
 			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
 				return lv / (double) rv;
 			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
 				return lv / (double) rv;
 			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
-				return lv / (double)rv;
+				return lv / (double) rv;
 			}
 		default:
 			throw new IllegalArgumentException("Invalid operator: " + operator);
@@ -1283,7 +1283,7 @@ public class PigUtils {
 	 * @return array of grpby headers
 	 */
 	public static LogicalExpression[] getHeaders(List<FunctionParams> functionparams) {
-		List<LogicalExpression> headersl = functionparams.stream().filter(fp->fp.getFunctionName() == null).map(fp->fp.getParams()).collect(Collectors.toList());
+		List<LogicalExpression> headersl = functionparams.stream().filter(fp -> fp.getFunctionName() == null).map(fp -> fp.getParams()).collect(Collectors.toList());
 		if(headersl.size()>0) {
 			return headersl.toArray(new LogicalExpression[1]);
 		} else {
@@ -1296,7 +1296,7 @@ public class PigUtils {
 	 * @return allexpressions
 	 */
 	public static LogicalExpression[] getLogicalExpressions(List<FunctionParams> functionparams) {
-		List<LogicalExpression> headersl = functionparams.stream().map(fp->fp.getParams()).collect(Collectors.toList());
+		List<LogicalExpression> headersl = functionparams.stream().map(fp -> fp.getParams()).collect(Collectors.toList());
 		if(headersl.size()>0) {
 			return headersl.toArray(new LogicalExpression[1]);
 		} else {
@@ -1310,7 +1310,7 @@ public class PigUtils {
 	 * @return array of grpby aliases
 	 */
 	public static List<String> getAlias(List<FunctionParams> functionparams) {
-		return functionparams.stream().map(fp->fp.getAlias()).collect(Collectors.toList());		
+		return functionparams.stream().map(fp -> fp.getAlias()).collect(Collectors.toList());		
 	}
 	
 	/**
@@ -1319,7 +1319,7 @@ public class PigUtils {
 	 * @return list of functions
 	 */
 	public static List<FunctionParams> getAggFunctions(List<FunctionParams> functionparams) {
-		List<FunctionParams> functions = functionparams.stream().filter(fp->fp.getFunctionName() != null
+		List<FunctionParams> functions = functionparams.stream().filter(fp -> fp.getFunctionName() != null
 				&& (fp.getFunctionName().equals("sum")
 				|| fp.getFunctionName().equals("count")
 				|| fp.getFunctionName().equals("avg"))).collect(Collectors.toList());
@@ -1332,7 +1332,7 @@ public class PigUtils {
 	 * @return list of functions
 	 */
 	public static List<FunctionParams> getNonAggFunctions(List<FunctionParams> functionparams) {
-		List<FunctionParams> functions = functionparams.stream().filter(fp->fp.getFunctionName() != null
+		List<FunctionParams> functions = functionparams.stream().filter(fp -> fp.getFunctionName() != null
 				&& (fp.getFunctionName().equals("abs")
 				|| fp.getFunctionName().equals("length")
 				|| fp.getFunctionName().equals("round")
@@ -1361,13 +1361,13 @@ public class PigUtils {
 		OperatorPlan forEachInnerPlan = loForEach.getInnerPlan();
 		Iterator<Operator> operators = forEachInnerPlan.getOperators();
 		List<FunctionParams> functionParams = new ArrayList<>();
-		for (; operators.hasNext();) {
+		for (;operators.hasNext();) {
 			Operator innerOperator = (LogicalRelationalOperator) operators.next();
 			if (innerOperator instanceof LOGenerate loGenerate) {
 				List<LogicalExpressionPlan> leps = loGenerate.getOutputPlans();
 				List<LogicalSchema> outputschemas = loGenerate.getOutputPlanSchemas();
-				int schemaindex=0;
-				for(LogicalExpressionPlan lep:leps) {
+				int schemaindex = 0;
+				for (LogicalExpressionPlan lep :leps) {
 					Iterator<Operator> funcoper = lep.getOperators();
 					FunctionParams param = new FunctionParams();
 					param.setAlias(outputschemas.get(schemaindex).getFields().get(0).alias);
@@ -1376,59 +1376,58 @@ public class PigUtils {
 					functionParams.add(param);
 					while (funcoper.hasNext()) {
 						Operator operexp = funcoper.next();	
-						if (operexp instanceof UserFuncExpression) {
-							UserFuncExpression funcExpression = (UserFuncExpression) operexp;
+						if (operexp instanceof UserFuncExpression funcExpression) {
 							// Check if this is the function call with your custom function
-							if (funcExpression.getFuncSpec().getClassName()
-									.equals("org.apache.pig.builtin.COUNT")) {
+							if ("org.apache.pig.builtin.COUNT"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("count");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("org.apache.pig.builtin.AVG")) {
+							} else if ("org.apache.pig.builtin.AVG"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("avg");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("org.apache.pig.builtin.SUM")) {
+							} else if ("org.apache.pig.builtin.SUM"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("sum");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.AbsUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.AbsUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("abs");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.Base64DecodeUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.Base64DecodeUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("base64decode");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.Base64EncodeUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.Base64EncodeUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("base64encode");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.CeilUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.CeilUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("ceil");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.ExpUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.ExpUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("exp");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.FloorUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.FloorUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("floor");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.LengthUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.LengthUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("length");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.LogeUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.LogeUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("loge");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.LowercaseUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.LowercaseUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("lowercase");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.NormalizeSpacesUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.NormalizeSpacesUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("normalizespaces");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.PowerUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.PowerUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("pow");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.RoundUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.RoundUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("round");
-							}  else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.SqrtUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.SqrtUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("sqrt");
-							} else if (funcExpression.getFuncSpec().getClassName()
-									.equals("com.github.datasamudaya.stream.pig.udf.UppercaseUDF")) {
+							} else if ("com.github.datasamudaya.stream.pig.udf.UppercaseUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("uppercase");
 							}
 						}
@@ -1446,9 +1445,9 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static void executeLOStore(StreamPipeline<?> sp, LOStore loStore) throws Exception {		
-		sp.map(data->data).saveAsTextFilePig(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
-				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)), DataSamudayaConstants.FORWARD_SLASH + loStore.getOutputSpec().getFileName()+
-				DataSamudayaConstants.FORWARD_SLASH + "pig-" + System.currentTimeMillis());
+		sp.map(data -> data).saveAsTextFilePig(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)), DataSamudayaConstants.FORWARD_SLASH + loStore.getOutputSpec().getFileName()
+				+ DataSamudayaConstants.FORWARD_SLASH + "pig-" + System.currentTimeMillis());
 	}
 	
 	/**
@@ -1465,14 +1464,14 @@ public class PigUtils {
 		for(LogicalExpressionPlan lep:leps) {
 			Iterator<Operator> operators = lep.getOperators();
 			while(operators.hasNext()) {
-				groupcolumns.add(((ProjectExpression)operators.next()).getColAlias());
+				groupcolumns.add(((ProjectExpression) operators.next()).getColAlias());
 			}
 		}
 		String[] groupcols = groupcolumns.toArray(new String[1]);
-		return sp.groupBy(map->{
+		return sp.groupBy(map -> {
 			Map<String, Object> groupmap = new HashMap<>();
 			String[] grpcols = groupcols;
-			for(String grpcol:grpcols)
+			for (String grpcol :grpcols)
 				groupmap.put(grpcol, map.get(grpcol));
 			return groupmap;
 		}).cache();
@@ -1495,7 +1494,7 @@ public class PigUtils {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		sp.map(data->data).dumpPigResults(true, null);
+		sp.map(data -> data).dumpPigResults(true, null);
 	}
 	
 	/**
@@ -1514,7 +1513,7 @@ public class PigUtils {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		return sp.map(data->data).collect(true, null);
+		return sp.map(data -> data).collect(true, null);
 	}
 	
 	/**
@@ -1523,7 +1522,7 @@ public class PigUtils {
 	 * @return array of fields
 	 */
 	public static String[] getHeaderFromSchema(LogicalSchema schema) {
-		List<String> schemafields = schema.getFields().stream().map(loschemafields->loschemafields.alias).collect(Collectors.toList());
+		List<String> schemafields = schema.getFields().stream().map(loschemafields -> loschemafields.alias).collect(Collectors.toList());
 		return schemafields.toArray(new String[1]);
 		
 	}
@@ -1534,10 +1533,10 @@ public class PigUtils {
 	 * @return array of data types
 	 */
 	public static List<SqlTypeName> getTypesFromSchema(LogicalSchema schema) {
-		List<SqlTypeName> schemafields = schema.getFields().stream().map(loschemafields->{
-			if(loschemafields.type == 10) {
+		List<SqlTypeName> schemafields = schema.getFields().stream().map(loschemafields -> {
+			if (loschemafields.type == 10) {
 				return SqlTypeName.INTEGER;
-			} else if(loschemafields.type == 55) {
+			} else if (loschemafields.type == 55) {
 				return SqlTypeName.VARCHAR;
 			} 
 			return SqlTypeName.VARCHAR;
@@ -1622,8 +1621,9 @@ public class PigUtils {
 				return intval;
 			} else if(value instanceof Long longval) {
 				return longval;
-			}else if(value instanceof String stringval && NumberUtils.isParsable(stringval))
-			return Double.valueOf(stringval);
+			}else if (value instanceof String stringval && NumberUtils.isParsable(stringval)) {
+				return Double.valueOf(stringval);
+			}
 			return String.valueOf(value);
 		}
 	}
@@ -1635,7 +1635,7 @@ public class PigUtils {
 	 * @param operator
 	 * @return true or false
 	 */
-	public static boolean evaluatePredicate(Object leftvalue,Object rightvalue, String operator) {
+	public static boolean evaluatePredicate(Object leftvalue, Object rightvalue, String operator) {
 		switch (operator.trim()) {
 		case "GreaterThan":
 			if(leftvalue instanceof Double lv && rightvalue instanceof Double rv) {

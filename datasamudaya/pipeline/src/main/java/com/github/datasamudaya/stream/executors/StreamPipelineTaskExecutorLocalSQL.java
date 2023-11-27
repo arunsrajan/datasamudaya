@@ -100,7 +100,7 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
-		log.info("BlocksLocation Columns: {}",blockslocation.getColumns());
+		log.info("BlocksLocation Columns: {}", blockslocation.getColumns());
 		CSVParser records = null;
 		var fsdos = new ByteArrayOutputStream();		
 		InputStream istreamnocols = null;
@@ -115,7 +115,7 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 				try {
 					if(CollectionUtils.isNotEmpty(csvoptions.getRequiredcolumns())) {
 						if(isNull(yosegibytes) || yosegibytes.length==0) {
-							log.info("Unable To Find vector for blocks {}",blockslocation);
+							log.info("Unable To Find vector for blocks {}", blockslocation);
 							try(var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 							var buffer = new BufferedReader(new InputStreamReader(bais));){
 								task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
@@ -184,12 +184,12 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 
 				} else if (finaltask instanceof StandardDeviation) {
 					out = new Vector<>();
-					CompletableFuture<List> cf = (CompletableFuture) ((java.util.stream.IntStream) streammap).boxed()
+					CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
 							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
 					var streamtmp = cf.get();
-					var mean = (streamtmp).stream().mapToInt(Integer.class::cast).average().getAsDouble();
-					var variance = (streamtmp).stream().mapToInt(Integer.class::cast)
+					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
+					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
 					var standardDeviation = Math.sqrt(variance);
 					out.add(standardDeviation);

@@ -30,12 +30,12 @@ import static java.util.Objects.isNull;
  */
 public class GlobalContainerLaunchers {
 
-	private static Logger log = Logger.getLogger(GlobalContainerLaunchers.class);
+	private static final Logger log = Logger.getLogger(GlobalContainerLaunchers.class);
 
 	private GlobalContainerLaunchers() {
 	}
 
-	private static Map<String, Map<String,List<LaunchContainers>>> lcsmap = new ConcurrentHashMap<>();
+	private static final Map<String, Map<String, List<LaunchContainers>>> lcsmap = new ConcurrentHashMap<>();
 
 	/**
 	 * The put method for holding userid as key, jobid and list of LaunchContainers object as values.
@@ -60,14 +60,14 @@ public class GlobalContainerLaunchers {
 	 * @return
 	 */
 	public static List<LaunchContainers> getAll() {
-		return lcsmap.keySet().stream().flatMap(userid -> lcsmap.get(userid).entrySet().stream()).flatMap(es->es.getValue().stream()).collect(Collectors.toList());
+		return lcsmap.keySet().stream().flatMap(userid -> lcsmap.get(userid).entrySet().stream()).flatMap(es -> es.getValue().stream()).collect(Collectors.toList());
 	}
 	
 	/**
 	 * Get All Users Job Containers Map for printing in web console
 	 * @return map of User Job Containers
 	 */
-	public static Map<String, Map<String,List<LaunchContainers>>> getUserContainersMap() {
+	public static Map<String, Map<String, List<LaunchContainers>>> getUserContainersMap() {
 		return lcsmap;
 	}
 

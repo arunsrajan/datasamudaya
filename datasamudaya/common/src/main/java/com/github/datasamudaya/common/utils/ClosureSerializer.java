@@ -28,27 +28,30 @@ public class ClosureSerializer extends Serializer {
 	
 	private static Method readResolve;
 
-	public ClosureSerializer () {
+	public ClosureSerializer() {
 		if (readResolve == null) {
 			try {
 				readResolve = SerializedLambda.class.getDeclaredMethod("readResolve");
 				readResolve.setAccessible(true);
 			} catch (Exception ex) {
 				readResolve = null;
-				Log.warn("Unable to obtain SerializedLambda#readResolve via reflection. " +
-					"Falling back on resolving lambdas via capturing class.", ex);
+				Log.warn("""
+					Unable to obtain SerializedLambda#readResolve via reflection. \
+					Falling back on resolving lambdas via capturing class.\
+					""", ex);
 			}
 		}
 	}
 	/**
 	 * The write method
 	 */
-	public void write (Kryo kryo, Output output, Object object) {
+	public void write(Kryo kryo, Output output, Object object) {
 		SerializedLambda serializedLambda = toSerializedLambda(object);
 		int count = serializedLambda.getCapturedArgCount();
 		output.writeVarInt(count, true);
-		for (int i = 0; i < count; i++)
+		for (int i = 0;i < count;i++) {
 			kryo.writeClassAndObject(output, serializedLambda.getCapturedArg(i));
+		}
 		try {
 			if(nonNull(kryo.getClassLoader())) {
 				kryo.writeClass(output, Class.forName(serializedLambda.getCapturingClass().replace('/', '.'), true, kryo.getClassLoader()));
@@ -71,11 +74,12 @@ public class ClosureSerializer extends Serializer {
 	/**
 	 * The read method.
 	 */
-	public Object read (Kryo kryo, Input input, Class type) {
+	public Object read(Kryo kryo, Input input, Class type) {
 		int count = input.readVarInt(true);
 		Object[] capturedArgs = new Object[count];
-		for (int i = 0; i < count; i++)
+		for (int i = 0;i < count;i++) {
 			capturedArgs[i] = kryo.readClassAndObject(input);
+		}
 		Class<?> capturingClass = kryo.readClass(input).getType();
 		SerializedLambda serializedLambda = new SerializedLambda(capturingClass, input.readString(),
 			input.readString(), input.readString(), input.readVarInt(true), input.readString(), input.readString(),
@@ -92,7 +96,7 @@ public class ClosureSerializer extends Serializer {
 	 * @param original
 	 * @return
 	 */
-	public Closure copy (Kryo kryo, Closure original) {
+	public Closure copy(Kryo kryo, Closure original) {
 		try {
 			SerializedLambda lambda = toSerializedLambda(original);
 			Class<?> capturingClass = null;
@@ -107,7 +111,7 @@ public class ClosureSerializer extends Serializer {
 		}
 	}
 
-	private Object readResolve (Class<?> capturingClass, SerializedLambda lambda) throws Exception {
+	private Object readResolve(Class<?> capturingClass, SerializedLambda lambda) throws Exception {
 		if (readResolve != null) {
 			return readResolve.invoke(lambda);
 		}
@@ -118,18 +122,20 @@ public class ClosureSerializer extends Serializer {
 		return m.invoke(null, lambda);
 	}
 
-	private SerializedLambda toSerializedLambda (Object object) {
+	private SerializedLambda toSerializedLambda(Object object) {
 		Object replacement;
 		try {
 			Method writeReplace = object.getClass().getDeclaredMethod("writeReplace");
 			writeReplace.setAccessible(true);
 			replacement = writeReplace.invoke(object);
 		} catch (Exception ex) {
-			if (object instanceof Serializable) throw new KryoException("Error serializing closure.", ex);
+			if (object instanceof Serializable) {
+				throw new KryoException("Error serializing closure.", ex);
+			}
 			throw new KryoException("Closure must implement java.io.Serializable.", ex);
 		}
 		try {
-			return (SerializedLambda)replacement;
+			return (SerializedLambda) replacement;
 		} catch (Exception ex) {
 			throw new KryoException("writeReplace must return a SerializedLambda: " + className(replacement.getClass()), ex);
 		}

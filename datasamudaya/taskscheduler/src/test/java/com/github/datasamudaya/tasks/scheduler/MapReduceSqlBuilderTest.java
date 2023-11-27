@@ -17,7 +17,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
 			"Cancelled", "CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
 			"LateAircraftDelay");
-	List<SqlTypeName> airlineheadertypes = Arrays.asList(SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE, SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.VARCHAR,SqlTypeName.DOUBLE,SqlTypeName.VARCHAR,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.VARCHAR,SqlTypeName.VARCHAR,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.VARCHAR,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE,SqlTypeName.DOUBLE);
+	List<SqlTypeName> airlineheadertypes = Arrays.asList(SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE);
 	static Logger log = LoggerFactory.getLogger(MapReduceSqlBuilderTest.class);
 	
 	@Test
@@ -28,8 +28,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -44,8 +44,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -60,8 +60,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -76,8 +76,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -92,8 +92,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -108,8 +108,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -124,8 +124,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -140,8 +140,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -151,14 +151,16 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	@Test
 	public void testAllColumnsJoin() throws Exception {
 		log.info("In testAllColumnsJoin() method Entry");
-		String statement = "SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Description "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear";				
+		String statement = """
+				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Description \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear\
+				""";				
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -169,14 +171,16 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	@Test
 	public void testFunctionsJoin() throws Exception {
 		log.info("In testFunctionsJoin() method Entry");
-		String statement = "SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,sum(airline.ArrDelay) sumdelay "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12 = airline.MonthOfYear";				
+		String statement = """
+				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,sum(airline.ArrDelay) sumdelay \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12 = airline.MonthOfYear\
+				""";				
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});
@@ -191,8 +195,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				.setHdfs(hdfsfilepath)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
-		records.stream().forEach(context->{
-			context.keys().stream().forEach(key->{
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
 				log.info("{} {}", key, context.get(key));
 			});
 		});

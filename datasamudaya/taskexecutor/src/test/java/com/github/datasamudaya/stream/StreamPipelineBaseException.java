@@ -162,7 +162,7 @@ public class StreamPipelineBaseException {
 									var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
 											containerprocesses, hdfs, containeridthreads, containeridports,
 											object, zo);
-									Future<Object> containerallocated =threadpool.submit(container);
+									Future<Object> containerallocated = threadpool.submit(container);
 									Object returnobject = containerallocated.get();
 									log.info("Containers Allocated: " + returnobject);
 									return returnobject;

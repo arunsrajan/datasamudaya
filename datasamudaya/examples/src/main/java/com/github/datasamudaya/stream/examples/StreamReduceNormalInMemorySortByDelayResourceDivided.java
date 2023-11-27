@@ -28,7 +28,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceNormalInMemorySortByDelayResourceDivided implements Serializable, Pipeline {
 	private static final long serialVersionUID = -7001849661976107123L;
-	private Logger log = Logger.getLogger(StreamReduceNormalInMemorySortByDelayResourceDivided.class);
+	private final Logger log = Logger.getLogger(StreamReduceNormalInMemorySortByDelayResourceDivided.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");
@@ -59,7 +59,7 @@ public class StreamReduceNormalInMemorySortByDelayResourceDivided implements Ser
 						line[1].substring(1, line[1].length() - 1)));
 
 		carriers.join(airlinesamples, (tuple1, tuple2) -> ((Tuple2) tuple1).v1.equals(((Tuple2) tuple2).v1))
-				.sorted((o1, o2) ->  ((Long)((Tuple2)((Tuple2)o1).v2).v2).compareTo((Long)((Tuple2)((Tuple2)o2).v2).v2))
+				.sorted((o1, o2) -> ((Long) ((Tuple2) ((Tuple2) o1).v2).v2).compareTo((Long) ((Tuple2) ((Tuple2) o2).v2).v2))
 				.saveAsTextFile(new URI(args[0]), args[3] + "/StreamOutReduce-" + System.currentTimeMillis());
 		log.info("StreamReduceNormalInMemorySortByDelayResourceDivided.testReduce After---------------------------------------");
 	}

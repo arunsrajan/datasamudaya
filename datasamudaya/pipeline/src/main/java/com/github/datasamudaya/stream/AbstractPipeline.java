@@ -17,28 +17,33 @@ public sealed class AbstractPipeline permits MapPair,StreamPipeline,PipelineIntS
 	List<AbstractPipeline> parents = new ArrayList<>();
 	List<AbstractPipeline> childs = new ArrayList<>();
 	public Object task = new Dummy();
-	Object finaltask = null;
+	Object finaltask;
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((task == null) ? 0 : task.hashCode());
+		result = prime * result + (task == null ? 0 : task.hashCode());
 		return result;
 	}
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		AbstractPipeline other = (AbstractPipeline) obj;
 		if (task == null) {
-			if (other.task != null)
+			if (other.task != null) {
 				return false;
-		} else if (!task.equals(other.task))
+			}
+		} else if (!task.equals(other.task)) {
 			return false;
+		}
 		return true;
 	}
 	

@@ -18,12 +18,20 @@ package com.github.datasamudaya.stream;
 import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
+
 import org.apache.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+
+import com.github.datasamudaya.common.functions.FlatMapFunction;
+import com.github.datasamudaya.common.functions.MapFunction;
+import com.github.datasamudaya.common.functions.MapToPairFunction;
+import com.github.datasamudaya.common.functions.PredicateSerializable;
+import com.github.datasamudaya.common.functions.SortedComparator;
 
 @SuppressWarnings({"unchecked", "serial", "rawtypes"})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -38,8 +46,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).peek(val -> System.out.println(val)).sample(46361).forEach(lis -> {
@@ -57,12 +65,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).peek(val -> System.out.println(val)).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).peek(val -> System.out.println(val)).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).collect(toexecute, null);
@@ -82,12 +90,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).peek(val -> System.out.println(val)).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).peek(val -> System.out.println(val)).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).count(null);
@@ -109,12 +117,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).peek(val -> System.out.println(val)).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).peek(val -> System.out.println(val)).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).forEach(lis -> {
@@ -132,12 +140,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+				}).sample(46361).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).collect(toexecute, null);
@@ -157,12 +165,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+				}).sample(46361).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).count(null);
@@ -184,12 +192,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sample(46361).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+		}).sample(46361).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).forEach(lis -> {
@@ -207,13 +215,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361)
-				.flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-					public java.util.stream.Stream<java.lang.String> apply(java.lang.String[] value) {
+				.flatMap(new FlatMapFunction<String[], String>() {
+					public Stream<String> apply(String[] value) {
 						return Arrays.asList(value[8] + "-" + value[14]).stream();
 					}
 				}).collect(toexecute, null);
@@ -233,13 +241,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361)
-				.flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-					public java.util.stream.Stream<java.lang.String> apply(java.lang.String[] value) {
+				.flatMap(new FlatMapFunction<String[], String>() {
+					public Stream<String> apply(String[] value) {
 						return Arrays.asList(value[8] + "-" + value[14]).stream();
 					}
 				}).count(null);
@@ -261,12 +269,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sample(46361).flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-			public java.util.stream.Stream<java.lang.String> apply(java.lang.String[] value) {
+		}).sample(46361).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
 				return Arrays.asList(value[8] + "-" + value[14]).stream();
 			}
 		}).forEach(lis -> {
@@ -284,12 +292,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+				}).sample(46361).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).collect(toexecute, null);
@@ -309,12 +317,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+				}).sample(46361).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).count(null);
@@ -336,12 +344,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sample(46361).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+		}).sample(46361).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).forEach(lis -> {
@@ -359,13 +367,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -386,13 +394,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -415,13 +423,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).forEach(lis -> {
@@ -439,13 +447,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -467,13 +475,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -494,13 +502,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -521,13 +529,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -550,13 +558,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).reduceByKey((a, b) -> a + b).forEach(lis -> {
@@ -574,8 +582,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -595,8 +603,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).peek(val -> System.out.println(val)).count(null);
@@ -618,8 +626,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -637,8 +645,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).sample(46361).collect(toexecute, null);
@@ -658,8 +666,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).sample(46361).count(null);
@@ -681,8 +689,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).sample(46361).forEach(lis -> {
@@ -700,12 +708,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sample(46361).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).collect(toexecute, null);
@@ -725,12 +733,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sample(46361).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).count(null);
@@ -752,12 +760,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sample(46361).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).forEach(lis -> {
@@ -775,16 +783,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+		}).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).collect(toexecute, null);
@@ -804,16 +812,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+		}).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).count(null);
@@ -835,16 +843,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+		}).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).forEach(lis -> {
@@ -862,16 +870,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-			public java.util.stream.Stream<java.lang.String> apply(java.lang.String[] value) {
+		}).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
 				return Arrays.asList(value[8] + "-" + value[14]).stream();
 			}
 		}).collect(toexecute, null);
@@ -891,16 +899,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-			public java.util.stream.Stream<java.lang.String> apply(java.lang.String[] value) {
+		}).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
 				return Arrays.asList(value[8] + "-" + value[14]).stream();
 			}
 		}).count(null);
@@ -922,16 +930,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-			public java.util.stream.Stream<java.lang.String> apply(java.lang.String[] value) {
+		}).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
 				return Arrays.asList(value[8] + "-" + value[14]).stream();
 			}
 		}).forEach(lis -> {
@@ -949,16 +957,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+		}).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).collect(toexecute, null);
@@ -978,16 +986,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+		}).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).count(null);
@@ -1009,16 +1017,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+		}).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).forEach(lis -> {
@@ -1036,17 +1044,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1067,17 +1075,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1100,17 +1108,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).forEach(lis -> {
@@ -1128,17 +1136,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1160,17 +1168,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -1191,17 +1199,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1222,17 +1230,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1255,17 +1263,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).reduceByKey((a, b) -> a + b).forEach(lis -> {
@@ -1283,12 +1291,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -1308,12 +1316,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).peek(val -> System.out.println(val)).count(null);
@@ -1335,12 +1343,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -1358,12 +1366,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).sample(46361).collect(toexecute, null);
@@ -1383,12 +1391,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).sample(46361).count(null);
@@ -1410,12 +1418,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).sample(46361).forEach(lis -> {
@@ -1433,16 +1441,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).collect(toexecute, null);
@@ -1462,16 +1470,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).count(null);
@@ -1493,16 +1501,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).forEach(lis -> {
@@ -1520,16 +1528,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -1549,16 +1557,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -1581,16 +1589,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -1608,12 +1616,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -1633,12 +1641,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -1661,12 +1669,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -1684,12 +1692,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -1709,12 +1717,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -1737,12 +1745,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -1760,17 +1768,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1791,17 +1799,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1825,17 +1833,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1854,17 +1862,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1887,17 +1895,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1919,17 +1927,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1950,17 +1958,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1984,17 +1992,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2013,12 +2021,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -2038,12 +2046,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).peek(val -> System.out.println(val)).count(null);
@@ -2066,12 +2074,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -2089,12 +2097,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).sample(46361).collect(toexecute, null);
@@ -2114,12 +2122,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).sample(46361).count(null);
@@ -2142,12 +2150,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).sample(46361).forEach(lis -> {
@@ -2165,16 +2173,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -2194,16 +2202,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).count(null);
@@ -2226,16 +2234,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lis -> {
@@ -2253,12 +2261,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -2278,12 +2286,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -2306,12 +2314,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -2329,8 +2337,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).collect(toexecute, null);
@@ -2350,8 +2358,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).count(null);
@@ -2374,8 +2382,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).forEach(lis -> {
@@ -2393,8 +2401,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).collect(toexecute, null);
@@ -2414,8 +2422,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).count(null);
@@ -2438,8 +2446,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).forEach(lis -> {
@@ -2457,13 +2465,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2484,13 +2492,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2514,13 +2522,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2539,13 +2547,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2568,13 +2576,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2596,13 +2604,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2623,13 +2631,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2653,13 +2661,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2678,8 +2686,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -2699,8 +2707,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).count(null);
@@ -2723,8 +2731,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -2742,8 +2750,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).collect(toexecute, null);
@@ -2763,8 +2771,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).count(null);
@@ -2787,8 +2795,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).forEach(lis -> {
@@ -2806,12 +2814,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -2831,12 +2839,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).count(null);
@@ -2859,12 +2867,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lis -> {
@@ -2882,17 +2890,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -2914,17 +2922,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lsttuples -> {
@@ -2945,13 +2953,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -2973,13 +2981,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -3000,13 +3008,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -3028,13 +3036,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -3055,18 +3063,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3089,18 +3097,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3122,18 +3130,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3156,18 +3164,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3189,18 +3197,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3223,18 +3231,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3256,13 +3264,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -3284,13 +3292,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -3311,13 +3319,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).sample(46361).collect(toexecute, null);
@@ -3339,13 +3347,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).sample(46361).forEach(lsttuples -> {
@@ -3366,17 +3374,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -3398,17 +3406,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -3429,13 +3437,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -3457,13 +3465,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -3484,8 +3492,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().collect(toexecute, null);
@@ -3507,8 +3515,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -3529,8 +3537,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().collect(toexecute, null);
@@ -3552,8 +3560,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -3574,13 +3582,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3603,13 +3611,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3631,13 +3639,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3660,13 +3668,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3688,13 +3696,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3717,13 +3725,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3745,8 +3753,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -3768,8 +3776,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -3790,8 +3798,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).collect(toexecute, null);
@@ -3813,8 +3821,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).forEach(lsttuples -> {
@@ -3835,12 +3843,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -3862,12 +3870,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -3888,13 +3896,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -3916,13 +3924,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -3943,8 +3951,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().collect(toexecute, null);
@@ -3966,8 +3974,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -3988,8 +3996,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().collect(toexecute, null);
@@ -4011,8 +4019,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -4033,13 +4041,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4062,13 +4070,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4090,13 +4098,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4119,13 +4127,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4147,13 +4155,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4176,13 +4184,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4204,8 +4212,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -4227,8 +4235,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -4249,8 +4257,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).collect(toexecute, null);
@@ -4272,8 +4280,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).forEach(lsttuples -> {
@@ -4294,12 +4302,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -4321,12 +4329,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -4347,18 +4355,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -4380,18 +4388,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -4412,13 +4420,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4441,13 +4449,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4469,18 +4477,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.groupByKey().filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -4502,18 +4510,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.groupByKey().filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lsttuples -> {
@@ -4534,13 +4542,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4563,13 +4571,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4591,13 +4599,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4620,13 +4628,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4648,19 +4656,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4683,19 +4691,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4718,19 +4726,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4755,19 +4763,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4791,19 +4799,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4828,19 +4836,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4863,13 +4871,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4892,13 +4900,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4920,13 +4928,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4949,13 +4957,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4977,18 +4985,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -5010,18 +5018,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -5042,13 +5050,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5071,13 +5079,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5099,19 +5107,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5134,19 +5142,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5168,19 +5176,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5203,19 +5211,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5237,19 +5245,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5272,19 +5280,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5306,13 +5314,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5335,13 +5343,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5363,19 +5371,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -5397,19 +5405,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -5430,13 +5438,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5459,13 +5467,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5487,13 +5495,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5516,13 +5524,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5544,19 +5552,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5579,19 +5587,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5614,19 +5622,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5651,19 +5659,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5687,19 +5695,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5724,19 +5732,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5759,13 +5767,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5788,13 +5796,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5816,13 +5824,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5845,13 +5853,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5873,19 +5881,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).collect(toexecute, null);
@@ -5907,19 +5915,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).forEach(lsttuples -> {
@@ -5940,13 +5948,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5969,13 +5977,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5997,18 +6005,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).collect(toexecute, null);
@@ -6030,18 +6038,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).forEach(lsttuples -> {
@@ -6062,13 +6070,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val))
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -6090,13 +6098,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val))
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -6117,8 +6125,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -6140,8 +6148,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -6162,8 +6170,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -6185,8 +6193,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -6207,13 +6215,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6236,13 +6244,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6264,13 +6272,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6293,13 +6301,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6321,13 +6329,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6350,13 +6358,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6378,8 +6386,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -6401,8 +6409,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -6423,8 +6431,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).sample(46361).collect(toexecute, null);
@@ -6446,8 +6454,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).sample(46361).forEach(lsttuples -> {
@@ -6468,13 +6476,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val))
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).collect(toexecute, null);
@@ -6496,13 +6504,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val))
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).forEach(lsttuples -> {
@@ -6523,13 +6531,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -6551,13 +6559,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -6578,8 +6586,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).collect(toexecute, null);
@@ -6601,8 +6609,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).forEach(lsttuples -> {
@@ -6623,8 +6631,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).collect(toexecute, null);
@@ -6646,8 +6654,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).forEach(lsttuples -> {
@@ -6668,13 +6676,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6697,13 +6705,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6725,13 +6733,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6754,13 +6762,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6782,13 +6790,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6811,13 +6819,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6839,8 +6847,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -6862,8 +6870,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -6884,8 +6892,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).sample(46361).collect(toexecute, null);
@@ -6907,8 +6915,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).sample(46361).forEach(lsttuples -> {
@@ -6929,13 +6937,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361)
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).collect(toexecute, null);
@@ -6957,13 +6965,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361)
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).forEach(lsttuples -> {
@@ -6984,16 +6992,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -7015,16 +7023,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lsttuples -> {
@@ -7045,12 +7053,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -7072,12 +7080,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -7098,12 +7106,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -7125,12 +7133,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -7151,17 +7159,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7184,17 +7192,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7216,17 +7224,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7249,17 +7257,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7281,17 +7289,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7314,17 +7322,17 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7346,12 +7354,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -7373,12 +7381,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -7399,12 +7407,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).sample(46361).collect(toexecute, null);
@@ -7426,12 +7434,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).sample(46361).forEach(lsttuples -> {
@@ -7452,16 +7460,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -7483,16 +7491,16 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -7513,12 +7521,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -7538,12 +7546,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -7566,12 +7574,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -7589,8 +7597,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).collect(toexecute, null);
@@ -7610,8 +7618,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).count(null);
@@ -7634,8 +7642,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).forEach(lis -> {
@@ -7653,8 +7661,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).collect(toexecute, null);
@@ -7674,8 +7682,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).count(null);
@@ -7698,8 +7706,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).forEach(lis -> {
@@ -7717,13 +7725,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7744,13 +7752,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7774,13 +7782,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7799,13 +7807,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7828,13 +7836,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7856,13 +7864,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7883,13 +7891,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7913,13 +7921,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7938,8 +7946,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -7959,8 +7967,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).count(null);
@@ -7983,8 +7991,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -8002,8 +8010,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).collect(toexecute, null);
@@ -8023,8 +8031,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).count(null);
@@ -8047,8 +8055,8 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).forEach(lis -> {
@@ -8066,12 +8074,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -8091,12 +8099,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).count(null);
@@ -8119,12 +8127,12 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lis -> {
@@ -8142,18 +8150,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -8173,18 +8181,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).count(null);
@@ -8207,18 +8215,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lis -> {
@@ -8236,13 +8244,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8263,13 +8271,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8293,13 +8301,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8318,18 +8326,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.groupByKey().filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -8351,18 +8359,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.groupByKey().filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lsttuples -> {
@@ -8383,13 +8391,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8412,13 +8420,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8440,13 +8448,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8469,13 +8477,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8497,19 +8505,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8532,19 +8540,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8566,19 +8574,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8601,19 +8609,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8635,19 +8643,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8670,19 +8678,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8704,13 +8712,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8733,13 +8741,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8761,13 +8769,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8790,13 +8798,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8818,18 +8826,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -8851,18 +8859,18 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -8883,13 +8891,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8910,13 +8918,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8940,13 +8948,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8965,19 +8973,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -8998,19 +9006,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9034,19 +9042,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9065,19 +9073,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9100,19 +9108,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9134,19 +9142,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9167,19 +9175,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9203,19 +9211,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9234,13 +9242,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9261,13 +9269,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9291,13 +9299,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9316,19 +9324,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -9348,19 +9356,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).count(null);
@@ -9383,19 +9391,19 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lis -> {
@@ -9413,13 +9421,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9440,13 +9448,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9470,13 +9478,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9495,13 +9503,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9522,13 +9530,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9552,13 +9560,13 @@ public class StreamPipelineDepth32Test extends StreamPipelineBaseTestCommon {
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})

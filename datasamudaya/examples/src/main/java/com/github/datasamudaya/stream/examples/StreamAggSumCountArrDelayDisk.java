@@ -28,7 +28,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamAggSumCountArrDelayDisk implements Serializable, Pipeline {
 	private static final long serialVersionUID = 6834009845802448401L;
-	private Logger log = Logger.getLogger(StreamAggSumCountArrDelayDisk.class);
+	private final Logger log = Logger.getLogger(StreamAggSumCountArrDelayDisk.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");

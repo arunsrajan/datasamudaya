@@ -37,6 +37,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jooq.lambda.tuple.Tuple2;
 import org.springframework.yarn.YarnSystemConstants;
 import org.springframework.yarn.am.ContainerLauncherInterceptor;
@@ -66,7 +67,7 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 
 	private static final Log log = LogFactory.getLog(MapReduceYarnAppmaster.class);
 
-	private Map<String, Object> pendingjobs = new ConcurrentHashMap<>();
+	private final Map<String, Object> pendingjobs = new ConcurrentHashMap<>();
 	private final Semaphore lock = new Semaphore(1);
 	@SuppressWarnings("rawtypes")
 	private DataCruncherContext dcc = new DataCruncherContext();
@@ -80,7 +81,7 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 	 */
 	@Override
 	protected void onInit() throws Exception {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		super.onInit();
 		if (getLauncher() instanceof AbstractLauncher launcher) {
 			launcher.addInterceptor(this);
@@ -108,7 +109,7 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 		try {
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			log.info("Environment: " + getEnvironment());
 			var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
 					+ getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
@@ -328,14 +329,14 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 						DataSamudayaConstants.MASSIVEDATA_YARN_RESULT, jobconf);
 				if (redtaskcompleted + 1 == rs.size()) {
 					var sb = new StringBuilder();
-					for (var redcount = 0; redcount < numreducers; redcount++) {
+					for (var redcount = 0;redcount < numreducers;redcount++) {
 						var red = rs.get(redcount);
 						var ctxreducerpart = (Context) RemoteDataFetcher.readIntermediatePhaseOutputFromDFS(
 								red.apptask.getApplicationid(),
 								(red.apptask.getApplicationid() + red.apptask.getTaskid()), false);
 						var keysreducers = ctxreducerpart.keys();
 						sb.append(DataSamudayaConstants.NEWLINE);
-						sb.append("Partition " + (redcount + 1) + "-------------------------------------------------");
+						sb.append("Partition ").append(redcount + 1).append("-------------------------------------------------");
 						sb.append(DataSamudayaConstants.NEWLINE);
 						for (var key : keysreducers) {
 							sb.append(key + DataSamudayaConstants.SINGLESPACE + ctxreducerpart.get(key));

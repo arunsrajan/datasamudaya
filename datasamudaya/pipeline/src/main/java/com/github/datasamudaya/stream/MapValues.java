@@ -29,7 +29,7 @@ import com.github.datasamudaya.common.functions.ReduceByKeyFunctionValues;
  */
 public final class MapValues<I1, I2> extends MapPair<I1, I2> {
 	private MapValues(AbstractPipeline root,
-			ReduceByKeyFunctionValues<I2> rfv)  {
+			ReduceByKeyFunctionValues<I2> rfv) {
 		this.task = rfv;
 		this.root = root;
 		root.finaltask = task;
@@ -54,7 +54,7 @@ public final class MapValues<I1, I2> extends MapPair<I1, I2> {
 	 * @return
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public MapValues<I1, I2> reduceByValues(ReduceByKeyFunctionValues<I2> rfv)  {
+	public MapValues<I1, I2> reduceByValues(ReduceByKeyFunctionValues<I2> rfv) {
 		var mapvalues = new MapValues(root, rfv);
 		this.childs.add(mapvalues);
 		mapvalues.parents.add(this);

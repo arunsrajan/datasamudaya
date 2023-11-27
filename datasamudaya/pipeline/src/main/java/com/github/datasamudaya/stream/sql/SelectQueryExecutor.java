@@ -90,7 +90,7 @@ public class SelectQueryExecutor {
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
-					if (columnMetadata.getColumnName().toLowerCase().equals("hdfslocation")) {
+					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
 					} else {
 						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
@@ -160,7 +160,7 @@ public class SelectQueryExecutor {
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
-					if (columnMetadata.getColumnName().toLowerCase().equals("hdfslocation")) {
+					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
 					} else {
 						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
@@ -183,6 +183,9 @@ public class SelectQueryExecutor {
 			}
 			return errors;
 		}
+	}
+
+	private SelectQueryExecutor() {
 	}
 
 }

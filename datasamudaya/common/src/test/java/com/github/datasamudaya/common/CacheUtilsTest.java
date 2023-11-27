@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.ehcache.Cache;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -46,13 +47,13 @@ public class CacheUtilsTest {
 
 	@BeforeClass
 	public static void initCache() throws Exception {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_TEST_PROPERTIES);
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
                 DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 	            + DataSamudayaConstants.CACHEBLOCKS);
-		ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 	}
 
 	@Test
@@ -86,12 +87,12 @@ public class CacheUtilsTest {
 		var dnxrefs = bls.stream().parallel().flatMap(bl -> {
 			var xrefs = new LinkedHashSet<String>();
 			Iterator<Set<String>> xref = bl.getBlock()[0].getDnxref().values().iterator();
-			for (; xref.hasNext(); ) {
+			for (;xref.hasNext();) {
 				xrefs.addAll(xref.next());
 			}
-			if(bl.getBlock().length > 1 && !Objects.isNull(bl.getBlock()[1])) {
+			if (bl.getBlock().length > 1 && !Objects.isNull(bl.getBlock()[1])) {
 				xref = bl.getBlock()[0].getDnxref().values().iterator();
-				for (; xref.hasNext(); ) {
+				for (;xref.hasNext();) {
 					xrefs.addAll(xref.next());
 				}
 			}

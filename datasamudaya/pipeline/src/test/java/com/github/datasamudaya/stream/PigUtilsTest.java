@@ -60,9 +60,9 @@ public class PigUtilsTest extends TestCase{
 		LOLoad loload = (LOLoad) loloadoperator.next();
 		assertTrue(loload instanceof LOLoad);
 		String[] fields = PigUtils.getHeaderFromSchema(loload.getSchema());
-		assertTrue(fields.length ==2);
-		assertEquals("name",fields[0]);
-		assertEquals("age",fields[1]);
+		assertTrue(fields.length == 2);
+		assertEquals("name", fields[0]);
+		assertEquals("age", fields[1]);
 	}
 	
 	@Test
@@ -76,7 +76,7 @@ public class PigUtilsTest extends TestCase{
 		LOLoad loload = (LOLoad) loloadoperator.next();
 		assertTrue(loload instanceof LOLoad);
 		List<SqlTypeName> types = PigUtils.getTypesFromSchema(loload.getSchema());
-		assertTrue(types.size() ==2);
+		assertTrue(types.size() == 2);
 		assertTrue(types.get(0) == SqlTypeName.VARCHAR);
 		assertTrue(types.get(1) == SqlTypeName.INTEGER);
 	}
