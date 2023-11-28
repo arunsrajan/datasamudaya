@@ -70,11 +70,11 @@ import com.github.datasamudaya.common.functions.StandardDeviation;
 import com.github.datasamudaya.common.functions.Sum;
 import com.github.datasamudaya.common.functions.SummaryStatistics;
 import com.github.datasamudaya.common.functions.UnionFunction;
+import com.github.datasamudaya.common.utils.DataSamudayaIgniteServer;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptions;
 import com.github.datasamudaya.stream.Json;
 import com.github.datasamudaya.stream.StreamPipelineTestCommon;
-import com.github.datasamudaya.stream.utils.DataSamudayaIgniteServer;
 import com.github.datasamudaya.stream.utils.FileBlocksPartitionerHDFS;
 
 public class StreamPipelineTaskExecutorIgniteTest extends StreamPipelineTestCommon {

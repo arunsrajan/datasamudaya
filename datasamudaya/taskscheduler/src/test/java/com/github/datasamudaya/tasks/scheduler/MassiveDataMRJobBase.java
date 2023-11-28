@@ -231,6 +231,7 @@ public class MassiveDataMRJobBase {
 
 	@AfterClass
 	public static void closeResources() throws Exception {
+		hdfsLocalCluster.close();
 		executorpool.shutdown();
 		testingserver.stop();
 		testingserver.close();

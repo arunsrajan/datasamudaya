@@ -25,6 +25,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteCache;
 import org.apache.log4j.Logger;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
@@ -35,6 +37,7 @@ import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.PipelineConfig;
+import com.github.datasamudaya.common.utils.DataSamudayaIgniteServer;
 import com.github.datasamudaya.common.utils.HadoopTestUtilities;
 import com.github.datasamudaya.common.utils.Utils;
 
@@ -89,6 +92,8 @@ public class StreamPipelineIgniteBase {
   protected static PipelineConfig pipelineconfig = new PipelineConfig();
   static Logger log = Logger.getLogger(StreamPipelineIgniteBase.class);
   private static TestingServer testingserver;
+  static Ignite igniteserver;
+  static IgniteCache<Object, byte[]> ignitecache;
    
   @SuppressWarnings({"unused"})
   @BeforeClass
@@ -96,10 +101,16 @@ public class StreamPipelineIgniteBase {
 	try {		
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
-		StaticComponentContainer.Modules.exportAllToAll();
+		try {
+			StaticComponentContainer.Modules.exportAllToAll();
+		}catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
 		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 		testingserver  = new TestingServer(zookeeperport);
-		testingserver.start();		
+		testingserver.start();
+		igniteserver = DataSamudayaIgniteServer.instance();
+		ignitecache = igniteserver.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH, DataSamudayaConstants.CACHEDISKPATH_DEFAULT)
 						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.CACHEBLOCKS);
@@ -157,6 +168,14 @@ public class StreamPipelineIgniteBase {
 
   @AfterClass
   public static void closeResources() throws Exception {
+	if(Objects.nonNull(igniteserver)) {
+		igniteserver.close();
+		igniteserver = null;
+	}
+	if(Objects.nonNull(ignitecache)) {
+		ignitecache.close();
+		ignitecache = null;
+	}
 	if(Objects.nonNull(testingserver)) {
 		testingserver.close();
 	}
@@ -166,6 +185,7 @@ public class StreamPipelineIgniteBase {
     }
     if (hdfsLocalCluster != null) {
       hdfsLocalCluster.shutdown(true);
+      hdfsLocalCluster.close();
       hdfsLocalCluster = null;
     }
     if (executorpool != null) {

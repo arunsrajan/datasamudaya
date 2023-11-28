@@ -1698,6 +1698,12 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 				                var input = new Input(bbis);) {
 				              return Utils.getKryo().readClassAndObject(input);
 						}
+					} else if(spts.getPc().getMode().equals(DataSamudayaConstants.MODE_DEFAULT)) {
+						try (var sis = new ByteArrayInputStream(
+								((StreamPipeline)root).jobCreated.getIgcache().get(task.jobid + task.stageid + task.taskid));
+								var input = new Input(sis);) {
+							return Utils.getKryo().readClassAndObject(input);
+						}
 					}
 				} catch (Exception ex) {
 					log.error(PipelineConstants.JOBSCHEDULERFINALSTAGERESULTSERROR, ex);

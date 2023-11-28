@@ -61,7 +61,7 @@ public class ByteBufferPoolDirectTest {
 			}
 		}
 		while(true) {
-			if (threads.size() == 0) {
+			if (threads.isEmpty()) {
 				break;
 			}
 			Thread thr = threads.remove(0);

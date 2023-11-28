@@ -380,7 +380,7 @@ public class SQLUtils {
 	 * @param value
 	 * @throws Exception 
 	 */
-	protected synchronized static void setValue(int index, Object vector, Object value) throws Exception {
+	protected static synchronized void setValue(int index, Object vector, Object value) throws Exception {
 		if(vector instanceof IntVector iv) {
 			iv.setSafe(index, (int) value);
 		} else if(vector instanceof VarCharVector vcv) {

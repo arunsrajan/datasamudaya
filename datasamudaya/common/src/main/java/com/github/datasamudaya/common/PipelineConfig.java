@@ -39,7 +39,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 public class PipelineConfig implements Serializable, Cloneable {
 	private static final Logger log = LoggerFactory.getLogger(PipelineConfig.class);
 	private static final long serialVersionUID = 1L;
-	transient private OutputStream  output, pigoutput;
+	private transient OutputStream  output, pigoutput;
 	private String blocksize;
 	private String isblocksuserdefined;
 	private String pingdelay;
@@ -73,7 +73,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	private String implicitcontainermemory;
 	private String implicitcontainermemorysize;
 	private Set<Class<?>> customclasses;
-	transient private ClassLoader clsloader;
+	private transient ClassLoader clsloader;
 	private String user;
 	private String jobid;
 	private String tejobid;

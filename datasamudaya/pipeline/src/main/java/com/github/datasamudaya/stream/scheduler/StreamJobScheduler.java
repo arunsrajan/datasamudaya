@@ -487,7 +487,7 @@ public class StreamJobScheduler {
       log.error(PipelineConstants.JOBSCHEDULERERROR, ex);
       throw new PipelineException(PipelineConstants.JOBSCHEDULERERROR, ex);
     } finally {
-      if (!Objects.isNull(job.getIgcache())) {
+      if (!Objects.isNull(job.getIgcache()) && job.getTrigger()!=TRIGGER.FOREACH) {
         job.getIgcache().close();
       }
       if ((Boolean.FALSE.equals(ismesos) && Boolean.FALSE.equals(isyarn)
@@ -1061,10 +1061,10 @@ public class StreamJobScheduler {
           StreamPipelineTaskExecutorIgnite mdste = null;
           if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
         	  mdste = new StreamPipelineTaskExecutorIgniteSQL(jsidjsmap.get(task.jobid + task.stageid), task);
-        	  mdste.setHdfspath(hdfsfilepath);
           } else {
         	  mdste = new StreamPipelineTaskExecutorIgnite(jsidjsmap.get(task.jobid + task.stageid), task);
           }
+          mdste.setHdfspath(hdfsfilepath);
           try {
             semaphore.acquire();
             var compute = job.getIgnite().compute(job.getIgnite().cluster().forServers());

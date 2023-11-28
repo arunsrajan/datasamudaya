@@ -46,7 +46,7 @@ public class DataSamudayaIgniteClient {
 	 * @param pipelineconfig
 	 * @return ignite object
 	 */
-	public synchronized static Ignite instance(PipelineConfig pipelineconfig) {
+	public static synchronized Ignite instance(PipelineConfig pipelineconfig) {
 		if (isNull(ignite) || nonNull(ignite) && !ignite.active()) {
 			IgniteConfiguration cfg = new IgniteConfiguration()
 				    .setDiscoverySpi(new TcpDiscoverySpi()
@@ -68,7 +68,7 @@ public class DataSamudayaIgniteClient {
 	 * @param jobconf
 	 * @return ignite client object
 	 */
-	public synchronized static Ignite instanceMR(JobConfiguration jobconf) {
+	public static synchronized Ignite instanceMR(JobConfiguration jobconf) {
 		if (isNull(ignite) || nonNull(ignite) && !ignite.active()) {			
 			IgniteConfiguration cfg = new IgniteConfiguration()
 				    .setDiscoverySpi(new TcpDiscoverySpi()

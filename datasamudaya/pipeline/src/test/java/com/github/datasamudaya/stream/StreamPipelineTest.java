@@ -28,6 +28,8 @@ public class StreamPipelineTest extends StreamPipelineTestCommon {
 	@Test
 	public void testGetDAG() throws Exception {
 		PipelineConfig pc = new PipelineConfig();
+		pc.setLocal("true");
+		pc.setMode(DataSamudayaConstants.EXECMODE_DEFAULT);
 		StreamPipeline<String> mdp = StreamPipeline.newStreamHDFS(hdfsurl, hdfsdirpaths1[0], pc);
 		StreamPipeline<String[]> mdparr = mdp.map(val -> val.split(DataSamudayaConstants.COMMA));
 		mdparr.finaltasks.add(mdparr.task);
@@ -42,6 +44,8 @@ public class StreamPipelineTest extends StreamPipelineTestCommon {
 	@Test
 	public void testFormDAGAbstractFunction() throws Exception {
 		PipelineConfig pc = new PipelineConfig();
+		pc.setLocal("true");
+		pc.setMode(DataSamudayaConstants.EXECMODE_DEFAULT);
 		StreamPipeline<String> mdp = StreamPipeline.newStreamHDFS(hdfsurl, hdfsdirpaths1[0], pc);
 		StreamPipeline<String[]> mdparr = mdp.map(val -> val.split(DataSamudayaConstants.COMMA));
 		mdparr.finaltasks.add(mdparr.task);

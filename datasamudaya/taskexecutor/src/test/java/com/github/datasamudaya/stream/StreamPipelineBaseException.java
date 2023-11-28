@@ -91,7 +91,7 @@ public class StreamPipelineBaseException {
 	static int zookeeperport = 2182;
 	static int namenodeport = 9000;
 	static int namenodehttpport = 60070;
-	static private String host;
+	private static String host;
 	static Logger log = Logger.getLogger(StreamPipelineBaseException.class);
 	static List<Registry> sss = new ArrayList<>();
 	static ExecutorService threadpool, executorpool;

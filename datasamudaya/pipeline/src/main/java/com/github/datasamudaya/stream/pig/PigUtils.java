@@ -1557,7 +1557,7 @@ public class PigUtils {
 			String opType = expression.getName();
 			LogicalExpression leftExpression = binaryExpression.getLhs();
 			LogicalExpression rightExpression = binaryExpression.getRhs();
-			String operator = opType.toString();
+			String operator = opType;
 			
 			switch (operator) {
 			case "And":

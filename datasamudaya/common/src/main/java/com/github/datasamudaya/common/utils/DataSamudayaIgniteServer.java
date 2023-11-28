@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.datasamudaya.stream.utils;
+package com.github.datasamudaya.common.utils;
 
-
-import static java.util.Objects.isNull;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheAtomicityMode;
@@ -32,34 +30,30 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 
 public class DataSamudayaIgniteServer {
 
-	private static Ignite ignite;
-
 	private DataSamudayaIgniteServer() {
 	}
 
 	public static synchronized Ignite instance() {
-		if (isNull(ignite)) {
-			Ignition.setClientMode(false);
-			var cfg = new IgniteConfiguration();
-			cfg.setIgniteInstanceName("Server");
-			// The node will be started as a server node.
-			cfg.setClientMode(false);
-			cfg.setDeploymentMode(DeploymentMode.CONTINUOUS);
-			// Classes of custom Java logic will be transferred over the wire from
-			// this app.
-			cfg.setPeerClassLoadingEnabled(true);
-			// Setting up an IP Finder to ensure the client can locate the servers.
-			var ipFinder = new TcpDiscoveryMulticastIpFinder();
-			ipFinder.setMulticastGroup(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IGNITEMULTICASTGROUP));
-			cfg.setDiscoverySpi(new TcpDiscoverySpi().setIpFinder(ipFinder));
-			var cc = new CacheConfiguration<Object, byte[]>(DataSamudayaConstants.DATASAMUDAYACACHE);
-			cc.setCacheMode(CacheMode.PARTITIONED);
-			cc.setAtomicityMode(CacheAtomicityMode.ATOMIC);
-			cc.setBackups(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IGNITEBACKUP)));
-			cfg.setCacheConfiguration(cc);
-			ignite = Ignition.start(cfg);
-		}
-		return ignite;
+		Ignition.setClientMode(false);
+		var cfg = new IgniteConfiguration();
+		cfg.setIgniteInstanceName("Server");
+		// The node will be started as a server node.
+		cfg.setClientMode(false);
+		cfg.setDeploymentMode(DeploymentMode.CONTINUOUS);
+		// Classes of custom Java logic will be transferred over the wire from
+		// this app.
+		cfg.setPeerClassLoadingEnabled(true);
+		// Setting up an IP Finder to ensure the client can locate the servers.
+		var ipFinder = new TcpDiscoveryMulticastIpFinder();
+		ipFinder.setMulticastGroup(
+				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IGNITEMULTICASTGROUP));
+		cfg.setDiscoverySpi(new TcpDiscoverySpi().setIpFinder(ipFinder));
+		var cc = new CacheConfiguration<Object, byte[]>(DataSamudayaConstants.DATASAMUDAYACACHE);
+		cc.setCacheMode(CacheMode.PARTITIONED);
+		cc.setAtomicityMode(CacheAtomicityMode.ATOMIC);
+		cc.setBackups(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IGNITEBACKUP)));
+		cfg.setCacheConfiguration(cc);
+		return Ignition.start(cfg);
 	}
 
 }
