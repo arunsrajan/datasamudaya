@@ -118,10 +118,10 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 		return true;
 	}
 
+	
 	@Override
 	public String toString() {
-		return "StreamPipelineTaskSubmitter [task=" + task + ", hp=" + hp + ", completedexecution=" + completedexecution
-				+ "]";
+		return "StreamPipelineTaskSubmitter [task=" + task + "]";
 	}
 
 	@Override

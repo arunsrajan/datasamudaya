@@ -834,7 +834,7 @@ public class StreamJobScheduler {
           }
           var containersfailed = new ArrayList<>(this.taskexecutors);
           containersfailed.removeAll(currentcontainers);
-          lineagegraph = generateLineageGraph(lineagegraph, containersfailed, currentcontainers);
+          updateOriginalGraph(lineagegraph, containersfailed, currentcontainers);
           log.info("Tasks Errored: Original Graph {} \nGenerating Lineage Graph: {}", origgraph, lineagegraph);
         }
 
@@ -891,50 +891,90 @@ public class StreamJobScheduler {
    * @param availableNodes
    * @return lineage graph
    */
-	public Graph<StreamPipelineTaskSubmitter, DAGEdge> generateLineageGraph(
-			Graph<StreamPipelineTaskSubmitter, DAGEdge> graphToProcess, List<String> downNodeIPs,
-			List<String> availableNodes) {		
-		Graph<StreamPipelineTaskSubmitter, DAGEdge> lineagegraph = new SimpleDirectedGraph<>(DAGEdge.class);
-		TopologicalOrderIterator<StreamPipelineTaskSubmitter, DAGEdge> sort = new TopologicalOrderIterator<>(
-				graphToProcess);
-		Map<String, StreamPipelineTaskSubmitter> map = new HashMap<>();
-		// update nodes with available nodes
-		while (sort.hasNext()) {
-			StreamPipelineTaskSubmitter spts = sort.next();			
-			// update node with available node IP
-			Set<DAGEdge> defaultEdge = graphToProcess.incomingEdgesOf(spts);
-			StreamPipelineTaskSubmitter updatedNode = new StreamPipelineTaskSubmitter(spts.getTask(),
-					spts.getHostPort(), job.getPipelineconfig());
-			updatedNode.setCompletedexecution(spts.isCompletedexecution());
-			if (defaultEdge.size() > 0) {
-				if (downNodeIPs.contains(spts.getHostPort())) {
-					DAGEdge edg = defaultEdge.iterator().next();
-					StreamPipelineTaskSubmitter sourceNode = graphToProcess.getEdgeSource(edg);
-					StreamPipelineTaskSubmitter source = map.get(sourceNode.getTask().taskid);
-					updatedNode.getTask().hostport = source.getHostPort();
-					updatedNode.setHostPort(source.getHostPort());
-					updatedNode.setCompletedexecution(false);
-				}
-			} else {
-				if (downNodeIPs.contains(spts.getHostPort())) {
-					String availableNodeIP = getAvailableTaskExecutor(spts.getTask(), availableNodes);
-					updatedNode.getTask().hostport = availableNodeIP;
-					updatedNode.setHostPort(availableNodeIP);
-					updatedNode.setCompletedexecution(false);
-				}
-			}
-			lineagegraph.addVertex(updatedNode);
-			map.put(updatedNode.getTask().taskid, updatedNode);
-			for (DAGEdge edge : defaultEdge) {
-				StreamPipelineTaskSubmitter sourceNode = graphToProcess.getEdgeSource(edge);
-				if (map.containsKey(sourceNode.getTask().taskid)) {
-					lineagegraph.addEdge(map.get(sourceNode.getTask().taskid), updatedNode);
-					reConfigureParentRDFForStageExecution(updatedNode, map.get(sourceNode.getTask().taskid));
-				}
-			}
-		}
-		return lineagegraph;
+	public void updateOriginalGraph(
+			Graph<StreamPipelineTaskSubmitter, DAGEdge> graphtoprocess, List<String> downteips,
+			List<String> availabletes) {		
+		List<StreamPipelineTaskSubmitter> failedtasks = getFailedTasks(graphtoprocess, downteips);
+		updateGraph(graphtoprocess, failedtasks, availabletes, downteips);
 	}
+	
+	/**
+	 * Update the Tasks with the available taskexecutors
+	 * @param graph
+	 * @param failedtasks
+	 * @param availableteips
+	 * @param downteips
+	 */
+	protected void updateGraph(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph, List<StreamPipelineTaskSubmitter> failedtasks,
+			List<String> availableteips, List<String> downteips) {
+        // Iterate through all failed nodes
+        for (StreamPipelineTaskSubmitter failedtask : failedtasks) {
+            // Update the graph for each failed node        	
+            updateChildren(graph, failedtask, getAvailableTaskExecutor(failedtask.getTask(), availableteips), downteips);
+        }
+    }
+	
+	/**
+	 * Update children with the taskexecutors of parents.
+	 * @param graph
+	 * @param parentNode
+	 */
+	protected void updateChildren(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph, 
+			StreamPipelineTaskSubmitter currenttask,
+			String hostporttoupdate, List<String> downnodeips) {
+		
+		if(downnodeips.contains(currenttask.getHostPort())) {
+            // Update the child node with the parent's IP address and port
+			currenttask.setHostPort(hostporttoupdate);
+			currenttask.getTask().setHostport(hostporttoupdate);
+			currenttask.setCompletedexecution(false);			
+    	} else {
+    		var incomingedges = graph.incomingEdgesOf(currenttask);
+    		for(DAGEdge dagedge:incomingedges){
+    			reConfigureParentRDFForStageExecution(currenttask, graph.getEdgeSource(dagedge));
+    		}
+    		updateChildrenTaskIncompleted(graph, currenttask);
+    		return;
+    	}
+		
+        for (DAGEdge edge : graph.outgoingEdgesOf(currenttask)) {
+        	StreamPipelineTaskSubmitter childtask = graph.getEdgeTarget(edge);
+            // Recursively update the child's children
+            updateChildren(graph, childtask, hostporttoupdate, downnodeips);
+        }
+    }
+
+	
+	/**
+	 * Update Children When Task Incompleted
+	 * @param graph
+	 * @param parenttask
+	 */
+	public void updateChildrenTaskIncompleted(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph,
+			StreamPipelineTaskSubmitter parenttask) {
+		parenttask.setCompletedexecution(false);
+		for (DAGEdge edge : graph.outgoingEdgesOf(parenttask)) {
+        	StreamPipelineTaskSubmitter childtask = graph.getEdgeTarget(edge);
+            // Recursively update the child's children
+        	updateChildrenTaskIncompleted(graph, childtask);
+        }
+	}
+	
+	
+	/**
+	 * Get Failed Tasks based on Dead Task Executor
+	 * @param graph
+	 * @param downNodeIps
+	 * @return all the tasks that are failed
+	 */
+	protected List<StreamPipelineTaskSubmitter> getFailedTasks(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph,
+			List<String> downnodeips) {
+		List<StreamPipelineTaskSubmitter> failedNodes = new ArrayList<>();
+        graph.vertexSet().stream().filter(spts->downnodeips.contains(spts.getHostPort())).forEach(failedNodes::add);
+        return failedNodes;
+    }
+	
+	
 	Random rand = new Random(System.currentTimeMillis());
 	public String getAvailableTaskExecutor(Task task, List<String> availableNodes) {
 		Object[] inputs = task.getInput();
@@ -969,10 +1009,12 @@ public class StreamJobScheduler {
 	public void reConfigureParentRDFForStageExecution(StreamPipelineTaskSubmitter spts,
 			StreamPipelineTaskSubmitter pred) {
 		var prdf = spts.getTask().parentremotedatafetch;
-		for (var rdf : prdf) {
-			if (!Objects.isNull(rdf) && rdf.getTaskid().equals(pred.getTask().getTaskid())) {
-				rdf.setHp(pred.getHostPort());
-				break;
+		if (nonNull(prdf)) {
+			for (var rdf : prdf) {
+				if (!Objects.isNull(rdf) && rdf.getTaskid().equals(pred.getTask().getTaskid())) {
+					rdf.setHp(pred.getHostPort());
+					break;
+				}
 			}
 		}
 	}
