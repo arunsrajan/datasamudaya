@@ -303,7 +303,6 @@ public class StreamJobScheduler {
           spts.getTask().filepath = job.getSavepath() + DataSamudayaConstants.HYPHEN + partitionnumber++;
         }
       }
-      Utils.writeToOstream(pipelineconfig.getOutput(), "stages: " + sptsl);
       if (isignite) {
         parallelExecutionPhaseIgnite(graph, new TaskProviderIgnite());
       }
@@ -835,7 +834,10 @@ public class StreamJobScheduler {
           var containersfailed = new ArrayList<>(this.taskexecutors);
           containersfailed.removeAll(currentcontainers);
           updateOriginalGraph(lineagegraph, containersfailed, currentcontainers);
-          log.info("Tasks Errored: Original Graph {} \nGenerating Lineage Graph: {}", origgraph, lineagegraph);
+          tetotaltaskscompleted.clear();
+          servertotaltasks.clear();
+          broadcastJobStageToTaskExecutors(lineagegraph.vertexSet().stream().map(spts->spts.getTask()).collect(Collectors.toList()));
+          log.debug("Tasks Errored: Original Graph {} \nGenerating Lineage Graph: {}", origgraph, lineagegraph);
         }
 
         numexecute++;
@@ -1155,9 +1157,9 @@ public class StreamJobScheduler {
         	
         	@Override
 			public Boolean execute() {
-				if (!spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
-					try {
-						semaphores.get(spts.getTask().getHostport()).acquire();
+				try {
+					semaphores.get(spts.getTask().getHostport()).acquire();
+					if (!spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
 						Task result = (Task) spts.call();
 						log.info("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
 						printresult.acquire();
@@ -1175,7 +1177,6 @@ public class StreamJobScheduler {
 						if (Objects.isNull(job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()))) {
 							job.getJm().getTaskexcutortasks().put(spts.getTask().getHostport(), new ArrayList<>());
 						}
-						job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()).add(result);
 						printresult.release();
 						if (result.taskstatus == TaskStatus.FAILED) {
 							spts.getTask().setTaskstatus(TaskStatus.FAILED);
@@ -1185,17 +1186,31 @@ public class StreamJobScheduler {
 							throw new IllegalArgumentException("Task Failed");
 						} else if (result.taskstatus == TaskStatus.COMPLETED) {
 							spts.setCompletedexecution(true);
+							job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()).add(result);
 						}
 						spts.getTask().setPiguuid(result.getPiguuid());
 						return true;
-					} catch (IllegalArgumentException e) {
-						throw e;
-					} catch (Exception e) {
-						log.error(DataSamudayaConstants.EMPTY, e);
-						spts.setCompletedexecution(false);
-					} finally {
-						semaphores.get(spts.getTask().getHostport()).release();
+					} else if (spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
+						printresult.acquire();
+						if (Objects.isNull(tetotaltaskscompleted.get(spts.getHostPort()))) {
+							tetotaltaskscompleted.put(spts.getHostPort(), 0d);
+						}
+						tetotaltaskscompleted.put(spts.getHostPort(),
+								tetotaltaskscompleted.get(spts.getHostPort()) + 1);
+						double percentagecompleted = Math.floor((tetotaltaskscompleted.get(spts.getHostPort())
+								/ servertotaltasks.get(spts.getHostPort())) * 100.0);
+						Utils.writeToOstream(pipelineconfig.getOutput(), "\nPercentage Completed TE("
+								+ spts.getHostPort() + ") " + percentagecompleted + "% \n");
+						job.getJm().getContainersallocated().put(spts.getHostPort(), percentagecompleted);
+						printresult.release();
 					}
+				} catch (IllegalArgumentException e) {
+					throw e;
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+					spts.setCompletedexecution(false);
+				} finally {
+					semaphores.get(spts.getTask().getHostport()).release();
 				}
 				return spts.isCompletedexecution();
 
