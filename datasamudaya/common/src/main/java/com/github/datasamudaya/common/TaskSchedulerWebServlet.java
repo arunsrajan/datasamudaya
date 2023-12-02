@@ -8,8 +8,11 @@
  */
 package com.github.datasamudaya.common;
 
+import static java.util.Objects.nonNull;
+
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,8 +30,6 @@ import org.apache.log4j.Logger;
 import org.springframework.util.CollectionUtils;
 
 import com.github.datasamudaya.common.utils.Utils;
-
-import static java.util.Objects.*;
 
 /**
  * Task Scheduler Servlet
@@ -233,8 +234,10 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 										              <th>User</th>
 										              <th>Executor</th>
 										              <th>Node</th>
+										              <th>Executor<BR/>Address</th>
 										              <th>Cpu</th>
 										              <th>Memory (MB)</th>
+										              <th>Status<BR/>(UP/DOWN)</th>
 										              </thead>
 										              <tbody>""".formatted(
 								aint.get(), aint.get(), aint.getAndIncrement()));
@@ -367,11 +370,19 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 				buffer.append("<td>");
 				buffer.append(lc.getNodehostport());
 				buffer.append("</td>");
+				String te = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+						+DataSamudayaConstants.UNDERSCORE+crs.getPort();
+				buffer.append("<td>");
+				buffer.append(te);
+				buffer.append("</td>");
 				buffer.append("<td>");
 				buffer.append(crs.getCpu());
 				buffer.append("</td>");
 				buffer.append("<td>");
 				buffer.append((crs.getMaxmemory() + crs.getDirectheap()) / DataSamudayaConstants.MB);
+				buffer.append("</td>");
+				buffer.append("<td>");
+				buffer.append(getTaskExecutorStatus(lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0], crs.getPort()));
 				buffer.append("</td>");
 				buffer.append("</tr>");
 			}
@@ -379,6 +390,22 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * Return status of task executor whether it is UP or DOWN
+	 * @param hp
+	 * @param port
+	 * @return status of task executor as UP/DOWN
+	 */
+	protected String getTaskExecutorStatus(String hp, int port){
+		try(Socket sock=new Socket()){
+			sock.connect(new InetSocketAddress(hp, port));
+			return "<font color=\"green\">"+DataSamudayaConstants.TASKEXECUTOR_STATUS_UP+"</font>";
+		} catch(Exception ex) {
+			return "<font color=\"red\">"+DataSamudayaConstants.TASKEXECUTOR_STATUS_DOWN+"</font>";
+		}
+	}
+	
+	
 	/**
 	 * The method converts the data object in the form of list or map to html
 	 * 

@@ -105,6 +105,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.util.CollectionUtils;
 import org.springframework.yarn.YarnSystemConstants;
 import org.springframework.yarn.client.CommandYarnClient;
 
@@ -1483,8 +1484,12 @@ public class Utils {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		});
-		GlobalContainerLaunchers.remove(user, jobid);
+		GlobalContainerLaunchers.remove(user, jobid);		
 		GlobalJobFolderBlockLocations.remove(jobid);
+		Map<String,List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);
+		if(CollectionUtils.isEmpty(jobcontainermap)) {
+			GlobalContainerLaunchers.remove(user);
+		}
 	}
 
 	static List<Object> objects = new ArrayList<>();

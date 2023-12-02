@@ -573,5 +573,8 @@ public class DataSamudayaConstants {
   
   public static final String YARN_INPUT_QUEUE = "/inputqueue";
   public static final String YARN_OUTPUT_QUEUE = "/outputqueue";
+  
+  public static final String TASKEXECUTOR_STATUS_UP = "UP";
+  public static final String TASKEXECUTOR_STATUS_DOWN = "DOWN";
 
 }

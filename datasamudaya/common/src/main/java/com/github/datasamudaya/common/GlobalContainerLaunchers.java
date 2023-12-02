@@ -88,6 +88,20 @@ public class GlobalContainerLaunchers {
 		lcsmap.remove(userid);
 	}
 	
+	/**
+	 * Get the entries for the given userid
+	 * @param userid
+	 * @return Container entries for the user
+	 */
+	public static Map<String, List<LaunchContainers>> get(String userid){
+		return lcsmap.get(userid);
+	}
+	
+	/**
+	 * Remove entries for given userid and jobid
+	 * @param userid
+	 * @param jobid
+	 */
 	public static void remove(String userid, String jobid) {
 		lcsmap.get(userid).remove(jobid);
 	}
