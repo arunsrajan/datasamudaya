@@ -19,6 +19,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URI;
@@ -30,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -48,6 +50,7 @@ import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.ehcache.Cache;
 import org.jgrapht.Graph;
@@ -593,51 +596,66 @@ public class StreamJobScheduler {
    */
   @SuppressWarnings("unchecked")
   public void getTaskExecutorsHostPort() throws PipelineException {
-    try {
-      GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();      
-      var loadjar = new LoadJar();
-      loadjar.setMrjar(pipelineconfig.getJar());
-      if (nonNull(pipelineconfig.getCustomclasses())
-          && !pipelineconfig.getCustomclasses().isEmpty()) {
-        loadjar.setClasses(pipelineconfig.getCustomclasses().stream().map(clz -> clz.getName())
-            .collect(Collectors.toCollection(LinkedHashSet::new)));
-      }
-      for (var lc : job.getLcs()) {
-        List<Integer> ports = null;
-        if (pipelineconfig.getUseglobaltaskexecutors()) {
-          ports = lc.getCla().getCr().stream().map(cr -> {
-            return cr.getPort();
-          }).collect(Collectors.toList());
-        } else {
-          ports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(), lc, DataSamudayaConstants.EMPTY);
-        }
-        int index = 0;
-        String tehost = lc.getNodehostport().split("_")[0];
-        while (index < ports.size()) {
-          while (true) {
-            try (Socket sock = new Socket(tehost, ports.get(index))) {
-              break;
-            } catch (Exception ex) {
-              Thread.sleep(200);
-            }
-          }
-          if (nonNull(loadjar.getMrjar())) {
-        	  log.debug("{}", Utils.getResultObjectByInput(
-                tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar, pipelineconfig.getUseglobaltaskexecutors() ? pipelineconfig.getTejobid() : job.getId()));
-          }
-          index++;
-        }
-      }
-      String jobid = job.getId();
-      if(pipelineconfig.getUseglobaltaskexecutors()) {
-    	  jobid = pipelineconfig.getTejobid();
-      }
-      var tes = zo.getTaskExectorsByJobId(jobid);
-      taskexecutors = new LinkedHashSet<>(tes);
-      while (taskexecutors.size() != job.getTaskexecutors().size()) {
-        Thread.sleep(500);
-      }
-    } catch (InterruptedException e) {
+		try {
+			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
+			var loadjar = new LoadJar();
+			loadjar.setMrjar(pipelineconfig.getJar());
+			if (nonNull(pipelineconfig.getCustomclasses()) && !pipelineconfig.getCustomclasses().isEmpty()) {
+				loadjar.setClasses(pipelineconfig.getCustomclasses().stream().map(clz -> clz.getName())
+						.collect(Collectors.toCollection(LinkedHashSet::new)));
+			}
+			Map<String, List<Integer>> nodehostportteports = new ConcurrentHashMap<>();
+			for (var lc : job.getLcs()) {
+				List<Integer> ports = null;
+				if (pipelineconfig.getUseglobaltaskexecutors()) {
+					ports = lc.getCla().getCr().stream().map(cr -> {
+						return cr.getPort();
+					}).collect(Collectors.toList());
+				} else {
+					ports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(), lc,
+							DataSamudayaConstants.EMPTY);
+				}
+				if (CollectionUtils.isNotEmpty(nodehostportteports.get(lc.getNodehostport()))) {
+					nodehostportteports.get(lc.getNodehostport()).addAll(ports);
+				} else {
+					nodehostportteports.put(lc.getNodehostport(), ports);
+				}
+			}
+			int sotimeoutcountmax = 5;
+			int sotimeoutcount = 0;
+			for(Entry<String, List<Integer>> nodehostportentry : nodehostportteports.entrySet()) {
+				String nodehostport = nodehostportentry.getKey();
+				String tehost = nodehostport.split("_")[0];
+				List<Integer> ports = nodehostportentry.getValue();
+				for (int port : ports) {
+					sotimeoutcount = 0;
+					while (sotimeoutcount < sotimeoutcountmax) {
+						try (Socket sock = new Socket()) {
+							sock.connect(new InetSocketAddress(tehost, port), 2000);
+							break;
+						} catch (Exception ex) {
+							Thread.sleep(200);
+						}
+						sotimeoutcount++;
+					}
+					if (nonNull(loadjar.getMrjar())) {
+						log.debug("{}",
+								Utils.getResultObjectByInput(tehost + DataSamudayaConstants.UNDERSCORE + port, loadjar,
+										pipelineconfig.getUseglobaltaskexecutors() ? pipelineconfig.getTejobid()
+												: job.getId()));
+					}
+				}
+			}
+			String jobid = job.getId();
+			if (pipelineconfig.getUseglobaltaskexecutors()) {
+				jobid = pipelineconfig.getTejobid();
+			}
+			var tes = zo.getTaskExectorsByJobId(jobid);
+			taskexecutors = new LinkedHashSet<>(tes);
+			if (taskexecutors.size() != job.getTaskexecutors().size()) {
+				log.warn("Current Task Executors {} is not same as predetermined taskexecutors for current job {}",taskexecutors, job.getTaskexecutors());
+			}
+		} catch (InterruptedException e) {
       log.warn("Interrupted!", e);
       // Restore interrupted state...
       Thread.currentThread().interrupt();
@@ -831,7 +849,7 @@ public class StreamJobScheduler {
           } else {
         	  currentcontainers = zo.getTaskExectorsByJobId(job.getId());
           }
-          var containersfailed = new ArrayList<>(this.taskexecutors);
+          var containersfailed = job.getTaskexecutors();
           containersfailed.removeAll(currentcontainers);
           updateOriginalGraph(lineagegraph, containersfailed, currentcontainers);
           tetotaltaskscompleted.clear();
