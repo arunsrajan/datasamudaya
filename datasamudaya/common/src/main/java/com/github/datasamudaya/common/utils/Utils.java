@@ -1089,7 +1089,8 @@ public class Utils {
 	 * @return containers
 	 * @throws Exception
 	 */
-	public static synchronized List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws Exception {
+	public static List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws Exception {
+		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
 		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
 		long memoryuserbytes = Long.valueOf(memoryuser) * DataSamudayaConstants.MB;
 		var nrs = DataSamudayaNodesResources.getAllocatedResources();
@@ -1102,6 +1103,7 @@ public class Utils {
 			throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		PipelineConfig pc = new PipelineConfig();
+		List<String> launchedcontainerhostports = new ArrayList<>();
 		for (int container = 0;container < numavailable;container++) {
 			ConcurrentMap<String, Resources> noderesmap = res.next();
 			Resources restolaunch = noderesmap.get(user);
@@ -1147,52 +1149,62 @@ public class Utils {
 				crs.setMaxmemory(heapmem);
 				crs.setDirectheap(directmem);
 				crs.setGctype(pc.getGctype());
-				crl.add(crs);
-				String conthp = restolaunch.getNodeport().split(DataSamudayaConstants.UNDERSCORE)[0] + DataSamudayaConstants.UNDERSCORE
-						+ port;
+				crl.add(crs);				
+			}			
+			cla.setCr(crl);
+			cla.setNumberofcontainers(numberofcontainers);
+			LaunchContainers lc = new LaunchContainers();
+			lc.setCla(cla);
+			lc.setNodehostport(restolaunch.getNodeport());
+			lc.setJobid(jobid);			
+			globallaunchcontainers.add(lc);
+			List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
+					lc, DataSamudayaConstants.EMPTY);
+			String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
+			launchedcontainerports.stream().map(port->containerhost
+					+ DataSamudayaConstants.UNDERSCORE + port).forEach(launchedcontainerhostports::add);
+			if (Objects.isNull(launchedcontainerports)) {
+				throw new ContainerException("Task Executor Launch Error From Container");
+			}
+			for (ContainerResources crs : crl) {
+				String conthp = containerhost
+						+ DataSamudayaConstants.UNDERSCORE + crs.getPort();
 				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
 				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
 				restolaunch.setFreememory(restolaunch.getFreememory() - heapmem - directmem);
 				restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpu);
 			}
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
-			cla.setCr(crl);
-			cla.setNumberofcontainers(numberofcontainers);
-			LaunchContainers lc = new LaunchContainers();
-			lc.setCla(cla);
-			lc.setNodehostport(restolaunch.getNodeport());
-			lc.setJobid(jobid);
-			List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
-					lc, DataSamudayaConstants.EMPTY);
-			globallaunchcontainers.add(lc);
-			if (Objects.isNull(launchedcontainerports)) {
-				throw new ContainerException("Task Executor Launch Error From Container");
-			}
-			int index = 0;
-			while (index < launchedcontainerports.size()) {
-				while (true) {
-					String tehost = lc.getNodehostport().split("_")[0];
-					try (var sock = new Socket(tehost, launchedcontainerports.get(index));) {
-						break;
-					} catch (Exception ex) {
-						try {
-							log.info("Waiting for chamber " + tehost + DataSamudayaConstants.UNDERSCORE
-									+ launchedcontainerports.get(index) + " to replete dispatch....");
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							log.warn("Interrupted!", e);
-							// Restore interrupted state...
-							Thread.currentThread().interrupt();
-						} catch (Exception e) {
-							log.error(DataSamudayaConstants.EMPTY, e);
-						}
-					}
-				}
-				index++;
-			}
 			log.info(
 					"Chamber dispatched node: " + restolaunch.getNodeport() + " with ports: " + launchedcontainerports);
 		}
+		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
+		
+		int index = 0;
+		while (index < launchedcontainerhostports.size()) {
+			while (true) {
+				String tehostport = launchedcontainerhostports.get(index);
+				String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
+				try (var sock = new Socket(tehp[0], Integer.valueOf(tehp[1]));) {
+					break;
+				} catch (Exception ex) {
+					try {
+						log.info("Waiting for chamber " + tehp[0] + DataSamudayaConstants.UNDERSCORE
+								+ tehp[1] + " to replete dispatch....");
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						log.warn("Interrupted!", e);
+						// Restore interrupted state...
+						Thread.currentThread().interrupt();
+					} catch (Exception e) {
+						log.error(DataSamudayaConstants.EMPTY, e);
+					}
+				}
+			}
+			index++;
+		}
+		
+		
 		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
 		return globallaunchcontainers;
 	}
