@@ -78,7 +78,7 @@ public class TaskSchedulerMapperSubmitter implements TaskSchedulerMapperSubmitte
 			output.close();
 			return (RetrieveKeys) Utils.getResultObjectByInput(blockslocation.getExecutorhp(), baos.toByteArray(), executorid);
 		}
-		catch (IOException ex) {
+		catch (Exception ex) {
 			var baos = new ByteArrayOutputStream();
 			var failuremessage = new PrintWriter(baos, true, StandardCharsets.UTF_8);
 			ex.printStackTrace(failuremessage);

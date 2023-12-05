@@ -32,7 +32,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
 import java.lang.reflect.Field;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -40,7 +39,6 @@ import java.net.URI;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.security.KeyStore;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -62,18 +60,7 @@ import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-
-import com.sun.management.OperatingSystemMXBean;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
@@ -156,7 +143,16 @@ import com.github.datasamudaya.common.WhoAreRequest;
 import com.github.datasamudaya.common.WhoAreResponse;
 import com.github.datasamudaya.common.WhoIsRequest;
 import com.github.datasamudaya.common.WhoIsResponse;
+import com.github.datasamudaya.common.execptions.JGroupsException;
+import com.github.datasamudaya.common.execptions.JobException;
+import com.github.datasamudaya.common.execptions.OutputStreamException;
+import com.github.datasamudaya.common.execptions.PropertiesException;
+import com.github.datasamudaya.common.execptions.RpcRegistryException;
+import com.github.datasamudaya.common.execptions.TaskExecutorException;
+import com.github.datasamudaya.common.execptions.YarnLaunchException;
+import com.github.datasamudaya.common.execptions.ZookeeperException;
 import com.github.datasamudaya.common.functions.Coalesce;
+import com.sun.management.OperatingSystemMXBean;
 
 import jdk.jshell.JShell;
 import net.sf.jsqlparser.parser.SimpleNode;
@@ -199,11 +195,8 @@ public class Utils {
 	/**
 	 * Thread Local kryo instance.
 	 */
-	static ThreadLocal<Kryo> conf = new ThreadLocal<>() {
-		public Kryo initialValue() {
-			return getKryoInstance();
-		}
-	};
+	static ThreadLocal<Kryo> conf =ThreadLocal.withInitial(()->getKryoInstance());
+
 
 	/**
 	 * Writes the text message to outputstream.
@@ -212,11 +205,15 @@ public class Utils {
 	 * @param message
 	 * @throws Exception
 	 */
-	public static void writeToOstream(OutputStream os, String message) throws Exception {
-		if (nonNull(os)) {
-			os.write(message.getBytes());
-			os.write('\n');
-			os.flush();
+	public static void writeToOstream(OutputStream os, String message) throws OutputStreamException {
+		try {
+			if (nonNull(os)) {
+				os.write(message.getBytes());
+				os.write('\n');
+				os.flush();
+			}
+		} catch (Exception ex) {
+			throw new OutputStreamException("Error In Writing message to outputstream", ex);
 		}
 	}
 
@@ -227,19 +224,19 @@ public class Utils {
 	 * @param propertyfile
 	 * @throws Exception
 	 */
-	public static void initializeProperties(String propertiesfilepath, String propertyfile) throws Exception {
+	public static void initializeProperties(String propertiesfilepath, String propertyfile) throws PropertiesException {
 		log.debug("Entered Utils.initializeProperties");
 		if (Objects.isNull(propertyfile)) {
-			throw new Exception("Property File Name cannot be null");
+			throw new PropertiesException("Property File Name cannot be null");
 		}
 		if (Objects.isNull(propertiesfilepath)) {
-			throw new Exception("Properties File Path cannot be null");
+			throw new PropertiesException("Properties File Path cannot be null");
 		}
 		try (var fis = new FileInputStream(propertiesfilepath + propertyfile);) {
 			var prop = new Properties();
 			prop.load(fis);
 			prop.putAll(System.getProperties());
-			log.debug("Properties: " + prop.entrySet());
+			log.debug("Properties: {}", prop.entrySet());
 			DataSamudayaProperties.put(prop);
 			String containerusersshare = prop.getProperty(DataSamudayaConstants.CONTAINER_ALLOC_USERS_PLUS_SHARE);
 			if (nonNull(containerusersshare)) {
@@ -250,7 +247,7 @@ public class Utils {
 					var userssharepercentage = new ConcurrentHashMap<String, User>();
 					double sharepercentagetotal = 0;
 					for (int usercount = 0;usercount < noofusers;usercount++) {
-						int sharepercentage = Integer.valueOf(cus[usercount * 2 + 1]);
+						int sharepercentage = Integer.parseInt(cus[usercount * 2 + 1]);
 						String username = cus[usercount * 2];
 						User user = new User(username, sharepercentage,
 								new ConcurrentHashMap<>());
@@ -258,27 +255,37 @@ public class Utils {
 						sharepercentagetotal += sharepercentage;
 					}
 					if (sharepercentagetotal > 100.0) {
-						throw new Exception("Users share total not tally and it should be less that or equal to 100.0");
+						throw new PropertiesException("Users share total not tally and it should be less that or equal to 100.0");
 					}
 					DataSamudayaUsers.put(userssharepercentage);
 				} else {
-					throw new Exception(
+					throw new PropertiesException(
 							"Container users share property [container.alloc.users.share] not properly formatted");
 				}
 			}
-			try {
-				StaticComponentContainer.Configuration.Default.setFileName(DataSamudayaProperties.get()
-						.getProperty(DataSamudayaConstants.BURNINGWAVE_PROPERTIES, DataSamudayaConstants.BURNINGWAVE_PROPERTIES_DEFAULT));
-			} catch (UnsupportedOperationException uoe) {
-				log.error("Problem in loading burningwave properties, See the cause below", uoe);
-			}
+			burningWaveInitialization();
 		} catch (Exception ex) {
-			log.error("Problem in loading properties, See the cause below", ex);
-			throw new Exception("Unable To Load Properties", ex);
+			throw new PropertiesException(PropertiesException.LOADING_PROPERTIES, ex);
 		}
 		log.debug("Exiting Utils.initializeProperties");
 	}
 
+	
+	/**
+	 * Burning Wave Initialized with properties file
+	 */
+	public static void burningWaveInitialization(){
+		try {
+			StaticComponentContainer.Configuration.Default.setFileName(DataSamudayaProperties.get()
+					.getProperty(DataSamudayaConstants.BURNINGWAVE_PROPERTIES, DataSamudayaConstants.BURNINGWAVE_PROPERTIES_DEFAULT));
+		} catch (UnsupportedOperationException uoe) {
+			log.error("Problem in loading burningwave properties, See the cause below", uoe);
+		}
+	}
+	
+	
+	
+	
 	/**
 	 * Gets the kryo object from thread local.
 	 * 
@@ -352,16 +359,16 @@ public class Utils {
 	 * @param propertyfile
 	 * @throws Exception
 	 */
-	public static void loadPropertiesMesos(String propertyfile) throws Exception {
+	public static void loadPropertiesMesos(String propertyfile) throws PropertiesException {
 		log.debug("Entered Utils.loadPropertiesMesos");		
 		var prop = new Properties();
 		try (var fis = Utils.class.getResourceAsStream(DataSamudayaConstants.FORWARD_SLASH + propertyfile);) {
 			prop.load(fis);
 			prop.putAll(System.getProperties());
-			log.debug("Properties: " + prop.entrySet());
+			log.debug("Properties: {}", prop.entrySet());
 			DataSamudayaProperties.put(prop);
 		} catch (Exception ex) {
-			log.error("Problem in loading properties, See the cause below", ex);
+			throw new PropertiesException("Problem in loading properties, See the cause below", ex);
 		}
 		log.debug("Exiting Utils.loadPropertiesMesos");
 	}
@@ -391,10 +398,13 @@ public class Utils {
 				String jobidl = jobid;
 				Map<String, WhoIsResponse.STATUS> mapreql = mapreq;
 				Map<String, WhoIsResponse.STATUS> maprespl = mapresp;
-
+				
+				@Override
 				public void viewAccepted(View clusterview) {
+					log.debug("View Accepted {}", clusterview);
 				}
 
+				@Override
 				public void receive(Message msg) {
 					synchronized (lock) {
 						var rawbuffer = (byte[]) ((ObjectMessage) msg).getObject();
@@ -402,14 +412,12 @@ public class Utils {
 							var object = kryo.readClassAndObject(input);
 							if (object instanceof WhoIsRequest whoisrequest) {
 								if (mapreql.containsKey(whoisrequest.getStagepartitionid())) {
-									log.debug("Whois: " + whoisrequest.getStagepartitionid() + " Map Status: " + mapreql
-											+ " Map Response Status: " + maprespl);
-									whoisresp(msg, whoisrequest.getStagepartitionid(), jobidl,
-											mapreql.get(whoisrequest.getStagepartitionid()), channel, networkaddress);
+									log.debug("Whois: {} Map Status: {} Map Response Status: {}" ,whoisrequest.getStagepartitionid(), mapreql,  maprespl);
+									whoisresp(msg, whoisrequest.getStagepartitionid(), 
+											mapreql.get(whoisrequest.getStagepartitionid()), channel);
 								}
 							} else if (object instanceof WhoIsResponse whoisresponse) {
-								log.debug("WhoisResp: " + whoisresponse.getStagepartitionid() + " Status: "
-										+ whoisresponse.getStatus());
+								log.debug("WhoisResp: {} Status: {}" ,whoisresponse.getStagepartitionid(), whoisresponse.getStatus());
 								maprespl.put(whoisresponse.getStagepartitionid(), whoisresponse.getStatus());
 							} else if (object instanceof WhoAreRequest) {
 								log.debug("WhoAreReq: ");
@@ -419,7 +427,7 @@ public class Utils {
 								maprespl.putAll(whoareresponse.getResponsemap());
 							}
 						} catch (Exception ex) {
-							log.error("In JGroups Object deserialization error: {}", ex);
+							log.error("In JGroups Object deserialization error: ", ex);
 						}
 					}
 				}
@@ -439,7 +447,7 @@ public class Utils {
 	 * @param stagepartitionid
 	 * @throws Exception
 	 */
-	public static void whois(JChannel channel, String stagepartitionid) throws Exception {
+	public static void whois(JChannel channel, String stagepartitionid) throws JGroupsException {
 		log.debug("Entered Utils.whois");
 		var whoisrequest = new WhoIsRequest();
 		whoisrequest.setStagepartitionid(stagepartitionid);
@@ -447,7 +455,8 @@ public class Utils {
 			getKryo().writeClassAndObject(output, whoisrequest);
 			output.flush();
 			channel.send(new ObjectMessage(null, baos.toByteArray()));
-		} finally {
+		} catch(Exception ex) {
+			throw new JGroupsException(JGroupsException.JGROUPS_PROCESSING_EXCETPION, ex);
 		}
 		log.debug("Exiting Utils.whois");
 	}
@@ -458,16 +467,17 @@ public class Utils {
 	 * executions.
 	 * 
 	 * @param channel
-	 * @throws Exception
+	 * @throws JGroupsException
 	 */
-	public static void whoare(JChannel channel) throws Exception {
+	public static void whoare(JChannel channel) throws JGroupsException {
 		log.debug("Entered Utils.whoare");
 		var whoarerequest = new WhoAreRequest();
 		try (var baos = new ByteArrayOutputStream(); var output = new Output(baos);) {
 			getKryo().writeClassAndObject(output, whoarerequest);
 			output.flush();
 			channel.send(new ObjectMessage(null, baos.toByteArray()));
-		} finally {
+		} catch(Exception ex) {
+			throw new JGroupsException(JGroupsException.JGROUPS_PROCESSING_EXCETPION, ex);
 		}
 		log.debug("Exiting Utils.whoare");
 	}
@@ -481,7 +491,7 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void whoareresponse(JChannel channel, Address address, Map<String, WhoIsResponse.STATUS> maptosend)
-			throws Exception {
+			throws JGroupsException {
 		log.debug("Entered Utils.whoareresponse");
 		var whoareresp = new WhoAreResponse();
 		whoareresp.setResponsemap(maptosend);
@@ -489,7 +499,8 @@ public class Utils {
 			getKryo().writeClassAndObject(output, whoareresp);
 			output.flush();
 			channel.send(new ObjectMessage(address, baos.toByteArray()));
-		} finally {
+		} catch(Exception ex) {
+			throw new JGroupsException(JGroupsException.JGROUPS_PROCESSING_EXCETPION, ex);
 		}
 		log.debug("Exiting Utils.whoareresponse");
 	}
@@ -506,8 +517,8 @@ public class Utils {
 	 * @param networkaddress
 	 * @throws Exception
 	 */
-	public static void whoisresp(Message msg, String stagepartitionid, String jobid, WhoIsResponse.STATUS status,
-			JChannel jchannel, String networkaddress) throws Exception {
+	public static void whoisresp(Message msg, String stagepartitionid, WhoIsResponse.STATUS status,
+			JChannel jchannel) throws JGroupsException {
 		log.debug("Entered Utils.whoisresp");
 		var whoisresponse = new WhoIsResponse();
 		whoisresponse.setStagepartitionid(stagepartitionid);
@@ -516,7 +527,8 @@ public class Utils {
 			getKryo().writeClassAndObject(output, whoisresponse);
 			output.flush();
 			jchannel.send(new ObjectMessage(msg.getSrc(), baos.toByteArray()));
-		} finally {
+		} catch(Exception ex) {
+			throw new JGroupsException(JGroupsException.JGROUPS_PROCESSING_EXCETPION, ex);
 		}
 		log.debug("Exiting Utils.whoisresp");
 	}
@@ -535,7 +547,7 @@ public class Utils {
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
-				log.warn("Interrupted!", e);
+				log.warn(DataSamudayaConstants.INTERRUPTED, e);
 				// Restore interrupted state...
 				Thread.currentThread().interrupt();
 			} catch (Exception ex) {
@@ -566,14 +578,14 @@ public class Utils {
 	 * @param writer
 	 * @throws ExportException
 	 */
-	public static void renderGraphPhysicalExecPlan(Graph<Task, DAGEdge> graph, Writer writer) throws ExportException {
+	public static void renderGraphPhysicalExecPlan(Graph<Task, DAGEdge> graph, Writer writer) {
 		log.debug("Entered Utils.renderGraphPhysicalExecPlan");
 		ComponentNameProvider<Task> vertexIdProvider = jobstage -> {
 
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
-				log.warn("Interrupted!", e);
+				log.warn(DataSamudayaConstants.INTERRUPTED, e);
 				// Restore interrupted state...
 				Thread.currentThread().interrupt();
 			} catch (Exception ex) {
@@ -632,7 +644,7 @@ public class Utils {
 	 * @return object
 	 * @throws Exception
 	 */
-	public static Object getResultObjectByInput(String hp, Object inputobj, String jobid) throws Exception {		
+	public static Object getResultObjectByInput(String hp, Object inputobj, String jobid) throws RpcRegistryException {		
 		try {
 			var hostport = hp.split(DataSamudayaConstants.UNDERSCORE);
 			final Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
@@ -640,8 +652,7 @@ public class Utils {
 					.lookup(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + jobid);
 			return cruncher.postObject(inputobj);
 		} catch (Exception ex) {
-			log.error("Unable to read result Object: " + inputobj + " " + hp, ex);
-			throw ex;
+			throw new RpcRegistryException(String.format("Unable to read result Object for the input object %s from host port %s",inputobj, hp), ex);
 		}
 	}
 
@@ -657,8 +668,7 @@ public class Utils {
 			String configfilepath = System.getProperty(DataSamudayaConstants.USERDIR) + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.JGROUPSCONF);
 			log.info("Composing Jgroups for address latch {} with trail {}", bindaddr, configfilepath);
-			var channel = new JChannel(configfilepath);
-			return channel;
+			return new JChannel(configfilepath);
 		} catch (Exception ex) {
 			log.error("Unable to add Protocol Stack: ", ex);
 		}
@@ -673,7 +683,7 @@ public class Utils {
 	 * @return list of uri in string format.
 	 */
 	public static List<String> getAllFilePaths(List<Path> paths) {
-		return paths.stream().map(path -> path.toUri().toString()).collect(Collectors.toList());
+		return paths.stream().map(path -> path.toUri().toString()).toList();
 	}
 
 	/**
@@ -793,13 +803,22 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static ServerCnxnFactory startZookeeperServer(int clientport, int numconnections, int ticktime)
-			throws Exception {
-		var dataDirectory = System.getProperty("java.io.tmpdir");
-		var dir = new File(dataDirectory, "zookeeper").getAbsoluteFile();
-		var server = new ZooKeeperServer(dir, dir, ticktime);
-		ServerCnxnFactory scf = ServerCnxnFactory.createFactory(new InetSocketAddress(clientport), numconnections);
-		scf.startup(server);
-		return scf;
+			throws ZookeeperException {
+		try {
+			var dataDirectory = System.getProperty("java.io.tmpdir");
+			var dir = new File(dataDirectory, "zookeeper").getAbsoluteFile();
+			var server = new ZooKeeperServer(dir, dir, ticktime);
+			ServerCnxnFactory scf = ServerCnxnFactory.createFactory(new InetSocketAddress(clientport), numconnections);
+			scf.startup(server);
+			return scf;
+		} catch (InterruptedException e) {
+			log.warn(DataSamudayaConstants.INTERRUPTED, e);
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
+		} catch(Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+		return null;
 	}
 
 	/**
@@ -856,7 +875,7 @@ public class Utils {
 		log.debug("Entered HeartBeatServer.getAvailableProcessors");
 		int processors = Runtime.getRuntime().availableProcessors();
 		if (nonNull(DataSamudayaProperties.get().get(DataSamudayaConstants.CPU_FROM_NODE))) {
-			int availableprocessors = Integer.valueOf((String) DataSamudayaProperties.get()
+			int availableprocessors = Integer.parseInt(DataSamudayaProperties.get()
 					.getProperty(DataSamudayaConstants.CPU_FROM_NODE, DataSamudayaConstants.CPU_FROM_NODE_DEFAULT));
 			if (availableprocessors < processors) {
 				processors = availableprocessors;
@@ -957,7 +976,7 @@ public class Utils {
 	 * @return jobid-stageid-taskid
 	 * @throws Exception
 	 */
-	public static String getIntermediateInputStreamTask(Task task) throws Exception {
+	public static String getIntermediateInputStreamTask(Task task) {
 		log.debug("Entered Utils.getIntermediateInputStreamTask");
 		var path = task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid;
 		log.debug("Returned Utils.getIntermediateInputStreamTask");
@@ -982,7 +1001,7 @@ public class Utils {
 		var globallaunchcontainers = new ArrayList<LaunchContainers>();
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
-			throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		PipelineConfig pc = new PipelineConfig();
 		int numberofcontainerpernode = Integer.parseInt(pc.getNumberofcontainers());
@@ -992,18 +1011,18 @@ public class Utils {
 			var cpu = restolaunch.getNumberofprocessors();
 			var usershare = usersshare.get(user);
 			if (isNull(usershare)) {
-				throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+				throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 			}			
 			cpu = cpu / numberofcontainerpernode;
 			if (cpu <= 0) {
-				throw new Exception(PipelineConstants.INSUFFCPUALLOCATIONERROR);
+				throw new ContainerException(PipelineConstants.INSUFFCPUALLOCATIONERROR);
 			}
 			var actualmemory = restolaunch.getFreememory();
 			if (actualmemory < (128 * DataSamudayaConstants.MB)) {
-				throw new Exception(PipelineConstants.MEMORYALLOCATIONERROR);
+				throw new ContainerException(PipelineConstants.MEMORYALLOCATIONERROR);
 			}
 			var memoryrequire = actualmemory;
-			var heapmem = memoryrequire * Integer.valueOf(
+			var heapmem = memoryrequire * Integer.parseInt(
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
 					/ 100;
 						
@@ -1017,7 +1036,7 @@ public class Utils {
 			if (Objects.isNull(ports)) {
 				throw new ContainerException("Port Allocation Error From Container");
 			}
-			log.info("Chamber alloted with node: " + restolaunch.getNodeport() + " amidst ports: " + ports);
+			log.info("Chamber alloted with node: {} amidst ports: {}",restolaunch.getNodeport(), ports);
 			
 			var cla = new ContainerLaunchAttributes();			
 			var crl = new ArrayList<ContainerResources>();
@@ -1058,11 +1077,11 @@ public class Utils {
 						break;
 					} catch (Exception ex) {
 						try {
-							log.info("Waiting for chamber " + tehost + DataSamudayaConstants.UNDERSCORE
-									+ launchedcontainerports.get(index) + " to replete dispatch....");
+							log.info("Waiting for chamber {} to replete dispatch....", tehost + DataSamudayaConstants.UNDERSCORE
+									+ launchedcontainerports.get(index));
 							Thread.sleep(1000);
 						} catch (InterruptedException e) {
-							log.warn("Interrupted!", e);
+							log.warn(DataSamudayaConstants.INTERRUPTED, e);
 							// Restore interrupted state...
 							Thread.currentThread().interrupt();
 						} catch (Exception e) {
@@ -1072,8 +1091,7 @@ public class Utils {
 				}
 				index++;
 			}
-			log.info(
-					"Chamber dispatched node: " + restolaunch.getNodeport() + " with ports: " + launchedcontainerports);
+			log.info("Chamber dispatched node: {} with ports: {}",  restolaunch.getNodeport(), launchedcontainerports);
 		}
 		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
 		return globallaunchcontainers;
@@ -1087,9 +1105,11 @@ public class Utils {
 	 * @param memoryuser
 	 * @param numberofcontainers
 	 * @return containers
-	 * @throws Exception
+	 * @throws InterruptedException 
+	 * @throws ContainerException
+	 * @throws RpcRegistryException 
 	 */
-	public static List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws Exception {
+	public static List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws ContainerException, InterruptedException, RpcRegistryException {
 		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
 		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
 		long memoryuserbytes = Long.valueOf(memoryuser) * DataSamudayaConstants.MB;
@@ -1100,7 +1120,7 @@ public class Utils {
 		var globallaunchcontainers = new ArrayList<LaunchContainers>();
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
-			throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		PipelineConfig pc = new PipelineConfig();
 		List<String> launchedcontainerhostports = new ArrayList<>();
@@ -1109,22 +1129,22 @@ public class Utils {
 			Resources restolaunch = noderesmap.get(user);
 			var usershare = usersshare.get(user);
 			if (isNull(usershare)) {
-				throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+				throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 			}
 			int cpu = restolaunch.getNumberofprocessors();			
 			cpu = cpu / numberofcontainers;
 			if (cpu <= 0) {
-				throw new Exception(PipelineConstants.INSUFFCPUALLOCATIONERROR);
+				throw new ContainerException(PipelineConstants.INSUFFCPUALLOCATIONERROR);
 			}
 			cpu = cpu < cpuuser ? cpu : cpuuser;
 			var actualmemory = restolaunch.getFreememory();
 			if (actualmemory < (128 * DataSamudayaConstants.MB)) {
-				throw new Exception(PipelineConstants.MEMORYALLOCATIONERROR);
+				throw new ContainerException(PipelineConstants.MEMORYALLOCATIONERROR);
 			}
 			var memoryrequire = actualmemory;
 			memoryrequire = memoryrequire / numberofcontainers;
 			memoryrequire = memoryrequire < memoryuserbytes ? memoryrequire : memoryuserbytes;
-			var heapmem = memoryrequire * Integer.valueOf(
+			var heapmem = memoryrequire * Integer.parseInt(
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
 					/ 100;
 						
@@ -1137,7 +1157,7 @@ public class Utils {
 			if (Objects.isNull(ports)) {
 				throw new ContainerException("Port Allocation Error From Container");
 			}
-			log.info("Chamber alloted with node: " + restolaunch.getNodeport() + " amidst ports: " + ports);
+			log.info("Chamber alloted with node: {} amidst ports: {}",restolaunch.getNodeport(), ports);
 			
 			var cla = new ContainerLaunchAttributes();			
 			var crl = new ArrayList<ContainerResources>();
@@ -1175,8 +1195,7 @@ public class Utils {
 				restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpu);
 			}
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
-			log.info(
-					"Chamber dispatched node: " + restolaunch.getNodeport() + " with ports: " + launchedcontainerports);
+			log.info("Chamber dispatched node: {} with ports: {}", restolaunch.getNodeport(), launchedcontainerports);
 		}
 		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		
@@ -1185,15 +1204,15 @@ public class Utils {
 			while (true) {
 				String tehostport = launchedcontainerhostports.get(index);
 				String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
-				try (var sock = new Socket(tehp[0], Integer.valueOf(tehp[1]));) {
+				try (var sock = new Socket(tehp[0], Integer.parseInt(tehp[1]));) {
 					break;
 				} catch (Exception ex) {
 					try {
-						log.info("Waiting for chamber " + tehp[0] + DataSamudayaConstants.UNDERSCORE
-								+ tehp[1] + " to replete dispatch....");
+						log.info("Waiting for chamber {} to replete dispatch....", tehp[0] + DataSamudayaConstants.UNDERSCORE
+								+ tehp[1]);
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
-						log.warn("Interrupted!", e);
+						log.warn(DataSamudayaConstants.INTERRUPTED, e);
 						// Restore interrupted state...
 						Thread.currentThread().interrupt();
 					} catch (Exception e) {
@@ -1230,31 +1249,30 @@ public class Utils {
 	 * @param cpuuser
 	 * @param memoryuser
 	 * @param numberofcontainers
+	 * @throws InterruptedException 
 	 * @throws Exception
 	 */
 	public static void launchYARNExecutors(String teid, 
-			int cpuuser, int memoryuser, int numberofcontainers) throws Exception {
-		yarnmutex.acquire();
-		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
-		System.setProperty("jobcount", "1");
-		System.setProperty("containercount", "" + numberofcontainers);
-	    System.setProperty("containermemory", "" + memoryuser);
-	    System.setProperty("containercpu", "" + cpuuser);
-		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-				DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT, Utils.class);
-		var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);		
-		client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
-		client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, teid);
-		ApplicationId appid = client.submitApplication(true);
+			int cpuuser, int memoryuser, int numberofcontainers) throws YarnLaunchException {
 		try {
+			yarnmutex.acquire();
+			GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
+			System.setProperty("jobcount", "1");
+			System.setProperty("containercount", "" + numberofcontainers);
+			System.setProperty("containermemory", "" + memoryuser);
+			System.setProperty("containercpu", "" + cpuuser);
+			ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+					DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT, Utils.class);
+			var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
+			client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
+			client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, teid);
+			ApplicationId appid = client.submitApplication(true);
 			var zo = new ZookeeperOperations();
-		 	zo.connect();
+			zo.connect();
 			SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
-					+ DataSamudayaConstants.YARN_INPUT_QUEUE
-					+ DataSamudayaConstants.FORWARD_SLASH + teid);
+					+ DataSamudayaConstants.YARN_INPUT_QUEUE + DataSamudayaConstants.FORWARD_SLASH + teid);
 			SimpleDistributedQueue outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
-					+ DataSamudayaConstants.YARN_OUTPUT_QUEUE
-					+ DataSamudayaConstants.FORWARD_SLASH + teid);
+					+ DataSamudayaConstants.YARN_OUTPUT_QUEUE + DataSamudayaConstants.FORWARD_SLASH + teid);
 			Map<String, Object> yarnresourcesmap = new ConcurrentHashMap<>();
 			yarnresourcesmap.put("appid", appid);
 			yarnresourcesmap.put("client", client);
@@ -1267,10 +1285,15 @@ public class Utils {
 				appreport = client.getApplicationReport(appid);
 				Thread.sleep(1000);
 			}
+		} catch(InterruptedException ex) {
+			log.warn(DataSamudayaConstants.INTERRUPTED, ex);
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
 		} catch(Exception ex) {
-			log.error(DataSamudayaConstants.EMPTY, ex);
+			throw new YarnLaunchException(YarnLaunchException.YARNLAUNCHEXCEPTION, ex);
+		} finally {
+			yarnmutex.release();
 		}
-		yarnmutex.release();
 	}
 	
 	/**
@@ -1287,23 +1310,27 @@ public class Utils {
 			SimpleDirectedGraph<?, DAGEdge> graph,
 			Map<String, ?> tasksptsthread,
 			Map<String, JobStage> jsidjsmap
-			) throws Exception {
-		OutputStream os = pipelineconfig.getOutput();
-        pipelineconfig.setOutput(null);
-        new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
-        Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
-            DataSamudayaConstants.YARNOUTJAR);
-        var yarninputfolder =
-            DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH + pipelineconfig.getJobid();
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(sptsl, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE, pipelineconfig);
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(graph, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE, pipelineconfig);
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(tasksptsthread, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE, pipelineconfig);
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jsidjsmap, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE, pipelineconfig);
-        pipelineconfig.setOutput(os);
+	) throws JobException {
+		try {
+			OutputStream os = pipelineconfig.getOutput();
+			pipelineconfig.setOutput(null);
+			new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
+			Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
+					DataSamudayaConstants.YARNOUTJAR);
+			var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
+					+ pipelineconfig.getJobid();
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(sptsl, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE, pipelineconfig);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(graph, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE, pipelineconfig);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(tasksptsthread, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE, pipelineconfig);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jsidjsmap, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE, pipelineconfig);
+			pipelineconfig.setOutput(os);
+		} catch (Exception ex) {
+			throw new JobException(JobException.JOBCREATIONEXCEPTION_MESSAGE, ex);
+		}
 	}
 	
 	/**
@@ -1373,8 +1400,7 @@ public class Utils {
 			Thread.sleep(1000);
 		}
 		var objectMapper = new ObjectMapper();
-		TaskInfoYARN tinfoyarn = objectMapper.readValue(outputqueue.poll(), TaskInfoYARN.class);
-		return tinfoyarn;
+		return objectMapper.readValue(outputqueue.poll(), TaskInfoYARN.class);
 	}
 	
 	/**
@@ -1392,10 +1418,9 @@ public class Utils {
 		while(outputqueue.peek() == null) {
 			Thread.sleep(1000);
 		}
-		TaskInfoYARN tinfoyarn = objectMapper.readValue(outputqueue.poll(), TaskInfoYARN.class);
-		return tinfoyarn;
+		return objectMapper.readValue(outputqueue.poll(), TaskInfoYARN.class);
 	}
-
+	
 	/**
 	 * This method configures pipeline as per schedulers;
 	 * @param scheduler
@@ -1403,28 +1428,28 @@ public class Utils {
 	 */
 	public static void setConfigForScheduler(String scheduler, PipelineConfig pipelineconfig) {
 		if (scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
-			pipelineconfig.setLocal("false");
-			pipelineconfig.setYarn("false");
-			pipelineconfig.setMesos("false");
-			pipelineconfig.setJgroups("true");
+			pipelineconfig.setLocal(DataSamudayaConstants.FALSE);
+			pipelineconfig.setYarn(DataSamudayaConstants.FALSE);
+			pipelineconfig.setMesos(DataSamudayaConstants.FALSE);
+			pipelineconfig.setJgroups(DataSamudayaConstants.TRUE);
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 		} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.YARN)) {
-			pipelineconfig.setLocal("false");
-			pipelineconfig.setYarn("true");
-			pipelineconfig.setMesos("false");
-			pipelineconfig.setJgroups("false");
+			pipelineconfig.setLocal(DataSamudayaConstants.FALSE);
+			pipelineconfig.setYarn(DataSamudayaConstants.TRUE);
+			pipelineconfig.setMesos(DataSamudayaConstants.FALSE);
+			pipelineconfig.setJgroups(DataSamudayaConstants.FALSE);
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 		} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
-			pipelineconfig.setLocal("false");
-			pipelineconfig.setYarn("false");
-			pipelineconfig.setMesos("false");
-			pipelineconfig.setJgroups("false");
+			pipelineconfig.setLocal(DataSamudayaConstants.FALSE);
+			pipelineconfig.setYarn(DataSamudayaConstants.FALSE);
+			pipelineconfig.setMesos(DataSamudayaConstants.FALSE);
+			pipelineconfig.setJgroups(DataSamudayaConstants.FALSE);
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 		} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE)) {
-			pipelineconfig.setLocal("false");
-			pipelineconfig.setYarn("false");
-			pipelineconfig.setMesos("false");
-			pipelineconfig.setJgroups("false");
+			pipelineconfig.setLocal(DataSamudayaConstants.FALSE);
+			pipelineconfig.setYarn(DataSamudayaConstants.FALSE);
+			pipelineconfig.setMesos(DataSamudayaConstants.FALSE);
+			pipelineconfig.setJgroups(DataSamudayaConstants.FALSE);
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
 		}
 	}
@@ -1435,15 +1460,11 @@ public class Utils {
 	 * 
 	 * @param user
 	 * @return true or false
-	 * @throws Exception
 	 */
-	public static Boolean isUserExists(String user) throws Exception {
+	public static Boolean isUserExists(String user) {
 		var usersshare = DataSamudayaUsers.get();
 		var usershare = usersshare.get(user);
-		if (isNull(usershare)) {
-			return false;
-		}
-		return true;
+		return !isNull(usershare);
 	}
 
 	/**
@@ -1475,12 +1496,12 @@ public class Utils {
 	 * @param jobid
 	 * @throws Exception
 	 */
-	public static synchronized void destroyContainers(String user, String jobid) throws Exception {
+	public static synchronized void destroyContainers(String user, String jobid) throws ContainerException {
 		var dc = new DestroyContainers();
 		dc.setJobid(jobid);
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
-			throw new Exception(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		var lcs = GlobalContainerLaunchers.get(user, jobid);
 		lcs.stream().forEach(lc -> {
@@ -1517,12 +1538,16 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static Registry getRPCRegistry(int port, final StreamDataCruncher streamdatacruncher, String id)
-			throws Exception {
-		objects.add(streamdatacruncher);
-		Registry registry = LocateRegistry.createRegistry(port);
-		StreamDataCruncher stub = (StreamDataCruncher) UnicastRemoteObject.exportObject(streamdatacruncher, port);
-		registry.rebind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + id, stub);
-		return registry;
+			throws RpcRegistryException {
+		try {
+			objects.add(streamdatacruncher);
+			Registry registry = LocateRegistry.createRegistry(port);
+			StreamDataCruncher stub = (StreamDataCruncher) UnicastRemoteObject.exportObject(streamdatacruncher, port);
+			registry.rebind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + id, stub);
+			return registry;
+		} catch(Exception ex) {
+			throw new RpcRegistryException(RpcRegistryException.REGISTRYCREATE_MESSAGE, ex);
+		}
 	}
 
 	/**
@@ -1540,77 +1565,13 @@ public class Utils {
 	}
 
 	/**
-	 * This function returns the ssl server socket for the given port.
-	 * 
-	 * @param port
-	 * @return ssl server socket object
-	 * @throws Exception
-	 */
-	public static ServerSocket createSSLServerSocket(int port) throws Exception {
-		KeyStore ks = KeyStore.getInstance("JKS");
-		String password = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_KEYSTORE_PASSWORD);
-		ks.load(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS)), password.toCharArray());
-
-		KeyManagerFactory kmf = KeyManagerFactory
-				.getInstance(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS_ALGO));
-		kmf.init(ks, password.toCharArray());
-
-		TrustManagerFactory tmf = TrustManagerFactory
-				.getInstance(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS_ALGO));
-		tmf.init(ks);
-
-		SSLContext sc = SSLContext.getInstance("TLS");
-		TrustManager[] trustManagers = tmf.getTrustManagers();
-		sc.init(kmf.getKeyManagers(), trustManagers, null);
-		SSLServerSocketFactory ssf = sc.getServerSocketFactory();
-		SSLServerSocket sslserversocket = (SSLServerSocket) ssf.createServerSocket();
-		sslserversocket.bind(
-				new InetSocketAddress(InetAddress.getByAddress(new byte[]{0x00, 0x00, 0x00, 0x00}), port), 256);
-		return sslserversocket;
-	}
-
-	/**
-	 * This function returns the ssl socket for the given port.
-	 * 
-	 * @param port
-	 * @return ssl socket object
-	 * @throws Exception
-	 */
-	public static Socket createSSLSocket(String host, int port) throws Exception {
-		log.info("Constructing socket factory for the (host,port): (" + host + "," + port + ")");
-		KeyStore ks = KeyStore.getInstance("JKS");
-		String password = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_KEYSTORE_PASSWORD);
-		ks.load(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS)), password.toCharArray());
-
-		KeyManagerFactory kmf = KeyManagerFactory
-				.getInstance(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS_ALGO));
-		kmf.init(ks, password.toCharArray());
-
-		TrustManagerFactory tmf = TrustManagerFactory
-				.getInstance(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS_ALGO));
-		tmf.init(ks);
-
-		SSLContext sc = SSLContext.getInstance("TLS");
-		TrustManager[] trustManagers = tmf.getTrustManagers();
-		sc.init(kmf.getKeyManagers(), trustManagers, null);
-
-		SSLSocketFactory sf = sc.getSocketFactory();
-		log.info("Constructing SSLSocket for the (host,port): (" + host + "," + port + ")");
-		SSLSocket sslsocket = (SSLSocket) sf.createSocket(host, port);
-		log.info("Kickoff SSLHandshake for the (host,port): (" + host + "," + port + ")");
-		sslsocket.startHandshake();
-		log.info("SSLHandshake concluded for the (host,port): (" + host + "," + port + ")");
-		return sslsocket;
-	}
-
-	/**
 	 * Write integer value to scheduler
 	 * 
 	 * @param os
 	 * @param value
 	 * @throws Exception
 	 */
-	public static void writeInt(OutputStream os, Integer value) throws Exception {
+	public static void writeInt(OutputStream os, Integer value) throws OutputStreamException {
 		try (var baos = new ByteArrayOutputStream(); var output = new Output(baos);) {
 			Utils.getKryo().writeClassAndObject(output, value);
 			output.flush();
@@ -1619,6 +1580,8 @@ public class Utils {
 			dos.writeInt(values.length);
 			dos.write(values);
 			dos.flush();
+		} catch(Exception ex) {
+			throw new OutputStreamException(OutputStreamException.ERRORCAUGHT_MESSAGE, ex);
 		}
 	}
 
@@ -1645,7 +1608,7 @@ public class Utils {
 	 * @param outbyt
 	 * @throws Exception
 	 */
-	public static void writeDataStream(OutputStream os, byte[] outbyt) throws Exception {
+	public static void writeDataStream(OutputStream os, byte[] outbyt) throws OutputStreamException {
 		try (var baos = new ByteArrayOutputStream(); var output = new Output(baos);) {
 			Utils.getKryo().writeClassAndObject(output, outbyt);
 			output.flush();
@@ -1654,6 +1617,8 @@ public class Utils {
 			dos.writeInt(values.length);
 			dos.write(values);
 			dos.flush();
+		} catch(Exception ex) {
+			throw new OutputStreamException(OutputStreamException.ERRORCAUGHT_MESSAGE, ex);
 		}
 	}
 
@@ -1696,14 +1661,14 @@ public class Utils {
 		} else if (data.get(0) instanceof Double value) {
 			out.println(value);
 			return;
-		} else if (data.get(0) instanceof Integer value) {
-			out.println(value);
+		} else if (data.get(0) instanceof Integer intval) {
+			out.println(intval);
 			return;
-		} else if (data.get(0) instanceof Float value) {
-			out.println(value);
+		} else if (data.get(0) instanceof Float floatval) {
+			out.println(floatval);
 			return;
-		} else if (data.get(0) instanceof Long value) {
-			out.println(value);
+		} else if (data.get(0) instanceof Long lvalue) {
+			out.println(lvalue);
 			return;
 		}
 		
@@ -1714,6 +1679,11 @@ public class Utils {
 		}
 	}
 	
+	/**
+	 * Print in pig format for the pig output
+	 * @param tableData
+	 * @param out
+	 */
 	private static void printTablePig(List<Map<String, Object>> tableData, PrintWriter out) {
 		if (tableData.isEmpty()) {
             out.println("Table is empty.");
@@ -1778,7 +1748,7 @@ public class Utils {
 
         // Print table header
         for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
-            out.printf("%-" + entry.getValue() + "s | ", entry.getKey());
+            out.printf(String.format("%-%ss | ", entry.getValue()), entry.getKey());
             out.flush();
         }
         out.println();
@@ -1789,7 +1759,7 @@ public class Utils {
             for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
                 String key = entry.getKey();
                 Object value = row.get(key);
-                out.printf("%-" + entry.getValue() + "s | ", value);
+                out.printf(String.format("%-%ss | ", entry.getValue()), value);
                 out.flush();
             }
             out.println();
@@ -1812,7 +1782,7 @@ public class Utils {
 				}
 				return port;
 			} catch (Exception e) {
-				continue;
+				log.error("port in use or exceeded its limit, so getting port again...", e);
 			}
 		}
 	}
@@ -1856,9 +1826,6 @@ public class Utils {
 								allocresources.setFreememory(allocresources.getFreememory() + maxmemory + directheap);
 								allocresources
 										.setNumberofprocessors(allocresources.getNumberofprocessors() + cr.getCpu());
-							} else {
-								var usersshare = DataSamudayaUsers.get();
-								var user = usersshare.get(job.getPipelineconfig().getUser());
 							}
 						} else {
 							deallocateall = false;
@@ -1868,30 +1835,31 @@ public class Utils {
 				if (deallocateall) {
 					var dc = new DestroyContainers();
 					dc.setJobid(job.getId());
-					log.debug("Destroying Containers with id:" + job.getId() + " for the hosts: " + nodes);
+					log.debug("Destroying Containers with id: {} for the hosts: {}", job.getId(), nodes);
 					// Destroy all the containers from all the nodes
 					for (var node : nodes) {
 						Utils.getResultObjectByInput(node, dc, DataSamudayaConstants.EMPTY);
 					}
 				}
 			}
+		} catch(InterruptedException ex) {
+			log.warn(DataSamudayaConstants.INTERRUPTED, ex);
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
 		} catch (Exception ex) {
-			log.error(PipelineConstants.DESTROYCONTAINERERROR, ex);
-			throw new Exception(PipelineConstants.DESTROYCONTAINERERROR, ex);
+			throw new TaskExecutorException(TaskExecutorException.TASKEXECUTORDESTROYEXCEPTION_MESSAGE, ex);
 		} finally {
 			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		}
 	}
 
-	static SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-	
 	/**
 	 * Formats date from util date object 
 	 * @param date
 	 * @return formatted date
 	 */
 	public static String formatDate(Date date) {
-		return format.format(date);
+		return new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(date);
 	}
 	
 	/**
@@ -1900,7 +1868,7 @@ public class Utils {
 	 * @return path of intermediate result file system
 	 * @throws Exception
 	 */
-	public static String getIntermediateResultFS(Task task) throws Exception {
+	public static String getIntermediateResultFS(Task task) {
 		return task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid;
 	}
 	
@@ -1976,14 +1944,12 @@ public class Utils {
 	   * @return colorvalue
 	   */
 	public static String getColor(int i) {
-	    {
-	      if (i % 2 == 0) {
-	        return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_PRIMARY,
-	            DataSamudayaConstants.COLOR_PICKER_PRIMARY_DEFAULT);
-	      } else {
-	        return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_ALTERNATE,
-	            DataSamudayaConstants.COLOR_PICKER_ALTERNATE_DEFAULT);
-	      }
-	    }
-	  }
+		if (i % 2 == 0) {
+			return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_PRIMARY,
+					DataSamudayaConstants.COLOR_PICKER_PRIMARY_DEFAULT);
+		} else {
+			return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_ALTERNATE,
+					DataSamudayaConstants.COLOR_PICKER_ALTERNATE_DEFAULT);
+		}
+	}
 }

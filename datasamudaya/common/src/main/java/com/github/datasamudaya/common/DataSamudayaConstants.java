@@ -577,4 +577,10 @@ public class DataSamudayaConstants {
   public static final String TASKEXECUTOR_STATUS_UP = "UP";
   public static final String TASKEXECUTOR_STATUS_DOWN = "DOWN";
 
+  
+  public static final String INTERRUPTED = "Interrupted!";
+  
+  public static final String FALSE = Boolean.toString(Boolean.FALSE);
+  public static final String TRUE = Boolean.toString(Boolean.TRUE);
+  
 }
