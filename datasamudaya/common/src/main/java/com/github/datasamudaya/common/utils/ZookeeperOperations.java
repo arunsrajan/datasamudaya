@@ -33,6 +33,7 @@ import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.exceptions.ZookeeperException;
 
 import static java.util.Objects.*;
 
@@ -44,16 +45,26 @@ public class ZookeeperOperations implements AutoCloseable{
     private CuratorFramework curator;
     private ObjectMapper objectMapper;
 	private static final Logger log = LoggerFactory.getLogger(ZookeeperOperations.class);
-    public void connect() throws Exception {
-        curator = CuratorFrameworkFactory.newClient(DataSamudayaProperties.get()
-        		.getProperty(DataSamudayaConstants.ZOOKEEPER_HOSTPORT, DataSamudayaConstants.ZK_DEFAULT), 
-        		new RetryForever(
-						Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_RETRYDELAY, DataSamudayaConstants.ZOOKEEPER_RETRYDELAY_DEFAULT))));
-        curator.start();
-        curator.blockUntilConnected();
-        objectMapper = new ObjectMapper();
-        objectMapper.setSerializationInclusion(Include.NON_NULL);
-        objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    public void connect() throws ZookeeperException {
+		try {
+			curator = CuratorFrameworkFactory.newClient(
+					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_HOSTPORT,
+							DataSamudayaConstants.ZK_DEFAULT),
+					new RetryForever(Integer.parseInt(
+							DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_RETRYDELAY,
+									DataSamudayaConstants.ZOOKEEPER_RETRYDELAY_DEFAULT))));
+			curator.start();
+			curator.blockUntilConnected();
+			objectMapper = new ObjectMapper();
+			objectMapper.setSerializationInclusion(Include.NON_NULL);
+			objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+		} catch (InterruptedException e) {
+			log.warn(DataSamudayaConstants.INTERRUPTED, e);
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
 
     /**
@@ -62,14 +73,14 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param data
      * @throws Exception
      */
-    public void createRootNode(String path, byte[] data) throws Exception {
-        curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(path, data);
-        curator.getData().usingWatcher(new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-                log.info("Root node changed: " + event);
-            }
-        }).forPath(path);
+    public void createRootNode(String path, byte[] data) throws ZookeeperException {
+    	try {
+	        curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(path, data);
+	        Watcher watcher = (WatchedEvent event) -> log.info("Root node changed: {}", event);
+	        curator.getData().usingWatcher(watcher).forPath(path);
+    	} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
 
     /**
@@ -79,11 +90,17 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param watcher
      * @throws Exception
      */
-    public void createNodesNode(String node, Resources data, Watcher watcher) throws Exception {
-    	curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.NODESZK + DataSamudayaConstants.FORWARD_SLASH + node, objectMapper.writeValueAsBytes(data));
-        curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.NODESZK);
+    public void createNodesNode(String node, Resources data, Watcher watcher) throws ZookeeperException {
+		try {
+			curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
+					.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
+							+ DataSamudayaConstants.NODESZK + DataSamudayaConstants.FORWARD_SLASH + node,
+							objectMapper.writeValueAsBytes(data));
+			curator.getChildren().usingWatcher(watcher)
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.NODESZK);
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
 
     /**
@@ -92,21 +109,27 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param watcher
      * @throws Exception
      */
-    public void createSchedulersLeaderNode(byte[] data, Watcher watcher) throws Exception {
-    	if(curator.checkExists().forPath(DataSamudayaConstants.ROOTZNODEZK
-	    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK)==null){
-	    	curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
-	    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK, data);
-	        curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
-	    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK);
-    	}
-    	if(curator.checkExists().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK)==null){
-    	curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK, data);
-        curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK);
-    	}
+    public void createSchedulersLeaderNode(byte[] data, Watcher watcher) throws ZookeeperException {
+		try {
+			if (curator.checkExists().forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
+					+ DataSamudayaConstants.LEADERSCHEDULERZK) == null) {
+				curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
+						.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
+								+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK, data);
+				curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
+						+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK);
+			}
+			if (curator.checkExists().forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
+					+ DataSamudayaConstants.LEADERSCHEDULERSTREAMZK) == null) {
+				curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
+						.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
+								+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK, data);
+				curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
+						+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK);
+			}
+		} catch(Exception ex) {
+		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+	}
     }
     
     /**
@@ -126,13 +149,22 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param watcher
      * @throws Exception
      */
-    public void createTaskExecutorNode(String jobid, String taskexecutor, byte[] data, Watcher watcher) throws Exception {
-    	if(curator.checkExists().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + taskexecutor)==null){
-	    	curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
-	    			+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + taskexecutor, data);
-	        curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
-	    			+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+    public void createTaskExecutorNode(String jobid, String taskexecutor, byte[] data, Watcher watcher) throws ZookeeperException {
+		try {
+			if (curator.checkExists()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKEXECUTORSZK
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+							+ taskexecutor) == null) {
+				curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
+						.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
+						.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKEXECUTORSZK
+								+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+								+ taskexecutor, data);
+				curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
+						+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+			}
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
     	}
     }
     
@@ -143,77 +175,94 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param watcher
      * @throws Exception
      */
-    public void createTasksForJobNode(String jobid, Task task, Watcher watcher) throws Exception {
-    	byte[] taskbytes = objectMapper.writeValueAsBytes(task);
-    	curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + task.getTaskid(), taskbytes);
-        curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+    public void createTasksForJobNode(String jobid, Task task, Watcher watcher) throws ZookeeperException {
+		try {
+			byte[] taskbytes = objectMapper.writeValueAsBytes(task);
+			curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
+					.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+							+ task.getTaskid(), taskbytes);
+			curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
     }
 
-    public void watchTaskNode(String jobid, String path) throws Exception {
-        NodeCache cache = new NodeCache(curator, DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + path);
-        cache.start();
-        cache.getListenable().addListener(new NodeCacheListener() {
-            @Override
-            public void nodeChanged() throws Exception {
-                ChildData data = cache.getCurrentData();
-                if (data != null) {
-                    log.info("Task executor node changed: " + new String(data.getData()));
-                } else {
-                    log.info("Task executor node deleted: " + path);
-                }
-            }
-        });
+    public void watchTaskNode(String jobid, String path) throws ZookeeperException {
+		try {
+			NodeCache cache = new NodeCache(curator, DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
+					+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + path);
+			cache.start();
+			cache.getListenable().addListener(new NodeCacheListener() {
+				@Override
+				public void nodeChanged() throws Exception {
+					ChildData data = cache.getCurrentData();
+					if (data != null) {
+						log.info("Task executor node changed: {}", new String(data.getData()));
+					} else {
+						log.info("Task executor node deleted: {}", path);
+					}
+				}
+			});
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
     }
 
     /**
      * This method creates the watcher for the nodes added and updates the global resources.
      * @throws Exception
      */
-    public void watchNodes() throws Exception {
-        PathChildrenCache cache = new PathChildrenCache(curator, DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.NODESZK, true);
-        cache.start(StartMode.POST_INITIALIZED_EVENT);
-        cache.getListenable().addListener(new PathChildrenCacheListener() {
-            @Override
-            public void childEvent(CuratorFramework curator, PathChildrenCacheEvent event) throws Exception {
-                Type type = event.getType();
-                switch (type) {
-                    case CHILD_ADDED:
-                    	String[] nodeadded = event.getData().getPath().split("/");
-                    	if (isNull(DataSamudayaNodesResources.get())) {
-                    		DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
-                    	}
-                    	if (isNull(DataSamudayaNodesResources.getAllocatedResources())) {
-                    		DataSamudayaNodesResources.putAllocatedResources(new ConcurrentHashMap<>());
-                    	}
-                    	String currentnode = nodeadded[nodeadded.length - 1];
-                    	Resources resources = objectMapper.readValue(event.getData().getData(), Resources.class);
-                    	DataSamudayaNodesResources.get().put(currentnode, resources);
-                    	if (isNull(DataSamudayaNodesResources.getAllocatedResources().get(currentnode))) {
-                    		DataSamudayaNodesResources.getAllocatedResources().put(currentnode, new ConcurrentHashMap<>());
-                    	}
-                    	Utils.allocateResourcesByUser(resources, DataSamudayaNodesResources.getAllocatedResources().get(currentnode));
-                        log.info("Master node added: " + event.getData().getPath());
-                        break;
-                    case CHILD_REMOVED:
-                    	String[] nodetoberemoved = event.getData().getPath().split("/");
-                    	if (isNull(DataSamudayaNodesResources.get())) {
-                    		DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
-                    	}
-                    	String nodetoremove = nodetoberemoved[nodetoberemoved.length - 1];
-                    	DataSamudayaNodesResources.get().remove(nodetoremove);
-                    	DataSamudayaNodesResources.getAllocatedResources().remove(nodetoremove);
-                    	
-                        log.info("Master node removed: " + event.getData().getPath());
-                        break;
-                    default:
-                        break;
-                }
-            }
-        });
+    public void watchNodes() throws ZookeeperException {
+		try {
+			PathChildrenCache cache = new PathChildrenCache(curator,
+					DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.NODESZK, true);
+			cache.start(StartMode.POST_INITIALIZED_EVENT);
+			cache.getListenable().addListener(new PathChildrenCacheListener() {
+				@Override
+				public void childEvent(CuratorFramework curator, PathChildrenCacheEvent event) throws Exception {
+					Type type = event.getType();
+					switch (type) {
+					case CHILD_ADDED:
+						String[] nodeadded = event.getData().getPath().split("/");
+						if (isNull(DataSamudayaNodesResources.get())) {
+							DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
+						}
+						if (isNull(DataSamudayaNodesResources.getAllocatedResources())) {
+							DataSamudayaNodesResources.putAllocatedResources(new ConcurrentHashMap<>());
+						}
+						String currentnode = nodeadded[nodeadded.length - 1];
+						Resources resources = objectMapper.readValue(event.getData().getData(), Resources.class);
+						DataSamudayaNodesResources.get().put(currentnode, resources);
+						if (isNull(DataSamudayaNodesResources.getAllocatedResources().get(currentnode))) {
+							DataSamudayaNodesResources.getAllocatedResources().put(currentnode,
+									new ConcurrentHashMap<>());
+						}
+						Utils.allocateResourcesByUser(resources,
+								DataSamudayaNodesResources.getAllocatedResources().get(currentnode));
+						log.info("Master node added: {}", event.getData().getPath());
+						break;
+					case CHILD_REMOVED:
+						String[] nodetoberemoved = event.getData().getPath().split("/");
+						if (isNull(DataSamudayaNodesResources.get())) {
+							DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
+						}
+						String nodetoremove = nodetoberemoved[nodetoberemoved.length - 1];
+						DataSamudayaNodesResources.get().remove(nodetoremove);
+						DataSamudayaNodesResources.getAllocatedResources().remove(nodetoremove);
+
+						log.info("Master node removed: {}", event.getData().getPath());
+						break;
+					default:
+						break;
+					}
+				}
+			});
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
     
     /**
@@ -223,12 +272,16 @@ public class ZookeeperOperations implements AutoCloseable{
      * @return leaderlatch object.
      * @throws Exception
      */
-    public LeaderLatch leaderElectionScheduler(String scheduler, LeaderLatchListener listener) throws Exception {
-        LeaderLatch leaderLatch = new LeaderLatch(curator, DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.SCHEDULERSZK, scheduler);
-        leaderLatch.addListener(listener);
-        leaderLatch.start();
-        return leaderLatch;
+    public LeaderLatch leaderElectionScheduler(String scheduler, LeaderLatchListener listener) throws ZookeeperException {
+		try {
+			LeaderLatch leaderLatch = new LeaderLatch(curator,
+					DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.SCHEDULERSZK, scheduler);
+			leaderLatch.addListener(listener);
+			leaderLatch.start();
+			return leaderLatch;
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
     
     /**
@@ -238,12 +291,16 @@ public class ZookeeperOperations implements AutoCloseable{
      * @return leaderlatch object.
      * @throws Exception
      */
-    public LeaderLatch leaderElectionSchedulerStream(String scheduler, LeaderLatchListener listener) throws Exception {
-        LeaderLatch leaderLatch = new LeaderLatch(curator, DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.SCHEDULERSSTREAMZK, scheduler);
-        leaderLatch.addListener(listener);
-        leaderLatch.start();
-        return leaderLatch;
+    public LeaderLatch leaderElectionSchedulerStream(String scheduler, LeaderLatchListener listener) throws ZookeeperException {
+    	try {
+	        LeaderLatch leaderLatch = new LeaderLatch(curator, DataSamudayaConstants.ROOTZNODEZK
+	    			+ DataSamudayaConstants.SCHEDULERSSTREAMZK, scheduler);
+	        leaderLatch.addListener(listener);
+	        leaderLatch.start();
+	        return leaderLatch;
+    	} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
 
     /**
@@ -252,8 +309,12 @@ public class ZookeeperOperations implements AutoCloseable{
      * @return byte data
      * @throws Exception
      */
-    public byte[] getData(String path) throws Exception {
-        return curator.getData().forPath(path);        
+    public byte[] getData(String path) throws ZookeeperException {
+    	try {
+    		return curator.getData().forPath(path);
+    	} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
 
     /**
@@ -262,9 +323,13 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param data
      * @throws Exception
      */
-    public void setData(String path, byte[] data) throws Exception {
-        // Set the data for the specified path
-        curator.setData().forPath(path, data);
+    public void setData(String path, byte[] data) throws ZookeeperException {
+    	try {
+	        // Set the data for the specified path
+	        curator.setData().forPath(path, data);
+    	} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
     
     /**
@@ -272,9 +337,13 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param data
      * @throws Exception
      */
-    public void setLeader(byte[] data) throws Exception {
-        curator.setData().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK, data);
+    public void setLeader(byte[] data) throws ZookeeperException {
+		try {
+			curator.setData().forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
+					+ DataSamudayaConstants.LEADERSCHEDULERZK, data);
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
     
     /**
@@ -282,9 +351,13 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param data
      * @throws Exception
      */
-    public void setLeaderStream(byte[] data) throws Exception {
-        curator.setData().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK, data);
+    public void setLeaderStream(byte[] data) throws ZookeeperException {
+		try {
+			curator.setData().forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
+					+ DataSamudayaConstants.LEADERSCHEDULERSTREAMZK, data);
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
     
     /**
@@ -293,16 +366,25 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param task
      * @throws Exception
      */
-    public void setDataForTask(String jobid, Task task) throws Exception {
-    	byte[] taskbytes = objectMapper.writeValueAsBytes(task);
-    	curator.setData().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid
-    			+ DataSamudayaConstants.FORWARD_SLASH + task.getTaskid(), taskbytes);
+    public void setDataForTask(String jobid, Task task) throws ZookeeperException {
+		try {
+			byte[] taskbytes = objectMapper.writeValueAsBytes(task);
+			curator.setData()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+							+ task.getTaskid(), taskbytes);
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
 
-    public void deleteNode(String path) throws Exception {
-        // Delete the node for the specified path
-        curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(path);
+    public void deleteNode(String path) throws ZookeeperException {
+		try {
+			// Delete the node for the specified path
+			curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(path);
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
     
     /**
@@ -310,12 +392,16 @@ public class ZookeeperOperations implements AutoCloseable{
      * @param jobid
      * @throws Exception
      */
-    public void deleteJob(String jobid) throws Exception {
-        // Delete the node for the specified path
-        curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
-        curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+    public void deleteJob(String jobid) throws ZookeeperException {
+		try {
+			// Delete the node for the specified path
+			curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+			curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
 
     /**
@@ -323,10 +409,13 @@ public class ZookeeperOperations implements AutoCloseable{
      * @return list of nodes in string format.
      * @throws Exception
      */
-    public List<String> getNodes() throws Exception {
-        List<String> children = curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.NODESZK);
-        return children;
+    public List<String> getNodes() throws ZookeeperException {
+		try {
+			return curator.getChildren()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.NODESZK);
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
     /**
      * This function returns list of task executors.
@@ -334,10 +423,13 @@ public class ZookeeperOperations implements AutoCloseable{
      * @return list of te's
      * @throws Exception
      */
-    public List<String> getTaskExectorsByJobId(String jobid) throws Exception {
-        List<String> children = curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
+    public List<String> getTaskExectorsByJobId(String jobid) throws ZookeeperException {
+    	try {
+       return curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
     			+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
-        return children;
+    	} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
     
     /**
@@ -346,16 +438,20 @@ public class ZookeeperOperations implements AutoCloseable{
      * @return list of tasks
      * @throws Exception
      */
-    public List<Task> getTasksByJobId(String jobid) throws Exception {
-        List<String> tasks = curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
-        var taskdeserialized = new ArrayList<Task>();
-        for(String task:tasks) {
-        	byte[] taskbytes = getData(DataSamudayaConstants.ROOTZNODEZK
-        			+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + task);
-        	objectMapper.readValue(taskbytes, Task.class);
-        }
-        return taskdeserialized;
+    public List<Task> getTasksByJobId(String jobid) throws ZookeeperException {
+		try {
+			List<String> tasks = curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+			var taskdeserialized = new ArrayList<Task>();
+			for (String task : tasks) {
+				byte[] taskbytes = getData(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
+						+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + task);
+				taskdeserialized.add(objectMapper.readValue(taskbytes, Task.class));
+			}
+			return taskdeserialized;
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
     
     /**
@@ -363,18 +459,27 @@ public class ZookeeperOperations implements AutoCloseable{
      * @return master of stream scheduler
      * @throws Exception
      */
-    public String getStreamSchedulerMaster() throws Exception {
-    	return new String(getData(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK));
+    public String getStreamSchedulerMaster() throws ZookeeperException {
+		try {
+			return new String(getData(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
+					+ DataSamudayaConstants.LEADERSCHEDULERSTREAMZK));
+		} catch(Exception ex) {
+    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+    	}
     }
+    
     /**
      * Gets the master of the map reduce scheduler.
      * @return master of mr's
      * @throws Exception
      */
-    public String getMRSchedulerMaster() throws Exception {
-    	return new String(getData(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK));
+    public String getMRSchedulerMaster() throws ZookeeperException {
+		try {
+			return new String(getData(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
+					+ DataSamudayaConstants.LEADERSCHEDULERZK));
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
     }
 
     /**

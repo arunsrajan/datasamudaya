@@ -19,9 +19,9 @@ public class UnixTerminal extends TerminalSupport implements Terminal2 {
 	private final String type;
 	private String intr;
 	private String lnext;
-	private Set<String> bools = new HashSet<String>();
-	private Map<String, Integer> ints = new HashMap<String, Integer>();
-	private Map<String, String> strings = new HashMap<String, String>();
+	private Set<String> bools = new HashSet<>();
+	private Map<String, Integer> ints = new HashMap<>();
+	private Map<String, String> strings = new HashMap<>();
 
 	public UnixTerminal() throws Exception {
 		this(TerminalLineSettings.DEFAULT_TTY, null);
