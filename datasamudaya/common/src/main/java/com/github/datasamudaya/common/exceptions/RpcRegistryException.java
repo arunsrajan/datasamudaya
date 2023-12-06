@@ -1,4 +1,4 @@
-package com.github.datasamudaya.common.execptions;
+package com.github.datasamudaya.common.exceptions;
 
 /**
  * The exception is thrown when RPC registry is obtained or method is called when data is processed

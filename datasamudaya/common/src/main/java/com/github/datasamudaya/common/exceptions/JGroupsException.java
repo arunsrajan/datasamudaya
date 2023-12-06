@@ -1,4 +1,4 @@
-package com.github.datasamudaya.common.execptions;
+package com.github.datasamudaya.common.exceptions;
 
 /**
  * Exception thrown when jgroups initialized or data processed through jgroups library.

@@ -1,4 +1,4 @@
-package com.github.datasamudaya.common.execptions;
+package com.github.datasamudaya.common.exceptions;
 
 /**
  * Exception thrown when properties are initialized

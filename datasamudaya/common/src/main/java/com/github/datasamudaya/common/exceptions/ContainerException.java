@@ -1,4 +1,4 @@
-package com.github.datasamudaya.common.execptions;
+package com.github.datasamudaya.common.exceptions;
 
 /**
  * The exception is thrown when a zookeeper object is created or data processed in zookeeper.
