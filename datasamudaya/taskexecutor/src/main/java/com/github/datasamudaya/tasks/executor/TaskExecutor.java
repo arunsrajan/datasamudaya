@@ -311,21 +311,20 @@ public class TaskExecutor implements Callable<Object> {
                   .getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)),
                   configuration)) {
                 log.info("Application Submitted:" + applicationid + "-" + taskid);
-
                 mdtemc = new TaskExecutorMapperCombiner(blockslocation,
                     HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs), applicationid,
-                    taskid, cl, port);
+                    taskid, cl, port);              
+	              apptaskexecutormap.put(apptaskid, mdtemc);
+	              mdtemc.call();
+	              var keys = mdtemc.ctx.keys();
+	              RetrieveKeys rk = new RetrieveKeys();
+	              rk.keys = new LinkedHashSet<>(keys);
+	              rk.applicationid = applicationid;
+	              rk.taskid = taskid;
+	              rk.response = true;
+	              log.info("destroying MapperCombiner {}", apptaskid);
+	              return rk;
               }
-              apptaskexecutormap.put(apptaskid, mdtemc);
-              mdtemc.call();
-              var keys = mdtemc.ctx.keys();
-              RetrieveKeys rk = new RetrieveKeys();
-              rk.keys = new LinkedHashSet<>(keys);
-              rk.applicationid = applicationid;
-              rk.taskid = taskid;
-              rk.response = true;
-              log.info("destroying MapperCombiner {}", apptaskid);
-              return rk;
             }
           } else if (object instanceof ReducerValues rv) {
         	var executorid = (String) objects.get(3);

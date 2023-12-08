@@ -767,7 +767,11 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			log.error("Unable To Execute Job, See Cause Below:", ex);
 		} finally {
 			try {
-				destroyContainers(applicationid);
+				if (isNull(jobconf.isIsuseglobalte()) 
+						|| (nonNull(jobconf.isIsuseglobalte()) 
+								&& !jobconf.isIsuseglobalte())) {
+					destroyContainers(applicationid);
+				}
 				if (!Objects.isNull(cf)) {
 					cf.close();
 				}

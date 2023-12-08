@@ -9,6 +9,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -48,6 +49,10 @@ public class SQLServerMR {
 					sock = serverSocket.accept();
 					executors.execute(() -> {
 						String user = "";
+						int numberofcontainers = 1;
+						int cpupercontainer = 1;
+						int memorypercontainer = 1024;
+						String scheduler = "";
 						String teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
 						boolean iscontainerlaunched = false;
 						try (Socket clientSocket = sock;
@@ -55,16 +60,26 @@ public class SQLServerMR {
 								BufferedReader in = new BufferedReader(
 										new InputStreamReader(clientSocket.getInputStream()));) {
 							user = in.readLine();
+							numberofcontainers = Integer.valueOf(in.readLine());
+							cpupercontainer = Integer.valueOf(in.readLine());							
+							memorypercontainer = Integer.valueOf(in.readLine());
+							scheduler = in.readLine();
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
 								out.println(usernotexistsmessage);
 								out.println("Quit");
 								throw new Exception(usernotexistsmessage);
 							}
-							List<LaunchContainers> containers = Utils.launchContainers(user, teappid);
-							var cpumemory = Utils.getAllocatedContainersResources(containers);
-							out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
-							Utils.printNodesAndContainers(containers, out);
+							List<LaunchContainers> containers = null;
+							Map<String, Object> cpumemory = null;
+							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT) 
+									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+								containers = Utils.launchContainersUserSpec(user, teappid, cpupercontainer, memorypercontainer, numberofcontainers);
+								cpumemory = Utils.getAllocatedContainersResources(containers);
+								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
+								Utils.printNodesAndContainers(containers, out);
+								iscontainerlaunched = true;
+							}
 							out.println("Welcome to the Map Reduce SQL Server!");
 							out.println("Type 'quit' to exit.");
 							out.println("Done");
@@ -115,10 +130,12 @@ public class SQLServerMR {
 													isignite = false;
 													isyarn = false;
 													if (!iscontainerlaunched) {
-														containers = Utils.launchContainers(user, teappid);
+														containers = Utils.launchContainersUserSpec(user, teappid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
+														Utils.printNodesAndContainers(containers, out);
+														iscontainerlaunched = true;
 													}
 													out.println("yarn and ignite mode unset");
 												}
