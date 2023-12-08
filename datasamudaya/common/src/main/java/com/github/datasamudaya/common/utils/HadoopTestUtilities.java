@@ -1,7 +1,5 @@
 package com.github.datasamudaya.common.utils;
 
-import java.net.BindException;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.slf4j.Logger;
@@ -27,8 +25,7 @@ public class HadoopTestUtilities {
    * @return hdfs cluster object.
    * @throws Exception
    */
-  public static MiniDFSCluster initHdfsCluster(int port, int httpport, int numnodes)
-      throws Exception {
+  public static MiniDFSCluster initHdfsCluster(int port, int httpport, int numnodes) {
 	  try {
 		  	Configuration conf = new Configuration();
 	        conf.set("dfs.replication", "1");
@@ -40,11 +37,10 @@ public class HadoopTestUtilities {
 	        builder.nameNodePort(port);
 	        builder.format(true);
 
-	        MiniDFSCluster hdfsCluster = builder.build();
+	        return builder.build();
 	
-	        return hdfsCluster;
 	  }
-	  catch(BindException ex) {
+	  catch(Exception ex) {
 		  log.error("Reusing the hadoop node for testing");
 	  }
     return null;

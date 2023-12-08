@@ -1748,7 +1748,7 @@ public class Utils {
 
         // Print table header
         for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
-            out.printf(String.format("%-%ss | ", entry.getValue()), entry.getKey());
+            out.printf(String.format("%%-%ds | ", entry.getValue()), entry.getKey());
             out.flush();
         }
         out.println();
@@ -1759,7 +1759,7 @@ public class Utils {
             for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
                 String key = entry.getKey();
                 Object value = row.get(key);
-                out.printf(String.format("%-%ss | ", entry.getValue()), value);
+                out.printf(String.format("%%-%ds | ", entry.getValue()), value);
                 out.flush();
             }
             out.println();
