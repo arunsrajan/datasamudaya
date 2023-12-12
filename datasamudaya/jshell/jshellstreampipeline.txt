@@ -1,13 +1,4 @@
-import com.github.datasamudaya.common.*;
-import com.github.datasamudaya.stream.*;
-import org.jooq.lambda.tuple.*;
-import java.util.*;
-import java.util.concurrent.*;
-import com.esotericsoftware.kryo.io.Output;
-
-org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
 PipelineConfig pc = new PipelineConfig();
-Utils.loadLog4JSystemProperties("../config/","datasamudaya.properties");
 pc.setBlocksize("64");
 pc.setNumberofcontainers("1");
 pc.setMaxmem("1024");
@@ -20,14 +11,6 @@ pc.setOutput(new Output(System.out));
 pc.setIsblocksuserdefined("true");
 pc.setBlocksize("64");
 pc.setMode(DataSamudayaConstants.MODE_NORMAL);
-Resources resources = new Resources();
-resources.setNumberofprocessors(12);
-resources.setFreememory(4294967296l);
-ConcurrentMap<String,Resources> mapres = new ConcurrentHashMap<>();
-mapres.put("127.0.0.1_12121",resources);
-DataSamudayaNodesResources.put(mapres);
-ByteBufferPoolDirect.init();
-CacheUtils.initBlockMetadataCache();
 StreamPipeline<String> sp = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000","/carriers",pc);
 List<List<Tuple2>> mapCarriers = (List<List<Tuple2>>) sp.map(linetosplit -> linetosplit.split(",")).mapToPair(line -> new Tuple2(line[0].substring(1, line[0].length() - 1),line[1].substring(1, line[1].length() - 1))).collect(true,null);
-mapCarriers.stream().forEach(System.out::println)
+mapCarriers

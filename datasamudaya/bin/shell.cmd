@@ -1,12 +1,21 @@
 @echo off
 
-title DATASAMUDAYA SHELL
+title Stream Api Scheduler
 
 setLocal EnableDelayedExpansion
 
-echo STARTING shell....
+echo STARTING Stream Api Scheduler....
 
-SET DATACRUNCHER=%~dp0\\..
+IF "%DATASAMUDAYA_HOME%" == "" (
+@echo on
+set DATASAMUDAYA_HOME=%~dp0/..
+echo DATASAMUDAYA home is not configured, configuring DATASAMUDAYA_HOME...
+@echo off
+) ELSE (
+@echo on
+echo DATASAMUDAYA home is configured as "%DATASAMUDAYA_HOME%"
+@echo off
+)
 
 set DEBUGPORT=4000
 
