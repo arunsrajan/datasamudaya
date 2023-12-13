@@ -162,7 +162,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
         DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
             + DataSamudayaConstants.ASTERIX,
         new ResourcesMetricsServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA
-            + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX);
+            + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+			new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
     log.info("Jetty Server initialized at: {}", port);
     su.start();
     log.info("Jetty Server started and listening: {}", port);

@@ -19,6 +19,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 
+import static java.util.Objects.*;
+
 /**
  * Web Resources servlet to fetch the file for example (HTML,js) etc
  * and sends to the browser.
@@ -35,11 +37,16 @@ public class WebResourcesServlet extends HttpServlet {
 
     response.setStatus(HttpServletResponse.SC_OK);
     String filename = request.getPathInfo();
+    if(isNull(filename)) {
+    	filename = request.getRequestURI();
+    }
     if (filename.endsWith(DataSamudayaConstants.JAVASCRIPT)) {
       response.setContentType(DataSamudayaConstants.TEXTJAVASCRIPT);
     } else if (filename.endsWith(DataSamudayaConstants.CSS)) {
       response.setContentType(DataSamudayaConstants.TEXTCSS);
-    }
+    } else if (filename.endsWith(DataSamudayaConstants.ICO)) {
+        response.setContentType(DataSamudayaConstants.ICON);
+      }
     File file = new File(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
         + DataSamudayaConstants.WEB_FOLDER + filename);
     try (FileInputStream fis = new FileInputStream(file);

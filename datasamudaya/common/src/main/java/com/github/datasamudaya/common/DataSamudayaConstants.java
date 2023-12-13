@@ -302,6 +302,8 @@ public class DataSamudayaConstants {
   public static final String TEXTHTML = "text/html";
   public static final String TEXTJAVASCRIPT = "text/javascript";
   public static final String TEXTCSS = "text/css";
+  public static final String ICON = "image/x-icon";
+  public static final String FAVICON = "favicon.ico";
   public static final String WEB_FOLDER = "web";
   public static final String RESOURCES = "resources";
   public static final String GRAPH = "graph";
@@ -444,6 +446,7 @@ public class DataSamudayaConstants {
   public static final String FILENAME = "filename";
   public static final String CSS = "css";
   public static final String JAVASCRIPT = "js";
+  public static final String ICO = "ico";
 
   public static final String YARN = "YARN";
   public static final String MESOS = "Mesos";

@@ -109,7 +109,8 @@ public class NodeLauncher {
           DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
               + DataSamudayaConstants.ASTERIX,
           new ResourcesMetricsServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA
-              + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX);
+              + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
       su.start();
       
       sdc = new StreamDataCruncher() {

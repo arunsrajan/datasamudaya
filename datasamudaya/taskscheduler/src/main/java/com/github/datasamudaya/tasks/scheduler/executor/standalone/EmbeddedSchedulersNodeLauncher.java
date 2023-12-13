@@ -180,7 +180,8 @@ public class EmbeddedSchedulersNodeLauncher {
 					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.ASTERIX,
 					new ResourcesMetricsServlet(),
-					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX);
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 			su.start();
 			datacruncher = new StreamDataCruncher() {
 				public Object postObject(Object object) {
@@ -274,7 +275,8 @@ public class EmbeddedSchedulersNodeLauncher {
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH, new SummaryWebServlet(),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.ASTERIX);
+				+ DataSamudayaConstants.ASTERIX,
+				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 		su.start();				
 		var lbq = new LinkedBlockingQueue<StreamPipelineTaskScheduler>(Integer.valueOf(
 				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE, DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE_DEFAULT)));
@@ -407,7 +409,8 @@ public class EmbeddedSchedulersNodeLauncher {
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
 						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new SummaryWebServlet(),
 						DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY + DataSamudayaConstants.FORWARD_SLASH
-						+ DataSamudayaConstants.ASTERIX);
+						+ DataSamudayaConstants.ASTERIX,
+						new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 		su.start();
 		SQLServerMR.start();
 		var es = Executors.newWorkStealingPool();

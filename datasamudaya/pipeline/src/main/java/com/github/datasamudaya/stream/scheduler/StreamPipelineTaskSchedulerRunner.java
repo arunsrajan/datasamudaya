@@ -124,6 +124,7 @@ public class StreamPipelineTaskSchedulerRunner {
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
 						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+						new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON,
 						new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH);
 		su.start();
 		

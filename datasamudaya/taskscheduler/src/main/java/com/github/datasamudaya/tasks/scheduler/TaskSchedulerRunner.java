@@ -97,7 +97,8 @@ public class TaskSchedulerRunner {
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_WEB_PORT)),
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
-						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX);
+						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+						new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 		su.start();
 		SQLServerMR.start();
 		var es = Executors.newWorkStealingPool();
