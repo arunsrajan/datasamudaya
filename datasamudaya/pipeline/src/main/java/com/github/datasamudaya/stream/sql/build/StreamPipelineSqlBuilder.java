@@ -27,6 +27,7 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.functions.CoalesceFunction;
 import com.github.datasamudaya.common.functions.JoinPredicate;
@@ -408,7 +409,12 @@ public class StreamPipelineSqlBuilder implements Serializable {
 						public Map<String, Object> apply(Map<String, Object> mapvalues) {							
 							Map<String, Object> objectValuesMap = new HashMap<>();							
 							selcolumnsfunccolsremoved.stream()
-							.forEach(key -> objectValuesMap.put(key, mapvalues.get(key)));
+							.forEach(key -> {
+								objectValuesMap.put(key, mapvalues.get(key));
+								if(mapvalues.containsKey(key+DataSamudayaConstants.SQLCOUNTFORAVG)) {
+									objectValuesMap.put(key+DataSamudayaConstants.SQLCOUNTFORAVG, mapvalues.get(key+DataSamudayaConstants.SQLCOUNTFORAVG));
+								}
+							});
 							return objectValuesMap;
 
 						}
@@ -492,70 +498,65 @@ public class StreamPipelineSqlBuilder implements Serializable {
 				} else if (!groupby.isEmpty() && isNull(plainSelect.getGroupBy())) {
 					throw new IllegalArgumentException("Provide proper GroupBy expressions or columns");
 				}
-				List<List<Expression>> exp = new ArrayList<>();
-				Boolean isaverage = false, iscount = false;
-				List<String> functionaverages = new ArrayList<>();
-				List<Function> funcrealign = new ArrayList<>();
-				Function countfn = null;
+				List<Expression> exp = new ArrayList<>();
+				List<List<Column>> columnstoeval = new ArrayList<>();
 				for (Function fn : aggfunctions) {
-					String functionname = fn.getName().toLowerCase();
-					if (functionname.startsWith("count")) {
-						iscount = true;
-						countfn = fn;
-					} else {
 						columnsselect.add(SQLUtils.getAliasForFunction(fn, functionalias));
-						funcrealign.add(fn);
-						exp.add(SQLUtils.getExpressions(fn));
-						if (functionname.startsWith("avg")) {
-							functionaverages.add(SQLUtils.getAliasForFunction(fn, functionalias));
-							isaverage = true;
-						}
-					}
-				}
-				if (iscount || isaverage && !iscount) {
-					exp.add(Arrays.asList());
-					if (iscount) {
-						columnsselect.add(SQLUtils.getAliasForFunction(countfn, functionalias));
-						funcrealign.add(countfn);
-					} else {
-						Function function = new Function();
-						function.setName("count");
-						function.setAllColumns(true);
-						funcrealign.add(function);
-					}
-				}
+						List<Expression> expressions = SQLUtils.getExpressions(fn);
+						if(nonNull(expressions)) {
+							exp.add(expressions.get(0));
+							List<Column> columnsfromexp = new ArrayList<>();
+							SQLUtils.getColumnsFromExpression(expressions.get(0), columnsfromexp);
+							columnstoeval.add(columnsfromexp);
+						} else {
+							exp.add(null);
+							columnstoeval.add(new ArrayList<>());
+						}						
+				}				
 				pipelinemap = pipelinemap.mapToPair(new MapToPairFunction<Map<String, Object>, Tuple2<Tuple, Tuple>>() {
 					private static final long serialVersionUID = 8102198486566760753L;
-					List<List<Expression>> expre = exp;
+					List<Expression> expre = exp;
 					Set<String> grpby = groupby;
-
+					List<Function> aggfuncs = aggfunctions;
+					List<List<Column>> columnsevaluation = columnstoeval;
 					@Override
 					public Tuple2<Tuple, Tuple> apply(Map<String, Object> mapvalues) {
-						Object[] fnobj = new Object[expre.size()];
-						Object[] grpbyobj = new Object[grpby.size()];
-
+						List<Object> fnobj = new ArrayList<>();
+						Object[] grpbyobj = new Object[grpby.size()];						
 						int index = 0;
 						for (Object grpobj : grpby) {
 							grpbyobj[index] = mapvalues.get(grpobj);
 							index++;
 						}
 						index = 0;
-						for (List<Expression> expr : expre) {
-							if (expr.isEmpty()) {
-								fnobj[index] = 1l;
+						for ( ;index<expre.size();index++) {
+							Expression expr = expre.get(index);
+							if (isNull(expr)) {
+								fnobj.add(1l);
 							} else {
-								fnobj[index] = SQLUtils.evaluateBinaryExpression(expr.get(0), mapvalues);
+								fnobj.add(SQLUtils.evaluateBinaryExpression(expr, mapvalues));
+								String functionname = aggfuncs.get(index).getName().toLowerCase();
+								long cval = 1;
+								if (functionname.startsWith("avg")) {
+									for (Column column : columnsevaluation.get(index)) {
+										Integer valuetocount = (Integer) mapvalues.get(column.getColumnName()+DataSamudayaConstants.SQLCOUNTFORAVG);
+										if (isNull(valuetocount)||nonNull(valuetocount)&&valuetocount == 0) {
+											cval = 0;
+											break;
+										}
+									}
+									fnobj.add(cval);
+								}
 							}
-							index++;
 						}
 
 						return Tuple.tuple(SQLUtils.convertObjectToTuple(grpbyobj),
-								SQLUtils.convertObjectToTuple(fnobj));
+								SQLUtils.convertObjectToTuple(fnobj.toArray(new Object[fnobj.size()])));
 
 					}
 				}).reduceByKey(new ReduceByKeyFunction<Tuple>() {
 					private static final long serialVersionUID = -8773950223630733894L;
-					List<Function> aggregatefunc = funcrealign;
+					List<Function> aggregatefunc = aggfunctions;
 
 					@Override
 					public Tuple apply(Tuple tuple1, Tuple tuple2) {
@@ -564,7 +565,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 
 				}).coalesce(1, new CoalesceFunction<Tuple>() {
 					private static final long serialVersionUID = -6496272568103409255L;
-					List<Function> aggregatefunc = funcrealign;
+					List<Function> aggregatefunc = aggfunctions;
 
 					@Override
 					public Tuple apply(Tuple tuple1, Tuple tuple2) {
@@ -574,21 +575,14 @@ public class StreamPipelineSqlBuilder implements Serializable {
 				}).map(new MapFunction<Tuple2<Tuple, Tuple>, Map<String, Object>>() {							
 					private static final long serialVersionUID = 9098846821052824347L;
 					Set<String> grpby = groupby;
-					List<Function> aggregatefunc = funcrealign;
+					List<Function> aggregatefunc = aggfunctions;
 					Map<Function, String> funcalias = functionalias;
-					List<String> fnaverages = functionaverages;
 					List<String> orderedcolumns = orderedselectcolumns;
 					@Override
-					public Map<String, Object> apply(Tuple2<Tuple, Tuple> tuple2) {
+					public Map<String, Object> apply(Tuple2<Tuple, Tuple> tuple2) {						
 						Map<String, Object> mapwithfinalvalues = new HashMap<>();
 						SQLUtils.populateMapFromTuple(mapwithfinalvalues, tuple2.v1, new ArrayList<>(grpby));
-						SQLUtils.populateMapFromFunctions(mapwithfinalvalues, tuple2.v2, aggregatefunc, funcalias);								
-						if (!fnaverages.isEmpty()) {
-							long count = SQLUtils.getCountFromTuple(tuple2.v2);
-							for (String fnaverage :fnaverages) {
-								mapwithfinalvalues.put(fnaverage, SQLUtils.evaluateValuesByOperator(mapwithfinalvalues.get(fnaverage), count, "/"));
-							}
-						}
+						SQLUtils.populateMapFromFunctions(mapwithfinalvalues, tuple2.v2, aggregatefunc, funcalias);
 						Map<String, Object> orderedvalues = new LinkedHashMap<>();
 						for (String column :orderedcolumns) {
 							orderedvalues.put(column, mapwithfinalvalues.get(column));

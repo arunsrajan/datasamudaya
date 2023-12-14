@@ -1167,7 +1167,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		assertTrue(sum == -63278.0);
-		assertTrue(avgarrdelay == -9.59511460158597);
+		assertTrue(avgarrdelay == -9.663325375452317);
 		log.info("In testAverageDelayByDestinationAirport() method Exit");
 	}
 	
@@ -1375,7 +1375,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String,Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
 		
-		assertEquals(Double.valueOf("-1.3649266609145816"), records.get(0).get(0).get("avg(airline.ArrDelay)"));
+		assertEquals(Double.valueOf("-1.3768957938942925"), records.get(0).get(0).get("avg(airline.ArrDelay)"));
 		
 		log.info("In testAllColumnsAvg() method Exit");
 	}
@@ -1392,7 +1392,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		List<List<Map<String,Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
 		
 		assertEquals("AQ", records.get(0).get(0).get("UniqueCarrier"));
-		assertEquals(Double.valueOf("-1.3649266609145816"), records.get(0).get(0).get("avg(airline.ArrDelay)"));
+		assertEquals(Double.valueOf("-1.3768957938942925"), records.get(0).get(0).get("avg(airline.ArrDelay)"));
 		
 		log.info("In testAllColumnsAvgArrDelayPerCarrier() method Exit");
 	}
@@ -1409,7 +1409,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		List<List<Map<String,Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
 		
 		assertEquals("AQ", records.get(0).get(0).get("UniqueCarrier"));
-		assertEquals(Double.valueOf(-2.2368498383779016), records.get(0).get(0).get("avg(airline.ArrDelay)"));
+		assertEquals(Double.valueOf(-2.2600950118764844), records.get(0).get(0).get("avg(airline.ArrDelay)"));
 		
 		log.info("In testAllColumnsAvgArrDelayPerCarrierWithWhere() method Exit");
 	}

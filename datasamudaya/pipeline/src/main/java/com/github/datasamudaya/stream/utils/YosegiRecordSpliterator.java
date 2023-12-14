@@ -9,6 +9,8 @@ import java.util.function.Consumer;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import com.github.datasamudaya.common.DataSamudayaConstants;
+
 import jp.co.yahoo.yosegi.message.objects.ByteObj;
 import jp.co.yahoo.yosegi.message.objects.DoubleObj;
 import jp.co.yahoo.yosegi.message.objects.FloatObj;
@@ -19,6 +21,8 @@ import jp.co.yahoo.yosegi.message.objects.ShortObj;
 import jp.co.yahoo.yosegi.message.objects.StringObj;
 import jp.co.yahoo.yosegi.message.parser.IParser;
 import jp.co.yahoo.yosegi.reader.YosegiSchemaReader;
+
+import static java.util.Objects.*;
 
 public class YosegiRecordSpliterator extends Spliterators.AbstractSpliterator<Map<String, Object>> {
     private final YosegiSchemaReader reader;
@@ -36,18 +40,38 @@ public class YosegiRecordSpliterator extends Spliterators.AbstractSpliterator<Ma
     		PrimitiveObject po = cv.get(col);
     		if(po instanceof IntegerObj iobj) {
     			map.put(col, iobj.getInt());
+    			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
+    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
     		} else if(po instanceof LongObj lobj) {
     			map.put(col, lobj.getLong());
+    			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
+    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
     		} else if(po instanceof FloatObj fobj) {
     			map.put(col, fobj.getFloat());
+    			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
+    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
     		} else if(po instanceof DoubleObj dobj) {
     			map.put(col, dobj.getDouble());
+    			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
+    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
     		} else if(po instanceof StringObj sobj) {
     			map.put(col, sobj.getString());
     		} else if(po instanceof ByteObj bobj) {
     			map.put(col, Long.valueOf(bobj.getByte()));
+    			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
+    			if(nonNull(posqlcount)) {
+    				map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
+    			} else {
+    				map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, 0);
+    			}
     		} else if(po instanceof ShortObj shobj) {
     			map.put(col, Long.valueOf(shobj.getShort()));
+    			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
+    			if(nonNull(posqlcount)) {
+    				map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
+    			} else {
+    				map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, 0);
+    			}
     		}
     	} catch(Exception ex) {
     		ex.printStackTrace();

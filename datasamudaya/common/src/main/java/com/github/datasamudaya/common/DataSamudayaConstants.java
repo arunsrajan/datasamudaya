@@ -31,6 +31,7 @@ public class DataSamudayaConstants {
   public static final String EQUAL = "=";
   public static final String UNDERSCORE = "_";
   public static final String EMPTY = "";
+  public static final String NA ="NA";
   public static final char DOT = '.';
   public static final String ASTERIX = "*";
   public static final String COMMA = ",";
@@ -585,5 +586,6 @@ public class DataSamudayaConstants {
   
   public static final String FALSE = Boolean.toString(Boolean.FALSE);
   public static final String TRUE = Boolean.toString(Boolean.TRUE);
+  public static final String  SQLCOUNTFORAVG = "-count";
   
 }
