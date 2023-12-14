@@ -528,7 +528,9 @@ public class DataSamudayaConstants {
   public static final String SQLPORTMR = "sql.port.mr";
   public static final String SQLPORTMR_DEFAULT = "12124";
   public static final String SQLMESSAGESSTORE = "sql.messages.store";
+  public static final String SHELLMESSAGESSTORE = "shell.messages.store";
   public static final String SQLMESSAGESSTORE_DEFAULT = "../sql_message_store";
+  public static final String SHELLMESSAGESSTORE_DEFAULT = "../shell_message_store";
   public static final String SQLDB = "sql.db";
   public static final String SQLMETASTORE_DB = "metastore_db";
   public static final String SQLDB_URL = "jdbc:h2:~/";

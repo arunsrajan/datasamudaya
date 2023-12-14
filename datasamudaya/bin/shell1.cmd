@@ -33,7 +33,7 @@ IF EXIST %DATASAMUDAYA_JAVA_HOME%\bin\java.exe (
 
 "%DATASAMUDAYA_JAVA_HOME%\bin\java" -version
 
-"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.common.utils.JShellClient
+"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.common.utils.JShellClient arun
 
 ) ELSE (
  @echo on
