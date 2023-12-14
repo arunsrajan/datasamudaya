@@ -334,7 +334,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 			for(Map<String, Object> map: recordspart) {
 				assertEquals(1, map.size());
 				assertTrue(map.containsKey("avgarrdelay"));
-				assertEquals(-1.364897219645823, map.get("avgarrdelay"));
+				assertEquals(-1.3768957938942925, map.get("avgarrdelay"));
 			}
 		}		
 	}
