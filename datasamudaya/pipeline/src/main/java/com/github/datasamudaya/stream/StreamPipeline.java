@@ -1308,12 +1308,15 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 					var dbPartitioner = new FileBlocksPartitionerHDFS();
 					dbPartitioner.getJobStageBlocks(job, supplier, ((StreamPipeline) root).protocol, stagesblocks, abspipeline, ((StreamPipeline) root).blocksize, ((StreamPipeline) root).pipelineconfig);
 				}
-				if(((StreamPipeline) root).pipelineconfig.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
+				PipelineConfig pipeconf = ((StreamPipeline) root).pipelineconfig;
+				if(pipeconf.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
 					var ignite = DataSamudayaIgniteClient.instance(((StreamPipeline) root).pipelineconfig);
 					IgniteCache<Object, byte[]> ignitecache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
 					job.setIgcache(ignitecache);
 					job.setIgnite(ignite);
-				} else {
+				} else if(pipeconf.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_NORMAL) &&
+						pipeconf.getLocal().equalsIgnoreCase("false")
+						&& pipeconf.getYarn().equalsIgnoreCase("false")) {
 					job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser(), pipelineconfig.getTejobid()));
 					List<String> containers = job.getLcs().stream().flatMap(lc -> {
 						var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);

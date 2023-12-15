@@ -70,6 +70,7 @@ public class PigQueryServer {
 						Map<String, Object> pigAliasExecutedObjectMap = new ConcurrentHashMap<>();
 						List<String> pigQueries = new ArrayList<>();
 						List<String> pigQueriesToExecute = new ArrayList<>();
+						boolean isyarncontainerlaunched = false;
 						boolean iscontainerlaunched = false;
 						try (Socket clientSocket = sock;
 								OutputStream ostream = clientSocket.getOutputStream();
@@ -100,13 +101,32 @@ public class PigQueryServer {
 								iscontainerlaunched = true;
 							}
 							Utils.setConfigForScheduler(scheduler, pipelineconfig);
-							out.println("Welcome to the Pig Server!");
-							out.println("Type 'quit' to exit.");
-							out.println("Done");
-							String inputLine;
 							boolean isjgroups = false;
 							boolean isignite = false;
 							boolean isyarn = false;
+							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+								isjgroups = true;
+								isignite = false;
+								isyarn = false;
+							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.YARN)) {
+								isjgroups = false;
+								isignite = false;
+								isyarn = true;
+								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+								isyarncontainerlaunched = true;
+							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
+								isjgroups = false;
+								isignite = false;
+								isyarn = false;
+							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE)) {
+								isjgroups = false;
+								isignite = true;
+								isyarn = false;
+							}	
+							out.println("Welcome to the Pig Server!");
+							out.println("Type 'quit' to exit.");
+							out.println("Done");
+							String inputLine;							
 							outer:
 							while (true) {
 								try {
@@ -130,6 +150,14 @@ public class PigQueryServer {
 													pipelineconfig.setMesos("false");
 													pipelineconfig.setJgroups("true");
 													pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+													if (isyarncontainerlaunched) {
+														try {
+															Utils.shutDownYARNContainer(tejobid);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = false;
+													}
 													if (!iscontainerlaunched) {
 														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
@@ -148,6 +176,14 @@ public class PigQueryServer {
 													pipelineconfig.setMesos("false");
 													pipelineconfig.setJgroups("false");
 													pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
+													if (isyarncontainerlaunched) {
+														try {
+															Utils.shutDownYARNContainer(tejobid);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = false;
+													}
 													if (iscontainerlaunched) {
 														try {
 															Utils.destroyContainers(user, tejobid);
@@ -174,6 +210,14 @@ public class PigQueryServer {
 														}
 														iscontainerlaunched = false;
 													}
+													if (!isyarncontainerlaunched) {
+														try {
+															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = true;
+													}
 													out.println("yarn mode set");
 												} else {
 													isjgroups = false;
@@ -184,6 +228,14 @@ public class PigQueryServer {
 													pipelineconfig.setMesos("false");
 													pipelineconfig.setJgroups("false");
 													pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+													if (isyarncontainerlaunched) {
+														try {
+															Utils.shutDownYARNContainer(tejobid);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = false;
+													}
 													if (!iscontainerlaunched) {
 														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
@@ -254,6 +306,13 @@ public class PigQueryServer {
 							if (iscontainerlaunched) {
 								try {
 									Utils.destroyContainers(user, tejobid);
+								} catch (Exception ex) {
+									log.error(DataSamudayaConstants.EMPTY, ex);
+								}
+							}
+							if (isyarncontainerlaunched) {
+								try {
+									Utils.shutDownYARNContainer(tejobid);
 								} catch (Exception ex) {
 									log.error(DataSamudayaConstants.EMPTY, ex);
 								}
