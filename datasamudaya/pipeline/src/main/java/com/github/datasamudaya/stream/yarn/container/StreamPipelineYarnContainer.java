@@ -16,6 +16,7 @@
 package com.github.datasamudaya.stream.yarn.container;
 
 import java.io.ByteArrayInputStream;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -55,6 +56,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 	private static final Log log = LogFactory.getLog(StreamPipelineYarnContainer.class);
 	private Map<String, JobStage> jsidjsmap;
 	private MindAppmasterServiceClient client;
+	private Map<String, byte[]> blockinfocache = new ConcurrentHashMap<>();
 	/**
 	 * Pull the Job to perform MR operation execution requesting 
 	 * the Yarn App Master Service. The various Yarn operation What operation
@@ -127,7 +129,8 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 						if (nonNull(tasktoprocess.getStorage()) && tasktoprocess.getStorage() == STORAGE.COLUMNARSQL) {
 							yarnexecutor = new StreamPipelineTaskExecutorYarnSQL(
 									containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL),
-									jsidjsmap.get(tasktoprocess.jobid + tasktoprocess.stageid));
+									jsidjsmap.get(tasktoprocess.jobid + tasktoprocess.stageid),
+									blockinfocache);
 						} else {
 							yarnexecutor = new StreamPipelineTaskExecutorYarn(
 									containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL),

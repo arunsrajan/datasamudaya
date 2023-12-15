@@ -195,7 +195,7 @@ public class Utils {
 	/**
 	 * Thread Local kryo instance.
 	 */
-	static ThreadLocal<Kryo> conf =ThreadLocal.withInitial(()->getKryoInstance());
+	static ThreadLocal<Kryo> conf = ThreadLocal.withInitial(()->getKryoInstance());
 
 
 	/**
