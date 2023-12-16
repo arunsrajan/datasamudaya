@@ -384,7 +384,11 @@ public class StreamJobScheduler {
           tasksgraphexecutor[stagegraphexecutorindex] = new TasksGraphExecutor();
           tasksgraphexecutor[stagegraphexecutorindex].setTasks(new ArrayList<>());
           tasksgraphexecutor[stagegraphexecutorindex].setHostport(te);
-          tasksgraphexecutor[stagegraphexecutorindex].setStorage(pipelineconfig.getStorage());
+          if(job.getTrigger() != TRIGGER.PIGDUMP) {
+        	  tasksgraphexecutor[stagegraphexecutorindex].setStorage(pipelineconfig.getStorage());
+          } else {
+        	  tasksgraphexecutor[stagegraphexecutorindex].setStorage(STORAGE.DISK);
+          }
           taskgraphexecutormap.put(te, tasksgraphexecutor[stagegraphexecutorindex]);
           stagegraphexecutorindex++;
         }
@@ -480,7 +484,7 @@ public class StreamJobScheduler {
     	  finalstageoutput = getLastStageOutput(sptss, graph, sptsl, ismesos, isyarn, islocal,
           isjgroups, resultstream, taskgraph);
       }
-      if (Boolean.TRUE.equals(isjgroups)) {
+      if (Boolean.TRUE.equals(isjgroups) && job.getJobtype() != JOBTYPE.PIG) {
         closeResourcesTaskExecutor(tasksgraphexecutor);
       }
       printStats();

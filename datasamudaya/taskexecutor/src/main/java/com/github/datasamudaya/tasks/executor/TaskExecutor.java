@@ -199,7 +199,7 @@ public class TaskExecutor implements Callable<Object> {
 				sptej = new StreamPipelineTaskExecutorJGroupsSQL(jobidstageidjobstagemap, stagesgraph.getTasks(), port,
 						inmemorycache, blorcmap);
 				log.info("In JGroups Storage Columnar Object {}", sptej);
-			} else {
+			} else if (stagesgraph.getStorage() == STORAGE.DISK){
 				sptej = new StreamPipelineTaskExecutorJGroups(jobidstageidjobstagemap, stagesgraph.getTasks(), port,
 						inmemorycache);
 				log.info("In JGroups Storage Object {}", sptej);
