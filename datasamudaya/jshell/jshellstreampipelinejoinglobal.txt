@@ -1,47 +1,30 @@
-import com.github.datasamudaya.common.*;
-import com.github.datasamudaya.stream.*;
-import org.jooq.lambda.tuple.*;
-import java.util.*;
-import java.util.concurrent.*;
-import com.esotericsoftware.kryo.io.Output;
-import org.apache.hadoop.fs.*;
-import java.net.*;
-
-org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
-URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
-Utils.loadLog4JSystemProperties("../config/","datasamudaya.properties");
-PipelineConfig pc = new PipelineConfig();
-pc.setBlocksize("64");
-pc.setNumberofcontainers("0");
-pc.setMaxmem("1024");
-pc.setMinmem("1024");
-pc.setJgroups("false");
-pc.setMesos("false");
-pc.setYarn("false");
-pc.setOutput(new Output(System.out));
-pc.setIsblocksuserdefined("true");
-pc.setBlocksize("64");
-pc.setMode(DataSamudayaConstants.MODE_NORMAL);
-Resources resources = new Resources();
-resources.setNumberofprocessors(12);
-resources.setFreememory(4294967296l);
-ConcurrentMap<String,Resources> mapres = new ConcurrentHashMap<>();
-mapres.put("127.0.0.1_12121",resources);
-resources.setNodeport("127.0.0.1_12121");
-DataSamudayaNodesResources.put(mapres);
-ByteBufferPoolDirect.init();
-CacheUtils.initBlockMetadataCache()
-pc.setLocal("false");
-pc.setClassLoader(jdk.jshell.JShell.class.getClassLoader());
-pc.setUseglobaltaskexecutors(true);
-var lc = Utils.launchContainers(1);
-StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000","/airline1989",pc);
-var mappair1 = datastream.map(dat -> dat.split(",")).filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14])).mapToPair(dat -> Tuple.tuple(dat[8], Long.parseLong(dat[14])));
-var airlinesamples = mappair1.reduceByKey((dat1, dat2) -> dat1 + dat2);
-List<List<Tuple2>> joinresult = (List) airlinesamples.collect(true,null);
-joinresult.stream().forEach(System.out::println)
-datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !dat[14].equals("ArrDelay") && !dat[14].equals("NA")).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).saveAsTextFile(new URI("hdfs://127.0.0.1:9000"), "/Coalesce/Coalesce-" + System.currentTimeMillis());
-MapPair<String,Tuple2<Long,Long>> mstll = datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !dat[14].equals("ArrDelay") && !dat[14].equals("NA")).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2));
-joinresult = mstll.collect(true,null);
-mstll.saveAsTextFile(new URI("hdfs://127.0.0.1:9000"), "/Coalesce/Coalesce-" + System.currentTimeMillis());
-Utils.destroyContainers(lc);
+import com.github.datasamudaya.common.functions.CoalesceFunction;
+import com.github.datasamudaya.common.functions.JoinPredicate;
+import com.github.datasamudaya.common.functions.MapFunction;
+import com.github.datasamudaya.common.functions.MapToPairFunction;
+import com.github.datasamudaya.common.functions.PredicateSerializable;
+import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
+var zo = new ZookeeperOperations();
+zo.connect();
+zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {System.out.println("Node Created");});
+zo.watchNodes();
+PipelineConfig pipelineconfig = new PipelineConfig();
+pipelineconfig.setBlocksize("64");
+pipelineconfig.setNumberofcontainers("1");
+pipelineconfig.setMaxmem("1024");
+pipelineconfig.setMinmem("1024");
+pipelineconfig.setLocal("false")
+pipelineconfig.setJgroups("false")
+pipelineconfig.setMesos("false")
+pipelineconfig.setYarn("false")
+pipelineconfig.setOutput(new Output(System.out));
+pipelineconfig.setIsblocksuserdefined("true");
+pipelineconfig.setBlocksize("64");
+pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+pipelineconfig.setUseglobaltaskexecutors("false");
+var datastream = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000", "/airline1989", pipelineconfig);
+var mappair1 = datastream.map(new MapFunction<String,String[]>() {@Override public String[] apply(String dat) {	return dat.split(",");	} }).filter(new PredicateSerializable<String[]>() {	@Override public boolean test(String[] dat) { return !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14]);	}}).mapToPair(new MapToPairFunction<String[], Tuple2<String,Long>>() { @Override public Tuple2<String,Long> apply(String[] dat) { return Tuple.tuple(dat[8], Long.parseLong(dat[14]));} });
+var airlinesamples = mappair1.reduceByKey(new ReduceByKeyFunction<>() { @Override public Long apply(Long t, Long u) { return t+u; }	}).coalesce(1, new CoalesceFunction<>() { @Override public Long apply(Long t, Long u) { return t+u;	} });
+var datastream1 = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000", "/carriers", pipelineconfig);
+var carriers = datastream1.map(new MapFunction<String,String[]>() {	@Override public String[] apply(String dat) { return dat.split(","); } }).mapToPair(new MapToPairFunction<String[], Tuple2<String,Long>>() { @Override public Tuple2<String,Long> apply(String[] line) { return new Tuple2(line[0].substring(1, line[0].length() - 1), line[1].substring(1, line[1].length() - 1));}}) ;
+var result = carriers.join(airlinesamples, new JoinPredicate<Tuple2<String,String>, Tuple2<String,Long>>(){ @Override public boolean test(Tuple2<String,String> tuple1, Tuple2<String,Long> tuple2) { return ((Tuple2) tuple1).v1.equals(((Tuple2) tuple2).v1); } }).collect(true, null);

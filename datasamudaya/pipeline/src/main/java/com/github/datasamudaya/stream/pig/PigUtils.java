@@ -181,7 +181,7 @@ public class PigUtils {
 		List<SqlTypeName> schematypes = getTypesFromSchema(loload.getSchema());
 		return StreamPipeline.newCsvStreamHDFSSQL(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT), loload.getSchemaFile(),
-				pipelineconfig, airlinehead, schematypes, Arrays.asList(airlinehead)).load();
+				pipelineconfig, airlinehead, schematypes, Arrays.asList(airlinehead));
 	}
 	
 	/**
@@ -396,13 +396,14 @@ public class PigUtils {
 				columns.clear();
 			}
 		}
-		((CsvOptionsSQL) sp.getCsvOptions()).getRequiredcolumns().clear();
-		((CsvOptionsSQL) sp.getCsvOptions()).getRequiredcolumns().addAll(colheaders);
+		CsvOptionsSQL csvoptsql = ((CsvOptionsSQL) sp.getCsvOptions());
+		List<String> requiredcolumns = csvoptsql.getRequiredcolumns();
+		csvoptsql.setRequiredcolumns(new ArrayList<>(colheaders));
 		List<FunctionParams> aggfunctions = getAggFunctions(functionparams);
 		List<FunctionParams> nonaggfunctions = getNonAggFunctions(functionparams);
 		final AtomicBoolean iscount = new AtomicBoolean(false), isaverage = new AtomicBoolean(false);
 		if(CollectionUtils.isEmpty(aggfunctions) && CollectionUtils.isEmpty(nonaggfunctions)) {
-			return sp.map(map -> {
+			StreamPipeline<Map<String, Object>> csp = sp.map(map -> {
 					Map<String, Object> formattedmap = new HashMap<>();
 					List<String> aliasesl = aliases;
 				try {
@@ -416,6 +417,8 @@ public class PigUtils {
 					}
 					return formattedmap;
 				}).cache();
+			csvoptsql.setRequiredcolumns(requiredcolumns);
+			return csp;
 		} else {
 			
 			StreamPipeline<Map<String, Object>> pipelinemap = sp;
@@ -548,7 +551,9 @@ public class PigUtils {
 					}
 				});
 			}
-			return pipelinemap.cache();
+			StreamPipeline<Map<String, Object>> csp = pipelinemap.cache();
+			csvoptsql.setRequiredcolumns(requiredcolumns);
+			return csp;
 		}
 	}
 	
@@ -1343,6 +1348,7 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static void executeDump(StreamPipeline<?> sp, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
+		sp.clearChild();
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
 		pipelineconfig.setUseglobaltaskexecutors(true);		
 		pipelineconfig.setUser(user);
@@ -1362,12 +1368,13 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static Object executeCollect(StreamPipeline<?> sp, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
+		sp.clearChild();
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
 		pipelineconfig.setUseglobaltaskexecutors(true);		
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		return sp.map(data -> data).collect(true, null);
+		return sp.map(val->val).collect(true, null);
 	}
 	
 	/**

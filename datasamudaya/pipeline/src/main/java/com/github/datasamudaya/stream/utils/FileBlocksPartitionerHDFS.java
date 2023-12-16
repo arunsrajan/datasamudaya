@@ -179,9 +179,9 @@ public class FileBlocksPartitionerHDFS {
 				if (obj instanceof StreamPipeline mdp) {
 					hdfspath = mdp.getHdfspath();
 					folder = mdp.getFolder();					
-				} else if (obj instanceof StreamPipeline mdp) {
-					hdfspath = mdp.getHdfspath();
-					folder = mdp.getFolder();
+				}
+				if(isNull(folder)) {
+					continue;
 				}
 				if(isNull(hdfspath)) {
 					hdfspath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);

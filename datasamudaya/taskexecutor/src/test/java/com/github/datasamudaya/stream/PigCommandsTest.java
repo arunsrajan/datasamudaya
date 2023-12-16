@@ -94,6 +94,38 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon{
 		assertEquals(46361, totalrecords);
 	}
 	
+	
+	@Test
+	public void testPigLoadForEachDumpAll() throws Exception {
+		String jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add("data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		PigQueryExecutor.execute(pigAliasExecutedObjectMap, queryParserDriver, pigQueriesToExecute, pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		
+		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
+		pigQueriesToExecute.add("data2 = FOREACH data GENERATE UniqueCarrier, SUM(ArrDelay) as sumdelay,COUNT(*) as cnt,AVG(ArrDelay) as avgarrdelay,SUM(DepDelay) as sumdepdelay,AVG(DepDelay) as avgdepdelay;");
+		PigQueryExecutor.execute(pigAliasExecutedObjectMap, queryParserDriver, pigQueriesToExecute, pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		
+		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
+		pigQueriesToExecute.add("carriers = LOAD '/carriers' AS (Code: chararray,Description: chararray);");
+		PigQueryExecutor.execute(pigAliasExecutedObjectMap, queryParserDriver, pigQueriesToExecute, pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		
+		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
+		pigQueriesToExecute.add("data3 = JOIN data2 BY UniqueCarrier, carriers BY Code;");
+		PigQueryExecutor.execute(pigAliasExecutedObjectMap, queryParserDriver, pigQueriesToExecute, pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		
+		jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
+		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get("data"), pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		int totalrecords = 0;
+		for(List<Map<String, Object>> recordspart:results) {
+			totalrecords += recordspart.size();
+			for(Map<String, Object> map: recordspart) {
+				assertEquals(53, map.size());
+			}
+		}
+		PigUtils.executeDump((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get("data2"), pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+	}
+	
 	@Test
 	public void testPigLoadForEachOrder() throws Exception {
 		String jobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();

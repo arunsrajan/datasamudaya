@@ -470,9 +470,13 @@ public class StreamJobScheduler {
         broadcastJobStageToTaskExecutors(new ArrayList<>(taskgraph.vertexSet()));
         graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) parallelExecutionPhaseDExecutor(graph);
       }
-
-      if(job.getJobtype() == JOBTYPE.PIG && job.getTrigger()!=TRIGGER.PIGDUMP) {
+      
+      if(job.getJobtype() == JOBTYPE.PIG) {
     	  printStats();
+    	  if(job.getTrigger() == TRIGGER.PIGDUMP) {
+    		  getLastStageOutput(sptss, graph, sptsl, ismesos, isyarn, islocal,
+    		          isjgroups, resultstream, taskgraph);
+    	  }
     	  return getFinalPhasesWithNoSuccessors(taskgraph);
       }
       // Obtain the final stage job results after final stage is
@@ -483,7 +487,7 @@ public class StreamJobScheduler {
       } else {
     	  finalstageoutput = getLastStageOutput(sptss, graph, sptsl, ismesos, isyarn, islocal,
           isjgroups, resultstream, taskgraph);
-      }
+      }      
       if (Boolean.TRUE.equals(isjgroups) && job.getJobtype() != JOBTYPE.PIG) {
         closeResourcesTaskExecutor(tasksgraphexecutor);
       }
@@ -630,7 +634,7 @@ public class StreamJobScheduler {
 					nodehostportteports.put(lc.getNodehostport(), ports);
 				}
 			}
-			int sotimeoutcountmax = 5;
+			int sotimeoutcountmax = 100;
 			int sotimeoutcount = 0;
 			for(Entry<String, List<Integer>> nodehostportentry : nodehostportteports.entrySet()) {
 				String nodehostport = nodehostportentry.getKey();
