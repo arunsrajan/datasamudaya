@@ -17,6 +17,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -24,6 +25,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.jooq.lambda.tuple.Tuple;
+import org.jooq.lambda.tuple.Tuple1;
+import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -284,53 +288,57 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							.withIgnoreHeaderCase().withIgnoreEmptyLines(true).withTrim();
 					CSVParser parser = csvformat.parse(new StringReader(line));
 					parser.forEach(csvrecord -> {
-						if (nonNull(where) && evaluateExpression(where, csvrecord) || isNull(where)) {
+						if (isNull(where) || nonNull(where) && evaluateExpression(where, csvrecord)) {
 							// Extract relevant columns
-							var valuemap = new HashMap<String, Object>();
-							for (String column :selectcols) {
-								// Output as key-value pair
-								valuemap.put(column, SQLUtils.getValueMR(csvrecord.get(column), tablecolumntypes.get(tablecolindexmap.get(column).intValue())));
+							Map<String,Object> valuemap = null;
+							if (CollectionUtils.isNotEmpty(selectcols)) {
+								valuemap = new HashMap<String, Object>();
+								for (String column : selectcols) {
+									// Output as key-value pair
+									valuemap.put(column, SQLUtils.getValueMR(csvrecord.get(column),
+											tablecolumntypes.get(tablecolindexmap.get(column).intValue())));
+								}
 							}
-							valuemap.put("tablename()", maintablename);
 							if (!functionwithcols.isEmpty()) {
+								var functionvaluesmap = new HashMap<>();
 								for (FunctionWithCols functionwithcols :functionwithcols) {
-									String funcname = functionwithcols.getName();
-									var map = new HashMap<String, Object>(valuemap);
+									String funcname = functionwithcols.getName();									
 									String matchingtablename = functionwithcols.getTablename();
 									boolean istablenamematches = nonNull(matchingtablename) ? matchingtablename.equalsIgnoreCase(maintablename) : false;
 									if (istablenamematches) {
 										if (funcname.startsWith("sum")) {
 											String colname = functionwithcols.getParameters().get(0);
 											String value = csvrecord.get(colname);
-											map.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "sum(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));										
-											context.put(maintablename, map);
+											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "sum(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));										
 											continue;
 										}
 										if (funcname.startsWith("max")) {
 											String colname = functionwithcols.getParameters().get(0);
 											String value = csvrecord.get(colname);
-											map.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "max(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
-											context.put(maintablename, map);
+											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "max(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
 											continue;
 										}
 										if (funcname.startsWith("min")) {
 											String colname = functionwithcols.getParameters().get(0);
 											String value = csvrecord.get(colname);
-											map.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "min(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
-											context.put(maintablename, map);
+											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "min(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
 											continue;
 										}
 									}
 									else if (funcname.startsWith("count")) {
-										map.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "count()", 1.0d);
-										context.put(maintablename, map);
+										functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "count()", 1.0d);
 										continue;
 									} else {
-										context.put(maintablename, map);
-									}
+										
+									}									
+								}
+								if(nonNull(valuemap)) {
+									context.put(maintablename, Tuple.tuple(valuemap, functionvaluesmap));
+								} else {
+									context.put(maintablename, Tuple.tuple(functionvaluesmap));
 								}
 							} else {
-								context.put(maintablename, valuemap);
+								context.put(maintablename, Tuple.tuple(valuemap));
 							}
 						}
 					});
@@ -341,8 +349,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			}
 
 		}
-		class MapperReducerSqlCombinerReducer implements Combiner<String, Map<String, Object>, Context>,
-				Reducer<String, Map<String, Object>, Context> {
+		class MapperReducerSqlCombinerReducer implements Combiner<String, Tuple, Context>,
+				Reducer<String, Tuple, Context> {
 			private static final long serialVersionUID = 3328584603251312114L;
 			List<FunctionWithCols> functionwithcols = functionwithcolumns;
 			public MapperReducerSqlCombinerReducer() {
@@ -350,239 +358,89 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public void combine(String key, List<Map<String, Object>> values, Context context) {
-				boolean issum = false, iscount = false, ismin = false, ismax = false;
-				var funcsum = new ArrayList<String>();
-				var funcmax = new ArrayList<String>();
-				var funcmin = new ArrayList<String>();
-				var funccount = new ArrayList<String>();
-				var isfunction = false;
-				for (FunctionWithCols functionwithcols : functionwithcols) {
-					String funcname = functionwithcols.getName();
-					if (funcname.startsWith("sum")) {
-						String colname = functionwithcols.getParameters().get(0);
-						funcsum.add(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "sum(" + colname + ")");
-						issum = true;
-						isfunction = true;
-					}
-					else if (funcname.startsWith("max")) {
-						String colname = functionwithcols.getParameters().get(0);
-						funcmax.add(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "max(" + colname + ")");
-						ismax = true;
-						isfunction = true;
-					}
-					else if (funcname.startsWith("min")) {
-						String colname = functionwithcols.getParameters().get(0);
-						funcmin.add(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "min(" + colname + ")");
-						ismin = true;
-						isfunction = true;
-
-					}
-					else if (funcname.startsWith("count")) {
-						funccount.add(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "count()");
-						iscount = true;
-						isfunction = true;
-					}
-				}
-				Map<Map<String,Object>, Double> valuemap = new HashMap<>();
-				outer:
-				for (Map<String, Object> keyreduce : values) {
-					if(isfunction) {
-						if(issum) {
-							for(String col:funcsum) {
-								if(keyreduce.containsKey(col)) {
-									Double valuetoadd = (Double) keyreduce.remove(col);
-									keyreduce.put(col, 0.0f);
-									Double valuefromvaluemap = valuemap.get(keyreduce);
-									if(valuefromvaluemap!=null) {
-										valuemap.put(keyreduce, valuetoadd + valuefromvaluemap);
+			public void combine(String key, List<Tuple> tuples, Context context) {
+				boolean isnotempty = CollectionUtils.isNotEmpty(functionwithcols);				
+				boolean istuple2 = tuples.get(0) instanceof Tuple2;
+				if(!istuple2) {
+					Map<String, Double> valuesaggregate = (Map<String, Double>) ((Tuple1)tuples.remove(0)).v1;
+					for (Tuple tuple : tuples) {
+						if(isnotempty) {
+							if(tuple instanceof Tuple1 tuple1) {
+								Map<String, Double> fnvalues = (Map<String, Double>) tuple1.v1();
+								fnvalues.keySet().forEach(fnkey -> {									
+									if(fnkey.startsWith("min")) {
+										valuesaggregate.put(fnkey, Math.min(valuesaggregate.get(fnkey), fnvalues.get(fnkey)));
+									} if(fnkey.startsWith("max")) {
+										valuesaggregate.put(fnkey, Math.max(valuesaggregate.get(fnkey), fnvalues.get(fnkey)));
 									} else {
-										valuemap.put(keyreduce, valuetoadd);
+										valuesaggregate.put(fnkey,  valuesaggregate.get(fnkey) + fnvalues.get(fnkey));
 									}
-									continue outer;
-								}
-							}
-							context.put("Reduce", keyreduce);
-						}
-						else if(ismax) {
-							for(String col:funcmax) {
-								if(keyreduce.containsKey(col)) {
-									Double valuetomax = (Double) keyreduce.remove(col);
-									keyreduce.put(col, 0.0f);
-									Double valuefromvaluemap = valuemap.get(keyreduce);
-									if(valuefromvaluemap!=null) {
-										valuemap.put(keyreduce, Math.max(valuetomax, valuefromvaluemap));
-									} else {
-										valuemap.put(keyreduce, valuetomax);
-									}
-									continue outer;
-								}
-							}
-							context.put("Reduce", keyreduce);
-						}
-						else if(ismin) {
-							for(String col:funcmin) {
-								if(keyreduce.containsKey(col)) {
-									Double valuetomin = (Double) keyreduce.remove(col);
-									keyreduce.put(col, 0.0f);
-									Double valuefromvaluemap = valuemap.get(keyreduce);
-									if(valuefromvaluemap!=null) {
-										valuemap.put(keyreduce, Math.min(valuetomin, valuefromvaluemap));
-									} else {
-										valuemap.put(keyreduce, valuetomin);
-									}
-									continue outer;
-								}
-							}
-							context.put("Reduce", keyreduce);
-						}
-						else if(iscount) {
-							for(String col:funccount) {
-								if(keyreduce.containsKey(col)) {
-									Double valuetocount = (Double) keyreduce.remove(col);
-									keyreduce.put(col, 0.0f);
-									Double valuefromvaluemap = valuemap.get(keyreduce);
-									if(valuefromvaluemap!=null) {
-										valuemap.put(keyreduce, valuetocount + valuefromvaluemap);
-									} else {
-										valuemap.put(keyreduce, valuetocount);
-									}
-									continue outer;
-								}
-							}
-							context.put("Reduce", keyreduce);
+								});
+							} 
 						} else {
-							context.put("Reduce", keyreduce);
+							context.put("Reducer", Tuple.tuple(key,tuple));
 						}
-					} else {
-						context.put("Reduce", keyreduce);
 					}
-				}
-				if (!valuemap.isEmpty()) {
-					if (!"Reducer".equals(key)) {
-						for (Map<String, Object> keystoreduce : valuemap.keySet()) {
-							if (issum) {
-								for (String col : funcsum) {
-									if (keystoreduce.containsKey(col)) {
-										keystoreduce.put(col, valuemap.get(keystoreduce));
-									}
-								}
-							}
-							if (ismax) {
-								for (String col : funcmax) {
-									if (keystoreduce.containsKey(col)) {
-										keystoreduce.put(col, valuemap.get(keystoreduce));
-									}
-								}
-							}
-							if (ismin) {
-								for (String col : funcmin) {
-									if (keystoreduce.containsKey(col)) {
-										keystoreduce.put(col, valuemap.get(keystoreduce));
-									}
-								}
-							}
-							if (iscount) {
-								for (String col : funccount) {
-									if (keystoreduce.containsKey(col)) {
-										keystoreduce.put(col, valuemap.get(keystoreduce));
-									}
-								}
-							}
-							context.put("Reduce", keystoreduce);
-						}
-					} else {
-						Map<Map<String, Object>, Map<String, Object>> combine = new HashMap<>();
-						Map<String, Object> combinevalues;
-						for (Map<String, Object> keystoreduce : valuemap.keySet()) {
-							if (issum) {
-								for (String col : funcsum) {
-									if (keystoreduce.containsKey(col)) {										
-										Map<String, Object> mapcombine = new HashMap<>(keystoreduce);
-										mapcombine.remove(col);
-										combinevalues = combine.get(mapcombine);
-										Object funcval = valuemap.get(keystoreduce);										
-										if (combinevalues == null) {
-											combinevalues = new HashMap<>();
-											combine.put(mapcombine, combinevalues);
-										}
-										combinevalues.put(col, funcval);
-									}
-								}
-							}
-							if (ismax) {
-								for (String col : funcmax) {
-									if (keystoreduce.containsKey(col)) {										
-										Map<String, Object> mapcombine = new HashMap<>(keystoreduce);
-										mapcombine.remove(col);
-										combinevalues = combine.get(mapcombine);
-										Object funcval = valuemap.get(keystoreduce);										
-										if (combinevalues == null) {
-											combinevalues = new HashMap<>();
-											combine.put(mapcombine, combinevalues);
-										}
-										combinevalues.put(col, funcval);
-									}
-								}
-							}
-							if (ismin) {
-								for (String col : funcmin) {
-									if (keystoreduce.containsKey(col)) {										
-										Map<String, Object> mapcombine = new HashMap<>(keystoreduce);
-										mapcombine.remove(col);
-										combinevalues = combine.get(mapcombine);
-										Object funcval = valuemap.get(keystoreduce);										
-										if (combinevalues == null) {
-											combinevalues = new HashMap<>();
-											combine.put(mapcombine, combinevalues);
-										}
-										combinevalues.put(col, funcval);
-									}
-								}
-							}
-							if (iscount) {
-								for (String col : funccount) {
-									if (keystoreduce.containsKey(col)) {			
-										Map<String, Object> mapcombine = new HashMap<>(keystoreduce);
-										mapcombine.remove(col);
-										combinevalues = combine.get(mapcombine);
-										Object funcval = valuemap.get(keystoreduce);										
-										if (combinevalues == null) {
-											combinevalues = new HashMap<>();
-											combine.put(mapcombine, combinevalues);
-										}
-										combinevalues.put(col, funcval);
-									}
-								}
-							}
-						}
-						combine.keySet().stream().map(val -> {
-							val.putAll(combine.get(val));
-							return val;
-						}).forEach(value -> {
-							context.put("Reduce", value);
-						});
-						
+					if(isnotempty) {
+						context.put("Reducer", Tuple.tuple(key,Tuple.tuple(valuesaggregate)));
 					}
+				} else {
+					List<Tuple2<Map<String,Object>, Map<String,Double>>> tuplesgrpby = (List) tuples;
+					Map<Map<String,Object>, Map<String,Double>> valuesagg = tuplesgrpby.stream()
+							.collect(Collectors.toMap(tuplekey->tuplekey.v1,
+									tuplevalue->tuplevalue.v2, (values1,values2)->{
+										values1.keySet().forEach(fnkey -> {									
+											if(fnkey.startsWith("min")) {
+												values1.put(fnkey, Math.min(values1.get(fnkey), values2.get(fnkey)));
+											} else if(fnkey.startsWith("max")) {
+												values1.put(fnkey, Math.max(values1.get(fnkey), values2.get(fnkey)));
+											} else {
+												values1.put(fnkey,  values1.get(fnkey) + values2.get(fnkey));
+											}
+										});
+										return values1;
+									}));
+					valuesagg.entrySet().stream()
+					.map(entry -> Tuple.tuple(entry.getKey(),entry.getValue()))
+					.forEach(value->context.put("Reducer", Tuple.tuple(key,value)));
 				}
 			}
 			PlainSelect ps = plainSelect;
 			Set<String> finalselectcolumns = selectcolumnsresult;
 			@Override
-			public void reduce(String key, List<Map<String, Object>> values, Context context) {
-				Map<String, List<Map<String, Object>>> mapListMap = new HashMap<>();
+			public void reduce(String key, List<Tuple> values, Context context) {
+				Map<String, List<Tuple>> mapListMap = new HashMap<>();
 
-		        for (Map<String, Object> map : values) {
-		            String groupByValue = (String) map.remove("tablename()");
-		            List<Map<String, Object>> groupList = mapListMap.getOrDefault(groupByValue, new ArrayList<>());
-		            groupList.add(map);
-		            mapListMap.put(groupByValue, groupList);
+		        for (Tuple tup : values) {
+		            String groupByValue="";
+		            if(tup instanceof Tuple2 tup2) {
+		            	groupByValue = (String) tup2.v1;
+		            	List<Tuple> groupList = mapListMap.getOrDefault(groupByValue, new ArrayList<>());
+			            groupList.add((Tuple) tup2.v2);
+			            mapListMap.put(groupByValue, groupList);
+		            }		            
 		        }
 		        Map<String, List<Map<String, Object>>> processedmap = new HashMap<>(); 
 		        mapListMap.keySet().forEach(keytoproc -> {
 		        	Context ctx = new DataCruncherContext<>();
 		        	combine("Reducer", mapListMap.get(keytoproc), ctx);
-		        	processedmap.put(keytoproc, (List<Map<String, Object>>) ctx.get("Reduce"));
+		        	List<Tuple> tupletomerge = (List<Tuple>) ctx.get("Reducer");
+		        	List<Map<String, Object>> objects = (List) tupletomerge.stream().map(t->{
+		        		if(t instanceof Tuple2 tuple2) {
+		        			Object tup2val = tuple2.v2;
+		        			if(tup2val instanceof Tuple2 value) {
+		        				Map<String, Object> val1 = (Map<String, Object>) value.v1;
+		        				Map<String, Object> val2 = (Map<String, Object>) value.v2;
+		        				val1.putAll(val2);
+			        			return val1;
+		        			}
+		        			else if(tup2val instanceof Tuple1 value1) {
+			        			return (Map<String, Object>) value1.v1;
+			        		}
+		        		}
+		        		return (Map<String, Object>) null;
+		        	}).collect(Collectors.toList());
+		        	processedmap.put(keytoproc, objects);
 		        });
 		        String tablename = ((Table) ps.getFromItem()).getName();
 		        List<Map<String, Object>> maintableoutput = new ArrayList<>();
