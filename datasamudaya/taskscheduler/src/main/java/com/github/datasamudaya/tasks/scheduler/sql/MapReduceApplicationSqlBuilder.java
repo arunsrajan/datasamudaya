@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -25,6 +26,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.lang3.StringUtils;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple1;
 import org.jooq.lambda.tuple.Tuple2;
@@ -207,27 +209,40 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 					} else if (selectExpressionItem.getExpression() instanceof Function function) {
 						functions.add(function);
 						if (nonNull(function.getParameters())) {
-							Column column = (Column) function.getParameters().getExpressions().get(0);
-							Set<String> requiredcolumns = tablerequiredcolumns.get(column.getTable().getName());
-							if (isNull(requiredcolumns)) {
-								requiredcolumns = new LinkedHashSet<>();
-								tablerequiredcolumns.put(column.getTable().getName(), requiredcolumns);
+							Expression exp = function.getParameters().getExpressions().get(0);
+							if(exp instanceof Column column) {
+								Set<String> requiredcolumns = tablerequiredcolumns.get(column.getTable().getName());
+								if (isNull(requiredcolumns)) {
+									requiredcolumns = new LinkedHashSet<>();
+									tablerequiredcolumns.put(column.getTable().getName(), requiredcolumns);
+								}
+								requiredcolumns.add(column.getColumnName());
+								columnsselect.add(column.getColumnName());
+								var functionwithcolsobj = new FunctionWithCols();
+								functionwithcolsobj.setName(function.getName().toLowerCase());
+								var params = function.getParameters().getExpressions().stream()
+										.map(col -> ((Column) col).getColumnName()).collect(Collectors.toList());
+								functionwithcolsobj.setAlias(
+										nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
+												: function.toString());
+								functionwithcolsobj.setTablename(column.getTable().getName());
+								functionwithcolumns.add(functionwithcolsobj);
+								functioncols.add(column.getColumnName());
+								functionwithcolsobj.setFunction(function);
+							} else {
+								var functionwithcolsobj = new FunctionWithCols();
+								functionwithcolsobj.setName(function.getName().toLowerCase());
+								Set<String> tablenames = new LinkedHashSet<>();
+								getColumnsFromBinaryExpression(function, tablenames);
+								functionwithcolsobj.setTablename(tablenames.iterator().next());
+								functionwithcolsobj.setAlias(
+										nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
+												: function.toString());
+								functionwithcolsobj.setFunction(function);
+								functionwithcolumns.add(functionwithcolsobj);
 							}
-							requiredcolumns.add(column.getColumnName());
-							columnsselect.add(column.getColumnName());
-							var functionwithcolsobj = new FunctionWithCols();
-							functionwithcolsobj.setName(function.getName().toLowerCase());
-							var params = function.getParameters().getExpressions().stream()
-									.map(col -> ((Column) col).getColumnName()).collect(Collectors.toList());
-							functionwithcolsobj.setParameters(params);
-							functionwithcolsobj.setAlias(
-									nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
-											: null);
-							functionwithcolsobj.setTablename(column.getTable().getName());
-							functionwithcolumns.add(functionwithcolsobj);
-							functioncols.add(column.getColumnName());
 							selectcolumnsresult.add(nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
-									: function.getName() + "(" + column.getColumnName() + ")");
+									: function.toString());
 						}
 						else {
 							var functionwithcolsobj = new FunctionWithCols();
@@ -236,6 +251,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							functionwithcolsobj.setAlias(
 									nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
 											: null);
+							functionwithcolsobj.setFunction(function);
 							selectcolumnsresult.add(nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
 									: function.getName() + "()");
 						}
@@ -306,22 +322,17 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 									String matchingtablename = functionwithcols.getTablename();
 									boolean istablenamematches = nonNull(matchingtablename) ? matchingtablename.equalsIgnoreCase(maintablename) : false;
 									if (istablenamematches) {
-										if (funcname.startsWith("sum")) {
-											String colname = functionwithcols.getParameters().get(0);
-											String value = csvrecord.get(colname);
-											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "sum(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));										
+										Object evaluatevalue = evaluateBinaryExpression(functionwithcols.getFunction().getParameters().getExpressions().get(0), csvrecord, tablecolumntypes, tablecolindexmap);
+										if (funcname.startsWith("sum")) {											
+											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);										
 											continue;
 										}
 										if (funcname.startsWith("max")) {
-											String colname = functionwithcols.getParameters().get(0);
-											String value = csvrecord.get(colname);
-											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "max(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
+											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
 											continue;
 										}
 										if (funcname.startsWith("min")) {
-											String colname = functionwithcols.getParameters().get(0);
-											String value = csvrecord.get(colname);
-											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "min(" + colname + ")", SQLUtils.getValueMR(value, SqlTypeName.DOUBLE));
+											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
 											continue;
 										}
 									}
@@ -867,6 +878,366 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			return Boolean.parseBoolean(value);
 		}
 	}
+	/**
+	 * Evaluates Expression and returns values
+	 * @param expression
+	 * @param row
+	 * @return evaluated value
+	 */
+	public static Object evaluateBinaryExpression(Expression expression, CSVRecord row, List<SqlTypeName> tablecolumntypes, Map<String, Long> tablecolindexmap) {
+		if(expression instanceof Function fn) {
+			String name = fn.getName().toLowerCase();
+			List<Expression> expfunc = fn.getParameters().getExpressions();
+			switch (name) {
+				case "abs":
+	                	               
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "abs");
+				case "length":
+	                // Get the length of string value	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "length");
+	                
+				case "round":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "round");
+				case "ceil":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "ceil");
+				case "floor":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "floor");
+				case "pow":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), evaluateBinaryExpression(expfunc.get(1), row, tablecolumntypes, tablecolindexmap), "pow");
+				case "sqrt":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "sqrt");
+				case "exp":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "exp");
+				case "loge":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "loge");
+				case "lowercase":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "lowercase");
+				case "uppercase":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "uppercase");
+				case "base64encode":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "base64encode");
+				case "base64decode":
+	                
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "base64decode");
+				case "normalizespaces":
+					
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "normalizespaces");
+				case "trim":
+					
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap), null, "trim");
+				case "substring":
+	                
+					LongValue pos = (LongValue) expfunc.get(1);
+					LongValue length = (LongValue) expfunc.get(2);
+					String val = (String) evaluateBinaryExpression(expfunc.get(0), row, tablecolumntypes, tablecolindexmap);
+	                return val.substring((int) pos.getValue(), Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
+			}
+		} else if(expression instanceof BinaryExpression bex) {
+		    Expression leftExpression = bex.getLeftExpression();
+		    Expression rightExpression = bex.getRightExpression();
+		    String operator = bex.getStringExpression();
+		    Object leftValue=null;
+		    Object rightValue=null;
+		    if(leftExpression instanceof Function fn) {
+		    	leftValue = evaluateBinaryExpression(leftExpression, row, tablecolumntypes, tablecolindexmap);
+		    }
+		    else if (leftExpression instanceof LongValue lv) {
+		    	leftValue =  lv.getValue();
+		    } else if (leftExpression instanceof DoubleValue dv) {
+		    	leftValue =  dv.getValue();
+		    } else if (leftExpression instanceof StringValue sv) {
+		    	leftValue = sv.getValue();
+		    } else if (leftExpression instanceof Column column) {	        
+				leftValue = SQLUtils.getValueMR(row.get(column.getColumnName()),
+						tablecolumntypes.get(tablecolindexmap.get(column.getColumnName()).intValue()));
+		    } else if (leftExpression instanceof BinaryExpression) {
+		    	leftValue = evaluateBinaryExpression(leftExpression, row, tablecolumntypes, tablecolindexmap);
+		    } else if (leftExpression instanceof Parenthesis parenthesis) {
+				Expression subExpression = parenthesis.getExpression();
+				leftValue = evaluateBinaryExpression(subExpression, row, tablecolumntypes, tablecolindexmap);
+			}
+		    
+		    if(rightExpression instanceof Function fn) {
+		    	rightValue = evaluateBinaryExpression(rightExpression, row, tablecolumntypes, tablecolindexmap);
+		    } else if (rightExpression instanceof LongValue lv) {
+		    	rightValue = lv.getValue();
+		    }else if (rightExpression instanceof DoubleValue dv) {
+		    	rightValue = dv.getValue();
+		    } else if (rightExpression instanceof StringValue sv) {
+		    	rightValue = sv.getValue();
+		    } else if (rightExpression instanceof Column column) {
+		        rightValue = SQLUtils.getValueMR(row.get(column.getColumnName()),
+						tablecolumntypes.get(tablecolindexmap.get(column.getColumnName()).intValue()));
+		    } else if (rightExpression instanceof BinaryExpression binaryExpression) {
+		    	rightValue = evaluateBinaryExpression(binaryExpression, row, tablecolumntypes, tablecolindexmap);
+		    } else if (rightExpression instanceof Parenthesis parenthesis) {
+				Expression subExpression = parenthesis.getExpression();
+				rightValue = evaluateBinaryExpression(subExpression, row, tablecolumntypes, tablecolindexmap);
+			}
+		    switch (operator) {
+		        case "+":
+		            return evaluateValuesByOperator(leftValue, rightValue, operator);
+		        case "-":
+		            return evaluateValuesByOperator(leftValue, rightValue, operator);
+		        case "*":
+		            return evaluateValuesByOperator(leftValue, rightValue, operator);
+		        case "/":
+		            return evaluateValuesByOperator(leftValue, rightValue, operator);
+		        default:
+		            throw new IllegalArgumentException("Invalid operator: " + operator);
+		    }
+		} 
+		else if (expression instanceof LongValue lv) {
+	        return Double.valueOf(lv.getValue());
+	    } else if (expression instanceof DoubleValue dv) {
+	        return dv.getValue();
+	    } else if (expression instanceof StringValue sv) {
+	        return sv.getValue();
+	    }  else if (expression instanceof Parenthesis parenthesis) {
+	        return evaluateBinaryExpression(parenthesis.getExpression(), row, tablecolumntypes, tablecolindexmap);
+	    } else if (expression instanceof Column column) {
+	        return SQLUtils.getValueMR(row.get(column.getColumnName()),
+					tablecolumntypes.get(tablecolindexmap.get(column.getColumnName()).intValue()));
+	    }
+		return Double.valueOf(0.0d);
+	}
+	
+	/**
+	 * Evaluates tuple using operator
+	 * @param leftValue
+	 * @param rightValue
+	 * @param operator
+	 * @return evaluated value
+	 */
+	public static Object evaluateValuesByOperator(Object leftValue, Object rightValue, String operator) {
+		switch (operator) {
+		case "+":
+			if (leftValue instanceof String lv && rightValue instanceof Double rv) {
+				return lv + rv;
+			} else if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+				return lv + rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
+				return lv + rv;
+			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
+				return lv + rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+				return lv + rv;
+			} else if(leftValue instanceof String lv && rightValue instanceof Long rv) {
+				return lv + rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof String rv) {
+				return lv + rv;
+			} else if(leftValue instanceof Double lv && rightValue instanceof String rv) {
+				return lv + rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+				return lv + rv;
+			} else if (leftValue instanceof String lv && rightValue instanceof String rv) {
+				return lv + rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+				return lv + rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+				return lv + rv;
+			}
+		case "-":
+			if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+				return lv - rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
+				return lv - rv;
+			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
+				return lv - rv;
+			}  else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+				return lv - rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+				return lv - rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+				return lv - rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+				return lv - rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+				return lv - rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+				return lv - rv;
+			}
+		case "*":
+			if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+				return lv * rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
+				return lv * rv;
+			} else if(leftValue instanceof Double lv && rightValue instanceof Integer rv) {
+				return lv * rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Double rv) {
+				return lv * rv;
+			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
+				return lv * rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+				return lv * rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+				return lv * rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+				return lv * rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+				return lv * rv;
+			}
+		case "/":
+			if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+				return lv / rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
+				return lv / rv;
+			} else if(leftValue instanceof Double lv && rightValue instanceof Integer rv) {
+				return lv / rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Double rv) {
+				return lv / rv;
+			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
+				return lv / rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+				return lv / (double) rv;
+			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+				return lv / (double) rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+				return lv / (double) rv;
+			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+				return lv / (double) rv;
+			}
+		default:
+			return 0;
+		}
+		
+	}
+	
+	/**
+	 * Evaluated functions by name and value
+	 * @param value
+	 * @param powerval
+	 * @param name
+	 * @return evaluated value
+	 */
+	public static Object evaluateFunctionsWithType(Object value, Object powerval, String name) {
+		switch (name) {
+		case "abs":
+			
+			if (value instanceof Double dv) {
+				return Math.abs(dv);
+			} else if (value instanceof Long lv) {
+				return Math.abs(lv);
+			} else if (value instanceof Float fv) {
+				return Math.abs(fv);
+			} else if (value instanceof Integer iv) {
+				return Math.abs(iv);
+			}
+		case "length":
+			// Get the length of string value
+			String val = (String) value;
+			// return the result to the stack
+			return Long.valueOf(val.length());
+		case "trim":
+			// Get the length of string value
+			val = (String) value;
+			// return the result to the stack
+			return val.trim();
+		case "round":
+			
+			if (value instanceof Double dv) {
+				return Math.round(dv);
+			} else if (value instanceof Long lv) {
+				return Math.round(lv);
+			} else if (value instanceof Float fv) {
+				return Math.round(fv);
+			} else if (value instanceof Integer iv) {
+				return Math.round(iv);
+			}
+		case "ceil":
+			
+			if (value instanceof Double dv) {
+				return Math.ceil(dv);
+			} else if (value instanceof Long lv) {
+				return Math.ceil(lv);
+			} else if (value instanceof Float fv) {
+				return Math.ceil(fv);
+			} else if (value instanceof Integer iv) {
+				return Math.ceil(iv);
+			}
+		case "floor":
+			
+			if (value instanceof Double dv) {
+				return Math.floor(dv);
+			} else if (value instanceof Long lv) {
+				return Math.floor(lv);
+			} else if (value instanceof Float fv) {
+				return Math.floor(fv);
+			} else if (value instanceof Integer iv) {
+				return Math.floor(iv);
+			}
+		case "pow":
+			
+			if (value instanceof Double dv && powerval instanceof Integer powval) {
+				return Math.pow(dv, powval);
+			} else if (value instanceof Long lv && powerval instanceof Integer powval) {
+				return Math.pow(lv, powval);
+			} else if (value instanceof Float fv && powerval instanceof Integer powval) {
+				return Math.pow(fv, powval);
+			} else if (value instanceof Integer iv && powerval instanceof Integer powval) {
+				return Math.pow(iv, powval);
+			}
+		case "sqrt":
+			
+			if (value instanceof Double dv) {
+				return Math.sqrt(dv);
+			} else if (value instanceof Long lv) {
+				return Math.sqrt(lv);
+			} else if (value instanceof Float fv) {
+				return Math.sqrt(fv);
+			} else if (value instanceof Integer iv) {
+				return Math.sqrt(iv);
+			}
+		case "exp":
+			
+			if (value instanceof Double dv) {
+				return Math.exp(dv);
+			} else if (value instanceof Long lv) {
+				return Math.exp(lv);
+			} else if (value instanceof Float fv) {
+				return Math.exp(fv);
+			} else if (value instanceof Integer iv) {
+				return Math.exp(iv);
+			}
+		case "loge":
+			
+			if (value instanceof Double dv) {
+				return Math.log(dv);
+			} else if (value instanceof Long lv) {
+				return Math.log(lv);
+			} else if (value instanceof Float fv) {
+				return Math.log(fv);
+			} else if (value instanceof Integer iv) {
+				return Math.log(iv);
+			}
+		case "lowercase":
+			
+			return ((String) value).toLowerCase();
+		case "uppercase":
+			
+			return ((String) value).toUpperCase();
+		case "base64encode":
+			
+			return Base64.getEncoder().encodeToString(((String) value).getBytes());
+		case "base64decode":
+			
+			return new String(Base64.getDecoder().decode(((String) value).getBytes()));
+		case "normalizespaces":
+			
+			return StringUtils.normalizeSpace((String) value);
+		}
+		return name;
+	}
 	
 	/**
 	 * Evaluates the expression with row to get value.
@@ -913,6 +1284,36 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		for (Expression onExpression : expressions) {
 			getColumnsFromBinaryExpression(onExpression, tablerequiredcolumns, joinTableExpressions,
 					joinTableExpressions);
+		}
+	}
+	
+	/**
+	 * Get All tables from expression 
+	 * @param expression
+	 * @param tablerequiredcolumns
+	 */
+	public void getColumnsFromBinaryExpression(Expression expression, Set<String> tablenames) {
+		if (expression instanceof BinaryExpression binaryExpression) {
+			Expression leftExpression = binaryExpression.getLeftExpression();
+			if (leftExpression instanceof BinaryExpression) {
+				getColumnsFromBinaryExpression(leftExpression, tablenames);
+			} else if(leftExpression instanceof Column column) {
+				tablenames.add(column.getTable().getName());
+			} else if (leftExpression instanceof Function fn) {
+				getColumnsFromBinaryExpression(fn, tablenames);
+			}
+			Expression rightExpression = binaryExpression.getRightExpression();
+			if (rightExpression instanceof BinaryExpression) {
+				getColumnsFromBinaryExpression(rightExpression, tablenames);
+			} else if(rightExpression instanceof Column column) {
+				tablenames.add(column.getTable().getName());
+			} else if (rightExpression instanceof Function fn) {
+				getColumnsFromBinaryExpression(fn, tablenames);
+			}
+		} else if(expression instanceof Column column) {
+			tablenames.add(column.getTable().getName());
+		} else if(expression instanceof Function function) {
+			getColumnsFromBinaryExpression(function.getParameters().getExpressions().get(0),tablenames);
 		}
 	}
 	
