@@ -51,6 +51,8 @@ import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.common.JobConfigurationBuilder;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.StreamDataCruncher;
@@ -62,7 +64,8 @@ import com.github.datasamudaya.tasks.executor.NodeRunner;
 public class MassiveDataMRJobBase {
 
 	static Logger log = Logger.getLogger(MassiveDataMRJobBase.class);
-
+	static String teappid;
+	static String appid;
 	static MiniDFSCluster hdfsLocalCluster;
 	static int namenodeport = 9000;
 	static int namenodehttpport = 50070;
@@ -102,7 +105,7 @@ public class MassiveDataMRJobBase {
 	static ExecutorService executorpool;
 	static int zookeeperport = 2181;
 	static boolean issetupdone;
-
+	static JobConfiguration jc;
 	private static TestingServer testingserver;
 
 	private static Registry server;
@@ -131,9 +134,9 @@ public class MassiveDataMRJobBase {
 			zo.connect();
 			zo.watchNodes();
 			executorpool = Executors.newWorkStealingPool();
-			int rescheduledelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.rescheduledelay"));
-			int initialdelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.initialdelay"));
-			int pingdelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.pingdelay"));
+			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.rescheduledelay"));
+			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.initialdelay"));
+			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.pingdelay"));
 			String host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskscheduler.host"));
 			port = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.port"));
 			Configuration configuration = new Configuration();
@@ -192,7 +195,14 @@ public class MassiveDataMRJobBase {
 					executorsindex++;
 				}
 			}
-
+			teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
+			Utils.launchContainersUserSpec("arun", teappid, 1, 1024, 1);
+			jc = JobConfigurationBuilder.newBuilder()
+					.setIsuseglobalte(true)
+					.setUser("arun")
+					.setTeappid(teappid)
+					.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT)
+					.build();
 			uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
 			uploadfile(hdfs, carriers, carriers + csvfileextn);
 		} catch (Exception ex) {
@@ -234,6 +244,7 @@ public class MassiveDataMRJobBase {
 		if(nonNull(hdfsLocalCluster)) {
 			hdfsLocalCluster.close();
 		}
+		Utils.destroyContainers("arun", teappid);
 		executorpool.shutdown();
 		testingserver.stop();
 		testingserver.close();
