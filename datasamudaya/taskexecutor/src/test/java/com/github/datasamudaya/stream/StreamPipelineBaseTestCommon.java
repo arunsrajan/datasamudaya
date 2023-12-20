@@ -192,7 +192,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 	}
 
 	public static void uploadfile(FileSystem hdfs, String dir, String filename) throws Throwable {
-		InputStream is = StreamPipelineBaseTestCommon.class.getResourceAsStream(filename);
+		InputStream is = StreamPipelineBaseTestCommon.class.getClassLoader().getResourceAsStream(filename.replaceFirst(DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.EMPTY));
 		String jobpath = dir;
 		String filepath = jobpath + filename;
 		Path jobpathurl = new Path(jobpath);
