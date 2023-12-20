@@ -54,6 +54,8 @@ public class SQLServerMR {
 						int memorypercontainer = 1024;
 						String scheduler = "";
 						String teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
+						boolean isignite = false;
+						boolean isyarn = false;
 						boolean iscontainerlaunched = false;
 						try (Socket clientSocket = sock;
 								PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -79,14 +81,19 @@ public class SQLServerMR {
 								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 								Utils.printNodesAndContainers(containers, out);
 								iscontainerlaunched = true;
+							} else if(scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE)) {
+								iscontainerlaunched = false;
+								isignite = true;
+								isyarn = false;
+							} else if(scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_YARN)) {
+								iscontainerlaunched = false;
+								isignite = false;
+								isyarn = true;
 							}
 							out.println("Welcome to the Map Reduce SQL Server!");
 							out.println("Type 'quit' to exit.");
-							out.println("Done");
-							iscontainerlaunched = true;
-							String inputLine;
-							boolean isignite = false;
-							boolean isyarn = false;
+							out.println("Done");							
+							String inputLine;							
 							String dbdefault = DataSamudayaProperties.get()
 									.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
 							outer:
