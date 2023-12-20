@@ -178,6 +178,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		Set<String> columnsselect = new LinkedHashSet<>();
 		Set<String> selectcolumnsresult = new LinkedHashSet<>();
 		boolean isdistinct = nonNull(plainSelect.getDistinct());
+		boolean isaggfunc = false;
 		Table table = (Table) plainSelect.getFromItem();
 		if ("*".equals(plainSelect.getSelectItems().get(0).toString())) {
 			tablerequiredcolumns.put(table.getName(), new LinkedHashSet<>(tablecolumnsmap.get(table.getName())));
@@ -208,6 +209,12 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 						}
 					} else if (selectExpressionItem.getExpression() instanceof Function function) {
 						functions.add(function);
+						String functionname = function.getName().toLowerCase();
+						if(functionname.startsWith("count") || functionname.startsWith("sum")
+								|| functionname.startsWith("min") 
+								||functionname.startsWith("max")) {
+							isaggfunc = true;
+						}
 						if (nonNull(function.getParameters())) {
 							Expression exp = function.getParameters().getExpressions().get(0);
 							if(exp instanceof Column column) {
@@ -284,15 +291,18 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			Expression where; 
 			List<SqlTypeName> tablecolumntypes;
 			Map<String, Long> tablecolindexmap;
+			boolean isaggfunc;
 			public MapperReducerSqlMapper(String maintablename, Set<String> selectcols,
 					List<FunctionWithCols> functionwithcols, Expression where,
-					List<SqlTypeName> tablecolumntypes, Map<String, Long> tablecolindexmap) {
+					List<SqlTypeName> tablecolumntypes, Map<String, Long> tablecolindexmap,
+					boolean isaggfunc) {
 				this.maintablename = maintablename;
 				this.selectcols = selectcols;
 				this.functionwithcols = functionwithcols;
 				this.where = where;
 				this.tablecolumntypes = tablecolumntypes;
 				this.tablecolindexmap = tablecolindexmap;
+				this.isaggfunc = isaggfunc;
 			}
 			@SuppressWarnings("unchecked")
 			@Override
@@ -318,33 +328,41 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							if (!functionwithcols.isEmpty()) {
 								var functionvaluesmap = new HashMap<>();
 								for (FunctionWithCols functionwithcols :functionwithcols) {
-									String funcname = functionwithcols.getName();									
-									String matchingtablename = functionwithcols.getTablename();
-									boolean istablenamematches = nonNull(matchingtablename) ? matchingtablename.equalsIgnoreCase(maintablename) : false;
-									if (istablenamematches) {
-										Object evaluatevalue = evaluateBinaryExpression(functionwithcols.getFunction().getParameters().getExpressions().get(0), csvrecord, tablecolumntypes, tablecolindexmap);
-										if (funcname.startsWith("sum")) {											
-											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);										
+									if(isaggfunc) {
+										String funcname = functionwithcols.getName();									
+										String matchingtablename = functionwithcols.getTablename();
+										boolean istablenamematches = nonNull(matchingtablename) ? matchingtablename.equalsIgnoreCase(maintablename) : false;
+										if (istablenamematches) {
+											Object evaluatevalue = evaluateBinaryExpression(functionwithcols.getFunction().getParameters().getExpressions().get(0), csvrecord, tablecolumntypes, tablecolindexmap);
+											if (funcname.startsWith("sum")) {											
+												functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);										
+												continue;
+											}
+											if (funcname.startsWith("max")) {
+												functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
+												continue;
+											}
+											if (funcname.startsWith("min")) {
+												functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
+												continue;
+											}
+										}
+										else if (funcname.startsWith("count")) {
+											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "count()", 1.0d);
 											continue;
 										}
-										if (funcname.startsWith("max")) {
-											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
-											continue;
-										}
-										if (funcname.startsWith("min")) {
-											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
-											continue;
-										}
-									}
-									else if (funcname.startsWith("count")) {
-										functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "count()", 1.0d);
-										continue;
 									} else {
-										
-									}									
+										Object evaluatevalue = evaluateBinaryExpression(functionwithcols.getFunction(), csvrecord, tablecolumntypes, tablecolindexmap);
+										functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
+									}
 								}
 								if(nonNull(valuemap)) {
-									context.put(maintablename, Tuple.tuple(valuemap, functionvaluesmap));
+									if(isaggfunc) {
+										context.put(maintablename, Tuple.tuple(valuemap, functionvaluesmap));
+									} else {
+										functionvaluesmap.putAll(valuemap);
+										context.put(maintablename, Tuple.tuple(functionvaluesmap));
+									}
 								} else {
 									context.put(maintablename, Tuple.tuple(functionvaluesmap));
 								}
@@ -364,7 +382,10 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				Reducer<String, Tuple, Context> {
 			private static final long serialVersionUID = 3328584603251312114L;
 			List<FunctionWithCols> functionwithcols = functionwithcolumns;
-			public MapperReducerSqlCombinerReducer() {
+			boolean isaggfunction;
+			public MapperReducerSqlCombinerReducer(List<FunctionWithCols> functionwithcols, boolean isaggfunction) {
+				this.functionwithcols = functionwithcols;
+				this.isaggfunction = isaggfunction;
 			}
 
 			@SuppressWarnings("unchecked")
@@ -375,7 +396,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				if(!istuple2) {
 					Map<String, Double> valuesaggregate = (Map<String, Double>) ((Tuple1)tuples.remove(0)).v1;
 					for (Tuple tuple : tuples) {
-						if(isnotempty) {
+						if(isnotempty && isaggfunction) {
 							if(tuple instanceof Tuple1 tuple1) {
 								Map<String, Double> fnvalues = (Map<String, Double>) tuple1.v1();
 								fnvalues.keySet().forEach(fnkey -> {									
@@ -392,7 +413,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							context.put("Reducer", Tuple.tuple(key,tuple));
 						}
 					}
-					if(isnotempty) {
+					if(isnotempty && isaggfunction) {
 						context.put("Reducer", Tuple.tuple(key,Tuple.tuple(valuesaggregate)));
 					}
 				} else {
@@ -588,7 +609,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		}
 		MapReduceApplicationBuilder mrab = MapReduceApplicationBuilder.newBuilder()
 		.addMapper(new MapperReducerSqlMapper(tablename, selectcolumns, functionwithcolumns, expressionRootTable,
-				tablecolumntypesmap.get(tablename), columnindexmap), tablefoldermap.get(tablename));
+				tablecolumntypesmap.get(tablename), columnindexmap, isaggfunc), tablefoldermap.get(tablename));
 		if(CollectionUtils.isNotEmpty(plainSelect.getJoins())) {
 			List<Join> joins = plainSelect.getJoins();
             for (Join join : joins) {
@@ -607,11 +628,12 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
         			columnindexmap.put(columnsfortable.get(originalcolumnindex), Long.valueOf(originalcolumnindex));
         		}
                 mrab = mrab.addMapper(new MapperReducerSqlMapper(rightItem.getName(), selectcolumns, functionwithcolumns, expressionJoinTable,
-                		tablecolumntypesmap.get(rightItem.getName()), columnindexmap), tablefoldermap.get(rightItem.getName()));
+                		tablecolumntypesmap.get(rightItem.getName()), columnindexmap,
+                		isaggfunc), tablefoldermap.get(rightItem.getName()));
             }
 		}
-		mrab = mrab.addCombiner(new MapperReducerSqlCombinerReducer())
-			.addReducer(new MapperReducerSqlCombinerReducer());
+		mrab = mrab.addCombiner(new MapperReducerSqlCombinerReducer(functionwithcolumns, isaggfunc))
+			.addReducer(new MapperReducerSqlCombinerReducer(functionwithcolumns, isaggfunc));
 		return mrab.setJobConf(jc)
 				.setOutputfolder("/aircararrivaldelay").build();
 	}

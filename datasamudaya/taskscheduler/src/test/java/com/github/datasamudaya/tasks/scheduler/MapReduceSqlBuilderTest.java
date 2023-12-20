@@ -443,4 +443,409 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		});
 		log.info("In testRequiredColumnsInOrder() method Exit");		
 	}
+	
+	
+	@Test
+	public void testNonAggFunctionAbsWithWhere() throws Exception {
+		log.info("In testNonAggFunctionAbsWithWhere() method Entry");
+		String statement = "SELECT airline.UniqueCarrier,abs(airline.ArrDelay) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(2, values.size());
+					assertTrue(values.containsKey("UniqueCarrier"));
+					assertTrue(values.containsKey("abs(airline.ArrDelay)"));
+					assertTrue(((Double)values.get("abs(airline.ArrDelay)"))>=0);
+				}
+			});
+		});
+		log.info("In testNonAggFunctionAbsWithWhere() method Exit");		
+	}
+	
+	
+	@Test
+	public void testNonAggFunctionAbsAddWithWhere() throws Exception {
+		log.info("In testNonAggFunctionAbsAddWithWhere() method Entry");
+		String statement = "SELECT airline.UniqueCarrier,abs(airline.ArrDelay + 10) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(2, values.size());
+					assertTrue(values.containsKey("UniqueCarrier"));
+					assertTrue(values.containsKey("abs(airline.ArrDelay + 10)"));
+					assertTrue(((Double)values.get("abs(airline.ArrDelay + 10)"))>=0);
+				}
+			});
+		});
+		log.info("In testNonAggFunctionAbsAddWithWhere() method Exit");		
+	}
+	
+	
+	@Test
+	public void testNonAggFunctionLengthWithWhere() throws Exception {
+		log.info("In testNonAggFunctionLengthWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,length(airline.UniqueCarrier) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(2, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("length(airline.UniqueCarrier)"));
+					assertTrue(((Long)values.get("length(airline.UniqueCarrier)"))>0);
+				}
+			});
+		});
+		log.info("In testNonAggFunctionLengthWithWhere() method Exit");		
+	}
+	
+	
+	@Test
+	public void testNonAggFunctionRoundWithWhere() throws Exception {
+		log.info("In testNonAggFunctionRoundWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,round(airline.ArrDelay + 3.14) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("round(airline.ArrDelay + 3.14)"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionRoundWithWhere() method Exit");		
+	}
+	
+	@Test
+	public void testNonAggFunctionCeilWithWhere() throws Exception {
+		log.info("In testNonAggFunctionCeilWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,ceil(airline.ArrDelay + 3.14) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("ceil(airline.ArrDelay + 3.14)"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionCeilWithWhere() method Exit");		
+	}
+	
+	@Test
+	public void testNonAggFunctionFloorWithWhere() throws Exception {
+		log.info("In testNonAggFunctionFloorWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,floor(airline.ArrDelay + 3.14) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("floor(airline.ArrDelay + 3.14)"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionFloorWithWhere() method Exit");		
+	}
+	
+	@Test
+	public void testNonAggFunctionPowWithWhere() throws Exception {
+		log.info("In testNonAggFunctionPowWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,pow(airline.ArrDelay + 3.14, 0.5) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("pow(airline.ArrDelay + 3.14, 0.5)"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionPowWithWhere() method Exit");		
+	}
+	
+	
+	
+	@Test
+	public void testNonAggFunctionSqrtWithWhere() throws Exception {
+		log.info("In testNonAggFunctionSqrtWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,sqrt(abs(airline.ArrDelay + 3.14)) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("sqrt(abs(airline.ArrDelay + 3.14))"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionSqrtWithWhere() method Exit");		
+	}
+	
+	
+	@Test
+	public void testNonAggFunctionExpWithWhere() throws Exception {
+		log.info("In testNonAggFunctionExpWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,exp(abs(airline.ArrDelay)) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("exp(abs(airline.ArrDelay))"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionExpWithWhere() method Exit");		
+	}
+	
+	@Test
+	public void testNonAggFunctionLogeWithWhere() throws Exception {
+		log.info("In testNonAggFunctionLogeWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,loge(abs(airline.ArrDelay)) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("loge(abs(airline.ArrDelay))"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionLogeWithWhere() method Exit");		
+	}
+	
+	@Test
+	public void testNonAggFunctionLowercaseWithWhere() throws Exception {
+		log.info("In testNonAggFunctionLowercaseWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,lowercase(airline.UniqueCarrier) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("lowercase(airline.UniqueCarrier)"));
+					assertEquals("aq", values.get("lowercase(airline.UniqueCarrier)"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionLowercaseWithWhere() method Exit");		
+	}
+	
+	@Test
+	public void testNonAggFunctionUppercaseWithWhere() throws Exception {
+		log.info("In testNonAggFunctionUppercaseWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,uppercase(lowercase(airline.UniqueCarrier)) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("uppercase(lowercase(airline.UniqueCarrier))"));
+					assertEquals("AQ", values.get("uppercase(lowercase(airline.UniqueCarrier))"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionUppercaseWithWhere() method Exit");		
+	}
+	
+	
+	@Test
+	public void testNonAggFunctionBase64encodeWithWhere() throws Exception {
+		log.info("In testNonAggFunctionBase64encodeWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,base64encode(airline.UniqueCarrier) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("base64encode(airline.UniqueCarrier)"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionBase64encodeWithWhere() method Exit");		
+	}
+	
+	@Test
+	public void testNonAggFunctionBase64decodeWithWhere() throws Exception {
+		log.info("In testNonAggFunctionBase64decodeWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,base64decode(base64encode(airline.UniqueCarrier)) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("base64decode(base64encode(airline.UniqueCarrier))"));
+					assertEquals("AQ",values.get("base64decode(base64encode(airline.UniqueCarrier))"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionBase64decodeWithWhere() method Exit");		
+	}
+	
+	@Test
+	public void testNonAggFunctionNormalizespaceWithWhere() throws Exception {
+		log.info("In testNonAggFunctionNormalizespaceWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,normalizespaces('   Spaces    Nomalizer   ' + base64encode(airline.UniqueCarrier) + '     ') FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("normalizespaces('   Spaces    Nomalizer   ' + base64encode(airline.UniqueCarrier) + '     ')"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionNormalizespaceWithWhere() method Exit");		
+	}
+	
+	@Test
+	public void testNonAggFunctionTrimWithWhere() throws Exception {
+		log.info("In testNonAggFunctionTrimWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,trim('   Spaces    Nomalizer   ' + base64encode(airline.UniqueCarrier) + '     ') FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("trim('   Spaces    Nomalizer   ' + base64encode(airline.UniqueCarrier) + '     ')"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionTrimWithWhere() method Exit");		
+	}
+	
+	
+	@Test
+	public void testNonAggFunctionSubstringWithWhere() throws Exception {
+		log.info("In testNonAggFunctionSubstringWithWhere() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,substring('Spaces Nomalizer ' + base64encode(airline.UniqueCarrier), 2, 10) FROM airline where airline.MonthOfYear=12";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
+				for(Map<String, Object> values: valuesmap) {
+					log.info("{}", values);
+					assertEquals(3, values.size());
+					assertTrue(values.containsKey("MonthOfYear"));
+					assertTrue(values.containsKey("ArrDelay"));
+					assertTrue(values.containsKey("substring('Spaces Nomalizer ' + base64encode(airline.UniqueCarrier), 2, 10)"));
+				}
+			});
+		});
+		log.info("In testNonAggFunctionSubstringWithWhere() method Exit");		
+	}
+	
+	
 }
