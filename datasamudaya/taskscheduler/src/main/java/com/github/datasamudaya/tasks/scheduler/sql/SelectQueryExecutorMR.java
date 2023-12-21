@@ -52,7 +52,7 @@ public class SelectQueryExecutorMR {
 			String teappid, boolean isyarn) throws Exception {
 		try {
 			JobConfiguration jc = JobConfigurationBuilder.newBuilder()
-					.setIsuseglobalte(!isyarn)
+					.setIsuseglobalte(true)
 					.setUser(user)
 					.setTeappid(teappid)
 					.setExecmode(isyarn ? DataSamudayaConstants.EXECMODE_YARN : DataSamudayaConstants.EXECMODE_DEFAULT)

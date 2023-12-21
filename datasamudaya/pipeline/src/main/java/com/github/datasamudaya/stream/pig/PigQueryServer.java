@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.pig.parser.QueryParserDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.yarn.YarnSystemConstants;
 
 import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -112,7 +113,7 @@ public class PigQueryServer {
 								isjgroups = false;
 								isignite = false;
 								isyarn = true;
-								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT);
 								isyarncontainerlaunched = true;
 							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
 								isjgroups = false;
@@ -212,7 +213,7 @@ public class PigQueryServer {
 													}
 													if (!isyarncontainerlaunched) {
 														try {
-															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT);
 														} catch (Exception ex) {
 															log.error(DataSamudayaConstants.EMPTY, ex);
 														}

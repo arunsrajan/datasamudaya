@@ -57,6 +57,7 @@ public class SQLServerMR {
 						boolean isignite = false;
 						boolean isyarn = false;
 						boolean iscontainerlaunched = false;
+						boolean isyarncontainerlaunched = false;
 						try (Socket clientSocket = sock;
 								PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 								BufferedReader in = new BufferedReader(
@@ -89,6 +90,14 @@ public class SQLServerMR {
 								iscontainerlaunched = false;
 								isignite = false;
 								isyarn = true;
+								if (!isyarncontainerlaunched) {
+									try {
+										Utils.launchYARNExecutors(teappid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.CONTEXT_FILE_CLIENT);
+									} catch (Exception ex) {
+										log.error(DataSamudayaConstants.EMPTY, ex);
+									}
+									isyarncontainerlaunched = true;
+								}
 							}
 							out.println("Welcome to the Map Reduce SQL Server!");
 							out.println("Type 'quit' to exit.");
@@ -112,6 +121,14 @@ public class SQLServerMR {
 												if (mode[1].equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
 													isignite = true;
 													isyarn = false;
+													if (isyarncontainerlaunched) {
+														try {
+															Utils.shutDownYARNContainer(teappid);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = false;
+													}
 													if (iscontainerlaunched) {
 														try {
 															Utils.destroyContainers(user, teappid);
@@ -132,10 +149,26 @@ public class SQLServerMR {
 														}
 														iscontainerlaunched = false;
 													}
+													if (!isyarncontainerlaunched) {
+														try {
+															Utils.launchYARNExecutors(teappid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.CONTEXT_FILE_CLIENT);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = true;
+													}
 													out.println("yarn mode set");
 												} else {
 													isignite = false;
 													isyarn = false;
+													if (isyarncontainerlaunched) {
+														try {
+															Utils.shutDownYARNContainer(teappid);
+														} catch (Exception ex) {
+															log.error(DataSamudayaConstants.EMPTY, ex);
+														}
+														isyarncontainerlaunched = false;
+													}
 													if (!iscontainerlaunched) {
 														containers = Utils.launchContainersUserSpec(user, teappid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
@@ -209,6 +242,14 @@ public class SQLServerMR {
 								} catch (Exception ex) {
 									log.error(DataSamudayaConstants.EMPTY, ex);
 								}
+							}
+							if (isyarncontainerlaunched) {
+								try {
+									Utils.shutDownYARNContainer(teappid);
+								} catch (Exception ex) {
+									log.error(DataSamudayaConstants.EMPTY, ex);
+								}
+								isyarncontainerlaunched = false;
 							}
 						}
 					});

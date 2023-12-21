@@ -125,6 +125,7 @@ import com.github.datasamudaya.common.GlobalJobFolderBlockLocations;
 import com.github.datasamudaya.common.GlobalYARNResources;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.Job.JOBTYPE;
+import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.common.exceptions.JGroupsException;
 import com.github.datasamudaya.common.exceptions.JobException;
 import com.github.datasamudaya.common.exceptions.OutputStreamException;
@@ -1253,7 +1254,8 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void launchYARNExecutors(String teid, 
-			int cpuuser, int memoryuser, int numberofcontainers) throws YarnLaunchException {
+			int cpuuser, int memoryuser, int numberofcontainers,
+			String yarnappcontextfile) throws YarnLaunchException {
 		try {
 			yarnmutex.acquire();
 			GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
@@ -1262,7 +1264,7 @@ public class Utils {
 			System.setProperty("containermemory", "" + memoryuser);
 			System.setProperty("containercpu", "" + cpuuser);
 			ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-					DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT, Utils.class);
+					DataSamudayaConstants.FORWARD_SLASH + yarnappcontextfile, Utils.class);
 			var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
 			client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
 			client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, teid);
@@ -1328,6 +1330,45 @@ public class Utils {
 			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jsidjsmap, yarninputfolder,
 					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE, pipelineconfig);
 			pipelineconfig.setOutput(os);
+		} catch (Exception ex) {
+			throw new JobException(JobException.JOBCREATIONEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
+	
+	
+	/**
+	 * This function creates the MR Job in HDFS
+	 * @param jobconf
+	 * @param yarninputfolder
+	 * @param mapclzchunkfile
+	 * @param combiner
+	 * @param reducer
+	 * @param folderfileblocksmap
+	 * @throws JobException
+	 */
+	public static void createJobInHDFSMR(JobConfiguration jobconf,
+			String yarninputfolder,
+			Map<String, Set<Object>> mapclzchunkfile,
+			Set<Object> combiner,
+			Set<?> reducer,
+			Map<?,?> folderfileblocksmap
+			
+	) throws JobException {
+		try {
+			OutputStream os = jobconf.getOutput();
+			jobconf.setOutput(null);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(mapclzchunkfile, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_MAPPER, jobconf);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(combiner, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_COMBINER, jobconf);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(reducer, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_REDUCER, jobconf);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(folderfileblocksmap, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_FILEBLOCKS, jobconf);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jobconf, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_CONFIGURATION, jobconf);
+			jobconf.setOutput(os);
 		} catch (Exception ex) {
 			throw new JobException(JobException.JOBCREATIONEXCEPTION_MESSAGE, ex);
 		}

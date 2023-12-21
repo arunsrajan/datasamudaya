@@ -216,7 +216,7 @@ public class RemoteDataFetcher {
 			String jobid, String filename, boolean keys) throws RemoteDataFetcherException {
 		log.debug("Entered RemoteDataFetcher.readIntermediatePhaseOutputFromDFS");
 		var configuration = new Configuration();
-		var path = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS
+		var path = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS
 				+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + filename;
 		try (var hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)),
 				configuration);
