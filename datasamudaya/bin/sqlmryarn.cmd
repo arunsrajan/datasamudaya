@@ -16,7 +16,7 @@ echo DATASAMUDAYA home is not configured, configuring DATASAMUDAYA_HOME...
 echo DATASAMUDAYA home is configured as "%DATASAMUDAYA_HOME%"
 @echo off
 )
-set DEBUGPORT=3001
+set DEBUGPORT=7002
 
 set ZOOKEEPERADMINCONFIG=-Dzookeeper.admin.serverPort=2180
 
@@ -34,7 +34,7 @@ IF EXIST %DATASAMUDAYA_JAVA_HOME%\bin\java.exe (
 
 "%DATASAMUDAYA_JAVA_HOME%\bin\java" -version
 
-"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.tasks.scheduler.sql.SQLClientMR -user arun -containerssql 1 -containercpu 6 -containermemory 10240 -sqlworkermode standalone
+"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.tasks.scheduler.sql.SQLClientMR -user tom -containerssql 2 -containercpu 4 -containermemory 2048 -sqlworkermode yarn
 
 ) ELSE (
  @echo on

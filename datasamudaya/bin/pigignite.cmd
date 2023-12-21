@@ -1,10 +1,10 @@
 @echo off
 
-title DATASAMUDAYA SQL
+title DATASAMUDAYA PIG
 
 setLocal EnableDelayedExpansion
 
-echo STARTING SQL....
+echo STARTING PIG....
 
 IF "%DATASAMUDAYA_HOME%" == "" (
 @echo on
@@ -16,9 +16,7 @@ echo DATASAMUDAYA home is not configured, configuring DATASAMUDAYA_HOME...
 echo DATASAMUDAYA home is configured as "%DATASAMUDAYA_HOME%"
 @echo off
 )
-
-set DEBUGPORT=4002
-
+set DEBUGPORT=6001
 set ZOOKEEPERADMINCONFIG=-Dzookeeper.admin.serverPort=2180
 
 set CLASSPATH=-classpath ".;../lib/*;../modules/*"
@@ -35,7 +33,7 @@ IF EXIST %DATASAMUDAYA_JAVA_HOME%\bin\java.exe (
 
 "%DATASAMUDAYA_JAVA_HOME%\bin\java" -version
 
-"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.stream.sql.SQLClient -user arun -containerssql 1 -containercpu 3 -containermemory 1024 -sqlworkermode yarn
+"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.stream.pig.PigQueryClient -piguser tom -containerspig 2 -containercpu 2 -containermemory 2048 -pigworkermode ignite
 
 ) ELSE (
  @echo on
