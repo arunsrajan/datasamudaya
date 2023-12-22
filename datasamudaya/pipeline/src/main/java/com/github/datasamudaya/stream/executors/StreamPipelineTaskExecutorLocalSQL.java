@@ -108,7 +108,7 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 		CSVParser records = null;
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
-		final YosegiRecordWriter writer;
+		YosegiRecordWriter writer = null;
 		ByteArrayOutputStream baos = null;
 		CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
 		List<String> reqcols = new Vector<>(csvoptions.getRequiredcolumns());
@@ -135,7 +135,7 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 							Map<String, SqlTypeName> sqltypename = SQLUtils.getColumnTypesByColumn(
 									csvoptions.getTypes(), Arrays.asList(csvoptions.getHeader()));
 							baos = new ByteArrayOutputStream();
-							writer = new YosegiRecordWriter(baos);
+							YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos);
 							intermediatestreamobject = streamcsv.map(csvrecord -> {
 								Map data = new ConcurrentHashMap<>();
 								Map datatoprocess = new ConcurrentHashMap<>();
@@ -145,7 +145,7 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 												col);
 										SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
 									});
-									writer.addRow(data);
+									writerdataload.addRow(data);
 								} catch (Exception ex) {
 									log.error(DataSamudayaConstants.EMPTY, ex);
 								}
@@ -266,6 +266,13 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 			log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 			throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 		} finally {
+			if (nonNull(writer)) {				
+				try {
+					writer.close();
+				} catch (IOException e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
 			if (nonNull(baos)) {
 				byte[] yosegibytes = baos.toByteArray();
 				cache.put(blockslocation.toBlString() + reqcols.toString(), yosegibytes);
