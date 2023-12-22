@@ -1,6 +1,6 @@
 echo STARTING Standalone Schedulers....
 export DEBUGPORT=4000
-cd /opt/datasamudaya/bin
+cd /opt/datasamudaya/sbin
 if [[ ! -v DATASAMUDAYA_HOME ]]; then
 	echo "DATASAMUDAYA_HOME is not configured, configuring..."	
 	export DATASAMUDAYA_HOME=$(pwd)/..
