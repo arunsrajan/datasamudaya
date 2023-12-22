@@ -37,7 +37,7 @@ import com.github.datasamudaya.stream.PipelineException;
  * Task executors thread for standalone task executors daemon.  
  */
 @SuppressWarnings("rawtypes")
-public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTaskExecutor permits StreamPipelineTaskExecutorInMemoryDisk, StreamPipelineTaskExecutorInMemorySQL  {
+public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTaskExecutor permits StreamPipelineTaskExecutorInMemoryDisk  {
 	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorInMemory.class);
 	protected ConcurrentMap<String,OutputStream> resultstream;
 	public double timetaken = 0.0;

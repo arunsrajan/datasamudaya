@@ -86,11 +86,15 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
 
+import jp.co.yahoo.yosegi.message.objects.ByteObj;
 import jp.co.yahoo.yosegi.message.objects.DoubleObj;
 import jp.co.yahoo.yosegi.message.objects.FloatObj;
 import jp.co.yahoo.yosegi.message.objects.IntegerObj;
 import jp.co.yahoo.yosegi.message.objects.LongObj;
+import jp.co.yahoo.yosegi.message.objects.PrimitiveObject;
+import jp.co.yahoo.yosegi.message.objects.ShortObj;
 import jp.co.yahoo.yosegi.message.objects.StringObj;
+import jp.co.yahoo.yosegi.message.parser.IParser;
 import jp.co.yahoo.yosegi.reader.YosegiSchemaReader;
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 import net.sf.jsqlparser.expression.BinaryExpression;
@@ -1097,20 +1101,8 @@ public class SQLUtils {
             throw new IllegalArgumentException("Both objects must be instances of wrapper classes.");
         }
 
-        // Get the value fields for the wrapper classes
-        java.lang.reflect.Field valueField1 = wrapperClass1.getDeclaredField("value");
-        java.lang.reflect.Field valueField2 = wrapperClass2.getDeclaredField("value");
-
-        // Make the fields accessible, since they are private
-        valueField1.setAccessible(true);
-        valueField2.setAccessible(true);
-
-        // Get the values of the fields for the instances
-        Comparable<Object> value1 = (Comparable<Object>) valueField1.get(obj1);
-        Comparable<Object> value2 = (Comparable<Object>) valueField2.get(obj2);
-
         // Perform the specified comparison
-        int comparisonResult = value1.compareTo(value2);
+        int comparisonResult = compareNumericValues((Number)obj1, (Number)obj2);
 
         switch (operator) {
             case EQUAL:
@@ -1129,7 +1121,25 @@ public class SQLUtils {
                 throw new IllegalArgumentException("Unsupported comparison operator.");
         }
     }
+	
+	/**
+	 * Compares two primitive wrapper classes. 
+	 * @param num1
+	 * @param num2
+	 * @return comparison value
+	 */
+	private static int compareNumericValues(Number num1, Number num2) {
+        double value1 = num1.doubleValue();
+        double value2 = num2.doubleValue();
 
+        return Double.compare(value1, value2);
+    }
+
+	/**
+	 * The function checks for the wrapper class
+	 * @param clazz
+	 * @return true if wrapper class 
+	 */
     private static boolean isWrapperClass(Class<?> clazz) {
         return clazz == Integer.class || clazz == Double.class
                || clazz == Float.class || clazz == Long.class
@@ -2571,37 +2581,6 @@ public class SQLUtils {
     }
 	
 	/**
-	 * csv records to yosegi byte array
-	 * @param streamcsv
-	 * @param sqltypes
-	 * @param cols
-	 * @return yosegi byte array
-	 * @throws Exception
-	 */
-	public static byte[] getYosegiRecordWriter(Stream<CSVRecord> streamcsv, List<SqlTypeName> sqltypes, List<String> reqcols, List<String> allcols) throws Exception {
-		try(var baos = new ByteArrayOutputStream();
-				YosegiRecordWriter writer = new YosegiRecordWriter(baos);){			
-			Map<String,SqlTypeName> sqltypename = getColumnTypesByColumn(sqltypes, allcols);			
-			streamcsv.forEach(csvrecord -> {
-				try {
-					Map data = new ConcurrentHashMap<>();
-					reqcols.stream().forEach(col -> {
-						setYosegiObjectByValue(csvrecord.get(col), sqltypename.get(col), data, col);
-					});
-					writer.addRow(data);
-				} catch (Exception ex) {
-					log.error(DataSamudayaConstants.EMPTY, ex);
-				}
-			});
-			writer.close();
-			return baos.toByteArray();
-		} catch(Exception ex) {
-			log.error(DataSamudayaConstants.EMPTY, ex);
-		}
-		return null;
-	}
-	
-	/**
 	 * Converts sqltypes and colums to column map
 	 * @param sqltypes
 	 * @param cols
@@ -2684,5 +2663,32 @@ public class SQLUtils {
 
 	}
 	
-	
+	/**
+	 * This function populates map from primitiveobject and 
+	 * @param map
+	 * @param col
+	 * @param po
+	 */
+	public static void getValueFromYosegiObject(Map<String, Object> map, String col, Map<String, Object> mapforavg) {
+    	try {
+    		PrimitiveObject po = (PrimitiveObject) mapforavg.get(col);
+    		if(po instanceof IntegerObj iobj) {
+    			map.put(col, iobj.getInt());
+    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
+    		} else if(po instanceof LongObj lobj) {
+    			map.put(col, lobj.getLong());
+    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
+    		} else if(po instanceof FloatObj fobj) {
+    			map.put(col, fobj.getFloat());
+    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
+    		} else if(po instanceof DoubleObj dobj) {
+    			map.put(col, dobj.getDouble());
+    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
+    		} else if(po instanceof StringObj sobj) {
+    			map.put(col, sobj.getString());
+    		}
+    	} catch(Exception ex) {
+    		ex.printStackTrace();
+    	}
+	}
 }
