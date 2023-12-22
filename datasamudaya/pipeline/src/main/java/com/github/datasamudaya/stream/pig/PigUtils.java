@@ -706,12 +706,15 @@ public class PigUtils {
 		    }	   
 		} else if(lexp instanceof ProjectExpression pex) {
 			columns.add(pex.getFieldSchema().alias);
-		} else if (lexp instanceof UserFuncExpression) {
-			Iterator<Operator> operators= lexp.getPlan().getOperators();
-			for (;operators.hasNext();) {
-				Object pexp = operators.next();
-				if (pexp instanceof ProjectExpression expression) {
-					getColumnsFromExpressions(expression, columns);
+		} else if (lexp instanceof UserFuncExpression userfuncexp) {
+			if (!"org.apache.pig.builtin.COUNT"
+					.equals(userfuncexp.getFuncSpec().getClassName())) {
+				Iterator<Operator> operators = lexp.getPlan().getOperators();
+				for (; operators.hasNext();) {
+					Object pexp = operators.next();
+					if (pexp instanceof ProjectExpression expression) {
+						getColumnsFromExpressions(expression, columns);
+					}
 				}
 			}
 	    }
