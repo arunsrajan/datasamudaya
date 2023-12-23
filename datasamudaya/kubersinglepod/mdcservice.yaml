@@ -39,6 +39,32 @@ spec:
       port: 12124
       targetPort: 12124
       nodePort: 32005
+    - name: pigport
+      protocol: TCP
+      port: 11123
+      targetPort: 11123
+      nodePort: 32006
+    - name: datanode
+      protocol: TCP
+      port: 9864
+      targetPort: 9864
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datasamudayastandalone-0
+  labels:
+    app: datasamudayastandalone
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: datasamudayastandalone
+  ports:
+    - name: hdfsname
+      protocol: TCP
+      port: 9864
+      targetPort: 9864
 ---
 apiVersion: v1
 kind: Service

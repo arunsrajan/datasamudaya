@@ -52,6 +52,13 @@ spec:
       containers:
         - name: datasamudayastandalone
           image: arunsrajan/datasamudayastandalone:latest
+          resources:
+              requests:
+                memory: "64Mi"
+                cpu: "8"
+              limits:
+                memory: "10240Mi"
+                cpu: "10"
           env:
             - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
               value: 'false'
@@ -92,6 +99,8 @@ spec:
               name: sqlstream
             - containerPort: 12124
               name: sqlshell
+            - containerPort: 11123
+              name: pigshell
           volumeMounts:
             - name: hdfsdatanode
               mountPath: /opt/dockershare/data
