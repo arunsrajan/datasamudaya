@@ -189,12 +189,41 @@ public class FileBlocksPartitionerHDFS {
 				try (var hdfs = FileSystem.newInstance(new URI(hdfspath), new Configuration());) {
 					this.hdfs = hdfs;
 					this.filepaths.clear();
-					this.filepaths.addAll(getFilePaths(hdfspath, folder));
+					List<Path> newpaths = getFilePaths(hdfspath, folder);					
+					this.filepaths.addAll(newpaths);
 					job.getJm().setTotalfilesize(
 							job.getJm().getTotalfilesize() + Utils.getTotalLengthByFiles(hdfs, filepaths));
 					if (pc.getUseglobaltaskexecutors()
 							&& nonNull(GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder))) {
+						Set<Path> pathtoprocess = GlobalJobFolderBlockLocations.compareCurrentPathsNewPathsAndStore(pc.getTejobid(), folder, newpaths, hdfs);
 						List<BlocksLocation> bls = GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder);
+						if(CollectionUtils.isNotEmpty(pathtoprocess)) {
+							this.filepaths.clear();
+							this.filepaths.addAll(pathtoprocess);
+							List<BlocksLocation> blsnew = getBlocks(columns);
+							getDnXref(blsnew, true);
+							getContainersGlobal();							
+							allocateContainersLoadBalanced(blsnew);
+							GlobalJobFolderBlockLocations.setIsResetBlocksLocation(false);
+							List<String> files = newpaths.parallelStream().map(path->path.toUri().toString()).toList();
+							List<BlocksLocation> currentbls = new ArrayList<>(bls);
+							for(BlocksLocation bltoremove:currentbls) {
+								Block[] block = bltoremove.getBlock();
+								if(!files.contains(block[0].getFilename())) {
+									bls.remove(bltoremove);
+								}
+							}
+							bls.addAll(blsnew);
+						} else {
+							List<String> files = newpaths.parallelStream().map(path->path.toUri().toString()).toList();
+							List<BlocksLocation> currentbls = new ArrayList<>(bls);
+							for(BlocksLocation bltoremove:currentbls) {
+								Block[] block = bltoremove.getBlock();
+								if(!files.contains(block[0].getFilename())) {
+									bls.remove(bltoremove);
+								}
+							}
+						}
 						final List<String> columnsql = columns;
 						bls.parallelStream().forEach(bl -> {
 							bl.setColumns(columnsql);
@@ -205,6 +234,7 @@ public class FileBlocksPartitionerHDFS {
 						if (GlobalJobFolderBlockLocations.getIsResetBlocksLocation()) {
 							folderstolbcontainers.add(folder);
 						}
+						GlobalJobFolderBlockLocations.putPaths(hdfspath, folder, newpaths, hdfs);
 					} else {
 						folderstolbcontainers.add(folder);						
 						if (!stageoutputmap.containsKey(rootstage)) {
@@ -214,6 +244,7 @@ public class FileBlocksPartitionerHDFS {
 								blocks = getHDFSParitions();
 								if (pc.getUseglobaltaskexecutors()) {
 									GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
+									GlobalJobFolderBlockLocations.putPaths(pc.getTejobid(), folder, newpaths, hdfs);
 								}
 								totalblockslocation.addAll(blocks);
 							} else {
@@ -221,6 +252,7 @@ public class FileBlocksPartitionerHDFS {
 								blocks = getBlocks(columns);
 								if (pc.getUseglobaltaskexecutors()) {
 									GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
+									GlobalJobFolderBlockLocations.putPaths(pc.getTejobid(), folder, newpaths, hdfs);
 								}
 								totalblockslocation.addAll(blocks);
 							}
@@ -277,6 +309,7 @@ public class FileBlocksPartitionerHDFS {
 		}
 	}
 
+	
 	/**
 	 * The blocks data is fetched from hdfs and caches in Ignite Server
 	 * 

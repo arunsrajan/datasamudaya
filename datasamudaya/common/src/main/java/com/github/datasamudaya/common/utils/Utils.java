@@ -1993,4 +1993,24 @@ public class Utils {
 					DataSamudayaConstants.COLOR_PICKER_ALTERNATE_DEFAULT);
 		}
 	}
+	
+	/**
+	 * Get Checksum of hdfs file
+	 * @param paths
+	 * @param hdfs
+	 * @return checksum
+	 */
+	public static Map<Path,String> getCheckSum(List<Path> paths, FileSystem hdfs){
+		Map<Path, String> checksums = new ConcurrentHashMap<>();
+		paths.parallelStream().forEach(path->{
+			try {
+				checksums.put(path, new String(hdfs.getFileChecksum(path).toString().split(":")[1]));
+			} catch (Exception e) {
+				log.error(DataSamudayaConstants.EMPTY, e);
+			}
+		});
+		return checksums;
+	}
+	
+	
 }
