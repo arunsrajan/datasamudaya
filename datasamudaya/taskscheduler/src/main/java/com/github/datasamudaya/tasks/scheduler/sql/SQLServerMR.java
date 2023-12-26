@@ -77,6 +77,7 @@ public class SQLServerMR {
 							Map<String, Object> cpumemory = null;
 							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT) 
 									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+								teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
 								containers = Utils.launchContainersUserSpec(user, teappid, cpupercontainer, memorypercontainer, numberofcontainers);
 								cpumemory = Utils.getAllocatedContainersResources(containers);
 								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
@@ -92,6 +93,7 @@ public class SQLServerMR {
 								isyarn = true;
 								if (!isyarncontainerlaunched) {
 									try {
+										teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
 										Utils.launchYARNExecutors(teappid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.CONTEXT_FILE_CLIENT);
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
@@ -151,6 +153,7 @@ public class SQLServerMR {
 													}
 													if (!isyarncontainerlaunched) {
 														try {
+															teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
 															Utils.launchYARNExecutors(teappid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.CONTEXT_FILE_CLIENT);
 														} catch (Exception ex) {
 															log.error(DataSamudayaConstants.EMPTY, ex);
@@ -170,6 +173,7 @@ public class SQLServerMR {
 														isyarncontainerlaunched = false;
 													}
 													if (!iscontainerlaunched) {
+														teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
 														containers = Utils.launchContainersUserSpec(user, teappid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;

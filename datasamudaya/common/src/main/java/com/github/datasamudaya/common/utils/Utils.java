@@ -994,7 +994,6 @@ public class Utils {
 	 */
 	@SuppressWarnings("unchecked")
 	public static synchronized List<LaunchContainers> launchContainers(String user, String jobid) throws Exception {
-		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
 		var nrs = DataSamudayaNodesResources.getAllocatedResources();
 		var resources = nrs.values();
 		int numavailable = resources.size();
@@ -1112,7 +1111,6 @@ public class Utils {
 	 */
 	public static List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws ContainerException, InterruptedException, RpcRegistryException {
 		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
-		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
 		long memoryuserbytes = Long.valueOf(memoryuser) * DataSamudayaConstants.MB;
 		var nrs = DataSamudayaNodesResources.getAllocatedResources();
 		var resources = nrs.values();
@@ -1258,7 +1256,6 @@ public class Utils {
 			String yarnappcontextfile) throws YarnLaunchException {
 		try {
 			yarnmutex.acquire();
-			GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
 			System.setProperty("jobcount", "1");
 			System.setProperty("containercount", "" + numberofcontainers);
 			System.setProperty("containermemory", "" + memoryuser);

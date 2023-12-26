@@ -42,16 +42,6 @@ public class GlobalJobFolderBlockLocations {
 	private GlobalJobFolderBlockLocations() {
 	}
 
-	private static Boolean isResetBlocksLocation; 
-	
-	public static Boolean getIsResetBlocksLocation() {
-		return isResetBlocksLocation;
-	}
-
-	public static void setIsResetBlocksLocation(Boolean isResetBlocksLocation) {
-		GlobalJobFolderBlockLocations.isResetBlocksLocation = isResetBlocksLocation;
-	}
-
 	private static final Map<String, Map<String, List<BlocksLocation>>> lcsmap = new ConcurrentHashMap<>();
 	private static final Map<String, Map<String, List<Path>>> paths = new ConcurrentHashMap<>();
 	private static final Map<String, Map<Path, String>> pathwithmd5has = new ConcurrentHashMap<>();

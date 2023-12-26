@@ -95,6 +95,7 @@ public class PigQueryServer {
 							Map<String, Object> cpumemory = null;
 							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT) 
 									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+								tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 								containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 								cpumemory = Utils.getAllocatedContainersResources(containers);
 								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
@@ -113,6 +114,7 @@ public class PigQueryServer {
 								isjgroups = false;
 								isignite = false;
 								isyarn = true;
+								tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT);
 								isyarncontainerlaunched = true;
 							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
@@ -160,6 +162,7 @@ public class PigQueryServer {
 														isyarncontainerlaunched = false;
 													}
 													if (!iscontainerlaunched) {
+														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
@@ -213,6 +216,7 @@ public class PigQueryServer {
 													}
 													if (!isyarncontainerlaunched) {
 														try {
+															tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT);
 														} catch (Exception ex) {
 															log.error(DataSamudayaConstants.EMPTY, ex);
@@ -238,6 +242,7 @@ public class PigQueryServer {
 														isyarncontainerlaunched = false;
 													}
 													if (!iscontainerlaunched) {
+														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;

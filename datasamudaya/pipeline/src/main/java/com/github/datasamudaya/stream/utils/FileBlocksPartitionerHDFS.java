@@ -201,10 +201,11 @@ public class FileBlocksPartitionerHDFS {
 							this.filepaths.clear();
 							this.filepaths.addAll(pathtoprocess);
 							List<BlocksLocation> blsnew = getBlocks(columns);
-							getDnXref(blsnew, true);
-							getContainersGlobal();							
-							allocateContainersLoadBalanced(blsnew);
-							GlobalJobFolderBlockLocations.setIsResetBlocksLocation(false);
+							if (isjgroups || !islocal && !isyarn && !ismesos && !isignite) {
+								getDnXref(blsnew, true);
+								getContainersGlobal();							
+								allocateContainersLoadBalanced(blsnew);
+							}							
 							List<String> files = newpaths.parallelStream().map(path->path.toUri().toString()).toList();
 							List<String> filestoprocess = pathtoprocess.parallelStream().map(path->path.toUri().toString()).toList();
 							List<BlocksLocation> currentbls = new ArrayList<>(bls);
@@ -235,9 +236,6 @@ public class FileBlocksPartitionerHDFS {
 						totalblockslocation.addAll(bls);
 						stageoutputmap.put(rootstage, bls);
 						noofpartition += bls.size();
-						if (GlobalJobFolderBlockLocations.getIsResetBlocksLocation()) {
-							folderstolbcontainers.add(folder);
-						}
 						GlobalJobFolderBlockLocations.putPaths(hdfspath, folder, newpaths, hdfs);
 					} else {
 						folderstolbcontainers.add(folder);						
@@ -291,7 +289,6 @@ public class FileBlocksPartitionerHDFS {
 					for(String foldertolb:folderstolbcontainers) {
 						allocateContainersLoadBalanced(GlobalJobFolderBlockLocations.get(pc.getTejobid(), foldertolb));
 					}
-					GlobalJobFolderBlockLocations.setIsResetBlocksLocation(false);
 				}				
 				job.getJm().setNodes(nodeschoosen);
 				job.getJm().setContainersallocated(new ConcurrentHashMap<>());
