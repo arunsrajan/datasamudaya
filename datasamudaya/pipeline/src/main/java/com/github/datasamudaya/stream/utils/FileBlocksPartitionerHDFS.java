@@ -206,19 +206,23 @@ public class FileBlocksPartitionerHDFS {
 							allocateContainersLoadBalanced(blsnew);
 							GlobalJobFolderBlockLocations.setIsResetBlocksLocation(false);
 							List<String> files = newpaths.parallelStream().map(path->path.toUri().toString()).toList();
+							List<String> filestoprocess = pathtoprocess.parallelStream().map(path->path.toUri().toString()).toList();
 							List<BlocksLocation> currentbls = new ArrayList<>(bls);
 							for(BlocksLocation bltoremove:currentbls) {
 								Block[] block = bltoremove.getBlock();
-								if(!files.contains(block[0].getFilename())) {
+								if(!files.contains(block[0].getFilename()) || 
+										filestoprocess.contains(block[0].getFilename())) {
 									bls.remove(bltoremove);
 								}
 							}
+							blsnew.stream().forEach(blocks->blocks.setToreprocess(true));
 							bls.addAll(blsnew);
 						} else {
 							List<String> files = newpaths.parallelStream().map(path->path.toUri().toString()).toList();
 							List<BlocksLocation> currentbls = new ArrayList<>(bls);
 							for(BlocksLocation bltoremove:currentbls) {
 								Block[] block = bltoremove.getBlock();
+								bltoremove.setToreprocess(false);
 								if(!files.contains(block[0].getFilename())) {
 									bls.remove(bltoremove);
 								}

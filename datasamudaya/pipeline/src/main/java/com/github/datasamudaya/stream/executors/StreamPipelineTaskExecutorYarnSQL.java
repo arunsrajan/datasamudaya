@@ -114,7 +114,7 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 				byte[] yosegibytes = (byte[]) blockinfocache.get(blockslocation.toBlString() + reqcols.toString());
 				try {
 					if (CollectionUtils.isNotEmpty(csvoptions.getRequiredcolumns())) {
-						if (isNull(yosegibytes) || yosegibytes.length == 0) {
+						if (isNull(yosegibytes) || yosegibytes.length == 0 || blockslocation.getToreprocess().booleanValue()) {
 							log.info("Unable To Find vector for blocks {}", blockslocation);
 							bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 							buffer = new BufferedReader(new InputStreamReader(bais));
