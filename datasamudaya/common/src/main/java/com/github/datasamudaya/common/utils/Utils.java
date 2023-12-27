@@ -2009,5 +2009,19 @@ public class Utils {
 		return checksums;
 	}
 	
+	/**
+	 * Obtains index of required columns from original columns
+	 * @param requiredcols
+	 * @param allcolumns
+	 * @return index of required columns
+	 */
+	public static Integer[] indexOfRequiredColumns(List<String> requiredcols, List<String> allcolumns){
+		List<Integer> indexcolumns = new ArrayList<>();
+		for(String col:requiredcols) {
+			indexcolumns.add(allcolumns.indexOf(col));
+		}
+		return indexcolumns.toArray(new Integer[0]);
+	}
+	
 	
 }

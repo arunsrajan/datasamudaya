@@ -78,6 +78,8 @@ public class GlobalJobFolderBlockLocations {
 	 */
 	public static void remove(String jobid) {
 		lcsmap.remove(jobid);
+		paths.remove(jobid);
+		pathwithmd5has.remove(jobid);
 	}
 	
 	/**

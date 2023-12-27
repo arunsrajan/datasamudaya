@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.BaseStream;
@@ -39,9 +41,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -65,6 +64,11 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
+import com.univocity.parsers.common.IterableResult;
+import com.univocity.parsers.common.ParsingContext;
+import com.univocity.parsers.common.ResultIterator;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
 
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
@@ -98,7 +102,6 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
 		log.info("BlocksLocation Columns: {}", blockslocation.getColumns());
-		CSVParser records = null;
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
 		YosegiRecordWriter writer = null;
@@ -114,36 +117,41 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 				byte[] yosegibytes = (byte[]) blockinfocache.get(blockslocation.toBlString() + reqcols.toString());
 				try {
 					if (CollectionUtils.isNotEmpty(csvoptions.getRequiredcolumns())) {
-						if (isNull(yosegibytes) || yosegibytes.length == 0 || blockslocation.getToreprocess().booleanValue()) {
+						if (isNull(yosegibytes) || yosegibytes.length == 0 || nonNull(blockslocation.getToreprocess()) && blockslocation.getToreprocess().booleanValue()) {
 							log.info("Unable To Find vector for blocks {}", blockslocation);
 							bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 							buffer = new BufferedReader(new InputStreamReader(bais));
 							task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
-							var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
-							csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader())
-									.withIgnoreHeaderCase().withTrim();
-							records = csvformat.parse(buffer);
-							Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
+							CsvParserSettings settings = new CsvParserSettings();							
+							settings.selectIndexes(Utils.indexOfRequiredColumns(reqcols, Arrays.asList(csvoptions.getHeader())));
+							settings.getFormat().setLineSeparator("\n");
+							settings.setNullValue(DataSamudayaConstants.EMPTY);
+							CsvParser parser = new CsvParser(settings);							
+							IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);   
+							ResultIterator<String[], ParsingContext> iterator = iter.iterator();
+					        Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.SIZED | Spliterator.SUBSIZED);
+					        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);
 							Map<String, SqlTypeName> sqltypename = SQLUtils.getColumnTypesByColumn(
 									csvoptions.getTypes(), Arrays.asList(csvoptions.getHeader()));
 							baos = new ByteArrayOutputStream();
 							YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos);
-							intermediatestreamobject = streamcsv.map(csvrecord -> {
+							intermediatestreamobject = stringstream.map(values -> {
 								Map data = new ConcurrentHashMap<>();
 								Map datatoprocess = new ConcurrentHashMap<>();
 								try {
-									reqcols.stream().forEach(col -> {
-										SQLUtils.setYosegiObjectByValue(csvrecord.get(col), sqltypename.get(col), data,
+									int colcount = 0;
+									for(String col:reqcols) {
+										SQLUtils.setYosegiObjectByValue(values[colcount], sqltypename.get(col), data,
 												col);
 										SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
-									});
+										colcount++;
+									}
 									writerdataload.addRow(data);
 								} catch (Exception ex) {
 									log.error(DataSamudayaConstants.EMPTY, ex);
 								}
 								return datatoprocess;
 							});
-
 						} else {
 							intermediatestreamobject = SQLUtils.getYosegiStreamRecords(yosegibytes,
 									csvoptions.getRequiredcolumns(), Arrays.asList(csvoptions.getHeader()),
@@ -276,13 +284,6 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 			if (nonNull(istreamnocols)) {
 				try {
 					istreamnocols.close();
-				} catch (Exception e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
-				}
-			}
-			if (!Objects.isNull(records)) {
-				try {
-					records.close();
 				} catch (Exception e) {
 					log.error(DataSamudayaConstants.EMPTY, e);
 				}

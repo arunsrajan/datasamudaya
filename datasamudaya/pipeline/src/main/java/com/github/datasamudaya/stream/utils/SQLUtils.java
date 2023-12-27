@@ -2670,8 +2670,8 @@ public class SQLUtils {
 	 * @param po
 	 */
 	public static void getValueFromYosegiObject(Map<String, Object> map, String col, Map<String, Object> mapforavg) {
-    	try {
-    		PrimitiveObject po = (PrimitiveObject) mapforavg.get(col);
+		PrimitiveObject po = (PrimitiveObject) mapforavg.get(col);
+    	try {    		
     		if(po instanceof IntegerObj iobj) {
     			map.put(col, iobj.getInt());
     			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
@@ -2688,7 +2688,9 @@ public class SQLUtils {
     			map.put(col, sobj.getString());
     		}
     	} catch(Exception ex) {
-    		ex.printStackTrace();
+    		if(po instanceof StringObj sobj) {
+    			map.put(col, "");
+    		}
     	}
 	}
 }
