@@ -161,9 +161,10 @@ public class PigUtils {
 	 * @return logical plan
 	 * @throws Exception
 	 */
-	public static LogicalPlan getLogicalPlan(String pigquery, QueryParserDriver queryparserdriver) throws Exception {
-		LogicalPlan logicalplan = queryparserdriver.parse(pigquery);
-		return logicalplan;
+	public static LogicalPlan getLogicalPlan(List<String> pigQueries, QueryParserDriver queryparserdriver) throws Exception {
+		StringBuilder pigCommands = new StringBuilder();
+		pigQueries.forEach(pigCommands::append);
+		return queryparserdriver.parse(pigCommands.toString());
 	}
 	
 	/**
@@ -240,7 +241,7 @@ public class PigUtils {
 					} catch (Exception e) {
 						return false;
 					}
-				}).cache();
+				});
 		return fsp;
 	}
 	
@@ -280,7 +281,7 @@ public class PigUtils {
 				}
 			}
 			return 0;
-		}).cache();
+		});
 	}
 	
 	/**
@@ -318,7 +319,7 @@ public class PigUtils {
 						return t + u;
 					}
 
-				}).map(val -> val.v1).distinct().cache();
+				}).map(val -> val.v1).distinct();
 	}
 	
 	/**
@@ -359,7 +360,7 @@ public class PigUtils {
 				columnvaluemap.putAll(tuple2.v2);
 				return columnvaluemap;
 			}
-		}).cache();
+		});
 	}
 	
 	/**
@@ -416,7 +417,7 @@ public class PigUtils {
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
 					return formattedmap;
-				}).cache();
+				});
 			csvoptsql.setRequiredcolumns(requiredcolumns);
 			return csp;
 		} else {
@@ -551,7 +552,7 @@ public class PigUtils {
 					}
 				});
 			}
-			StreamPipeline<Map<String, Object>> csp = pipelinemap.cache();
+			StreamPipeline<Map<String, Object>> csp = pipelinemap;
 			csvoptsql.setRequiredcolumns(requiredcolumns);
 			return csp;
 		}
@@ -1336,7 +1337,7 @@ public class PigUtils {
 			for (String grpcol :grpcols)
 				groupmap.put(grpcol, map.get(grpcol));
 			return groupmap;
-		}).cache();
+		});
 	}
 	
 	
@@ -1351,7 +1352,6 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static void executeDump(StreamPipeline<?> sp, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
-		sp.clearChild();
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
 		pipelineconfig.setUseglobaltaskexecutors(true);		
 		pipelineconfig.setUser(user);
@@ -1370,13 +1370,13 @@ public class PigUtils {
 	 * @return Results
 	 * @throws Exception
 	 */
-	public static Object executeCollect(StreamPipeline<?> sp, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
-		sp.clearChild();
+	public static Object executeCollect(LogicalPlan lp, String alias, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
 		pipelineconfig.setUseglobaltaskexecutors(true);		
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
+		StreamPipeline<?> sp = PigQueryExecutor.traversePlan(lp, alias, user, jobid, tejobid, pipelineconfig);
 		return sp.map(val->val).collect(true, null);
 	}
 	

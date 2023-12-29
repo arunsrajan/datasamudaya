@@ -1,5 +1,7 @@
 package com.github.datasamudaya.stream.pig;
 
+import static java.util.Objects.nonNull;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -16,20 +18,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.pig.newplan.logical.relational.LogicalPlan;
 import org.apache.pig.parser.QueryParserDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.yarn.YarnSystemConstants;
 
-import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.LaunchContainers;
+import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.utils.Utils;
-import com.github.datasamudaya.stream.StreamPipeline;
-
-import static java.util.Objects.nonNull;
 
 /**
  * Pig server to process pig commands.
@@ -271,22 +271,20 @@ public class PigQueryServer {
 											inputLine = inputLine.replace(";", "");
 											String[] dumpwithalias = inputLine.split(" ");
 											long starttime = System.currentTimeMillis();
-											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();											
-									    	PigUtils.executeDump((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(dumpwithalias[1].trim()), user, jobid, tejobid, pipelineconfig);
+											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+											pigQueriesToExecute.clear();
+											pigQueriesToExecute.addAll(pigQueries);
+											pigQueriesToExecute.add("\n");
+											LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+											PigQueryExecutor.executePlan(lp,dumpwithalias[1].trim(), user, jobid, tejobid, pipelineconfig);
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;											
 											out.println("Time taken " + timetaken + " seconds");
 											out.println("");
 										} else {
 											long starttime = System.currentTimeMillis();
-											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-											pigQueriesToExecute.clear();
-											pigQueriesToExecute.addAll(pigQueries);
-											pigQueriesToExecute.add(inputLine);
-											pigQueriesToExecute.add("\n");
 											if (nonNull(pipelineconfig)) {
 												pipelineconfig.setSqlpigquery(inputLine);
 									    	}
-									    	PigQueryExecutor.execute(pigAliasExecutedObjectMap, queryParserDriver, pigQueriesToExecute, user, jobid, tejobid, pipelineconfig);
 									    	pigQueries.add(inputLine);
 									    	pigQueries.add("\n");
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;											
