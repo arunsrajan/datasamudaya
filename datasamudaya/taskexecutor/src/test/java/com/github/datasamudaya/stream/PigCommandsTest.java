@@ -45,7 +45,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		queryParserDriver = PigUtils.getQueryParserDriver("pig");
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
 		pipelineconfig.setUseglobaltaskexecutors(true);
-		pipelineconfig.setLocal("false");
+		pipelineconfig.setLocal("true");
 		pipelineconfig.setUser("arun");
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
@@ -149,7 +149,219 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		}
 		assertEquals(46361, totalrecords);
 	}
+	
+	@Test
+	public void testPigLoadFilter() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("filtered_data = FILTER data BY MonthOfYear > 11 AND DayofMonth >= 6;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "filtered_data",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		int totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(53, map.size());
+			}
+		}
+		assertEquals(3389, totalrecords);
+	}
+	
+	
+	@Test
+	public void testPigLoadFilterFilter() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("filtered_data = FILTER data BY MonthOfYear > 11 AND DayofMonth >= 6;");
+		pigQueriesToExecute.add("filtered_data1 = FILTER filtered_data BY DayOfWeek > 1;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "filtered_data1",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		int totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(53, map.size());
+			}
+		}
+		assertTrue(totalrecords<3389);
+	}
+	
+	@Test
+	public void testPigLoadFilterExecCollectFilterExecCollectForEach() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("filtered_data = FILTER data BY MonthOfYear > 11 AND DayofMonth >= 6;");
+		pigQueriesToExecute.add("filtered_data1 = FILTER filtered_data BY DayOfWeek > 1;");
+		pigQueriesToExecute.add("data1 = FOREACH filtered_data GENERATE SUM(ArrDelay) as sumarrdelay;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "filtered_data",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		int totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(53, map.size());
+			}
+		}
+		assertEquals(3389, totalrecords);
+		
+		results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "filtered_data1",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(53, map.size());
+			}
+		}
+		assertTrue(totalrecords<3389);
+		
+		results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "data1",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(1, map.size());
+				assertTrue(map.containsKey("sumarrdelay"));
+			}
+		}
+		assertEquals(1, totalrecords);
+	}
+	
+	
+	@Test
+	public void testPigLoadFilterExecCollectFilterExecCollectForEachForEach() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("filtered_data = FILTER data BY MonthOfYear > 11 AND DayofMonth >= 6;");
+		pigQueriesToExecute.add("filtered_data1 = FILTER filtered_data BY DayOfWeek > 1;");
+		pigQueriesToExecute.add("data1 = FOREACH filtered_data GENERATE SUM(ArrDelay) as sumarrdelay;");
+		pigQueriesToExecute.add("data2 = FOREACH filtered_data1 GENERATE SUM(ArrDelay) as sumarrdelay;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "filtered_data",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		int totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(53, map.size());
+			}
+		}
+		assertEquals(3389, totalrecords);
+		
+		results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "filtered_data1",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(53, map.size());
+			}
+		}
+		assertTrue(totalrecords<3389);
+		
+		results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "data1",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(1, map.size());
+				assertTrue(map.containsKey("sumarrdelay"));
+			}
+		}
+		assertEquals(1, totalrecords);
+		
+		results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "data2",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(1, map.size());
+				assertTrue(map.containsKey("sumarrdelay"));
+			}
+		}
+		assertEquals(1, totalrecords);
+	}
 
+	@Test
+	public void testPigLoadFilterForEachFilterForEach() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("filtered_data = FILTER data BY MonthOfYear > 11 AND DayofMonth >= 6;");
+		pigQueriesToExecute.add("data1 = FOREACH filtered_data GENERATE SUM(ArrDelay) as sumarrdelay;");
+		pigQueriesToExecute.add("filtered_data1 = FILTER data1 BY sumarrdelay < 1000;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "filtered_data1",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		int totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(1, map.size());
+				assertTrue(((int)map.get("sumarrdelay"))<1000);
+			}
+		}
+		assertEquals(1, totalrecords);
+	}
+	
+	
+	@Test
+	public void testPigLoadFilterForEachFilterForEachGroup() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("filtered_data = FILTER data BY MonthOfYear > 11 AND DayofMonth >= 6;");
+		pigQueriesToExecute.add("data1 = FOREACH filtered_data GENERATE UniqueCarrier,SUM(ArrDelay) as sumarrdelay;");
+		pigQueriesToExecute.add("filtered_data1 = FILTER data1 BY sumarrdelay < 1000;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "filtered_data1",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		int totalrecords = 0;
+		for (List<Map<String, Object>> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(2, map.size());
+				assertTrue(map.containsKey("UniqueCarrier"));
+				assertTrue(((int)map.get("sumarrdelay"))<1000);
+			}
+		}
+		assertEquals(1, totalrecords);
+	}
+	
+	
 	@Test
 	public void testPigLoadForEachOrderFilter() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -292,7 +504,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Map<String, Object> map : recordspart) {
 				assertEquals(1, map.size());
 				assertTrue(map.containsKey("sumdelay"));
-				assertEquals(-43110l, map.get("sumdelay"));
+				assertEquals(-43110, map.get("sumdelay"));
 			}
 		}
 	}
@@ -315,9 +527,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("sumarrdelay"));
 				assertTrue(map.containsKey("UniqueCarrier"));
-				if (((long) map.get("sumarrdelay")) == 0) {
+				if (((int) map.get("sumarrdelay")) == 0) {
 					assertEquals("UniqueCarrier", map.get("UniqueCarrier"));
-				} else if (((long) map.get("sumarrdelay")) == -63278) {
+				} else if (((int) map.get("sumarrdelay")) == -63278) {
 					assertEquals("AQ", map.get("UniqueCarrier"));
 				}
 			}
@@ -389,7 +601,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("ArrDelay"));
 				assertTrue(map.containsKey("absarrdelay"));
-				assertEquals(map.get("absarrdelay"), Math.abs((long) map.get("ArrDelay")));
+				assertEquals(map.get("absarrdelay"), Math.abs((int) map.get("ArrDelay")));
 			}
 		}
 	}
@@ -504,7 +716,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("submoydom"));
-				assertEquals(((long) map.get("MonthOfYear")) - ((long) map.get("DayofMonth")), map.get("submoydom"));
+				assertEquals(((int) map.get("MonthOfYear")) - ((int) map.get("DayofMonth")), map.get("submoydom"));
 			}
 		}
 	}
@@ -553,7 +765,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("divyearmon"));
 				assertEquals(
-						((long) map.get("AirlineYear"))
+						((int) map.get("AirlineYear"))
 								/ (Double.valueOf(map.get("MonthOfYear") + DataSamudayaConstants.EMPTY)),
 						map.get("divyearmon"));
 			}
@@ -580,9 +792,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertTrue(map.containsKey("MonthOfYear"));
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("divmulyearmon"));
-				assertEquals(((long) map.get("AirlineYear"))
+				assertEquals(((int) map.get("AirlineYear"))
 						/ (Double.valueOf(map.get("MonthOfYear") + DataSamudayaConstants.EMPTY))
-						* ((long) map.get("DayofMonth")), map.get("divmulyearmon"));
+						* ((int) map.get("DayofMonth")), map.get("divmulyearmon"));
 			}
 		}
 	}
@@ -750,7 +962,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertEquals(2, map.size());
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("floordom"));
-				assertEquals(Math.ceil(((long) map.get("DayofMonth"))), map.get("floordom"));
+				assertEquals(Math.ceil(((int) map.get("DayofMonth"))), map.get("floordom"));
 			}
 		}
 	}
@@ -819,6 +1031,30 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertTrue(map.containsKey("DayofMonth"));
 				assertTrue(map.containsKey("logdom"));
 				assertEquals(Math.log(((long) map.get("DayofMonth"))), map.get("logdom"));
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadMultipleAssignment() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, loge(DayofMonth) as logdom;");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, exp(DayofMonth) as expdom;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Map<String, Object>> recordspart : results) {
+			for (Map<String, Object> map : recordspart) {
+				assertEquals(2, map.size());
+				assertTrue(map.containsKey("DayofMonth"));
+				assertTrue(map.containsKey("expdom"));
+				assertEquals(Math.exp(((long) map.get("DayofMonth"))), map.get("expdom"));
 			}
 		}
 	}

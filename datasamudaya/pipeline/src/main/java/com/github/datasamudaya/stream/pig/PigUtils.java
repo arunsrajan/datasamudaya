@@ -74,7 +74,6 @@ import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.MapFunction;
 import com.github.datasamudaya.common.functions.MapToPairFunction;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
-import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 
@@ -231,7 +230,7 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static StreamPipeline<Map<String, Object>> executeLOFilter(StreamPipeline<Map<String, Object>> sp, LOFilter loFilter) throws Exception {
-		sp.clearChild();
+		
 		LogicalExpressionPlan lep = loFilter.getFilterPlan();
 		List<Operator> exp = lep.getSources();
 		StreamPipeline<Map<String, Object>> fsp = sp
@@ -253,7 +252,7 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static StreamPipeline<Map<String, Object>> executeLOSort(StreamPipeline<Map<String, Object>> sp, LOSort loSort) throws Exception {
-		sp.clearChild();
+		
 		List<LogicalExpressionPlan> leps = loSort.getSortColPlans();
 		Iterator<Boolean> asccolumns = loSort.getAscendingCols().iterator();
 		List<SortOrderColumns> sortordercolumns = new ArrayList<>();
@@ -291,7 +290,7 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static StreamPipeline<Map<String, Object>> executeLODistinct(StreamPipeline<Map<String, Object>> sp) throws Exception {
-		sp.clearChild();
+		
 		return sp
 				.mapToPair(new MapToPairFunction<Map<String, Object>, Tuple2<Map<String, Object>, Double>>() {
 
@@ -334,9 +333,7 @@ public class PigUtils {
 			StreamPipeline<Map<String, Object>> sp2,
 			List<String> columnsleft, List<String> columnsright,
 			LOJoin loJoin) throws Exception {
-		sp1.clearChild();
-		sp2.clearChild();
-		return sp1.map(value -> value).join(sp2.map(val -> val), new JoinPredicate<Map<String, Object>, Map<String, Object>>() {
+		return sp1.join(sp2, new JoinPredicate<Map<String, Object>, Map<String, Object>>() {
 			private static final long serialVersionUID = -2218859526944624786L;
 			List<String> leftablecol = columnsleft;
 			List<String> righttablecol = columnsright;
@@ -371,7 +368,7 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static StreamPipeline<Map<String, Object>> executeLOForEach(StreamPipeline<Map<String, Object>> sp, LOForEach loForEach) throws Exception {
-		sp.clearChild();
+		
 		List<FunctionParams> functionparams = getFunctionsWithParamsGrpBy(loForEach);
 		LogicalExpression[] lexp = getLogicalExpressions(functionparams);
 		LogicalExpression[] headers = getHeaders(functionparams);
@@ -388,23 +385,12 @@ public class PigUtils {
 		}
 		
 		List<String> aliases = getAlias(functionparams);
-		Set<String> colheaders = new LinkedHashSet<>();
-		if(nonNull(lexp)) {
-			List<String> columns = new ArrayList<>();
-			for(LogicalExpression lex:lexp) {
-				getColumnsFromExpressions(lex, columns);
-				colheaders.addAll(columns);
-				columns.clear();
-			}
-		}
-		CsvOptionsSQL csvoptsql = ((CsvOptionsSQL) sp.getCsvOptions());
-		List<String> requiredcolumns = csvoptsql.getRequiredcolumns();
-		csvoptsql.setRequiredcolumns(new ArrayList<>(colheaders));
+		
 		List<FunctionParams> aggfunctions = getAggFunctions(functionparams);
 		List<FunctionParams> nonaggfunctions = getNonAggFunctions(functionparams);
 		final AtomicBoolean iscount = new AtomicBoolean(false), isaverage = new AtomicBoolean(false);
 		if(CollectionUtils.isEmpty(aggfunctions) && CollectionUtils.isEmpty(nonaggfunctions)) {
-			StreamPipeline<Map<String, Object>> csp = sp.map(map -> {
+			return sp.map(map -> {
 					Map<String, Object> formattedmap = new HashMap<>();
 					List<String> aliasesl = aliases;
 				try {
@@ -418,8 +404,6 @@ public class PigUtils {
 					}
 					return formattedmap;
 				});
-			csvoptsql.setRequiredcolumns(requiredcolumns);
-			return csp;
 		} else {
 			
 			StreamPipeline<Map<String, Object>> pipelinemap = sp;
@@ -552,9 +536,7 @@ public class PigUtils {
 					}
 				});
 			}
-			StreamPipeline<Map<String, Object>> csp = pipelinemap;
-			csvoptsql.setRequiredcolumns(requiredcolumns);
-			return csp;
+			return pipelinemap;
 		}
 	}
 	
