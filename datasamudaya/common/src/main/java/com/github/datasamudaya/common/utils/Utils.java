@@ -1932,7 +1932,8 @@ public class Utils {
         boolean ismap = false;
         if(firstdataobject instanceof Map map) {
         	ismap = true;
-	        header = (String[]) map.keySet().toArray(new String[0]);
+	        List<String> headers = map.keySet().stream().filter(key->!((String)key).endsWith("-count")).toList();
+	        header = headers.toArray(new String[0]);
         } else {
         	 // Get the fields of the object using reflection
         	 header = new String[fields.length];

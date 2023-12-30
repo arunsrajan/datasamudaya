@@ -57,14 +57,18 @@ public class PigQueryExecutor {
 	 * @return
 	 * @throws Exception
 	 */
-	public static void executePlan(LogicalPlan logicalPlan, String alias, String user, String jobid, String tejobid,
+	public static void executePlan(LogicalPlan logicalPlan, boolean isstore, String alias, String user, String jobid, String tejobid,
 			PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
 		pipelineconfig.setUseglobaltaskexecutors(true);
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		PigUtils.executeDump(traversePlan(logicalPlan, alias, user, jobid, tejobid, pipelineconfig), user, jobid, tejobid, pipelineconfig); ;
+		if(isstore) {
+			traversePlan(logicalPlan, isstore, alias, user, jobid, tejobid, pipelineconfig);
+			return;
+		}
+		PigUtils.executeDump(traversePlan(logicalPlan, isstore, alias, user, jobid, tejobid, pipelineconfig), user, jobid, tejobid, pipelineconfig); ;
 	}
 
 	/**
@@ -78,11 +82,14 @@ public class PigQueryExecutor {
 	 * @return pipeline object
 	 * @throws Exception
 	 */
-	public static StreamPipeline<?> traversePlan(OperatorPlan plan, String alias, String user, String jobid,
+	public static StreamPipeline<?> traversePlan(OperatorPlan plan, boolean isstore, String alias, String user, String jobid,
 			String tejobid, PipelineConfig pipelineconfig) throws Exception {
-		Operator operatortoexec = findLatestAssignment(plan, alias);
+		Operator operatortoexec = findLatestAssignment(plan, isstore, alias);
 		List<Operator> operatorstoexec = new ArrayList<>();
-		if(operatortoexec instanceof LOJoin lojoin) {
+		if(operatortoexec instanceof LOStore lostore) {
+			traverseOperator(operatortoexec, 0, operatorstoexec);
+		}
+		else if(operatortoexec instanceof LOJoin lojoin) {
 			operatorstoexec.add(operatortoexec);
 		}
 		else if (operatortoexec instanceof LogicalRelationalOperator lro) {
@@ -99,7 +106,7 @@ public class PigQueryExecutor {
 				}
 			}
 		} else {
-			traversePlan(operatortoexec.getPlan(), alias, user, jobid, tejobid, pipelineconfig);
+			traversePlan(operatortoexec.getPlan(), isstore, alias, user, jobid, tejobid, pipelineconfig);
 		}
 
 		List<Operator> operatorstoobtainschemas = new ArrayList<>(operatorstoexec);
@@ -112,12 +119,7 @@ public class PigQueryExecutor {
 			extractRequiredColumns(operatorstoobtainschemas, requiredcolumns, allcolumns);
 		}
 		
-		StreamPipeline<?> sp = executeOperators(operatorstoexec, (LogicalPlan) plan, user, jobid, tejobid, pipelineconfig);
-		if(!(operatortoexec instanceof LOJoin)) {
-			CsvOptionsSQL csvoptsql = ((CsvOptionsSQL) sp.getCsvOptions());
-			csvoptsql.setRequiredcolumns(new ArrayList<>(requiredcolumns));
-		}
-		return sp;
+		return executeOperators(operatorstoexec, requiredcolumns, (LogicalPlan) plan, user, jobid, tejobid, pipelineconfig);		
 	}
 	
 	
@@ -192,9 +194,9 @@ public class PigQueryExecutor {
 	 */
 	private static Set<String> getColumnsFromSchemaFields(List<LogicalFieldSchema> schemafields, Set<String> allcolumns){
 		if(isNull(allcolumns)) {
-			return schemafields.parallelStream().map(field->field.alias).collect(Collectors.toSet());
+			return schemafields.parallelStream().map(field->field.alias).collect(Collectors.toCollection(LinkedHashSet::new));
 		}
-		return schemafields.parallelStream().filter(field->allcolumns.contains(field.alias)).map(field->field.alias).collect(Collectors.toSet());
+		return schemafields.parallelStream().filter(field->allcolumns.contains(field.alias)).map(field->field.alias).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 	
 	
@@ -204,12 +206,15 @@ public class PigQueryExecutor {
 	 * @param alias
 	 * @return latest assignment operator plan
 	 */
-	private static Operator findLatestAssignment(OperatorPlan plan, String alias) {
+	private static Operator findLatestAssignment(OperatorPlan plan, boolean isstore, String alias) {
         Iterator<Operator> operators = plan.getOperators();
         Operator latestoperatorforalias = null;
         for (;operators.hasNext();) {
             Operator operator = operators.next();
-            if (operator instanceof LogicalRelationalOperator lro) {
+            if(isstore && operator instanceof LOStore) {
+            	latestoperatorforalias = operator;
+            }
+            else if (operator instanceof LogicalRelationalOperator lro) {
                 if (lro.getAlias().equals(alias)) {
                     // Found the latest assignment
                 	latestoperatorforalias = operator;
@@ -250,12 +255,14 @@ public class PigQueryExecutor {
 	 * @return pipeline object
 	 * @throws Exception
 	 */
-	private static StreamPipeline<?> executeOperators(List<Operator> operatorstoexec, LogicalPlan plan, String user,
+	private static StreamPipeline<?> executeOperators(List<Operator> operatorstoexec, Set<String> requiredcolumns, LogicalPlan plan, String user,
 			String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
 		StreamPipeline<?> sp = null;
 		for (Operator operator : operatorstoexec) {
 			if (operator instanceof LOLoad loload) {
 				sp = PigUtils.executeLOLoad(user, jobid, tejobid, loload, pipelineconfig);
+				CsvOptionsSQL csvoptsql = ((CsvOptionsSQL) sp.getCsvOptions());
+				csvoptsql.setRequiredcolumns(new ArrayList<>(requiredcolumns));
 			} else if (operator instanceof LOFilter loFilter) {
 				sp = PigUtils.executeLOFilter((StreamPipeline<Map<String, Object>>) sp, loFilter);
 			} else if (operator instanceof LOStore lostore) {
@@ -287,9 +294,9 @@ public class PigQueryExecutor {
 					}
 				}
 				sp = PigUtils.executeLOJoin(
-						(StreamPipeline<Map<String, Object>>) traversePlan(operator.getPlan(), expjoinalias.get(0),
+						(StreamPipeline<Map<String, Object>>) traversePlan(operator.getPlan(), false, expjoinalias.get(0),
 								user, jobid, tejobid, pipelineconfig),
-						(StreamPipeline<Map<String, Object>>) traversePlan(operator.getPlan(), expjoinalias.get(1),
+						(StreamPipeline<Map<String, Object>>) traversePlan(operator.getPlan(), false, expjoinalias.get(1),
 								user, jobid, tejobid, pipelineconfig),
 						joincolumns.get(0), joincolumns.get(1), loJoin);
 			}

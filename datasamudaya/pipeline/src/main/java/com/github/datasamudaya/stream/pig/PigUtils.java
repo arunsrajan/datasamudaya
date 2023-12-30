@@ -1363,8 +1363,27 @@ public class PigUtils {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		StreamPipeline<?> sp = PigQueryExecutor.traversePlan(lp, alias, user, jobid, tejobid, pipelineconfig);
+		StreamPipeline<?> sp = PigQueryExecutor.traversePlan(lp, false, alias, user, jobid, tejobid, pipelineconfig);
 		return sp.map(val->val).collect(true, null);
+	}
+	
+	/**
+	 * This function executes latest store pig query.
+	 * @param lp
+	 * @param alias
+	 * @param user
+	 * @param jobid
+	 * @param tejobid
+	 * @param pipelineconfig
+	 * @throws Exception
+	 */
+	public static void executeStore(LogicalPlan lp, String alias, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
+		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
+		pipelineconfig.setUseglobaltaskexecutors(true);		
+		pipelineconfig.setUser(user);
+		pipelineconfig.setTejobid(tejobid);
+		pipelineconfig.setJobid(jobid);
+		PigQueryExecutor.traversePlan(lp, true, alias, user, jobid, tejobid, pipelineconfig);
 	}
 	
 	/**

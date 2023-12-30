@@ -276,7 +276,7 @@ public class PigQueryServer {
 											pigQueriesToExecute.addAll(pigQueries);
 											pigQueriesToExecute.add("\n");
 											LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-											PigQueryExecutor.executePlan(lp,dumpwithalias[1].trim(), user, jobid, tejobid, pipelineconfig);
+											PigQueryExecutor.executePlan(lp,false, dumpwithalias[1].trim(), user, jobid, tejobid, pipelineconfig);
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;											
 											out.println("Time taken " + timetaken + " seconds");
 											out.println("");
@@ -291,6 +291,10 @@ public class PigQueryServer {
 											pigQueriesToExecute.add("\n");
 											LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 											if(nonNull(lp)) {
+												if(inputLine.startsWith("store") || inputLine.startsWith("STORE")) {
+													String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+													PigQueryExecutor.executePlan(lp, true, DataSamudayaConstants.EMPTY, user, jobid, tejobid, pipelineconfig);
+												}
 												pigQueries.add(inputLine);
 												pigQueries.add("\n");
 											}else {

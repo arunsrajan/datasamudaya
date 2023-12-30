@@ -23,13 +23,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Vector;
@@ -42,6 +43,7 @@ import java.util.stream.StreamSupport;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
@@ -108,13 +111,15 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 		ByteArrayOutputStream baos = null;
 		CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
 		List<String> reqcols = new Vector<>(csvoptions.getRequiredcolumns());
+		List<String> originalcolsorder = csvoptions.getRequiredcolumns();
 		Collections.sort(reqcols);
+		var fsdos = new ByteArrayOutputStream();
 		BufferedReader buffer = null;
 		InputStream bais = null;
-		try (var fsdos = new ByteArrayOutputStream(); var output = new Output(fsdos);) {
+		try (var output = new Output(fsdos);) {
 			Stream intermediatestreamobject;
 			try {
-				byte[] yosegibytes = (byte[]) blockinfocache.get(blockslocation.toBlString() + reqcols.toString());
+				byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString() + reqcols.toString());
 				try {
 					if (CollectionUtils.isNotEmpty(csvoptions.getRequiredcolumns())) {
 						if (isNull(yosegibytes) || yosegibytes.length == 0 || nonNull(blockslocation.getToreprocess()) && blockslocation.getToreprocess().booleanValue()) {
@@ -123,7 +128,7 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 							buffer = new BufferedReader(new InputStreamReader(bais));
 							task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
 							CsvParserSettings settings = new CsvParserSettings();							
-							settings.selectIndexes(Utils.indexOfRequiredColumns(reqcols, Arrays.asList(csvoptions.getHeader())));
+							settings.selectIndexes(Utils.indexOfRequiredColumns(originalcolsorder, Arrays.asList(csvoptions.getHeader())));
 							settings.getFormat().setLineSeparator("\n");
 							settings.setNullValue(DataSamudayaConstants.EMPTY);
 							CsvParser parser = new CsvParser(settings);							
@@ -136,11 +141,11 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 							baos = new ByteArrayOutputStream();
 							YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos);
 							intermediatestreamobject = stringstream.map(values -> {
-								Map data = new ConcurrentHashMap<>();
-								Map datatoprocess = new ConcurrentHashMap<>();
+								Map data = new LinkedHashMap<>();
+								Map datatoprocess = new LinkedHashMap<>();
 								try {
 									int colcount = 0;
-									for(String col:reqcols) {
+									for(String col:originalcolsorder) {
 										SQLUtils.setYosegiObjectByValue(values[colcount], sqltypename.get(col), data,
 												col);
 										SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
@@ -221,6 +226,15 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 				} else {
 					log.info("Map assembly deriving");
 					out = (List) ((Stream) streammap).collect(Collectors.toCollection(Vector::new));
+					if (task.finalphase && task.saveresulttohdfs) {
+						try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+								Short.parseShort(
+										DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+												DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+							Utils.convertToCsv((List) out, os);
+						}
+						return (System.currentTimeMillis() - starttime) / 1000.0;
+					}
 					log.info("Map assembly concluded");
 				}
 				Utils.getKryo().writeClassAndObject(output, out);

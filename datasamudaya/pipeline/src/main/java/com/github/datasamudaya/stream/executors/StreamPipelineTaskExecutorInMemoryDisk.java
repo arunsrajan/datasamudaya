@@ -189,30 +189,22 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var streamsecond = buffer2.lines();) {
 			var cf = (CompletableFuture) streamsecond.distinct().collect(ParallelCollectors.parallel(value -> value,
 					Collectors.toCollection(LinkedHashSet::new), executor, Runtime.getRuntime().availableProcessors()));
-			;
 			var setsecond = (Set) cf.get();
-			if (task.finalphase && task.saveresulttohdfs) {
-				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-					int ch = (int) '\n';
-					streamfirst.distinct().filter(setsecond::contains).forEach(val -> {
-						try {
-							os.write(val.toString().getBytes());
-							os.write(ch);
-						} catch (IOException e) {
-						}
-					});
-				}
-				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-				return timetaken;
-			}
 			// Get the result of intersection functions parallel.
 			cf = (CompletableFuture) streamfirst.distinct().filter(setsecond::contains)
 					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
 							Runtime.getRuntime().availableProcessors()));
 
 			Object result = cf.get();
+			if (task.finalphase && task.saveresulttohdfs) {
+				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+						Short.parseShort(DataSamudayaProperties.get().getProperty(
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+					Utils.convertToCsv((List) result, os);
+				}
+				return (System.currentTimeMillis() - starttime) / 1000.0;
+			}
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
 			task.setNumbytesgenerated(fsdos.toByteArray().length);
@@ -261,27 +253,20 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 					Collectors.toCollection(LinkedHashSet::new), executor, Runtime.getRuntime().availableProcessors()));
 			;
 			var setsecond = (Set) cf.get();
-			if (task.finalphase && task.saveresulttohdfs) {
-				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-					int ch = (int) '\n';
-					datafirst.stream().distinct().filter(setsecond::contains).forEach(val -> {
-						try {
-							os.write(val.toString().getBytes());
-							os.write(ch);
-						} catch (IOException e) {
-						}
-					});
-				}
-				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-				return timetaken;
-			}
 			// Parallel execution of the intersection function.
 			cf = (CompletableFuture) datafirst.stream().distinct().filter(setsecond::contains)
 					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
 							Runtime.getRuntime().availableProcessors()));
 			Object result = cf.get();
+			if (task.finalphase && task.saveresulttohdfs) {
+				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+						Short.parseShort(DataSamudayaProperties.get().getProperty(
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+					Utils.convertToCsv((List) result, os);
+				}
+				return (System.currentTimeMillis() - starttime) / 1000.0;
+			}
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
 			task.setNumbytesgenerated(fsdos.toByteArray().length);
@@ -326,27 +311,20 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var datasecond = (List) Utils.getKryo().readClassAndObject(inputsecond);
-			if (task.finalphase && task.saveresulttohdfs) {
-				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-					int ch = (int) '\n';
-					datafirst.stream().distinct().filter(datasecond::contains).forEach(val -> {
-						try {
-							os.write(val.toString().getBytes());
-							os.write(ch);
-						} catch (IOException e) {
-						}
-					});
-				}
-				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-				return timetaken;
-			}
 			// parallel execution of intersection function.
 			var cf = (CompletableFuture) datafirst.stream().distinct().filter(datasecond::contains)
 					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
 							Runtime.getRuntime().availableProcessors()));
 			Object result = cf.get();
+			if (task.finalphase && task.saveresulttohdfs) {
+				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+						Short.parseShort(DataSamudayaProperties.get().getProperty(
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+					Utils.convertToCsv((List) result, os);
+				}
+				return (System.currentTimeMillis() - starttime) / 1000.0;
+			}
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
 			task.setNumbytesgenerated(fsdos.toByteArray().length);
@@ -723,27 +701,21 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 					var standardDeviation = Math.sqrt(variance);
 					out.add(standardDeviation);
 
-				} else if (task.finalphase && task.saveresulttohdfs) {
-					try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-							Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-									DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-						int ch = (int) '\n';
-						((Stream) streammap).forEach(val -> {
-							try {
-								os.write(val.toString().getBytes());
-								os.write(ch);
-							} catch (IOException e) {
-							}
-						});
-					}
-					var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-					return timetaken;
 				} else {
 					log.info("Map assembly deriving");
 					CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
 							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
 					out = cf.get();
+					if (task.finalphase && task.saveresulttohdfs) {
+						try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+								Short.parseShort(DataSamudayaProperties.get().getProperty(
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+							Utils.convertToCsv((List) out, os);
+						}
+						return (System.currentTimeMillis() - starttime) / 1000.0;
+					}
 					log.info("Map assembly concluded");
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
@@ -864,29 +836,20 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 							double standardDeviation = Math.sqrt(variance);
 							out.add(standardDeviation);
 
-						} else if (task.finalphase && task.saveresulttohdfs
-
-						) {
-							try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-									Short.parseShort(
-											DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-													DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-								int ch = (int) '\n';
-								((Stream) streammap).forEach(val -> {
-									try {
-										os.write(val.toString().getBytes());
-										os.write(ch);
-									} catch (IOException e) {
-									}
-								});
-							}
-							var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-							return timetaken;
 						} else {
 							CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap).collect(
 									ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 											executor, Runtime.getRuntime().availableProcessors()));
 							out = cf.get();
+							if (task.finalphase && task.saveresulttohdfs) {
+								try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+										Short.parseShort(DataSamudayaProperties.get().getProperty(
+												DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+												DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+									Utils.convertToCsv((List) out, os);
+								}
+								return (System.currentTimeMillis() - starttime) / 1000.0;
+							}
 						}
 					} catch (Exception ex) {
 						log.error(PipelineConstants.PROCESSHDFSERROR, ex);
