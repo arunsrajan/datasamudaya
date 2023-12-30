@@ -285,8 +285,17 @@ public class PigQueryServer {
 											if (nonNull(pipelineconfig)) {
 												pipelineconfig.setSqlpigquery(inputLine);
 									    	}
-									    	pigQueries.add(inputLine);
-									    	pigQueries.add("\n");
+											pigQueriesToExecute.clear();
+											pigQueriesToExecute.addAll(pigQueries);
+											pigQueriesToExecute.add(inputLine);
+											pigQueriesToExecute.add("\n");
+											LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+											if(nonNull(lp)) {
+												pigQueries.add(inputLine);
+												pigQueries.add("\n");
+											}else {
+												out.println(String.format("Error In Pig Query for the current line: %s ", inputLine));
+											}
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;											
 											out.println("Time taken " + timetaken + " seconds");
 											out.println("");

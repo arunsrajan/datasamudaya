@@ -161,9 +161,14 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static LogicalPlan getLogicalPlan(List<String> pigQueries, QueryParserDriver queryparserdriver) throws Exception {
-		StringBuilder pigCommands = new StringBuilder();
-		pigQueries.forEach(pigCommands::append);
-		return queryparserdriver.parse(pigCommands.toString());
+		try {
+			StringBuilder pigCommands = new StringBuilder();
+			pigQueries.forEach(pigCommands::append);
+			return queryparserdriver.parse(pigCommands.toString());
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
 	}
 	
 	/**
