@@ -1722,37 +1722,76 @@ public class Utils {
 	 * @param tableData
 	 * @param out
 	 */
-	private static void printTablePig(List<Map<String, Object>> tableData, PrintWriter out) {
+	private static void printTablePig(List<?> tableData, PrintWriter out) {
 		if (tableData.isEmpty()) {
             out.println("Table is empty.");
             out.flush();
             return;
         }
-		Map<String, Object> mapforkeys = tableData.get(0);
-        Set<String> keys = mapforkeys.keySet();
-        out.print("(");
-        out.flush();
-        for(String key: keys) {
-        	out.print(key);
-        	out.print(",");
-        	out.flush();
-        }
-        out.print(")");
-        out.println();
-        out.flush();
-		for (Map<String, Object> row : tableData) {
-			out.print("(");
+		
+		
+		Object valuemap = tableData.get(0);
+		if(valuemap instanceof Map) {
+			Map<String,Object> mapforkeys = (Map<String,Object>) valuemap;
+	        Set<String> keys = mapforkeys.keySet();
+	        out.print("(");
 	        out.flush();
-			for(String key: keys) {
-				out.print(row.get(key));
-				out.print(",");
-                out.flush();
-            }
-			out.print(")");
-	        out.flush();
+	        for(String key: keys) {
+	        	out.print(key);
+	        	out.print(",");
+	        	out.flush();
+	        }
+	        out.print(")");
 	        out.println();
-            out.flush();
-        }
+	        out.flush();
+	        List<Map<String,Object>> tableDataToPrint = (List<Map<String, Object>>) tableData;
+			for (Map<String, Object> row : tableDataToPrint) {
+				out.print("(");
+		        out.flush();
+				for(String key: keys) {
+					out.print(row.get(key));
+					out.print(",");
+	                out.flush();
+	            }
+				out.print(")");
+		        out.flush();
+		        out.println();
+	            out.flush();
+	        }
+		} else if(valuemap instanceof Tuple2 tuple2){
+			Tuple2<Map<String, Object>, List<Map<String, Object>>> tup2 = tuple2;
+			Set<String> keys = tup2.v1.keySet();
+	        out.print("(");
+	        out.flush();
+	        for(String key: keys) {
+	        	out.print(key);
+	        	out.print(",");
+	        	out.flush();
+	        }
+	        out.print(")");
+	        out.println();
+	        out.flush();
+			List<Tuple2<Map<String, Object>, List<Map<String, Object>>>> tableDataToPrint = 
+					(List<Tuple2<Map<String, Object>, List<Map<String, Object>>>>) tableData;
+			for (Tuple2<Map<String, Object>, List<Map<String, Object>>> row : tableDataToPrint) {
+				out.print("(");
+		        out.flush();
+				for(String key: keys) {
+					out.print(row.v1.get(key));
+					out.print(",");
+	                out.flush();
+	            }
+				out.print(")");
+				out.print("(");
+		        out.flush();
+				out.print(row.v2);
+	            out.flush();	           
+				out.print(")");
+		        out.flush();
+		        out.println();
+	            out.flush();
+	        }
+		}
 	}
 
 	/**
