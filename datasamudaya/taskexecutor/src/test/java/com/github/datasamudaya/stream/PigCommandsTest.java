@@ -51,7 +51,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
-		Utils.launchContainers("arun", tejobid);
+		if(pipelineconfig.getLocal().equals("false")) {
+			Utils.launchContainers("arun", tejobid);
+		}
 	}
 
 	@Test
@@ -171,6 +173,20 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		assertEquals(3389, totalrecords);
+	}
+	
+	@Test
+	public void testPigLoadFilterStore() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("filtered_data = FILTER data BY MonthOfYear > 11 AND DayofMonth >= 6;");
+		pigQueriesToExecute.add("STORE filtered_data into '/examplestest1';");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+		assertTrue(nonNull(lp));
+		PigUtils.executeStore(lp, DataSamudayaConstants.EMPTY, pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
 	}
 	
 	

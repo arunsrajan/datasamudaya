@@ -28,7 +28,6 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -70,13 +69,17 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
+import com.google.common.collect.Maps;
 import com.pivovarit.collectors.ParallelCollectors;
 import com.univocity.parsers.common.IterableResult;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.ResultIterator;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
 
+import jp.co.yahoo.yosegi.config.Configuration;
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
 /**
@@ -113,11 +116,12 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 		ByteArrayOutputStream baos = null;
 		CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
 		List<String> reqcols = new Vector<>(csvoptions.getRequiredcolumns());
-		List<String> originalcolsorder = csvoptions.getRequiredcolumns();
+		List<String> originalcolsorder = new Vector<>(csvoptions.getRequiredcolumns());
 		Collections.sort(reqcols);
 		var fsdos = new ByteArrayOutputStream();
 		BufferedReader buffer = null;
 		InputStream bais = null;
+		CsvWriter writercsv = null;
 		try (var output = new Output(fsdos);) {
 			Stream intermediatestreamobject;
 			try {
@@ -143,16 +147,14 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 							baos = new ByteArrayOutputStream();
 							YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos);
 							intermediatestreamobject = stringstream.map(values -> {
-								Map data = new LinkedHashMap<>();
-								Map datatoprocess = new LinkedHashMap<>();
+								Map data = Maps.newLinkedHashMap();
+								Map datatoprocess = Maps.newLinkedHashMap();
 								try {
-									int colcount = 0;
-									for(String col:originalcolsorder) {
-										SQLUtils.setYosegiObjectByValue(values[colcount], sqltypename.get(col), data,
+									originalcolsorder.forEach(col->{
+										SQLUtils.setYosegiObjectByValue(values[originalcolsorder.indexOf(col)], sqltypename.get(col), data,
 												col);
 										SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
-										colcount++;
-									}
+									});
 									writerdataload.addRow(data);
 								} catch (Exception ex) {
 									log.error(DataSamudayaConstants.EMPTY, ex);
@@ -230,19 +232,28 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 
 				} else {
 					log.info("Map assembly deriving");
-					CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
-							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-									executor, Runtime.getRuntime().availableProcessors()));
-					out = cf.get();
 					if (task.finalphase && task.saveresulttohdfs) {
 						try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-								Short.parseShort(
-										DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-												DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-							Utils.convertToCsv((List) out, os);
+								Short.parseShort(DataSamudayaProperties.get().getProperty(
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));
+								) {
+							CsvWriterSettings settings = new CsvWriterSettings();
+							CsvWriter csvtowrite = writercsv = new CsvWriter(os, settings);
+							((Stream) streammap).forEach(value->{
+								try {
+									Utils.convertMapToCsv(value, csvtowrite);
+								} catch (Exception e) {
+									log.error(DataSamudayaConstants.EMPTY, e);
+								}
+							});	
 						}
-						var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-						return timetaken;
+						return (System.currentTimeMillis() - starttime) / 1000.0;
+					} else {
+						CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
+								.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+										executor, Runtime.getRuntime().availableProcessors()));
+						out = cf.get();
 					}
 					log.info("Map assembly concluded");
 				}
@@ -268,6 +279,13 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 			log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 			throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 		} finally {
+			if(nonNull(writercsv)) {
+				try {
+					writercsv.close();
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}			
 			if (nonNull(writer)) {				
 				try {
 					writer.close();

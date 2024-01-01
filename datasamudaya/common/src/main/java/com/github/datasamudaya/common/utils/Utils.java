@@ -154,6 +154,7 @@ import com.github.datasamudaya.common.WhoIsRequest;
 import com.github.datasamudaya.common.WhoIsResponse;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.sun.management.OperatingSystemMXBean;
+import com.univocity.parsers.csv.CsvWriter;
 
 import jdk.jshell.JShell;
 import net.sf.jsqlparser.parser.SimpleNode;
@@ -1983,8 +1984,13 @@ public class Utils {
         try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(ostream)
         		, CSVFormat.DEFAULT.withHeader(header))) {
         	if(ismap) {
+        		List<Object> rowData = new ArrayList<>();
 	            for (Map<String, Object> map : (List<Map>) data) {
-	                printer.printRecord(map.values());
+	                for(String headr:header) {
+	                	rowData.add(map.get(headr));
+	                }
+	                printer.printRecord(rowData);
+                    rowData.clear();
 	            }
         	} else {
         		List<Object> rowData = new ArrayList<>();
@@ -2002,6 +2008,30 @@ public class Utils {
         	}
         }
         log.info("Writing data to csv End");
+    }
+	
+	/**
+	 * The function converts object to csv
+	 * @param obj
+	 * @param printer
+	 * @param colsinorder
+	 * @throws Exception
+	 */
+	public static void convertMapToCsv(Object obj, CsvWriter writer) throws Exception {
+		if(obj instanceof Map map) {                	
+			map.keySet().parallelStream().filter(key->!((String)key).endsWith("-count")).map(header->map.get(header)).forEachOrdered(value->{
+				writer.addValue(value);
+			});
+			writer.writeValuesToRow();
+		} else {
+			Field[] fields = obj.getClass().getDeclaredFields();
+			for (int i = 0; i < fields.length; i++) {
+				fields[i].setAccessible(true);
+				Object value = fields[i].get(obj);
+				writer.addValue(value);
+			}
+			writer.writeValuesToRow();
+		}
     }
 	
 	/**
@@ -2063,5 +2093,19 @@ public class Utils {
 		return indexcolumns.toArray(new Integer[0]);
 	}
 	
+	/**
+	 * Estimate the initial capacity of HashMap for given number of keys;
+	 * @param numberOfKeys
+	 * @return initial capacity of hash map.
+	 */
+	public static int calculateInitialCapacity(int numberOfKeys) {
+        // Calculate the initial capacity based on the estimated number of keys
+        // You can use your own logic here; a common approach is to use a power of two
+        int capacity = 1;
+        while (capacity < numberOfKeys) {
+            capacity <<= 1; // Left shift to double the value
+        }
+        return capacity;
+    }
 	
 }

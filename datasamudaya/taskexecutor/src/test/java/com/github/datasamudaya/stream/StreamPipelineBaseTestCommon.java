@@ -83,7 +83,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 			pipelineconfig.setNumberofcontainers("1");
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-			pipelineconfig.setBatchsize("1");
+			pipelineconfig.setBatchsize("4");
 			tejobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
 			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
