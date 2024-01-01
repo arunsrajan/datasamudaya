@@ -327,44 +327,42 @@ public class StreamJobScheduler {
       // If Yarn is scheduler run yarn scheduler via spring yarn
       // framework.
 		else if (Boolean.TRUE.equals(isyarn)) {
-			if(job.getTrigger() != TRIGGER.PIGDUMP) {
-				if (!pipelineconfig.getUseglobaltaskexecutors()) {
-					yarnmutex.acquire();
-					pipelineconfig.setJobid(job.getId());
-					Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
-					decideContainerCountAndPhysicalMemoryByBlockSize(sptsl.size(),
-							Integer.parseInt(pipelineconfig.getBlocksize()));
-					ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-							DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT,
-							getClass());
-					var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
-					if (nonNull(pipelineconfig.getJobname())) {
-						client.setAppName(pipelineconfig.getJobname());
-					} else {
-						client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
-					}
-					client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, job.getId());
-					var appid = client.submitApplication(true);
-					var appreport = client.getApplicationReport(appid);
-					yarnmutex.release();
-					while (appreport.getYarnApplicationState() != YarnApplicationState.RUNNING) {
-						appreport = client.getApplicationReport(appid);
-						Thread.sleep(1000);
-					}
-					Utils.sendJobToYARNDistributedQueue(zo, job.getId());
-					TaskInfoYARN tinfoyarn = Utils.getJobOutputStatusYARNDistributedQueueBlocking(zo, job.getId());
-					Utils.shutDownYARNContainer(zo, job.getId());
-					log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
-							job.getId().equals(tinfoyarn.getJobid()));
+			if (!pipelineconfig.getUseglobaltaskexecutors()) {
+				yarnmutex.acquire();
+				pipelineconfig.setJobid(job.getId());
+				Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
+				decideContainerCountAndPhysicalMemoryByBlockSize(sptsl.size(),
+						Integer.parseInt(pipelineconfig.getBlocksize()));
+				ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+						DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT,
+						getClass());
+				var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
+				if (nonNull(pipelineconfig.getJobname())) {
+					client.setAppName(pipelineconfig.getJobname());
 				} else {
-					Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
-					Utils.sendJobToYARNDistributedQueue(pipelineconfig.getTejobid(), job.getId());
-					TaskInfoYARN tinfoyarn = Utils
-							.getJobOutputStatusYARNDistributedQueueBlocking(pipelineconfig.getTejobid());
-					log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
-							job.getId().equals(tinfoyarn.getJobid()));
-					log.info("Is output available {}", tinfoyarn.isIsresultavailable());
+					client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
 				}
+				client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, job.getId());
+				var appid = client.submitApplication(true);
+				var appreport = client.getApplicationReport(appid);
+				yarnmutex.release();
+				while (appreport.getYarnApplicationState() != YarnApplicationState.RUNNING) {
+					appreport = client.getApplicationReport(appid);
+					Thread.sleep(1000);
+				}
+				Utils.sendJobToYARNDistributedQueue(zo, job.getId());
+				TaskInfoYARN tinfoyarn = Utils.getJobOutputStatusYARNDistributedQueueBlocking(zo, job.getId());
+				Utils.shutDownYARNContainer(zo, job.getId());
+				log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
+						job.getId().equals(tinfoyarn.getJobid()));
+			} else {
+				Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
+				Utils.sendJobToYARNDistributedQueue(pipelineconfig.getTejobid(), job.getId());
+				TaskInfoYARN tinfoyarn = Utils
+						.getJobOutputStatusYARNDistributedQueueBlocking(pipelineconfig.getTejobid());
+				log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
+						job.getId().equals(tinfoyarn.getJobid()));
+				log.info("Is output available {}", tinfoyarn.isIsresultavailable());
 			}
 		}
       // If Jgroups is the scheduler;
@@ -471,14 +469,6 @@ public class StreamJobScheduler {
         graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) parallelExecutionPhaseDExecutor(graph);
       }
       
-      if(job.getJobtype() == JOBTYPE.PIG) {
-    	  printStats();
-    	  if(job.getTrigger() == TRIGGER.PIGDUMP) {
-    		  getLastStageOutput(sptss, graph, sptsl, ismesos, isyarn, islocal,
-    		          isjgroups, resultstream, taskgraph);
-    	  }
-    	  return getFinalPhasesWithNoSuccessors(taskgraph);
-      }
       // Obtain the final stage job results after final stage is
       // completed.
       List finalstageoutput = new ArrayList<>();
@@ -1664,10 +1654,8 @@ public class StreamJobScheduler {
         int partition = 0;
         for (var spts : sptss) {
           job.getOutput().add(spts);
-          if (job.isIsresultrequired()) {
-            // Get final stage results from ignite
-            writeResultsFromIgnite(spts.getTask(), partition++, stageoutput);
-          }
+          // Get final stage results from ignite
+          writeResultsFromIgnite(spts.getTask(), partition++, stageoutput);
         }
       } else if (Boolean.TRUE.equals(islocal)) {
         if (job.getTrigger() != job.getTrigger().SAVERESULTSTOFILE) {
@@ -1691,7 +1679,7 @@ public class StreamJobScheduler {
         int partition = 0;
         if(Boolean.TRUE.equals(isyarn) && job.getTrigger()==TRIGGER.PIGDUMP) {
         	var vertices = taskgraph.vertexSet();
-        	var tasks = vertices.stream().filter(spts -> Graphs.predecessorListOf(taskgraph, spts).isEmpty())
+        	var tasks = vertices.stream().filter(spts -> Graphs.successorListOf(taskgraph, spts).isEmpty())
         	        .collect(Collectors.toCollection(LinkedHashSet::new));
         	PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput(), true);
         	for (var task : tasks) {
@@ -1777,12 +1765,9 @@ public class StreamJobScheduler {
           BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fsdos))) {
 
         if (result instanceof List res) {
-          for (var value : res) {
-            bw.write(value.toString());
-            bw.write(DataSamudayaConstants.NEWLINE);
-          }
+          Utils.convertToCsv(res, fsdos);
         } else {
-          bw.write(result.toString());
+        	Utils.convertToCsv(Arrays.asList(result), fsdos);
         }
         bw.flush();
         fsdos.flush();
