@@ -134,7 +134,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
     return task;
   }
 
-  /**
+  public void setCache(Cache cache) {
+	this.cache = cache;
+}
+
+/**
    * This method writes the intermediate data generated in to output stream.  
    * @param fsdos
    * @throws PipelineException

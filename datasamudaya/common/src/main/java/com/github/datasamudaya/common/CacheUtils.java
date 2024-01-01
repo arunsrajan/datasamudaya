@@ -92,14 +92,14 @@ public class CacheUtils {
    */
   public static void initCache(String cacheName, String diskpath) {
     log.debug("Entered CacheUtils.initCache");
-    String cacheduration = (String) DataSamudayaProperties.get().get(DataSamudayaConstants.CACHEDURATION);
+    String cacheduration = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDURATION, DataSamudayaConstants.CACHEDURATION_DEFAULT);
     DataSamudayaCache
         .put(buildInMemoryCache(cacheName, String.class, byte[].class,
-            Integer.parseInt((String) DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEHEAPMAXENTRIES,
+            Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEHEAPMAXENTRIES,
             		DataSamudayaConstants.CACHEHEAPMAXENTRIES_DEFAULT)),
-            Integer.parseInt((String) DataSamudayaProperties.get().get(DataSamudayaConstants.CACHEEXPIRY)),
+            Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEEXPIRY, DataSamudayaConstants.CACHEEXPIRY_DEFAULT)),
             CacheUtils.CacheExpiry.valueOf(cacheduration),
-            Integer.parseInt((String) DataSamudayaProperties.get().get(DataSamudayaConstants.CACHEDISKSIZEGB)),
+            Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKSIZEGB, DataSamudayaConstants.CACHEDISKSIZEGB_DEFAULT)),
             diskpath));
     log.debug("Exiting CacheUtils.initCache");
   }

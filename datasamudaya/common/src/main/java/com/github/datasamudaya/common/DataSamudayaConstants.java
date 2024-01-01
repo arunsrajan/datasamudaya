@@ -344,12 +344,16 @@ public class DataSamudayaConstants {
 
   // Cache Properties
   public static final String CACHESIZEGB = "cache.size";
+  public static final String CACHESIZEGB_DEFAULT = "2048";
   public static final String CACHEEXPIRY = "cache.expiry";
+  public static final String CACHEEXPIRY_DEFAULT = "2";
   public static final String CACHEDURATION = "cache.duration";
+  public static final String CACHEDURATION_DEFAULT = "HOURS";
   public static final String BLOCKCACHE = "BlockCache";
   public static final String BLOCKSLOCATIONMETADATACACHE = "BlocksLocationMetadataCache";
   public static final String FILEMETADATACACHE = "FILEMETADATACACHE";
   public static final String CACHEDISKSIZEGB = "cache.disk";
+  public static final String CACHEDISKSIZEGB_DEFAULT = "12"; 
   public static final String CACHEDISKPATH = "cache.disk.path";
   public static final String CACHEBLOCKSLOCATIONDISKPATH = "cache.disk.blocks.metadata.path";
   public static final String CACHEFILEMETDATADISKPATH = "cache.disk.file.metadata.path";

@@ -94,11 +94,9 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 
 	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorYarnSQL.class);
 
-	Map<String, byte[]> blockinfocache;
 
-	public StreamPipelineTaskExecutorYarnSQL(String hdfsnn, JobStage jobstage, Map<String, byte[]> blockinfocache) {
+	public StreamPipelineTaskExecutorYarnSQL(String hdfsnn, JobStage jobstage) {
 		super(hdfsnn, jobstage);
-		this.blockinfocache = blockinfocache;
 	}
 
 	/**
@@ -251,10 +249,10 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 						}
 						return (System.currentTimeMillis() - starttime) / 1000.0;
 					} else {
-						CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
-								.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-										executor, Runtime.getRuntime().availableProcessors()));
-						out = cf.get();
+						log.info("Map assembly processing");
+						out = ((Stream) streammap)
+								.toList();
+						log.info("Map assembly completed");
 					}
 					log.info("Map assembly concluded");
 				}
@@ -294,7 +292,7 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 			}
 			if (nonNull(baos)) {
 				byte[] yosegibytes = baos.toByteArray();
-				blockinfocache.put(blockslocation.toBlString() + reqcols.toString(), yosegibytes);
+				cache.put(blockslocation.toBlString() + reqcols.toString(), yosegibytes);
 				task.numbytesconverted = yosegibytes.length;
 				try {
 					baos.close();
