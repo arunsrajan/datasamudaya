@@ -107,11 +107,12 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 		List<String> reqcols = new Vector<>(csvoptions.getRequiredcolumns());
 		List<String> originalcolsorder = new Vector<>(csvoptions.getRequiredcolumns());
 		Collections.sort(reqcols);
-		var fsdos = new ByteArrayOutputStream();
 		BufferedReader buffer = null;
 		InputStream bais = null;
 		CsvWriter writercsv = null;
-		try (var output = new Output(fsdos);) {
+		try (var fsdos = new ByteArrayOutputStream();
+				var sos = new SnappyOutputStream(fsdos);
+				var output = new Output(sos);) {
 			Stream intermediatestreamobject;
 			try {
 				byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString() + reqcols.toString());
