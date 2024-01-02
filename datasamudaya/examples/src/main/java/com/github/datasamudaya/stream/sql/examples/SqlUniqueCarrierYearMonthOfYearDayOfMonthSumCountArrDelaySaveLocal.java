@@ -60,7 +60,7 @@ public class SqlUniqueCarrierYearMonthOfYearDayOfMonthSumCountArrDelaySaveLocal 
 				FROM airline where airline.ArrDelay<>'NA' and airline.ArrDelay<>'ArrDelay' group by airline.AirlineYear,airline.MonthOfYear,airline.DayofMonth,airline.UniqueCarrier\
 				""";
 		StreamPipelineSql mdpsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airsqltype)
-				.setHdfs(args[0])
+				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		mdpsql.saveAsTextFile(new URI(args[0]), args[4] + "/SqlCountSum-" + System.currentTimeMillis());
 		log.info("SqlUniqueCarrierYearMonthOfYearDayOfMonthSumCountArrDelaySaveLocal.testSql After---------------------------------------");

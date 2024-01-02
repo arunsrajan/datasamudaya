@@ -65,17 +65,14 @@ public class SqlUniqueCarrierSumCountDepDelaySADisk implements Serializable, Pip
 				FROM airline where airline.DepDelay<>'NA' and airline.DepDelay<>'DepDelay' group by airline.UniqueCarrier\
 				""";
 		StreamPipelineSql mdpsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airsqltype)
-				.setHdfs(args[0])
+				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) mdpsql.collect(true, null);
-		Long sum = 0l;
 		for (List<Map<String, Object>> recs : records) {
 			for (Map<String, Object> rec : recs) {
 				log.info(rec);
-				sum += (Long) rec.get("sum(DepDelay)");
 			}
 		}
-		log.info("Sum = " + sum);
 		log.info("SqlUniqueCarrierSumCountDepDelaySADisk.testSql After---------------------------------------");
 	}
 }

@@ -61,7 +61,7 @@ public class SqlCountLocal implements Serializable, Pipeline {
 				FROM airline where airline.ArrDelay<>'ArrDelay' and airline.ArrDelay<>'NA' group by airline.UniqueCarrier\
 				""";
 		StreamPipelineSql mdpsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airsqltype)
-				.setHdfs(args[0])
+				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
 		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) mdpsql.collect(true, null);
 		Long sum = 0l;

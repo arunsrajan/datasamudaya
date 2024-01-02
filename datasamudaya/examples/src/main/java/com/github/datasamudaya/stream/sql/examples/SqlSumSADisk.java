@@ -18,6 +18,8 @@ package com.github.datasamudaya.stream.sql.examples;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.log4j.Logger;
 
@@ -65,16 +67,13 @@ public class SqlSumSADisk implements Serializable, Pipeline {
 				""";
 		StreamPipelineSql mdpsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airsqltype)
 				.add(args[2], "carriers", carrierheader, carriersqltype).setHdfs(args[0])
-				.setPipelineConfig(pipelineconfig).setSql(statement).build();
-		List<List<Long>> records = (List<List<Long>>) mdpsql.collect(true, null);
-		long sum = 0;
-		for (List<Long> recs : records) {
-			for (Long rec : recs) {
+				.setPipelineConfig(pipelineconfig).setDb(DataSamudayaConstants.SQLMETASTORE_DB).setSql(statement).build();
+		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) mdpsql.collect(true, null);
+		for (List<Map<String, Object>> recs : records) {
+			for (Map<String, Object> rec : recs) {
 				log.info(rec);
-				sum += rec;
 			}
 		}
-		log.info("Sum = " + sum);
 		log.info("SqlSumSADisk.testSql After---------------------------------------");
 	}
 }
