@@ -15,28 +15,30 @@
  */
 package com.github.datasamudaya.stream;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.calcite.sql.type.SqlTypeName;
+
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * 
  * @author arun
- * This class is a stream with parametered types for pipeline api to process json files.
- * @param <I1>
+ * This class json based option for JSON based data pipeline.
  */
-public final class JsonStream<I1> extends StreamPipeline<I1> {
-	@SuppressWarnings({"rawtypes"})
-	public JsonStream(StreamPipeline root) {
-		this.tasks.add(new Json());
-		root.childs.add(this);
-		this.parents.add(root);
-		this.protocol = root.protocol;
-		this.pipelineconfig = root.pipelineconfig;
-	}
-	
-	@SuppressWarnings({"rawtypes"})
-	public JsonStream(StreamPipeline root, JsonSQL jsonsql) {
-		this.tasks.add(jsonsql);
-		root.childs.add(this);
-		this.parents.add(root);
-		this.protocol = root.protocol;
-		this.pipelineconfig = root.pipelineconfig;
+@Getter
+@Setter
+public class JsonSQL extends Json implements Serializable {
+	private static final long serialVersionUID = 433665395278296254L;
+	private String[] header;
+	private List<SqlTypeName> types = new ArrayList<>();
+	private List<String> requiredcolumns = new ArrayList<>();
+	public JsonSQL(String[] header, List<SqlTypeName> types, List<String> requiredcolumns) {
+		this.header = header;
+		this.types = types;
+		this.requiredcolumns = requiredcolumns;
 	}
 }

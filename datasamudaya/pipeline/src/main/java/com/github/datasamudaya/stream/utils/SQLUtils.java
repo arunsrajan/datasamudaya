@@ -4,16 +4,13 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -86,17 +83,14 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
 
-import jp.co.yahoo.yosegi.message.objects.ByteObj;
+import jp.co.yahoo.yosegi.message.objects.BooleanObj;
 import jp.co.yahoo.yosegi.message.objects.DoubleObj;
 import jp.co.yahoo.yosegi.message.objects.FloatObj;
 import jp.co.yahoo.yosegi.message.objects.IntegerObj;
 import jp.co.yahoo.yosegi.message.objects.LongObj;
 import jp.co.yahoo.yosegi.message.objects.PrimitiveObject;
-import jp.co.yahoo.yosegi.message.objects.ShortObj;
 import jp.co.yahoo.yosegi.message.objects.StringObj;
-import jp.co.yahoo.yosegi.message.parser.IParser;
 import jp.co.yahoo.yosegi.reader.YosegiSchemaReader;
-import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
@@ -2093,164 +2087,52 @@ public class SQLUtils {
 	 * @param tuple2
 	 * @param aggfunctions
 	 * @return Tuple
+	 * @throws Exception 
+	 * @throws InvocationTargetException 
+	 * @throws IllegalArgumentException 
 	 */
 	public static Tuple evaluateTuple(Tuple tuple1, Tuple tuple2, List<Function> aggfunctions) {
-		int index=0;
-		if(tuple1 instanceof Tuple1 tup11 && tuple2 instanceof Tuple1 tup21) {
-			return Tuple.tuple(evaluateFunction(tup11.v1(), tup21.v1(), aggfunctions.get(index)));
-		} else if(tuple1 instanceof Tuple2 tup12 && tuple2 instanceof Tuple2 tup22) {
-			return Tuple.tuple(evaluateFunction(tup12.v1(), tup22.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup12.v2(), tup22.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple3 tup13 && tuple2 instanceof Tuple3 tup23) {
-			return Tuple.tuple(evaluateFunction(tup13.v1(), tup23.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup13.v2(), tup23.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup13.v3(), tup23.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple4 tup14 && tuple2 instanceof Tuple4 tup24) {
-			return Tuple.tuple(evaluateFunction(tup14.v1(), tup24.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup14.v2(), tup24.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup14.v3(), tup24.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup14.v4(), tup24.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple5 tup15 && tuple2 instanceof Tuple5 tup25) {
-			return Tuple.tuple(evaluateFunction(tup15.v1(), tup25.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup15.v2(), tup25.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup15.v3(), tup25.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup15.v4(), tup25.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup15.v5(), tup25.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple6 tup16 && tuple2 instanceof Tuple6 tup26) {
-			return Tuple.tuple(evaluateFunction(tup16.v1(), tup26.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup16.v2(), tup26.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup16.v3(), tup26.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup16.v4(), tup26.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup16.v5(), tup26.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup16.v6(), tup26.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple7 tup17 && tuple2 instanceof Tuple7 tup27) {
-			return Tuple.tuple(evaluateFunction(tup17.v1(), tup27.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup17.v2(), tup27.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup17.v3(), tup27.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup17.v4(), tup27.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup17.v5(), tup27.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup17.v6(), tup27.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup17.v7(), tup27.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple8 tup18 && tuple2 instanceof Tuple8 tup28) {
-			return Tuple.tuple(evaluateFunction(tup18.v1(), tup28.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup18.v2(), tup28.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup18.v3(), tup28.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v4(), tup28.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v5(), tup28.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v6(), tup28.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v7(), tup28.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v8(), tup28.v8(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple9 tup19 && tuple2 instanceof Tuple9 tup29) {
-			return Tuple.tuple(evaluateFunction(tup19.v1(), tup29.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup19.v2(), tup29.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup19.v3(), tup29.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v4(), tup29.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v5(), tup29.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v6(), tup29.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v7(), tup29.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v8(), tup29.v8(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v9(), tup29.v9(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple10 tup1_10 && tuple2 instanceof Tuple10 tup2_10) {
-			return Tuple.tuple(evaluateFunction(tup1_10.v1(), tup2_10.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_10.v2(), tup2_10.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_10.v3(), tup2_10.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v4(), tup2_10.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v5(), tup2_10.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v6(), tup2_10.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v7(), tup2_10.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v8(), tup2_10.v8(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v9(), tup2_10.v9(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v10(), tup2_10.v10(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple11 tup1_11 && tuple2 instanceof Tuple11 tup2_11) {
-			return Tuple.tuple(evaluateFunction(tup1_11.v1(), tup2_11.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_11.v2(), tup2_11.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_11.v3(), tup2_11.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v4(), tup2_11.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v5(), tup2_11.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v6(), tup2_11.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v7(), tup2_11.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v8(), tup2_11.v8(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v9(), tup2_11.v9(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v10(), tup2_11.v10(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v11(), tup2_11.v11(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple12 tup1_12 && tuple2 instanceof Tuple12 tup2_12) {
-			return Tuple.tuple(evaluateFunction(tup1_12.v1(), tup2_12.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_12.v2(), tup2_12.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_12.v3(), tup2_12.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v4(), tup2_12.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v5(), tup2_12.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v6(), tup2_12.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v7(), tup2_12.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v8(), tup2_12.v8(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v9(), tup2_12.v9(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v10(), tup2_12.v10(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v11(), tup2_12.v11(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v12(), tup2_12.v12(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple13 tup1_13 && tuple2 instanceof Tuple13 tup2_13) {
-			return Tuple.tuple(evaluateFunction(tup1_13.v1(), tup2_13.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_13.v2(), tup2_13.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_13.v3(), tup2_13.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v4(), tup2_13.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v5(), tup2_13.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v6(), tup2_13.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v7(), tup2_13.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v8(), tup2_13.v8(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v9(), tup2_13.v9(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v10(), tup2_13.v10(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v11(), tup2_13.v11(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v12(), tup2_13.v12(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v13(), tup2_13.v13(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple14 tup1_14 && tuple2 instanceof Tuple14 tup2_14) {
-			return Tuple.tuple(evaluateFunction(tup1_14.v1(), tup2_14.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_14.v2(), tup2_14.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_14.v3(), tup2_14.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v4(), tup2_14.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v5(), tup2_14.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v6(), tup2_14.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v7(), tup2_14.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v8(), tup2_14.v8(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v9(), tup2_14.v9(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v10(), tup2_14.v10(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v11(), tup2_14.v11(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v12(), tup2_14.v12(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v13(), tup2_14.v13(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v14(), tup2_14.v14(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple15 tup1_15 && tuple2 instanceof Tuple15 tup2_15) {
-			return Tuple.tuple(evaluateFunction(tup1_15.v1(), tup2_15.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_15.v2(), tup2_15.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_15.v3(), tup2_15.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v4(), tup2_15.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v5(), tup2_15.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v6(), tup2_15.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v7(), tup2_15.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v8(), tup2_15.v8(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v9(), tup2_15.v9(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v10(), tup2_15.v10(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v11(), tup2_15.v11(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v12(), tup2_15.v12(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v13(), tup2_15.v13(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v14(), tup2_15.v14(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v15(), tup2_15.v15(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple16 tup1_16 && tuple2 instanceof Tuple16 tup2_16) {
-			return Tuple.tuple(evaluateFunction(tup1_16.v1(), tup2_16.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_16.v2(), tup2_16.v2(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_16.v3(), tup2_16.v3(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v4(), tup2_16.v4(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v5(), tup2_16.v5(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v6(), tup2_16.v6(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v7(), tup2_16.v7(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v8(), tup2_16.v8(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v9(), tup2_16.v9(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v10(), tup2_16.v10(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v11(), tup2_16.v11(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v12(), tup2_16.v12(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v13(), tup2_16.v13(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v14(), tup2_16.v14(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v15(), tup2_16.v15(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v16(), tup2_16.v16(), aggfunctions.get(index).getName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else {
-			throw new UnsupportedOperationException("Max supported Column is 16");
-		}
+		try {
+            // Get the class of the Tuple
+            Class<?> tupleClass = tuple1.getClass();
+            // Create a new instance of the Tuple
+            Tuple result = (Tuple) tupleClass.getConstructor(tuple2.getClass()).newInstance(tuple1);
+            // Get all the fields of the Tuple class
+            java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
+            int index = 0;
+            boolean avgindex = false;
+            Function func = aggfunctions.get(index);
+            // Iterate over the fields and perform summation
+            for (java.lang.reflect.Field field : fields) {
+                // Make the field accessible, as it might be private
+                field.setAccessible(true);
+
+                // Get the values of the fields from both tuples
+                Object value1 = field.get(tuple1);
+                Object value2 = field.get(tuple2);
+                field.set(result,evaluateFunction(value1, value2, func));
+                // Set the sum of the values in the result tuple                
+                if(index+1<aggfunctions.size()) {
+                	if(avgindex) {
+                		func = aggfunctions.get(index);
+                    	avgindex = false;
+                    	index++;
+                	} else if(!aggfunctions.get(index).getName().equalsIgnoreCase("avg")) {
+                		func = aggfunctions.get(index+1);
+                		index++;
+                		avgindex = false;
+                	} else {
+                    	func = aggfunctions.get(index);
+                    	avgindex = true;
+                    }
+                } 
+            }
+
+            return result;
+        } catch (Exception ex) {
+        	log.error(DataSamudayaConstants.EMPTY, ex);
+        }
+		return null;
 	}
 	
 	/**
@@ -2636,6 +2518,8 @@ public class SQLUtils {
 					mapvalues.put(col,  new DoubleObj(Double.valueOf(0.0d)));
 					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new IntegerObj(0));
 				}
+			} else if(type == SqlTypeName.BOOLEAN) {
+					mapvalues.put(col,  new BooleanObj(Boolean.valueOf(value)));
 			} else {
 				mapvalues.put(col, new StringObj(value));
 			}
@@ -2684,6 +2568,8 @@ public class SQLUtils {
     		} else if(po instanceof DoubleObj dobj) {
     			map.put(col, dobj.getDouble());
     			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
+    		} else if(po instanceof BooleanObj bobj) {
+    			map.put(col, bobj.getBoolean());
     		} else if(po instanceof StringObj sobj) {
     			map.put(col, sobj.getString());
     		}

@@ -592,6 +592,6 @@ public class DataSamudayaConstants {
   
   public static final String FALSE = Boolean.toString(Boolean.FALSE);
   public static final String TRUE = Boolean.toString(Boolean.TRUE);
-  public static final String  SQLCOUNTFORAVG = "-count";
-  
+  public static final String SQLCOUNTFORAVG = "-count";
+  public static final String CSV = "csv";
 }

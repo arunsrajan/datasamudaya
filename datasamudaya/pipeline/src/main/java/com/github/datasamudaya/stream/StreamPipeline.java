@@ -190,6 +190,14 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		
 	}
 	
+	public static JsonStream<Map<String, Object>> newJsonStreamHDFSSQL(String hdfspath, String folder, PipelineConfig pipelineconfig, String[] header, List<SqlTypeName> types, List<String> requiredcolumns) throws PipelineException {
+		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
+		StreamPipeline<String> pipeline = new StreamPipeline<String>(hdfspath, folder, pipelineconfig);
+		pipeline.tasks.add(new Dummy());
+		return pipeline.toJson(header, types, requiredcolumns);
+		
+	}
+	
 	public static StreamPipeline<String> newStream(String filepathwithscheme, PipelineConfig pipelineconfig) throws PipelineException {
 		StreamPipeline<String> sp = null;
 		URL url;
@@ -229,6 +237,17 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	private JsonStream<JSONObject> toJson() {
 		return new JsonStream<>(this);
+	}
+	
+	/**
+	 * Creates Json stream object.
+	 * @param header
+	 * @param columntypes
+	 * @param columns
+	 * @return json stream object
+	 */
+	private JsonStream<Map<String,Object>> toJson(String[] header, List<SqlTypeName> columntypes, List<String> columns) {
+		return new JsonStream<>(this, new JsonSQL(header, columntypes, columns));
 	}
 
 	/**

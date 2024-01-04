@@ -75,6 +75,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 	private static final Logger log = LoggerFactory.getLogger(StreamPipelineSqlBuilder.class);
 	String sql;
 	String db;
+	String fileformat;
 	ConcurrentMap<String, String> tablefoldermap = new ConcurrentHashMap<>();
 	ConcurrentMap<String, List<String>> tablecolumnsmap = new ConcurrentHashMap<>();
 	ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap = new ConcurrentHashMap<>();
@@ -154,6 +155,11 @@ public class StreamPipelineSqlBuilder implements Serializable {
 	 */
 	public StreamPipelineSqlBuilder setDb(String db) {
 		this.db = db;
+		return this;
+	}
+	
+	public StreamPipelineSqlBuilder setFileformat(String fileformat) {
+		this.fileformat = fileformat;
 		return this;
 	}
 
@@ -312,10 +318,12 @@ public class StreamPipelineSqlBuilder implements Serializable {
 					: new LinkedHashSet<>(columnsselect);
 			Expression expressionRootTable = nonNull(table)?SQLUtils.getFilterExpression(expressionsTable.get(table.getName())):null;
 			StreamPipeline<Map<String, Object>> pipeline = nonNull(table)
-					? StreamPipeline.newCsvStreamHDFSSQL(hdfs, tablefoldermap.get(table.getName()), this.pc,
+					? fileformat.equals(DataSamudayaConstants.CSV) ? StreamPipeline.newCsvStreamHDFSSQL(hdfs, tablefoldermap.get(table.getName()), this.pc,
 							roottablecolumn.toArray(new String[roottablecolumn.size()]),
 							tablecolumntypesmap.get(table.getName()), new ArrayList<>(columnsRootTable))
-					: subselectpipeline;
+					: StreamPipeline.newJsonStreamHDFSSQL(hdfs, tablefoldermap.get(table.getName()), this.pc,
+							roottablecolumn.toArray(new String[roottablecolumn.size()]),
+							tablecolumntypesmap.get(table.getName()), new ArrayList<>(columnsRootTable)) : subselectpipeline;
 			if (nonNull(expressionRootTable)) {
 				pipeline = pipeline.filter(new PredicateSerializable<Map<String, Object>>() {
 					private static final long serialVersionUID = -9040664505941669357L;
