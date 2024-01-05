@@ -13,6 +13,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 
+import jp.co.yahoo.yosegi.message.objects.BooleanObj;
 import jp.co.yahoo.yosegi.message.objects.ByteObj;
 import jp.co.yahoo.yosegi.message.objects.DoubleObj;
 import jp.co.yahoo.yosegi.message.objects.FloatObj;
@@ -54,6 +55,8 @@ public class YosegiRecordSpliterator extends Spliterators.AbstractSpliterator<Ma
     			map.put(col, dobj.getDouble());
     			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
     			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
+    		} else if(po instanceof BooleanObj boolobj) {
+    			map.put(col, boolobj.getBoolean());
     		} else if(po instanceof StringObj sobj) {
     			map.put(col, sobj.getString());
     		} else if(po instanceof ByteObj bobj) {

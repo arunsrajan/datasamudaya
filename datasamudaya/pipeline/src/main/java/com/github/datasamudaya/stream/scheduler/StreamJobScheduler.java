@@ -382,7 +382,8 @@ public class StreamJobScheduler {
           tasksgraphexecutor[stagegraphexecutorindex] = new TasksGraphExecutor();
           tasksgraphexecutor[stagegraphexecutorindex].setTasks(new ArrayList<>());
           tasksgraphexecutor[stagegraphexecutorindex].setHostport(te);
-          if(job.getJobtype() == JOBTYPE.PIG) {
+          if(job.getJobtype() == JOBTYPE.PIG || nonNull(pipelineconfig.getStorage()) 
+        		  && (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL)) {
         	  tasksgraphexecutor[stagegraphexecutorindex].setStorage(pipelineconfig.getStorage());
           } else {
         	  tasksgraphexecutor[stagegraphexecutorindex].setStorage(STORAGE.DISK);

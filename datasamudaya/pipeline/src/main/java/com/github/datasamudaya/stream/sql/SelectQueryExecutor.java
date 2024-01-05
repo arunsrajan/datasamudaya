@@ -87,17 +87,21 @@ public class SelectQueryExecutor {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
 				TableCreator.getColumnMetadataFromTable(dbdefault, table.getName(), columnMetadatas);
 				String hdfslocation = null;
+				String fileformat = null;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
 					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
+					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
+						fileformat = columnMetadata.getColumnDefault().replace("'", "").trim();
 					} else {
 						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
 					}
 				}
 				builder = builder.add(hdfslocation, table.getName().toLowerCase(), tablecolumn, tablecolumnDataType);
+				builder.setFileformat(fileformat);
 			}
 			StreamPipelineSql mdpsql = builder.build();
 			return (List) mdpsql.collect(true, null);
@@ -157,17 +161,21 @@ public class SelectQueryExecutor {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
 				TableCreator.getColumnMetadataFromTable(dbdefault, table.getName(), columnMetadatas);
 				String hdfslocation = null;
+				String fileformat = null;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
 					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
+					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
+						fileformat = columnMetadata.getColumnDefault().replace("'", "").trim();
 					} else {
 						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
 					}
 				}
 				builder = builder.add(hdfslocation, table.getName().toLowerCase(), tablecolumn, tablecolumnDataType);
+				builder.setFileformat(fileformat);
 			}
 			StreamPipelineSql ipsql = builder.build();
 			return (List) ipsql.collect(true, null);
