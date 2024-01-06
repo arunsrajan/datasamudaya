@@ -284,6 +284,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		this.tasks.add(task);
 		this.pipelineconfig = parent.pipelineconfig;
 		this.csvoptions = parent.csvoptions;
+		this.json = parent.json;
 	}
 	
 	/**
@@ -656,6 +657,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			csp.pigtasks = (Set<Task>) js.schedule(job);
 			this.clearChild();
 			csp.csvoptions = ((StreamPipeline<?>) this).getCsvOptions();
+			csp.json = ((StreamPipeline<?>) this).getJson();
 			csp.pipelineconfig = this.pipelineconfig;
 			csp.graph = new DirectedAcyclicGraph<>(DAGEdge.class);
 			return csp;
@@ -1355,6 +1357,10 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	
 	public CsvOptions getCsvOptions() {
 		return this.csvoptions;
+	}
+	
+	public Json getJson() {
+		return this.json;
 	}
 	
 }

@@ -16,6 +16,7 @@ public sealed class AbstractPipeline permits StreamPipeline, MapPair{
 	public List<Object> tasks = new ArrayList<>();
 	public PipelineConfig pipelineconfig;
 	protected CsvOptions csvoptions;
+	protected Json json;
 	@Override
 	public int hashCode() {
 		return Objects.hash(tasks);

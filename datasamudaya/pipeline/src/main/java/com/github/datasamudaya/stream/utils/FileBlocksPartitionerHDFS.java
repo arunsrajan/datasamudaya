@@ -71,6 +71,7 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.AbstractPipeline;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
+import com.github.datasamudaya.stream.JsonSQL;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.StreamPipeline;
 
@@ -175,6 +176,8 @@ public class FileBlocksPartitionerHDFS {
 				var obj = roots.next();
 				if(!CollectionUtils.isEmpty(rootstage.tasks) && rootstage.tasks.get(0) instanceof CsvOptionsSQL csvOptionsSQL) {
 					columns = csvOptionsSQL.getRequiredcolumns();
+				} else if(!CollectionUtils.isEmpty(rootstage.tasks) && rootstage.tasks.get(0) instanceof JsonSQL jsonSQL) {
+					columns = jsonSQL.getRequiredcolumns();
 				}
 				if (obj instanceof StreamPipeline mdp) {
 					hdfspath = mdp.getHdfspath();

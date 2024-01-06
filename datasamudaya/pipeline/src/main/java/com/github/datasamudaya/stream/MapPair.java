@@ -72,6 +72,7 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 		tasks.add(task);
 		this.pipelineconfig = parent.pipelineconfig;
 		this.csvoptions = parent.csvoptions;
+		this.json = parent.json;
 	}
 	
 	/**
