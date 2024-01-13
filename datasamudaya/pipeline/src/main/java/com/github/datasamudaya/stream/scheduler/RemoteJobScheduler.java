@@ -30,8 +30,8 @@ import com.github.datasamudaya.stream.PipelineException;
  *
  */
 public class RemoteJobScheduler {
-	
-	private static Logger log = LoggerFactory.getLogger(RemoteJobScheduler.class);
+
+	private static final Logger log = LoggerFactory.getLogger(RemoteJobScheduler.class);
 	Set<String> taskexecutors;
 	/**
 	 * 
@@ -111,7 +111,7 @@ public class RemoteJobScheduler {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 var fstout = new Output(baos);) {	    	
 	    	zo.connect();
-	    	getTaskExecutorsHostPort(job,job.getPipelineconfig(),zo);
+	    	getTaskExecutorsHostPort(job, job.getPipelineconfig(), zo);
 	    	String choosente = taskexecutors.iterator().next();
            	Kryo kryo = Utils.getKryoInstance();
            	if (nonNull(job.getPipelineconfig().getClsloader())) {

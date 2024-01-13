@@ -34,11 +34,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.functions.HashPartitioner;
-import com.github.datasamudaya.stream.CsvStream;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.NumPartitions;
-import com.github.datasamudaya.stream.NumPartitionsEachFile;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
@@ -433,7 +428,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Double>> longs = (List<List<Double>>) datastream.flatMap(value -> {
 			String values[] = value.split(",");
 			return Arrays.asList(
-					Long.parseLong((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					Long.parseLong(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).flatMap(value -> Arrays.asList(Double.valueOf(value)).stream()).flatMap(value -> Arrays.asList(value.longValue()).stream())
 				.flatMap(value -> Arrays.asList(Double.valueOf(value)).stream()).collect(toexecute, null);
 
@@ -451,7 +446,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Long>> longs = (List) datastream.flatMap(value -> {
 			String values[] = value.split(",");
 			return (Stream<Long>) Arrays.asList(
-					Long.parseLong((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					Long.parseLong(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).flatMapToDouble(value -> Arrays.asList(Double.valueOf(value)).stream()).flatMap(value -> Arrays.asList(value.longValue()).stream())
 				.flatMapToLong(value -> Arrays.asList(value).stream()).collect(toexecute, null);
 
@@ -480,7 +475,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Double>> longs = (List) datastream.flatMapToDouble(value -> {
 			String values[] = value.split(",");
 			return Arrays.asList(Double
-					.parseDouble((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					.parseDouble(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).collect(toexecute, null);
 
 		assertEquals(-63278,
@@ -497,7 +492,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Double>> longs = (List) datastream.flatMapToDouble(value -> {
 			String values[] = value.split(",");
 			return Arrays.asList(Double
-					.parseDouble((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					.parseDouble(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).flatMap(value -> Arrays.asList(value).stream()).collect(toexecute, null);
 
 		assertEquals(-63278,
@@ -514,7 +509,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Long>> longs = (List) datastream.flatMapToLong(value -> {
 			String values[] = value.split(",");
 			return Arrays.asList(
-					Long.parseLong((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					Long.parseLong(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).collect(toexecute, null);
 
 		assertEquals(-63278,
@@ -531,7 +526,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Long>> longs = (List) datastream.flatMapToLong(value -> {
 			String values[] = value.split(",");
 			return Arrays.asList(
-					Long.parseLong((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					Long.parseLong(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).flatMap(value -> Arrays.asList(value).stream()).collect(toexecute, null);
 
 		assertEquals(-63278,
@@ -548,7 +543,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Long>> longs = (List) datastream.flatMapToLong(value -> {
 			String values[] = value.split(",");
 			return Arrays.asList(
-					Long.parseLong((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					Long.parseLong(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).flatMap(value -> Arrays.asList(value).stream()).flatMap(value -> Arrays.asList(value).stream())
 				.flatMap(value -> Arrays.asList(value).stream()).collect(toexecute, null);
 
@@ -565,7 +560,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Double>> longs = (List) datastream.flatMapToLong(value -> {
 			String values[] = value.split(",");
 			return Arrays.asList(
-					Long.parseLong((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					Long.parseLong(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).flatMapToDouble(value -> Arrays.asList(Double.valueOf(value)).stream()).collect(toexecute, null);
 
 		assertEquals(-63278.0,
@@ -583,7 +578,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Double>> longs = (List) datastream.flatMapToLong(value -> {
 			String values[] = value.split(",");
 			return Arrays.asList(
-					Long.parseLong((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					Long.parseLong(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).flatMapToDouble(value -> Arrays.asList(Double.valueOf(value)).stream())
 				.flatMapToLong(value -> Arrays.asList(value.longValue()).stream())
 				.flatMapToDouble(value -> Arrays.asList(Double.valueOf(value)).stream()).collect(toexecute, null);
@@ -603,7 +598,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		List<List<Long>> longs = (List) datastream.flatMapToLong(value -> {
 			String values[] = value.split(",");
 			return Arrays.asList(
-					Long.parseLong((!"NA".equals(values[14]) && !"ArrDelay".equals(values[14])) ? values[14] : "0")).stream();
+					Long.parseLong(!"NA".equals(values[14]) && !"ArrDelay".equals(values[14]) ? values[14] : "0")).stream();
 		}).flatMapToLong(value -> Arrays.asList(value).stream()).collect(toexecute, null);
 
 		assertEquals(-63278, longs.stream().flatMap(stream -> stream.stream()).mapToLong(val -> val.longValue()).sum());
@@ -1046,7 +1041,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		log.info("testMapCsvStream Before---------------------------------------");
 		CsvStream<CSVRecord> datastream = StreamPipeline.newCsvStreamHDFS(hdfsfilepath, airlinepairjoin,
 				pipelineconfig, airlineheader);
-		java.util.List<List<Tuple2>> listreducebykey = (List) datastream.filter(
+		List<List<Tuple2>> listreducebykey = (List) datastream.filter(
 				dat -> dat != null && !"ArrDelay".equals(dat.get("ArrDelay")) && !"NA".equals(dat.get("ArrDelay")))
 				.map(dat -> Tuple.tuple(dat.get(8), Long.parseLong(dat.get(14)))).collect(toexecute, null);
 		for (Tuple2 tuple2 : listreducebykey.get(0)) {
@@ -1117,7 +1112,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		log.info("testMapMappairFilter Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
-		java.util.List<List<Tuple2>> mappairresult = (List) datastream.map(dat -> dat.split(","))
+		List<List<Tuple2>> mappairresult = (List) datastream.map(dat -> dat.split(","))
 				.filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14]))
 				.mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14])))
 				.filter((Tuple2 pair) -> pair != null && (Long) ((Tuple2) pair).v2 > Long.MIN_VALUE)
@@ -1170,7 +1165,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		log.info("testMapOfTupleOutput Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinepairjoin,
 				pipelineconfig);
-		java.util.List<List<Tuple2>> listreducebykey = (List) datastream.map(dat -> dat.split(","))
+		List<List<Tuple2>> listreducebykey = (List) datastream.map(dat -> dat.split(","))
 				.filter(dat -> dat != null && !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14]))
 				.map(dat -> Tuple.tuple(dat[8], Long.parseLong(dat[14]))).collect(toexecute, null);
 		for (Tuple2 tuple2 : listreducebykey.get(0)) {
@@ -1632,7 +1627,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		log.info("testReduceByKeyCsvStream Before---------------------------------------");
 		CsvStream<CSVRecord> datastream = StreamPipeline.newCsvStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig, airlineheader);
-		java.util.List<List<Tuple2>> listreducebykey = (List) datastream.filter(
+		List<List<Tuple2>> listreducebykey = (List) datastream.filter(
 				dat -> dat != null && !"ArrDelay".equals(dat.get("ArrDelay")) && !"NA".equals(dat.get("ArrDelay")))
 				.mapToPair(dat -> {
 					return Tuple.tuple(dat.get(8), Long.parseLong(dat.get(14)));
@@ -1695,7 +1690,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		log.info("testSample Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
-		java.util.List<List<Tuple2>> listreducebykey = (List) datastream.sample(46361).map(datas -> datas.split(","))
+		List<List<Tuple2>> listreducebykey = (List) datastream.sample(46361).map(datas -> datas.split(","))
 				.filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14])).mapToPair(dat -> {
 			return Tuple.tuple(dat[8], Long.parseLong(dat[14]));
 		}).reduceByKey((a, b) -> a + b).coalesce(1, (pair1, pair2) -> (Long) pair1 + (Long) pair2)
@@ -1774,7 +1769,7 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		log.info("testStreamSampleSampleSample Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
-		java.util.List<List<Tuple2>> listreducebykey = (List) datastream.sample(10000).map(dat -> dat.split(","))
+		List<List<Tuple2>> listreducebykey = (List) datastream.sample(10000).map(dat -> dat.split(","))
 				.filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14])).sample(1000)
 				.mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14])))
 				.reduceByKey((a, b) -> a + b).coalesce(1, (pair1, pair2) -> (Long) pair1 + (Long) pair2)
@@ -2136,10 +2131,10 @@ public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		List<List<Tuple2<String,Integer>>> tupleslist = (List) datastream.map(str -> str.split(","))
-				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14])).mapToPair(str -> new Tuple2<String,Integer>(str[1], Integer.parseInt(str[14])))
+				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14])).mapToPair(str -> new Tuple2<String, Integer>(str[1], Integer.parseInt(str[14])))
 				.partition(new HashPartitioner(3))
-				.flatMap(tuples->tuples.v2().stream())
-				.reduceByKey((a,b)->a+b)
+				.flatMap(tuples -> tuples.v2().stream())
+				.reduceByKey((a, b) -> a + b)
 				.collect(toexecute, null);
 		int sum = 0;
 		assertEquals(1, tupleslist.size());

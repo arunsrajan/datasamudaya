@@ -17,6 +17,7 @@ package com.github.datasamudaya.mr.examples.join;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.tasks.executor.Mapper;
@@ -35,7 +36,7 @@ public class AirlineDepDelayDataMapper implements Mapper<Long, String, Context<S
 				} else {
 					map.put("AIRLINEDEPDELAY", null);
 				}
-				if(contents != null && contents.length > 8 && java.util.Objects.nonNull(contents[8])) {
+				if(contents != null && contents.length > 8 && Objects.nonNull(contents[8])) {
 					ctx.put(contents[8], map);
 				}
 			}

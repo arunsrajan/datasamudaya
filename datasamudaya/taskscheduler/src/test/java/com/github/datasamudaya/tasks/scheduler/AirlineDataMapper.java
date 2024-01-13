@@ -40,7 +40,7 @@ public class AirlineDataMapper implements Mapper<Long, String, Context>, Combine
 			sum += value;
 			numrecs++;
 		}
-		log.info("numRecords: {}",numrecs);
+		log.info("numRecords: {}", numrecs);
 		context.put(key, sum);
 
 	}

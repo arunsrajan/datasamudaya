@@ -26,7 +26,7 @@ import com.github.datasamudaya.stream.Pipeline;
 import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceRightOuterJoinInMemoryDisk implements Pipeline {
-	private Logger log = Logger.getLogger(StreamReduceRightOuterJoinInMemoryDisk.class);
+	private final Logger log = Logger.getLogger(StreamReduceRightOuterJoinInMemoryDisk.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");

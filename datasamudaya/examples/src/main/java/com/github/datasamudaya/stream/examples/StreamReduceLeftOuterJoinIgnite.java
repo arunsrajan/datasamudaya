@@ -26,7 +26,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.Pipeline;
 
 public class StreamReduceLeftOuterJoinIgnite implements Pipeline {
-	private Logger log = Logger.getLogger(StreamReduceLeftOuterJoinIgnite.class);
+	private final Logger log = Logger.getLogger(StreamReduceLeftOuterJoinIgnite.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");

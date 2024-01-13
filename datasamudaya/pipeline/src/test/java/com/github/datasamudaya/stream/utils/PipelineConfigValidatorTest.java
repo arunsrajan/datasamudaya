@@ -22,7 +22,6 @@ import org.junit.Test;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.utils.Utils;
-import com.github.datasamudaya.stream.utils.PipelineConfigValidator;
 
 public class PipelineConfigValidatorTest {
 

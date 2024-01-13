@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class ByteBufferInputStream extends InputStream implements Serializable{
 	private static final long serialVersionUID = -296327349247183144L;	
 	static Logger log = LoggerFactory.getLogger(ByteBufferInputStream.class);
-	private ByteBuffer bb;
+	private transient ByteBuffer bb;
 
 	public ByteBufferInputStream(ByteBuffer bb) {
 		try {

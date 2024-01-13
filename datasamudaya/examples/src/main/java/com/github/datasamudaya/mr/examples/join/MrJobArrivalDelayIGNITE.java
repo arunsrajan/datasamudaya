@@ -19,11 +19,12 @@ package com.github.datasamudaya.mr.examples.join;
 import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.tasks.scheduler.Application;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationBuilder;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationIgnite;
 
-public class MrJobArrivalDelayIGNITE implements com.github.datasamudaya.tasks.scheduler.Application {
+public class MrJobArrivalDelayIGNITE implements Application {
 	static Logger log = Logger.getLogger(MrJobArrivalDelayIGNITE.class);
 
 	@Override

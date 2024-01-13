@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 echo STARTING Zookeeper....
 export DEBUGPORT=4006
-cd /opt/datasamudaya/bin
+cd "/opt/datasamudaya/sbin"
 if [[ ! -v DATASAMUDAYA_HOME ]]; then
 	echo "DATASAMUDAYA_HOME is not configured, configuring..."	
 	export DATASAMUDAYA_HOME=$(pwd)/..

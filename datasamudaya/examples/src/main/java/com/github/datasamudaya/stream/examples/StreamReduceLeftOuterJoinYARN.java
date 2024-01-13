@@ -27,7 +27,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceLeftOuterJoinYARN implements Pipeline {
 	private static final long serialVersionUID = 2670336699129016987L;
-	private Logger log = Logger.getLogger(StreamReduceLeftOuterJoinYARN.class);
+	private final Logger log = Logger.getLogger(StreamReduceLeftOuterJoinYARN.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");

@@ -10,6 +10,7 @@ package com.github.datasamudaya.common;
 
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -20,7 +21,7 @@ public class ContainerLauncher {
 
   private ContainerLauncher() {}
 
-  static org.slf4j.Logger log = LoggerFactory.getLogger(ContainerLauncher.class);
+  static Logger log = LoggerFactory.getLogger(ContainerLauncher.class);
 /**
  * Launch the task executor with given parameters
  * @param port

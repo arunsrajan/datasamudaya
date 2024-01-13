@@ -26,24 +26,24 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
 			"Cancelled", "CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
 			"LateAircraftDelay");
-	List<SqlTypeName> airlineheadertypes = Arrays.asList(SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER, SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.VARCHAR,SqlTypeName.INTEGER,SqlTypeName.VARCHAR,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.VARCHAR,SqlTypeName.VARCHAR,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.VARCHAR,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER,SqlTypeName.INTEGER);
+	List<SqlTypeName> airlineheadertypes = Arrays.asList(SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.VARCHAR, SqlTypeName.INTEGER, SqlTypeName.VARCHAR, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.VARCHAR, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER, SqlTypeName.INTEGER);
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
 	List<String> airportsheader = Arrays.asList("iata", "airport", "city", "state", "country", "latitude", "longitude");
 	List<SqlTypeName> airportstype = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
-	private static Logger log = LoggerFactory.getLogger(StreamingSqlExamples.class);
+	private static final Logger log = LoggerFactory.getLogger(StreamingSqlExamples.class);
 	
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
-		if(args[3].equals("yarn")) {
+		if("yarn".equals(args[3])) {
 			pipelineconfig.setYarn("true");
 		} else {
 			pipelineconfig.setYarn("false");
 		}
-		if(args[3].equals("jgroups")) {
+		if("jgroups".equals(args[3])) {
 			pipelineconfig.setJgroups("true");
 		} else {
 			pipelineconfig.setJgroups("false");
@@ -51,8 +51,8 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 		String tejobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
 		boolean iscontainerallocated = false;
 		try {
-			if((args[3].equals("jgroups") || args[3].equals("standalone")) &&
-					args[4].equals("true")) {
+			if(("jgroups".equals(args[3]) || "standalone".equals(args[3]))
+					&& "true".equals(args[4])) {
 				pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
 				pipelineconfig.setUseglobaltaskexecutors(true);		
 				pipelineconfig.setUser(args[5]);
@@ -60,321 +60,321 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 				iscontainerallocated = true;
 			}
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			pipelineconfig.setTejobid(tejobid);
 			testAllColumns(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumns(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsWithWhereGreaterThan(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsWithWhereLessThan(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsWithWhereGreaterThanEquals(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsWithWhereLessThanEquals(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsWithWhereLiteralFirst(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsWithWhereColumnEquals(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsCount(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsCountWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsSumWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsMinWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsMaxWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoin(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinCarrierSpecific(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testCountAllColumnsWithWhereAndJoin(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testPrintAllColumnsCountWithWhereAndJoin(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTables(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTablesWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTablesCount(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTablesCountWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTablesColumnCountWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTablesColumnSumWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTablesColumnMinWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTablesColumnMaxWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredMultipleColumnsJoinTwoTablesColumnMaxWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTablesColumnSumWhereNoFilter(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testMultipleRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testMultipleAllColumnsAndOrCondition(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testMultipleAllColumnsOrAndCondition(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testNumberOfFlightsByCarrier(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testNumberOfFlightsByDayOfWeek(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testNumberOfFlightsCancelled(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testNumberOfFlightsDiverted(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testTotalDistanceFlownByCarrier(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testDayOfWeekWithMostFlights(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testMonthOfYearWithMostFlights(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAirportsWithDepartures(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAirportsWithArrivals(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testDelayTimeByDayOfWeek(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testTotalDelayTimeByMonthOfYear(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAverageDelayByDestinationAirport(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsCancelledAndCancellationCode(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsCancelledDueToWeather(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsDivertedDueToWeather(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsDivertedDueToWeatherSortBy(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsjoinGroupBy(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsDistinctUniqueCarrier(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsDistinctUniqueCarrierWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsAvg(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsAvgArrDelayPerCarrier(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsAvgArrDelayPerCarrierWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsMonthDayAvgArrDelayPerCarrier(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testCountAvgMinMaxSumArrDelayPerCarrier(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnLength(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnWithLength(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnWithMultipleLengths(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnWithLengthsAndLowercase(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnWithLengthsAndUppercase(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnTrim(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnBase64Encode(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnSubStringAlias(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnSubString(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnNormailizeSpaces(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testDate(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testDateWithCount(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSumWithMultuplication(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSumWithAddition(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSumWithSubtraction(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSumWithBase64Encode(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSumWithColumnAndLength(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectWithAggFunctionWithGroupBy(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSumWithDivision(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSumWithSubtractionAndMultiplication(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSumWithAdditionAndMultiplication(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectWithWhereIn(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectCountWithWhereLike(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithWhereLike(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithWhereInAndLikeClause(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectCountWithWhereInAndLikeClause(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectCountWithWhereLikeAndBetweenClause(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithWhereLikeAndBetweenClause(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithNestedAbsFunction(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());		
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());		
 			testSelectSumWithNestedAbsFunctions(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithNestedAbsAndLengthFunctions(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnAbs(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnRound(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnCeil(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnFloor(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnPower(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnSqrt(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnExponential(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnLoge(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithNestedRound(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithNestedCeil(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithNestedFloor(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithNestedPower(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithNestedSqrt(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithNestedExponential(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectSumWithNestedloge(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testSelectGroupConcatGroupBy(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnLengthWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnAbsLengthWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnRoundLengthWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnRoundLengthWithExpWithInc(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnCeilLengthWithExpWithInc(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnCeilLengthWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnFloorLengthWithExpWithInc(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnFloorLengthWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnLengthWithParanthesisExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnPowerLengthWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnSqrtLengthWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnExpLengthWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnLogLengthWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnLowerCaseWithUpperCaseWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnUpperCaseWithLowerCaseWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnTrimUpperCaseWithLowerCaseWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnBase64_EncUpperCaseWithLowerCaseWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsLeftJoin(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsRightJoin(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOr(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOrAnd(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOrAndParanthesis(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOrAndParanthesisOr(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOrAndParanthesisOrDayOfMonthPlus2(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOrAndParanthesisOrDayOfMonthPlus2ColumnRight(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOrAndParanthesisOrDayOfMonthPlusDayOfWeekMultipleColumnRight(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOrAndParanthesisOrDayOfMonthMinus2MultipleColumnRight(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOrAndParanthesisOrDayOfMonthMultiply2MultipleColumnRight(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testFlightsAndOrAndParanthesisOrDayOfMonthDivideBy2MultipleColumnRight(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsSubSelect(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsFunctionsSubSelect(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsSubSelectFunctions(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsSubSelectFunctionsSumCount(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsFunctionsAvgSubSelect(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsFunctionsAvgSumCountSubSelect(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsFunctionAvgDelayFunctionsAvgSumCountSubSelect(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsSubSelectAllColumns(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsSubSelectAllColumnsWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testAllColumnsWithWhereSubSelectAllColumnsWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsWithWhereSubSelectAllColumnsWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testNonAggSqrtAggAvgFunctionWithWhereSubSelectAllColumnsWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinSubSelect(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsJoinSubSelectAliasTable(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsInnerJoinSubSelectInnerJoinAliasTable(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsRequiredColumnsWithWhereSubSelectAllColumnsWithWhere(args, pipelineconfig);
-			pipelineconfig.setJobid(DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID());
+			pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			testRequiredColumnsWithWhereRequiredColumnsWithWhereSubSelectAllColumnsWithWhere(args, pipelineconfig);
 		}
 		finally {
-			if((args[3].equals("jgroups") || args[3].equals("standalone")) &&
-					args[4].equals("true") && iscontainerallocated) {
+			if(("jgroups".equals(args[3]) || "standalone".equals(args[3]))
+					&& "true".equals(args[4]) && iscontainerallocated) {
 				Utils.destroyContainers(args[5], tejobid);
 			}
 		}
@@ -441,8 +441,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsWithWhereGreaterThan(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsWithWhereGreaterThan() method Entry");
 		
-		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth>8.0 and airline.MonthOfYear>6.0";
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear \
+				FROM airline \
+				WHERE airline.DayofMonth>8.0 and airline.MonthOfYear>6.0\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -455,8 +458,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsWithWhereLessThan(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsWithWhereLessThan() method Entry");
 		
-		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth<8 and airline.MonthOfYear<6";
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear \
+				FROM airline \
+				WHERE airline.DayofMonth<8 and airline.MonthOfYear<6\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -469,8 +475,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsWithWhereGreaterThanEquals(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsWithWhereGreaterThanEquals() method Entry");
 		
-		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth>=8.0 and airline.MonthOfYear>=6.0";
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear \
+				FROM airline \
+				WHERE airline.DayofMonth>=8.0 and airline.MonthOfYear>=6.0\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -483,8 +492,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsWithWhereLessThanEquals(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsWithWhereLessThanEquals() method Entry");
 		
-		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth<=8.0 and airline.MonthOfYear<=6.0";
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear \
+				FROM airline \
+				WHERE airline.DayofMonth<=8.0 and airline.MonthOfYear<=6.0\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -497,8 +509,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsWithWhereLiteralFirst(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In RequiredColumnsWithWhere() method Entry");
 		
-		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE 8.0=airline.DayofMonth and 12.0=airline.MonthOfYear";
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear \
+				FROM airline \
+				WHERE 8.0=airline.DayofMonth and 12.0=airline.MonthOfYear\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -511,8 +526,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsWithWhereColumnEquals(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsWithWhereColumnEquals() method Entry");
 		
-		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear " + "FROM airline "
-				+ "WHERE airline.DayofMonth=airline.MonthOfYear";
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear \
+				FROM airline \
+				WHERE airline.DayofMonth=airline.MonthOfYear\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -589,8 +607,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsJoin(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoin() method Entry");
 		
-		String statement = "SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear";				
+		String statement = """
+				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear\
+				""";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -602,9 +622,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsJoinCarrierSpecific(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinCarrierSpecific() method Entry");
 		
-		String statement = "SELECT airline.ArrDelay,airline.DepDelay,airline.DayofMonth,airline.MonthOfYear,carriers.Code,carriers.Description "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ'";
+		String statement = """
+				SELECT airline.ArrDelay,airline.DepDelay,airline.DayofMonth,airline.MonthOfYear,carriers.Code,carriers.Description \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ'\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -616,9 +638,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testCountAllColumnsWithWhereAndJoin(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testCountAllColumnsWithWhereAndJoin() method Entry");
 		
-		String statement = "SELECT count(*) "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ' and carriers.Code<>'Code'";
+		String statement = """
+				SELECT count(*) \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ' and carriers.Code<>'Code'\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -631,9 +655,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testPrintAllColumnsCountWithWhereAndJoin(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testPrintAllColumnsCountWithWhereAndJoin() method Entry");
 		
-		String statement = "SELECT * "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ' and carriers.Code<>'Code'";
+		String statement = """
+				SELECT * \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ' and carriers.Code<>'Code'\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -645,9 +671,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTables(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTables() method Entry");
-		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear,carriers.Description,airline.Origin,airports.airport "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin ";
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear,carriers.Description,airline.Origin,airports.airport \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -660,10 +688,12 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTablesWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesWhere() method Entry");
-		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear,carriers.Description,airline.Origin,airports.airport "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin "
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear,carriers.Description,airline.Origin,airports.airport \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -677,9 +707,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTablesCount(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesCount() method Entry");
-		String statement = "SELECT count(*) "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin ";
+		String statement = """
+				SELECT count(*) \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -692,10 +724,12 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTablesCountWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesCountWhere() method Entry");
-		String statement = "SELECT count(*) "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin " 
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
+		String statement = """
+				SELECT count(*) \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -708,10 +742,12 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTablesColumnCountWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnCountWhere() method Entry");
-		String statement = "SELECT airline.UniqueCarrier,count(*) "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin " 
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
+		String statement = """
+				SELECT airline.UniqueCarrier,count(*) \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -723,10 +759,12 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTablesColumnSumWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumWhere() method Entry");
-		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay) "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin " 
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
+		String statement = """
+				SELECT airline.UniqueCarrier,sum(airline.ArrDelay) \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -739,10 +777,12 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTablesColumnMinWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnMinWhere() method Entry");
-		String statement = "SELECT airline.UniqueCarrier,min(airline.ArrDelay) "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin " 
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
+		String statement = """
+				SELECT airline.UniqueCarrier,min(airline.ArrDelay) \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -754,10 +794,12 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTablesColumnMaxWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnMaxWhere() method Entry");
-		String statement = "SELECT airline.UniqueCarrier,max(airline.ArrDelay) "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin " 
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
+		String statement = """
+				SELECT airline.UniqueCarrier,max(airline.ArrDelay) \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -769,10 +811,12 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredMultipleColumnsJoinTwoTablesColumnMaxWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredMultipleColumnsJoinTwoTablesColumnMaxWhere() method Entry");
-		String statement = "SELECT airports.iata,airline.UniqueCarrier,sum(airline.ArrDelay) "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin " 
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airports.iata,airline.UniqueCarrier";
+		String statement = """
+				SELECT airports.iata,airline.UniqueCarrier,sum(airline.ArrDelay) \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airports.iata,airline.UniqueCarrier\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -786,8 +830,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTablesColumnSumWhereNoFilter(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumWhereNoFilter() method Entry");
-		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay) "
-				+ "FROM airline group by airline.UniqueCarrier";
+		String statement = """
+				SELECT airline.UniqueCarrier,sum(airline.ArrDelay) \
+				FROM airline group by airline.UniqueCarrier\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -801,8 +847,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter() method Entry");
-		String statement = "SELECT airline.UniqueCarrier,min(airline.ArrDelay),count(*),max(airline.ArrDelay),sum(airline.ArrDelay) "
-				+ "FROM airline where airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier";
+		String statement = """
+				SELECT airline.UniqueCarrier,min(airline.ArrDelay),count(*),max(airline.ArrDelay),sum(airline.ArrDelay) \
+				FROM airline where airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -815,10 +863,12 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testMultipleRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testMultipleRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter() method Entry");
-		String statement = "SELECT airports.iata,airline.UniqueCarrier,sum(airline.ArrDelay),min(airline.ArrDelay),max(airline.ArrDelay),count(*) "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code "
-				+ " inner join airports on airports.iata = airline.Origin " 
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airports.iata,airline.UniqueCarrier";
+		String statement = """
+				SELECT airports.iata,airline.UniqueCarrier,sum(airline.ArrDelay),min(airline.ArrDelay),max(airline.ArrDelay),count(*) \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
+				 inner join airports on airports.iata = airline.Origin \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airports.iata,airline.UniqueCarrier\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.add(airportssample, "airports", airportsheader, airportstype)
@@ -832,8 +882,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testMultipleAllColumnsAndOrCondition(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testMultipleAllColumnsAndOrCondition() method Entry");
-		String statement = "SELECT * from airline "				
-				+ "WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
+		String statement = """
+				SELECT * from airline \
+				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -846,8 +898,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testMultipleAllColumnsOrAndCondition(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testMultipleAllColumnsOrAndCondition() method Entry");
-		String statement = "SELECT * from airline "				
-				+ "WHERE (airline.DayofMonth=8 or airline.MonthOfYear=12)";
+		String statement = """
+				SELECT * from airline \
+				WHERE (airline.DayofMonth=8 or airline.MonthOfYear=12)\
+				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1168,9 +1222,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsMonthDayAvgArrDelayPerCarrier(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsMonthDayAvgArrDelayPerCarrier() method Entry");
 		
-		String statement = "SELECT airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear,avg(airline.ArrDelay) avgarrdelay, "
-				+ "sum(airline.ArrDelay) as sumarrdelay, count(*) as ct, min(airline.ArrDelay) as minarrdelay, max(airline.ArrDelay) as maxarrdelay"
-				+ " FROM airline group by airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear order by airline.UniqueCarrier, avgarrdelay";				
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear,avg(airline.ArrDelay) avgarrdelay, \
+				sum(airline.ArrDelay) as sumarrdelay, count(*) as ct, min(airline.ArrDelay) as minarrdelay, max(airline.ArrDelay) as maxarrdelay\
+				 FROM airline group by airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear order by airline.UniqueCarrier, avgarrdelay\
+				""";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -1182,9 +1238,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testCountAvgMinMaxSumArrDelayPerCarrier(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testCountAvgMinMaxSumArrDelayPerCarrier() method Entry");
 		
-		String statement = "SELECT avg(airline.ArrDelay) avgarrdelay, "
-				+ "sum(airline.ArrDelay) as sumarrdelay, count(*) as ct, min(airline.ArrDelay) as minarrdelay, max(airline.ArrDelay) as maxarrdelay"
-				+ " FROM airline group by airline.MonthOfYear order by avgarrdelay";				
+		String statement = """
+				SELECT avg(airline.ArrDelay) avgarrdelay, \
+				sum(airline.ArrDelay) as sumarrdelay, count(*) as ct, min(airline.ArrDelay) as minarrdelay, max(airline.ArrDelay) as maxarrdelay\
+				 FROM airline group by airline.MonthOfYear order by avgarrdelay\
+				""";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2063,8 +2121,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsLeftJoin(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsLeftJoin() method Entry");
 		
-		String statement = "SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
-				+ "FROM carriers left join airline on airline.UniqueCarrier = carriers.Code";				
+		String statement = """
+				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
+				FROM carriers left join airline on airline.UniqueCarrier = carriers.Code\
+				""";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2079,8 +2139,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsRightJoin(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsRightJoin() method Entry");
 		
-		String statement = "SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
-				+ "FROM airline right join carriers on airline.UniqueCarrier = carriers.Code";				
+		String statement = """
+				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
+				FROM airline right join carriers on airline.UniqueCarrier = carriers.Code\
+				""";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2372,8 +2434,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsWithWhereSubSelectAllColumnsWithWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Entry");
-		String statement = "SELECT AirlineYear,MonthOfYear,DayofMonth,DayOfWeek FROM "
-				+ "(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3";
+		String statement = """
+				SELECT AirlineYear,MonthOfYear,DayofMonth,DayOfWeek FROM \
+				(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3\
+				""";
 		
 		
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
@@ -2388,8 +2452,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testNonAggSqrtAggAvgFunctionWithWhereSubSelectAllColumnsWithWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testNonAggSqrtAggAvgFunctionWithWhereSubSelectAllColumnsWithWhere() method Entry");
-		String statement = "SELECT sqrt(abs(ArrDelay)) sqrtabs FROM "
-				+ "(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3";
+		String statement = """
+				SELECT sqrt(abs(ArrDelay)) sqrtabs FROM \
+				(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3\
+				""";
 		
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
@@ -2404,8 +2470,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsJoinSubSelect(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinSubSelect() method Entry");
 		
-		String statement = "SELECT * FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear)";				
+		String statement = """
+				SELECT * FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear)\
+				""";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2419,8 +2487,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsJoinSubSelectAliasTable(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsJoinSubSelectAliasTable() method Entry");
 		
-		String statement = "SELECT ijres.DayofMonth,ijres.MonthOfYear,ijres.UniqueCarrier,ijres.Code FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear) ijres";				
+		String statement = """
+				SELECT ijres.DayofMonth,ijres.MonthOfYear,ijres.UniqueCarrier,ijres.Code FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear) ijres\
+				""";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2434,9 +2504,11 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	public void testRequiredColumnsInnerJoinSubSelectInnerJoinAliasTable(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsInnerJoinSubSelectInnerJoinAliasTable() method Entry");
 		
-		String statement = "SELECT ijres.DayofMonth,ijres.MonthOfYear,ijres.UniqueCarrier,ijres.Code FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code "
-				+ "FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear) ijres inner "
-				+ "join carriers on ijres.UniqueCarrier = carriers.Code";				
+		String statement = """
+				SELECT ijres.DayofMonth,ijres.MonthOfYear,ijres.UniqueCarrier,ijres.Code FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear) ijres inner \
+				join carriers on ijres.UniqueCarrier = carriers.Code\
+				""";				
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(args[0]).setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setPipelineConfig(pipelineconfig).setSql(statement).build();
@@ -2449,8 +2521,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsRequiredColumnsWithWhereSubSelectAllColumnsWithWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Entry");
-		String statement = "SELECT AirlineYear,DayOfWeek,DayofMonth FROM( SELECT AirlineYear,MonthOfYear,DayofMonth,DayOfWeek FROM "
-				+ "(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3)";
+		String statement = """
+				SELECT AirlineYear,DayOfWeek,DayofMonth FROM( SELECT AirlineYear,MonthOfYear,DayofMonth,DayOfWeek FROM \
+				(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3)\
+				""";
 		
 		
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)
@@ -2464,8 +2538,10 @@ public class StreamingSqlExamples implements Serializable, Pipeline{
 	
 	public void testRequiredColumnsWithWhereRequiredColumnsWithWhereSubSelectAllColumnsWithWhere(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("In testRequiredColumnsWithWhereRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Entry");
-		String statement = "SELECT AirlineYear,MonthOfYear,DayOfWeek,DayofMonth FROM( SELECT AirlineYear,MonthOfYear,DayofMonth,DayOfWeek FROM "
-				+ "(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3) where MonthOfYear=12";
+		String statement = """
+				SELECT AirlineYear,MonthOfYear,DayOfWeek,DayofMonth FROM( SELECT AirlineYear,MonthOfYear,DayofMonth,DayOfWeek FROM \
+				(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3) where MonthOfYear=12\
+				""";
 		
 		
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airlineheadertypes)

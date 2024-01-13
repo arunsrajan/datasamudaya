@@ -59,5 +59,5 @@ public class JobMetrics implements Serializable{
 	private Map<String, List<Task>> taskexcutortasks = new ConcurrentHashMap<>();
 	private Graph stageGraphs;
 	private Graph taskGraphs;
-
+	private String sqlpigquery;
 }

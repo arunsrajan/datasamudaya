@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.springframework.yarn.integration.ip.mind.MindAppmasterService;
 import org.springframework.yarn.integration.ip.mind.MindRpcMessageHolder;
 import org.springframework.yarn.integration.ip.mind.binding.BaseObject;
@@ -43,7 +44,7 @@ public class StreamPipelineYarnAppmasterService extends MindAppmasterService {
 	private StreamPipelineYarnAppmaster yarnAppMaster;
 	
 	public StreamPipelineYarnAppmasterService() {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 	}
 
 	/**

@@ -24,20 +24,15 @@ import java.util.Objects;
 import java.util.Set;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.github.datasamudaya.common.DataCruncherContext;
-import com.github.datasamudaya.common.FileSystemSupport;
-import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.common.RemoteDataFetcher;
-import com.github.datasamudaya.common.RemoteDataFetcherException;
 import com.github.datasamudaya.common.utils.HadoopTestUtilities;
 import com.github.datasamudaya.common.utils.Utils;
 
@@ -49,7 +44,7 @@ public class RemoteDataFetcherTest {
 
 	@BeforeClass
 	public static void setUpHdfs() throws Exception {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
 		hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
@@ -133,8 +128,8 @@ public class RemoteDataFetcherTest {
 		String job = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis();
 		Configuration configuration = new Configuration();
 		configuration.set(DataSamudayaConstants.HDFS_DEFAULTFS, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL));
-		configuration.set(DataSamudayaConstants.HDFS_IMPL, org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-		configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, org.apache.hadoop.fs.LocalFileSystem.class.getName());
+		configuration.set(DataSamudayaConstants.HDFS_IMPL, DistributedFileSystem.class.getName());
+		configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, LocalFileSystem.class.getName());
 		String jobpath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + DataSamudayaConstants.FORWARD_SLASH
 				+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + job;
 		String filepath = jobpath + DataSamudayaConstants.FORWARD_SLASH + filename;
@@ -165,8 +160,8 @@ public class RemoteDataFetcherTest {
 			String job = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis();
 			Configuration configuration = new Configuration();
 			configuration.set(DataSamudayaConstants.HDFS_DEFAULTFS, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL));
-			configuration.set(DataSamudayaConstants.HDFS_IMPL, org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-			configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, org.apache.hadoop.fs.LocalFileSystem.class.getName());
+			configuration.set(DataSamudayaConstants.HDFS_IMPL, DistributedFileSystem.class.getName());
+			configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, LocalFileSystem.class.getName());
 			DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL);
 			FileSystem hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
@@ -196,8 +191,8 @@ public class RemoteDataFetcherTest {
 			String dir = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis();
 			Configuration configuration = new Configuration();
 			configuration.set(DataSamudayaConstants.HDFS_DEFAULTFS, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL));
-			configuration.set(DataSamudayaConstants.HDFS_IMPL, org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-			configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, org.apache.hadoop.fs.LocalFileSystem.class.getName());
+			configuration.set(DataSamudayaConstants.HDFS_IMPL, DistributedFileSystem.class.getName());
+			configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, LocalFileSystem.class.getName());
 			String jobpath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + DataSamudayaConstants.FORWARD_SLASH
 					+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + dir;
 			String filepath = jobpath + DataSamudayaConstants.FORWARD_SLASH + filename;
@@ -218,8 +213,8 @@ public class RemoteDataFetcherTest {
 		Configuration configuration = new Configuration();
 		configuration.set(DataSamudayaConstants.HDFS_DEFAULTFS,
 				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL));
-		configuration.set(DataSamudayaConstants.HDFS_IMPL, org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-		configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, org.apache.hadoop.fs.LocalFileSystem.class.getName());
+		configuration.set(DataSamudayaConstants.HDFS_IMPL, DistributedFileSystem.class.getName());
+		configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, LocalFileSystem.class.getName());
 		String jobpath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + DataSamudayaConstants.FORWARD_SLASH
 				+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + dir;
 		String filepath = jobpath + DataSamudayaConstants.FORWARD_SLASH + filename;
@@ -243,8 +238,8 @@ public class RemoteDataFetcherTest {
 			String dir = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis();
 			Configuration configuration = new Configuration();
 			configuration.set(DataSamudayaConstants.HDFS_DEFAULTFS, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL));
-			configuration.set(DataSamudayaConstants.HDFS_IMPL, org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-			configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, org.apache.hadoop.fs.LocalFileSystem.class.getName());
+			configuration.set(DataSamudayaConstants.HDFS_IMPL, DistributedFileSystem.class.getName());
+			configuration.set(DataSamudayaConstants.HDFS_FILE_IMPL, LocalFileSystem.class.getName());
 			String jobpath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + DataSamudayaConstants.FORWARD_SLASH
 					+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + dir;
 			String filepath = jobpath + DataSamudayaConstants.FORWARD_SLASH + filename;

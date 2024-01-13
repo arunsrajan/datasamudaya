@@ -21,6 +21,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.zookeeper.server.ServerCnxnFactory;
+import org.burningwave.core.assembler.StaticComponentContainer;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -32,7 +34,7 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
  *
  */
 public class ZookeeperMain {
-	static org.slf4j.Logger log = LoggerFactory.getLogger(ZookeeperMain.class);
+	static Logger log = LoggerFactory.getLogger(ZookeeperMain.class);
 
 	public static void main(String[] args) throws Exception {		
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
@@ -51,7 +53,7 @@ public class ZookeeperMain {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		var cdl = new CountDownLatch(1);
 		var clientport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_STANDALONE_CLIENTPORT,
 				DataSamudayaConstants.ZOOKEEPER_STANDALONE_CLIENTPORT_DEFAULT));

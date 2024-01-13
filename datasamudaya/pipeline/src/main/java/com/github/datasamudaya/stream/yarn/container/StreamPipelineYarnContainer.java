@@ -15,32 +15,37 @@
  */
 package com.github.datasamudaya.stream.yarn.container;
 
+import static java.util.Objects.nonNull;
+
 import java.io.ByteArrayInputStream;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.springframework.yarn.integration.container.AbstractIntegrationYarnContainer;
 import org.springframework.yarn.integration.ip.mind.MindAppmasterServiceClient;
 
 import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
-import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.CacheUtils;
+import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorYarn;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorYarnSQL;
 import com.github.datasamudaya.stream.yarn.appmaster.JobRequest;
 import com.github.datasamudaya.stream.yarn.appmaster.JobResponse;
-
-import static java.util.Objects.*;
 
 /**
  * 
@@ -53,7 +58,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 	private ExecutorService executor;
 	private static final Log log = LogFactory.getLog(StreamPipelineYarnContainer.class);
 	private Map<String, JobStage> jsidjsmap;
-	private MindAppmasterServiceClient client = null;
+	private MindAppmasterServiceClient client;
 	/**
 	 * Pull the Job to perform MR operation execution requesting 
 	 * the Yarn App Master Service. The various Yarn operation What operation
@@ -62,19 +67,28 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 	 */
 	@Override
 	protected void runInternal() {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		Task task;
 		JobRequest request;
 		byte[] job = null;
 		var containerid = getEnvironment().get(DataSamudayaConstants.SHDP_CONTAINERID);		
-		executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-		Semaphore lock = new Semaphore(Runtime.getRuntime().availableProcessors());
+		executor = Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
+		Semaphore lock = new Semaphore(2);
 		try {
+			log.info("Initializing Container Properties");
 			var prop = new Properties();
 			prop.putAll(System.getProperties());
 			prop.putAll(containerprops);
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+			log.info("Initializing Container Properties Completed");
+			log.info("Initializing Cache");
+			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
+					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
+			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+				            + DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
+			var inmemorycache = DataSamudayaCache.get();
+			log.info("Initializing Cache Completed");
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			while (true) {
 				request = new JobRequest();
 				request.setState(JobRequest.State.WHATTODO);
@@ -127,10 +141,12 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 							yarnexecutor = new StreamPipelineTaskExecutorYarnSQL(
 									containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL),
 									jsidjsmap.get(tasktoprocess.jobid + tasktoprocess.stageid));
+							yarnexecutor.setCache(inmemorycache);
 						} else {
 							yarnexecutor = new StreamPipelineTaskExecutorYarn(
 									containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL),
 									jsidjsmap.get(tasktoprocess.jobid + tasktoprocess.stageid));
+							yarnexecutor.setCache(inmemorycache);
 						}
 						yarnexecutor.setTask(tasktoprocess);
 						yarnexecutor.setExecutor(executor);

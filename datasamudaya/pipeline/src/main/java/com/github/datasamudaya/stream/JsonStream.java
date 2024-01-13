@@ -24,10 +24,21 @@ package com.github.datasamudaya.stream;
 public final class JsonStream<I1> extends StreamPipeline<I1> {
 	@SuppressWarnings({"rawtypes"})
 	public JsonStream(StreamPipeline root) {
-		this.root = root;
-		this.task = new Json();
+		this.tasks.add(new Json());
 		root.childs.add(this);
 		this.parents.add(root);
 		this.protocol = root.protocol;
+		this.pipelineconfig = root.pipelineconfig;
+	}
+	
+	@SuppressWarnings({"rawtypes"})
+	public JsonStream(StreamPipeline root, JsonSQL jsonsql) {
+		root.json = jsonsql;
+		this.json = jsonsql;
+		this.tasks.add(jsonsql);
+		root.childs.add(this);
+		this.parents.add(root);
+		this.protocol = root.protocol;
+		this.pipelineconfig = root.pipelineconfig;
 	}
 }

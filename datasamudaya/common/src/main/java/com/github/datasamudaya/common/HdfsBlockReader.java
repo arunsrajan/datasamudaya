@@ -16,6 +16,7 @@
 package com.github.datasamudaya.common;
 
 import static java.util.Objects.nonNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,14 +24,15 @@ import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.lang.ref.SoftReference;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+
 import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.StorageType;
@@ -60,7 +62,7 @@ import org.apache.log4j.Logger;
  */
 public class HdfsBlockReader {
 
-	private static Logger log = Logger.getLogger(HdfsBlockReader.class);
+	private static final Logger log = Logger.getLogger(HdfsBlockReader.class);
 
 	/**
 	 * This method gets the data in bytes from hdfs given the blocks location.
@@ -173,27 +175,13 @@ public class HdfsBlockReader {
 		try {
 			var inputstreams = new ArrayList<BlockReaderInputStream>();
 			log.debug("Entered HdfsBlockReader.getBlockDataSnappyStream");
-
-			var mapfilenamelb = new HashMap<String, List<LocatedBlock>>();
 			for (var block : bl.getBlock()) {
-				log.debug("In getBlockDataMR block: " + block);
-				if (!Objects.isNull(block) && Objects.isNull(mapfilenamelb.get(block.getFilename()))) {
-					try (var fsinput = (HdfsDataInputStream) hdfs.open(new Path(block.getFilename()));) {
-						mapfilenamelb.put(block.getFilename(), new ArrayList<>(fsinput.getAllBlocks()));
-					}
-				}
-				if (!Objects.isNull(block)) {
-					var locatedBlocks = mapfilenamelb.get(block.getFilename());
-					for (var lb : locatedBlocks) {
-						if (lb.getStartOffset() == block.getBlockOffset()) {
-							log.debug("Obtaining Data for the " + block + " with offset: " + lb.getStartOffset());
-							BlockReader blockr1 = HdfsBlockReader.getBlockReader((DistributedFileSystem) hdfs, lb,
-									lb.getStartOffset() + block.getBlockstart(), block.getHp().split(DataSamudayaConstants.UNDERSCORE)[0]);
-							BlockReaderInputStream bris = new BlockReaderInputStream(blockr1, block.getBlockend() - block.getBlockstart());
-							inputstreams.add(bris);
-							break;
-						}
-					}
+				if (nonNull(block)) {
+					log.info("Obtaining Data for the " + block + " with offset: " + block.getBlockOffset());
+					FSDataInputStream dfsis = hdfs.open(new Path(block.getFilename()));
+					BlockReaderInputStream bris = new BlockReaderInputStream(dfsis, (int) (block.getBlockOffset() + block.getBlockstart()),
+							block.getBlockend() - block.getBlockstart());
+					inputstreams.add(bris);
 				}
 			}
 			log.debug("Exiting HdfsBlockReader.getBlockDataSnappyStream");

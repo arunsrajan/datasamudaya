@@ -112,7 +112,7 @@ public class FileBlocksPartitioner {
 			int destIx;
 			var skip = 0;
 			var totalskip = 0;
-			for (destIx = 1; destIx <= numSplits; destIx++) {
+			for (destIx = 1;destIx <= numSplits;destIx++) {
 				try (var baos = new ByteArrayOutputStream(); var lzfos = new SnappyOutputStream(baos);) {
 					var bl = new BlocksLocation();
 					bl.getBlock()[0] = new Block();

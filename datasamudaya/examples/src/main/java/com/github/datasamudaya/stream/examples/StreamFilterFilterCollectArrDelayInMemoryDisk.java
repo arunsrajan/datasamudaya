@@ -26,7 +26,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamFilterFilterCollectArrDelayInMemoryDisk implements Serializable, Pipeline {
 	private static final long serialVersionUID = -1073668309871473457L;
-	private Logger log = Logger.getLogger(StreamFilterFilterCollectArrDelayInMemoryDisk.class);
+	private final Logger log = Logger.getLogger(StreamFilterFilterCollectArrDelayInMemoryDisk.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");
@@ -48,8 +48,8 @@ public class StreamFilterFilterCollectArrDelayInMemoryDisk implements Serializab
 		log.info("testMapValuesReduceByValues Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(args[0], args[1], pipelineconfig);
 		datastream
-		.filter(value->!"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
-		.filter(value->!"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
+		.filter(value -> !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
+		.filter(value -> !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
 				.saveAsTextFile(new URI(args[0]), args[2] + "/FilterFilter-" + System.currentTimeMillis());
 		log.info("testMapValuesReduceByValues After---------------------------------------");
 	}

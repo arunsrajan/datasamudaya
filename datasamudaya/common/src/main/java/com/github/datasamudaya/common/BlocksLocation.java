@@ -44,6 +44,7 @@ public class BlocksLocation implements Serializable, Cloneable {
 	private Set<Object> combinerclasses;
 	private Set<Object> containers;
 	private List<String> columns;
+	private Boolean toreprocess;
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -53,12 +54,15 @@ public class BlocksLocation implements Serializable, Cloneable {
 	}
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		BlocksLocation other = (BlocksLocation) obj;
 		return Arrays.equals(block, other.block);
 	}
@@ -68,4 +72,10 @@ public class BlocksLocation implements Serializable, Cloneable {
 		return super.clone();
 	}
 
+	public String toBlString() {
+		return "BlocksLocation [block=" + Arrays.toString(block) + "]";
+	}
+
+	
+	
 }

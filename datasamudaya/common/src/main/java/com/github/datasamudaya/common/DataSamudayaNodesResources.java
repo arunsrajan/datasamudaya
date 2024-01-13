@@ -29,12 +29,22 @@ public class DataSamudayaNodesResources {
 	private DataSamudayaNodesResources() {
 	}
 	private static ConcurrentMap<String, Resources> resources;
+	private static ConcurrentMap<String, ConcurrentMap<String, Resources>> allocatedresources;
 
 	public static void put(ConcurrentMap<String, Resources> resources) {
 		DataSamudayaNodesResources.resources = resources;
 	}
+	
+	public static void putAllocatedResources(ConcurrentMap<String, ConcurrentMap<String, Resources>> allocatedresources) {
+		DataSamudayaNodesResources.allocatedresources = allocatedresources;
+	}
 
 	public static ConcurrentMap<String, Resources> get() {
 		return DataSamudayaNodesResources.resources;
+	}
+	
+	
+	public static ConcurrentMap<String, ConcurrentMap<String, Resources>> getAllocatedResources() {
+		return DataSamudayaNodesResources.allocatedresources;
 	}
 }

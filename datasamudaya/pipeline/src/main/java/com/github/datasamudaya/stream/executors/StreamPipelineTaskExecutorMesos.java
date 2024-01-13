@@ -36,9 +36,9 @@ import com.github.datasamudaya.common.RemoteDataFetcher;
  * Mesos task executor.
  */
 public final class StreamPipelineTaskExecutorMesos extends StreamPipelineTaskExecutor {
-	private ExecutorDriver driver;
+	private final ExecutorDriver driver;
 	TaskID taskid;
-	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorMesos.class);
+	private static final Logger log = Logger.getLogger(StreamPipelineTaskExecutorMesos.class);
 
 	public StreamPipelineTaskExecutorMesos(JobStage jobstage, ExecutorDriver driver,
 			TaskID taskid) {
@@ -67,7 +67,7 @@ public final class StreamPipelineTaskExecutorMesos extends StreamPipelineTaskExe
 
 			if (task.input != null && task.parentremotedatafetch != null) {
 				var numinputs = task.parentremotedatafetch.length;
-				for (var inputindex = 0; inputindex < numinputs; inputindex++) {
+				for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 					var input = task.parentremotedatafetch[inputindex];
 					if (input != null) {
 						var rdf = (RemoteDataFetch) input;

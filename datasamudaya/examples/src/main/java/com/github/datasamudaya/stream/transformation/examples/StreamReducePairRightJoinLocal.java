@@ -28,7 +28,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReducePairRightJoinLocal implements Serializable, Pipeline {
 	private static final long serialVersionUID = -7001849661976107123L;
-	private Logger log = Logger.getLogger(StreamReducePairRightJoinLocal.class);
+	private final Logger log = Logger.getLogger(StreamReducePairRightJoinLocal.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");

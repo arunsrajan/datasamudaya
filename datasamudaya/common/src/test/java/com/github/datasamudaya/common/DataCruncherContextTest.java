@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.Set;
 import org.junit.Test;
 
-import com.github.datasamudaya.common.DataCruncherContext;
-
 public class DataCruncherContextTest {
 	String testdata = "TestData";
 	String testdata1 = "TestData1";

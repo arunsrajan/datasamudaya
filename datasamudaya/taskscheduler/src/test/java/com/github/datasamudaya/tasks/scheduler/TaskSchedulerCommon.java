@@ -15,6 +15,7 @@
  */
 package com.github.datasamudaya.tasks.scheduler;
 
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.BeforeClass;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -26,7 +27,10 @@ public class TaskSchedulerCommon {
 	public static void init() throws Exception {		
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
+	}
+
+	protected TaskSchedulerCommon() {
 	}
 
 

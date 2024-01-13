@@ -84,7 +84,8 @@ import com.github.dexecutor.core.task.Task;
 import com.github.dexecutor.core.task.TaskProvider;
 import com.google.common.collect.Iterables;
 
-import static java.util.Objects.*;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 /**
  * Map reduce application to execute map and reduce tasks.
@@ -192,12 +193,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				ac.setNumberofcontainers(cr.size());
 				ports = (List<Integer>) Utils.getResultObjectByInput(node, ac, DataSamudayaConstants.EMPTY);
 				Resources allocresources = resources.get(node);
-				for (int containercount = 0; containercount < ports.size(); containercount++) {
+				for (int containercount = 0;containercount < ports.size();containercount++) {
 					ContainerResources crs = cr.get(containercount);
 					long maxmemory = crs.getMaxmemory();
 					long directheap = crs.getDirectheap();
-					allocresources.setFreememory(allocresources.getFreememory()-maxmemory-directheap);
-					allocresources.setNumberofprocessors(allocresources.getNumberofprocessors()-crs.getCpu());
+					allocresources.setFreememory(allocresources.getFreememory() - maxmemory - directheap);
+					allocresources.setNumberofprocessors(allocresources.getNumberofprocessors() - crs.getCpu());
 					crs.setPort(ports.get(containercount));
 					containers.add(host + DataSamudayaConstants.UNDERSCORE + ports.get(containercount));
 				}
@@ -221,7 +222,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 
 				}).collect(Collectors.toList()).stream();
 			}).collect(Collectors.toList()));
-			log.debug("Total Containers Allocated:"	+ totalcontainersallocated);
+			log.debug("Total Containers Allocated:" + totalcontainersallocated);
 		} catch (Exception ex) {
 			log.error(PipelineConstants.TASKEXECUTORSALLOCATIONERROR, ex);
 			throw new PipelineException(PipelineConstants.TASKEXECUTORSALLOCATIONERROR, ex);
@@ -233,12 +234,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		var dnxrefs = bls.stream().parallel().flatMap(bl -> {
 			var xrefs = new LinkedHashSet<String>();
 			Iterator<Set<String>> xref = bl.getBlock()[0].getDnxref().values().iterator();
-			for (; xref.hasNext(); ) {
+			for (;xref.hasNext();) {
 				xrefs.addAll(xref.next());
 			}
 			if (bl.getBlock().length > 1 && !Objects.isNull(bl.getBlock()[1])) {
 				xref = bl.getBlock()[0].getDnxref().values().iterator();
-				for (; xref.hasNext(); ) {
+				for (;xref.hasNext();) {
 					xrefs.addAll(xref.next());
 				}
 			}
@@ -441,7 +442,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			if (cpu < numberofimplicitcontainercpu * numberofimplicitcontainers) {
 				throw new PipelineException(PipelineConstants.INSUFFCPUALLOCATIONERROR);
 			}
-			for (var count = 0; count < numberofimplicitcontainers; count++) {
+			for (var count = 0;count < numberofimplicitcontainers;count++) {
 				var res = new ContainerResources();
 				res.setCpu(numberofimplicitcontainercpu);
 				var heapmem = memoryrequired * Integer.valueOf(jobconf.getHeappercentage())
@@ -489,7 +490,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	String exceptionmsg = DataSamudayaConstants.EMPTY;
 
 	protected List<String> getHostPort(Collection<String> appidtaskids) {
-		return appidtaskids.stream().map(apptaskid->apptaskhp.get(apptaskid))
+		return appidtaskids.stream().map(apptaskid -> apptaskhp.get(apptaskid))
 				.collect(Collectors.toList());
 	}
 	
@@ -556,7 +557,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			}
 			
 			if(nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
-				var lcs = GlobalContainerLaunchers.get(jobconf.getUser());
+				var lcs = GlobalContainerLaunchers.get(jobconf.getUser(), jobconf.getTeappid());
 				containers = lcs.stream().flatMap(lc -> {
 					var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
 					return lc.getCla().getCr().stream().map(cr -> {
@@ -624,16 +625,16 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					String[] nodehp = node.split(DataSamudayaConstants.UNDERSCORE);
 					for(ContainerResources cr: crs) {
 						batchsize += cr.getCpu()*2;
-						semaphores.put(nodehp[0]+DataSamudayaConstants.UNDERSCORE+cr.getPort(), new Semaphore(cr.getCpu()*2));
+						semaphores.put(nodehp[0] + DataSamudayaConstants.UNDERSCORE + cr.getPort(), new Semaphore(cr.getCpu() * 2));
 					}
 				}
 			} else {
-				var lcs = GlobalContainerLaunchers.get(jobconf.getUser());
-				lcs.stream().forEach(lc->{
+				var lcs = GlobalContainerLaunchers.get(jobconf.getUser(), jobconf.getTeappid());
+				lcs.stream().forEach(lc -> {
 					String[] nodehp = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
-					for(ContainerResources cr: lc.getCla().getCr()) {
-						batchsize += cr.getCpu()*2;
-						semaphores.put(nodehp[0]+DataSamudayaConstants.UNDERSCORE+cr.getPort(), new Semaphore(cr.getCpu()*2));
+					for (ContainerResources cr : lc.getCla().getCr()) {
+						batchsize += cr.getCpu() * 2;
+						semaphores.put(nodehp[0] + DataSamudayaConstants.UNDERSCORE + cr.getPort(), new Semaphore(cr.getCpu() * 2));
 					}
 				});
 			}
@@ -690,7 +691,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	
 				DexecutorConfig<TaskSchedulerReducerSubmitter, Boolean> redconfig = new DexecutorConfig(newExecutor(), new ReducerTaskExecutor(batchsize, applicationid, dccred));
 				DefaultDexecutor<TaskSchedulerReducerSubmitter, Boolean> executorred = new DefaultDexecutor<>(redconfig);
-				for (; partkeys.hasNext(); ) {
+				for (;partkeys.hasNext();) {
 					mrtaskcount++;
 					var currentexecutor = getTaskExecutor(mrtaskcount);
 					var rv = new ReducerValues();
@@ -699,7 +700,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					rv.setReducer(reducer.iterator().next());
 					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + mrtaskcount;
 					var teappid = applicationid;
-					if(nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
+					if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
 						teappid = jobconf.getTeappid();
 					}
 					var mdtstr = new TaskSchedulerReducerSubmitter(
@@ -725,7 +726,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					for (var ctxreducerpart :dccred) {
 						var keysreducers = ctxreducerpart.keys();
 						sb.append(DataSamudayaConstants.NEWLINE);
-						sb.append("Partition " + partindex + "-------------------------------------------------");
+						sb.append("Partition ").append(partindex).append("-------------------------------------------------");
 						sb.append(DataSamudayaConstants.NEWLINE);
 						for (Object key : keysreducers) {
 							sb.append(key + DataSamudayaConstants.SINGLESPACE + ctxreducerpart.get(key));
@@ -766,7 +767,11 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			log.error("Unable To Execute Job, See Cause Below:", ex);
 		} finally {
 			try {
-				destroyContainers(applicationid);
+				if (isNull(jobconf.isIsuseglobalte()) 
+						|| (nonNull(jobconf.isIsuseglobalte()) 
+								&& !jobconf.isIsuseglobalte())) {
+					destroyContainers(applicationid);
+				}
 				if (!Objects.isNull(cf)) {
 					cf.close();
 				}
@@ -853,7 +858,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		Semaphore semaphorebatch;
 		DataCruncherContext dccmapphase;
 		int totaltasks;
-		int taskexecuted = 0;
+		int taskexecuted;
 		private Semaphore resultmerge = new Semaphore(1);
 
 		public MapCombinerTaskExecutor(Semaphore semaphore, DataCruncherContext dccmapphase,
@@ -863,10 +868,10 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			this.totaltasks = totaltasks;
 		}
 
-		public com.github.dexecutor.core.task.Task<TaskSchedulerMapperCombinerSubmitter, Boolean> provideTask(
+		public Task<TaskSchedulerMapperCombinerSubmitter, Boolean> provideTask(
 				final TaskSchedulerMapperCombinerSubmitter tsmcs) {
 
-			return new com.github.dexecutor.core.task.Task<TaskSchedulerMapperCombinerSubmitter, Boolean>() {
+			return new Task<TaskSchedulerMapperCombinerSubmitter, Boolean>() {
 				private TaskSchedulerMapperCombinerSubmitter tsmcsl = tsmcs;
 				private static final long serialVersionUID = 1L;
 
@@ -876,8 +881,8 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						RetrieveKeys rk = tsmcsl.call();
 						resultmerge.acquire();
 						taskexecuted++;
-						double percentagecompleted = Math.floor(((float)taskexecuted) / totaltasks * 100.0);
-						Utils.writeToOstream( jobconf.getOutput(), "\nPercentage Completed TE("
+						double percentagecompleted = Math.floor(((float) taskexecuted) / totaltasks * 100.0);
+						Utils.writeToOstream(jobconf.getOutput(), "\nPercentage Completed TE("
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						dccmapphase.putAll(rk.keys, rk.applicationid + rk.taskid);
 						resultmerge.release();
@@ -913,15 +918,15 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			for(ContainerResources cr: crs) {
 				long maxmemory = cr.getMaxmemory();
 				long directheap = cr.getDirectheap();
-				allocresources.setFreememory(allocresources.getFreememory()+maxmemory+directheap);
-				allocresources.setNumberofprocessors(allocresources.getNumberofprocessors()+cr.getCpu());
+				allocresources.setFreememory(allocresources.getFreememory() + maxmemory + directheap);
+				allocresources.setNumberofprocessors(allocresources.getNumberofprocessors() + cr.getCpu());
 			}
 		}
 		
 	}
 
 	public TaskSchedulerMapperCombinerSubmitter getMassiveDataTaskSchedulerThreadMapperCombiner(
-			Set<Object> mapclz,Set<Object> combiners, BlocksLocation blockslocation, ApplicationTask apptask, String applicationid) throws Exception {
+			Set<Object> mapclz, Set<Object> combiners, BlocksLocation blockslocation, ApplicationTask apptask, String applicationid) throws Exception {
 		log.debug("Block To Read :" + blockslocation);
 		if(nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
 			applicationid = jobconf.getTeappid();

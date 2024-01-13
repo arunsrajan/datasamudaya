@@ -2,7 +2,7 @@ package com.github.datasamudaya.stream.utils;
 
 import java.util.Map;
 import java.util.stream.Stream;
-
+import org.apache.orc.Reader;
 import org.apache.orc.RecordReader;
 
 import lombok.AllArgsConstructor;
@@ -16,7 +16,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class OrcReaderRecordReader {
-	private org.apache.orc.Reader reader;
+	private Reader reader;
 	private RecordReader rows;
 	private Stream<Map<String,Object>> valuesmapstream;
 }

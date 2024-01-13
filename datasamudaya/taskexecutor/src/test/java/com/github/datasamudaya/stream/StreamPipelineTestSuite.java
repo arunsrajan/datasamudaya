@@ -17,9 +17,9 @@ import com.github.datasamudaya.tasks.executor.MassiveDataCruncherMRApiTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	FileBlocksPartitionerHDFSTest.class,LaunchContainersTest.class,
-	PigCommandsTest.class,RemoteJobSchedulerTest.class,
-	HDFSBlockUtilsTest.class,StreamPipeline1Test.class,
+	FileBlocksPartitionerHDFSTest.class, LaunchContainersTest.class,
+	PigCommandsTest.class, RemoteJobSchedulerTest.class,
+	HDFSBlockUtilsTest.class, StreamPipeline1Test.class,
 	StreamPipelineContinuedTest.class, StreamPipelineTestSuite2.class,
     StreamPipelineTest.class, StreamPipelineFoldByKeyKeyByTest.class,
     StreamPipelineTransformationsCollectTest.class,

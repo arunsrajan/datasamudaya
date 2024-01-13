@@ -22,8 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.compress.utils.IOUtils;
 import org.junit.Test;
 
-import com.github.datasamudaya.common.ServerUtils;
-
 import junit.framework.TestCase;
 
 public class ServerUtilsTest extends TestCase {

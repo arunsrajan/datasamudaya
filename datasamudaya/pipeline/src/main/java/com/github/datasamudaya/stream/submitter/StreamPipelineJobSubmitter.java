@@ -32,6 +32,7 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.burningwave.core.assembler.StaticComponentContainer;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -70,7 +71,7 @@ public class StreamPipelineJobSubmitter {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		try (var zo = new ZookeeperOperations()) {
 			zo.connect();
 			var hostport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOSTPORT);
@@ -118,7 +119,7 @@ public class StreamPipelineJobSubmitter {
 			// File name is sent to scheduler.
 			Utils.writeDataStream(os, new File(mrjarpath).getName().getBytes());
 			if (args.length > 1) {
-				for (var argsindex = 1; argsindex < args.length; argsindex++) {
+				for (var argsindex = 1;argsindex < args.length;argsindex++) {
 					var arg = args[argsindex];
 					log.info("Dispatching arguments to application: " + arg);
 					Utils.writeDataStream(os, arg.getBytes());

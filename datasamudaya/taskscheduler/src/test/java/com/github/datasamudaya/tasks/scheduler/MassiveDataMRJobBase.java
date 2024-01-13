@@ -42,6 +42,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -50,6 +51,8 @@ import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.common.JobConfigurationBuilder;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.StreamDataCruncher;
@@ -61,7 +64,8 @@ import com.github.datasamudaya.tasks.executor.NodeRunner;
 public class MassiveDataMRJobBase {
 
 	static Logger log = Logger.getLogger(MassiveDataMRJobBase.class);
-
+	static String teappid;
+	static String appid;
 	static MiniDFSCluster hdfsLocalCluster;
 	static int namenodeport = 9000;
 	static int namenodehttpport = 50070;
@@ -96,28 +100,28 @@ public class MassiveDataMRJobBase {
 	static String bicyclecrash = "/bicyclecrash";
 	static String airlinemultiplefilesfolder = "/airlinemultiplefilesfolder";
 	static String githubevents = "/githubevents";
-	private static int numberofnodes = 1;
+	private static final int numberofnodes = 1;
 	private static int port;
 	static ExecutorService executorpool;
 	static int zookeeperport = 2181;
-	static boolean issetupdone = false;
-
+	static boolean issetupdone;
+	static JobConfiguration jc;
 	private static TestingServer testingserver;
 
 	private static Registry server;
 
-	private static ZookeeperOperations zo = null;
+	private static ZookeeperOperations zo;
 	
 	@BeforeClass
 	public static void setServerUp() throws Exception {		
-		try (InputStream istream = MassiveDataMRJobBase.class.getResourceAsStream("/log4j.properties");) {
+		try {
 			System.setProperty("HIBCFG", "../config/datasamudayahibernate.cfg.xml");
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
-			PropertyConfigurator.configure(istream);
+			PropertyConfigurator.configure("./config/log4j.properties");
 			Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
-			org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+			StaticComponentContainer.Modules.exportAllToAll();
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, 
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
@@ -130,9 +134,9 @@ public class MassiveDataMRJobBase {
 			zo.connect();
 			zo.watchNodes();
 			executorpool = Executors.newWorkStealingPool();
-			int rescheduledelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.rescheduledelay"));
-			int initialdelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.initialdelay"));
-			int pingdelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.pingdelay"));
+			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.rescheduledelay"));
+			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.initialdelay"));
+			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.pingdelay"));
 			String host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskscheduler.host"));
 			port = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.port"));
 			Configuration configuration = new Configuration();
@@ -155,7 +159,7 @@ public class MassiveDataMRJobBase {
 				resource.setTotaldisksize(Utils.totaldiskspace());
 				resource.setUsabledisksize(Utils.usablediskspace());
 				resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
-				zo.createNodesNode(host+DataSamudayaConstants.UNDERSCORE+nodeport, resource, (event)->{
+				zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource, event -> {
 					log.info(event);
 				});
 				while(isNull(DataSamudayaNodesResources.get()) || nonNull(DataSamudayaNodesResources.get()) && DataSamudayaNodesResources.get().size()!=numberofnodes) {
@@ -191,7 +195,14 @@ public class MassiveDataMRJobBase {
 					executorsindex++;
 				}
 			}
-
+			teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
+			Utils.launchContainersUserSpec("arun", teappid, 1, 1024, 1);
+			jc = JobConfigurationBuilder.newBuilder()
+					.setIsuseglobalte(true)
+					.setUser("arun")
+					.setTeappid(teappid)
+					.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT)
+					.build();
 			uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
 			uploadfile(hdfs, carriers, carriers + csvfileextn);
 		} catch (Exception ex) {
@@ -230,6 +241,10 @@ public class MassiveDataMRJobBase {
 
 	@AfterClass
 	public static void closeResources() throws Exception {
+		if(nonNull(hdfsLocalCluster)) {
+			hdfsLocalCluster.close();
+		}
+		Utils.destroyContainers("arun", teappid);
 		executorpool.shutdown();
 		testingserver.stop();
 		testingserver.close();

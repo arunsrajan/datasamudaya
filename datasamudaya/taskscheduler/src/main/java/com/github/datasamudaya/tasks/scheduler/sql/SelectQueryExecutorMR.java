@@ -2,21 +2,20 @@ package com.github.datasamudaya.tasks.scheduler.sql;
 
 import static java.util.Objects.nonNull;
 
-import java.io.PrintWriter;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.github.datasamudaya.common.ColumnMetadata;
-import com.github.datasamudaya.common.JobConfiguration;
-import com.github.datasamudaya.common.JobConfigurationBuilder;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.common.JobConfigurationBuilder;
 import com.github.datasamudaya.stream.sql.TableCreator;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplication;
@@ -53,10 +52,10 @@ public class SelectQueryExecutorMR {
 			String teappid, boolean isyarn) throws Exception {
 		try {
 			JobConfiguration jc = JobConfigurationBuilder.newBuilder()
-					.setIsuseglobalte(!isyarn)
+					.setIsuseglobalte(true)
 					.setUser(user)
 					.setTeappid(teappid)
-					.setExecmode(isyarn?DataSamudayaConstants.EXECMODE_YARN:DataSamudayaConstants.EXECMODE_DEFAULT)
+					.setExecmode(isyarn ? DataSamudayaConstants.EXECMODE_YARN : DataSamudayaConstants.EXECMODE_DEFAULT)
 					.build();
 			CCJSqlParserManager parserManager = new CCJSqlParserManager();
 			Validation validation = new Validation(Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB,
@@ -89,7 +88,7 @@ public class SelectQueryExecutorMR {
 					List<String> tablecolumn = new ArrayList<>();
 					List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 					for (ColumnMetadata columnMetadata : columnMetadatas) {
-						if (columnMetadata.getColumnName().toLowerCase().equals("hdfslocation")) {
+						if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 							hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
 						} else {
 							tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
@@ -110,13 +109,8 @@ public class SelectQueryExecutorMR {
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
-			try (StringWriter stackTrace = new StringWriter(); 
-					PrintWriter writer = new PrintWriter(stackTrace);) {
-				ex.printStackTrace(writer);
-				writer.flush();
-				error.add(stackTrace.toString());
-				errors.add(error);
-			}
+			error.add(ExceptionUtils.getRootCauseMessage(ex));
+			errors.add(error);
 			return errors;
 		}
 		return new ArrayList<>();
@@ -163,7 +157,7 @@ public class SelectQueryExecutorMR {
 					List<String> tablecolumn = new ArrayList<>();
 					List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 					for (ColumnMetadata columnMetadata : columnMetadatas) {
-						if (columnMetadata.getColumnName().toLowerCase().equals("hdfslocation")) {
+						if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 							hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
 						} else {
 							tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
@@ -180,16 +174,14 @@ public class SelectQueryExecutorMR {
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
-			try (StringWriter stackTrace = new StringWriter(); 
-					PrintWriter writer = new PrintWriter(stackTrace);) {
-				ex.printStackTrace(writer);
-				writer.flush();
-				error.add(stackTrace.toString());
-				errors.add(error);
-			}
+			error.add(ExceptionUtils.getRootCauseMessage(ex));
+			errors.add(error);
 			return errors;
 		}
 		return new ArrayList<>();
+	}
+
+	private SelectQueryExecutorMR() {
 	}
 
 }

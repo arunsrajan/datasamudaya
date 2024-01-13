@@ -31,6 +31,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.log4j.Logger;
+import org.burningwave.core.assembler.StaticComponentContainer;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -78,7 +79,7 @@ public class ApplicationSubmitter {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		try (var zo = new ZookeeperOperations()) {
 			zo.connect();
 		var hostport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOSTPORT);

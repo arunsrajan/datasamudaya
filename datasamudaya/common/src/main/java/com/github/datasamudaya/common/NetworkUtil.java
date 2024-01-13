@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class NetworkUtil {
-	private static Logger log = Logger.getLogger(NetworkUtil.class);
+	private static final Logger log = Logger.getLogger(NetworkUtil.class);
 
 	/**
 	 * This functions returns listenable host address passing the host information. 

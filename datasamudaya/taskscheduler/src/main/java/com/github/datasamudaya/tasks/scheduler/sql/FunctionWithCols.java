@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.sf.jsqlparser.expression.Function;
 
 @Setter
 @Getter
@@ -18,4 +19,5 @@ public class FunctionWithCols implements Serializable {
 	private String alias;
 	private String tablename;
 	private List<String> parameters;
+	private Function function; 
 }

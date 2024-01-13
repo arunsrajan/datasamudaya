@@ -88,7 +88,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		var containerprocesses = new ConcurrentHashMap<String, Map<String, Process>>();
 		var containeridthreads = new ConcurrentHashMap<String, Map<String, List<Thread>>>();
 		var containeridports = new ConcurrentHashMap<String, List<Integer>>();
-		for (int nodeindex = 0; nodeindex < NOOFNODES; nodeindex++) {
+		for (int nodeindex = 0;nodeindex < NOOFNODES;nodeindex++) {
 			server = Utils.getRPCRegistry(30000 + nodeindex, new StreamDataCruncher() {
 				public Object postObject(Object object) throws RemoteException {
 					try {

@@ -19,7 +19,6 @@ import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
@@ -28,6 +27,7 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.functions.CoalesceFunction;
 import com.github.datasamudaya.common.functions.JoinPredicate;
@@ -40,7 +40,6 @@ import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.utils.SQLUtils;
-import com.google.common.collect.MapMaker;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
@@ -73,15 +72,16 @@ import net.sf.jsqlparser.util.validation.feature.DatabaseType;
  */
 public class StreamPipelineSqlBuilder implements Serializable {
 	private static final long serialVersionUID = -8585345445522511086L;
-	private static Logger log = LoggerFactory.getLogger(StreamPipelineSqlBuilder.class);
+	private static final Logger log = LoggerFactory.getLogger(StreamPipelineSqlBuilder.class);
 	String sql;
 	String db;
+	String fileformat;
 	ConcurrentMap<String, String> tablefoldermap = new ConcurrentHashMap<>();
 	ConcurrentMap<String, List<String>> tablecolumnsmap = new ConcurrentHashMap<>();
 	ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap = new ConcurrentHashMap<>();
 	String hdfs;
 	transient PipelineConfig pc;
-	private Stack<List<String>> columnstack = new Stack<>();
+	private final Stack<List<String>> columnstack = new Stack<>();
 
 	private StreamPipelineSqlBuilder() {
 
@@ -157,6 +157,11 @@ public class StreamPipelineSqlBuilder implements Serializable {
 		this.db = db;
 		return this;
 	}
+	
+	public StreamPipelineSqlBuilder setFileformat(String fileformat) {
+		this.fileformat = fileformat;
+		return this;
+	}
 
 	/**
 	 * The build method to create sql pipeline object.
@@ -165,6 +170,9 @@ public class StreamPipelineSqlBuilder implements Serializable {
 	 * @throws Exception
 	 */
 	public StreamPipelineSql build() throws Exception {
+		if(nonNull(pc)) {
+			pc.setSqlpigquery(sql);
+		}
 		CCJSqlParserManager parserManager = new CCJSqlParserManager();
 		Validation validation = new Validation(
 				Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB, DatabaseType.POSTGRESQL, DatabaseType.H2),
@@ -208,15 +216,15 @@ public class StreamPipelineSqlBuilder implements Serializable {
 			List<String> functioncols = new ArrayList<>();
 			boolean isdistinct = nonNull(plainSelect.getDistinct());
 			List<String> orderedselectcolumns = new ArrayList<>();
-			if (fromItem instanceof SubSelect) {
-				SelectBody subSelectBody = ((SubSelect) fromItem).getSelectBody();
-				if (subSelectBody instanceof PlainSelect) {
-					subselectpipeline = (StreamPipeline<Map<String, Object>>) execute((PlainSelect) subSelectBody);
+			if (fromItem instanceof SubSelect select) {
+				SelectBody subSelectBody = select.getSelectBody();
+				if (subSelectBody instanceof PlainSelect plainselect) {
+					subselectpipeline = (StreamPipeline<Map<String, Object>>) execute(plainselect);
 				}
 			} else if (fromItem instanceof Table) {
 				table = (Table) plainSelect.getFromItem();
 			}
-			if (plainSelect.getSelectItems().get(0).toString().equals("*")) {
+			if ("*".equals(plainSelect.getSelectItems().get(0).toString())) {
 				if (nonNull(table)) {
 					tablerequiredcolumns.put(table.getName(),
 							new LinkedHashSet<>(tablecolumnsmap.get(table.getName())));
@@ -259,8 +267,8 @@ public class StreamPipelineSqlBuilder implements Serializable {
 										: column.getColumnName());
 							}
 						} else if (selectExpressionItem.getExpression() instanceof Function function) {
-							orderedselectcolumns.add(nonNull(selectExpressionItem.getAlias())?
-									selectExpressionItem.getAlias().getName():selectExpressionItem.toString());
+							orderedselectcolumns.add(nonNull(selectExpressionItem.getAlias())
+									? selectExpressionItem.getAlias().getName() : selectExpressionItem.toString());
 							
 							functionalias.put(function,
 									nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
@@ -310,10 +318,12 @@ public class StreamPipelineSqlBuilder implements Serializable {
 					: new LinkedHashSet<>(columnsselect);
 			Expression expressionRootTable = nonNull(table)?SQLUtils.getFilterExpression(expressionsTable.get(table.getName())):null;
 			StreamPipeline<Map<String, Object>> pipeline = nonNull(table)
-					? StreamPipeline.newCsvStreamHDFSSQL(hdfs, tablefoldermap.get(table.getName()), this.pc,
+					? fileformat.equals(DataSamudayaConstants.CSV) ? StreamPipeline.newCsvStreamHDFSSQL(hdfs, tablefoldermap.get(table.getName()), this.pc,
 							roottablecolumn.toArray(new String[roottablecolumn.size()]),
 							tablecolumntypesmap.get(table.getName()), new ArrayList<>(columnsRootTable))
-					: subselectpipeline;
+					: StreamPipeline.newJsonStreamHDFSSQL(hdfs, tablefoldermap.get(table.getName()), this.pc,
+							roottablecolumn.toArray(new String[roottablecolumn.size()]),
+							tablecolumntypesmap.get(table.getName()), new ArrayList<>(columnsRootTable)) : subselectpipeline;
 			if (nonNull(expressionRootTable)) {
 				pipeline = pipeline.filter(new PredicateSerializable<Map<String, Object>>() {
 					private static final long serialVersionUID = -9040664505941669357L;
@@ -327,7 +337,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 			}
 			Map<String, Long> roottablecolumnindexmap = new ConcurrentHashMap<>();
 			if(nonNull(roottablecolumn)) {
-				for (int originalcolumnindex = 0; originalcolumnindex < roottablecolumn.size(); originalcolumnindex++) {
+				for (int originalcolumnindex = 0;originalcolumnindex < roottablecolumn.size();originalcolumnindex++) {
 					roottablecolumnindexmap.put(roottablecolumn.get(originalcolumnindex),
 							Long.valueOf(originalcolumnindex));
 				}
@@ -340,8 +350,8 @@ public class StreamPipelineSqlBuilder implements Serializable {
 					String tablename = ((Table) join.getRightItem()).getName();
 					List<String> jointablecolumn = tablecolumnsmap.get(tablename);
 					Map<String, Double> jointablecolumnindexmap = new ConcurrentHashMap<>();
-					for (int originalcolumnindex = 0; originalcolumnindex < jointablecolumn
-							.size(); originalcolumnindex++) {
+					for (int originalcolumnindex = 0;originalcolumnindex < jointablecolumn
+							.size();originalcolumnindex++) {
 						jointablecolumnindexmap.put(jointablecolumn.get(originalcolumnindex),
 								Double.valueOf(originalcolumnindex));
 					}
@@ -407,7 +417,12 @@ public class StreamPipelineSqlBuilder implements Serializable {
 						public Map<String, Object> apply(Map<String, Object> mapvalues) {							
 							Map<String, Object> objectValuesMap = new HashMap<>();							
 							selcolumnsfunccolsremoved.stream()
-							.forEach(key -> objectValuesMap.put(key, mapvalues.get(key)));
+							.forEach(key -> {
+								objectValuesMap.put(key, mapvalues.get(key));
+								if(mapvalues.containsKey(key+DataSamudayaConstants.SQLCOUNTFORAVG)) {
+									objectValuesMap.put(key+DataSamudayaConstants.SQLCOUNTFORAVG, mapvalues.get(key+DataSamudayaConstants.SQLCOUNTFORAVG));
+								}
+							});
 							return objectValuesMap;
 
 						}
@@ -443,7 +458,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 					Map<Function, String> aliasfn = functionalias;
 					Map<Parenthesis, String> parenthealias = parenthesisalias;
 					boolean isaggfuncqueried = isaggfunc;
-					SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+					SimpleDateFormat dateFormat = new SimpleDateFormat();
 
 					@Override
 					public Map<String, Object> apply(Map<String, Object> mapvalues) {
@@ -458,6 +473,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 									nonaggfnvalues.put(alias, value);
 								} else if (fn.getName().toLowerCase().startsWith("currentisodate")) {
 									String alias = nonNull(aliasfunction) ? aliasfunction : "currentisodate()";
+									dateFormat.applyPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 									nonaggfnvalues.put(alias, dateFormat.format(new Date(System.currentTimeMillis())));
 								}
 							} else if (exp instanceof Parenthesis parenthesis) {
@@ -490,70 +506,65 @@ public class StreamPipelineSqlBuilder implements Serializable {
 				} else if (!groupby.isEmpty() && isNull(plainSelect.getGroupBy())) {
 					throw new IllegalArgumentException("Provide proper GroupBy expressions or columns");
 				}
-				List<List<Expression>> exp = new ArrayList<>();
-				Boolean isaverage = false, iscount = false;
-				List<String> functionaverages = new ArrayList<>();
-				List<Function> funcrealign = new ArrayList<>();
-				Function countfn = null;
+				List<Expression> exp = new ArrayList<>();
+				List<List<Column>> columnstoeval = new ArrayList<>();
 				for (Function fn : aggfunctions) {
-					String functionname = fn.getName().toLowerCase();
-					if (functionname.startsWith("count")) {
-						iscount = true;
-						countfn = fn;
-					} else {
 						columnsselect.add(SQLUtils.getAliasForFunction(fn, functionalias));
-						funcrealign.add(fn);
-						exp.add(SQLUtils.getExpressions(fn));
-						if (functionname.startsWith("avg")) {
-							functionaverages.add(SQLUtils.getAliasForFunction(fn, functionalias));
-							isaverage = true;
-						}
-					}
-				}
-				if (iscount || isaverage && !iscount) {
-					exp.add(Arrays.asList());
-					if (iscount) {
-						columnsselect.add(SQLUtils.getAliasForFunction(countfn, functionalias));
-						funcrealign.add(countfn);
-					} else {
-						Function function = new Function();
-						function.setName("count");
-						function.setAllColumns(true);
-						funcrealign.add(function);
-					}
-				}
+						List<Expression> expressions = SQLUtils.getExpressions(fn);
+						if(nonNull(expressions)) {
+							exp.add(expressions.get(0));
+							List<Column> columnsfromexp = new ArrayList<>();
+							SQLUtils.getColumnsFromExpression(expressions.get(0), columnsfromexp);
+							columnstoeval.add(columnsfromexp);
+						} else {
+							exp.add(null);
+							columnstoeval.add(new ArrayList<>());
+						}						
+				}				
 				pipelinemap = pipelinemap.mapToPair(new MapToPairFunction<Map<String, Object>, Tuple2<Tuple, Tuple>>() {
 					private static final long serialVersionUID = 8102198486566760753L;
-					List<List<Expression>> expre = exp;
+					List<Expression> expre = exp;
 					Set<String> grpby = groupby;
-
+					List<Function> aggfuncs = aggfunctions;
+					List<List<Column>> columnsevaluation = columnstoeval;
 					@Override
 					public Tuple2<Tuple, Tuple> apply(Map<String, Object> mapvalues) {
-						Object[] fnobj = new Object[expre.size()];
-						Object[] grpbyobj = new Object[grpby.size()];
-
+						List<Object> fnobj = new ArrayList<>();
+						Object[] grpbyobj = new Object[grpby.size()];						
 						int index = 0;
 						for (Object grpobj : grpby) {
 							grpbyobj[index] = mapvalues.get(grpobj);
 							index++;
 						}
 						index = 0;
-						for (List<Expression> expr : expre) {
-							if (expr.isEmpty()) {
-								fnobj[index] = 1l;
+						for ( ;index<expre.size();index++) {
+							Expression expr = expre.get(index);
+							if (isNull(expr)) {
+								fnobj.add(1l);
 							} else {
-								fnobj[index] = SQLUtils.evaluateBinaryExpression(expr.get(0), mapvalues);
+								fnobj.add(SQLUtils.evaluateBinaryExpression(expr, mapvalues));
+								String functionname = aggfuncs.get(index).getName().toLowerCase();
+								long cval = 1;
+								if (functionname.startsWith("avg")) {
+									for (Column column : columnsevaluation.get(index)) {
+										Integer valuetocount = (Integer) mapvalues.get(column.getColumnName()+DataSamudayaConstants.SQLCOUNTFORAVG);
+										if (isNull(valuetocount)||nonNull(valuetocount)&&valuetocount == 0) {
+											cval = 0;
+											break;
+										}
+									}
+									fnobj.add(cval);
+								}
 							}
-							index++;
 						}
 
 						return Tuple.tuple(SQLUtils.convertObjectToTuple(grpbyobj),
-								SQLUtils.convertObjectToTuple(fnobj));
+								SQLUtils.convertObjectToTuple(fnobj.toArray(new Object[fnobj.size()])));
 
 					}
 				}).reduceByKey(new ReduceByKeyFunction<Tuple>() {
 					private static final long serialVersionUID = -8773950223630733894L;
-					List<Function> aggregatefunc = funcrealign;
+					List<Function> aggregatefunc = aggfunctions;
 
 					@Override
 					public Tuple apply(Tuple tuple1, Tuple tuple2) {
@@ -562,7 +573,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 
 				}).coalesce(1, new CoalesceFunction<Tuple>() {
 					private static final long serialVersionUID = -6496272568103409255L;
-					List<Function> aggregatefunc = funcrealign;
+					List<Function> aggregatefunc = aggfunctions;
 
 					@Override
 					public Tuple apply(Tuple tuple1, Tuple tuple2) {
@@ -572,23 +583,16 @@ public class StreamPipelineSqlBuilder implements Serializable {
 				}).map(new MapFunction<Tuple2<Tuple, Tuple>, Map<String, Object>>() {							
 					private static final long serialVersionUID = 9098846821052824347L;
 					Set<String> grpby = groupby;
-					List<Function> aggregatefunc = funcrealign;
+					List<Function> aggregatefunc = aggfunctions;
 					Map<Function, String> funcalias = functionalias;
-					List<String> fnaverages = functionaverages;
 					List<String> orderedcolumns = orderedselectcolumns;
 					@Override
-					public Map<String, Object> apply(Tuple2<Tuple,Tuple> tuple2) {
+					public Map<String, Object> apply(Tuple2<Tuple, Tuple> tuple2) {						
 						Map<String, Object> mapwithfinalvalues = new HashMap<>();
 						SQLUtils.populateMapFromTuple(mapwithfinalvalues, tuple2.v1, new ArrayList<>(grpby));
-						SQLUtils.populateMapFromFunctions(mapwithfinalvalues, tuple2.v2, aggregatefunc, funcalias);								
-						if(!fnaverages.isEmpty()) {
-							long count = SQLUtils.getCountFromTuple(tuple2.v2);
-							for(String fnaverage:fnaverages) {
-								mapwithfinalvalues.put(fnaverage, SQLUtils.evaluateValuesByOperator(mapwithfinalvalues.get(fnaverage),count,"/"));
-							}
-						}
+						SQLUtils.populateMapFromFunctions(mapwithfinalvalues, tuple2.v2, aggregatefunc, funcalias);
 						Map<String, Object> orderedvalues = new LinkedHashMap<>();
-						for(String column:orderedcolumns) {
+						for (String column :orderedcolumns) {
 							orderedvalues.put(column, mapwithfinalvalues.get(column));
 						}
 						mapwithfinalvalues.clear();
@@ -775,13 +779,13 @@ public class StreamPipelineSqlBuilder implements Serializable {
 				var columnslocal = columns;
 				var directionslocal = directions;
 
-				for (int i = 0; i < columnslocal.size(); i++) {
+				for (int i = 0;i < columnslocal.size();i++) {
 					String columnName = columnslocal.get(i).getColumnName();
 					String sortOrder = directionslocal.get(i);
 					Object value1 = map1.get(columnName);
 					Object value2 = map2.get(columnName);
 					int result = SQLUtils.compareTo(value1, value2);
-					if (sortOrder.equals("DESC")) {
+					if ("DESC".equals(sortOrder)) {
 						result = -result;
 					}
 					if (result != 0) {

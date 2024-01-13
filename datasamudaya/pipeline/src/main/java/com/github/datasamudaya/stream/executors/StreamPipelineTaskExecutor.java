@@ -104,13 +104,13 @@ import com.pivovarit.collectors.ParallelCollectors;
 public class StreamPipelineTaskExecutor implements Callable<Boolean> {
   protected JobStage jobstage;
   private static Logger log = Logger.getLogger(StreamPipelineTaskExecutor.class);
-  protected FileSystem hdfs = null;
-  protected boolean completed = false;
-  public long starttime = 0l;
-  public long endtime = 0l;
+  protected FileSystem hdfs;
+  protected boolean completed;
+  public long starttime;
+  public long endtime;
   Cache cache;
   Task task;
-  boolean iscacheable = false;
+  boolean iscacheable;
   ExecutorService executor;
 
   public StreamPipelineTaskExecutor(JobStage jobstage, Cache cache) {
@@ -134,7 +134,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
     return task;
   }
 
-  /**
+  public void setCache(Cache cache) {
+	this.cache = cache;
+}
+
+/**
    * This method writes the intermediate data generated in to output stream.  
    * @param fsdos
    * @throws PipelineException
@@ -255,7 +259,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
             Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
                 DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-          Utils.convertToCsv((List)result, os);
+          Utils.convertToCsv((List) result, os);
         }
         var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
         return timetaken;
@@ -264,7 +268,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
             
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<Object>(result);
       result = null;
@@ -323,14 +327,14 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
             Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
                 DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-        	 Utils.convertToCsv((List)result, os);
+        	 Utils.convertToCsv((List) result, os);
         }
         var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
         return timetaken;
       }      
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<Object>(result);
       result = null;
@@ -386,13 +390,14 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
             Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
                 DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-        	 Utils.convertToCsv((List)result, os);
+        	 Utils.convertToCsv((List) result, os);
         }
         var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
         return timetaken;
       }      
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<Object>(result);
       result = null;
@@ -420,8 +425,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
    * @return path of the tasks.
    */
   public String getIntermediateDataFSFilePath(Task task) {
-    return (DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH
-        + task.jobid + DataSamudayaConstants.FORWARD_SLASH + task.taskid);
+    return DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH
+        + task.jobid + DataSamudayaConstants.FORWARD_SLASH + task.taskid;
   }
 
   /**
@@ -485,11 +490,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       List result;
       if (terminalCount) {
           result = new Vector<>();
-          result.add(java.util.stream.Stream.concat(streamfirst, streamsecond).distinct().count());
+          result.add(Stream.concat(streamfirst, streamsecond).distinct().count());
         } else {
           // parallel stream union operation result
           var cf =
-              (CompletableFuture) java.util.stream.Stream.concat(streamfirst, streamsecond).distinct()
+              (CompletableFuture) Stream.concat(streamfirst, streamsecond).distinct()
                   .collect(ParallelCollectors.parallel(value -> value,
                       Collectors.toCollection(Vector::new), executor,
                       Runtime.getRuntime().availableProcessors()));
@@ -499,7 +504,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
             Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
                 DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-          Utils.convertToCsv((List)result, os);
+          Utils.convertToCsv((List) result, os);
         }
         var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
         return timetaken;
@@ -508,7 +513,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(result);
       result = null;
@@ -561,11 +566,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       if (terminalCount) {
         result = new Vector<>();
         result.add(
-            java.util.stream.Stream.concat(datafirst.stream(), streamsecond).distinct().count());
+            Stream.concat(datafirst.stream(), streamsecond).distinct().count());
       } else {
         // parallel stream union operation result
     	  CompletableFuture cf =
-            (CompletableFuture) java.util.stream.Stream.concat(datafirst.stream(), streamsecond)
+            (CompletableFuture) Stream.concat(datafirst.stream(), streamsecond)
                 .distinct()
                 .collect(ParallelCollectors.parallel(value -> value,
                     Collectors.toCollection(Vector::new), executor,
@@ -576,7 +581,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	        try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
 	            Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
 	                DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-	        	Utils.convertToCsv((List)result, os);
+	        	Utils.convertToCsv((List) result, os);
 		        var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 		        return timetaken;
 	      }
@@ -584,7 +589,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(result);
       result = null;
@@ -634,11 +639,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }
 		if (terminalCount) {
 			result = new ArrayList<>();
-			result.add(java.util.stream.Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
+			result.add(Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
 					.distinct().count());
 		} else {
 			// parallel stream union operation result
-			var cf = (CompletableFuture) java.util.stream.Stream.concat(datafirst.stream(), datasecond.stream())
+			var cf = (CompletableFuture) Stream.concat(datafirst.stream(), datasecond.stream())
 					.distinct()
 					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
 							Runtime.getRuntime().availableProcessors()));
@@ -649,7 +654,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
             Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
                 DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-        	Utils.convertToCsv((List)result, os);
+        	Utils.convertToCsv((List) result, os);
         }
         var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
         return timetaken;
@@ -657,6 +662,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, result);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(result);
       result = null;
@@ -768,13 +774,13 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         } else if (finaltask instanceof StandardDeviation) {
           out = new Vector<>();
           CompletableFuture<List> cf =
-              (CompletableFuture) ((java.util.stream.IntStream) streammap).boxed()
+              (CompletableFuture) ((IntStream) streammap).boxed()
                   .collect(ParallelCollectors.parallel(value -> value,
                       Collectors.toCollection(Vector::new), executor,
                       Runtime.getRuntime().availableProcessors()));
           var streamtmp = cf.get();
-          var mean = (streamtmp).stream().mapToInt(Integer.class::cast).average().getAsDouble();
-          var variance = (streamtmp).stream().mapToInt(Integer.class::cast)
+          var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
+          var variance = streamtmp.stream().mapToInt(Integer.class::cast)
               .mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
           var standardDeviation = Math.sqrt(variance);
           out.add(standardDeviation);
@@ -799,6 +805,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 		}
         Utils.getKryo().writeClassAndObject(output, out);
         output.flush();
+        task.setNumbytesgenerated(fsdos.toByteArray().length);
         cacheAble(fsdos);
         var wr = new WeakReference<List>(out);
         out = null;
@@ -902,14 +909,14 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
             } else if (finaltask instanceof StandardDeviation) {
               out = new Vector<>();
               CompletableFuture<List> cf =
-                  (CompletableFuture) ((java.util.stream.IntStream) streammap).boxed()
+                  (CompletableFuture) ((IntStream) streammap).boxed()
                       .collect(ParallelCollectors.parallel(value -> value,
                           Collectors.toCollection(Vector::new), executor,
                           Runtime.getRuntime().availableProcessors()));
               var streamtmp = cf.get();
               double mean =
-                  (streamtmp).stream().mapToInt(Integer.class::cast).average().getAsDouble();
-              double variance = (double) (streamtmp).stream().mapToInt(Integer.class::cast)
+                  streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
+              double variance = (double) streamtmp.stream().mapToInt(Integer.class::cast)
                   .mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
               double standardDeviation = Math.sqrt(variance);
               out.add(standardDeviation);
@@ -942,6 +949,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(out);
       out = null;
@@ -1008,7 +1016,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(out);
       out = null;
@@ -1076,7 +1084,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(out);
       out = null;
@@ -1106,7 +1114,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
    * @return jobid-stageid-taskid
    */
   public String getIntermediateDataFSFilePath(String jobid, String stageid, String taskid) {
-    return (jobid + DataSamudayaConstants.HYPHEN + stageid + DataSamudayaConstants.HYPHEN + taskid);
+    return jobid + DataSamudayaConstants.HYPHEN + stageid + DataSamudayaConstants.HYPHEN + taskid;
   }
 
   /**
@@ -1140,7 +1148,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
       if (task.input != null && task.parentremotedatafetch != null) {
         var numinputs = task.parentremotedatafetch.length;
-        for (var inputindex = 0; inputindex < numinputs; inputindex++) {
+        for (var inputindex = 0;inputindex < numinputs;inputindex++) {
           var input = task.parentremotedatafetch[inputindex];
           if (input != null) {
             var rdf = input;
@@ -1156,11 +1164,12 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
           }
         }
       }
-      endtime = System.currentTimeMillis();
+      task.taskexecutionstartime = starttime;
       timetakenseconds = computeTasks(task, hdfs);
       log.debug("Completed Stage: " + stagePartition);
       completed = true;
-      endtime = System.currentTimeMillis();
+      endtime = System.currentTimeMillis();     
+      task.taskexecutionendtime = endtime;
     } catch (Throwable ex) {
       log.error("Failed Stage: " + stagePartition, ex);
       completed = false;
@@ -1169,6 +1178,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         var failuremessage = new PrintWriter(baos, true, StandardCharsets.UTF_8);
         ex.printStackTrace(failuremessage);
         endtime = System.currentTimeMillis();
+        task.taskexecutionendtime = endtime;
         task.taskstatus = TaskStatus.FAILED;
         task.tasktype = TaskType.EXECUTEUSERTASK;
         task.stagefailuremessage = new String(baos.toByteArray());
@@ -1200,18 +1210,18 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         streamsecond = HdfsBlockReader.getBlockDataInputStream(blsecond, hdfs);
       } else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
           || ((task.input[0] instanceof InputStream) && task.input[1] instanceof BlocksLocation)) {
-        streamfirst = task.input[0] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[0], hdfs)
+        streamfirst = task.input[0] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[0];
-        streamsecond = task.input[1] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[1], hdfs)
+        streamsecond = task.input[1] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[1];
       } else {
         streamfirst = (InputStream) task.input[0];
         streamsecond = (InputStream) task.input[1];
       }
-      try (var streamfirsttocompute = ((InputStream) streamfirst);
-          var streamsecondtocompute = ((InputStream) streamsecond);) {
+      try (var streamfirsttocompute = (InputStream) streamfirst;
+          var streamsecondtocompute = (InputStream) streamsecond;) {
         timetakenseconds = processJoin(streamfirsttocompute, streamsecondtocompute, jp,
             task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
       } catch (IOException ioe) {
@@ -1231,18 +1241,18 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         streamsecond = HdfsBlockReader.getBlockDataInputStream(blsecond, hdfs);
       } else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
           || ((task.input[0] instanceof InputStream) && task.input[1] instanceof BlocksLocation)) {
-        streamfirst = task.input[0] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[0], hdfs)
+        streamfirst = task.input[0] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[0];
-        streamsecond = task.input[1] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[1], hdfs)
+        streamsecond = task.input[1] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[1];
       } else {
         streamfirst = (InputStream) task.input[0];
         streamsecond = (InputStream) task.input[1];
       }
-      try (var streamfirsttocompute = ((InputStream) streamfirst);
-          var streamsecondtocompute = ((InputStream) streamsecond);) {
+      try (var streamfirsttocompute = (InputStream) streamfirst;
+          var streamsecondtocompute = (InputStream) streamsecond;) {
         timetakenseconds = processLeftOuterJoin(streamfirsttocompute, streamsecondtocompute, ljp,
             task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
       } catch (IOException ioe) {
@@ -1261,18 +1271,18 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         streamsecond = HdfsBlockReader.getBlockDataInputStream(blsecond, hdfs);
       } else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
           || ((task.input[0] instanceof InputStream) && task.input[1] instanceof BlocksLocation)) {
-        streamfirst = task.input[0] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[0], hdfs)
+        streamfirst = task.input[0] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[0];
-        streamsecond = task.input[1] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[1], hdfs)
+        streamsecond = task.input[1] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[1];
       } else {
         streamfirst = (InputStream) task.input[0];
         streamsecond = (InputStream) task.input[1];
       }
-      try (var streamfirsttocompute = ((InputStream) streamfirst);
-          var streamsecondtocompute = ((InputStream) streamsecond);) {
+      try (var streamfirsttocompute = (InputStream) streamfirst;
+          var streamsecondtocompute = (InputStream) streamsecond;) {
         timetakenseconds = processRightOuterJoin(streamfirsttocompute, streamsecondtocompute, rjp,
             task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
       } catch (IOException ioe) {
@@ -1291,18 +1301,18 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         streamsecond = HdfsBlockReader.getBlockDataInputStream(blsecond, hdfs);
       } else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
           || ((task.input[0] instanceof InputStream) && task.input[1] instanceof BlocksLocation)) {
-        streamfirst = task.input[0] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[0], hdfs)
+        streamfirst = task.input[0] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[0];
-        streamsecond = task.input[1] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[1], hdfs)
+        streamsecond = task.input[1] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[1];
       } else {
         streamfirst = (InputStream) task.input[0];
         streamsecond = (InputStream) task.input[1];
       }
-      try (var streamfirsttocompute = ((InputStream) streamfirst);
-          var streamsecondtocompute = ((InputStream) streamsecond);) {
+      try (var streamfirsttocompute = (InputStream) streamfirst;
+          var streamsecondtocompute = (InputStream) streamsecond;) {
         timetakenseconds = processJoin(streamfirsttocompute, streamsecondtocompute,
             task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
       } catch (IOException ioe) {
@@ -1322,18 +1332,18 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         streamsecond = HdfsBlockReader.getBlockDataInputStream(blsecond, hdfs);
       } else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
           || ((task.input[0] instanceof InputStream) && task.input[1] instanceof BlocksLocation)) {
-        streamfirst = task.input[0] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[0], hdfs)
+        streamfirst = task.input[0] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[0];
-        streamsecond = task.input[1] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[1], hdfs)
+        streamsecond = task.input[1] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[1];
       } else {
         streamfirst = (InputStream) task.input[0];
         streamsecond = (InputStream) task.input[1];
       }
-      try (var streamfirsttocompute = ((InputStream) streamfirst);
-          var streamsecondtocompute = ((InputStream) streamsecond);) {
+      try (var streamfirsttocompute = (InputStream) streamfirst;
+          var streamsecondtocompute = (InputStream) streamsecond;) {
         timetakenseconds = processLeftJoin(streamfirsttocompute, streamsecondtocompute,
             task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
       } catch (IOException ioe) {
@@ -1352,18 +1362,18 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         streamsecond = HdfsBlockReader.getBlockDataInputStream(blsecond, hdfs);
       } else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
           || ((task.input[0] instanceof InputStream) && task.input[1] instanceof BlocksLocation)) {
-        streamfirst = task.input[0] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[0], hdfs)
+        streamfirst = task.input[0] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[0];
-        streamsecond = task.input[1] instanceof BlocksLocation
-            ? HdfsBlockReader.getBlockDataInputStream((BlocksLocation) task.input[1], hdfs)
+        streamsecond = task.input[1] instanceof BlocksLocation bl
+            ? HdfsBlockReader.getBlockDataInputStream(bl, hdfs)
             : (InputStream) task.input[1];
       } else {
         streamfirst = (InputStream) task.input[0];
         streamsecond = (InputStream) task.input[1];
       }
-      try (var streamfirsttocompute = ((InputStream) streamfirst);
-          var streamsecondtocompute = ((InputStream) streamsecond);) {
+      try (var streamfirsttocompute = (InputStream) streamfirst;
+          var streamsecondtocompute = (InputStream) streamsecond;) {
         timetakenseconds = processRightJoin(streamfirsttocompute, streamsecondtocompute,
             task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
       } catch (IOException ioe) {
@@ -1384,13 +1394,13 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         var streamfirst = new LinkedHashSet<InputStream>();
         var blockssecond = new ArrayList<BlocksLocation>();
         for (var input : task.input) {
-          if (input instanceof InputStream inpstr)
-            streamfirst.add(inpstr);
-          else {
-            if (input instanceof BlocksLocation blockslocation) {
-              blockssecond.add(blockslocation);
-            }
-          }
+					if (input instanceof InputStream inpstr) {
+						streamfirst.add(inpstr);
+					} else {
+						if (input instanceof BlocksLocation blockslocation) {
+							blockssecond.add(blockslocation);
+						}
+					}
         }
         timetakenseconds = processBlockHDFSIntersection(streamfirst, blockssecond, hdfs);
       } else if (task.input[0] instanceof InputStream && task.input[1] instanceof InputStream) {
@@ -1407,13 +1417,13 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         var streamfirst = new LinkedHashSet<InputStream>();
         var blockssecond = new ArrayList<BlocksLocation>();
         for (var input : task.input) {
-          if (input instanceof InputStream inpstr)
-            streamfirst.add(inpstr);
-          else {
-            if (input instanceof BlocksLocation blockslocation) {
-              blockssecond.add(blockslocation);
-            }
-          }
+					if (input instanceof InputStream inpstr) {
+						streamfirst.add(inpstr);
+					} else {
+						if (input instanceof BlocksLocation blockslocation) {
+							blockssecond.add(blockslocation);
+						}
+					}
         }
         timetakenseconds = processBlockHDFSUnion(streamfirst, blockssecond, hdfs);
       } else if (task.input[0] instanceof InputStream && task.input[1] instanceof InputStream) {
@@ -1534,7 +1544,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -1640,7 +1650,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }      
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -1746,7 +1756,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       }      
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -1838,7 +1848,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
           joinpairsout = seqinnerjoin.toList();
           if (!joinpairsout.isEmpty()) {
             Tuple2 tuple2 = (Tuple2) joinpairsout.get(0);
-            if (tuple2.v1 instanceof CSVRecord && tuple2.v2 instanceof CSVRecord) {
+            if (tuple2.v1 instanceof CSVRecord && tuple2.v2 instanceof CSVRecord ) {
               var cf = (CompletableFuture) joinpairsout.stream()
                   .filter(val -> val instanceof Tuple2).filter(value -> {
                     Tuple2 csvrec = (Tuple2) value;
@@ -1889,6 +1899,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -2015,13 +2026,13 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
             		&& (tuple2.v2 == null || tuple2.v2 instanceof Map)) {
             	Map<String,Object> keyvaluemap = (Map<String, Object>) inputs2.get(0);
             	Map<String,Object> nullmap = new HashMap<>();
-            	keyvaluemap.keySet().forEach(key->nullmap.put(key, null));
+            	keyvaluemap.keySet().forEach(key -> nullmap.put(key, null));
             	var cf = (CompletableFuture) joinpairsout.stream()
                         .filter(val -> val instanceof Tuple2).map(value -> {
                           Tuple2 maprec = (Tuple2) value;
-                          Map<String,Object> rec1 = (Map<String, Object>) maprec.v1;
-                          Map<String,Object> rec2 = (Map<String, Object>) maprec.v2;
-                          if(rec2 == null) {
+                          Map<String, Object> rec1 = (Map<String, Object>) maprec.v1;
+                          Map<String, Object> rec2 = (Map<String, Object>) maprec.v2;
+                          if (rec2 == null) {
                         	  return new Tuple2(rec1, nullmap); 
                           }
                           return maprec;
@@ -2048,7 +2059,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -2175,13 +2186,13 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
             		&& tuple2.v2 instanceof Map) {
             	Map<String,Object> keyvaluemap = (Map<String, Object>) inputs1.get(0);
             	Map<String,Object> nullmap = new HashMap<>();
-            	keyvaluemap.keySet().forEach(key->nullmap.put(key, null));
+            	keyvaluemap.keySet().forEach(key -> nullmap.put(key, null));
             	var cf = (CompletableFuture) joinpairsout.stream()
                         .filter(val -> val instanceof Tuple2).map(value -> {
                           Tuple2 maprec = (Tuple2) value;
-                          Map<String,Object> rec1 = (Map<String, Object>) maprec.v1;
-                          Map<String,Object> rec2 = (Map<String, Object>) maprec.v2;
-                          if(rec1 == null) {
+                          Map<String, Object> rec1 = (Map<String, Object>) maprec.v1;
+                          Map<String, Object> rec2 = (Map<String, Object>) maprec.v2;
+                          if (rec1 == null) {
                         	  return new Tuple2(nullmap, rec2); 
                           }
                           return maprec;
@@ -2208,7 +2219,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, joinpairsout);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(joinpairsout);
       joinpairsout = null;
@@ -2246,7 +2257,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       var allpairs = new ArrayList<>();
       var mapgpbykey = new LinkedHashSet<Map>();
       for (var fs : task.input) {
-        try (var fsdis = ((InputStream) fs);
+        try (var fsdis = (InputStream) fs;
             var input = new Input(fsdis);) {
           // while (input.available() > 0) {
           var keyvaluepair = Utils.getKryo().readClassAndObject(input);
@@ -2304,7 +2315,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       log.debug("Exiting StreamPipelineTaskExecutor.processGroupByKeyTuple2");
       var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2340,7 +2351,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       var allpairs = new ArrayList<Tuple2>();
       var mapgpbykey = new LinkedHashSet<Map>();
       for (var fs : task.input) {
-        try (var fsdis = ((InputStream) fs);
+        try (var fsdis = (InputStream) fs;
             var input = new Input(fsdis);) {
           // while (input.available() > 0) {
           var keyvaluepair = Utils.getKryo().readClassAndObject(input);
@@ -2399,6 +2410,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
       
       Utils.getKryo().writeClassAndObject(output, out);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       var wr = new WeakReference<List>(out);
       out = null;
       cacheAble(fsdos);
@@ -2434,7 +2446,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
       var allpairs = new ArrayList<Tuple2<Object, Object>>();
       for (var fs : task.input) {
-        var fsdis = ((InputStream) fs);
+        var fsdis = (InputStream) fs;
         var input = new Input(fsdis);
         // while (input.available() > 0) {
         var keyvaluepair = Utils.getKryo().readClassAndObject(input);
@@ -2476,8 +2488,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
         return timetaken;
       }   
-      Utils.getKryo().writeClassAndObject(output,intermediatelist);
+      Utils.getKryo().writeClassAndObject(output, intermediatelist);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(intermediatelist);
       intermediatelist = null;
@@ -2513,7 +2526,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
       var allpairs = new ArrayList<Tuple2<Object, Object>>();
       for (var fs : task.input) {
-        var fsdis = ((InputStream) fs);
+        var fsdis = (InputStream) fs;
         var input = new Input(fsdis);
         // while (input.available() > 0) {
         var keyvaluepair = Utils.getKryo().readClassAndObject(input);
@@ -2555,8 +2568,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         return timetaken;
       }
       
-      Utils.getKryo().writeClassAndObject(output,intermediatelist);
+      Utils.getKryo().writeClassAndObject(output, intermediatelist);
       output.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(intermediatelist);
       intermediatelist = null;
@@ -2655,9 +2669,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
           outpairs = cf.get();
         }
       }
-      Utils.getKryo().writeClassAndObject(currentoutput,outpairs);
+      Utils.getKryo().writeClassAndObject(currentoutput, outpairs);
       currentoutput.flush();
-
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(outpairs);
       outpairs = null;
@@ -2707,11 +2721,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
     	  int partitionnumber = hashpartition.get(0).getPartitionnumber();
           Map<Integer, List<Tuple2>> mappartitoned =
               keyvaluepairs.parallelStream()
-                  .collect(Collectors.groupingBy(tup2->tup2.v1.hashCode() % partitionnumber, HashMap::new,
-                		  Collectors.mapping(tup2->tup2, Collectors.toList())));
-          output = new ArrayList<Tuple2<Integer,List<Tuple2>>>();
-          for(int partitionindex = 0; partitionindex<partitionnumber; partitionindex++) {
-        	  output.add(new Tuple2<Integer,List<Tuple2>>(Integer.valueOf(partitionindex),mappartitoned.get(partitionindex)));  
+                  .collect(Collectors.groupingBy(tup2 -> tup2.v1.hashCode() % partitionnumber, HashMap::new,
+                		  Collectors.mapping(tup2 -> tup2, Collectors.toList())));
+          output = new ArrayList<Tuple2<Integer, List<Tuple2>>>();
+          for (int partitionindex = 0;partitionindex < partitionnumber;partitionindex++) {
+        	  output.add(new Tuple2<Integer, List<Tuple2>>(Integer.valueOf(partitionindex), mappartitoned.get(partitionindex)));  
           }
           
         }     
@@ -2724,8 +2738,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
         return timetaken;
       }
-      Utils.getKryo().writeClassAndObject(currentoutput,output);
+      Utils.getKryo().writeClassAndObject(currentoutput, output);
       currentoutput.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       var wr = new WeakReference<List>(output);
       output = null;
@@ -2775,11 +2790,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
           Map<Object, List<Object>> mapgroupby =
               keyvaluepairs.parallelStream()
                   .collect(Collectors.groupingBy(
-                		  obj->gbf.apply(obj), 
+                		  obj -> gbf.apply(obj), 
                 		  HashMap::new,
-                		  Collectors.mapping(obj->obj, Collectors.toList())));
+                		  Collectors.mapping(obj -> obj, Collectors.toList())));
           output = mapgroupby.keySet().stream()
-          .map(key->new Tuple2<Object,List<Object>>(key,mapgroupby.get(key)))
+          .map(key -> new Tuple2<Object, List<Object>>(key, mapgroupby.get(key)))
           .collect(Collectors.toList());
           
         }     
@@ -2792,8 +2807,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
         var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
         return timetaken;
       }
-      Utils.getKryo().writeClassAndObject(currentoutput,output);
+      Utils.getKryo().writeClassAndObject(currentoutput, output);
       currentoutput.flush();
+      task.setNumbytesgenerated(fsdos.toByteArray().length);
       cacheAble(fsdos);
       log.debug("Exiting StreamPipelineTaskExecutor.processHashPartition");
       var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;

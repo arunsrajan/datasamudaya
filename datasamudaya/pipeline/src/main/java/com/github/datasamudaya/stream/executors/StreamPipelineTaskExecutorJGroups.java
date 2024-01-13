@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +41,6 @@ import org.ehcache.Cache;
 import org.jgroups.JChannel;
 
 import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.ByteBufferInputStream;
-import com.github.datasamudaya.common.ByteBufferOutputStream;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.NetworkUtil;
@@ -62,7 +59,7 @@ import com.github.datasamudaya.common.utils.Utils;
 @SuppressWarnings("rawtypes")
 public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecutor {
 	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorJGroups.class);
-	private List<Task> tasks = null;
+	private List<Task> tasks;
 	Map<String, JobStage> jsidjsmap;
 	public double timetaken = 0.0;
 	public JChannel channel;
@@ -74,7 +71,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 		this.tasks = tasks;
 		this.port = port;
 	}
-	ExecutorService es = null;
+	ExecutorService es;
 	
 	/**
 	 * This method call computes the tasks from stages and return 
@@ -139,8 +136,9 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 											continue;
 										}
 									}
-									if (breakloop)
+									if (breakloop) {
 										break;
+									}
 									Thread.sleep(1000);
 								}
 							}
@@ -148,11 +146,11 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 
 							taskstatusconcmapreq.put(stagePartition, WhoIsResponse.STATUS.RUNNING);
 							if (task.input != null && task.parentremotedatafetch != null) {
-								if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
+								if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
 									var numinputs = task.parentremotedatafetch.length;
-									for (var inputindex = 0; inputindex < numinputs; inputindex++) {
+									for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 										var input = task.parentremotedatafetch[inputindex];
-										log.info("Task Input "+task.jobid+" rdf:" + input);
+										log.info("Task Input " + task.jobid + " rdf:" + input);
 										if (input != null) {
 											var rdf = input;
 											InputStream is = RemoteDataFetcher.readIntermediatePhaseOutputFromFS(
@@ -165,13 +163,13 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 											}
 										}
 									}
-								} else if(task.input!=null && task.input[0]!=null) {
+								} else if (task.input != null && task.input[0] != null) {
 									var numinputs = task.input.length;
-									for (var inputindex = 0; inputindex<numinputs;inputindex++) {
+									for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 										var input = task.input[inputindex];
-										if(input != null && input instanceof Task taskinput) {
+										if (input != null && input instanceof Task taskinput) {
 											var os = getIntermediateInputStreamFS(taskinput);
-											log.info("Task Input "+taskinput.jobid+" Os:" + os);
+											log.info("Task Input " + taskinput.jobid + " Os:" + os);
 											if (os != null) {
 												task.input[inputindex] = new BufferedInputStream(os);
 											}
@@ -221,7 +219,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 				try {
 					es.awaitTermination(2, TimeUnit.SECONDS);
 				} catch (InterruptedException e) {
-					log.error("Failed Shutdown executors"+ es);
+					log.error("Failed Shutdown executors" + es);
 				}
 			}
 		}

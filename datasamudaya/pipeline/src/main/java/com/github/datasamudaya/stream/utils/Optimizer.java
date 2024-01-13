@@ -31,7 +31,6 @@ import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlFunction;
@@ -171,7 +170,7 @@ public class Optimizer {
 		);
 	}
 	
-	private static List<SqlFunction> getAllSqlFunctions(){
+	private static List<SqlFunction> getAllSqlFunctions() {
 		
 		SqlFunction sqrtFunction = new SqlFunction("sqrt",
                 SqlKind.OTHER_FUNCTION,
@@ -299,7 +298,7 @@ public class Optimizer {
                 SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces,
-				substring,base64encode, base64decode,
+				substring, base64encode, base64decode,
 				uppercase, lowercase, loge, pow, sqrt,
 				ceil, floor, round, abs, current_iso_date, grp_concat);
 		

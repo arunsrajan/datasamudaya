@@ -17,6 +17,7 @@ import java.util.List;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,9 +34,9 @@ import jline.console.ConsoleReader;
  *
  */
 public class SQLClientMR {
-	private static Logger log = LoggerFactory.getLogger(SQLClientMR.class);
-	private static List<String> history = new ArrayList<>();
-	private static int historyIndex = 0;
+	private static final Logger log = LoggerFactory.getLogger(SQLClientMR.class);
+	private static final List<String> history = new ArrayList<>();
+	private static int historyIndex;
 
 	/**
 	 * Main method which starts sql client in terminal.
@@ -48,6 +49,10 @@ public class SQLClientMR {
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.USERSQL, true, DataSamudayaConstants.USERSQLREQUIRED);
+		options.addOption(DataSamudayaConstants.SQLCONTAINERS, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.CPUPERCONTAINER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.MEMORYPERCONTAINER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.SQLWORKERMODE, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
 		var cmd = parser.parse(options, args);
 		String user;
@@ -67,14 +72,38 @@ public class SQLClientMR {
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
 					DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		int numberofcontainers = 1;
+		if (cmd.hasOption(DataSamudayaConstants.SQLCONTAINERS)) {
+			String containers = cmd.getOptionValue(DataSamudayaConstants.SQLCONTAINERS);
+			numberofcontainers = Integer.valueOf(containers);
+			
+		} else {
+			numberofcontainers = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS));
+		}
+		int cpupercontainer = 1;
+		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
+			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUPERCONTAINER);
+			cpupercontainer = Integer.valueOf(cpu);
+			
+		}
+		int memorypercontainer = 1024;
+		if (cmd.hasOption(DataSamudayaConstants.MEMORYPERCONTAINER)) {
+			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYPERCONTAINER);
+			memorypercontainer = Integer.valueOf(memory);
+			
+		}
+		String mode = DataSamudayaConstants.SQLWORKERMODE_DEFAULT;
+		if (cmd.hasOption(DataSamudayaConstants.SQLWORKERMODE)) {
+			mode = cmd.getOptionValue(DataSamudayaConstants.SQLWORKERMODE);
+		}
+		StaticComponentContainer.Modules.exportAllToAll();
 		// get the hostname of the sql server
 		String hostName = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST);
 		// get the port number of the sql server
-		int portNumber = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SQLPORTMR,
+		int portNumber = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SQLPORTMR,
 				DataSamudayaConstants.SQLPORTMR_DEFAULT));
 
-		int timeout = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SO_TIMEOUT,
+		int timeout = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SO_TIMEOUT,
 				DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
 
 		while (true) {
@@ -85,6 +114,10 @@ public class SQLClientMR {
 							PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 							BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
 						out.println(user);
+						out.println(numberofcontainers);
+						out.println(cpupercontainer);
+						out.println(memorypercontainer);
+						out.println(mode);
 						printServerResponse(in);
 						String messagestorefile = DataSamudayaProperties.get().getProperty(
 								DataSamudayaConstants.SQLMESSAGESSTORE, DataSamudayaConstants.SQLMESSAGESSTORE_DEFAULT)
@@ -136,7 +169,7 @@ public class SQLClientMR {
 		reader.setPrompt("\nSQLMR>");
 		while (true) {
 			String input = readLineWithHistory(reader);
-			if (input.equals("Quit")) {
+			if ("Quit".equals(input)) {
 				break;
 			}
 			processInput(input, out);
@@ -254,9 +287,7 @@ public class SQLClientMR {
 							sb.deleteCharAt(curPos);
 						}
 					}
-				} else if (key == 126) {
-
-				} else {
+				} else if (key != 126) {
 					historyIndex = history.size();
 					sb.delete(0, sb.length());
 					sb.append(reader.getCursorBuffer().toString());
@@ -265,6 +296,7 @@ public class SQLClientMR {
 					reader.setConsoleBuffer(sb.toString());
 					reader.setCursorPosition(curPos + 1);
 					reader.flush();
+
 				}
 			}
 			line = sb.toString();

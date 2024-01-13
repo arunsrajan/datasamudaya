@@ -35,6 +35,7 @@ import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.springframework.yarn.YarnSystemConstants;
@@ -69,20 +70,20 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	private static final Log log = LogFactory.getLog(StreamPipelineYarnAppmaster.class);
 	private List<Task> tasks = new Vector<>();
 
-	private Map<String, Task> pendingtasks = new ConcurrentHashMap<>();
-	private Map<String, Task> pendingsubmittedtasks = new ConcurrentHashMap<>();
-	private Map<String, Timer> requestresponsetimer = new ConcurrentHashMap<>();
-	private Map<String, Map<String, Task>> containertaskmap = new ConcurrentHashMap<>();
+	private final Map<String, Task> pendingtasks = new ConcurrentHashMap<>();
+	private final Map<String, Task> pendingsubmittedtasks = new ConcurrentHashMap<>();
+	private final Map<String, Timer> requestresponsetimer = new ConcurrentHashMap<>();
+	private final Map<String, Map<String, Task>> containertaskmap = new ConcurrentHashMap<>();
 	private Map<String, JobStage> jsidjsmap;
-	private Map<String, Boolean> sentjobstages = new ConcurrentHashMap<>();
+	private final Map<String, Boolean> sentjobstages = new ConcurrentHashMap<>();
 	TaskInfoYARN tinfo = new TaskInfoYARN();
 	private final Object lock = new Object();
-	SimpleDistributedQueue outputqueue = null;
+	SimpleDistributedQueue outputqueue;
 
 	private long taskidcounter;
 	private long taskcompleted;
-	private boolean tokillcontainers = false;
-	private boolean isreadytoexecute = false;
+	private boolean tokillcontainers;
+	private boolean isreadytoexecute;
 	private List<StreamPipelineTaskSubmitter> mdststs;
 	private SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge> graph = new SimpleDirectedGraph<>(
 			DAGEdge.class);
@@ -93,7 +94,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	 */
 	@Override
 	protected void onInit() throws Exception {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		super.onInit();
 		if (getLauncher() instanceof AbstractLauncher launcher) {
 			launcher.addInterceptor(this);
@@ -109,10 +110,10 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 		ExecutorService es = null;
 		try {
 			es = Executors.newFixedThreadPool(1);
-			es.execute(()->pollQueue());
+			es.execute(() -> pollQueue());
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);	
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);	
 			var containerallocator = (DefaultContainerAllocator) getAllocator();
 			log.debug("Parameters: " + getParameters());
 			log.info("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
@@ -133,7 +134,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	Map<String, String> containeridipmap = new ConcurrentHashMap<>();
 
 	@SuppressWarnings("unchecked")
-	protected void pollQueue(){
+	protected void pollQueue() {
 		log.debug("Task Id Counter: " + taskidcounter);
 		log.debug("Environment: " + getEnvironment());
 		try(var zo = new ZookeeperOperations();){
@@ -329,8 +330,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 					var task = tasks.get((int) taskidcounter);
 					String ip = containeridipmap.get(containerid.trim());
 					if (!Objects.isNull(task.input)) {
-						if (task.input[0] instanceof BlocksLocation) {
-							var bl = (BlocksLocation) task.input[0];
+						if (task.input[0] instanceof BlocksLocation bl) {
 							if (!Objects.isNull(bl.getBlock()) && bl.getBlock().length > 0) {
 								String[] blockip = bl.getBlock()[0].getHp().split(DataSamudayaConstants.COLON);
 								if (!ip.equals(blockip[0])) {
@@ -341,7 +341,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 					}
 					var toexecute = true;
 					var predessorslist = Graphs.predecessorListOf(graph, taskmdsthread.get(task.jobid + task.stageid + task.taskid));
-					for (var succcount = 0; succcount < predessorslist.size(); succcount++) {
+					for (var succcount = 0;succcount < predessorslist.size();succcount++) {
 						var predthread = predessorslist.get(succcount);
 						if (!taskmdsthread.get(predthread.getTask().jobid + predthread.getTask().stageid + predthread.getTask().taskid)
 								.isCompletedexecution()) {
@@ -391,8 +391,8 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	public boolean hasJobs() {
 		synchronized (lock) {
 			log.debug("Has Jobs: " + (taskidcounter < tasks.size()) + ", Task Counter:" + taskidcounter);
-			boolean hasJobs = (isreadytoexecute
-					&& (taskidcounter < tasks.size() || pendingtasks.size() > 0 || taskcompleted < tasks.size()));
+			boolean hasJobs = isreadytoexecute
+					&& (taskidcounter < tasks.size() || pendingtasks.size() > 0 || taskcompleted < tasks.size());
 			try {			
 				if (tasks.size() > 0 && taskcompleted >= tasks.size()) {
 					tasks.clear();

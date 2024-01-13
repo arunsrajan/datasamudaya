@@ -18,6 +18,8 @@ package com.github.datasamudaya.stream.sql.examples;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.log4j.Logger;
 
@@ -31,13 +33,13 @@ import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 
 public class SqlSumSAInMemory implements Serializable, Pipeline {
 	private static final long serialVersionUID = -7001849661976107123L;
-	private Logger log = Logger.getLogger(SqlSumSAInMemory.class);
+	private final Logger log = Logger.getLogger(SqlSumSAInMemory.class);
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
 			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime",
 			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
 			"Cancelled", "CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
 			"LateAircraftDelay");
-	List<SqlTypeName> airsqltype = Arrays.asList(SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT, SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.VARCHAR,SqlTypeName.BIGINT,SqlTypeName.VARCHAR,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.VARCHAR,SqlTypeName.VARCHAR,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.VARCHAR,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT,SqlTypeName.BIGINT);
+	List<SqlTypeName> airsqltype = Arrays.asList(SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT);
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carriersqltype = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
 
@@ -59,20 +61,19 @@ public class SqlSumSAInMemory implements Serializable, Pipeline {
 	@SuppressWarnings({"unchecked"})
 	public void testSql(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("SqlSumSAInMemory.testSql Before---------------------------------------");
-		String statement = "SELECT sum(airline.ArrDelay) "
-				+ "FROM airline where airline.ArrDelay<>'ArrDelay' and airline.ArrDelay<>'NA'";
+		String statement = """
+				SELECT sum(airline.ArrDelay) \
+				FROM airline where airline.ArrDelay<>'ArrDelay' and airline.ArrDelay<>'NA'\
+				""";
 		StreamPipelineSql mdpsql = StreamPipelineSqlBuilder.newBuilder().add(args[1], "airline", airlineheader, airsqltype)
 				.add(args[2], "carriers", carrierheader, carriersqltype).setHdfs(args[0])
-				.setPipelineConfig(pipelineconfig).setSql(statement).build();
-		List<List<Long>> records = (List<List<Long>>) mdpsql.collect(true, null);
-		long sum = 0;
-		for (List<Long> recs : records) {
-			for (Long rec : recs) {
+				.setPipelineConfig(pipelineconfig).setDb(DataSamudayaConstants.SQLMETASTORE_DB).setSql(statement).build();
+		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) mdpsql.collect(true, null);
+		for (List<Map<String, Object>> recs : records) {
+			for (Map<String, Object> rec : recs) {
 				log.info(rec);
-				sum += rec;
 			}
 		}
-		log.info("Sum = " + sum);
 		log.info("SqlSumSAInMemory.testSql After---------------------------------------");
 	}
 }

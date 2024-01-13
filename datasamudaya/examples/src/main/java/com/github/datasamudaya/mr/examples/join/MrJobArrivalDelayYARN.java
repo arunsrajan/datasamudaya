@@ -19,11 +19,12 @@ package com.github.datasamudaya.mr.examples.join;
 import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.tasks.scheduler.Application;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationBuilder;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationYarn;
 
-public class MrJobArrivalDelayYARN implements com.github.datasamudaya.tasks.scheduler.Application {
+public class MrJobArrivalDelayYARN implements Application {
 	static String heapsize = "1024";
 	static Logger log = Logger.getLogger(MrJobArrivalDelayYARN.class);
 

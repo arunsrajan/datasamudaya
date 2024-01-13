@@ -666,13 +666,13 @@
 											</path>
 											<path>
 												<from>target/datasamudayastandalone</from>
-												<into>/opt/datasamudaya/bin</into>
+												<into>/opt/datasamudaya/sbin</into>
 												<includes>standalone.sh</includes>
 											</path>
 										</paths>
 										<permissions>
 											<permission>
-												<file>/opt/datasamudaya/bin/*</file>
+												<file>/opt/datasamudaya/sbin/*</file>
 												<mode>777</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
 											<permission>
@@ -755,13 +755,13 @@
 											</path>
 											<path>
 												<from>target/datasamudayacontainer</from>
-												<into>/opt/datasamudaya/bin</into>
+												<into>/opt/datasamudaya/sbin</into>
 												<includes>container.sh</includes>
 											</path>
 										</paths>
 										<permissions>
 											<permission>
-												<file>/opt/datasamudaya/bin/*</file>
+												<file>/opt/datasamudaya/sbin/*</file>
 												<mode>777</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
 											<permission>
@@ -838,13 +838,13 @@
 											</path>
 											<path>
 												<from>dockerzk</from>
-												<into>/opt/datasamudaya/bin</into>
+												<into>/opt/datasamudaya/sbin</into>
 												<includes>zookeeper.sh</includes>
 											</path>
 										</paths>
 										<permissions>
 											<permission>
-												<file>/opt/datasamudaya/bin/*</file>
+												<file>/opt/datasamudaya/sbin/*</file>
 												<mode>777</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
 											<permission>
@@ -860,7 +860,7 @@
 										<entrypoint>
 										    <arg>bash</arg>
 										    <arg>-ex</arg>
-											<arg>/opt/datasamudaya/bin/zookeeper.sh</arg>
+											<arg>/opt/datasamudaya/sbin/zookeeper.sh</arg>
 										</entrypoint>
 										<format>Docker</format>
 									</container>

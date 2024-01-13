@@ -26,17 +26,21 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jooq.lambda.tuple.Tuple2;
 import org.springframework.yarn.YarnSystemConstants;
 import org.springframework.yarn.am.ContainerLauncherInterceptor;
@@ -44,15 +48,18 @@ import org.springframework.yarn.am.StaticEventingAppmaster;
 import org.springframework.yarn.am.allocate.DefaultContainerAllocator;
 import org.springframework.yarn.am.container.AbstractLauncher;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.datasamudaya.common.ApplicationTask;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
-import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.common.RemoteDataFetcher;
+import com.github.datasamudaya.common.TaskInfoYARN;
+import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.google.common.collect.Iterables;
 
 /**
@@ -66,21 +73,27 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 
 	private static final Log log = LogFactory.getLog(MapReduceYarnAppmaster.class);
 
-	private Map<String, Object> pendingjobs = new ConcurrentHashMap<>();
+	private final Map<String, Object> pendingjobs = new ConcurrentHashMap<>();
 	private final Semaphore lock = new Semaphore(1);
 	@SuppressWarnings("rawtypes")
-	private DataCruncherContext dcc = new DataCruncherContext();
+	private DataCruncherContext dcc;
 	private long taskcompleted, redtaskcompleted;
 	private int tasksubmitted;
 	private int redtasksubmitted;
 	private int numreducers;
+	TaskInfoYARN tinfo = new TaskInfoYARN();
+	SimpleDistributedQueue outputqueue;
 
+	private long taskidcounter;
+	private boolean tokillcontainers = false;
+	private boolean isreadytoexecute = false;
+	private String applicationid = "";
 	/**
 	 * Container initialization.
 	 */
 	@Override
 	protected void onInit() throws Exception {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		super.onInit();
 		if (getLauncher() instanceof AbstractLauncher launcher) {
 			launcher.addInterceptor(this);
@@ -105,94 +118,133 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 	@SuppressWarnings("unchecked")
 	@Override
 	public void submitApplication() {
-		try {
-			var prop = new Properties();
-			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
-			log.info("Environment: " + getEnvironment());
-			var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
-					+ getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
-			log.info("Yarn Input Folder: " + yarninputfolder);
-			log.info("AppMaster HDFS: " + getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
-			var configuration = getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL);
-			var containerallocator = (DefaultContainerAllocator) getAllocator();
-			log.info("Parameters: " + getParameters());
-			log.info("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
-			containerallocator.setMemory(Integer.parseInt(getParameters().getProperty("container-memory", "1024")));
-			System.setProperty(DataSamudayaConstants.HDFSNAMENODEURL, getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
-			// Thread containing the job stage information.
-			mapclzchunkfile = (Map<String, Set<Object>>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(
-					configuration, yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_MAPPER);
-			combiner = (Set<Object>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(configuration,
-					yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_COMBINER);
-			reducer = (Set<Object>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(configuration,
-					yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_REDUCER);
-			folderfileblocksmap = (Map<String, List<BlocksLocation>>) RemoteDataFetcher
-					.readYarnAppmasterServiceDataFromDFS(configuration, yarninputfolder,
-							DataSamudayaConstants.MASSIVEDATA_YARNINPUT_FILEBLOCKS);
-			jobconf = (JobConfiguration) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(configuration,
-					yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_CONFIGURATION);
-			numreducers = Integer.parseInt(jobconf.getNumofreducers());
 
+		ExecutorService es = null;
+		try {
 			var appmasterservice = (MapReduceYarnAppmasterService) getAppmasterService();
-			log.info("In SubmitApplication Setting AppMaster Service: " + appmasterservice);
+			log.debug("In SubmitApplication Setting AppMaster Service: " + appmasterservice);
 			if (appmasterservice != null) {
 				// Set the Yarn App master bean to the Yarn App master service object.
 				appmasterservice.setYarnAppMaster(this);
 			}
-			var taskcount = 0;
-			var applicationid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis();
-			var bls = folderfileblocksmap.keySet().stream().flatMap(key -> folderfileblocksmap.get(key).stream())
-					.collect(Collectors.toList());
-			List<MapperCombiner> mappercombiners;
-			totalmappersize = bls.size();
-			for (var bl : bls) {
-				var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + DataSamudayaConstants.MAPPER + DataSamudayaConstants.HYPHEN
-						+ (taskcount + 1);
-				var apptask = new ApplicationTask();
-				apptask.setApplicationid(applicationid);
-				apptask.setTaskid(taskid);
-				var mc = (MapperCombiner) getMapperCombiner(mapclzchunkfile, combiner, bl, apptask);
-				var xrefdnaddrs = new ArrayList<>(bl.getBlock()[0].getDnxref().keySet());
-				var key = xrefdnaddrs.get(taskcount % xrefdnaddrs.size());
-				var dnxrefaddr = new ArrayList<>(bl.getBlock()[0].getDnxref().get(key));
-				bl.getBlock()[0].setHp(dnxrefaddr.get(taskcount % dnxrefaddr.size()));
-				var host = bl.getBlock()[0].getHp().split(":")[0];
-				if (Objects.isNull(ipmcs.get(host))) {
-					mappercombiners = new ArrayList<>();
-					ipmcs.put(host, mappercombiners);
-				} else {
-					mappercombiners = ipmcs.get(host);
-				}
-				mappercombiners.add(mc);
-				taskcount++;
-			}
-			log.info(bls);
-			taskcount = 0;
-			while (taskcount < numreducers) {
-				var red = new YarnReducer();
-				red.reducerclasses = reducer;
-				var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + DataSamudayaConstants.REDUCER + DataSamudayaConstants.HYPHEN
-						+ (taskcount + 1);
-				var apptask = new ApplicationTask();
-				apptask.setApplicationid(applicationid);
-				apptask.setTaskid(taskid);
-				red.apptask = apptask;
-				rs.add(red);
-				taskcount++;
-			}
-			log.info(rs);
-
-			prop.put(DataSamudayaConstants.HDFSNAMENODEURL, getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
+			es = Executors.newFixedThreadPool(1);
+			es.execute(() -> pollQueue());
+			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
-			super.submitApplication();
-		}
-		catch (Exception ex) {
-			log.info("Submit Application Error, See cause below \n", ex);
-			ByteBufferPoolDirect.destroy();
-		}
+			prop.put(DataSamudayaConstants.HDFSNAMENODEURL, getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);	
+			var containerallocator = (DefaultContainerAllocator) getAllocator();
+			log.debug("Parameters: " + getParameters());
+			log.info("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
+			log.info("Container-Cpu: " + getParameters().getProperty("container-cpu", "1"));
+			containerallocator.setVirtualcores(Integer.parseInt(getParameters().getProperty("container-cpu", "1")));
+			containerallocator.setMemory(Integer.parseInt(getParameters().getProperty("container-memory", "1024")));
+		} catch (Exception ex) {
+			log.debug("Submit Application Error, See cause below \n", ex);
+		}		
+		super.submitApplication();
 	}
 
+	@SuppressWarnings("unchecked")
+	protected void pollQueue() {
+		log.debug("Task Id Counter: " + taskidcounter);
+		log.debug("Environment: " + getEnvironment());
+		try(var zo = new ZookeeperOperations();){
+	 	zo.connect();
+	 	String teid = getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
+		SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_INPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + teid);
+		
+		outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_OUTPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + teid);
+		
+		ObjectMapper objectMapper = new ObjectMapper();
+		var prop = new Properties();
+		DataSamudayaProperties.put(prop);
+		while(!tokillcontainers) {
+			if (inputqueue.peek() != null && !isreadytoexecute) {
+				pendingjobs.clear();
+				tinfo = objectMapper.readValue(inputqueue.poll(), TaskInfoYARN.class);
+				tokillcontainers = tinfo.isTokillcontainer();
+				if(Objects.isNull(tinfo.getJobid())) {
+					continue;
+				}
+				var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
+						+ tinfo.getJobid();
+				log.debug("Yarn Input Folder: " + yarninputfolder);
+				log.debug("AppMaster HDFS: " + getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
+				System.setProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+						getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
+				var configuration = getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL);
+				// Thread containing the job stage information.
+				mapclzchunkfile = (Map<String, Set<Object>>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(
+						configuration, yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_MAPPER);
+				combiner = (Set<Object>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(configuration,
+						yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_COMBINER);
+				reducer = (Set<Object>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(configuration,
+						yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_REDUCER);
+				folderfileblocksmap = (Map<String, List<BlocksLocation>>) RemoteDataFetcher
+						.readYarnAppmasterServiceDataFromDFS(configuration, yarninputfolder,
+								DataSamudayaConstants.MASSIVEDATA_YARNINPUT_FILEBLOCKS);
+				jobconf = (JobConfiguration) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(configuration,
+						yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_CONFIGURATION);
+				numreducers = Integer.parseInt(jobconf.getNumofreducers());
+				
+				var taskcount = 0;
+				dcc = new DataCruncherContext();
+				applicationid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis();
+				var bls = folderfileblocksmap.keySet().stream().flatMap(key -> folderfileblocksmap.get(key).stream())
+						.collect(Collectors.toList());
+				List<MapperCombiner> mappercombiners;
+				totalmappersize = bls.size();
+				for (var bl : bls) {
+					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + DataSamudayaConstants.MAPPER + DataSamudayaConstants.HYPHEN
+							+ (taskcount + 1);
+					var apptask = new ApplicationTask();
+					apptask.setApplicationid(applicationid);
+					apptask.setTaskid(taskid);
+					var mc = (MapperCombiner) getMapperCombiner(mapclzchunkfile, combiner, bl, apptask);
+					var xrefdnaddrs = new ArrayList<>(bl.getBlock()[0].getDnxref().keySet());
+					var key = xrefdnaddrs.get(taskcount % xrefdnaddrs.size());
+					var dnxrefaddr = new ArrayList<>(bl.getBlock()[0].getDnxref().get(key));
+					bl.getBlock()[0].setHp(dnxrefaddr.get(taskcount % dnxrefaddr.size()));
+					var host = bl.getBlock()[0].getHp().split(":")[0];
+					if (Objects.isNull(ipmcs.get(host))) {
+						mappercombiners = new ArrayList<>();
+						ipmcs.put(host, mappercombiners);
+					} else {
+						mappercombiners = ipmcs.get(host);
+					}
+					mappercombiners.add(mc);
+					taskcount++;
+				}
+				log.info(bls);
+				taskcount = 0;
+				while (taskcount < numreducers) {
+					var red = new YarnReducer();
+					red.reducerclasses = reducer;
+					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + DataSamudayaConstants.REDUCER + DataSamudayaConstants.HYPHEN
+							+ (taskcount + 1);
+					var apptask = new ApplicationTask();
+					apptask.setApplicationid(applicationid);
+					apptask.setTaskid(taskid);
+					red.apptask = apptask;
+					rs.add(red);
+					taskcount++;
+				}
+				log.info(rs);
+				isreadytoexecute = true;
+				log.debug("tasks To Execute:" + tinfo.getJobid());
+			} else {
+				Thread.sleep(1000);
+			}
+		}
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);			
+		}
+	}
 
 	public MapperCombiner getMapperCombiner(
 			Map<String, Set<Object>> mapclzchunkfile,
@@ -324,18 +376,18 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 		try {
 			lock.acquire();
 			if (success) {
-				RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(rs, DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH + getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID),
+				RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(rs, DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH + applicationid,
 						DataSamudayaConstants.MASSIVEDATA_YARN_RESULT, jobconf);
 				if (redtaskcompleted + 1 == rs.size()) {
 					var sb = new StringBuilder();
-					for (var redcount = 0; redcount < numreducers; redcount++) {
+					for (var redcount = 0;redcount < numreducers;redcount++) {
 						var red = rs.get(redcount);
 						var ctxreducerpart = (Context) RemoteDataFetcher.readIntermediatePhaseOutputFromDFS(
 								red.apptask.getApplicationid(),
 								(red.apptask.getApplicationid() + red.apptask.getTaskid()), false);
 						var keysreducers = ctxreducerpart.keys();
 						sb.append(DataSamudayaConstants.NEWLINE);
-						sb.append("Partition " + (redcount + 1) + "-------------------------------------------------");
+						sb.append("Partition ").append(redcount + 1).append("-------------------------------------------------");
 						sb.append(DataSamudayaConstants.NEWLINE);
 						for (var key : keysreducers) {
 							sb.append(key + DataSamudayaConstants.SINGLESPACE + ctxreducerpart.get(key));
@@ -347,14 +399,26 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 					}
 					var filename = DataSamudayaConstants.MAPRED + DataSamudayaConstants.HYPHEN + System.currentTimeMillis();
 					log.info("Writing Results to file: " + filename);
-					try (var hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
+					try (var hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)),
 							new Configuration());var fsdos = hdfs.create(new Path(
-							DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + DataSamudayaConstants.FORWARD_SLASH
+							DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 									+ jobconf.getOutputfolder() + DataSamudayaConstants.FORWARD_SLASH + filename));) {
 						fsdos.write(sb.toString().getBytes());
 					} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
-					}
+					}					
+					ObjectMapper objMapper = new ObjectMapper();
+					tinfo.setIsresultavailable(true);
+					tinfo.setJobid(applicationid);
+					outputqueue.offer(objMapper.writeValueAsBytes(tinfo));					
+					tasksubmitted = 0;
+					redtasksubmitted = 0;
+					taskcompleted = 0;
+					redtaskcompleted = 0;
+					rs.clear();
+					pendingjobs.remove(r.apptask.getApplicationid() + r.apptask.getTaskid());
+					isreadytoexecute = false;
+					return;
 				}
 				log.info(r.apptask.getApplicationid() + r.apptask.getTaskid() + " Updated");
 				pendingjobs.remove(r.apptask.getApplicationid() + r.apptask.getTaskid());
@@ -386,33 +450,34 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 	public Object getJob(String containerid) {
 		try {
 			lock.acquire();
-			if (!pendingjobs.keySet().isEmpty()) {
-				return pendingjobs.remove(pendingjobs.keySet().iterator().next());
-			} else if (tasksubmitted < totalmappersize) {
-				log.info("getJob Container Id Ip Map:" + containeridipmap);
-				var ip = containeridipmap.get(containerid.trim());
-				var iptasksubmitted = iptasksubmittedmap.get(ip) == null ? 0 : iptasksubmittedmap.get(ip);
-				var mcs = ipmcs.get(ip);
-				if (Objects.isNull(mcs)) {
-					return null;
+			if (isreadytoexecute) {
+				if (!pendingjobs.keySet().isEmpty()) {
+					return pendingjobs.remove(pendingjobs.keySet().iterator().next());
+				} else if (tasksubmitted < totalmappersize) {
+					log.info("getJob Container Id Ip Map:" + containeridipmap);
+					var ip = containeridipmap.get(containerid.trim());
+					var iptasksubmitted = iptasksubmittedmap.get(ip) == null ? 0 : iptasksubmittedmap.get(ip);
+					var mcs = ipmcs.get(ip);
+					if (Objects.isNull(mcs)) {
+						return null;
+					}
+					if (iptasksubmitted < mcs.size()) {
+						var mc = ipmcs.get(ip).get(iptasksubmitted++);
+						iptasksubmittedmap.put(ip, iptasksubmitted);
+						tasksubmitted++;
+						return mc;
+					}
+				} else if (redtasksubmitted < rs.size() && taskcompleted >= totalmappersize) {
+					if (redtasksubmitted == 0) {
+						var keyapptasks = (List<Tuple2>) dcc.keys().parallelStream()
+								.map(key -> new Tuple2(key, dcc.get(key)))
+								.collect(Collectors.toCollection(ArrayList::new));
+						partkeys = Iterables.partition(keyapptasks, (keyapptasks.size()) / numreducers).iterator();
+					}
+					rs.get(redtasksubmitted).tuples = new ArrayList<Tuple2>(partkeys.next());
+					log.info("Tuples: " + rs.get(redtasksubmitted).tuples);
+					return rs.get(redtasksubmitted++);
 				}
-				if (iptasksubmitted < mcs.size()) {
-					var mc = ipmcs.get(ip).get(iptasksubmitted++);
-					iptasksubmittedmap.put(ip, iptasksubmitted);
-					tasksubmitted++;
-					return mc;
-				}
-			} else if (redtasksubmitted < rs.size() && taskcompleted >= totalmappersize) {
-				if (redtasksubmitted == 0) {
-					var keyapptasks = (List<Tuple2>) dcc.keys().parallelStream()
-							.map(key -> new Tuple2(key, dcc.get(key)))
-							.collect(Collectors.toCollection(ArrayList::new));
-					partkeys = Iterables
-							.partition(keyapptasks, (keyapptasks.size()) / numreducers).iterator();
-				}
-				rs.get(redtasksubmitted).tuples = new ArrayList<Tuple2>(partkeys.next());
-				log.info("Tuples: " + rs.get(redtasksubmitted).tuples);
-				return rs.get(redtasksubmitted++);
 			}
 			return null;
 		} catch (InterruptedException e) {
@@ -435,7 +500,8 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 	public boolean hasJobs() {
 		try {
 			lock.acquire();
-			return pendingjobs.size() > 0 || taskcompleted < totalmappersize || redtaskcompleted < rs.size();
+			boolean hasJobs = isreadytoexecute && (pendingjobs.size() > 0 || taskcompleted < totalmappersize || redtaskcompleted < rs.size());			
+			return hasJobs || !tokillcontainers;
 		}
 		catch (InterruptedException e) {
 			log.warn("Interrupted!", e);

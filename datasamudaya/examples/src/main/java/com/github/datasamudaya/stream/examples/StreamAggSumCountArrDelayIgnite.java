@@ -28,7 +28,7 @@ import com.github.datasamudaya.stream.Pipeline;
 
 public class StreamAggSumCountArrDelayIgnite implements Serializable, Pipeline {
 	private static final long serialVersionUID = -1073668309871473457L;
-	private Logger log = Logger.getLogger(StreamAggSumCountArrDelayIgnite.class);
+	private final Logger log = Logger.getLogger(StreamAggSumCountArrDelayIgnite.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");

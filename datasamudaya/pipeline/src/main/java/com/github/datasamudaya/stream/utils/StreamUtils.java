@@ -15,11 +15,8 @@
  */
 package com.github.datasamudaya.stream.utils;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Vector;
 import java.util.function.IntUnaryOperator;
 import java.util.function.ToIntFunction;
 import java.util.stream.BaseStream;
@@ -29,7 +26,6 @@ import java.util.stream.Stream;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 
-import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.functions.CoalesceFunction;
 import com.github.datasamudaya.common.functions.Distinct;
 import com.github.datasamudaya.common.functions.DoubleFlatMapFunction;
@@ -332,7 +328,7 @@ public class StreamUtils {
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static Stream reduce(ReduceByKeyFunction reducefunction, Stream<Tuple2> stream) {
-		java.util.Map out = stream.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2, reducefunction::apply));
+		Map out = stream.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2, reducefunction::apply));
 		return ((List) out.entrySet().parallelStream()
 				.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue())).collect(Collectors.toCollection(Vector::new))).stream();
 	}
@@ -345,7 +341,7 @@ public class StreamUtils {
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static Stream reduce(ReduceByKeyFunctionValues reducefunctionvalues, Stream<Tuple2> stream) {
-		java.util.Map out = stream.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2, reducefunctionvalues::apply));
+		Map out = stream.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2, reducefunctionvalues::apply));
 		return ((List) out.entrySet().parallelStream()
 				.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue())).collect(Collectors.toCollection(Vector::new))).stream();
 	}
@@ -358,7 +354,7 @@ public class StreamUtils {
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static Stream coalesce(CoalesceFunction coelescefunction, Stream<Tuple2> stream) {
-		java.util.Map out = stream.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2, coelescefunction::apply));
+		Map out = stream.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2, coelescefunction::apply));
 		return ((List) out.entrySet().stream()
 				.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue())).collect(Collectors.toCollection(Vector::new))).parallelStream();
 	}
