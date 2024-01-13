@@ -17,8 +17,6 @@ package com.github.datasamudaya.common;
 
 import org.junit.Test;
 
-import com.github.datasamudaya.common.Resources;
-
 import junit.framework.TestCase;
 
 public class ResourcesTest extends TestCase {

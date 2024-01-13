@@ -33,7 +33,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 public class ResourcesMetricsServlet extends HttpServlet {
 
   private static final long serialVersionUID = 8713220540678338208L;
-  private static Logger log = Logger.getLogger(ResourcesMetricsServlet.class);
+	private static final Logger log = Logger.getLogger(ResourcesMetricsServlet.class);
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws IOException {
@@ -61,7 +61,7 @@ public class ResourcesMetricsServlet extends HttpServlet {
 
     MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
     ObjectName name = ObjectName.getInstance("java.lang:type=OperatingSystem");
-    AttributeList list = mbs.getAttributes(name, new String[] {"ProcessCpuLoad"});
+    AttributeList list = mbs.getAttributes(name, new String[]{"ProcessCpuLoad"});
     if (list.isEmpty()) {
       return Double.NaN;
     }

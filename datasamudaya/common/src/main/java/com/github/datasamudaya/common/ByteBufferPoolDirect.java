@@ -33,19 +33,19 @@ import org.slf4j.LoggerFactory;
  */
 public class ByteBufferPoolDirect {
 
-	private static Logger log = LoggerFactory.getLogger(ByteBufferPoolDirect.class);
+	private static final Logger log = LoggerFactory.getLogger(ByteBufferPoolDirect.class);
 
-	private static List<ByteBuffer> bufferPool = null;
-	static int totalnumberofblocks = 0;
-	static long directmemory = 0;
-	static long totalmemoryallocated = 0;
+	private static List<ByteBuffer> bufferPool;
+	static int totalnumberofblocks;
+	static long directmemory;
+	static long totalmemoryallocated;
 	static Semaphore lock = new Semaphore(1);
 	/**
 	 * Initialize the bytebuffer heapsize and direct memory size
 	 */
 	public static void init(long dm) {		
 		directmemory = dm;
-		bufferPool = new Vector<>((int)(directmemory/(130*DataSamudayaConstants.MB))+30);
+		bufferPool = new Vector<>((int) (directmemory / (130 * DataSamudayaConstants.MB)) + 30);
         log.info("Total Buffer pool size: {}", bufferPool.size());
 	}
 
@@ -63,16 +63,17 @@ public class ByteBufferPoolDirect {
 			lock.release();
 			return bb;
 		}
-		Collections.sort(bufferPool, (bb1,bb2)->{
-			if(bb1.capacity()>bb2.capacity()) {
+		Collections.sort(bufferPool, (bb1, bb2) -> {
+			if (bb1.capacity() > bb2.capacity()) {
 				return 1;
-			} else if(bb1.capacity()<bb2.capacity()) {
+			} else if (bb1.capacity() < bb2.capacity()) {
 				return -1;
 			}
 			return 0;
 		});
 		int bbindex=bufferPool.size()-1;
-		for(;bbindex>=0 && bufferPool.get(bbindex).capacity()>=memorytoallocate;bbindex--);
+		for (;bbindex >= 0 && bufferPool.get(bbindex).capacity() >= memorytoallocate;bbindex--) {
+		}
 		if(bbindex == bufferPool.size()-1) {
 			ByteBuffer bb = ByteBuffer.allocate((int) memorytoallocate);
 			lock.release();

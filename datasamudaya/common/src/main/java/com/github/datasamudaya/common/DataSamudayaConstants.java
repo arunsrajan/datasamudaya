@@ -17,7 +17,7 @@ package com.github.datasamudaya.common;
 public class DataSamudayaConstants {
   private DataSamudayaConstants() {}
 
-  static final String DATASAMUDAYA = "DATASAMUDAYA";
+  public static final String DATASAMUDAYA = "DATASAMUDAYA";
   public static final String NEWLINE = "\n";
   public static final String HYPHEN = "-";
   public static final String TAB = "\t";
@@ -31,7 +31,8 @@ public class DataSamudayaConstants {
   public static final String EQUAL = "=";
   public static final String UNDERSCORE = "_";
   public static final String EMPTY = "";
-  static final char DOT = '.';
+  public static final String NA ="NA";
+  public static final char DOT = '.';
   public static final String ASTERIX = "*";
   public static final String COMMA = ",";
   public static final String SINGLE_QUOTES = "'";
@@ -170,6 +171,7 @@ public class DataSamudayaConstants {
 
   public static final String ZOOKEEPER_HOSTPORT = "zookeeper.hostport";
   public static final String ZOOKEEPER_RETRYDELAY = "zookeeper.retrydelay";
+  public static final String ZOOKEEPER_RETRYDELAY_DEFAULT = "500";
   public static final String ZOOKEEPER_STANDALONE_CLIENTPORT = "zookeeper.standalone.clientport";
   public static final String ZOOKEEPER_STANDALONE_NUMCONNECTIONS =
       "zookeeper.standalone.numconnections";
@@ -301,9 +303,12 @@ public class DataSamudayaConstants {
   public static final String TEXTHTML = "text/html";
   public static final String TEXTJAVASCRIPT = "text/javascript";
   public static final String TEXTCSS = "text/css";
+  public static final String ICON = "image/x-icon";
+  public static final String FAVICON = "favicon.ico";
   public static final String WEB_FOLDER = "web";
   public static final String RESOURCES = "resources";
   public static final String GRAPH = "graph";
+  public static final String SUMMARY = "summary";
   public static final String DATA = "data";
 
   static final String THISHOST = "0.0.0.0";
@@ -321,6 +326,7 @@ public class DataSamudayaConstants {
 
   public static final String STAGEEXECUTORS = "se";
   public static final String DATASAMUDAYAJOBID = "datasamudayajobid";
+  public static final String JOBID = "jobId";
 
   // Jgroups Cluster
   public static final String CLUSTERNAME = "jgroups.clustername";
@@ -338,12 +344,16 @@ public class DataSamudayaConstants {
 
   // Cache Properties
   public static final String CACHESIZEGB = "cache.size";
+  public static final String CACHESIZEGB_DEFAULT = "2048";
   public static final String CACHEEXPIRY = "cache.expiry";
+  public static final String CACHEEXPIRY_DEFAULT = "2";
   public static final String CACHEDURATION = "cache.duration";
+  public static final String CACHEDURATION_DEFAULT = "HOURS";
   public static final String BLOCKCACHE = "BlockCache";
   public static final String BLOCKSLOCATIONMETADATACACHE = "BlocksLocationMetadataCache";
   public static final String FILEMETADATACACHE = "FILEMETADATACACHE";
   public static final String CACHEDISKSIZEGB = "cache.disk";
+  public static final String CACHEDISKSIZEGB_DEFAULT = "12"; 
   public static final String CACHEDISKPATH = "cache.disk.path";
   public static final String CACHEBLOCKSLOCATIONDISKPATH = "cache.disk.blocks.metadata.path";
   public static final String CACHEFILEMETDATADISKPATH = "cache.disk.file.metadata.path";
@@ -390,7 +400,7 @@ public class DataSamudayaConstants {
   public static final String IGNITEMULTICASTGROUP_DEFAULT = "228.10.10.157";
 
   public static final String EXECMODE = "taskscheduler.execmode";
-  public static final String EXECMODE_DEFAULT = "standlalone";
+  public static final String EXECMODE_DEFAULT = "standalone";
   public static final String EXECMODE_YARN = "yarn";
   public static final String EXECMODE_IGNITE = "ignite";
 
@@ -416,10 +426,20 @@ public class DataSamudayaConstants {
   public static final String ANTFORMATTER = "ant";
   
   public static final String USERSQL = "user";
+  public static final String SQL = "SQL";
   public static final String USERSQLREQUIRED = "User need to be provided to execute sql";
+  public static final String SQLCONTAINERS = "containerssql";
+  public static final String MEMORYPERCONTAINER = "containermemory";
+  public static final String CPUPERCONTAINER = "containercpu";
+  public static final String SQLWORKERMODE = "sqlworkermode";
+  public static final String SQLWORKERMODE_DEFAULT = "standalone";
   
   public static final String USERPIG = "piguser";
+  public static final String PIG = "PIG";
   public static final String USERPIGREQUIRED = "User need to be provided to execute pig commands";
+  public static final String PIGCONTAINERS = "containerspig";
+  public static final String PIGWORKERMODE = "pigworkermode";
+  public static final String PIGWORKERMODE_DEFAULT = "standalone";
 
   public static final String YARNRM = "yarn.rm";
   public static final String YARNRM_DEFAULT = "127.0.0.1:8032";
@@ -431,6 +451,7 @@ public class DataSamudayaConstants {
   public static final String FILENAME = "filename";
   public static final String CSS = "css";
   public static final String JAVASCRIPT = "js";
+  public static final String ICO = "ico";
 
   public static final String YARN = "YARN";
   public static final String MESOS = "Mesos";
@@ -511,7 +532,9 @@ public class DataSamudayaConstants {
   public static final String SQLPORTMR = "sql.port.mr";
   public static final String SQLPORTMR_DEFAULT = "12124";
   public static final String SQLMESSAGESSTORE = "sql.messages.store";
+  public static final String SHELLMESSAGESSTORE = "shell.messages.store";
   public static final String SQLMESSAGESSTORE_DEFAULT = "../sql_message_store";
+  public static final String SHELLMESSAGESSTORE_DEFAULT = "../shell_message_store";
   public static final String SQLDB = "sql.db";
   public static final String SQLMETASTORE_DB = "metastore_db";
   public static final String SQLDB_URL = "jdbc:h2:~/";
@@ -550,5 +573,25 @@ public class DataSamudayaConstants {
   public static final String DATASAMUDAYA_HOME = "DATASAMUDAYA_HOME";
   
   public static final String ARROWFILE_EXT = ".arrow";
+  
+  public static final String ORCFILE_EXT = ".orc";
+  public static final String CRCFILE_EXT = ".crc";
+  
+  public static final String SO_TIMEOUT = "socket.timeout";
+  
+  public static final String SO_TIMEOUT_DEFAULT = "4000";
+  
+  public static final String YARN_INPUT_QUEUE = "/inputqueue";
+  public static final String YARN_OUTPUT_QUEUE = "/outputqueue";
+  
+  public static final String TASKEXECUTOR_STATUS_UP = "UP";
+  public static final String TASKEXECUTOR_STATUS_DOWN = "DOWN";
 
+  
+  public static final String INTERRUPTED = "Interrupted!";
+  
+  public static final String FALSE = Boolean.toString(Boolean.FALSE);
+  public static final String TRUE = Boolean.toString(Boolean.TRUE);
+  public static final String SQLCOUNTFORAVG = "-count";
+  public static final String CSV = "csv";
 }

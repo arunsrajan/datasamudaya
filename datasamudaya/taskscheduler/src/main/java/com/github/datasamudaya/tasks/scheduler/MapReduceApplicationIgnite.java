@@ -66,6 +66,7 @@ import com.github.datasamudaya.tasks.scheduler.ignite.MapReduceResult;
 import com.github.dexecutor.core.DefaultDexecutor;
 import com.github.dexecutor.core.DexecutorConfig;
 import com.github.dexecutor.core.ExecutionConfig;
+import com.github.dexecutor.core.task.Task;
 import com.github.dexecutor.core.task.TaskProvider;
 
 /**
@@ -169,11 +170,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 				allfiles.addAll(Utils.getAllFilePaths(blockpath));
 				jm.setTotalfilesize(jm.getTotalfilesize() + Utils.getTotalLengthByFiles(hdfs, blockpath));
 				bls = new ArrayList<>();
-				if (isblocksuserdefined) {
-					bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, isblocksuserdefined, blocksize * DataSamudayaConstants.MB, null));
-				} else {
-					bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, isblocksuserdefined, 128 * DataSamudayaConstants.MB, null));
-				}
+				bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null));
 				folderfileblocksmap.put(hdfsdir, bls);
 				FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 				fbp.getDnXref(bls, false);
@@ -240,7 +237,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			for (var ctxreducerpart :result) {
 				var keysreducers = ctxreducerpart.keys();
 				sb.append(DataSamudayaConstants.NEWLINE);
-				sb.append("Partition " + partindex + "-------------------------------------------------");
+				sb.append("Partition ").append(partindex).append("-------------------------------------------------");
 				sb.append(DataSamudayaConstants.NEWLINE);
 				for (var key : keysreducers) {
 					sb.append(key + DataSamudayaConstants.SINGLESPACE + ctxreducerpart.get(key));
@@ -288,10 +285,10 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 	public class TaskProviderIgniteMapperCombiner
 			implements TaskProvider<IgniteMapperCombiner, Boolean> {
 
-		public com.github.dexecutor.core.task.Task<IgniteMapperCombiner, Boolean> provideTask(
+		public Task<IgniteMapperCombiner, Boolean> provideTask(
 				final IgniteMapperCombiner datasamudayamc) {
 
-			return new com.github.dexecutor.core.task.Task<IgniteMapperCombiner, Boolean>() {
+			return new Task<IgniteMapperCombiner, Boolean>() {
 
 				private static final long serialVersionUID = 1L;
 

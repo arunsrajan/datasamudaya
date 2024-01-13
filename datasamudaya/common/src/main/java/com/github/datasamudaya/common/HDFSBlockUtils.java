@@ -34,6 +34,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.client.HdfsDataInputStream;
 import org.apache.hadoop.hdfs.protocol.LocatedBlock;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -45,9 +46,9 @@ public class HDFSBlockUtils {
 
 	private HDFSBlockUtils() {
 	}
-	static org.slf4j.Logger log = LoggerFactory.getLogger(HDFSBlockUtils.class);
-	
-	private static Semaphore lock = new Semaphore(1);
+	static Logger log = LoggerFactory.getLogger(HDFSBlockUtils.class);
+
+	private static final Semaphore lock = new Semaphore(1);
 
 	/**
 	 * This function returns list of blocks location using the block size obtained from HDFS.
@@ -56,36 +57,31 @@ public class HDFSBlockUtils {
 	 * @return list of blocks information with multiple location from HDFS.
 	 * @throws Exception
 	 */
-	public static List<BlocksLocation> getBlocksLocationByFixedBlockSizeAuto(FileSystem hdfs, List<Path> filepaths, boolean isuserdefinedblocksize, 
-			long userdefinedblocksize,
+	public static List<BlocksLocation> getBlocksLocationByFixedBlockSizeAuto(FileSystem hdfs, List<Path> filepaths,
 			List<String> columns)
 			throws Exception {
 		lock.acquire();
 		var blocklocationsl = new Vector<BlocksLocation>();
 		filepaths.parallelStream().forEachOrdered(filepath -> {
 			try {
-				long startoffset = 0;
+				long offset = 0;
 				long starttime = System.currentTimeMillis();
 				try (var hdis = (HdfsDataInputStream) hdfs.open(filepath);) {
 					var locatedblocks = hdis.getAllBlocks();
 					int lbindex = 0;
-					var lb = locatedblocks.get(lbindex);
-					long blocksize = isuserdefinedblocksize
-							? lb.getBlockSize() < userdefinedblocksize ? lb.getBlockSize() : userdefinedblocksize
-							: lb.getBlockSize();
+					var lb = locatedblocks.get(lbindex);					
 					var dinfoa = lb.getLocations();
 					var dninfos = Arrays.asList(dinfoa);
 					log.info("In getBlocksLocationByFixedBlockSizeAuto dninfos TimeTaken {}",
 							(System.currentTimeMillis() - starttime) / 1000.0);
+					var skipbytes = 0l;
 					while (true) {
 						var bls = new BlocksLocation();
 						bls.setColumns(columns);
 						var block = new Block[2];
 						block[0] = new Block();
-						block[0].setBlockstart(startoffset);
-						startoffset = blocksize + startoffset < lb.getBlockSize() ? startoffset + blocksize
-								: lb.getBlockSize();
-						block[0].setBlockend(startoffset);
+						block[0].setBlockstart(skipbytes);
+						block[0].setBlockend(lb.getBlockSize());
 						block[0].setBlockOffset(lb.getStartOffset());
 						block[0].setFilename(filepath.toUri().toString());
 						Map<String, Set<String>> dnxref = dninfos.stream().map(dninfo -> dninfo.getXferAddr()).collect(
@@ -94,34 +90,14 @@ public class HDFSBlockUtils {
 						block[0].setDnxref(dnxref);
 						bls.setBlock(block);
 						blocklocationsl.add(bls);
-						var skipbytes = 0l;
+						skipbytes = 0l;
 						log.info("In getBlocksLocationByFixedBlockSizeAuto skipbytes TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
-						boolean isnewline = isNewLineAtEnd(hdfs, lb, lb.getStartOffset() + startoffset - 1,
+						boolean isnewline = isNewLineAtEnd(hdfs, lb, lb.getStartOffset() + block[0].getBlockend() - 1,
 								dninfos.get(0).getXferAddr());
 						log.info("In getBlocksLocationByFixedBlockSizeAuto isnewline TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
-						if (!isnewline) {
-							if (startoffset < lb.getBlockSize()) {
-								skipbytes = skipBlockToNewLine(hdfs, lb, lb.getStartOffset() + startoffset,
-										dninfos.get(0).getXferAddr());
-								if (skipbytes > 0) {
-									bls = blocklocationsl.get(blocklocationsl.size() - 1);
-									bls.getBlock()[1] = new Block();
-									bls.getBlock()[1].setBlockstart(startoffset);
-									bls.getBlock()[1].setBlockend(startoffset + skipbytes);
-									bls.getBlock()[1].setBlockOffset(lb.getStartOffset());
-									bls.getBlock()[1].setFilename(filepath.toUri().toString());
-									bls.getBlock()[1].setDnxref(dninfos.stream().map(dninfo -> dninfo.getXferAddr())
-											.collect(Collectors.groupingBy(
-													xrefaddr -> xrefaddr.split(DataSamudayaConstants.COLON)[0],
-													Collectors.mapping(xrefaddr -> xrefaddr,
-															Collectors.toCollection(LinkedHashSet::new)))));
-									startoffset += skipbytes;
-								}
-								log.info("In getBlocksLocationByFixedBlockSizeAuto ifskipbytes TimeTaken {}",
-										(System.currentTimeMillis() - starttime) / 1000.0);
-							} else if (lbindex < locatedblocks.size() - 1) {
+						if (!isnewline && lbindex < locatedblocks.size() - 1) {
 								log.info(
 										"In getBlocksLocationByFixedBlockSizeAuto lbindex < locatedblocks.size TimeTaken {}",
 										(System.currentTimeMillis() - starttime) / 1000.0);
@@ -129,14 +105,13 @@ public class HDFSBlockUtils {
 								lb = locatedblocks.get(lbindex);
 								dinfoa = lb.getLocations();
 								dninfos = Arrays.asList(dinfoa);
-								startoffset = 0;
-								skipbytes = skipBlockToNewLine(hdfs, lb, lb.getStartOffset() + startoffset,
+								skipbytes = skipBlockToNewLine(hdfs, lb, lb.getStartOffset(),
 										dninfos.get(0).getXferAddr());
 								if (skipbytes > 0) {
 									bls = blocklocationsl.get(blocklocationsl.size() - 1);
 									bls.getBlock()[1] = new Block();
-									bls.getBlock()[1].setBlockstart(startoffset);
-									bls.getBlock()[1].setBlockend(startoffset + skipbytes);
+									bls.getBlock()[1].setBlockstart(0);
+									bls.getBlock()[1].setBlockend(skipbytes);
 									bls.getBlock()[1].setBlockOffset(lb.getStartOffset());
 									bls.getBlock()[1].setFilename(filepath.toUri().toString());
 									bls.getBlock()[1].setDnxref(dninfos.stream().map(dninfo -> dninfo.getXferAddr())
@@ -144,19 +119,14 @@ public class HDFSBlockUtils {
 													xrefaddr -> xrefaddr.split(DataSamudayaConstants.COLON)[0],
 													Collectors.mapping(xrefaddr -> xrefaddr,
 															Collectors.toCollection(HashSet::new)))));
-									startoffset += skipbytes;
 								}
-							} else {
-								break;
-							}
 						} else if (lbindex < locatedblocks.size() - 1) {
-							startoffset = 0;
+							offset = 0;
 							lbindex++;
 							lb = locatedblocks.get(lbindex);
 						} else {
 							break;
 						}
-						log.debug(blocksize + " " + lb.getStartOffset());
 						log.info("In getBlocksLocationByFixedBlockSizeAuto blockslocations TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
 					}

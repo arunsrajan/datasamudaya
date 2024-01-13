@@ -20,7 +20,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses({ ResourcesTest.class, ServerUtilsTest.class,
+@SuiteClasses({ResourcesTest.class, ServerUtilsTest.class,
 		RemoteDataFetcherTest.class, DataCruncherContextTest.class,
 		HadoopTestUtilitiesTest.class})
 public class CommonsTestSuite {

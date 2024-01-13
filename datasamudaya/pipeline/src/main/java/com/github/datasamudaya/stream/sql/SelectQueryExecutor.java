@@ -10,13 +10,13 @@ import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.github.datasamudaya.common.ColumnMetadata;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.stream.sql.build.IgnitePipelineSql;
-import com.github.datasamudaya.stream.sql.build.IgnitePipelineSqlBuilder;
+import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 import com.github.datasamudaya.stream.utils.SQLUtils;
@@ -60,6 +60,7 @@ public class SelectQueryExecutor {
 			} else {
 				pc.setYarn("false");
 			}
+			pc.setJobname(DataSamudayaConstants.SQL);
 			pc.setMesos("false");
 			pc.setMode(DataSamudayaConstants.MODE_NORMAL);
 			pc.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
@@ -86,20 +87,30 @@ public class SelectQueryExecutor {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
 				TableCreator.getColumnMetadataFromTable(dbdefault, table.getName(), columnMetadatas);
 				String hdfslocation = null;
+				String fileformat = null;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
-					if (columnMetadata.getColumnName().toLowerCase().equals("hdfslocation")) {
+					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
+					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
+						fileformat = columnMetadata.getColumnDefault().replace("'", "").trim();
 					} else {
 						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
 					}
 				}
 				builder = builder.add(hdfslocation, table.getName().toLowerCase(), tablecolumn, tablecolumnDataType);
+				builder.setFileformat(fileformat);
 			}
 			StreamPipelineSql mdpsql = builder.build();
 			return (List) mdpsql.collect(true, null);
+		} catch (PipelineException ex) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();
+			error.add(ExceptionUtils.getRootCauseMessage(ex));
+			errors.add(error);
+			return errors;
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
@@ -119,6 +130,7 @@ public class SelectQueryExecutor {
 			String tejobid) throws Exception {
 		try {
 			PipelineConfig pc = new PipelineConfig();
+			pc.setJobname(DataSamudayaConstants.SQL);
 			pc.setLocal("false");
 			pc.setJgroups("false");
 			pc.setYarn("false");
@@ -141,7 +153,7 @@ public class SelectQueryExecutor {
 			var tables = new ArrayList<Table>();
 			var tmpset = new HashSet<String>();			
 			SQLUtils.getAllTables(statement, tables, tmpset);
-			var builder = IgnitePipelineSqlBuilder.newBuilder()
+			var builder = StreamPipelineSqlBuilder.newBuilder()
 					.setHdfs(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);
@@ -149,19 +161,23 @@ public class SelectQueryExecutor {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
 				TableCreator.getColumnMetadataFromTable(dbdefault, table.getName(), columnMetadatas);
 				String hdfslocation = null;
+				String fileformat = null;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
-					if (columnMetadata.getColumnName().toLowerCase().equals("hdfslocation")) {
+					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
+					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
+						fileformat = columnMetadata.getColumnDefault().replace("'", "").trim();
 					} else {
 						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
 					}
 				}
 				builder = builder.add(hdfslocation, table.getName().toLowerCase(), tablecolumn, tablecolumnDataType);
+				builder.setFileformat(fileformat);
 			}
-			IgnitePipelineSql ipsql = builder.build();
+			StreamPipelineSql ipsql = builder.build();
 			return (List) ipsql.collect(true, null);
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
@@ -175,6 +191,9 @@ public class SelectQueryExecutor {
 			}
 			return errors;
 		}
+	}
+
+	private SelectQueryExecutor() {
 	}
 
 }

@@ -1,41 +1,19 @@
-import com.github.datasamudaya.common.*;
-import com.github.datasamudaya.stream.*;
-import org.jooq.lambda.tuple.*;
-import java.util.*;
-import java.util.concurrent.*;
-import com.esotericsoftware.kryo.io.Output;
-import org.apache.hadoop.fs.*;
-
-org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
-URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
-PipelineConfig pc = new PipelineConfig();
-Utils.loadLog4JSystemProperties("../config/","datasamudaya.properties");
-pc.setBlocksize("64");
-pc.setNumberofcontainers("1");
-pc.setMaxmem("1024");
-pc.setMinmem("1024");
-pc.setLocal("true")
-pc.setJgroups("false")
-pc.setMesos("false")
-pc.setYarn("false")
-pc.setOutput(new Output(System.out));
-pc.setIsblocksuserdefined("true");
-pc.setBlocksize("64");
-pc.setMode(DataSamudayaConstants.MODE_NORMAL);
-Resources resources = new Resources();
-resources.setNumberofprocessors(12);
-resources.setFreememory(4294967296l);
-ConcurrentMap<String,Resources> mapres = new ConcurrentHashMap<>();
-mapres.put("127.0.0.1_12121",resources);
-DataSamudayaNodesResources.put(mapres);
-ByteBufferPoolDirect.init();
-CacheUtils.initBlockMetadataCache()
-StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000","/airline1989",pc);
+PipelineConfig pipelineconfig = new PipelineConfig();
+pipelineconfig.setBlocksize("64");
+pipelineconfig.setNumberofcontainers("1");
+pipelineconfig.setMaxmem("1024");
+pipelineconfig.setMinmem("1024");
+pipelineconfig.setLocal("false")
+pipelineconfig.setJgroups("false")
+pipelineconfig.setMesos("false")
+pipelineconfig.setYarn("false")
+pipelineconfig.setOutput(new Output(System.out));
+pipelineconfig.setIsblocksuserdefined("true");
+pipelineconfig.setBlocksize("64");
+pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+var datastream = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000", "/airline1989", pipelineconfig);
 var mappair1 = datastream.map(dat -> dat.split(",")).filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14])).mapToPair(dat -> Tuple.tuple(dat[8], Long.parseLong(dat[14])));
 var airlinesamples = mappair1.reduceByKey((dat1, dat2) -> dat1 + dat2).coalesce(1,(dat1, dat2) -> dat1 + dat2);
-List<List<Tuple2>> joinresult = (List) airlinesamples.collect(true,null);
-joinresult.stream().forEach(System.out::println)
-datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !dat[14].equals("ArrDelay") && !dat[14].equals("NA")).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).saveAsTextFile(new URI("hdfs://127.0.0.1:9000"), "/Coalesce/Coalesce-" + System.currentTimeMillis());
-MapPair<String,Tuple2<Long,Long>> mstll = datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !dat[14].equals("ArrDelay") && !dat[14].equals("NA")).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long,Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2));
-joinresult = mstll.collect(true,null);
-mstll.saveAsTextFile(new URI("hdfs://127.0.0.1:9000"), "/Coalesce/Coalesce-" + System.currentTimeMillis());
+var datastream1 = StreamPipeline.newStreamHDFS("hdfs://127.0.0.1:9000", "/carriers", pipelineconfig);
+var carriers = datastream1.map(linetosplit -> linetosplit.split(",")).mapToPair(line -> new Tuple2(line[0].substring(1, line[0].length() - 1),line[1].substring(1, line[1].length() - 1)));
+var result = carriers.join(airlinesamples, (tuple1, tuple2) -> ((Tuple2) tuple1).v1.equals(((Tuple2) tuple2).v1)).collect(true,null);

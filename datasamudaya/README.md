@@ -23,7 +23,7 @@ mvn -Dmaven.antrun.skip=true -Dmaven.test.skip.exec=true -Pmodules clean package
 To Run jacoco and sonar
 -----------------------
 
--Dmaven.antrun.skip=true -f pom.xml -Pmodules clean install sonar:sonar -Dsonar.login=a2f18857a3ec8c8302a1a405d22f40fd7194cde7 -Dsonar.host.url=http://localhost:8082 -Dsonar.sources=pom.xml,src/main -Dsonar.test.exclusions=**src/test/**/*.java -Dsonar.language=Java
+-Dmaven.antrun.skip=true -f pom.xml -Pmodules jacoco:report-aggregate sonar:sonar -Dsonar.projectKey=datasamudaya -Dsonar.projectName='datasamudaya' -Dsonar.host.url=http://localhost:9900 -Dsonar.token=sqp_821cb5fc68adfa589c838348c5fe1ab9049414d4 -Dsonar.sources=pom.xml,src/main -Dsonar.test.exclusions=**src/test/**/*.java -Dsonar.language=Java
 
 To compile only tests
 ---------------------------------------------------------------
@@ -88,7 +88,7 @@ docker network create --driver=bridge --subnet=172.30.0.0/16 --ip-range=172.30.0
 
 docker run --network datasamudaya --name namenode --hostname namenode -v "E:/DEVELOPMENT/dockershare:/opt/dockershare" -e "CORE_CONF_fs_defaultFS=hdfs://namenode:9000" -e "HDFS_CONF_dfs_namenode_name_dir=file:///opt/dockershare" -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -e "CLUSTER_NAME=hadooptest" -p 9870:9870 -p 9000:9000 -d bde2020/hadoop-namenode
 
-docker run --network datasamudaya -v "C:/DEVELOPMENT/dockershare/container:/opt/dockershare" --hostname dnte --link namenode:namenode --link zoo:zoo -e "CORE_CONF_fs_defaultFS=hdfs://namenode:9000" -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data" --name datasamudayacontainer --ip 172.30.0.20 -e ZKHOSTPORT=zoo:2181 -e HOST=172.30.0.20 -e PORT=10101 -e NODEPORT=12121 -p 12121:12121 --memory 4g -e MEMCONFIGLOW=-Xms512M -e MEMCONFIGHIGH=-Xmx512M -d arunsrajan/datasamudayacontainer
+docker run --network datasamudaya -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" --hostname dnte --link namenode:namenode --link zoo:zoo -e "CORE_CONF_fs_defaultFS=hdfs://namenode:9000" -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data1" --name datasamudayacontainer --ip 172.30.0.20 -e ZKHOSTPORT=zoo:2181 -e HOST=172.30.0.20 -e PORT=10101 -e NODEPORT=12121 -p 12121:12121 --memory 4g -e MEMCONFIGLOW=-Xms512M -e MEMCONFIGHIGH=-Xmx512M -d arunsrajan/datasamudayacontainer
 
 To run task scheduler stream in network datasamudaya
 -------------------------------------------
@@ -104,7 +104,7 @@ To run standalone in network datasamudaya
 ------------------------------------------- 
 docker run --network datasamudaya --name namenode --hostname namenode -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" -e "CORE_CONF_fs_defaultFS=hdfs://namenode:9000" -e "HDFS_CONF_dfs_namenode_name_dir=file:///opt/dockershare/name" -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -e "CLUSTER_NAME=hadooptest" -p 9870:9870 -p 9000:9000 -d bde2020/hadoop-namenode
 
-docker run --network datasamudaya -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data" --name datasamudayastandalone --hostname datasamudayastandalone --ip 172.30.0.10 -e ZKHOSTPORT=zoo:2181 -e TEHOST=172.30.0.10 -e TEPORT=10101 -e NODEPORT=12121 -e TSSHOST=172.30.0.10 --link namenode:namenode -e TSSPORT=22222 -e TSHOST=172.30.0.10 -e TSPORT=11111 -p 22222:22222 -p 22223:22223 -p 11111:11111 -p 11112:11112 -p 12123:12123 -p 12124:12124 -e DPORT=*:4000 -p 4000:4000 --memory 4g -e MEMCONFIGLOW=-Xms512m -e MEMCONFIGHIGH=-Xmx512m -d arunsrajan/datasamudayastandalone
+docker run --network datasamudaya -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data" --name datasamudayastandalone --hostname datasamudayastandalone --ip 172.30.0.10 -e ZKHOSTPORT=zoo:2181 -e TEHOST=172.30.0.10 -e TEPORT=10101 -e NODEPORT=12121 -e TSSHOST=172.30.0.10 --link namenode:namenode -e TSSPORT=22222 -e TSHOST=172.30.0.10 -e TSPORT=11111 -p 22222:22222 -p 22223:22223 -p 11111:11111 -p 11112:11112 -p 12123:12123 -p 11123:11123 -p 12124:12124 -e DPORT=*:4000 -p 4000:4000 --memory 12g -e MEMCONFIGLOW=-Xms512m -e MEMCONFIGHIGH=-Xmx512m -d arunsrajan/datasamudayastandalone
 
 To run docker container as separate service in swarm using weave networks to support multicasting
 ----------------------------------------------------
@@ -457,6 +457,12 @@ streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stre
 
 Stream Reduce SQL
 -----------------
+
+streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.StreamingSqlExamples hdfs://127.0.0.1:9000 /airline1989 /sqlexamplestandaloneoutput standalone true arun 2 4096
+
+streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.StreamingSqlExamples hdfs://127.0.0.1:9000 /airline1989 /sqlexamplejgroupsoutput jgroups true arun 2 4096
+
+streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.StreamingSqlExamples hdfs://127.0.0.1:9000 /airline1989 /sqlexampleyarnoutput yarn false
 
 streamjobsubmitter.cmd ../examples/examples-2.0.jar com.github.datasamudaya.stream.sql.examples.SqlSumLocal hdfs://127.0.0.1:9000 /airline1989 /carriers 32 2
 

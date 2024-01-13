@@ -33,7 +33,7 @@ public class NodeWebServlet extends HttpServlet {
   }
 
   private static final long serialVersionUID = 8713220540678338208L;
-  private static Logger log = Logger.getLogger(NodeWebServlet.class);
+	private static final Logger log = Logger.getLogger(NodeWebServlet.class);
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws IOException {
@@ -43,7 +43,7 @@ public class NodeWebServlet extends HttpServlet {
     String contextpath = request.getScheme() + "://" + request.getServerName() + DataSamudayaConstants.COLON
         + request.getLocalPort();
     try {
-      writer.println(String.format("""
+      writer.println(("""
           <!DOCTYPE HTML>
           <html>
           <head>
@@ -134,8 +134,8 @@ public class NodeWebServlet extends HttpServlet {
           </div>""" + getIframe() + """
           </body>
           </html>
-          					""", contextpath, contextpath, contextpath, contextpath, contextpath,
-          request.getServerName() + DataSamudayaConstants.COLON + request.getLocalPort()));
+          					""").formatted(contextpath, contextpath, contextpath, contextpath, contextpath,
+					request.getServerName() + DataSamudayaConstants.COLON + request.getLocalPort()));
     } catch (Exception ex) {
       log.debug("TaskScheduler Web servlet error, See cause below \n", ex);
     }

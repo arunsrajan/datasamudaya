@@ -87,19 +87,19 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>21.0</version>
+			<version>18.0</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.7.6</version>
+			<version>2.0.9</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.6</version>
+			<version>2.0.9</version>
 		</dependency>
 
 		<dependency>
@@ -107,6 +107,13 @@
 			<artifactId>logstash-gelf</artifactId>
 			<version>1.5.1</version>
 		</dependency>
+
+		<dependency>
+		    <groupId>net.sf.trove4j</groupId>
+		    <artifactId>trove4j</artifactId>
+		    <version>3.0.3</version>
+		</dependency>
+
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
@@ -146,6 +153,12 @@
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-client</artifactId>
 			<version>3.3.4</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.jline</groupId>
+					<artifactId>jline</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -269,11 +282,10 @@
 			<version>1.8</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>3.11</version>
+		    <groupId>com.univocity</groupId>
+		    <artifactId>univocity-parsers</artifactId>
+		    <version>2.9.1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.github.dexecutor</groupId>
 			<artifactId>dexecutor-core</artifactId>
@@ -316,7 +328,7 @@
 		<dependency>
 			<groupId>org.glassfish.jaxb</groupId>
 			<artifactId>jaxb-runtime</artifactId>
-			<version>2.3.1</version>
+			<version>2.3.9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.ignite</groupId>
@@ -362,7 +374,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.24</version>
+			<version>1.18.30</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -386,6 +398,12 @@
 		</dependency>
 		
 		<dependency>
+		    <groupId>jp.co.yahoo.yosegi</groupId>
+		    <artifactId>yosegi</artifactId>
+		    <version>2.0.5</version>
+		</dependency>
+		
+		<dependency>
 		    <groupId>org.apache.arrow</groupId>
 		    <artifactId>arrow-vector</artifactId>
 		    <version>12.0.0</version>
@@ -393,7 +411,7 @@
 		
 		<dependency>
 		    <groupId>org.apache.arrow</groupId>
-		    <artifactId>arrow-memory-unsafe</artifactId>
+		    <artifactId>arrow-memory-netty</artifactId>
 		    <version>12.0.0</version>
 		</dependency>
 		
@@ -402,7 +420,16 @@
 		    <artifactId>pig</artifactId>
 		    <version>0.17.0</version>
 		</dependency>
-		
+		<dependency>
+		    <groupId>org.apache.orc</groupId>
+		    <artifactId>orc-core</artifactId>
+		    <version>1.7.5</version>
+		</dependency>
+		<dependency>
+	        <groupId>org.apache.hadoop</groupId>
+	        <artifactId>hadoop-client-runtime</artifactId>
+	        <version>3.3.4</version>
+	    </dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
@@ -418,25 +445,37 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>io.github.solven-eu.cleanthat</groupId>
+				<artifactId>cleanthat-maven-plugin</artifactId>
+				<version>2.17</version>
+			</plugin>
+			<plugin>
 				<groupId>org.openrewrite.maven</groupId>
 				<artifactId>rewrite-maven-plugin</artifactId>
-				<version>4.26.0</version>
+				<version>5.14.0</version>
 				<configuration>
 					<activeRecipes>
+						<recipe>org.openrewrite.staticanalysis.CodeCleanup</recipe>
 						<receipe>org.openrewrite.java.RemoveUnusedImports</receipe>
+						<recipe>org.openrewrite.java.migrate.UpgradeToJava17</recipe>
 					</activeRecipes>
 					<checkstyleConfigFile>checkstyle.xml</checkstyleConfigFile>
 				</configuration>
 				<dependencies>
 					<dependency>
+			            <groupId>org.openrewrite.recipe</groupId>
+			            <artifactId>rewrite-static-analysis</artifactId>
+			            <version>1.1.1</version>
+			      	</dependency>
+					<dependency>
 						<groupId>org.openrewrite.recipe</groupId>
 						<artifactId>rewrite-migrate-java</artifactId>
-						<version>1.8.0</version>
+						<version>2.4.0</version>
 					</dependency>
 					<dependency>
 						<groupId>org.openrewrite</groupId>
 						<artifactId>rewrite-java-17</artifactId>
-						<version>7.25.0</version>
+						<version>8.9.9</version>
 					</dependency>
 				</dependencies>
 			</plugin>
@@ -520,8 +559,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>17</source>
-					<target>17</target>
+					<release>17</release>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -638,7 +676,7 @@
 							<reuseForks>true</reuseForks>
 							<argLine>
 								${argLine}
-								-Xms256m -Xmx2g
+								-Xms256m -Xmx6g
 								--add-opens
 								java.base/java.math=ALL-UNNAMED
 								--add-opens

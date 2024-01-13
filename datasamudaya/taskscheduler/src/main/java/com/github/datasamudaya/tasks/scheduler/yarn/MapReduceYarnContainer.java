@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jooq.lambda.tuple.Tuple2;
 import org.springframework.yarn.integration.container.AbstractIntegrationYarnContainer;
 import org.springframework.yarn.integration.ip.mind.MindAppmasterServiceClient;
@@ -70,7 +71,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Override
 	protected void runInternal() {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		log.info("Container Started...");
 		JobRequest request;
 		byte[] job = null;
@@ -79,7 +80,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 		try {
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			while (true) {
 				request = new JobRequest();
 				request.setState(JobRequest.State.WHATTODO);

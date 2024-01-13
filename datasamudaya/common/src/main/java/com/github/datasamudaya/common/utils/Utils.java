@@ -31,7 +31,7 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
-import java.net.InetAddress;
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -39,7 +39,6 @@ import java.net.URI;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.security.KeyStore;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -54,32 +53,28 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.hadoop.yarn.api.records.ApplicationId;
+import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgrapht.Graph;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.io.ComponentNameProvider;
 import org.jgrapht.io.DOTExporter;
 import org.jgrapht.io.ExportException;
@@ -94,42 +89,62 @@ import org.jgroups.util.UUID;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.objenesis.strategy.StdInstantiatorStrategy;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.util.CollectionUtils;
+import org.springframework.yarn.YarnSystemConstants;
+import org.springframework.yarn.client.CommandYarnClient;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.ClosureSerializer.Closure;
-import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.StringArraySerializer;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
+import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.StringArraySerializer;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.EnumSerializer;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.datasamudaya.common.AllocateContainers;
+import com.github.datasamudaya.common.Block;
 import com.github.datasamudaya.common.ContainerException;
 import com.github.datasamudaya.common.ContainerLaunchAttributes;
 import com.github.datasamudaya.common.ContainerResources;
 import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataCruncherContext;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaNodesResources;
+import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.DataSamudayaUsers;
 import com.github.datasamudaya.common.DestroyContainer;
 import com.github.datasamudaya.common.DestroyContainers;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
 import com.github.datasamudaya.common.GlobalJobFolderBlockLocations;
+import com.github.datasamudaya.common.GlobalYARNResources;
 import com.github.datasamudaya.common.Job;
+import com.github.datasamudaya.common.Job.JOBTYPE;
+import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.common.exceptions.JGroupsException;
+import com.github.datasamudaya.common.exceptions.JobException;
+import com.github.datasamudaya.common.exceptions.OutputStreamException;
+import com.github.datasamudaya.common.exceptions.PropertiesException;
+import com.github.datasamudaya.common.exceptions.RpcRegistryException;
+import com.github.datasamudaya.common.exceptions.TaskExecutorException;
+import com.github.datasamudaya.common.exceptions.YarnLaunchException;
+import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LaunchContainers;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaNodesResources;
-import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.DataSamudayaUsers;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
+import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.Stage;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.TaskInfoYARN;
 import com.github.datasamudaya.common.TaskStatus;
 import com.github.datasamudaya.common.Tuple2Serializable;
 import com.github.datasamudaya.common.User;
@@ -137,8 +152,9 @@ import com.github.datasamudaya.common.WhoAreRequest;
 import com.github.datasamudaya.common.WhoAreResponse;
 import com.github.datasamudaya.common.WhoIsRequest;
 import com.github.datasamudaya.common.WhoIsResponse;
-import com.github.datasamudaya.common.Job.JOBTYPE;
 import com.github.datasamudaya.common.functions.Coalesce;
+import com.sun.management.OperatingSystemMXBean;
+import com.univocity.parsers.csv.CsvWriter;
 
 import jdk.jshell.JShell;
 import net.sf.jsqlparser.parser.SimpleNode;
@@ -151,7 +167,7 @@ import net.sf.jsqlparser.schema.Table;
  *         socket.
  */
 public class Utils {
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(Utils.class);
+	private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
 	private Utils() {
 	}
@@ -181,11 +197,8 @@ public class Utils {
 	/**
 	 * Thread Local kryo instance.
 	 */
-	static ThreadLocal<Kryo> conf = new ThreadLocal<>() {
-		public Kryo initialValue() {
-			return getKryoInstance();
-		}
-	};
+	static ThreadLocal<Kryo> conf = ThreadLocal.withInitial(()->getKryoInstance());
+
 
 	/**
 	 * Writes the text message to outputstream.
@@ -194,11 +207,15 @@ public class Utils {
 	 * @param message
 	 * @throws Exception
 	 */
-	public static void writeToOstream(OutputStream os, String message) throws Exception {
-		if (nonNull(os)) {
-			os.write(message.getBytes());
-			os.write('\n');
-			os.flush();
+	public static void writeToOstream(OutputStream os, String message) throws OutputStreamException {
+		try {
+			if (nonNull(os)) {
+				os.write(message.getBytes());
+				os.write('\n');
+				os.flush();
+			}
+		} catch (Exception ex) {
+			throw new OutputStreamException("Error In Writing message to outputstream", ex);
 		}
 	}
 
@@ -209,19 +226,19 @@ public class Utils {
 	 * @param propertyfile
 	 * @throws Exception
 	 */
-	public static void initializeProperties(String propertiesfilepath, String propertyfile) throws Exception {
+	public static void initializeProperties(String propertiesfilepath, String propertyfile) throws PropertiesException {
 		log.debug("Entered Utils.initializeProperties");
 		if (Objects.isNull(propertyfile)) {
-			throw new Exception("Property File Name cannot be null");
+			throw new PropertiesException("Property File Name cannot be null");
 		}
 		if (Objects.isNull(propertiesfilepath)) {
-			throw new Exception("Properties File Path cannot be null");
+			throw new PropertiesException("Properties File Path cannot be null");
 		}
 		try (var fis = new FileInputStream(propertiesfilepath + propertyfile);) {
 			var prop = new Properties();
 			prop.load(fis);
 			prop.putAll(System.getProperties());
-			log.debug("Properties: " + prop.entrySet());
+			log.debug("Properties: {}", prop.entrySet());
 			DataSamudayaProperties.put(prop);
 			String containerusersshare = prop.getProperty(DataSamudayaConstants.CONTAINER_ALLOC_USERS_PLUS_SHARE);
 			if (nonNull(containerusersshare)) {
@@ -231,36 +248,46 @@ public class Utils {
 					int noofusers = userswithshare / 2;
 					var userssharepercentage = new ConcurrentHashMap<String, User>();
 					double sharepercentagetotal = 0;
-					for (int usercount = 0; usercount < noofusers; usercount++) {
-						int sharepercentage = Integer.valueOf(cus[usercount * 2 + 1]);
+					for (int usercount = 0;usercount < noofusers;usercount++) {
+						int sharepercentage = Integer.parseInt(cus[usercount * 2 + 1]);
 						String username = cus[usercount * 2];
-						User user = new User(username, sharepercentage, new ConcurrentHashMap<>(),
+						User user = new User(username, sharepercentage,
 								new ConcurrentHashMap<>());
 						userssharepercentage.put(username, user);
 						sharepercentagetotal += sharepercentage;
 					}
 					if (sharepercentagetotal > 100.0) {
-						throw new Exception("Users share total not tally and it should be less that or equal to 100.0");
+						throw new PropertiesException("Users share total not tally and it should be less that or equal to 100.0");
 					}
 					DataSamudayaUsers.put(userssharepercentage);
 				} else {
-					throw new Exception(
+					throw new PropertiesException(
 							"Container users share property [container.alloc.users.share] not properly formatted");
 				}
 			}
-			try {
-				StaticComponentContainer.Configuration.Default.setFileName(DataSamudayaProperties.get()
-						.getProperty(DataSamudayaConstants.BURNINGWAVE_PROPERTIES, DataSamudayaConstants.BURNINGWAVE_PROPERTIES_DEFAULT));
-			} catch (UnsupportedOperationException uoe) {
-				log.error("Problem in loading burningwave properties, See the cause below", uoe);
-			}
+			burningWaveInitialization();
 		} catch (Exception ex) {
-			log.error("Problem in loading properties, See the cause below", ex);
-			throw new Exception("Unable To Load Properties", ex);
+			throw new PropertiesException(PropertiesException.LOADING_PROPERTIES, ex);
 		}
 		log.debug("Exiting Utils.initializeProperties");
 	}
 
+	
+	/**
+	 * Burning Wave Initialized with properties file
+	 */
+	public static void burningWaveInitialization(){
+		try {
+			StaticComponentContainer.Configuration.Default.setFileName(DataSamudayaProperties.get()
+					.getProperty(DataSamudayaConstants.BURNINGWAVE_PROPERTIES, DataSamudayaConstants.BURNINGWAVE_PROPERTIES_DEFAULT));
+		} catch (UnsupportedOperationException uoe) {
+			log.error("Problem in loading burningwave properties, See the cause below", uoe);
+		}
+	}
+	
+	
+	
+	
 	/**
 	 * Gets the kryo object from thread local.
 	 * 
@@ -334,18 +361,16 @@ public class Utils {
 	 * @param propertyfile
 	 * @throws Exception
 	 */
-	public static void loadPropertiesMesos(String propertyfile) throws Exception {
-		log.debug("Entered Utils.loadPropertiesMesos");
-		PropertyConfigurator
-				.configure(Utils.class.getResourceAsStream(DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES));
+	public static void loadPropertiesMesos(String propertyfile) throws PropertiesException {
+		log.debug("Entered Utils.loadPropertiesMesos");		
 		var prop = new Properties();
 		try (var fis = Utils.class.getResourceAsStream(DataSamudayaConstants.FORWARD_SLASH + propertyfile);) {
 			prop.load(fis);
 			prop.putAll(System.getProperties());
-			log.debug("Properties: " + prop.entrySet());
+			log.debug("Properties: {}", prop.entrySet());
 			DataSamudayaProperties.put(prop);
 		} catch (Exception ex) {
-			log.error("Problem in loading properties, See the cause below", ex);
+			throw new PropertiesException("Problem in loading properties, See the cause below", ex);
 		}
 		log.debug("Exiting Utils.loadPropertiesMesos");
 	}
@@ -375,10 +400,13 @@ public class Utils {
 				String jobidl = jobid;
 				Map<String, WhoIsResponse.STATUS> mapreql = mapreq;
 				Map<String, WhoIsResponse.STATUS> maprespl = mapresp;
-
+				
+				@Override
 				public void viewAccepted(View clusterview) {
+					log.debug("View Accepted {}", clusterview);
 				}
 
+				@Override
 				public void receive(Message msg) {
 					synchronized (lock) {
 						var rawbuffer = (byte[]) ((ObjectMessage) msg).getObject();
@@ -386,14 +414,12 @@ public class Utils {
 							var object = kryo.readClassAndObject(input);
 							if (object instanceof WhoIsRequest whoisrequest) {
 								if (mapreql.containsKey(whoisrequest.getStagepartitionid())) {
-									log.debug("Whois: " + whoisrequest.getStagepartitionid() + " Map Status: " + mapreql
-											+ " Map Response Status: " + maprespl);
-									whoisresp(msg, whoisrequest.getStagepartitionid(), jobidl,
-											mapreql.get(whoisrequest.getStagepartitionid()), channel, networkaddress);
+									log.debug("Whois: {} Map Status: {} Map Response Status: {}" ,whoisrequest.getStagepartitionid(), mapreql,  maprespl);
+									whoisresp(msg, whoisrequest.getStagepartitionid(), 
+											mapreql.get(whoisrequest.getStagepartitionid()), channel);
 								}
 							} else if (object instanceof WhoIsResponse whoisresponse) {
-								log.debug("WhoisResp: " + whoisresponse.getStagepartitionid() + " Status: "
-										+ whoisresponse.getStatus());
+								log.debug("WhoisResp: {} Status: {}" ,whoisresponse.getStagepartitionid(), whoisresponse.getStatus());
 								maprespl.put(whoisresponse.getStagepartitionid(), whoisresponse.getStatus());
 							} else if (object instanceof WhoAreRequest) {
 								log.debug("WhoAreReq: ");
@@ -403,7 +429,7 @@ public class Utils {
 								maprespl.putAll(whoareresponse.getResponsemap());
 							}
 						} catch (Exception ex) {
-							log.error("In JGroups Object deserialization error: {}", ex);
+							log.error("In JGroups Object deserialization error: ", ex);
 						}
 					}
 				}
@@ -423,7 +449,7 @@ public class Utils {
 	 * @param stagepartitionid
 	 * @throws Exception
 	 */
-	public static void whois(JChannel channel, String stagepartitionid) throws Exception {
+	public static void whois(JChannel channel, String stagepartitionid) throws JGroupsException {
 		log.debug("Entered Utils.whois");
 		var whoisrequest = new WhoIsRequest();
 		whoisrequest.setStagepartitionid(stagepartitionid);
@@ -431,7 +457,8 @@ public class Utils {
 			getKryo().writeClassAndObject(output, whoisrequest);
 			output.flush();
 			channel.send(new ObjectMessage(null, baos.toByteArray()));
-		} finally {
+		} catch(Exception ex) {
+			throw new JGroupsException(JGroupsException.JGROUPS_PROCESSING_EXCETPION, ex);
 		}
 		log.debug("Exiting Utils.whois");
 	}
@@ -442,16 +469,17 @@ public class Utils {
 	 * executions.
 	 * 
 	 * @param channel
-	 * @throws Exception
+	 * @throws JGroupsException
 	 */
-	public static void whoare(JChannel channel) throws Exception {
+	public static void whoare(JChannel channel) throws JGroupsException {
 		log.debug("Entered Utils.whoare");
 		var whoarerequest = new WhoAreRequest();
 		try (var baos = new ByteArrayOutputStream(); var output = new Output(baos);) {
 			getKryo().writeClassAndObject(output, whoarerequest);
 			output.flush();
 			channel.send(new ObjectMessage(null, baos.toByteArray()));
-		} finally {
+		} catch(Exception ex) {
+			throw new JGroupsException(JGroupsException.JGROUPS_PROCESSING_EXCETPION, ex);
 		}
 		log.debug("Exiting Utils.whoare");
 	}
@@ -465,7 +493,7 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void whoareresponse(JChannel channel, Address address, Map<String, WhoIsResponse.STATUS> maptosend)
-			throws Exception {
+			throws JGroupsException {
 		log.debug("Entered Utils.whoareresponse");
 		var whoareresp = new WhoAreResponse();
 		whoareresp.setResponsemap(maptosend);
@@ -473,7 +501,8 @@ public class Utils {
 			getKryo().writeClassAndObject(output, whoareresp);
 			output.flush();
 			channel.send(new ObjectMessage(address, baos.toByteArray()));
-		} finally {
+		} catch(Exception ex) {
+			throw new JGroupsException(JGroupsException.JGROUPS_PROCESSING_EXCETPION, ex);
 		}
 		log.debug("Exiting Utils.whoareresponse");
 	}
@@ -490,8 +519,8 @@ public class Utils {
 	 * @param networkaddress
 	 * @throws Exception
 	 */
-	public static void whoisresp(Message msg, String stagepartitionid, String jobid, WhoIsResponse.STATUS status,
-			JChannel jchannel, String networkaddress) throws Exception {
+	public static void whoisresp(Message msg, String stagepartitionid, WhoIsResponse.STATUS status,
+			JChannel jchannel) throws JGroupsException {
 		log.debug("Entered Utils.whoisresp");
 		var whoisresponse = new WhoIsResponse();
 		whoisresponse.setStagepartitionid(stagepartitionid);
@@ -500,7 +529,8 @@ public class Utils {
 			getKryo().writeClassAndObject(output, whoisresponse);
 			output.flush();
 			jchannel.send(new ObjectMessage(msg.getSrc(), baos.toByteArray()));
-		} finally {
+		} catch(Exception ex) {
+			throw new JGroupsException(JGroupsException.JGROUPS_PROCESSING_EXCETPION, ex);
 		}
 		log.debug("Exiting Utils.whoisresp");
 	}
@@ -519,7 +549,7 @@ public class Utils {
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
-				log.warn("Interrupted!", e);
+				log.warn(DataSamudayaConstants.INTERRUPTED, e);
 				// Restore interrupted state...
 				Thread.currentThread().interrupt();
 			} catch (Exception ex) {
@@ -550,14 +580,14 @@ public class Utils {
 	 * @param writer
 	 * @throws ExportException
 	 */
-	public static void renderGraphPhysicalExecPlan(Graph<Task, DAGEdge> graph, Writer writer) throws ExportException {
+	public static void renderGraphPhysicalExecPlan(Graph<Task, DAGEdge> graph, Writer writer) {
 		log.debug("Entered Utils.renderGraphPhysicalExecPlan");
 		ComponentNameProvider<Task> vertexIdProvider = jobstage -> {
 
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
-				log.warn("Interrupted!", e);
+				log.warn(DataSamudayaConstants.INTERRUPTED, e);
 				// Restore interrupted state...
 				Thread.currentThread().interrupt();
 			} catch (Exception ex) {
@@ -616,7 +646,7 @@ public class Utils {
 	 * @return object
 	 * @throws Exception
 	 */
-	public static Object getResultObjectByInput(String hp, Object inputobj, String jobid) throws Exception {		
+	public static Object getResultObjectByInput(String hp, Object inputobj, String jobid) throws RpcRegistryException {		
 		try {
 			var hostport = hp.split(DataSamudayaConstants.UNDERSCORE);
 			final Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
@@ -624,8 +654,7 @@ public class Utils {
 					.lookup(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + jobid);
 			return cruncher.postObject(inputobj);
 		} catch (Exception ex) {
-			log.error("Unable to read result Object: " + inputobj + " " + hp, ex);
-			throw ex;
+			throw new RpcRegistryException(String.format("Unable to read result Object for the input object %s from host port %s",inputobj, hp), ex);
 		}
 	}
 
@@ -641,8 +670,7 @@ public class Utils {
 			String configfilepath = System.getProperty(DataSamudayaConstants.USERDIR) + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.JGROUPSCONF);
 			log.info("Composing Jgroups for address latch {} with trail {}", bindaddr, configfilepath);
-			var channel = new JChannel(configfilepath);
-			return channel;
+			return new JChannel(configfilepath);
 		} catch (Exception ex) {
 			log.error("Unable to add Protocol Stack: ", ex);
 		}
@@ -657,7 +685,7 @@ public class Utils {
 	 * @return list of uri in string format.
 	 */
 	public static List<String> getAllFilePaths(List<Path> paths) {
-		return paths.stream().map(path -> path.toUri().toString()).collect(Collectors.toList());
+		return paths.stream().map(path -> path.toUri().toString()).toList();
 	}
 
 	/**
@@ -777,13 +805,22 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static ServerCnxnFactory startZookeeperServer(int clientport, int numconnections, int ticktime)
-			throws Exception {
-		var dataDirectory = System.getProperty("java.io.tmpdir");
-		var dir = new File(dataDirectory, "zookeeper").getAbsoluteFile();
-		var server = new ZooKeeperServer(dir, dir, ticktime);
-		ServerCnxnFactory scf = ServerCnxnFactory.createFactory(new InetSocketAddress(clientport), numconnections);
-		scf.startup(server);
-		return scf;
+			throws ZookeeperException {
+		try {
+			var dataDirectory = System.getProperty("java.io.tmpdir");
+			var dir = new File(dataDirectory, "zookeeper").getAbsoluteFile();
+			var server = new ZooKeeperServer(dir, dir, ticktime);
+			ServerCnxnFactory scf = ServerCnxnFactory.createFactory(new InetSocketAddress(clientport), numconnections);
+			scf.startup(server);
+			return scf;
+		} catch (InterruptedException e) {
+			log.warn(DataSamudayaConstants.INTERRUPTED, e);
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
+		} catch(Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+		return null;
 	}
 
 	/**
@@ -802,7 +839,7 @@ public class Utils {
 			values.add(driveGB);
 		}
 		var totalHDSize = 0d;
-		for (var i = 0; i < values.size(); i++) {
+		for (var i = 0;i < values.size();i++) {
 			totalHDSize += values.get(i);
 		}
 		log.debug("Exiting HeartBeatServer.usablediskspace");
@@ -816,7 +853,7 @@ public class Utils {
 	 */
 	public static Long getTotalAvailablePhysicalMemory() {
 		log.debug("Entered HeartBeatServer.getTotalAvailablePhysicalMemory");
-		var os = (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory
+		var os = (OperatingSystemMXBean) ManagementFactory
 				.getOperatingSystemMXBean();
 		var availablePhysicalMemorySize = os.getFreePhysicalMemorySize();
 		if (nonNull(DataSamudayaProperties.get().get(DataSamudayaConstants.MEMORY_FROM_NODE))) {
@@ -840,7 +877,7 @@ public class Utils {
 		log.debug("Entered HeartBeatServer.getAvailableProcessors");
 		int processors = Runtime.getRuntime().availableProcessors();
 		if (nonNull(DataSamudayaProperties.get().get(DataSamudayaConstants.CPU_FROM_NODE))) {
-			int availableprocessors = Integer.valueOf((String) DataSamudayaProperties.get()
+			int availableprocessors = Integer.parseInt(DataSamudayaProperties.get()
 					.getProperty(DataSamudayaConstants.CPU_FROM_NODE, DataSamudayaConstants.CPU_FROM_NODE_DEFAULT));
 			if (availableprocessors < processors) {
 				processors = availableprocessors;
@@ -857,7 +894,7 @@ public class Utils {
 	 */
 	public static Long getPhysicalMemory() {
 		log.debug("Entered HeartBeatServer.getPhysicalMemory");
-		var os = (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory
+		var os = (OperatingSystemMXBean) ManagementFactory
 				.getOperatingSystemMXBean();
 		var physicalMemorySize = os.getTotalPhysicalMemorySize();
 		log.debug("Exiting HeartBeatServer.getPhysicalMemory");
@@ -879,7 +916,7 @@ public class Utils {
 			values.add(driveGB);
 		}
 		var totalHDSize = 0d;
-		for (var i = 0; i < values.size(); i++) {
+		for (var i = 0;i < values.size();i++) {
 			totalHDSize += values.get(i);
 		}
 		log.debug("Exiting HeartBeatServer.totaldiskspace");
@@ -941,7 +978,7 @@ public class Utils {
 	 * @return jobid-stageid-taskid
 	 * @throws Exception
 	 */
-	public static String getIntermediateInputStreamTask(Task task) throws Exception {
+	public static String getIntermediateInputStreamTask(Task task) {
 		log.debug("Entered Utils.getIntermediateInputStreamTask");
 		var path = task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid;
 		log.debug("Returned Utils.getIntermediateInputStreamTask");
@@ -949,7 +986,7 @@ public class Utils {
 	}
 
 	/**
-	 * This function launches containers for sql console.
+	 * This function launches containers for mapreduce sql console.
 	 * 
 	 * @param user
 	 * @param jobid
@@ -957,51 +994,36 @@ public class Utils {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unchecked")
-	public static List<LaunchContainers> launchContainers(String user, String jobid) throws Exception {
-		GlobalJobFolderBlockLocations.setIsResetBlocksLocation(true);
-		if (nonNull(GlobalContainerLaunchers.get(user))) {
-			var lcs = GlobalContainerLaunchers.get(user);
-			var lcscloned = new ArrayList<LaunchContainers>();
-			for (var lc : lcs) {
-				var clonedlc = SerializationUtils.clone(lc);
-				clonedlc.setJobid(jobid);
-				lcscloned.add(clonedlc);
-			}
-			return lcscloned;
-		}		
-		var nrs = DataSamudayaNodesResources.get();
+	public static synchronized List<LaunchContainers> launchContainers(String user, String jobid) throws Exception {
+		var nrs = DataSamudayaNodesResources.getAllocatedResources();
 		var resources = nrs.values();
 		int numavailable = resources.size();
-		Iterator<Resources> res = resources.iterator();
+		Iterator<ConcurrentMap<String, Resources>> res = resources.iterator();
 		var globallaunchcontainers = new ArrayList<LaunchContainers>();
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
-			throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
+			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		PipelineConfig pc = new PipelineConfig();
 		int numberofcontainerpernode = Integer.parseInt(pc.getNumberofcontainers());
-		for (int container = 0; container < numavailable; container++) {
-			Resources restolaunch = res.next();
-			var cpu = restolaunch.getNumberofprocessors() - 1;
+		for (int container = 0;container < numavailable;container++) {
+			ConcurrentMap<String, Resources> userrestolaunch = res.next();
+			Resources restolaunch = userrestolaunch.get(user);
+			var cpu = restolaunch.getNumberofprocessors();
 			var usershare = usersshare.get(user);
 			if (isNull(usershare)) {
-				throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
-			}
-			if (nonNull(usershare.getIsallocated().get(restolaunch.getNodeport()))
-					&& usershare.getIsallocated().get(restolaunch.getNodeport())) {
-				throw new Exception(String.format(PipelineConstants.USERALLOCATEDSHARE, user));
-			}
-			cpu = cpu * usershare.getPercentage() / 100;
+				throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+			}			
 			cpu = cpu / numberofcontainerpernode;
-			if(cpu == 0) {
-				cpu = 1;
+			if (cpu <= 0) {
+				throw new ContainerException(PipelineConstants.INSUFFCPUALLOCATIONERROR);
 			}
-			var actualmemory = restolaunch.getFreememory() - DataSamudayaConstants.GB;
+			var actualmemory = restolaunch.getFreememory();
 			if (actualmemory < (128 * DataSamudayaConstants.MB)) {
-				throw new Exception(PipelineConstants.MEMORYALLOCATIONERROR);
+				throw new ContainerException(PipelineConstants.MEMORYALLOCATIONERROR);
 			}
-			var memoryrequire = actualmemory * usershare.getPercentage() / 100;
-			var heapmem = memoryrequire * Integer.valueOf(
+			var memoryrequire = actualmemory;
+			var heapmem = memoryrequire * Integer.parseInt(
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
 					/ 100;
 						
@@ -1015,25 +1037,26 @@ public class Utils {
 			if (Objects.isNull(ports)) {
 				throw new ContainerException("Port Allocation Error From Container");
 			}
-			log.info("Chamber alloted with node: " + restolaunch.getNodeport() + " amidst ports: " + ports);
+			log.info("Chamber alloted with node: {} amidst ports: {}",restolaunch.getNodeport(), ports);
 			
 			var cla = new ContainerLaunchAttributes();			
 			var crl = new ArrayList<ContainerResources>();
-			for(Integer port:ports) {
+			for (Integer port :ports) {
 				var crs = new ContainerResources();
 				crs.setPort(port);
 				crs.setCpu(cpu);			
 				crs.setMinmemory(heapmem);
 				crs.setMaxmemory(heapmem);
 				crs.setDirectheap(directmem);
-				crs.setGctype(DataSamudayaConstants.ZGC);
+				crs.setGctype(pc.getGctype());
 				crl.add(crs);
 				String conthp = restolaunch.getNodeport().split(DataSamudayaConstants.UNDERSCORE)[0] + DataSamudayaConstants.UNDERSCORE
 						+ port;
 				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
 				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
+				restolaunch.setFreememory(restolaunch.getFreememory() - heapmem - directmem);
+				restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpu);
 			}
-			usershare.getIsallocated().put(restolaunch.getNodeport(), true);						
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
 			cla.setCr(crl);
 			cla.setNumberofcontainers(numberofcontainerpernode);
@@ -1055,11 +1078,11 @@ public class Utils {
 						break;
 					} catch (Exception ex) {
 						try {
-							log.info("Waiting for chamber " + tehost + DataSamudayaConstants.UNDERSCORE
-									+ launchedcontainerports.get(index) + " to replete dispatch....");
+							log.info("Waiting for chamber {} to replete dispatch....", tehost + DataSamudayaConstants.UNDERSCORE
+									+ launchedcontainerports.get(index));
 							Thread.sleep(1000);
 						} catch (InterruptedException e) {
-							log.warn("Interrupted!", e);
+							log.warn(DataSamudayaConstants.INTERRUPTED, e);
 							// Restore interrupted state...
 							Thread.currentThread().interrupt();
 						} catch (Exception e) {
@@ -1069,28 +1092,418 @@ public class Utils {
 				}
 				index++;
 			}
-			log.info(
-					"Chamber dispatched node: " + restolaunch.getNodeport() + " with ports: " + launchedcontainerports);
+			log.info("Chamber dispatched node: {} with ports: {}",  restolaunch.getNodeport(), launchedcontainerports);
 		}
-		GlobalContainerLaunchers.put(user, globallaunchcontainers);
+		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
 		return globallaunchcontainers;
 	}
+	
+	/**
+	 * This method launches and returns containers as per user specs 
+	 * @param user
+	 * @param jobid
+	 * @param cpuuser
+	 * @param memoryuser
+	 * @param numberofcontainers
+	 * @return containers
+	 * @throws InterruptedException 
+	 * @throws ContainerException
+	 * @throws RpcRegistryException 
+	 */
+	public static List<LaunchContainers> launchContainersUserSpec(String user, String jobid, int cpuuser, int memoryuser, int numberofcontainers) throws ContainerException, InterruptedException, RpcRegistryException {
+		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
+		long memoryuserbytes = Long.valueOf(memoryuser) * DataSamudayaConstants.MB;
+		var nrs = DataSamudayaNodesResources.getAllocatedResources();
+		var resources = nrs.values();
+		int numavailable = resources.size();
+		Iterator<ConcurrentMap<String, Resources>> res = resources.iterator();
+		var globallaunchcontainers = new ArrayList<LaunchContainers>();
+		var usersshare = DataSamudayaUsers.get();
+		if (isNull(usersshare)) {
+			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+		}
+		PipelineConfig pc = new PipelineConfig();
+		List<String> launchedcontainerhostports = new ArrayList<>();
+		for (int container = 0;container < numavailable;container++) {
+			ConcurrentMap<String, Resources> noderesmap = res.next();
+			Resources restolaunch = noderesmap.get(user);
+			var usershare = usersshare.get(user);
+			if (isNull(usershare)) {
+				throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+			}
+			int cpu = restolaunch.getNumberofprocessors();			
+			cpu = cpu / numberofcontainers;
+			if (cpu <= 0) {
+				throw new ContainerException(PipelineConstants.INSUFFCPUALLOCATIONERROR);
+			}
+			cpu = cpu < cpuuser ? cpu : cpuuser;
+			var actualmemory = restolaunch.getFreememory();
+			if (actualmemory < (128 * DataSamudayaConstants.MB)) {
+				throw new ContainerException(PipelineConstants.MEMORYALLOCATIONERROR);
+			}
+			var memoryrequire = actualmemory;
+			memoryrequire = memoryrequire / numberofcontainers;
+			memoryrequire = memoryrequire < memoryuserbytes ? memoryrequire : memoryuserbytes;
+			var heapmem = memoryrequire * Integer.parseInt(
+					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
+					/ 100;
+						
+			var directmem = memoryrequire - heapmem;
+			var ac = new AllocateContainers();
+			ac.setJobid(jobid);
+			ac.setNumberofcontainers(numberofcontainers);
+			List<Integer> ports = (List<Integer>) Utils.getResultObjectByInput(restolaunch.getNodeport(), ac,
+					DataSamudayaConstants.EMPTY);
+			if (Objects.isNull(ports)) {
+				throw new ContainerException("Port Allocation Error From Container");
+			}
+			log.info("Chamber alloted with node: {} amidst ports: {}",restolaunch.getNodeport(), ports);
+			
+			var cla = new ContainerLaunchAttributes();			
+			var crl = new ArrayList<ContainerResources>();
+			for (Integer port :ports) {
+				var crs = new ContainerResources();
+				crs.setPort(port);
+				crs.setCpu(cpu);			
+				crs.setMinmemory(heapmem);
+				crs.setMaxmemory(heapmem);
+				crs.setDirectheap(directmem);
+				crs.setGctype(pc.getGctype());
+				crl.add(crs);				
+			}			
+			cla.setCr(crl);
+			cla.setNumberofcontainers(numberofcontainers);
+			LaunchContainers lc = new LaunchContainers();
+			lc.setCla(cla);
+			lc.setNodehostport(restolaunch.getNodeport());
+			lc.setJobid(jobid);			
+			globallaunchcontainers.add(lc);
+			List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
+					lc, DataSamudayaConstants.EMPTY);
+			String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
+			launchedcontainerports.stream().map(port->containerhost
+					+ DataSamudayaConstants.UNDERSCORE + port).forEach(launchedcontainerhostports::add);
+			if (Objects.isNull(launchedcontainerports)) {
+				throw new ContainerException("Task Executor Launch Error From Container");
+			}
+			for (ContainerResources crs : crl) {
+				String conthp = containerhost
+						+ DataSamudayaConstants.UNDERSCORE + crs.getPort();
+				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
+				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
+				restolaunch.setFreememory(restolaunch.getFreememory() - heapmem - directmem);
+				restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpu);
+			}
+			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
+			log.info("Chamber dispatched node: {} with ports: {}", restolaunch.getNodeport(), launchedcontainerports);
+		}
+		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
+		
+		int index = 0;
+		while (index < launchedcontainerhostports.size()) {
+			while (true) {
+				String tehostport = launchedcontainerhostports.get(index);
+				String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
+				try (var sock = new Socket(tehp[0], Integer.parseInt(tehp[1]));) {
+					break;
+				} catch (Exception ex) {
+					try {
+						log.info("Waiting for chamber {} to replete dispatch....", tehp[0] + DataSamudayaConstants.UNDERSCORE
+								+ tehp[1]);
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						log.warn(DataSamudayaConstants.INTERRUPTED, e);
+						// Restore interrupted state...
+						Thread.currentThread().interrupt();
+					} catch (Exception e) {
+						log.error(DataSamudayaConstants.EMPTY, e);
+					}
+				}
+			}
+			index++;
+		}
+		
+		
+		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
+		return globallaunchcontainers;
+	}
+	
+	/**
+	 * Allocate resources based on user allocation percentage for the nodes
+	 * @param resources
+	 * @param userresourcesmap
+	 */
+	public static void allocateResourcesByUser(Resources resources, Map<String, Resources> userresourcesmap) {
+		var usersshare = DataSamudayaUsers.get();
+		usersshare.entrySet().stream().forEach(es -> {
+			Resources resperuser = new Resources(resources.getNodeport(), resources.getTotalmemory(), resources.getFreememory() * es.getValue().getPercentage() / 100,
+					resources.getNumberofprocessors() * es.getValue().getPercentage() / 100, resources.getTotaldisksize(), resources.getUsabledisksize(), resources.getPhysicalmemorysize());
+			userresourcesmap.put(es.getKey(), resperuser);
+		});
+	}
 
+	private static final Semaphore yarnmutex = new Semaphore(1);
+	/**
+	 * launches the YARN Executors creating containers
+	 * @param pipelineconfig
+	 * @param cpuuser
+	 * @param memoryuser
+	 * @param numberofcontainers
+	 * @throws InterruptedException 
+	 * @throws Exception
+	 */
+	public static void launchYARNExecutors(String teid, 
+			int cpuuser, int memoryuser, int numberofcontainers,
+			String yarnappcontextfile) throws YarnLaunchException {
+		try {
+			yarnmutex.acquire();
+			System.setProperty("jobcount", "1");
+			System.setProperty("containercount", "" + numberofcontainers);
+			System.setProperty("containermemory", "" + memoryuser);
+			System.setProperty("containercpu", "" + cpuuser);
+			ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+					DataSamudayaConstants.FORWARD_SLASH + yarnappcontextfile, Utils.class);
+			var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
+			client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
+			client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, teid);
+			ApplicationId appid = client.submitApplication(true);
+			var zo = new ZookeeperOperations();
+			zo.connect();
+			SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.YARN_INPUT_QUEUE + DataSamudayaConstants.FORWARD_SLASH + teid);
+			SimpleDistributedQueue outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.YARN_OUTPUT_QUEUE + DataSamudayaConstants.FORWARD_SLASH + teid);
+			Map<String, Object> yarnresourcesmap = new ConcurrentHashMap<>();
+			yarnresourcesmap.put("appid", appid);
+			yarnresourcesmap.put("client", client);
+			yarnresourcesmap.put("inputqueue", inputqueue);
+			yarnresourcesmap.put("outputqueue", outputqueue);
+			yarnresourcesmap.put("zk", zo);
+			GlobalYARNResources.setYarnResourcesByTeId(teid, yarnresourcesmap);
+			var appreport = client.getApplicationReport(appid);
+			while (appreport.getYarnApplicationState() != YarnApplicationState.RUNNING) {
+				appreport = client.getApplicationReport(appid);
+				Thread.sleep(1000);
+			}
+		} catch(InterruptedException ex) {
+			log.warn(DataSamudayaConstants.INTERRUPTED, ex);
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
+		} catch(Exception ex) {
+			throw new YarnLaunchException(YarnLaunchException.YARNLAUNCHEXCEPTION, ex);
+		} finally {
+			yarnmutex.release();
+		}
+	}
+	
+	/**
+	 * creates Job in HDFS to execute in YARN
+	 * @param pipelineconfig
+	 * @param sptsl
+	 * @param graph
+	 * @param tasksptsthread
+	 * @param jsidjsmap
+	 * @throws Exception
+	 */
+	public static void createJobInHDFS(PipelineConfig pipelineconfig,
+			List<?> sptsl,
+			SimpleDirectedGraph<?, DAGEdge> graph,
+			Map<String, ?> tasksptsthread,
+			Map<String, JobStage> jsidjsmap
+	) throws JobException {
+		try {
+			OutputStream os = pipelineconfig.getOutput();
+			pipelineconfig.setOutput(null);
+			new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
+			Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
+					DataSamudayaConstants.YARNOUTJAR);
+			var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
+					+ pipelineconfig.getJobid();
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(sptsl, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE, pipelineconfig);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(graph, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE, pipelineconfig);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(tasksptsthread, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE, pipelineconfig);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jsidjsmap, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE, pipelineconfig);
+			pipelineconfig.setOutput(os);
+		} catch (Exception ex) {
+			throw new JobException(JobException.JOBCREATIONEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
+	
+	
+	/**
+	 * This function creates the MR Job in HDFS
+	 * @param jobconf
+	 * @param yarninputfolder
+	 * @param mapclzchunkfile
+	 * @param combiner
+	 * @param reducer
+	 * @param folderfileblocksmap
+	 * @throws JobException
+	 */
+	public static void createJobInHDFSMR(JobConfiguration jobconf,
+			String yarninputfolder,
+			Map<String, Set<Object>> mapclzchunkfile,
+			Set<Object> combiner,
+			Set<?> reducer,
+			Map<?,?> folderfileblocksmap
+			
+	) throws JobException {
+		try {
+			OutputStream os = jobconf.getOutput();
+			jobconf.setOutput(null);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(mapclzchunkfile, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_MAPPER, jobconf);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(combiner, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_COMBINER, jobconf);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(reducer, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_REDUCER, jobconf);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(folderfileblocksmap, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_FILEBLOCKS, jobconf);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jobconf, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_CONFIGURATION, jobconf);
+			jobconf.setOutput(os);
+		} catch (Exception ex) {
+			throw new JobException(JobException.JOBCREATIONEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
+	/**
+	 * Sends Job Information to DistributedQueue
+	 * @param teid
+	 * @param jobid
+	 * @throws Exception 
+	 */
+	public static void sendJobToYARNDistributedQueue(String teid, String jobid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		var taskInfo  = new TaskInfoYARN(jobid, false, false); 
+		((SimpleDistributedQueue) GlobalYARNResources.getYarnResourcesByTeId(teid).get("inputqueue")).offer(objectMapper.writeValueAsBytes(taskInfo));
+	}
+	
+	/**
+	 * Send Job Information to Distributed queue
+	 * @param zo
+	 * @param jobid
+	 * @throws Exception
+	 */
+	public static void sendJobToYARNDistributedQueue(ZookeeperOperations zo, String jobid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		var taskInfo  = new TaskInfoYARN(jobid, false, false); 
+		SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_INPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+		inputqueue.offer(objectMapper.writeValueAsBytes(taskInfo));
+	}
+	
+	/**
+	 * Sends Job Information to DistributedQueue
+	 * @param teid
+	 * @param jobid
+	 * @throws Exception 
+	 */
+	public static void shutDownYARNContainer(String teid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		var taskInfo  = new TaskInfoYARN(null, true, false); 
+		((SimpleDistributedQueue) GlobalYARNResources.getYarnResourcesByTeId(teid).get("inputqueue")).offer(objectMapper.writeValueAsBytes(taskInfo));
+	}
+	
+	/**
+	 * Shutdown YARN resources like container
+	 * @param zo
+	 * @param jobid
+	 * @throws Exception
+	 */
+	public static void shutDownYARNContainer(ZookeeperOperations zo, String jobid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		var taskInfo  = new TaskInfoYARN(null, true, false); 
+		SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_INPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+		inputqueue.offer(objectMapper.writeValueAsBytes(taskInfo));
+	}
+	
+	/**
+	 * get Job Status
+	 * @param teid
+	 * @param jobid
+	 * @return task info yarn
+	 * @throws Exception
+	 */
+	public static TaskInfoYARN getJobOutputStatusYARNDistributedQueueBlocking(String teid) throws Exception {		
+		SimpleDistributedQueue outputqueue = (SimpleDistributedQueue) GlobalYARNResources.getYarnResourcesByTeId(teid).get("outputqueue");
+		while(outputqueue.peek() == null) {
+			Thread.sleep(1000);
+		}
+		var objectMapper = new ObjectMapper();
+		return objectMapper.readValue(outputqueue.poll(), TaskInfoYARN.class);
+	}
+	
+	/**
+	 * Get Submitted YARN Job Status
+	 * @param zo
+	 * @param jobid
+	 * @return taskinfoyarn
+	 * @throws Exception
+	 */
+	public static TaskInfoYARN getJobOutputStatusYARNDistributedQueueBlocking(ZookeeperOperations zo, String jobid) throws Exception {
+		var objectMapper = new ObjectMapper();
+		SimpleDistributedQueue outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_OUTPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+		while(outputqueue.peek() == null) {
+			Thread.sleep(1000);
+		}
+		return objectMapper.readValue(outputqueue.poll(), TaskInfoYARN.class);
+	}
+	
+	/**
+	 * This method configures pipeline as per schedulers;
+	 * @param scheduler
+	 * @param pipelineconfig
+	 */
+	public static void setConfigForScheduler(String scheduler, PipelineConfig pipelineconfig) {
+		if (scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
+			pipelineconfig.setLocal(DataSamudayaConstants.FALSE);
+			pipelineconfig.setYarn(DataSamudayaConstants.FALSE);
+			pipelineconfig.setMesos(DataSamudayaConstants.FALSE);
+			pipelineconfig.setJgroups(DataSamudayaConstants.TRUE);
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.YARN)) {
+			pipelineconfig.setLocal(DataSamudayaConstants.FALSE);
+			pipelineconfig.setYarn(DataSamudayaConstants.TRUE);
+			pipelineconfig.setMesos(DataSamudayaConstants.FALSE);
+			pipelineconfig.setJgroups(DataSamudayaConstants.FALSE);
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
+			pipelineconfig.setLocal(DataSamudayaConstants.FALSE);
+			pipelineconfig.setYarn(DataSamudayaConstants.FALSE);
+			pipelineconfig.setMesos(DataSamudayaConstants.FALSE);
+			pipelineconfig.setJgroups(DataSamudayaConstants.FALSE);
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE)) {
+			pipelineconfig.setLocal(DataSamudayaConstants.FALSE);
+			pipelineconfig.setYarn(DataSamudayaConstants.FALSE);
+			pipelineconfig.setMesos(DataSamudayaConstants.FALSE);
+			pipelineconfig.setJgroups(DataSamudayaConstants.FALSE);
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
+		}
+	}
+	
 	/**
 	 * This function returns true if user exists with the allocation share
 	 * percentage. returns false if no configuration for the given user exists.
 	 * 
 	 * @param user
 	 * @return true or false
-	 * @throws Exception
 	 */
-	public static Boolean isUserExists(String user) throws Exception {
+	public static Boolean isUserExists(String user) {
 		var usersshare = DataSamudayaUsers.get();
 		var usershare = usersshare.get(user);
-		if (isNull(usershare)) {
-			return false;
-		}
-		return true;
+		return !isNull(usershare);
 	}
 
 	/**
@@ -1122,25 +1535,33 @@ public class Utils {
 	 * @param jobid
 	 * @throws Exception
 	 */
-	public static void destroyContainers(String user, String jobid) throws Exception {
+	public static synchronized void destroyContainers(String user, String jobid) throws ContainerException {
 		var dc = new DestroyContainers();
 		dc.setJobid(jobid);
 		var usersshare = DataSamudayaUsers.get();
 		if (isNull(usersshare)) {
-			throw new Exception(String.format(PipelineConstants.USERNOTCONFIGURED, user));
+			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
-		var usershare = usersshare.get(user);
-		var lcs = GlobalContainerLaunchers.get(user);
+		var lcs = GlobalContainerLaunchers.get(user, jobid);
 		lcs.stream().forEach(lc -> {
 			try {
+				ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources.getAllocatedResources().get(lc.getNodehostport());
+				Resources resallocated = nodesresallocated.get(user);
 				Utils.getResultObjectByInput(lc.getNodehostport(), dc, DataSamudayaConstants.EMPTY);
-				usershare.getIsallocated().put(lc.getNodehostport(), false);
+				lc.getCla().getCr().stream().forEach(cr -> {
+					resallocated.setFreememory(resallocated.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
+					resallocated.setNumberofprocessors(resallocated.getNumberofprocessors() + cr.getCpu());
+				});
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		});
-		GlobalContainerLaunchers.remove(user);
+		GlobalContainerLaunchers.remove(user, jobid);		
 		GlobalJobFolderBlockLocations.remove(jobid);
+		Map<String,List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);
+		if(CollectionUtils.isEmpty(jobcontainermap)) {
+			GlobalContainerLaunchers.remove(user);
+		}
 	}
 
 	static List<Object> objects = new ArrayList<>();
@@ -1156,12 +1577,16 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static Registry getRPCRegistry(int port, final StreamDataCruncher streamdatacruncher, String id)
-			throws Exception {
-		objects.add(streamdatacruncher);
-		Registry registry = LocateRegistry.createRegistry(port);
-		StreamDataCruncher stub = (StreamDataCruncher) UnicastRemoteObject.exportObject(streamdatacruncher, port);
-		registry.rebind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + id, stub);
-		return registry;
+			throws RpcRegistryException {
+		try {
+			objects.add(streamdatacruncher);
+			Registry registry = LocateRegistry.createRegistry(port);
+			StreamDataCruncher stub = (StreamDataCruncher) UnicastRemoteObject.exportObject(streamdatacruncher, port);
+			registry.rebind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + id, stub);
+			return registry;
+		} catch(Exception ex) {
+			throw new RpcRegistryException(RpcRegistryException.REGISTRYCREATE_MESSAGE, ex);
+		}
 	}
 
 	/**
@@ -1179,77 +1604,13 @@ public class Utils {
 	}
 
 	/**
-	 * This function returns the ssl server socket for the given port.
-	 * 
-	 * @param port
-	 * @return ssl server socket object
-	 * @throws Exception
-	 */
-	public static ServerSocket createSSLServerSocket(int port) throws Exception {
-		KeyStore ks = KeyStore.getInstance("JKS");
-		String password = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_KEYSTORE_PASSWORD);
-		ks.load(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS)), password.toCharArray());
-
-		KeyManagerFactory kmf = KeyManagerFactory
-				.getInstance(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS_ALGO));
-		kmf.init(ks, password.toCharArray());
-
-		TrustManagerFactory tmf = TrustManagerFactory
-				.getInstance(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS_ALGO));
-		tmf.init(ks);
-
-		SSLContext sc = SSLContext.getInstance("TLS");
-		TrustManager[] trustManagers = tmf.getTrustManagers();
-		sc.init(kmf.getKeyManagers(), trustManagers, null);
-		SSLServerSocketFactory ssf = sc.getServerSocketFactory();
-		SSLServerSocket sslserversocket = (SSLServerSocket) ssf.createServerSocket();
-		sslserversocket.bind(
-				new InetSocketAddress(InetAddress.getByAddress(new byte[] { 0x00, 0x00, 0x00, 0x00 }), port), 256);
-		return sslserversocket;
-	}
-
-	/**
-	 * This function returns the ssl socket for the given port.
-	 * 
-	 * @param port
-	 * @return ssl socket object
-	 * @throws Exception
-	 */
-	public static Socket createSSLSocket(String host, int port) throws Exception {
-		log.info("Constructing socket factory for the (host,port): (" + host + "," + port + ")");
-		KeyStore ks = KeyStore.getInstance("JKS");
-		String password = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_KEYSTORE_PASSWORD);
-		ks.load(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS)), password.toCharArray());
-
-		KeyManagerFactory kmf = KeyManagerFactory
-				.getInstance(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS_ALGO));
-		kmf.init(ks, password.toCharArray());
-
-		TrustManagerFactory tmf = TrustManagerFactory
-				.getInstance(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYA_JKS_ALGO));
-		tmf.init(ks);
-
-		SSLContext sc = SSLContext.getInstance("TLS");
-		TrustManager[] trustManagers = tmf.getTrustManagers();
-		sc.init(kmf.getKeyManagers(), trustManagers, null);
-
-		SSLSocketFactory sf = sc.getSocketFactory();
-		log.info("Constructing SSLSocket for the (host,port): (" + host + "," + port + ")");
-		SSLSocket sslsocket = (SSLSocket) sf.createSocket(host, port);
-		log.info("Kickoff SSLHandshake for the (host,port): (" + host + "," + port + ")");
-		sslsocket.startHandshake();
-		log.info("SSLHandshake concluded for the (host,port): (" + host + "," + port + ")");
-		return sslsocket;
-	}
-
-	/**
 	 * Write integer value to scheduler
 	 * 
 	 * @param os
 	 * @param value
 	 * @throws Exception
 	 */
-	public static void writeInt(OutputStream os, Integer value) throws Exception {
+	public static void writeInt(OutputStream os, Integer value) throws OutputStreamException {
 		try (var baos = new ByteArrayOutputStream(); var output = new Output(baos);) {
 			Utils.getKryo().writeClassAndObject(output, value);
 			output.flush();
@@ -1258,6 +1619,8 @@ public class Utils {
 			dos.writeInt(values.length);
 			dos.write(values);
 			dos.flush();
+		} catch(Exception ex) {
+			throw new OutputStreamException(OutputStreamException.ERRORCAUGHT_MESSAGE, ex);
 		}
 	}
 
@@ -1269,10 +1632,10 @@ public class Utils {
 	public static void printNodesAndContainers(List<LaunchContainers> lcs, PrintWriter out) {
 		for(LaunchContainers lc:lcs) {
 			out.println();
-			out.println(lc.getNodehostport()+":");
+			out.println(lc.getNodehostport() + ":");
 			for(ContainerResources crs:lc.getCla().getCr()) {
 				out.print(DataSamudayaConstants.TAB);
-				out.println("cpu: "+crs.getCpu()+" memory: "+(crs.getMaxmemory()/DataSamudayaConstants.MB+crs.getDirectheap()/DataSamudayaConstants.MB)+" mb port:"+crs.getPort());
+				out.println("cpu: " + crs.getCpu() + " memory: " + (crs.getMaxmemory() / DataSamudayaConstants.MB + crs.getDirectheap() / DataSamudayaConstants.MB) + " mb port:" + crs.getPort());
 			}
 		}
 	}
@@ -1284,7 +1647,7 @@ public class Utils {
 	 * @param outbyt
 	 * @throws Exception
 	 */
-	public static void writeDataStream(OutputStream os, byte[] outbyt) throws Exception {
+	public static void writeDataStream(OutputStream os, byte[] outbyt) throws OutputStreamException {
 		try (var baos = new ByteArrayOutputStream(); var output = new Output(baos);) {
 			Utils.getKryo().writeClassAndObject(output, outbyt);
 			output.flush();
@@ -1293,6 +1656,8 @@ public class Utils {
 			dos.writeInt(values.length);
 			dos.write(values);
 			dos.flush();
+		} catch(Exception ex) {
+			throw new OutputStreamException(OutputStreamException.ERRORCAUGHT_MESSAGE, ex);
 		}
 	}
 
@@ -1314,7 +1679,7 @@ public class Utils {
 			}
 			return;
 		} else if (data.get(0) instanceof DataCruncherContext dcc) {
-			Map<String, Object> mapheadervalue = (Map<String, Object>) dcc.get("Reduce").iterator().next();
+			Map<String, Object> mapheadervalue = (Map<String, Object>) dcc.get("Reducer").iterator().next();
 			String[] headers = mapheadervalue.keySet().toArray(new String[0]);
 			// Initialize a two-dimensional array to hold the data
 
@@ -1323,8 +1688,8 @@ public class Utils {
 				out.printf("%-20s", header); // adjust width as needed
 			}
 			out.println();
-			Iterator<Map<String, Object>> ite = dcc.get("Reduce").iterator();
-			for (; ite.hasNext();) {
+			Iterator<Map<String, Object>> ite = dcc.get("Reducer").iterator();
+			for (;ite.hasNext();) {
 				Map<String, Object> row = (Map<String, Object>) ite.next();
 				for (String header : headers) {
 					out.printf("%-20s", row.get(header));
@@ -1335,14 +1700,14 @@ public class Utils {
 		} else if (data.get(0) instanceof Double value) {
 			out.println(value);
 			return;
-		} else if (data.get(0) instanceof Integer value) {
-			out.println(value);
+		} else if (data.get(0) instanceof Integer intval) {
+			out.println(intval);
 			return;
-		} else if (data.get(0) instanceof Float value) {
-			out.println(value);
+		} else if (data.get(0) instanceof Float floatval) {
+			out.println(floatval);
 			return;
-		} else if (data.get(0) instanceof Long value) {
-			out.println(value);
+		} else if (data.get(0) instanceof Long lvalue) {
+			out.println(lvalue);
 			return;
 		}
 		
@@ -1353,37 +1718,81 @@ public class Utils {
 		}
 	}
 	
-	private static void printTablePig(List<Map<String, Object>> tableData, PrintWriter out) {
+	/**
+	 * Print in pig format for the pig output
+	 * @param tableData
+	 * @param out
+	 */
+	private static void printTablePig(List<?> tableData, PrintWriter out) {
 		if (tableData.isEmpty()) {
             out.println("Table is empty.");
             out.flush();
             return;
         }
-		Map<String, Object> mapforkeys = tableData.get(0);
-        Set<String> keys = mapforkeys.keySet();
-        out.print("(");
-        out.flush();
-        for(String key: keys) {
-        	out.print(key);
-        	out.print(",");
-        	out.flush();
-        }
-        out.print(")");
-        out.println();
-        out.flush();
-		for (Map<String, Object> row : tableData) {
-			out.print("(");
+		
+		
+		Object valuemap = tableData.get(0);
+		if(valuemap instanceof Map) {
+			Map<String,Object> mapforkeys = (Map<String,Object>) valuemap;
+	        Set<String> keys = mapforkeys.keySet();
+	        out.print("(");
 	        out.flush();
-			for(String key: keys) {
-				out.print(row.get(key));
-				out.print(",");
-                out.flush();
-            }
-			out.print(")");
-	        out.flush();
+	        for(String key: keys) {
+	        	out.print(key);
+	        	out.print(",");
+	        	out.flush();
+	        }
+	        out.print(")");
 	        out.println();
-            out.flush();
-        }
+	        out.flush();
+	        List<Map<String,Object>> tableDataToPrint = (List<Map<String, Object>>) tableData;
+			for (Map<String, Object> row : tableDataToPrint) {
+				out.print("(");
+		        out.flush();
+				for(String key: keys) {
+					out.print(row.get(key));
+					out.print(",");
+	                out.flush();
+	            }
+				out.print(")");
+		        out.flush();
+		        out.println();
+	            out.flush();
+	        }
+		} else if(valuemap instanceof Tuple2 tuple2){
+			Tuple2<Map<String, Object>, List<Map<String, Object>>> tup2 = tuple2;
+			Set<String> keys = tup2.v1.keySet();
+	        out.print("(");
+	        out.flush();
+	        for(String key: keys) {
+	        	out.print(key);
+	        	out.print(",");
+	        	out.flush();
+	        }
+	        out.print(")");
+	        out.println();
+	        out.flush();
+			List<Tuple2<Map<String, Object>, List<Map<String, Object>>>> tableDataToPrint = 
+					(List<Tuple2<Map<String, Object>, List<Map<String, Object>>>>) tableData;
+			for (Tuple2<Map<String, Object>, List<Map<String, Object>>> row : tableDataToPrint) {
+				out.print("(");
+		        out.flush();
+				for(String key: keys) {
+					out.print(row.v1.get(key));
+					out.print(",");
+	                out.flush();
+	            }
+				out.print(")");
+				out.print("(");
+		        out.flush();
+				out.print(row.v2);
+	            out.flush();	           
+				out.print(")");
+		        out.flush();
+		        out.println();
+	            out.flush();
+	        }
+		}
 	}
 
 	/**
@@ -1417,7 +1826,7 @@ public class Utils {
 
         // Print table header
         for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
-            out.printf("%-" + entry.getValue() + "s | ", entry.getKey());
+            out.printf(String.format("%%-%ds | ", entry.getValue()), entry.getKey());
             out.flush();
         }
         out.println();
@@ -1428,7 +1837,7 @@ public class Utils {
             for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
                 String key = entry.getKey();
                 Object value = row.get(key);
-                out.printf("%-" + entry.getValue() + "s | ", value);
+                out.printf(String.format("%%-%ds | ", entry.getValue()), value);
                 out.flush();
             }
             out.println();
@@ -1451,7 +1860,7 @@ public class Utils {
 				}
 				return port;
 			} catch (Exception e) {
-				continue;
+				log.error("port in use or exceeded its limit, so getting port again...", e);
 			}
 		}
 	}
@@ -1495,10 +1904,6 @@ public class Utils {
 								allocresources.setFreememory(allocresources.getFreememory() + maxmemory + directheap);
 								allocresources
 										.setNumberofprocessors(allocresources.getNumberofprocessors() + cr.getCpu());
-							} else {
-								var usersshare = DataSamudayaUsers.get();
-								var user = usersshare.get(job.getPipelineconfig().getUser());
-								user.getIsallocated().remove(node);
 							}
 						} else {
 							deallocateall = false;
@@ -1508,30 +1913,31 @@ public class Utils {
 				if (deallocateall) {
 					var dc = new DestroyContainers();
 					dc.setJobid(job.getId());
-					log.debug("Destroying Containers with id:" + job.getId() + " for the hosts: " + nodes);
+					log.debug("Destroying Containers with id: {} for the hosts: {}", job.getId(), nodes);
 					// Destroy all the containers from all the nodes
 					for (var node : nodes) {
 						Utils.getResultObjectByInput(node, dc, DataSamudayaConstants.EMPTY);
 					}
 				}
 			}
+		} catch(InterruptedException ex) {
+			log.warn(DataSamudayaConstants.INTERRUPTED, ex);
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
 		} catch (Exception ex) {
-			log.error(PipelineConstants.DESTROYCONTAINERERROR, ex);
-			throw new Exception(PipelineConstants.DESTROYCONTAINERERROR, ex);
+			throw new TaskExecutorException(TaskExecutorException.TASKEXECUTORDESTROYEXCEPTION_MESSAGE, ex);
 		} finally {
 			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		}
 	}
 
-	static SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-	
 	/**
 	 * Formats date from util date object 
 	 * @param date
 	 * @return formatted date
 	 */
 	public static String formatDate(Date date) {
-		return format.format(date);
+		return new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(date);
 	}
 	
 	/**
@@ -1540,7 +1946,166 @@ public class Utils {
 	 * @return path of intermediate result file system
 	 * @throws Exception
 	 */
-	public static String getIntermediateResultFS(Task task) throws Exception {
+	public static String getIntermediateResultFS(Task task) {
 		return task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid;
 	}
+	
+	
+	/**
+	 * Writes the map object to csv with given output stream 
+	 * @param data
+	 * @param ostream
+	 * @throws IOException
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
+	 */
+	public static void convertToCsv(List<?> data, OutputStream ostream) throws IOException, IllegalArgumentException, IllegalAccessException {
+		log.info("Writing data to csv Start");
+		if (data.isEmpty()) {
+            return;
+        }		
+		Object firstdataobject = data.get(0);
+		
+        // Prepare CSV data
+        String[] header = null;
+        Field[] fields = firstdataobject.getClass().getDeclaredFields();
+        boolean ismap = false;
+        if(firstdataobject instanceof Map map) {
+        	ismap = true;
+	        List<String> headers = map.keySet().stream().filter(key->!((String)key).endsWith("-count")).toList();
+	        header = headers.toArray(new String[0]);
+        } else {
+        	 // Get the fields of the object using reflection
+        	 header = new String[fields.length];
+        	 for (int i = 0;i < fields.length;i++) {
+                 header[i] = fields[i].getName();
+             }
+        }
+        try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(ostream)
+        		, CSVFormat.DEFAULT.withHeader(header))) {
+        	if(ismap) {
+        		List<Object> rowData = new ArrayList<>();
+	            for (Map<String, Object> map : (List<Map>) data) {
+	                for(String headr:header) {
+	                	rowData.add(map.get(headr));
+	                }
+	                printer.printRecord(rowData);
+                    rowData.clear();
+	            }
+        	} else {
+        		List<Object> rowData = new ArrayList<>();
+        		for (Object obj : data) {                    
+
+                    for (int i = 0;i < fields.length;i++) {
+                        fields[i].setAccessible(true);
+                        Object value = fields[i].get(obj);
+                        rowData.add(value);
+                    }
+
+                    printer.printRecord(rowData);
+                    rowData.clear();
+                }
+        	}
+        }
+        log.info("Writing data to csv End");
+    }
+	
+	/**
+	 * The function converts object to csv
+	 * @param obj
+	 * @param printer
+	 * @param colsinorder
+	 * @throws Exception
+	 */
+	public static void convertMapToCsv(Object obj, CsvWriter writer) throws Exception {
+		if(obj instanceof Map map) {                	
+			map.keySet().parallelStream().filter(key->!((String)key).endsWith("-count")).map(header->map.get(header)).forEachOrdered(value->{
+				writer.addValue(value);
+			});
+			writer.writeValuesToRow();
+		} else {
+			Field[] fields = obj.getClass().getDeclaredFields();
+			for (int i = 0; i < fields.length; i++) {
+				fields[i].setAccessible(true);
+				Object value = fields[i].get(obj);
+				writer.addValue(value);
+			}
+			writer.writeValuesToRow();
+		}
+    }
+	
+	/**
+	 * This function returns number of bytes to process for the given blocks
+	 * @param block
+	 * @return numberofbytesprocessed
+	 */
+	public static long numBytesBlocks(Block[] block) {
+		long totalbytes = nonNull(block[0])?block[0].getBlockend()-block[0].getBlockstart():0l;
+		totalbytes += nonNull(block[1])?block[1].getBlockend()-block[1].getBlockstart():0l;
+		return totalbytes;
+	}
+	
+	/**
+	   * Color for primary and alternate
+	   * 
+	   * @param i
+	   * @return colorvalue
+	   */
+	public static String getColor(int i) {
+		if (i % 2 == 0) {
+			return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_PRIMARY,
+					DataSamudayaConstants.COLOR_PICKER_PRIMARY_DEFAULT);
+		} else {
+			return DataSamudayaProperties.get().getProperty(DataSamudayaConstants.COLOR_PICKER_ALTERNATE,
+					DataSamudayaConstants.COLOR_PICKER_ALTERNATE_DEFAULT);
+		}
+	}
+	
+	/**
+	 * Get Checksum of hdfs file
+	 * @param paths
+	 * @param hdfs
+	 * @return checksum
+	 */
+	public static Map<Path,String> getCheckSum(List<Path> paths, FileSystem hdfs){
+		Map<Path, String> checksums = new ConcurrentHashMap<>();
+		paths.parallelStream().forEach(path->{
+			try {
+				checksums.put(path, new String(hdfs.getFileChecksum(path).toString().split(":")[1]));
+			} catch (Exception e) {
+				log.error(DataSamudayaConstants.EMPTY, e);
+			}
+		});
+		return checksums;
+	}
+	
+	/**
+	 * Obtains index of required columns from original columns
+	 * @param requiredcols
+	 * @param allcolumns
+	 * @return index of required columns
+	 */
+	public static Integer[] indexOfRequiredColumns(List<String> requiredcols, List<String> allcolumns){
+		List<Integer> indexcolumns = new ArrayList<>();
+		for(String col:requiredcols) {
+			indexcolumns.add(allcolumns.indexOf(col));
+		}
+		return indexcolumns.toArray(new Integer[0]);
+	}
+	
+	/**
+	 * Estimate the initial capacity of HashMap for given number of keys;
+	 * @param numberOfKeys
+	 * @return initial capacity of hash map.
+	 */
+	public static int calculateInitialCapacity(int numberOfKeys) {
+        // Calculate the initial capacity based on the estimated number of keys
+        // You can use your own logic here; a common approach is to use a power of two
+        int capacity = 1;
+        while (capacity < numberOfKeys) {
+            capacity <<= 1; // Left shift to double the value
+        }
+        return capacity;
+    }
+	
 }

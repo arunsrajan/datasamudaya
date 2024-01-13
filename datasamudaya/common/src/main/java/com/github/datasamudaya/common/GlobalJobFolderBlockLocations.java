@@ -18,11 +18,17 @@ package com.github.datasamudaya.common;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
+
+import com.github.datasamudaya.common.utils.Utils;
 
 /**
  * Holds BlocksLocation object globally.
@@ -31,29 +37,21 @@ import org.apache.log4j.Logger;
  */
 public class GlobalJobFolderBlockLocations {
 
-	private static Logger log = Logger.getLogger(GlobalJobFolderBlockLocations.class);
+	private static final Logger log = Logger.getLogger(GlobalJobFolderBlockLocations.class);
 
 	private GlobalJobFolderBlockLocations() {
 	}
 
-	private static Boolean isResetBlocksLocation; 
-	
-	public static Boolean getIsResetBlocksLocation() {
-		return isResetBlocksLocation;
-	}
-
-	public static void setIsResetBlocksLocation(Boolean isResetBlocksLocation) {
-		GlobalJobFolderBlockLocations.isResetBlocksLocation = isResetBlocksLocation;
-	}
-
-	private static Map<String, Map<String, List<BlocksLocation>>> lcsmap = new ConcurrentHashMap<>();
+	private static final Map<String, Map<String, List<BlocksLocation>>> lcsmap = new ConcurrentHashMap<>();
+	private static final Map<String, Map<String, List<Path>>> paths = new ConcurrentHashMap<>();
+	private static final Map<String, Map<Path, String>> pathwithmd5has = new ConcurrentHashMap<>();
 
 	/**
 	 * The put method for holding userid as key and list of BlocksLocation object as values.
 	 * @param hdfsfolder
 	 * @param lbls
 	 */
-	public static void put(String jobid,String hdfsfolder, List<BlocksLocation> lbls) {
+	public static void put(String jobid, String hdfsfolder, List<BlocksLocation> lbls) {
 		Map<String, List<BlocksLocation>> folderblockslocationmap = lcsmap.get(jobid);
 		if (isNull(folderblockslocationmap)) {
 			folderblockslocationmap = new ConcurrentHashMap<>();
@@ -80,5 +78,75 @@ public class GlobalJobFolderBlockLocations {
 	 */
 	public static void remove(String jobid) {
 		lcsmap.remove(jobid);
+		paths.remove(jobid);
+		pathwithmd5has.remove(jobid);
 	}
+	
+	/**
+	 * The function puts path with the given jobid folder and paths
+	 * @param jobid
+	 * @param hdfsfolder
+	 * @param latestpaths
+	 */
+	public static void putPaths(String jobid, String hdfsfolder, List<Path> latestpaths, FileSystem hdfs) {
+		Map<String, List<Path>> folderpathsmap = paths.get(jobid);
+		if (isNull(folderpathsmap)) {
+			folderpathsmap = new ConcurrentHashMap<>();
+			paths.put(jobid, folderpathsmap);
+		}
+		else {
+			log.info("Chamber launched already: " + hdfsfolder + " with paths: " + latestpaths);
+		}
+		folderpathsmap.put(hdfsfolder, latestpaths);
+		Map<Path,String> newchecksums = Utils.getCheckSum(latestpaths, hdfs);
+		Map<Path, String> checksumsold = pathwithmd5has.get(jobid);
+		if(nonNull(checksumsold)) {
+			checksumsold.putAll(newchecksums);
+		} else {
+			pathwithmd5has.put(jobid, newchecksums);
+		}
+	}
+	
+	/**
+	 * This function returns current paths for the given jobid and folder
+	 * @param jobid
+	 * @param hdfsfolder
+	 * @return returns the paths
+	 */
+	public static List<Path> getPaths(String jobid, String hdfsfolder) {
+		return nonNull(paths.get(jobid))?paths.get(jobid).get(hdfsfolder):null;
+	}
+	
+	/**
+	 * This function returns the set of paths to process again if there is change in file content
+	 * @param jobid
+	 * @param hdfsfolder
+	 * @param currentpaths
+	 * @param hdfs
+	 * @return path to process
+	 */
+	public static Set<Path> compareCurrentPathsNewPathsAndStore(String jobid, String hdfsfolder, List<Path> currentpaths, FileSystem hdfs){
+		Map<String, List<Path>> folderpathsmap = paths.get(jobid);
+		Set<Path> newpathtoprocess = new LinkedHashSet<>();
+		if(nonNull(folderpathsmap)) {			
+			Map<Path,String> newchecksums = Utils.getCheckSum(currentpaths, hdfs);
+			Map<Path,String> oldchecksums = pathwithmd5has.get(jobid);
+			if(nonNull(oldchecksums)) {
+				for(Path path: currentpaths) {
+					if(nonNull(oldchecksums.get(path))) {
+						if(!newchecksums.get(path).equals(oldchecksums.get(path))) {
+							newpathtoprocess.add(path);
+						}
+					} else {
+						newpathtoprocess.add(path);
+					}
+				}
+			}
+			pathwithmd5has.put(jobid, newchecksums);
+			folderpathsmap.put(hdfsfolder, currentpaths);
+		}
+		return newpathtoprocess;
+	}
+	
+	
 }

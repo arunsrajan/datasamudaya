@@ -10,6 +10,7 @@ package com.github.datasamudaya.common;
 
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -20,7 +21,7 @@ public class ContainerLauncher {
 
   private ContainerLauncher() {}
 
-  static org.slf4j.Logger log = LoggerFactory.getLogger(ContainerLauncher.class);
+  static Logger log = LoggerFactory.getLogger(ContainerLauncher.class);
 /**
  * Launch the task executor with given parameters
  * @param port
@@ -100,7 +101,7 @@ public class ContainerLauncher {
       argumentsForSpawn.add("-Xms" + cr.getMinmemory() + "m");
       argumentsForSpawn.add("-Xmx" + cr.getMaxmemory() + "m");
       argumentsForSpawn.add("-XX:ActiveProcessorCount=" + cr.getCpu());
-      argumentsForSpawn.add("-XX:InitiatingHeapOccupancyPercent=80");
+      argumentsForSpawn.add("-XX:InitiatingHeapOccupancyPercent=40");
       argumentsForSpawn.add("-Xrunjdwp:server=y,transport=dt_socket,address="
           + (Integer.parseInt(port) + 100) + ",suspend=n");
       argumentsForSpawn.add(cr.getGctype());

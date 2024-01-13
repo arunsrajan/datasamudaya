@@ -27,7 +27,12 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import com.github.datasamudaya.stream.IgnitePipeline;
+import com.github.datasamudaya.common.functions.FlatMapFunction;
+import com.github.datasamudaya.common.functions.MapFunction;
+import com.github.datasamudaya.common.functions.MapToPairFunction;
+import com.github.datasamudaya.common.functions.PredicateSerializable;
+import com.github.datasamudaya.common.functions.SortedComparator;
+import com.github.datasamudaya.stream.StreamPipeline;
 
 @SuppressWarnings({"unchecked", "serial", "rawtypes"})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -38,11 +43,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPeekSampleForEach() throws Throwable {
 		log.info("testMapPeekSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).peek(val -> System.out.println(val)).sample(46361).forEach(lis -> {
@@ -57,15 +62,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPeekSortedCollect() throws Throwable {
 		log.info("testMapPeekSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).peek(val -> System.out.println(val)).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).peek(val -> System.out.println(val)).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).collect(toexecute, null);
@@ -82,15 +87,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPeekSortedCount() throws Throwable {
 		log.info("testMapPeekSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).peek(val -> System.out.println(val)).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).peek(val -> System.out.println(val)).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).count(null);
@@ -109,15 +114,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPeekSortedForEach() throws Throwable {
 		log.info("testMapPeekSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).peek(val -> System.out.println(val)).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).peek(val -> System.out.println(val)).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).forEach(lis -> {
@@ -132,15 +137,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleFilterCollect() throws Throwable {
 		log.info("testMapSampleFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+				}).sample(46361).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).collect(toexecute, null);
@@ -157,15 +162,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleFilterCount() throws Throwable {
 		log.info("testMapSampleFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+				}).sample(46361).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).count(null);
@@ -184,15 +189,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleFilterForEach() throws Throwable {
 		log.info("testMapSampleFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sample(46361).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+		}).sample(46361).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).forEach(lis -> {
@@ -207,16 +212,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleFlatMapCollect() throws Throwable {
 		log.info("testMapSampleFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361)
-				.flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-					public Stream<java.lang.String> apply(java.lang.String[] value) {
+				.flatMap(new FlatMapFunction<String[], String>() {
+					public Stream<String> apply(String[] value) {
 						return Arrays.asList(value[8] + "-" + value[14]).stream();
 					}
 				}).collect(toexecute, null);
@@ -233,16 +238,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleFlatMapCount() throws Throwable {
 		log.info("testMapSampleFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361)
-				.flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-					public Stream<java.lang.String> apply(java.lang.String[] value) {
+				.flatMap(new FlatMapFunction<String[], String>() {
+					public Stream<String> apply(String[] value) {
 						return Arrays.asList(value[8] + "-" + value[14]).stream();
 					}
 				}).count(null);
@@ -261,15 +266,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleFlatMapForEach() throws Throwable {
 		log.info("testMapSampleFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sample(46361).flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-			public Stream<java.lang.String> apply(java.lang.String[] value) {
+		}).sample(46361).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
 				return Arrays.asList(value[8] + "-" + value[14]).stream();
 			}
 		}).forEach(lis -> {
@@ -284,15 +289,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapCollect() throws Throwable {
 		log.info("testMapSampleMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+				}).sample(46361).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).collect(toexecute, null);
@@ -309,15 +314,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapCount() throws Throwable {
 		log.info("testMapSampleMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+				}).sample(46361).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).count(null);
@@ -336,15 +341,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapForEach() throws Throwable {
 		log.info("testMapSampleMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sample(46361).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+		}).sample(46361).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).forEach(lis -> {
@@ -359,16 +364,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapPairCollect() throws Throwable {
 		log.info("testMapSampleMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -386,16 +391,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapPairCount() throws Throwable {
 		log.info("testMapSampleMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -415,16 +420,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapPairForEach() throws Throwable {
 		log.info("testMapSampleMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).forEach(lis -> {
@@ -439,16 +444,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapSampleMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -467,16 +472,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapSampleMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -494,16 +499,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapSampleMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -521,16 +526,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapPairReduceByKeyCount() throws Throwable {
 		log.info("testMapSampleMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -550,16 +555,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapSampleMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).reduceByKey((a, b) -> a + b).forEach(lis -> {
@@ -574,11 +579,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSamplePeekCollect() throws Throwable {
 		log.info("testMapSamplePeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -595,11 +600,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSamplePeekCount() throws Throwable {
 		log.info("testMapSamplePeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).peek(val -> System.out.println(val)).count(null);
@@ -618,11 +623,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSamplePeekForEach() throws Throwable {
 		log.info("testMapSamplePeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -637,11 +642,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleSampleCollect() throws Throwable {
 		log.info("testMapSampleSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).sample(46361).collect(toexecute, null);
@@ -658,11 +663,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleSampleCount() throws Throwable {
 		log.info("testMapSampleSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
 				}).sample(46361).sample(46361).count(null);
@@ -681,11 +686,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleSampleForEach() throws Throwable {
 		log.info("testMapSampleSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
 		}).sample(46361).sample(46361).forEach(lis -> {
@@ -700,15 +705,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleSortedCollect() throws Throwable {
 		log.info("testMapSampleSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sample(46361).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).collect(toexecute, null);
@@ -725,15 +730,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleSortedCount() throws Throwable {
 		log.info("testMapSampleSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sample(46361).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).count(null);
@@ -752,15 +757,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleSortedForEach() throws Throwable {
 		log.info("testMapSampleSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sample(46361).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sample(46361).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).forEach(lis -> {
@@ -775,19 +780,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedFilterCollect() throws Throwable {
 		log.info("testMapSortedFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+		}).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).collect(toexecute, null);
@@ -804,19 +809,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedFilterCount() throws Throwable {
 		log.info("testMapSortedFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+		}).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).count(null);
@@ -835,19 +840,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedFilterForEach() throws Throwable {
 		log.info("testMapSortedFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<java.lang.String[]>() {
-			public boolean test(java.lang.String[] value) {
+		}).filter(new PredicateSerializable<String[]>() {
+			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
 		}).forEach(lis -> {
@@ -862,19 +867,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedFlatMapCollect() throws Throwable {
 		log.info("testMapSortedFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-			public Stream<java.lang.String> apply(java.lang.String[] value) {
+		}).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
 				return Arrays.asList(value[8] + "-" + value[14]).stream();
 			}
 		}).collect(toexecute, null);
@@ -891,19 +896,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedFlatMapCount() throws Throwable {
 		log.info("testMapSortedFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-			public Stream<java.lang.String> apply(java.lang.String[] value) {
+		}).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
 				return Arrays.asList(value[8] + "-" + value[14]).stream();
 			}
 		}).count(null);
@@ -922,19 +927,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedFlatMapForEach() throws Throwable {
 		log.info("testMapSortedFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).flatMap(new com.github.datasamudaya.common.functions.FlatMapFunction<java.lang.String[], java.lang.String>() {
-			public Stream<java.lang.String> apply(java.lang.String[] value) {
+		}).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
 				return Arrays.asList(value[8] + "-" + value[14]).stream();
 			}
 		}).forEach(lis -> {
@@ -949,19 +954,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapCollect() throws Throwable {
 		log.info("testMapSortedMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+		}).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).collect(toexecute, null);
@@ -978,19 +983,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapCount() throws Throwable {
 		log.info("testMapSortedMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+		}).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).count(null);
@@ -1009,19 +1014,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapForEach() throws Throwable {
 		log.info("testMapSortedMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String[], java.lang.String>() {
-			public java.lang.String apply(java.lang.String[] value) {
+		}).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
 				return value[8] + "-" + value[14];
 			}
 		}).forEach(lis -> {
@@ -1036,20 +1041,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapPairCollect() throws Throwable {
 		log.info("testMapSortedMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1067,20 +1072,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapPairCount() throws Throwable {
 		log.info("testMapSortedMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1100,20 +1105,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapPairForEach() throws Throwable {
 		log.info("testMapSortedMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).forEach(lis -> {
@@ -1128,20 +1133,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapSortedMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1160,20 +1165,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapSortedMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -1191,20 +1196,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapSortedMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1222,20 +1227,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapPairReduceByKeyCount() throws Throwable {
 		log.info("testMapSortedMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				})
@@ -1255,20 +1260,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapSortedMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String[], org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String[] value) {
+				new MapToPairFunction<String[], Tuple2<String, String>>() {
+					public Tuple2 apply(String[] value) {
 						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
 					}
 				}).reduceByKey((a, b) -> a + b).forEach(lis -> {
@@ -1283,15 +1288,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedPeekCollect() throws Throwable {
 		log.info("testMapSortedPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -1308,15 +1313,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedPeekCount() throws Throwable {
 		log.info("testMapSortedPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).peek(val -> System.out.println(val)).count(null);
@@ -1335,15 +1340,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedPeekForEach() throws Throwable {
 		log.info("testMapSortedPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -1358,15 +1363,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedSampleCollect() throws Throwable {
 		log.info("testMapSortedSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).sample(46361).collect(toexecute, null);
@@ -1383,15 +1388,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedSampleCount() throws Throwable {
 		log.info("testMapSortedSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).sample(46361).count(null);
@@ -1410,15 +1415,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedSampleForEach() throws Throwable {
 		log.info("testMapSortedSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).sample(46361).forEach(lis -> {
@@ -1433,19 +1438,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedSortedCollect() throws Throwable {
 		log.info("testMapSortedSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).collect(toexecute, null);
@@ -1462,19 +1467,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedSortedCount() throws Throwable {
 		log.info("testMapSortedSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline
-				.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-					public java.lang.String[] apply(java.lang.String value) {
+				.map(new MapFunction<String, String[]>() {
+					public String[] apply(String value) {
 						return value.split(",");
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+				}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).count(null);
@@ -1493,19 +1498,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedSortedForEach() throws Throwable {
 		log.info("testMapSortedSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(new com.github.datasamudaya.common.functions.MapFunction<java.lang.String, java.lang.String[]>() {
-			public java.lang.String[] apply(java.lang.String value) {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
 				return value.split(",");
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<java.lang.String[]>() {
-			public int compare(java.lang.String[] value1, java.lang.String[] value2) {
+		}).sorted(new SortedComparator<String[]>() {
+			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
 		}).forEach(lis -> {
@@ -1520,19 +1525,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterFilterCollect() throws Throwable {
 		log.info("testMapPairFilterFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -1549,19 +1554,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterFilterCount() throws Throwable {
 		log.info("testMapPairFilterFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -1580,20 +1585,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterFilterForEach() throws Throwable {
 		log.info("testMapPairFilterFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -1608,15 +1613,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterFlatMapCollect() throws Throwable {
 		log.info("testMapPairFilterFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -1633,15 +1638,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterFlatMapCount() throws Throwable {
 		log.info("testMapPairFilterFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -1660,16 +1665,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterFlatMapForEach() throws Throwable {
 		log.info("testMapPairFilterFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -1684,15 +1689,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapCollect() throws Throwable {
 		log.info("testMapPairFilterMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -1709,15 +1714,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapCount() throws Throwable {
 		log.info("testMapPairFilterMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -1736,16 +1741,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapForEach() throws Throwable {
 		log.info("testMapPairFilterMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -1760,20 +1765,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapPairCollect() throws Throwable {
 		log.info("testMapPairFilterMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1791,20 +1796,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapPairCount() throws Throwable {
 		log.info("testMapPairFilterMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1824,21 +1829,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapPairForEach() throws Throwable {
 		log.info("testMapPairFilterMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1854,20 +1859,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairFilterMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1886,21 +1891,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairFilterMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1919,20 +1924,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairFilterMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1950,20 +1955,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapPairReduceByKeyCount() throws Throwable {
 		log.info("testMapPairFilterMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -1983,21 +1988,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairFilterMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2013,15 +2018,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterPeekCollect() throws Throwable {
 		log.info("testMapPairFilterPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -2038,15 +2043,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterPeekCount() throws Throwable {
 		log.info("testMapPairFilterPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).peek(val -> System.out.println(val)).count(null);
@@ -2065,16 +2070,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterPeekForEach() throws Throwable {
 		log.info("testMapPairFilterPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -2089,15 +2094,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterSampleCollect() throws Throwable {
 		log.info("testMapPairFilterSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).sample(46361).collect(toexecute, null);
@@ -2114,15 +2119,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterSampleCount() throws Throwable {
 		log.info("testMapPairFilterSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).sample(46361).count(null);
@@ -2141,16 +2146,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterSampleForEach() throws Throwable {
 		log.info("testMapPairFilterSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).sample(46361).forEach(lis -> {
@@ -2165,19 +2170,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterSortedCollect() throws Throwable {
 		log.info("testMapPairFilterSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -2194,19 +2199,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterSortedCount() throws Throwable {
 		log.info("testMapPairFilterSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).count(null);
@@ -2225,20 +2230,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterSortedForEach() throws Throwable {
 		log.info("testMapPairFilterSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lis -> {
@@ -2253,15 +2258,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapFilterCollect() throws Throwable {
 		log.info("testMapPairFlatMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -2278,15 +2283,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapFilterCount() throws Throwable {
 		log.info("testMapPairFlatMapFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -2305,16 +2310,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapFilterForEach() throws Throwable {
 		log.info("testMapPairFlatMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -2329,11 +2334,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapFlatMapCollect() throws Throwable {
 		log.info("testMapPairFlatMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).collect(toexecute, null);
@@ -2350,11 +2355,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapFlatMapCount() throws Throwable {
 		log.info("testMapPairFlatMapFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).count(null);
@@ -2373,12 +2378,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapFlatMapForEach() throws Throwable {
 		log.info("testMapPairFlatMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).forEach(lis -> {
@@ -2393,11 +2398,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapCollect() throws Throwable {
 		log.info("testMapPairFlatMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).collect(toexecute, null);
@@ -2414,11 +2419,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapCount() throws Throwable {
 		log.info("testMapPairFlatMapMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).count(null);
@@ -2437,12 +2442,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapForEach() throws Throwable {
 		log.info("testMapPairFlatMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).forEach(lis -> {
@@ -2457,16 +2462,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapPairCollect() throws Throwable {
 		log.info("testMapPairFlatMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2484,16 +2489,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapPairCount() throws Throwable {
 		log.info("testMapPairFlatMapMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2513,17 +2518,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapPairForEach() throws Throwable {
 		log.info("testMapPairFlatMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2539,16 +2544,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairFlatMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2567,17 +2572,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairFlatMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2596,16 +2601,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairFlatMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2623,16 +2628,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapPairReduceByKeyCount() throws Throwable {
 		log.info("testMapPairFlatMapMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2652,17 +2657,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairFlatMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -2678,11 +2683,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapPeekCollect() throws Throwable {
 		log.info("testMapPairFlatMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -2699,11 +2704,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapPeekCount() throws Throwable {
 		log.info("testMapPairFlatMapPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).count(null);
@@ -2722,12 +2727,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapPeekForEach() throws Throwable {
 		log.info("testMapPairFlatMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -2742,11 +2747,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapSampleCollect() throws Throwable {
 		log.info("testMapPairFlatMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).collect(toexecute, null);
@@ -2763,11 +2768,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapSampleCount() throws Throwable {
 		log.info("testMapPairFlatMapSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).count(null);
@@ -2786,12 +2791,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapSampleForEach() throws Throwable {
 		log.info("testMapPairFlatMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).forEach(lis -> {
@@ -2806,15 +2811,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapSortedCollect() throws Throwable {
 		log.info("testMapPairFlatMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -2831,15 +2836,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapSortedCount() throws Throwable {
 		log.info("testMapPairFlatMapSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).count(null);
@@ -2858,16 +2863,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapSortedForEach() throws Throwable {
 		log.info("testMapPairFlatMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lis -> {
@@ -2882,20 +2887,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -2913,21 +2918,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lsttuples -> {
@@ -2945,16 +2950,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -2972,17 +2977,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -3000,16 +3005,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -3027,17 +3032,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -3055,21 +3060,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3088,22 +3093,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3122,21 +3127,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3155,22 +3160,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3189,21 +3194,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3222,22 +3227,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3256,16 +3261,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterPeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -3283,17 +3288,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterPeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -3311,16 +3316,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterSampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).sample(46361).collect(toexecute, null);
@@ -3338,17 +3343,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterSampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).sample(46361).forEach(lsttuples -> {
@@ -3366,20 +3371,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterSortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -3397,21 +3402,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterSortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilterSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -3429,16 +3434,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -3456,17 +3461,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -3484,11 +3489,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().collect(toexecute, null);
@@ -3506,12 +3511,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -3529,11 +3534,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().collect(toexecute, null);
@@ -3551,12 +3556,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -3574,16 +3579,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3602,17 +3607,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3631,16 +3636,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3659,17 +3664,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3688,16 +3693,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3716,17 +3721,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -3745,11 +3750,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapPeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -3767,12 +3772,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapPeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -3790,11 +3795,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapSampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).collect(toexecute, null);
@@ -3812,12 +3817,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapSampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).forEach(lsttuples -> {
@@ -3835,15 +3840,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapSortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -3861,16 +3866,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapSortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -3888,16 +3893,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -3915,17 +3920,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey()
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -3943,11 +3948,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().collect(toexecute, null);
@@ -3965,12 +3970,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -3988,11 +3993,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().collect(toexecute, null);
@@ -4010,12 +4015,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
@@ -4033,16 +4038,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4061,17 +4066,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4090,16 +4095,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4118,17 +4123,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4147,16 +4152,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4175,17 +4180,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4204,11 +4209,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -4226,12 +4231,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -4249,11 +4254,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapSampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).collect(toexecute, null);
@@ -4271,12 +4276,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapSampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).forEach(lsttuples -> {
@@ -4294,15 +4299,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapSortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -4320,16 +4325,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapSortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -4347,21 +4352,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -4379,22 +4384,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -4412,16 +4417,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4440,17 +4445,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4469,21 +4474,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.groupByKey().filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -4501,22 +4506,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.groupByKey().filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lsttuples -> {
@@ -4534,16 +4539,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4562,17 +4567,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4591,16 +4596,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4619,17 +4624,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4648,22 +4653,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4682,23 +4687,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4718,22 +4723,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	public void testMapPairGroupByKeyMapPairGroupByKeyMapPairGroupByKeyCollect() throws Throwable {
 		log.info(
 				"testMapPairGroupByKeyMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4754,23 +4759,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	public void testMapPairGroupByKeyMapPairGroupByKeyMapPairGroupByKeyForEach() throws Throwable {
 		log.info(
 				"testMapPairGroupByKeyMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4791,22 +4796,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	public void testMapPairGroupByKeyMapPairGroupByKeyMapPairReduceByKeyCollect() throws Throwable {
 		log.info(
 				"testMapPairGroupByKeyMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4827,23 +4832,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	public void testMapPairGroupByKeyMapPairGroupByKeyMapPairReduceByKeyForEach() throws Throwable {
 		log.info(
 				"testMapPairGroupByKeyMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4863,16 +4868,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyPeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4891,17 +4896,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyPeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4920,16 +4925,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeySampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4948,17 +4953,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeySampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -4977,21 +4982,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeySortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -5009,22 +5014,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeySortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairGroupByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -5042,16 +5047,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5070,17 +5075,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5099,22 +5104,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5133,23 +5138,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5168,22 +5173,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5202,23 +5207,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5237,22 +5242,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5271,23 +5276,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -5306,16 +5311,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairPeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5334,17 +5339,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairPeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5363,22 +5368,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -5396,23 +5401,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -5430,16 +5435,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5458,17 +5463,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5487,16 +5492,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5515,17 +5520,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5544,22 +5549,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5578,23 +5583,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5614,22 +5619,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	public void testMapPairGroupByKeyMapPairReduceByKeyMapPairGroupByKeyCollect() throws Throwable {
 		log.info(
 				"testMapPairGroupByKeyMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5650,23 +5655,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	public void testMapPairGroupByKeyMapPairReduceByKeyMapPairGroupByKeyForEach() throws Throwable {
 		log.info(
 				"testMapPairGroupByKeyMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5687,22 +5692,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	public void testMapPairGroupByKeyMapPairReduceByKeyMapPairReduceByKeyCollect() throws Throwable {
 		log.info(
 				"testMapPairGroupByKeyMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5723,23 +5728,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	public void testMapPairGroupByKeyMapPairReduceByKeyMapPairReduceByKeyForEach() throws Throwable {
 		log.info(
 				"testMapPairGroupByKeyMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5759,16 +5764,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyPeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5787,17 +5792,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyPeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5816,16 +5821,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeySampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5844,17 +5849,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeySampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5873,22 +5878,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeySortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).collect(toexecute, null);
@@ -5906,23 +5911,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeySortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairReduceByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).forEach(lsttuples -> {
@@ -5940,16 +5945,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairSampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5968,17 +5973,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairSampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -5997,21 +6002,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairSortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).collect(toexecute, null);
@@ -6029,22 +6034,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairSortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPairSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).forEach(lsttuples -> {
@@ -6062,16 +6067,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val))
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -6089,17 +6094,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val))
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -6117,11 +6122,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -6139,12 +6144,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -6162,11 +6167,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -6184,12 +6189,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -6207,16 +6212,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6235,17 +6240,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6264,16 +6269,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6292,17 +6297,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6321,16 +6326,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6349,17 +6354,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6378,11 +6383,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekPeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -6400,12 +6405,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekPeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -6423,11 +6428,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekSampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).sample(46361).collect(toexecute, null);
@@ -6445,12 +6450,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekSampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val)).sample(46361).forEach(lsttuples -> {
@@ -6468,16 +6473,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekSortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val))
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).collect(toexecute, null);
@@ -6495,17 +6500,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekSortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeekSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().peek(val -> System.out.println(val))
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).forEach(lsttuples -> {
@@ -6523,16 +6528,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySampleFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -6550,17 +6555,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySampleFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lsttuples -> {
@@ -6578,11 +6583,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySampleFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).collect(toexecute, null);
@@ -6600,12 +6605,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySampleFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).forEach(lsttuples -> {
@@ -6623,11 +6628,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySampleMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).collect(toexecute, null);
@@ -6645,12 +6650,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySampleMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).forEach(lsttuples -> {
@@ -6668,16 +6673,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySampleMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6696,17 +6701,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySampleMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6725,16 +6730,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySampleMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6753,17 +6758,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySampleMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6782,16 +6787,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySampleMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6810,17 +6815,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySampleMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -6839,11 +6844,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySamplePeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySamplePeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -6861,12 +6866,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySamplePeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySamplePeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -6884,11 +6889,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleSampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySampleSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).sample(46361).collect(toexecute, null);
@@ -6906,12 +6911,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleSampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySampleSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361).sample(46361).forEach(lsttuples -> {
@@ -6929,16 +6934,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleSortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySampleSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361)
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).collect(toexecute, null);
@@ -6956,17 +6961,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleSortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySampleSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().sample(46361)
-				.sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-					public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
 				}).forEach(lsttuples -> {
@@ -6984,19 +6989,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySortedFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -7014,20 +7019,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySortedFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
-		}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lsttuples -> {
@@ -7045,15 +7050,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySortedFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -7071,16 +7076,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySortedFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -7098,15 +7103,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySortedMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -7124,16 +7129,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySortedMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -7151,20 +7156,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySortedMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7183,21 +7188,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySortedMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7216,20 +7221,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySortedMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7248,21 +7253,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySortedMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7281,20 +7286,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySortedMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7313,21 +7318,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySortedMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7346,15 +7351,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedPeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySortedPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -7372,16 +7377,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedPeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySortedPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).peek(val -> System.out.println(val)).forEach(lsttuples -> {
@@ -7399,15 +7404,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedSampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySortedSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).sample(46361).collect(toexecute, null);
@@ -7425,16 +7430,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedSampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySortedSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).sample(46361).forEach(lsttuples -> {
@@ -7452,19 +7457,19 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedSortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySortedSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -7482,20 +7487,20 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedSortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySortedSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
-		}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -7513,15 +7518,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapFilterCollect() throws Throwable {
 		log.info("testMapPairMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -7538,15 +7543,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapFilterCount() throws Throwable {
 		log.info("testMapPairMapFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).count(null);
@@ -7565,16 +7570,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapFilterForEach() throws Throwable {
 		log.info("testMapPairMapFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lis -> {
@@ -7589,11 +7594,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapFlatMapCollect() throws Throwable {
 		log.info("testMapPairMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).collect(toexecute, null);
@@ -7610,11 +7615,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapFlatMapCount() throws Throwable {
 		log.info("testMapPairMapFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).count(null);
@@ -7633,12 +7638,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapFlatMapForEach() throws Throwable {
 		log.info("testMapPairMapFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).forEach(lis -> {
@@ -7653,11 +7658,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapCollect() throws Throwable {
 		log.info("testMapPairMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).collect(toexecute, null);
@@ -7674,11 +7679,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapCount() throws Throwable {
 		log.info("testMapPairMapMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).count(null);
@@ -7697,12 +7702,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapForEach() throws Throwable {
 		log.info("testMapPairMapMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).forEach(lis -> {
@@ -7717,16 +7722,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapPairCollect() throws Throwable {
 		log.info("testMapPairMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7744,16 +7749,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapPairCount() throws Throwable {
 		log.info("testMapPairMapMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7773,17 +7778,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapPairForEach() throws Throwable {
 		log.info("testMapPairMapMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7799,16 +7804,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7827,17 +7832,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairMapMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7856,16 +7861,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7883,16 +7888,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapPairReduceByKeyCount() throws Throwable {
 		log.info("testMapPairMapMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7912,17 +7917,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairMapMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -7938,11 +7943,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPeekCollect() throws Throwable {
 		log.info("testMapPairMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).collect(toexecute, null);
@@ -7959,11 +7964,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPeekCount() throws Throwable {
 		log.info("testMapPairMapPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).count(null);
@@ -7982,12 +7987,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPeekForEach() throws Throwable {
 		log.info("testMapPairMapPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).peek(val -> System.out.println(val)).forEach(lis -> {
@@ -8002,11 +8007,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapSampleCollect() throws Throwable {
 		log.info("testMapPairMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).collect(toexecute, null);
@@ -8023,11 +8028,11 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapSampleCount() throws Throwable {
 		log.info("testMapPairMapSampleCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).count(null);
@@ -8046,12 +8051,12 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapSampleForEach() throws Throwable {
 		log.info("testMapPairMapSample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).sample(46361).forEach(lis -> {
@@ -8066,15 +8071,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapSortedCollect() throws Throwable {
 		log.info("testMapPairMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -8091,15 +8096,15 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapSortedCount() throws Throwable {
 		log.info("testMapPairMapSortedCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).count(null);
@@ -8118,16 +8123,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapSortedForEach() throws Throwable {
 		log.info("testMapPairMapSorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lis -> {
@@ -8142,21 +8147,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairFilterCollect() throws Throwable {
 		log.info("testMapPairMapPairFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -8173,21 +8178,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairFilterCount() throws Throwable {
 		log.info("testMapPairMapPairFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).count(null);
@@ -8206,22 +8211,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairFilterForEach() throws Throwable {
 		log.info("testMapPairMapPairFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lis -> {
@@ -8236,16 +8241,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairFlatMapCollect() throws Throwable {
 		log.info("testMapPairMapPairFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8263,16 +8268,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairFlatMapCount() throws Throwable {
 		log.info("testMapPairMapPairFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8292,17 +8297,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairFlatMapForEach() throws Throwable {
 		log.info("testMapPairMapPairFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8318,21 +8323,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyFilterCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.groupByKey().filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).collect(toexecute, null);
@@ -8350,22 +8355,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyFilterForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-			public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.groupByKey().filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
 				return true;
 			}
 		}).forEach(lsttuples -> {
@@ -8383,16 +8388,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyFlatMapCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8411,17 +8416,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyFlatMapForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8440,16 +8445,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyMapCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8468,17 +8473,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyMapForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8497,22 +8502,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyMapPairCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8531,23 +8536,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyMapPairForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8566,22 +8571,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8600,23 +8605,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8635,22 +8640,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8669,23 +8674,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.groupByKey().mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8704,16 +8709,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyPeekCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8732,17 +8737,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyPeekForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeyPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8761,16 +8766,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeySampleCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8789,17 +8794,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeySampleForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeySample Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8818,21 +8823,21 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeySortedCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).collect(toexecute, null);
@@ -8850,22 +8855,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeySortedForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKeySorted Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
-				.groupByKey().sorted(new com.github.datasamudaya.common.functions.SortedComparator<org.jooq.lambda.tuple.Tuple2>() {
-			public int compare(org.jooq.lambda.tuple.Tuple2 value1, org.jooq.lambda.tuple.Tuple2 value2) {
+				.groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
 				return value1.compareTo(value2);
 			}
 		}).forEach(lsttuples -> {
@@ -8883,16 +8888,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapCollect() throws Throwable {
 		log.info("testMapPairMapPairMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8910,16 +8915,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapCount() throws Throwable {
 		log.info("testMapPairMapPairMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8939,17 +8944,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapForEach() throws Throwable {
 		log.info("testMapPairMapPairMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -8965,22 +8970,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapPairCollect() throws Throwable {
 		log.info("testMapPairMapPairMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -8998,22 +9003,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapPairCount() throws Throwable {
 		log.info("testMapPairMapPairMapPairCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9033,23 +9038,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapPairForEach() throws Throwable {
 		log.info("testMapPairMapPairMapPair Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9065,22 +9070,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairMapPairMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9099,23 +9104,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairMapPairMapPairGroupByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9134,22 +9139,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairMapPairMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9167,22 +9172,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapPairReduceByKeyCount() throws Throwable {
 		log.info("testMapPairMapPairMapPairReduceByKeyCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9202,23 +9207,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairMapPairMapPairReduceByKey Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.mapToPair(
-						new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-							public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+						new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+							public Tuple2 apply(Tuple2 value) {
 								return (Tuple2<String, String>) value;
 							}
 						})
@@ -9234,16 +9239,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairPeekCollect() throws Throwable {
 		log.info("testMapPairMapPairPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9261,16 +9266,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairPeekCount() throws Throwable {
 		log.info("testMapPairMapPairPeekCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9290,17 +9295,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairPeekForEach() throws Throwable {
 		log.info("testMapPairMapPairPeek Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9316,22 +9321,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyFilterCollect() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).collect(toexecute, null);
@@ -9348,22 +9353,22 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyFilterCount() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyFilterCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).count(null);
@@ -9382,23 +9387,23 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyFilterForEach() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyFilter Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
 				.reduceByKey((a, b) -> a + b)
-				.filter(new com.github.datasamudaya.common.functions.PredicateSerializable<org.jooq.lambda.tuple.Tuple2>() {
-					public boolean test(org.jooq.lambda.tuple.Tuple2 value) {
+				.filter(new PredicateSerializable<Tuple2>() {
+					public boolean test(Tuple2 value) {
 						return true;
 					}
 				}).forEach(lis -> {
@@ -9413,16 +9418,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyFlatMapCollect() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9440,16 +9445,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyFlatMapCount() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyFlatMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9469,17 +9474,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyFlatMapForEach() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyFlatMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9495,16 +9500,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyMapCollect() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9522,16 +9527,16 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyMapCount() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyMapCount Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})
@@ -9551,17 +9556,17 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyMapForEach() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyMap Before---------------------------------------");
-		IgnitePipeline<String> datapipeline = IgnitePipeline.newStreamHDFS(hdfsfilepath,
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<java.lang.String, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(java.lang.String value) {
+				new MapToPairFunction<String, Tuple2<String, String>>() {
+					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).mapToPair(
-				new com.github.datasamudaya.common.functions.MapToPairFunction<org.jooq.lambda.tuple.Tuple2, org.jooq.lambda.tuple.Tuple2<java.lang.String, java.lang.String>>() {
-					public org.jooq.lambda.tuple.Tuple2 apply(org.jooq.lambda.tuple.Tuple2 value) {
+				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
 				})

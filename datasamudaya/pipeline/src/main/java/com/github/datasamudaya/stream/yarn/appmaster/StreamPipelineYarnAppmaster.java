@@ -23,13 +23,19 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.springframework.yarn.YarnSystemConstants;
@@ -38,38 +44,46 @@ import org.springframework.yarn.am.StaticEventingAppmaster;
 import org.springframework.yarn.am.allocate.DefaultContainerAllocator;
 import org.springframework.yarn.am.container.AbstractLauncher;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.DAGEdge;
-import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.TaskInfoYARN;
+import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.scheduler.StreamPipelineTaskSubmitter;
 
 /**
  * 
- * @author Arun Yarn App master with lifecycle init, submitapplication,
- *         isjobcomplete and prelaunch containers. Various container events
- *         captured are container failure and completed operation with container
- *         statuses.
+ * @author Arun 
+ * Yarn App master with lifecycle init, submitapplication,
+ * isjobcomplete and prelaunch containers. Various container events
+ * captured are container failure and completed operation with container
+ * statuses.
  */
 public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster implements ContainerLauncherInterceptor {
 
 	private static final Log log = LogFactory.getLog(StreamPipelineYarnAppmaster.class);
-	private List<Task> tasks;
+	private List<Task> tasks = new Vector<>();
 
-	private Map<String, Task> pendingtasks = new ConcurrentHashMap<>();
-	private Map<String, Task> pendingsubmittedtasks = new ConcurrentHashMap<>();
-	private Map<String, Timer> requestresponsetimer = new ConcurrentHashMap<>();
-	private Map<String, Map<String, Task>> containertaskmap = new ConcurrentHashMap<>();
+	private final Map<String, Task> pendingtasks = new ConcurrentHashMap<>();
+	private final Map<String, Task> pendingsubmittedtasks = new ConcurrentHashMap<>();
+	private final Map<String, Timer> requestresponsetimer = new ConcurrentHashMap<>();
+	private final Map<String, Map<String, Task>> containertaskmap = new ConcurrentHashMap<>();
 	private Map<String, JobStage> jsidjsmap;
-	private Map<String, Boolean> sentjobstages = new ConcurrentHashMap<>();
+	private final Map<String, Boolean> sentjobstages = new ConcurrentHashMap<>();
+	TaskInfoYARN tinfo = new TaskInfoYARN();
 	private final Object lock = new Object();
+	SimpleDistributedQueue outputqueue;
 
 	private long taskidcounter;
 	private long taskcompleted;
+	private boolean tokillcontainers;
+	private boolean isreadytoexecute;
 	private List<StreamPipelineTaskSubmitter> mdststs;
 	private SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge> graph = new SimpleDirectedGraph<>(
 			DAGEdge.class);
@@ -80,7 +94,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	 */
 	@Override
 	protected void onInit() throws Exception {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		super.onInit();
 		if (getLauncher() instanceof AbstractLauncher launcher) {
 			launcher.addInterceptor(this);
@@ -91,39 +105,21 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	 * Submit the user application. The various parameters obtained from HDFS are
 	 * graph with node and edges, job stage map, job stage with task information.
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
 	public void submitApplication() {
+		ExecutorService es = null;
 		try {
+			es = Executors.newFixedThreadPool(1);
+			es.execute(() -> pollQueue());
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
-			log.debug("Task Id Counter: " + taskidcounter);
-			log.debug("Environment: " + getEnvironment());
-			var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
-					+ getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
-			log.debug("Yarn Input Folder: " + yarninputfolder);
-			log.debug("AppMaster HDFS: " + getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
-			var namenodeurl = getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL);
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);	
 			var containerallocator = (DefaultContainerAllocator) getAllocator();
 			log.debug("Parameters: " + getParameters());
 			log.info("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
+			log.info("Container-Cpu: " + getParameters().getProperty("container-cpu", "1"));
+			containerallocator.setVirtualcores(Integer.parseInt(getParameters().getProperty("container-cpu", "1")));
 			containerallocator.setMemory(Integer.parseInt(getParameters().getProperty("container-memory", "1024")));
-			System.setProperty(DataSamudayaConstants.HDFSNAMENODEURL, getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
-			// Thread containing the job stage information.
-			mdststs = (List<StreamPipelineTaskSubmitter>) RemoteDataFetcher
-					.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE);
-			// Graph containing the nodes and edges.
-			graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) RemoteDataFetcher
-					.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
-							DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE);
-			// task map.
-			taskmdsthread = (Map<String, StreamPipelineTaskSubmitter>) RemoteDataFetcher
-					.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE);
-			jsidjsmap = (Map<String, JobStage>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
-					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE);
-			tasks = mdststs.stream().map(StreamPipelineTaskSubmitter::getTask).collect(Collectors.toList());
-			log.debug("tasks size:" + tasks.size());
 		} catch (Exception ex) {
 			log.debug("Submit Application Error, See cause below \n", ex);
 		}
@@ -137,6 +133,67 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	}
 	Map<String, String> containeridipmap = new ConcurrentHashMap<>();
 
+	@SuppressWarnings("unchecked")
+	protected void pollQueue() {
+		log.debug("Task Id Counter: " + taskidcounter);
+		log.debug("Environment: " + getEnvironment());
+		try(var zo = new ZookeeperOperations();){
+	 	zo.connect();
+	 	String teid = getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
+		SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_INPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + teid);
+		
+		outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+				+ DataSamudayaConstants.YARN_OUTPUT_QUEUE
+				+ DataSamudayaConstants.FORWARD_SLASH + teid);
+		
+		ObjectMapper objectMapper = new ObjectMapper();
+		while(!tokillcontainers) {
+			if (inputqueue.peek() != null && !isreadytoexecute) {
+				pendingtasks.clear();
+				pendingsubmittedtasks.clear();
+				containertaskmap.clear();
+				sentjobstages.clear();
+				taskidcounter = 0;
+				tinfo = objectMapper.readValue(inputqueue.poll(), TaskInfoYARN.class);
+				tokillcontainers = tinfo.isTokillcontainer();
+				if(Objects.isNull(tinfo.getJobid())) {
+					continue;
+				}
+				var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
+						+ tinfo.getJobid();
+				log.debug("Yarn Input Folder: " + yarninputfolder);
+				log.debug("AppMaster HDFS: " + getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
+				var namenodeurl = getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL);				
+				System.setProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+						getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
+				// Thread containing the job stage information.
+				mdststs = (List<StreamPipelineTaskSubmitter>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(
+						namenodeurl, yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE);
+				// Graph containing the nodes and edges.
+				graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) RemoteDataFetcher
+						.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
+								DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE);
+				// task map.
+				taskmdsthread = (Map<String, StreamPipelineTaskSubmitter>) RemoteDataFetcher
+						.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
+								DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE);
+				jsidjsmap = (Map<String, JobStage>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(namenodeurl,
+						yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE);
+				tasks = mdststs.stream().map(StreamPipelineTaskSubmitter::getTask).collect(Collectors.toCollection(Vector::new));
+				isreadytoexecute = true;
+				log.debug("tasks size:" + tasks.size());
+			} else {
+				Thread.sleep(1000);
+			}
+		}
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);			
+		}
+	}
+	
+	
 	/**
 	 * Set App Master service hosts and port running before the container is
 	 * launched.
@@ -213,7 +270,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	 */
 	@Override
 	protected boolean isComplete() {
-		return completedJobs();
+		return completedJobs() && super.isComplete();
 	}
 
 	/**
@@ -246,70 +303,71 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	 */
 	public Object getTask(String containerid) {
 		synchronized (lock) {
-			if (!sentjobstages.containsKey(containerid)) {
-				sentjobstages.put(containerid, true);
-				return jsidjsmap;
-			}
-			// If the pending jobs being staged first execute the pending jobs.
-			if (pendingtasks.size() > 0) {
-				var pendings = pendingtasks.keySet();
-				for (var pend : pendings) {
-					if (!pendingsubmittedtasks.containsKey(pend)) {
-						pendingsubmittedtasks.put(pend, pendingtasks.get(pend));
-						var timer = new Timer();
-						var task = pendingtasks.get(pend);
-						requestresponsetimer.put(task.jobid + task.stageid + task.taskid, timer);
-						timer.schedule(new JobStageTimerTask(task, pendingtasks, pendingsubmittedtasks, lock,
-								requestresponsetimer), 10000);
-						return task;
-					}
+			if(isreadytoexecute) {
+				if (!sentjobstages.containsKey(containerid)) {
+					sentjobstages.put(containerid, true);
+					return jsidjsmap;
 				}
-
-			}
-			// If the jobs stage submitted is less than the total jobs size
-			// return the job to be executed.
-			if (taskidcounter < tasks.size()) {
-				var task = tasks.get((int) taskidcounter);
-				String ip = containeridipmap.get(containerid.trim());
-				if (!Objects.isNull(task.input)) {
-					if (task.input[0] instanceof BlocksLocation) {
-						var bl = (BlocksLocation) task.input[0];
-						if (!Objects.isNull(bl.getBlock()) && bl.getBlock().length > 0) {
-							String[] blockip = bl.getBlock()[0].getHp().split(DataSamudayaConstants.COLON);
-							if (!ip.equals(blockip[0])) {
-								return null;
+				// If the pending jobs being staged first execute the pending jobs.
+				if (pendingtasks.size() > 0) {
+					var pendings = pendingtasks.keySet();
+					for (var pend : pendings) {
+						if (!pendingsubmittedtasks.containsKey(pend)) {
+							pendingsubmittedtasks.put(pend, pendingtasks.get(pend));
+							var timer = new Timer();
+							var task = pendingtasks.get(pend);
+							requestresponsetimer.put(task.jobid + task.stageid + task.taskid, timer);
+							timer.schedule(new JobStageTimerTask(task, pendingtasks, pendingsubmittedtasks, lock,
+									requestresponsetimer), 10000);
+							return task;
+						}
+					}
+	
+				}
+				// If the jobs stage submitted is less than the total jobs size
+				// return the job to be executed.
+				if (taskidcounter < tasks.size()) {
+					var task = tasks.get((int) taskidcounter);
+					String ip = containeridipmap.get(containerid.trim());
+					if (!Objects.isNull(task.input)) {
+						if (task.input[0] instanceof BlocksLocation bl) {
+							if (!Objects.isNull(bl.getBlock()) && bl.getBlock().length > 0) {
+								String[] blockip = bl.getBlock()[0].getHp().split(DataSamudayaConstants.COLON);
+								if (!ip.equals(blockip[0])) {
+									return null;
+								}
 							}
 						}
 					}
-				}
-				var toexecute = true;
-				var predessorslist = Graphs.predecessorListOf(graph, taskmdsthread.get(task.jobid + task.stageid + task.taskid));
-				for (var succcount = 0; succcount < predessorslist.size(); succcount++) {
-					var predthread = predessorslist.get(succcount);
-					if (!taskmdsthread.get(predthread.getTask().jobid + predthread.getTask().stageid + predthread.getTask().taskid)
-							.isCompletedexecution()) {
-						toexecute = false;
-						break;
+					var toexecute = true;
+					var predessorslist = Graphs.predecessorListOf(graph, taskmdsthread.get(task.jobid + task.stageid + task.taskid));
+					for (var succcount = 0;succcount < predessorslist.size();succcount++) {
+						var predthread = predessorslist.get(succcount);
+						if (!taskmdsthread.get(predthread.getTask().jobid + predthread.getTask().stageid + predthread.getTask().taskid)
+								.isCompletedexecution()) {
+							toexecute = false;
+							break;
+						}
+	
 					}
-
-				}
-				if (toexecute) {
-					if (!containertaskmap.containsKey(containerid)) {
-						containertaskmap.put(containerid, new ConcurrentHashMap<>());
+					if (toexecute) {
+						if (!containertaskmap.containsKey(containerid)) {
+							containertaskmap.put(containerid, new ConcurrentHashMap<>());
+						}
+						containertaskmap.get(containerid).put(task.jobid + task.stageid + task.taskid, task);
+						log.debug(
+								"Allocating JobsStage " + task.jobid + task.stageid + task.taskid + " to the container: " + containerid);
+						taskidcounter++;
+						var timer = new Timer();
+						requestresponsetimer.put(task.jobid + task.stageid + task.taskid, timer);
+						timer.schedule(new JobStageTimerTask(task, pendingtasks, pendingsubmittedtasks, lock,
+								requestresponsetimer), 10000);
+						log.debug(task + " To Execute, Task Counter:" + taskidcounter);
+						return task;
+					} else {
+						log.debug(task + " To StandBy, Task Counter:" + taskidcounter);
+						return null;
 					}
-					containertaskmap.get(containerid).put(task.jobid + task.stageid + task.taskid, task);
-					log.debug(
-							"Allocating JobsStage " + task.jobid + task.stageid + task.taskid + " to the container: " + containerid);
-					taskidcounter++;
-					var timer = new Timer();
-					requestresponsetimer.put(task.jobid + task.stageid + task.taskid, timer);
-					timer.schedule(new JobStageTimerTask(task, pendingtasks, pendingsubmittedtasks, lock,
-							requestresponsetimer), 10000);
-					log.debug(task + " To Execute, Task Counter:" + taskidcounter);
-					return task;
-				} else {
-					log.debug(task + " To StandBy, Task Counter:" + taskidcounter);
-					return null;
 				}
 			}
 			return null;
@@ -328,12 +386,27 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	/**
 	 * Check on whether the jobs are available to execute.
 	 * 
-	 * @return
+	 * @return true when jobs available and container not to kill
 	 */
 	public boolean hasJobs() {
 		synchronized (lock) {
 			log.debug("Has Jobs: " + (taskidcounter < tasks.size()) + ", Task Counter:" + taskidcounter);
-			return taskidcounter < tasks.size() || pendingtasks.size() > 0 || taskcompleted < tasks.size();
+			boolean hasJobs = isreadytoexecute
+					&& (taskidcounter < tasks.size() || pendingtasks.size() > 0 || taskcompleted < tasks.size());
+			try {			
+				if (tasks.size() > 0 && taskcompleted >= tasks.size()) {
+					tasks.clear();
+					ObjectMapper objMapper = new ObjectMapper();
+					tinfo.setIsresultavailable(true);
+					outputqueue.offer(objMapper.writeValueAsBytes(tinfo));
+					taskcompleted = 0;
+					isreadytoexecute = false;
+				}
+			} catch(Exception ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
+			}
+			return hasJobs || !tokillcontainers;
+
 		}
 	}
 

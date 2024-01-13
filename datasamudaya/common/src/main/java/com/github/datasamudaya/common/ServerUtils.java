@@ -48,7 +48,7 @@ public class ServerUtils implements ServerUtilsMBean {
     var context = new ServletContextHandler(ServletContextHandler.SESSIONS);
     context.setContextPath(DataSamudayaConstants.FORWARD_SLASH);
     server.setHandler(context);
-    for (var conf = 1; conf < config.length; conf += 2) {
+    for (var conf = 1;conf < config.length;conf += 2) {
       if (!(config[conf] instanceof HttpServlet)) {
         throw new Exception(config[conf] + " which is of type " + config[conf].getClass().getName()
             + " must be instance of servlet javax.servlet.http.HttpServlet");
@@ -77,7 +77,7 @@ public class ServerUtils implements ServerUtilsMBean {
 	    } catch (IOException ex) {
 	      log.error(DataSamudayaConstants.EMPTY, ex);
 	      int port = Utils.getRandomPort();
-	      ((ServerConnector)(server.getConnectors()[0])).setPort(port);
+	      ((ServerConnector) (server.getConnectors()[0])).setPort(port);
 	    }
 	  }
 

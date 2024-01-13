@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.log4j.PropertyConfigurator;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,9 +52,9 @@ import static java.util.Objects.nonNull;
  */
 public class NodeLauncher {
   static Logger log = LoggerFactory.getLogger(NodeLauncher.class);
-  static Registry server = null;
-  static StreamDataCruncher stub = null;
-  static StreamDataCruncher sdc = null;
+  static Registry server;
+  static StreamDataCruncher stub;
+  static StreamDataCruncher sdc;
 
   /**
    * Main class to start and run the node launcher.
@@ -78,7 +79,7 @@ public class NodeLauncher {
 		Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
 			+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 	}
-	org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+	StaticComponentContainer.Modules.exportAllToAll();
     var port = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
     try (var zo = new ZookeeperOperations();) {
     	zo.connect();
@@ -91,8 +92,8 @@ public class NodeLauncher {
 		resource.setTotaldisksize(Utils.totaldiskspace());
 		resource.setUsabledisksize(Utils.usablediskspace());
 		resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
-		zo.createNodesNode(host+DataSamudayaConstants.UNDERSCORE+port, resource, (event)->{
-			log.info("{}",event);
+		zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + port, resource, event -> {
+			log.info("{}", event);
 		});
       var escontainer = Executors.newWorkStealingPool();
 
@@ -108,7 +109,8 @@ public class NodeLauncher {
           DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
               + DataSamudayaConstants.ASTERIX,
           new ResourcesMetricsServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA
-              + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX);
+              + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
       su.start();
       
       sdc = new StreamDataCruncher() {
@@ -147,10 +149,10 @@ public class NodeLauncher {
           log.debug("Stopping and closes all the connections...");
           log.debug("Destroying...");
           hdfs.close();
-          if(Objects.nonNull(server)) {
+          if (Objects.nonNull(server)) {
         	  UnicastRemoteObject.unexportObject(server, true);
           }
-          if(nonNull(zo)) {
+          if (nonNull(zo)) {
         	  zo.close();
           }
           cdl.countDown();

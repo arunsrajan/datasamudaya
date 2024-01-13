@@ -39,7 +39,7 @@ public class DataSamudayaMapReducePhaseClassLoader extends ClassLoader {
 
 	private final byte[] jarBytes;
 	private final Set<String> names;
-	private static Logger log = Logger.getLogger(DataSamudayaMapReducePhaseClassLoader.class);
+	private static final Logger log = Logger.getLogger(DataSamudayaMapReducePhaseClassLoader.class);
 	@SuppressWarnings("rawtypes")
 	private static List instances = new ArrayList();
 

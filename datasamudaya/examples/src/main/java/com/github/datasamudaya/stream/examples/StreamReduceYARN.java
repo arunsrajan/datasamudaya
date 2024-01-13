@@ -28,7 +28,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceYARN implements Serializable, Pipeline {
 	private static final long serialVersionUID = -7001849661976107123L;
-	private Logger log = Logger.getLogger(StreamReduceYARN.class);
+	private final Logger log = Logger.getLogger(StreamReduceYARN.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");
@@ -37,6 +37,7 @@ public class StreamReduceYARN implements Serializable, Pipeline {
 		pipelineconfig.setYarn("true");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		pipelineconfig.setJobname(StreamReduceYARN.class.getName());
 		testReduce(args, pipelineconfig);
 	}
 

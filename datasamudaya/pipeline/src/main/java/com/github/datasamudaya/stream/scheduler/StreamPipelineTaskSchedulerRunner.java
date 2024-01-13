@@ -18,6 +18,7 @@ import org.apache.commons.cli.Options;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.log4j.PropertyConfigurator;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgroups.JChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ import com.github.datasamudaya.common.WebResourcesServlet;
 import com.github.datasamudaya.common.utils.JShellServer;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
+import com.github.datasamudaya.stream.pig.PigQueryServer;
 import com.github.datasamudaya.stream.sql.SQLServer;
 import com.github.datasamudaya.stream.utils.PipelineGraphWebServlet;
 
@@ -44,7 +46,7 @@ import com.github.datasamudaya.stream.utils.PipelineGraphWebServlet;
  */
 public class StreamPipelineTaskSchedulerRunner {
 	static Logger log = LoggerFactory.getLogger(StreamPipelineTaskSchedulerRunner.class);
-	static ServerSocket ss = null;
+	static ServerSocket ss;
 	static ExecutorService esstream;
 	static ExecutorService es;
 	static JChannel channel;
@@ -75,21 +77,21 @@ public class StreamPipelineTaskSchedulerRunner {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		var zo = new ZookeeperOperations();
 		zo.connect();
-		zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), (event)->{
+		zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
 			log.info("Node Created");
 		});
 		zo.watchNodes();
 		var cdlstream = new CountDownLatch(1);
 		var zookeeperid = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST))
 				+ DataSamudayaConstants.UNDERSCORE + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_PORT);
-		zo.leaderElectionSchedulerStream(zookeeperid,new LeaderLatchListener(){
+		zo.leaderElectionSchedulerStream(zookeeperid, new LeaderLatchListener(){
 
 			@Override
 			public void isLeader() {
-				log.info("Stream Scheduler Node {} elected as leader",zookeeperid);
+				log.info("Stream Scheduler Node {} elected as leader", zookeeperid);
 				try {
 					zo.setLeaderStream(zookeeperid.getBytes());
 					cdlstream.countDown();
@@ -122,10 +124,13 @@ public class StreamPipelineTaskSchedulerRunner {
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
 						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+						new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON,
 						new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH);
 		su.start();
 		
 		SQLServer.start();
+		
+		PigQueryServer.start();
 	    
 	    JShellServer.startJShell();
 	    
@@ -146,19 +151,21 @@ public class StreamPipelineTaskSchedulerRunner {
 						while (true) {
 							var len = in.readInt();
 							byte buffer[] = new byte[len]; // this could be reused !
-							while (len > 0)
-							    len -= in.read(buffer, buffer.length - len, len);
+							while (len > 0) {
+								len -= in.read(buffer, buffer.length - len, len);
+							}
 							// skipped: check for stream close
 							Object obj = Utils.getKryo().readClassAndObject(new Input(buffer));
-							if (obj instanceof Integer brkintval && brkintval == -1)
+							if (obj instanceof Integer brkintval && brkintval == -1) {
 								break;
+							}
 							bytesl.add((byte[]) obj);
 						}
 						String[] arguments = null;
 						if (bytesl.size() > 2) {
 							var totalargs = bytesl.size();
 							arguments = new String[totalargs - 1];
-							for (var index = 2; index < totalargs; index++) {
+							for (var index = 2;index < totalargs;index++) {
 								arguments[index - 2] = new String(bytesl.get(index));
 							}
 						}
@@ -168,7 +175,7 @@ public class StreamPipelineTaskSchedulerRunner {
 						log.info("Queueing the Job Name: {}", filename);
 						var spts = new StreamPipelineTaskScheduler(filename, bytesl.get(0),
 								arguments, s);
-						if(!isparallel) {
+						if (!isparallel) {
 							lbq.put(spts);
 						} else {
 							 es.execute(spts);
@@ -183,10 +190,10 @@ public class StreamPipelineTaskSchedulerRunner {
 			}
 		});
 		if(!isparallel) {
-			es.execute(()->{
+			es.execute(() -> {
 				StreamPipelineTaskScheduler spts;
-				while(true) {
-					while((lbq.peek())!=null) {
+				while (true) {
+					while ((lbq.peek()) != null) {
 						spts = lbq.poll();
 						spts.run();
 					}
@@ -213,7 +220,7 @@ public class StreamPipelineTaskSchedulerRunner {
 				if (Objects.nonNull(DataSamudayaCacheManager.get())) {
 					DataSamudayaCacheManager.get().close();
 				}
-				if(Objects.nonNull(zo)) {
+				if (Objects.nonNull(zo)) {
 					zo.close();
 				}
 				cdl.countDown();

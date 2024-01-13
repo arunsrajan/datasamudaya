@@ -40,6 +40,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.protocol.LocatedBlock;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.yarn.client.CommandYarnClient;
 
@@ -53,8 +54,12 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaJobMetrics;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.RemoteDataFetcher;
+import com.github.datasamudaya.common.TaskInfoYARN;
 import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.tasks.scheduler.yarn.YarnReducer;
+
+import static java.util.Objects.*;
 
 /**
  * Map reduce application runs in hadoop yarn.
@@ -83,7 +88,7 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 	List<BlocksLocation> bls;
 	List<String> nodes;
 	CuratorFramework cf;
-	static Logger log = Logger.getLogger(MapReduceApplicationYarn.class);
+	static org.slf4j.Logger log = LoggerFactory.getLogger(MapReduceApplicationYarn.class);
 	List<LocatedBlock> locatedBlocks;
 	int executorindex;
 	ExecutorService es;
@@ -109,12 +114,12 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 		var dnxrefs = bls.stream().parallel().flatMap(bl -> {
 			var xrefs = new LinkedHashSet<String>();
 			Iterator<Set<String>> xref = bl.getBlock()[0].getDnxref().values().iterator();
-			for (; xref.hasNext(); ) {
+			for (;xref.hasNext();) {
 				xrefs.addAll(xref.next());
 			}
 			if (bl.getBlock().length > 1 && !Objects.isNull(bl.getBlock()[1])) {
 				xref = bl.getBlock()[0].getDnxref().values().iterator();
-				for (; xref.hasNext(); ) {
+				for (;xref.hasNext();) {
 					xrefs.addAll(xref.next());
 				}
 			}
@@ -149,7 +154,8 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 
 	public List<DataCruncherContext> call() {
 		String applicationid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis();
-		try {
+		try (var zo = new ZookeeperOperations();) {
+			zo.connect();
 			var starttime = System.currentTimeMillis();
 			batchsize = Integer.parseInt(jobconf.getBatchsize());
 			numreducers = Integer.parseInt(jobconf.getNumofreducers());
@@ -188,11 +194,7 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 				var paths = FileUtil.stat2Paths(fileStatus);
 				blockpath.addAll(Arrays.asList(paths));
 				bls = new ArrayList<>();
-				if (isblocksuserdefined) {
-					bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, isblocksuserdefined, blocksize * DataSamudayaConstants.MB, null));
-				} else {
-					bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, isblocksuserdefined, 128 * DataSamudayaConstants.MB, null));
-				}
+				bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null));
 				getDnXref(bls);
 				mrtaskcount += bls.size();
 				folderfileblocksmap.put(hdfsdir, bls);
@@ -220,30 +222,34 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 			var output = jobconf.getOutput();
 			jobconf.setOutputfolder(outputfolder);
 			jobconf.setOutput(null);
-			decideContainerCountAndPhysicalMemoryByBlockSize();
-			System.setProperty("jobcount", "" + mrtaskcount);
-			new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
-			Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH, DataSamudayaConstants.YARNOUTJAR);
-			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(mapclzchunkfile, yarninputfolder,
-					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_MAPPER, jobconf);
-			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(combiner, yarninputfolder,
-					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_COMBINER, jobconf);
-			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(reducer, yarninputfolder,
-					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_REDUCER, jobconf);
-			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(folderfileblocksmap, yarninputfolder,
-					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_FILEBLOCKS, jobconf);
-			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jobconf, yarninputfolder,
-					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_CONFIGURATION, jobconf);
-			ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.CONTEXT_FILE_CLIENT, getClass());
-			var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
-			client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, applicationid);
-			var appid = client.submitApplication(true);
-			var appreport = client.getApplicationReport(appid);
-			while (appreport.getYarnApplicationState() != YarnApplicationState.FINISHED
-					&& appreport.getYarnApplicationState() != YarnApplicationState.FAILED) {
-				appreport = client.getApplicationReport(appid);
-				Thread.sleep(1000);
+			TaskInfoYARN tinfoyarn = null;
+			if(nonNull(jobconf.isIsuseglobalte()) && !jobconf.isIsuseglobalte()) {
+				decideContainerCountAndPhysicalMemoryByBlockSize();
+				System.setProperty("jobcount", "" + mrtaskcount);
+				new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
+				Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH, DataSamudayaConstants.YARNOUTJAR);
+				Utils.createJobInHDFSMR(jobconf, yarninputfolder, mapclzchunkfile, combiner, reducer, folderfileblocksmap);
+				ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+						DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.CONTEXT_FILE_CLIENT, getClass());
+				var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
+				client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, applicationid);
+				var appid = client.submitApplication(true);
+				var appreport = client.getApplicationReport(appid);
+				while (appreport.getYarnApplicationState() != YarnApplicationState.RUNNING) {
+					appreport = client.getApplicationReport(appid);
+					Thread.sleep(1000);
+				}
+				Utils.sendJobToYARNDistributedQueue(zo, applicationid);
+				tinfoyarn = Utils.getJobOutputStatusYARNDistributedQueueBlocking(zo, applicationid);
+				Utils.shutDownYARNContainer(zo, applicationid);
+			} else {
+				Utils.createJobInHDFSMR(jobconf, yarninputfolder, mapclzchunkfile, combiner, reducer, folderfileblocksmap);
+				Utils.sendJobToYARNDistributedQueue(jobconf.getTeappid(), applicationid);
+				tinfoyarn = Utils
+						.getJobOutputStatusYARNDistributedQueueBlocking(jobconf.getTeappid());
+				log.info("Request jobid {} matching Response job id {} is {}", applicationid, tinfoyarn.getJobid(),
+						applicationid.equals(tinfoyarn.getJobid()));
+				log.info("Is output available {}", tinfoyarn.isIsresultavailable());
 			}
 
 			log.debug("Waiting for the Reducer to complete------------");
@@ -255,9 +261,10 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 				Utils.writeToOstream(jobconf.getOutput(),
 						"Completed Job in " + (jm.getTotaltimetaken()) + " seconds");
 			}
+			String yarnoutput = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH + tinfoyarn.getJobid();
 			List<YarnReducer> reducers = (List<YarnReducer>) RemoteDataFetcher
 					.readYarnAppmasterServiceDataFromDFS(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL),
-					yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARN_RESULT);
+							yarnoutput, DataSamudayaConstants.MASSIVEDATA_YARN_RESULT);
 			List<DataCruncherContext> results = new ArrayList<>();
 			for (YarnReducer red: reducers) {
 				var ctxreducerpart = (Context) RemoteDataFetcher.readIntermediatePhaseOutputFromDFS(

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgroups.JChannel;
 import org.jgroups.ObjectMessage;
 import org.jooq.lambda.tuple.Tuple;
@@ -44,28 +46,21 @@ import org.junit.Test;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.DataSamudayaUsers;
-import com.github.datasamudaya.common.Stage;
-import com.github.datasamudaya.common.StreamDataCruncher;
-import com.github.datasamudaya.common.Tuple2Serializable;
-import com.github.datasamudaya.common.User;
-import com.github.datasamudaya.common.WhoAreRequest;
-import com.github.datasamudaya.common.WhoAreResponse;
-import com.github.datasamudaya.common.WhoIsRequest;
-import com.github.datasamudaya.common.WhoIsResponse;
+import com.esotericsoftware.kryo.serializers.ClosureSerializer;
+
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.utils.Utils;
 
 import jdk.jshell.JShell;
 
+import net.sf.jsqlparser.parser.SimpleNode;
+import net.sf.jsqlparser.schema.Table;
+
 public class UtilsTest {
 	
 	@Before
 	public void startUp() {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 	}
 
 	@Test
@@ -115,11 +110,11 @@ public class UtilsTest {
 	@Test
 	public void initializePropertiesValid() throws Exception {
 		String propertiesFilePath = System.getProperty("user.dir")+"/config/";
-		java.io.File file = new java.io.File(propertiesFilePath);
-		if(!(file.isDirectory()&&file.exists())) {
+		File file = new File(propertiesFilePath);
+		if(!(file.isDirectory() && file.exists())) {
 			propertiesFilePath = "../config/";
-			file = new java.io.File(propertiesFilePath);
-			if(!(file.isDirectory()&&file.exists())) {
+			file = new File(propertiesFilePath);
+			if(!(file.isDirectory() && file.exists())) {
 				throw new Exception();
 			}
 		}
@@ -129,9 +124,9 @@ public class UtilsTest {
 		ConcurrentMap<String, User> users = DataSamudayaUsers.get();
 		assertTrue(Objects.nonNull(users));
 		assertTrue(users.containsKey("arun"));
-		assertEquals(Integer.valueOf(100),users.get("arun").getPercentage());
+		assertEquals(Integer.valueOf(100), users.get("arun").getPercentage());
 		assertTrue(Objects.nonNull(DataSamudayaProperties.get()));
-		assertEquals("127.0.0.1:2181",DataSamudayaProperties.get().get("zookeeper.hostport"));
+		assertEquals("127.0.0.1:2181", DataSamudayaProperties.get().get("zookeeper.hostport"));
 		
 	}
 	
@@ -139,11 +134,11 @@ public class UtilsTest {
 	public void initializePropertiesNullPropertyFile() throws Exception {
 		try {
 			String propertiesFilePath = System.getProperty("user.dir")+"/config/";
-			java.io.File file = new java.io.File(propertiesFilePath);
-			if(!(file.isDirectory()&&file.exists())) {
+			File file = new File(propertiesFilePath);
+			if(!(file.isDirectory() && file.exists())) {
 				propertiesFilePath = "../config/";
-				file = new java.io.File(propertiesFilePath);
-				if(!(file.isDirectory()&&file.exists())) {
+				file = new File(propertiesFilePath);
+				if(!(file.isDirectory() && file.exists())) {
 					throw new Exception();
 				}
 			}
@@ -169,11 +164,11 @@ public class UtilsTest {
 	public void initializePropertiesInvalidUsersShare() throws Exception {
 		try {
 		String propertiesFilePath = System.getProperty("user.dir")+"/config/";
-		java.io.File file = new java.io.File(propertiesFilePath);
-		if(!(file.isDirectory()&&file.exists())) {
+		File file = new File(propertiesFilePath);
+		if(!(file.isDirectory() && file.exists())) {
 			propertiesFilePath = "../config/";
-			file = new java.io.File(propertiesFilePath);
-			if(!(file.isDirectory()&&file.exists())) {
+			file = new File(propertiesFilePath);
+			if(!(file.isDirectory() && file.exists())) {
 				throw new Exception();
 			}
 		}
@@ -181,7 +176,7 @@ public class UtilsTest {
 		Utils.initializeProperties(propertiesFilePath, propertyFile);
 		}
 		catch(Exception ex) {
-			Assert.assertEquals("Users share total not tally and it should be less that or equal to 100.0",ex.getCause().getMessage());
+			Assert.assertEquals("Users share total not tally and it should be less that or equal to 100.0", ex.getCause().getMessage());
 		}
 		
 	}
@@ -190,11 +185,11 @@ public class UtilsTest {
 	public void initializePropertiesNonExistent() throws Exception {
 		try {
 		String propertiesFilePath = System.getProperty("user.dir")+"/config/";
-		java.io.File file = new java.io.File(propertiesFilePath);
-		if(!(file.isDirectory()&&file.exists())) {
+		File file = new File(propertiesFilePath);
+		if(!(file.isDirectory() && file.exists())) {
 			propertiesFilePath = "../config/";
-			file = new java.io.File(propertiesFilePath);
-			if(!(file.isDirectory()&&file.exists())) {
+			file = new File(propertiesFilePath);
+			if(!(file.isDirectory() && file.exists())) {
 				throw new Exception();
 			}
 		}
@@ -202,7 +197,7 @@ public class UtilsTest {
 		Utils.initializeProperties(propertiesFilePath, propertyFile);
 		}
 		catch(Exception ex) {
-			Assert.assertEquals("..\\config\\datasamudayanonexistent.properties (The system cannot find the file specified)",ex.getCause().getMessage());
+			Assert.assertEquals("..\\config\\datasamudayanonexistent.properties (The system cannot find the file specified)", ex.getCause().getMessage());
 		}
 		
 	}
@@ -236,22 +231,22 @@ public class UtilsTest {
 		assert kryo.getRegistration(Coalesce.class) != null;
 		assert kryo.getRegistration(JobStage.class) != null;
 		assert kryo.getRegistration(Stage.class) != null;
-		assert kryo.getRegistration(net.sf.jsqlparser.schema.Table.class) != null;
-		assert kryo.getRegistration(net.sf.jsqlparser.parser.SimpleNode.class) != null;
+		assert kryo.getRegistration(Table.class) != null;
+		assert kryo.getRegistration(SimpleNode.class) != null;
 		assert kryo.getRegistration(java.lang.invoke.SerializedLambda.class) != null;
-		assert kryo.getRegistration(org.jooq.lambda.tuple.Tuple2.class) != null;
-		assert kryo.getRegistration(com.esotericsoftware.kryo.serializers.ClosureSerializer.Closure.class) != null;
+		assert kryo.getRegistration(Tuple2.class) != null;
+		assert kryo.getRegistration(ClosureSerializer.Closure.class) != null;
 		assert kryo.getRegistration(JShell.class) != null;
 
 		// Ensure custom serializers are registered
-		assert kryo.getSerializer(org.jooq.lambda.tuple.Tuple2.class) != null;
+		assert kryo.getSerializer(Tuple2.class) != null;
 		assert kryo.getSerializer(WhoIsResponse.STATUS.class) != null;
 		assert kryo.getSerializer(Coalesce.class) != null;
 		assert kryo.getSerializer(JobStage.class) != null;
 		assert kryo.getSerializer(Stage.class) != null;
-		assert kryo.getSerializer(net.sf.jsqlparser.schema.Table.class) != null;
-		assert kryo.getSerializer(net.sf.jsqlparser.parser.SimpleNode.class) != null;
-		assert kryo.getSerializer(com.esotericsoftware.kryo.serializers.ClosureSerializer.Closure.class) != null;
+		assert kryo.getSerializer(Table.class) != null;
+		assert kryo.getSerializer(SimpleNode.class) != null;
+		assert kryo.getSerializer(ClosureSerializer.Closure.class) != null;
 		assert kryo.getSerializer(JShell.class) != null;
 	}
 	
@@ -260,7 +255,7 @@ public class UtilsTest {
 		Kryo kryo = Utils.getKryoInstance();
 		Integer originalObject = Integer.valueOf(25); // Create a test object
 		byte[] serializedData;
-		try (com.esotericsoftware.kryo.io.Output output = new com.esotericsoftware.kryo.io.Output(new ByteArrayOutputStream())) {
+		try (Output output = new Output(new ByteArrayOutputStream())) {
 		    kryo.writeObject(output, originalObject);
 		    serializedData = output.toBytes();
 		}
@@ -369,7 +364,7 @@ public class UtilsTest {
 		    	Thread.sleep(1000);
 		    }
 		    assertNotNull(maprespsrc.get("1"));
-		    assertTrue(maprespsrc.get("1")==WhoIsResponse.STATUS.COMPLETED);
+		    assertTrue(maprespsrc.get("1") == WhoIsResponse.STATUS.COMPLETED);
 		    channelsrc.close();
 		    channeldest.close();
 		} catch (Exception ex) {
@@ -393,7 +388,7 @@ public class UtilsTest {
 		    channelsrc.close();
 		} catch (Exception ex) {
 		    // Handle any exceptions or failures
-			assertEquals("cluster name cannot be null",ex.getMessage());
+			assertEquals("cluster name cannot be null", ex.getMessage());
 		    // Fail the test if necessary
 		}
 
@@ -427,7 +422,7 @@ public class UtilsTest {
 		    	Thread.sleep(1000);
 		    }
 		    assertNotNull(maprespsrc.get("1"));
-		    assertTrue(maprespsrc.get("1")==WhoIsResponse.STATUS.COMPLETED);
+		    assertTrue(maprespsrc.get("1") == WhoIsResponse.STATUS.COMPLETED);
 		    channelsrc.close();
 		    channeldest.close();
 		} catch (Exception ex) {
@@ -466,11 +461,11 @@ public class UtilsTest {
 		    	Thread.sleep(1000);
 		    }
 		    assertNotNull(maprespsrc.get("1"));
-		    assertTrue(maprespsrc.get("1")==WhoIsResponse.STATUS.COMPLETED);
+		    assertTrue(maprespsrc.get("1") == WhoIsResponse.STATUS.COMPLETED);
 		    assertNotNull(maprespsrc.get("2"));
-		    assertTrue(maprespsrc.get("2")==WhoIsResponse.STATUS.RUNNING);
+		    assertTrue(maprespsrc.get("2") == WhoIsResponse.STATUS.RUNNING);
 		    assertNotNull(maprespsrc.get("3"));
-		    assertTrue(maprespsrc.get("3")==WhoIsResponse.STATUS.YETTOSTART);
+		    assertTrue(maprespsrc.get("3") == WhoIsResponse.STATUS.YETTOSTART);
 		    channelsrc.close();
 		    channeldest.close();
 		} catch (Exception ex) {
@@ -516,7 +511,7 @@ public class UtilsTest {
 	@Test
 	public void validGCStatusMultipleGCInvoke() {
 		// Simulate a garbage collection event by manually triggering it
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0;i < 5;i++) {
 		    System.gc();
 		}
 

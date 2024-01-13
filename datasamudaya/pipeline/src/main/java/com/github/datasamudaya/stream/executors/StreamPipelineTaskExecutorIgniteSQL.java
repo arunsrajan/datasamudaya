@@ -21,16 +21,16 @@ import static java.util.Objects.nonNull;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
-import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -40,24 +40,20 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.apache.arrow.vector.ValueVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.ArrowStreamReader;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
-import com.github.datasamudaya.common.CompressedVectorSchemaRoot;
+import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.functions.CalculateCount;
@@ -68,13 +64,25 @@ import com.github.datasamudaya.common.functions.Sum;
 import com.github.datasamudaya.common.functions.SummaryStatistics;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
+import com.github.datasamudaya.stream.JsonSQL;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
+import com.google.common.collect.Maps;
+import com.univocity.parsers.common.IterableResult;
+import com.univocity.parsers.common.ParsingContext;
+import com.univocity.parsers.common.ResultIterator;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
+import com.univocity.parsers.csv.CsvWriter;
+
+import jp.co.yahoo.yosegi.config.Configuration;
+import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
 /**
  * This class executes tasks in ignite.
+ * 
  * @author Arun
  */
 @SuppressWarnings("rawtypes")
@@ -82,13 +90,13 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 
 	private static final long serialVersionUID = -3824414146677196362L;
 	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorIgniteSQL.class);
-	
-	private static ConcurrentMap<BlocksLocation, CompressedVectorSchemaRoot> blvectorsmap = new ConcurrentHashMap<>();
-	
+
+	private static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
+
 	public StreamPipelineTaskExecutorIgniteSQL(JobStage jobstage, Task task) {
 		super(jobstage, task);
 	}
-	
+
 	/**
 	 * Perform map operation to obtain intermediate stage result.
 	 * 
@@ -101,77 +109,122 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
-		log.info("BlocksLocation Columns: {}"+blockslocation.getColumns());
-		CSVParser records = null;
+		log.info("BlocksLocation Columns: {}" + blockslocation.getColumns());
+		InputStream istreamnocols = null;
+		BufferedReader buffernocols = null;
+		YosegiRecordWriter writer = null;
+		ByteArrayOutputStream baos = null;		
+		BufferedReader buffer = null;
+		InputStream bais = null;
+		CsvWriter writercsv = null;
+		List<String> reqcols = null;
+		List<String> originalcolsorder = null;
+		List<SqlTypeName> sqltypenamel = null;
+		String[] headers = null;
+		boolean iscsv = false;
 		var fsdos = new ByteArrayOutputStream();
-		VectorSchemaRoot vectorschemaroot = null;
-		ArrowStreamReader readerarrowstream = null;
-		List<VectorSchemaRoot> vectorschemaroottoprocess = new ArrayList<>();
-		List<ArrowStreamReader> readerarrowstreamtoprocess = new ArrayList<>();
 		try (var output = new Output(fsdos);) {
 			Stream intermediatestreamobject;
-			try {
-				CompressedVectorSchemaRoot compvectorschemaroot = blvectorsmap.get(blockslocation);
-				Set<String> columsvectorschemaroot = nonNull(compvectorschemaroot)? compvectorschemaroot.getColumnvectorschemarootkeymap().keySet():
-					new LinkedHashSet<>();
-				Set<String> columsvectorschemaroottoprocess = new LinkedHashSet<>(columsvectorschemaroot);
-				List<String> columsfromsql = blockslocation.getColumns();
-				columsvectorschemaroottoprocess.addAll(columsfromsql);
-				columsvectorschemaroottoprocess.removeAll(columsvectorschemaroot);
-				if(isNull(compvectorschemaroot) || CollectionUtils.isNotEmpty(columsvectorschemaroottoprocess)) {
-					log.info("Unable To Find vector for blocks {}",blockslocation);
-					try(var fs = FileSystem.get(URI.create(getHdfspath()), new Configuration());
-							var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, fs);
-					var buffer = new BufferedReader(new InputStreamReader(bais));){
-						CsvOptionsSQL csvoptions = (CsvOptionsSQL) jobstage.getStage().tasks.get(0);
-						var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
-						csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader()).withIgnoreHeaderCase()
-								.withTrim();
-						records = csvformat.parse(buffer);
-						Stream<CSVRecord> streamcsv = StreamSupport.stream(records.spliterator(), false);
-						CompressedVectorSchemaRoot compressedvectorschemaroot = nonNull(compvectorschemaroot)?
-								compvectorschemaroot:new CompressedVectorSchemaRoot();
-						Map<String, Integer> columnindexmap = SQLUtils.getColumnIndexMap(Arrays.asList(csvoptions.getHeader()));
-						SQLUtils.getArrowVectors(streamcsv,new ArrayList<>(columsvectorschemaroottoprocess), columnindexmap, csvoptions.getTypes(), compressedvectorschemaroot);
-						blvectorsmap.put(blockslocation, compressedvectorschemaroot);
-					}
-				}				
+			try {				
 				try {
-					compvectorschemaroot = blvectorsmap.get(blockslocation);
-					Map<String, String> columnvectorschemarootkeymap = compvectorschemaroot.getColumnvectorschemarootkeymap();
-					Map<String, String> vectorschemarootkeyfilemap = compvectorschemaroot.getVectorschemarootkeybytesmap();
-					List<String> processedkeys = new ArrayList<>();
-					Map<String, VectorSchemaRoot> keyvectorschemaroot = new ConcurrentHashMap<>();
-					Map<String, VectorSchemaRoot> columnvectorschemaroot = new ConcurrentHashMap<>();
-					for(String columnsql:columsfromsql) {
-						String vectorschemarootkey = columnvectorschemarootkeymap.get(columnsql);
-						if(!processedkeys.contains(vectorschemarootkey)) {
-							readerarrowstream = SQLUtils.decompressVectorSchemaRootBytes(vectorschemarootkeyfilemap.get(vectorschemarootkey));
-							readerarrowstreamtoprocess.add(readerarrowstream);
-							vectorschemaroot = readerarrowstream.getVectorSchemaRoot();
-							vectorschemaroottoprocess.add(vectorschemaroot);
-							keyvectorschemaroot.put(vectorschemarootkey, vectorschemaroot);
-							processedkeys.add(vectorschemarootkey);
-						} 
-						columnvectorschemaroot.put(columnsql, keyvectorschemaroot.get(vectorschemarootkey));
+					if(jobstage.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {
+						reqcols = new Vector<>(cosql.getRequiredcolumns());
+						originalcolsorder = new Vector<>(cosql.getRequiredcolumns());
+						Collections.sort(reqcols);
+						sqltypenamel = cosql.getTypes();
+						headers = cosql.getHeader();
+						iscsv = true;
+						
+					} else if(jobstage.getStage().tasks.get(0) instanceof JsonSQL jsql) {
+						reqcols = new Vector<>(jsql.getRequiredcolumns());
+						originalcolsorder = new Vector<>(jsql.getRequiredcolumns());
+						Collections.sort(reqcols);
+						sqltypenamel = jsql.getTypes();
+						headers = jsql.getHeader();
+						iscsv = false;
 					}
-					
-					final int totalrecords = compvectorschemaroot.getRecordcount();
-					List<String> columntoquery = blockslocation.getColumns();
-					Map<String, ValueVector> colvalvectormap = columntoquery.stream().collect(Collectors.toMap(val->val, val->{
-						ValueVector valuevector = columnvectorschemaroot.get(val).getVector((String) val);
-						return valuevector;
-					}));
-					log.info("Processing Data for blockslocation {}",blockslocation);
-					intermediatestreamobject = IntStream.range(0, totalrecords).mapToObj(recordIndex -> {
-						Map<String, Object> valuemap = new ConcurrentHashMap<>();
-						columntoquery.stream().forEach(column->{
-							Object arrowvectorvalue = colvalvectormap.get(column);
-							valuemap.put(column, SQLUtils.getVectorValue(recordIndex, arrowvectorvalue));
-						});					
-						return valuemap;
-					});
-				} finally {}
+					byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString() + reqcols.toString());
+					final List<String> oco = originalcolsorder; 
+					if (CollectionUtils.isNotEmpty(originalcolsorder)) {
+						if (isNull(yosegibytes) || yosegibytes.length == 0 || nonNull(blockslocation.getToreprocess()) && blockslocation.getToreprocess().booleanValue()) {
+							log.info("Unable To Find vector for blocks {}", blockslocation);
+							bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+							buffer = new BufferedReader(new InputStreamReader(bais));
+							task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
+							Map<String, SqlTypeName> sqltypename = SQLUtils.getColumnTypesByColumn(
+									sqltypenamel, Arrays.asList(headers));
+							if(iscsv) {
+								CsvParserSettings settings = new CsvParserSettings();							
+								settings.selectIndexes(Utils.indexOfRequiredColumns(originalcolsorder, Arrays.asList(headers)));
+								settings.getFormat().setLineSeparator("\n");
+								settings.setNullValue(DataSamudayaConstants.EMPTY);
+								CsvParser parser = new CsvParser(settings);							
+								IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);   
+								ResultIterator<String[], ParsingContext> iterator = iter.iterator();
+						        Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.SIZED | Spliterator.SUBSIZED);
+						        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);								
+								baos = new ByteArrayOutputStream();								
+								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+								intermediatestreamobject = stringstream.map(values -> {
+									Map data = Maps.newLinkedHashMap();
+									Map datatoprocess = Maps.newLinkedHashMap();
+									try {
+										oco.forEach(col->{
+											SQLUtils.setYosegiObjectByValue(values[oco.indexOf(col)], sqltypename.get(col), data,
+													col);
+											SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
+										});
+										writerdataload.addRow(data);
+									} catch (Exception ex) {
+										log.error(DataSamudayaConstants.EMPTY, ex);
+									}
+									return datatoprocess;
+								});
+							} else {
+								baos = new ByteArrayOutputStream();
+								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+								intermediatestreamobject = buffer.lines();
+								intermediatestreamobject = intermediatestreamobject.map(line -> {
+									try {
+										JSONObject jsonobj = (JSONObject) new JSONParser().parse((String) line);
+										Map data = Maps.newLinkedHashMap();
+										Map datatoprocess = Maps.newLinkedHashMap();
+										try {
+											oco.forEach(col->{
+												String reccolval = "";
+												if(jsonobj.get(col) instanceof String val) {
+													reccolval = val;
+												} else if(jsonobj.get(col) instanceof JSONObject jsonval){
+													reccolval = jsonval.toString();
+												} else if(jsonobj.get(col) instanceof Boolean val) {
+													reccolval = val.toString();
+												}
+												SQLUtils.setYosegiObjectByValue(reccolval, sqltypename.get(col), data,
+														col);
+												SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
+											});
+											writerdataload.addRow(data);
+										} catch (Exception ex) {
+											log.error(DataSamudayaConstants.EMPTY, ex);
+										}
+										return datatoprocess;
+									} catch (ParseException e) {
+										return null;
+									}
+								});
+							}
+						} else {
+							intermediatestreamobject = SQLUtils.getYosegiStreamRecords(yosegibytes,
+									originalcolsorder, Arrays.asList(headers),
+									sqltypenamel);
+						}
+					} else {
+						istreamnocols = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+						buffernocols = new BufferedReader(new InputStreamReader(istreamnocols));
+						intermediatestreamobject = buffernocols.lines().map(line -> new HashMap<>());
+					}
+				} finally {
+				}
 			} catch (IOException ioe) {
 				log.error(PipelineConstants.FILEIOERROR, ioe);
 				throw new PipelineException(PipelineConstants.FILEIOERROR, ioe);
@@ -219,7 +272,7 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 
 				} else if (finaltask instanceof StandardDeviation) {
 					out = new Vector<>();
-					var streamtmp = ((java.util.stream.IntStream) streammap).boxed().collect(Collectors.toList());
+					var streamtmp = ((IntStream) streammap).boxed().collect(Collectors.toList());
 					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
 					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
@@ -249,24 +302,47 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 			log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 			throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 		} finally {
-			vectorschemaroottoprocess.stream().forEach(vsr -> {
-				if (nonNull(vsr)) {
-					vsr.clear();
-					vsr.close();
-				}
-			});
-			readerarrowstreamtoprocess.stream().forEach(reader -> {
-				if (nonNull(reader)) {
-					try {
-						reader.close();
-					} catch (IOException e) {
-						log.error(DataSamudayaConstants.EMPTY, e);
-					}
-				}
-			});
-			if (!Objects.isNull(records)) {
+			if (nonNull(writer)) {				
 				try {
-					records.close();
+					writer.close();
+				} catch (IOException e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+			if (nonNull(baos)) {
+				byte[] yosegibytes = baos.toByteArray();
+				cache.put(blockslocation.toBlString() + reqcols.toString(), yosegibytes);
+				task.numbytesconverted = yosegibytes.length;
+				try {
+					baos.close();
+				} catch (IOException e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+			if (nonNull(buffer)) {
+				try {
+					buffer.close();
+				} catch (IOException e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+			if (nonNull(bais)) {
+				try {
+					bais.close();
+				} catch (IOException e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+			if (nonNull(buffernocols)) {
+				try {
+					buffernocols.close();
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+			if (nonNull(istreamnocols)) {
+				try {
+					istreamnocols.close();
 				} catch (Exception e) {
 					log.error(DataSamudayaConstants.EMPTY, e);
 				}

@@ -37,14 +37,6 @@ import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.ReducerValues;
 import com.github.datasamudaya.stream.StreamPipelineBaseTestCommon;
-import com.github.datasamudaya.tasks.executor.Combiner;
-import com.github.datasamudaya.tasks.executor.CombinerExecutor;
-import com.github.datasamudaya.tasks.executor.Mapper;
-import com.github.datasamudaya.tasks.executor.MapperExecutor;
-import com.github.datasamudaya.tasks.executor.Reducer;
-import com.github.datasamudaya.tasks.executor.ReducerExecutor;
-import com.github.datasamudaya.tasks.executor.TaskExecutorMapperCombiner;
-import com.github.datasamudaya.tasks.executor.TaskExecutorReducer;
 
 public class MassiveDataCruncherMRApiTest extends StreamPipelineBaseTestCommon {
 

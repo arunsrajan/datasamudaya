@@ -39,7 +39,7 @@ import com.github.datasamudaya.stream.PipelineException;
 @SuppressWarnings("rawtypes")
 public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTaskExecutor permits StreamPipelineTaskExecutorInMemoryDisk  {
 	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorInMemory.class);
-	protected ConcurrentMap<String,OutputStream> resultstream = null;
+	protected ConcurrentMap<String,OutputStream> resultstream;
 	public double timetaken = 0.0;
 	
 	public StreamPipelineTaskExecutorInMemory(JobStage jobstage, 
@@ -56,9 +56,8 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 	 */
 	public OutputStream getIntermediateInputStreamRDF(RemoteDataFetch rdf) throws Exception {
 		log.debug("Entered StreamPipelineTaskExecutorInMemory.getIntermediateInputStreamRDF");
-		var path = (rdf.getJobid() + DataSamudayaConstants.HYPHEN +
-				rdf.getStageid() + DataSamudayaConstants.HYPHEN +rdf.getTaskid()
-				);
+		var path = rdf.getJobid() + DataSamudayaConstants.HYPHEN
+				+ rdf.getStageid() + DataSamudayaConstants.HYPHEN +rdf.getTaskid();
 		OutputStream os = resultstream.get(path);
 		log.debug("Exiting StreamPipelineTaskExecutorInMemory.getIntermediateInputStreamFS");
 		if(isNull(os)) {
@@ -80,9 +79,8 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 	 */
 	public OutputStream getIntermediateInputStreamTask(Task task) throws Exception {
 		log.debug("Entered StreamPipelineTaskExecutorInMemory.getIntermediateInputStreamTask");
-		var path = (task.getJobid() + DataSamudayaConstants.HYPHEN +
-				task.getStageid() + DataSamudayaConstants.HYPHEN +task.getTaskid()
-				);
+		var path = task.getJobid() + DataSamudayaConstants.HYPHEN
+				+ task.getStageid() + DataSamudayaConstants.HYPHEN +task.getTaskid();
 		OutputStream os = resultstream.get(path);
 		log.debug("Exiting StreamPipelineTaskExecutorInMemory.getIntermediateInputStreamTask");
 		if(isNull(os)) {
@@ -102,8 +100,8 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 	 */
 	@Override
 	public String getIntermediateDataFSFilePath(Task task) {
-		return task.jobid + DataSamudayaConstants.HYPHEN +
-				task.stageid + DataSamudayaConstants.HYPHEN +task.taskid;
+		return task.jobid + DataSamudayaConstants.HYPHEN
+				+ task.stageid + DataSamudayaConstants.HYPHEN +task.taskid;
 	}
 	
 	/**
@@ -111,11 +109,11 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 	 * and return it. 
 	 */
 	@Override
-	public OutputStream createIntermediateDataToFS(Task task,int buffersize) throws PipelineException {
+	public OutputStream createIntermediateDataToFS(Task task, int buffersize) throws PipelineException {
 		log.debug("Entered StreamPipelineTaskExecutorInMemory.createIntermediateDataToFS");
 		try {
 			var path = getIntermediateDataFSFilePath(task);
-			log.info("ResultStream Path: "+path);
+			log.info("ResultStream Path: " + path);
 			OutputStream os;
 			os = new ByteBufferOutputStream(ByteBufferPoolDirect.get(buffersize));
 			resultstream.put(path, os);
@@ -152,11 +150,11 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 	@Override
 	public Boolean call() {
 		starttime = System.currentTimeMillis();
-		log.debug("Entered StreamPipelineTaskExecutorInMemory.call for task "+task);
+		log.debug("Entered StreamPipelineTaskExecutorInMemory.call for task " + task);
 		String stageTasks = "";
 		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
-		log.info("Acclaimed namenode URL "+hdfsfilepath);
-		log.info("Result Stream "+resultstream);
+		log.info("Acclaimed namenode URL " + hdfsfilepath);
+		log.info("Result Stream " + resultstream);
 		var configuration = new Configuration();
 		try(var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);) {
 			stageTasks = getStagesTask();
@@ -164,9 +162,9 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 			if (task.input != null && task.parentremotedatafetch != null) {
 				if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
 					var numinputs = task.parentremotedatafetch.length;
-					for (var inputindex = 0; inputindex<numinputs;inputindex++) {
+					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.parentremotedatafetch[inputindex];
-						if(input != null) {
+						if (input != null) {
 							var rdf = (RemoteDataFetch) input;
 							var os = getIntermediateInputStreamRDF(rdf);
 							if (os != null) {
@@ -181,11 +179,11 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 					}
 				} else if(task.input!=null && task.input[0]!=null) {
 					var numinputs = task.input.length;
-					for (var inputindex = 0; inputindex<numinputs;inputindex++) {
+					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.input[inputindex];
-						if(input != null && input instanceof Task taskinput) {
+						if (input != null && input instanceof Task taskinput) {
 							var os = getIntermediateInputStreamTask(taskinput);
-							log.info("Task Input "+taskinput.jobid+" Os:" + os);
+							log.info("Task Input " + taskinput.jobid + " Os:" + os);
 							if (os != null) {
 								ByteBufferOutputStream bbos = (ByteBufferOutputStream) os;
 								ByteBuffer buffer = bbos.get();
@@ -198,7 +196,10 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 			log.info("Functioning Task " + task);
 			log.info("Task Input length" + task.input.length);
 			log.info("Task Input " + task.input[0]);
+			task.taskexecutionstartime = starttime;
 			timetaken = computeTasks(task, hdfs);
+			endtime = task.taskexecutionendtime = System.currentTimeMillis();
+			task.timetakenseconds = timetaken;
 			log.info("Completed Task: " + task);
 			task.piguuid = UUID.randomUUID().toString();
 			completed = true;

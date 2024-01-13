@@ -12,25 +12,26 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class GithubEventsStreamReduce implements Serializable, Pipeline {
 	private static final long serialVersionUID = -7163128367640941539L;
-	private Logger log = Logger.getLogger(GithubEventsStreamReduce.class);
+	private final Logger log = Logger.getLogger(GithubEventsStreamReduce.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");
-		if(args[3].equals("local")) {
+		if("local".equals(args[3])) {
 			pipelineconfig.setLocal("true");
 			pipelineconfig.setMesos("false");
 			pipelineconfig.setYarn("false");
 			pipelineconfig.setJgroups("false");
-		} else if(args[3].equals("sa")) {
+		} else if("sa".equals(args[3])) {
 			pipelineconfig.setLocal("false");
 			pipelineconfig.setMesos("false");
 			pipelineconfig.setYarn("false");
 			pipelineconfig.setJgroups("false");
-		} else if(args[3].equals("yarn")) {
+		} else if("yarn".equals(args[3])) {
 			pipelineconfig.setLocal("false");
 			pipelineconfig.setMesos("false");
 			pipelineconfig.setYarn("true");
 			pipelineconfig.setJgroups("false");
+			pipelineconfig.setJobname(GithubEventsStreamReduce.class.getName());
 		} else {
 			pipelineconfig.setLocal("false");
 			pipelineconfig.setMesos("false");

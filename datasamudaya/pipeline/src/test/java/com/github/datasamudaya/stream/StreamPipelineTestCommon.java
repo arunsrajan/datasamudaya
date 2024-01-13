@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.log4j.Logger;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.ehcache.Cache;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -83,12 +84,12 @@ public class StreamPipelineTestCommon {
 
 	@BeforeClass
 	public static void setUp() throws Throwable {
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		StaticComponentContainer.Modules.exportAllToAll();
 		System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
 		Configuration conf = new Configuration();
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
-		ByteBufferPoolDirect.init(2*DataSamudayaConstants.GB);
+		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
                 DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 	            + DataSamudayaConstants.CACHEBLOCKS);

@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.log4j.PropertyConfigurator;
+import org.burningwave.core.assembler.StaticComponentContainer;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -34,14 +36,13 @@ import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.CacheUtils;
-import com.github.datasamudaya.common.CompressedVectorSchemaRoot;
-import com.github.datasamudaya.common.Job;
-import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.Job;
+import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.ServerUtils;
 import com.github.datasamudaya.common.StreamDataCruncher;
@@ -61,7 +62,7 @@ import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
  */
 public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 
-  static org.slf4j.Logger log = LoggerFactory.getLogger(TaskExecutorRunner.class);
+  static Logger log = LoggerFactory.getLogger(TaskExecutorRunner.class);
   Map<String, Object> apptaskexecutormap = new ConcurrentHashMap<>();
   Map<String, Object> jobstageexecutormap = new ConcurrentHashMap<>();
   ConcurrentMap<String, OutputStream> resultstream = new ConcurrentHashMap<>();
@@ -70,7 +71,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
   Queue<Object> taskqueue = new LinkedBlockingQueue<Object>();
   static ExecutorService es;
   static CountDownLatch shutdown = new CountDownLatch(1);
-  static ConcurrentMap<BlocksLocation, CompressedVectorSchemaRoot> blvectorsmap = new ConcurrentHashMap<>();
+  static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
 
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {						
@@ -99,7 +100,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 						+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 			}
-			org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+			StaticComponentContainer.Modules.exportAllToAll();
 			zo.connect();
 			ByteBufferPoolDirect.init(Long.parseLong(args[1]));
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
@@ -136,14 +137,14 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	
 	var hp = host+DataSamudayaConstants.UNDERSCORE+port;
 	
-	zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), (event)->{
-		log.info("TaskExecutor {} initialized and started",hp);
+	zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
+		log.info("TaskExecutor {} initialized and started", hp);
 	});
 
   }
 
   ClassLoader cl;
-  static Registry server = null;
+  static Registry server;
 
   /**
    * Starts and executes the tasks from scheduler via rpc registry.
@@ -161,7 +162,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
         DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
             + DataSamudayaConstants.ASTERIX,
         new ResourcesMetricsServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA
-            + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX);
+            + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+			new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
     log.info("Jetty Server initialized at: {}", port);
     su.start();
     log.info("Jetty Server started and listening: {}", port);
@@ -197,15 +199,15 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
         	  StreamJobScheduler js = new StreamJobScheduler();
         	  return js.schedule(job);
           } else if (!Objects.isNull(deserobj)) {
-        	  log.info("Deserialized object:{} ",deserobj);
+        	  log.info("Deserialized object:{} ", deserobj);
             TaskExecutor taskexecutor = new TaskExecutor(cl, port, es, configuration,
                 apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
-                jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blvectorsmap);
+                jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap);
             return taskexecutor.call();
           }
         } catch (Throwable ex) {
           log.error(DataSamudayaConstants.EMPTY, ex);
-          if(ex instanceof Exception e) {
+          if (ex instanceof Exception e) {
           	Utils.getStackTrace(e, task);
           }
         }
@@ -217,8 +219,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
     log.info("RPC Registry for port: {} Obtained", port);
   }
 
-  static StreamDataCruncher stub = null;
-  static StreamDataCruncher dataCruncher = null;
+  static StreamDataCruncher stub;
+  static StreamDataCruncher dataCruncher;
 
   /**
    * Destroy the thread pool.

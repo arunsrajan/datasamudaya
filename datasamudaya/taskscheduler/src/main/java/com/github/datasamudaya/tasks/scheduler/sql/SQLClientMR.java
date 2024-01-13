@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.List;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,25 +28,31 @@ import com.github.datasamudaya.common.utils.Utils;
 import jline.console.ConsoleReader;
 
 /**
- * This class is SQL client 
+ * This class is SQL client
+ * 
  * @author arun
  *
  */
 public class SQLClientMR {
-	private static Logger log = LoggerFactory.getLogger(SQLClientMR.class);
-	private static List<String> history = new ArrayList<>();
-	private static int historyIndex = 0;
+	private static final Logger log = LoggerFactory.getLogger(SQLClientMR.class);
+	private static final List<String> history = new ArrayList<>();
+	private static int historyIndex;
 
 	/**
 	 * Main method which starts sql client in terminal.
+	 * 
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {		
+	public static void main(String[] args) throws Exception {
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.USERSQL, true, DataSamudayaConstants.USERSQLREQUIRED);
+		options.addOption(DataSamudayaConstants.SQLCONTAINERS, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.CPUPERCONTAINER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.MEMORYPERCONTAINER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.SQLWORKERMODE, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
 		var cmd = parser.parse(options, args);
 		String user;
@@ -60,32 +68,76 @@ public class SQLClientMR {
 			config = cmd.getOptionValue(DataSamudayaConstants.CONF);
 			Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
 		} else {
-			Utils.initializeProperties(
-					datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
+			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
 					DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
-		org.burningwave.core.assembler.StaticComponentContainer.Modules.exportAllToAll();
+		int numberofcontainers = 1;
+		if (cmd.hasOption(DataSamudayaConstants.SQLCONTAINERS)) {
+			String containers = cmd.getOptionValue(DataSamudayaConstants.SQLCONTAINERS);
+			numberofcontainers = Integer.valueOf(containers);
+			
+		} else {
+			numberofcontainers = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS));
+		}
+		int cpupercontainer = 1;
+		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
+			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUPERCONTAINER);
+			cpupercontainer = Integer.valueOf(cpu);
+			
+		}
+		int memorypercontainer = 1024;
+		if (cmd.hasOption(DataSamudayaConstants.MEMORYPERCONTAINER)) {
+			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYPERCONTAINER);
+			memorypercontainer = Integer.valueOf(memory);
+			
+		}
+		String mode = DataSamudayaConstants.SQLWORKERMODE_DEFAULT;
+		if (cmd.hasOption(DataSamudayaConstants.SQLWORKERMODE)) {
+			mode = cmd.getOptionValue(DataSamudayaConstants.SQLWORKERMODE);
+		}
+		StaticComponentContainer.Modules.exportAllToAll();
 		// get the hostname of the sql server
 		String hostName = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST);
 		// get the port number of the sql server
-		int portNumber = Integer
-				.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SQLPORTMR, DataSamudayaConstants.SQLPORTMR_DEFAULT));
+		int portNumber = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SQLPORTMR,
+				DataSamudayaConstants.SQLPORTMR_DEFAULT));
 
-		try (Socket socket = new Socket(hostName, portNumber);
-				PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-				BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
-			out.println(user);
-			printServerResponse(in);
-			String messagestorefile = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SQLMESSAGESSTORE,
-					DataSamudayaConstants.SQLMESSAGESSTORE_DEFAULT) + DataSamudayaConstants.UNDERSCORE + user;
-			try {
-				processMessage(out, in, messagestorefile);
-			} catch (Exception ex) {
-				log.info("Aborting Connection");
-				out.println("quit");
+		int timeout = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SO_TIMEOUT,
+				DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
+
+		while (true) {
+			try (Socket sock = new Socket();) {
+				sock.connect(new InetSocketAddress(hostName, portNumber), timeout);
+				if (sock.isConnected()) {
+					try (Socket socket = sock;
+							PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+							BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
+						out.println(user);
+						out.println(numberofcontainers);
+						out.println(cpupercontainer);
+						out.println(memorypercontainer);
+						out.println(mode);
+						printServerResponse(in);
+						String messagestorefile = DataSamudayaProperties.get().getProperty(
+								DataSamudayaConstants.SQLMESSAGESSTORE, DataSamudayaConstants.SQLMESSAGESSTORE_DEFAULT)
+								+ DataSamudayaConstants.UNDERSCORE + user;
+						try {
+							processMessage(out, in, messagestorefile);
+						} catch (Exception ex) {
+							log.info("Aborting Connection");
+							out.println("quit");
+						}
+						break;
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+					}
+				}
+			} catch (Throwable ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
-		} catch (Exception ex) {
-			log.error(DataSamudayaConstants.EMPTY, ex);
+			log.info("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
+			Thread.sleep(2000);
 		}
 	}
 
@@ -104,6 +156,7 @@ public class SQLClientMR {
 
 	/**
 	 * Processes the message from client to server and back to client.
+	 * 
 	 * @param out
 	 * @param in
 	 * @param messagestorefile
@@ -116,7 +169,7 @@ public class SQLClientMR {
 		reader.setPrompt("\nSQLMR>");
 		while (true) {
 			String input = readLineWithHistory(reader);
-			if (input.equals("Quit")) {
+			if ("Quit".equals(input)) {
 				break;
 			}
 			processInput(input, out);
@@ -124,15 +177,16 @@ public class SQLClientMR {
 			if (toquit) {
 				break;
 			}
-			saveHistory(messagestorefile);			
+			saveHistory(messagestorefile);
 		}
 
 		reader.close();
 	}
 
 	/**
-	 * Histroy stored in file will be loaded and when keys are pressed will
-	 * be displayed to the user.
+	 * Histroy stored in file will be loaded and when keys are pressed will be
+	 * displayed to the user.
+	 * 
 	 * @param reader
 	 * @return messages like sql query from history or user typed text.
 	 * @throws Exception
@@ -202,8 +256,8 @@ public class SQLClientMR {
 							reader.flush();
 						} else if (key == 51) {
 							int curPos = reader.getCursorBuffer().cursor;
-							if (curPos >= 0 && curPos<reader.getCursorBuffer().length()) {
-								reader.setCursorPosition(curPos+1);
+							if (curPos >= 0 && curPos < reader.getCursorBuffer().length()) {
+								reader.setCursorPosition(curPos + 1);
 								reader.backspace();
 								reader.flush();
 								if (!sb.isEmpty() && curPos < sb.length()) {
@@ -233,9 +287,7 @@ public class SQLClientMR {
 							sb.deleteCharAt(curPos);
 						}
 					}
-				} else if (key == 126) {
-					
-				} else {
+				} else if (key != 126) {
 					historyIndex = history.size();
 					sb.delete(0, sb.length());
 					sb.append(reader.getCursorBuffer().toString());
@@ -244,6 +296,7 @@ public class SQLClientMR {
 					reader.setConsoleBuffer(sb.toString());
 					reader.setCursorPosition(curPos + 1);
 					reader.flush();
+
 				}
 			}
 			line = sb.toString();
@@ -261,6 +314,7 @@ public class SQLClientMR {
 
 	/**
 	 * Input sent to server.
+	 * 
 	 * @param input
 	 * @param out
 	 */
@@ -272,6 +326,7 @@ public class SQLClientMR {
 
 	/**
 	 * The history from the files will be loaded.
+	 * 
 	 * @param messagestorefile
 	 */
 	private static void loadHistory(String messagestorefile) {
@@ -288,6 +343,7 @@ public class SQLClientMR {
 
 	/**
 	 * Save the messages to history file.
+	 * 
 	 * @param messagestorefile
 	 */
 	private static void saveHistory(String messagestorefile) {
@@ -302,6 +358,7 @@ public class SQLClientMR {
 
 	/**
 	 * This method is console reader with custom setConsoleBuffer method.
+	 * 
 	 * @author arun
 	 *
 	 */

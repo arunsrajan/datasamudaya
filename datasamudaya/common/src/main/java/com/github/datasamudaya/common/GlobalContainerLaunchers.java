@@ -21,6 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
 
+import static java.util.Objects.isNull;
+
 /**
  * Holds LaunchContainer object globally.
  * @author arun
@@ -28,25 +30,29 @@ import org.apache.log4j.Logger;
  */
 public class GlobalContainerLaunchers {
 
-	private static Logger log = Logger.getLogger(GlobalContainerLaunchers.class);
+	private static final Logger log = Logger.getLogger(GlobalContainerLaunchers.class);
 
 	private GlobalContainerLaunchers() {
 	}
 
-	private static Map<String, List<LaunchContainers>> lcsmap = new ConcurrentHashMap<String, List<LaunchContainers>>();
+	private static final Map<String, Map<String, List<LaunchContainers>>> lcsmap = new ConcurrentHashMap<>();
 
 	/**
-	 * The put method for holding userid as key and list of LaunchContainers object as values.
-	 * @param cid
+	 * The put method for holding userid as key, jobid and list of LaunchContainers object as values.
+	 * @param userid
+	 * @param jobid
 	 * @param lcs
 	 */
-	public static void put(String userid, List<LaunchContainers> lcs) {
-		if (!lcsmap.containsKey(userid)) {
-			lcsmap.put(userid, lcs);
+	public static void put(String userid, String jobid, List<LaunchContainers> lcs) {
+		Map<String,List<LaunchContainers>> jobidcontainersmap = lcsmap.get(userid);
+		if (isNull(jobidcontainersmap)) {
+			jobidcontainersmap = new ConcurrentHashMap<>();
+			lcsmap.put(userid, jobidcontainersmap);
 		}
 		else {
 			log.info("Chamber launched already: " + userid + " with assets: " + lcs);
 		}
+		jobidcontainersmap.put(jobid, lcs);
 	}
 
 	/**
@@ -54,7 +60,15 @@ public class GlobalContainerLaunchers {
 	 * @return
 	 */
 	public static List<LaunchContainers> getAll() {
-		return lcsmap.keySet().stream().flatMap(userid -> lcsmap.get(userid).stream()).collect(Collectors.toList());
+		return lcsmap.keySet().stream().flatMap(userid -> lcsmap.get(userid).entrySet().stream()).flatMap(es -> es.getValue().stream()).collect(Collectors.toList());
+	}
+	
+	/**
+	 * Get All Users Job Containers Map for printing in web console
+	 * @return map of User Job Containers
+	 */
+	public static Map<String, Map<String, List<LaunchContainers>>> getUserContainersMap() {
+		return lcsmap;
 	}
 
 	/**
@@ -62,8 +76,8 @@ public class GlobalContainerLaunchers {
 	 * @param userid
 	 * @return list of LaunchContainers object.
 	 */
-	public static List<LaunchContainers> get(String userid) {
-		return lcsmap.get(userid);
+	public static List<LaunchContainers> get(String userid, String jobid) {
+		return lcsmap.get(userid).get(jobid);
 	}
 
 	/**
@@ -73,4 +87,23 @@ public class GlobalContainerLaunchers {
 	public static void remove(String userid) {
 		lcsmap.remove(userid);
 	}
+	
+	/**
+	 * Get the entries for the given userid
+	 * @param userid
+	 * @return Container entries for the user
+	 */
+	public static Map<String, List<LaunchContainers>> get(String userid){
+		return lcsmap.get(userid);
+	}
+	
+	/**
+	 * Remove entries for given userid and jobid
+	 * @param userid
+	 * @param jobid
+	 */
+	public static void remove(String userid, String jobid) {
+		lcsmap.get(userid).remove(jobid);
+	}
+	
 }

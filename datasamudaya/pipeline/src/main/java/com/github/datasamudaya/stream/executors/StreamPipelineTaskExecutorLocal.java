@@ -104,7 +104,7 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 	 * @throws PipelineException 
 	 */
 	@Override
-	public OutputStream createIntermediateDataToFS(Task task,int buffersize) throws PipelineException {
+	public OutputStream createIntermediateDataToFS(Task task, int buffersize) throws PipelineException {
 		log.debug("Entered StreamPipelineTaskExecutorLocal.createIntermediateDataToFS");
 		try {
 			var path = getIntermediateDataFSFilePath(task);
@@ -134,7 +134,7 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 		log.debug("Exiting StreamPipelineTaskExecutorLocal.getIntermediateInputStreamFS");
 		OutputStream os = resultstream.get(path);
 		if(Objects.isNull(os)) {
-			throw new NullPointerException("Unable to get Result Stream for path: "+path);
+			throw new NullPointerException("Unable to get Result Stream for path: " + path);
 		}else if(os instanceof ByteBufferOutputStream baos) {
 			return new ByteBufferInputStream(baos.get().duplicate());
 		} else {
@@ -161,7 +161,7 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 			if (task.input != null && task.parentremotedatafetch != null) {
 				if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
 					var numinputs = task.parentremotedatafetch.length;
-					for (var inputindex = 0; inputindex < numinputs; inputindex++) {
+					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.parentremotedatafetch[inputindex];
 						if (input != null) {
 							var rdf = (RemoteDataFetch) input;
@@ -178,9 +178,9 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 					}
 				} else if(task.input!=null && task.input[0]!=null) {
 					var numinputs = task.input.length;
-					for (var inputindex = 0; inputindex<numinputs;inputindex++) {
+					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.input[inputindex];
-						if(input != null && input instanceof Task taskinput) {
+						if (input != null && input instanceof Task taskinput) {
 							var is = getIntermediateInputStreamFS(taskinput);
 							if (is != null) {
 								task.input[inputindex] = is;

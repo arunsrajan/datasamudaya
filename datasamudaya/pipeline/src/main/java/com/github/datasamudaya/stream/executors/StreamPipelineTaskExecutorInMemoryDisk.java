@@ -103,7 +103,7 @@ import com.pivovarit.collectors.ParallelCollectors;
  * @author Arun Task executors thread for standalone task executors daemon.
  */
 @SuppressWarnings("rawtypes")
-public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelineTaskExecutorInMemory {
+public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelineTaskExecutorInMemory permits StreamPipelineTaskExecutorInMemoryDiskSQL {
 	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorInMemoryDisk.class);
 
 	public StreamPipelineTaskExecutorInMemoryDisk(JobStage jobstage, ConcurrentMap<String, OutputStream> resultstream,
@@ -189,33 +189,25 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 				var streamsecond = buffer2.lines();) {
 			var cf = (CompletableFuture) streamsecond.distinct().collect(ParallelCollectors.parallel(value -> value,
 					Collectors.toCollection(LinkedHashSet::new), executor, Runtime.getRuntime().availableProcessors()));
-			;
 			var setsecond = (Set) cf.get();
-			if (task.finalphase && task.saveresulttohdfs) {
-				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-					int ch = (int) '\n';
-					streamfirst.distinct().filter(setsecond::contains).forEach(val -> {
-						try {
-							os.write(val.toString().getBytes());
-							os.write(ch);
-						} catch (IOException e) {
-						}
-					});
-				}
-				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-				return timetaken;
-			}
 			// Get the result of intersection functions parallel.
 			cf = (CompletableFuture) streamfirst.distinct().filter(setsecond::contains)
 					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
 							Runtime.getRuntime().availableProcessors()));
 
 			Object result = cf.get();
+			if (task.finalphase && task.saveresulttohdfs) {
+				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+						Short.parseShort(DataSamudayaProperties.get().getProperty(
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+					Utils.convertToCsv((List) result, os);
+				}
+				return (System.currentTimeMillis() - starttime) / 1000.0;
+			}
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<Object>(result);
 			result = null;
@@ -242,7 +234,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 	 * @return timetaken in seconds
 	 * @throws Exception
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSIntersection(Set<InputStream> fsstreamfirst, List<BlocksLocation> blockssecond,
 			FileSystem hdfs) throws Exception {
 		var starttime = System.currentTimeMillis();
@@ -261,30 +253,23 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 					Collectors.toCollection(LinkedHashSet::new), executor, Runtime.getRuntime().availableProcessors()));
 			;
 			var setsecond = (Set) cf.get();
-			if (task.finalphase && task.saveresulttohdfs) {
-				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-					int ch = (int) '\n';
-					datafirst.stream().distinct().filter(setsecond::contains).forEach(val -> {
-						try {
-							os.write(val.toString().getBytes());
-							os.write(ch);
-						} catch (IOException e) {
-						}
-					});
-				}
-				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-				return timetaken;
-			}
 			// Parallel execution of the intersection function.
 			cf = (CompletableFuture) datafirst.stream().distinct().filter(setsecond::contains)
 					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
 							Runtime.getRuntime().availableProcessors()));
 			Object result = cf.get();
+			if (task.finalphase && task.saveresulttohdfs) {
+				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+						Short.parseShort(DataSamudayaProperties.get().getProperty(
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+					Utils.convertToCsv((List) result, os);
+				}
+				return (System.currentTimeMillis() - starttime) / 1000.0;
+			}
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<Object>(result);
 			result = null;
@@ -310,7 +295,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 	 * @return timetaken in seconds.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSIntersection(List<InputStream> fsstreamfirst, List<InputStream> fsstreamsecond)
 			throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -326,29 +311,23 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var datasecond = (List) Utils.getKryo().readClassAndObject(inputsecond);
-			if (task.finalphase && task.saveresulttohdfs) {
-				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-					int ch = (int) '\n';
-					datafirst.stream().distinct().filter(datasecond::contains).forEach(val -> {
-						try {
-							os.write(val.toString().getBytes());
-							os.write(ch);
-						} catch (IOException e) {
-						}
-					});
-				}
-				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-				return timetaken;
-			}
 			// parallel execution of intersection function.
 			var cf = (CompletableFuture) datafirst.stream().distinct().filter(datasecond::contains)
 					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
 							Runtime.getRuntime().availableProcessors()));
 			Object result = cf.get();
+			if (task.finalphase && task.saveresulttohdfs) {
+				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+						Short.parseShort(DataSamudayaProperties.get().getProperty(
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+					Utils.convertToCsv((List) result, os);
+				}
+				return (System.currentTimeMillis() - starttime) / 1000.0;
+			}
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<Object>(result);
 			result = null;
@@ -386,7 +365,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSUnion(BlocksLocation blocksfirst, BlocksLocation blockssecond, FileSystem hdfs)
 			throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -412,10 +391,10 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
-						os.write(("" + java.util.stream.Stream.concat(streamfirst, streamsecond).distinct().count())
+						os.write(("" + Stream.concat(streamfirst, streamsecond).distinct().count())
 								.getBytes());
 					} else {
-						java.util.stream.Stream.concat(streamfirst, streamsecond).distinct().forEach(val -> {
+						Stream.concat(streamfirst, streamsecond).distinct().forEach(val -> {
 							try {
 								os.write(val.toString().getBytes());
 								os.write(ch);
@@ -429,10 +408,10 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			if (terminalCount) {
 				result = new Vector<>();
-				result.add(java.util.stream.Stream.concat(streamfirst, streamsecond).distinct().count());
+				result.add(Stream.concat(streamfirst, streamsecond).distinct().count());
 			} else {
 				// parallel stream union operation result
-				var cf = (CompletableFuture) java.util.stream.Stream.concat(streamfirst, streamsecond).distinct()
+				var cf = (CompletableFuture) Stream.concat(streamfirst, streamsecond).distinct()
 						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 								executor, Runtime.getRuntime().availableProcessors()));
 				result = (List) cf.get();
@@ -440,7 +419,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(result);
 			result = null;
@@ -467,7 +446,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSUnion(Set<InputStream> fsstreamfirst, List<BlocksLocation> blockssecond,
 			FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -493,10 +472,10 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 					int ch = (int) '\n';
 					if (terminalCount) {
 						os.write((""
-								+ java.util.stream.Stream.concat(datafirst.stream(), streamsecond).distinct().count())
+								+ Stream.concat(datafirst.stream(), streamsecond).distinct().count())
 								.getBytes());
 					} else {
-						java.util.stream.Stream.concat(datafirst.stream(), streamsecond).distinct().forEach(val -> {
+						Stream.concat(datafirst.stream(), streamsecond).distinct().forEach(val -> {
 							try {
 								os.write(val.toString().getBytes());
 								os.write(ch);
@@ -511,17 +490,17 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			List result;
 			if (terminalCount) {
 				result = new Vector<>();
-				result.add(java.util.stream.Stream.concat(datafirst.stream(), streamsecond).distinct().count());
+				result.add(Stream.concat(datafirst.stream(), streamsecond).distinct().count());
 			} else {
 				// parallel stream union operation result
-				var cf = (CompletableFuture) java.util.stream.Stream.concat(datafirst.stream(), streamsecond).distinct()
+				var cf = (CompletableFuture) Stream.concat(datafirst.stream(), streamsecond).distinct()
 						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 								executor, Runtime.getRuntime().availableProcessors()));
 				result = (List) cf.get();
 			}
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(result);
 			result = null;
@@ -547,7 +526,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings({"unchecked"})
 	public double processBlockHDFSUnion(List<InputStream> fsstreamfirst, List<InputStream> fsstreamsecond)
 			throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -572,10 +551,10 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
-						os.write(("" + java.util.stream.Stream.concat(datafirst.stream(), datasecond.stream())
+						os.write(("" + Stream.concat(datafirst.stream(), datasecond.stream())
 								.distinct().count()).getBytes());
 					} else {
-						java.util.stream.Stream.concat(datafirst.stream(), datasecond.stream()).distinct()
+						Stream.concat(datafirst.stream(), datasecond.stream()).distinct()
 								.forEach(val -> {
 									try {
 										os.write(val.toString().getBytes());
@@ -590,11 +569,11 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			if (terminalCount) {
 				result = new ArrayList<>();
-				result.add(java.util.stream.Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
+				result.add(Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
 						.distinct().count());
 			} else {
 				// parallel stream union operation result
-				var cf = (CompletableFuture) java.util.stream.Stream.concat(datafirst.stream(), datasecond.stream())
+				var cf = (CompletableFuture) Stream.concat(datafirst.stream(), datasecond.stream())
 						.distinct()
 						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 								executor, Runtime.getRuntime().availableProcessors()));
@@ -603,6 +582,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(result);
 			result = null;
@@ -711,41 +691,36 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 
 				} else if (finaltask instanceof StandardDeviation) {
 					out = new Vector<>();
-					CompletableFuture<List> cf = (CompletableFuture) ((java.util.stream.IntStream) streammap).boxed()
+					CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
 							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
 					var streamtmp = cf.get();
-					var mean = (streamtmp).stream().mapToInt(Integer.class::cast).average().getAsDouble();
-					var variance = (streamtmp).stream().mapToInt(Integer.class::cast)
+					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
+					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
 					var standardDeviation = Math.sqrt(variance);
 					out.add(standardDeviation);
 
-				} else if (task.finalphase && task.saveresulttohdfs) {
-					try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-							Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-									DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-						int ch = (int) '\n';
-						((Stream) streammap).forEach(val -> {
-							try {
-								os.write(val.toString().getBytes());
-								os.write(ch);
-							} catch (IOException e) {
-							}
-						});
-					}
-					var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-					return timetaken;
 				} else {
 					log.info("Map assembly deriving");
 					CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
 							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
 					out = cf.get();
+					if (task.finalphase && task.saveresulttohdfs) {
+						try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+								Short.parseShort(DataSamudayaProperties.get().getProperty(
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+							Utils.convertToCsv((List) out, os);
+						}
+						return (System.currentTimeMillis() - starttime) / 1000.0;
+					}
 					log.info("Map assembly concluded");
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
 				output.flush();
+				task.setNumbytesgenerated(fsdos.toByteArray().length);
 				cacheAble(fsdos);
 				var wr = new WeakReference<List>(out);
 				out = null;
@@ -849,41 +824,32 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 
 						} else if (finaltask instanceof StandardDeviation) {
 							out = new Vector<>();
-							CompletableFuture<List> cf = (CompletableFuture) ((java.util.stream.IntStream) streammap)
+							CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap)
 									.boxed()
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
 							var streamtmp = cf.get();
-							double mean = (streamtmp).stream().mapToInt(Integer.class::cast).average().getAsDouble();
-							double variance = (double) (streamtmp).stream().mapToInt(Integer.class::cast)
+							double mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
+							double variance = (double) streamtmp.stream().mapToInt(Integer.class::cast)
 									.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
 							double standardDeviation = Math.sqrt(variance);
 							out.add(standardDeviation);
 
-						} else if (task.finalphase && task.saveresulttohdfs
-
-						) {
-							try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-									Short.parseShort(
-											DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-													DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-								int ch = (int) '\n';
-								((Stream) streammap).forEach(val -> {
-									try {
-										os.write(val.toString().getBytes());
-										os.write(ch);
-									} catch (IOException e) {
-									}
-								});
-							}
-							var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-							return timetaken;
 						} else {
 							CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap).collect(
 									ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 											executor, Runtime.getRuntime().availableProcessors()));
 							out = cf.get();
+							if (task.finalphase && task.saveresulttohdfs) {
+								try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
+										Short.parseShort(DataSamudayaProperties.get().getProperty(
+												DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+												DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+									Utils.convertToCsv((List) out, os);
+								}
+								return (System.currentTimeMillis() - starttime) / 1000.0;
+							}
 						}
 					} catch (Exception ex) {
 						log.error(PipelineConstants.PROCESSHDFSERROR, ex);
@@ -897,6 +863,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(output, out);
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(out);
 			out = null;
@@ -969,7 +936,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(output, out);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(out);
 			out = null;
@@ -1043,7 +1010,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(output, out);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(out);
 			out = null;
@@ -1068,6 +1035,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 	@Override
 	public Boolean call() {
 		starttime = System.currentTimeMillis();
+		task.taskexecutionstartime = starttime;
 		log.debug("Entered StreamPipelineTaskExecutorInMemoryDisk.call");
 		var stageTasks = getStagesTask();
 		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
@@ -1082,7 +1050,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			if (task.input != null && task.parentremotedatafetch != null) {
 				if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
 					var numinputs = task.parentremotedatafetch.length;
-					for (var inputindex = 0; inputindex < numinputs; inputindex++) {
+					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.parentremotedatafetch[inputindex];
 						if (input != null) {
 							var rdf = (RemoteDataFetch) input;
@@ -1097,7 +1065,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 					}
 				} else if (task.input != null && task.input[0] != null) {
 					var numinputs = task.input.length;
-					for (var inputindex = 0; inputindex < numinputs; inputindex++) {
+					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.input[inputindex];
 						if (input != null && input instanceof Task taskinput) {
 							var btarray = getCachedTask(taskinput);
@@ -1109,9 +1077,10 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 				}
 			}
 			log.debug("Running Stage " + task.jobid + " " + task.stageid + " " + jobstage);
-			timetakenseconds = computeTasks(task, hdfs);
+			task.timetakenseconds = timetakenseconds = computeTasks(task, hdfs);
 			completed = true;
 			endtime = System.currentTimeMillis();
+			task.taskexecutionendtime = endtime;
 			log.debug("Completed JobStage " + task.jobid + " " + task.stageid + " in " + timetakenseconds);
 		} catch (Throwable ex) {
 			completed = false;
@@ -1119,7 +1088,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			try (var baos = new ByteArrayOutputStream();) {
 				var failuremessage = new PrintWriter(baos, true, StandardCharsets.UTF_8);
 				ex.printStackTrace(failuremessage);
-				endtime = System.currentTimeMillis();
+				task.taskexecutionendtime = endtime = System.currentTimeMillis();
 				task.taskstatus = TaskStatus.FAILED;
 				task.tasktype = TaskType.EXECUTEUSERTASK;
 				task.stagefailuremessage = new String(baos.toByteArray());
@@ -1227,7 +1196,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1336,7 +1305,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1445,7 +1414,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1592,6 +1561,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1756,7 +1726,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1921,7 +1891,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(output, joinpairsout);
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(joinpairsout);
 			joinpairsout = null;
@@ -1957,7 +1927,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			var allpairs = new ArrayList<>();
 			var mapgpbykey = new LinkedHashSet<Map>();
 			for (var fs : task.input) {
-				try (var fsdis = ((InputStream) fs); var input = new Input(fsdis);) {
+				try (var fsdis = (InputStream) fs; var input = new Input(fsdis);) {
 					// while (input.available() > 0) {
 					var keyvaluepair = Utils.getKryo().readClassAndObject(input);
 					if (keyvaluepair instanceof List kvp) {
@@ -2031,7 +2001,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 				Utils.getKryo().writeClassAndObject(output, new Vector<>());
 			}
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			log.debug("Exiting StreamPipelineTaskExecutor.processGroupByKeyTuple2");
 			var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2065,7 +2035,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			var allpairs = new ArrayList<Tuple2>();
 			var mapgpbykey = new LinkedHashSet<Map>();
 			for (var fs : task.input) {
-				try (var fsdis = ((InputStream) fs); var input = new Input(fsdis);) {
+				try (var fsdis = (InputStream) fs; var input = new Input(fsdis);) {
 					// while (input.available() > 0) {
 					var keyvaluepair = Utils.getKryo().readClassAndObject(input);
 					if (keyvaluepair instanceof List kvp) {
@@ -2157,7 +2127,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 				var wr = new WeakReference<List>(out);
 				out = null;
 			}
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			log.debug("Exiting StreamPipelineTaskExecutor.processFoldByKeyTuple2");
 			var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2190,7 +2160,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 
 			var allpairs = new ArrayList<Tuple2<Object, Object>>();
 			for (var fs : task.input) {
-				var fsdis = ((InputStream) fs);
+				var fsdis = (InputStream) fs;
 				var input = new Input(fsdis);
 				// while (input.available() > 0) {
 				var keyvaluepair = Utils.getKryo().readClassAndObject(input);
@@ -2213,7 +2183,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 						if (jobstage.getStage().tasks.size() > 1) {
 							var functions = getFunctions();
 							functions.remove(0);
-							cf = ((Stream) StreamUtils.getFunctionsToStream(functions, cf.parallel()));
+							cf = (Stream) StreamUtils.getFunctionsToStream(functions, cf.parallel());
 						}
 						cf.forEach(val -> {
 							try {
@@ -2249,7 +2219,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 				Utils.getKryo().writeClassAndObject(output, intermediatelist);
 			}
 			output.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(intermediatelist);
 			intermediatelist = null;
@@ -2284,7 +2254,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 
 			var allpairs = new ArrayList<Tuple2<Object, Object>>();
 			for (var fs : task.input) {
-				var fsdis = ((InputStream) fs);
+				var fsdis = (InputStream) fs;
 				var input = new Input(fsdis);
 				// while (input.available() > 0) {
 				var keyvaluepair = Utils.getKryo().readClassAndObject(input);
@@ -2307,7 +2277,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 						if (jobstage.getStage().tasks.size() > 1) {
 							var functions = getFunctions();
 							functions.remove(0);
-							cf = ((Stream) StreamUtils.getFunctionsToStream(functions, cf.parallel()));
+							cf = (Stream) StreamUtils.getFunctionsToStream(functions, cf.parallel());
 						}
 						cf.forEach(val -> {
 							try {
@@ -2344,6 +2314,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 				Utils.getKryo().writeClassAndObject(output, intermediatelist);
 			}
 			output.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(intermediatelist);
 			intermediatelist = null;
@@ -2459,7 +2430,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(currentoutput, outpairs);
 			currentoutput.flush();
-
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(outpairs);
 			outpairs = null;
@@ -2508,7 +2479,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 						.collect(Collectors.groupingBy(tup2 -> tup2.v1.hashCode() % partitionnumber, HashMap::new,
 								Collectors.mapping(tup2 -> tup2, Collectors.toList())));
 				output = new ArrayList<Tuple2<Integer, List<Tuple2>>>();
-				for (int partitionindex = 0; partitionindex < partitionnumber; partitionindex++) {
+				for (int partitionindex = 0;partitionindex < partitionnumber;partitionindex++) {
 					output.add(new Tuple2<Integer, List<Tuple2>>(Integer.valueOf(partitionindex),
 							mappartitoned.get(partitionindex)));
 				}
@@ -2546,6 +2517,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(currentoutput, output);
 			currentoutput.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			var wr = new WeakReference<List>(output);
 			output = null;
@@ -2629,6 +2601,7 @@ public final class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipeline
 			}
 			Utils.getKryo().writeClassAndObject(currentoutput, output);
 			currentoutput.flush();
+			task.setNumbytesgenerated(fsdos.toByteArray().length);
 			cacheAble(fsdos);
 			log.debug("Exiting StreamPipelineTaskExecutor.processHashPartition");
 			var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;

@@ -21,8 +21,6 @@ import java.util.List;
 import org.junit.Test;
 
 import com.github.datasamudaya.common.DataCruncherContext;
-import com.github.datasamudaya.tasks.scheduler.MapReduceApplication;
-import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationBuilder;
 
 public class DataSamudayaJobBuilderTest extends MassiveDataMRJobBase {
 

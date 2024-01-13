@@ -17,11 +17,13 @@ package com.github.datasamudaya.stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.util.Arrays;
 import java.util.List;
+
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.AfterClass;
@@ -29,8 +31,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamPipelineTransformationsCollectTest extends StreamPipelineBaseTestCommon {
 
@@ -91,7 +91,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		linereader.close();
 		List<List<String>> data = datastream.map(val -> val.split(DataSamudayaConstants.COMMA)[0]).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -112,7 +112,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		linereader.close();
 		List<List<String>> data = datastream.filter(val -> "2007".equals(val.split(DataSamudayaConstants.COMMA)[0]) || "Year".equalsIgnoreCase(val.split(DataSamudayaConstants.COMMA)[0])).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -133,7 +133,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		linereader.close();
 		List<List<String>> data = datastream.flatMap(val -> Arrays.asList(val.split(DataSamudayaConstants.COMMA)).stream()).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count * 29, sum);
@@ -162,7 +162,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 			}
 		}).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -191,7 +191,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 			}
 		}).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -216,7 +216,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 			return Arrays.asList((Tuple2<String, String>) Tuple.tuple(values[14], values[8]));
 		}).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -240,7 +240,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 			return Arrays.asList(Tuple.tuple(values[0], values[1], values[14], values[8]));
 		}).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -261,7 +261,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		linereader.close();
 		List<List<Tuple>> data = datastream.keyBy(val -> val.split(DataSamudayaConstants.COMMA)[0]).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -284,7 +284,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		linereader.close();
 		List<List<String>> data = datastream1.leftOuterjoin(datastream2, (val1, val2) -> val1.equals(val2)).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -304,7 +304,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				pipelineconfig);
 		List<List<String>> data = datastream1.leftOuterjoin(datastream2, (val1, val2) -> val1.equals(val2)).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(3875, sum);
@@ -327,7 +327,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		linereader.close();
 		List<List<String>> data = datastream1.join(datastream2, (val1, val2) -> val1.equals(val2)).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -349,7 +349,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				pipelineconfig);
 		List<List<String>> data = datastream1.join(datastream2, (val1, val2) -> val1.equals(val2)).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(3, sum);
@@ -373,7 +373,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		linereader.close();
 		List<List<String>> data = datastream2.rightOuterjoin(datastream1, (val1, val2) -> val1.equals(val2)).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -392,10 +392,10 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				|| "3".equals(val.split(DataSamudayaConstants.COMMA)[2])
 				|| "4".equals(val.split(DataSamudayaConstants.COMMA)[2]));
 		StreamPipeline<String> datastream2 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
-				pipelineconfig);
+				pipelineconfig).map(val -> val);
 		List<List<String>> data = datastream2.rightOuterjoin(datastream1, (val1, val2) -> val1.equals(val2)).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(3, sum);
@@ -417,7 +417,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				pipelineconfig);
 		List<List<String>> data = datastream1.rightOuterjoin(datastream2, (val1, val2) -> val1.equals(val2)).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(20, sum);
@@ -444,7 +444,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				pipelineconfig);
 		List<List<String>> data = datastream1.union(datastream2).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count - 1, sum);
@@ -460,14 +460,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1987,
-				pipelineconfig);
+				pipelineconfig).map(val -> val);
 		StreamPipeline<String> datastream2 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
 				pipelineconfig).filter(val -> "2".equals(val.split(DataSamudayaConstants.COMMA)[2])
 				|| "3".equals(val.split(DataSamudayaConstants.COMMA)[2])
 				|| "4".equals(val.split(DataSamudayaConstants.COMMA)[2]));
 		List<List<String>> data = datastream1.union(datastream2).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(504, sum);
@@ -491,7 +491,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				|| "4".equals(val.split(DataSamudayaConstants.COMMA)[2]));
 		List<List<String>> data = datastream1.union(datastream2).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(46, sum);
@@ -515,7 +515,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				pipelineconfig);
 		List<List<String>> data = datastream1.intersection(datastream2).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -531,14 +531,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
-				pipelineconfig);
+				pipelineconfig).map(val -> val);
 		StreamPipeline<String> datastream2 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
 				pipelineconfig).filter(val -> "2".equals(val.split(DataSamudayaConstants.COMMA)[2])
 				|| "3".equals(val.split(DataSamudayaConstants.COMMA)[2])
 				|| "4".equals(val.split(DataSamudayaConstants.COMMA)[2]));
 		List<List<String>> data = datastream1.intersection(datastream2).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(3, sum);
@@ -562,7 +562,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				|| "4".equals(val.split(DataSamudayaConstants.COMMA)[2]));
 		List<List<String>> data = datastream1.intersection(datastream2).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(3, sum);
@@ -583,7 +583,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 				pipelineconfig);
 		List<List<String>> data = datastream1.peek(System.out::println).collect(toexecute, null);
 		long sum = 0;
-		for (int index = 0; index < data.size(); index++) {
+		for (int index = 0;index < data.size();index++) {
 			sum += data.get(index).size();
 		}
 		assertEquals(count, sum);
@@ -609,7 +609,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		long sum = 0;
 		for (List<String> data :datas) {
 			sum += data.size();
-			for (int index = 0; index < data.size(); index++) {
+			for (int index = 0;index < data.size();index++) {
 				if (index > 1) {
 					assertTrue(Integer.valueOf(data.get(index - 1).split(DataSamudayaConstants.COMMA)[2]) <= Integer.valueOf(data.get(index).split(DataSamudayaConstants.COMMA)[2]));
 				}

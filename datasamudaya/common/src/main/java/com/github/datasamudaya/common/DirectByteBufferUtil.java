@@ -75,8 +75,11 @@ public final class DirectByteBufferUtil {
 	 */
 	public static synchronized ByteBuffer allocateDirect(int cap) throws Exception {
 		ByteBuffer buffer = ByteBuffer.allocateDirect(cap);
-		log.info("Direct Byte Buffer quota number {} with object info {}", allocation.incrementAndGet(),  buffer);
+		log.info("Direct Byte Buffer quota number {} with object info {}", allocation.incrementAndGet(), buffer);
 		return buffer;
+	}
+
+	private DirectByteBufferUtil() {
 	}
 
 }

@@ -16,6 +16,8 @@
 package com.github.datasamudaya.stream.executors;
 
 import static java.util.Objects.nonNull;
+
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -57,7 +59,7 @@ import com.github.datasamudaya.common.utils.Utils;
 @SuppressWarnings("rawtypes")
 public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecutor {
 	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorJGroups.class);
-	private List<Task> tasks = null;
+	private List<Task> tasks;
 	Map<String, JobStage> jsidjsmap;
 	public double timetaken = 0.0;
 	public JChannel channel;
@@ -69,7 +71,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 		this.tasks = tasks;
 		this.port = port;
 	}
-	ExecutorService es = null;
+	ExecutorService es;
 	
 	/**
 	 * This method call computes the tasks from stages and return 
@@ -79,7 +81,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 	public Boolean call() {
 		log.debug("Entered MassiveDataStreamJGroupsTaskExecutor.call");
 		var taskstatusmap = tasks.parallelStream()
-				.map(task -> task.taskid)
+				.map(task -> task.jobid + task.taskid)
 				.collect(Collectors.toMap(key -> key, value -> WhoIsResponse.STATUS.YETTOSTART));
 		var taskstatusconcmapreq = new ConcurrentHashMap<>(
 				taskstatusmap);
@@ -90,7 +92,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 		Semaphore semaphore = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try (var hdfscompute = FileSystem.newInstance(new URI(hdfsfilepath), new Configuration());) {
 			this.hdfs = hdfscompute;
-			channel = Utils.getChannelTaskExecutor(jobstage.getJobid(),
+			channel = Utils.getChannelTaskExecutor(jobstage.getTejobid(),
 					host,
 					port, taskstatusconcmapreq, taskstatusconcmapresp);
 			log.info("Work in Jgroups agent: " + tasks + " in host: " + host + " port: " + port);
@@ -104,11 +106,11 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 						hdfs = hdfscompute;
 						task = tasktocompute;
 						executor = exec;						
-						var stagePartition = task.taskid;
+						var stagePartition = task.jobid + task.taskid;
 						try {
 							var taskspredecessor = task.taskspredecessor;
 							if (!taskspredecessor.isEmpty()) {
-								var taskids = taskspredecessor.parallelStream().map(tk -> tk.taskid)
+								var taskids = taskspredecessor.parallelStream().map(tk -> tk.jobid + tk.taskid)
 										.collect(Collectors.toList());
 								var breakloop = false;
 								while (true) {
@@ -134,8 +136,9 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 											continue;
 										}
 									}
-									if (breakloop)
+									if (breakloop) {
 										break;
+									}
 									Thread.sleep(1000);
 								}
 							}
@@ -143,25 +146,40 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 
 							taskstatusconcmapreq.put(stagePartition, WhoIsResponse.STATUS.RUNNING);
 							if (task.input != null && task.parentremotedatafetch != null) {
-								var numinputs = task.parentremotedatafetch.length;
-								for (var inputindex = 0; inputindex < numinputs; inputindex++) {
-									var input = task.parentremotedatafetch[inputindex];
-									if (input != null) {
-										var rdf = input;
-										InputStream is = RemoteDataFetcher.readIntermediatePhaseOutputFromFS(
-												rdf.getJobid(), getIntermediateDataRDF(rdf.getTaskid()));
-										if (Objects.isNull(is)) {
-											RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
-											task.input[inputindex] = new ByteArrayInputStream(rdf.getData());
-										} else {
-											task.input[inputindex] = is;
+								if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
+									var numinputs = task.parentremotedatafetch.length;
+									for (var inputindex = 0;inputindex < numinputs;inputindex++) {
+										var input = task.parentremotedatafetch[inputindex];
+										log.info("Task Input " + task.jobid + " rdf:" + input);
+										if (input != null) {
+											var rdf = input;
+											InputStream is = RemoteDataFetcher.readIntermediatePhaseOutputFromFS(
+													rdf.getJobid(), getIntermediateDataRDF(rdf.getTaskid()));
+											if (Objects.isNull(is)) {
+												RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
+												task.input[inputindex] = new ByteArrayInputStream(rdf.getData());
+											} else {
+												task.input[inputindex] = is;
+											}
+										}
+									}
+								} else if (task.input != null && task.input[0] != null) {
+									var numinputs = task.input.length;
+									for (var inputindex = 0;inputindex < numinputs;inputindex++) {
+										var input = task.input[inputindex];
+										if (input != null && input instanceof Task taskinput) {
+											var os = getIntermediateInputStreamFS(taskinput);
+											log.info("Task Input " + taskinput.jobid + " Os:" + os);
+											if (os != null) {
+												task.input[inputindex] = new BufferedInputStream(os);
+											}
 										}
 									}
 								}
-							}
+							} 
 
 							var timetakenseconds = computeTasks(task, hdfs);
-							log.debug("Completed Stage " + stagePartition + " in " + timetakenseconds);
+							log.info("Completed Stage " + stagePartition + " in " + timetakenseconds);
 							taskstatusconcmapreq.put(stagePartition, WhoIsResponse.STATUS.COMPLETED);
 						} catch (Exception ex) {
 							log.error("Failed Stage " + tasks, ex);
@@ -201,7 +219,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 				try {
 					es.awaitTermination(2, TimeUnit.SECONDS);
 				} catch (InterruptedException e) {
-					log.error("Failed Shutdown executors"+ es);
+					log.error("Failed Shutdown executors" + es);
 				}
 			}
 		}

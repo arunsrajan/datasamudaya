@@ -22,8 +22,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import com.github.datasamudaya.stream.StreamPipeline;
-
 public class StreamPipelineUserDefinedObjectsTest extends StreamPipelineBaseTestCommon {
 	boolean toexecute = true;
 	int sum;

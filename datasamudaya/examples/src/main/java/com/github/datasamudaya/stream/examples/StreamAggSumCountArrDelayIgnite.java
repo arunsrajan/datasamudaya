@@ -23,12 +23,12 @@ import org.jooq.lambda.tuple.Tuple2;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.stream.IgnitePipeline;
+import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.Pipeline;
 
 public class StreamAggSumCountArrDelayIgnite implements Serializable, Pipeline {
 	private static final long serialVersionUID = -1073668309871473457L;
-	private Logger log = Logger.getLogger(StreamAggSumCountArrDelayIgnite.class);
+	private final Logger log = Logger.getLogger(StreamAggSumCountArrDelayIgnite.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");
@@ -46,7 +46,7 @@ public class StreamAggSumCountArrDelayIgnite implements Serializable, Pipeline {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void testMapValuesReduceByValues(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("testMapValuesReduceByValues Before---------------------------------------");
-		IgnitePipeline<String> datastream = IgnitePipeline.newStreamHDFS(args[0], args[1], pipelineconfig);
+		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(args[0], args[1], pipelineconfig);
 		datastream.map(dat -> dat.split(","))
 				.filter(dat -> dat != null && !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14]))
 				.mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14])))

@@ -13,13 +13,13 @@ import static java.util.Objects.nonNull;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URI;
@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -49,6 +50,7 @@ import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.ehcache.Cache;
 import org.jgrapht.Graph;
@@ -57,6 +59,7 @@ import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.jgroups.JChannel;
 import org.jgroups.ObjectMessage;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.yarn.YarnSystemConstants;
@@ -73,15 +76,18 @@ import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
 import com.github.datasamudaya.common.CloseStagesGraphExecutor;
 import com.github.datasamudaya.common.DAGEdge;
+import com.github.datasamudaya.common.DataSamudayaCache;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.FreeResourcesCompletedJob;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.Job;
+import com.github.datasamudaya.common.Job.JOBTYPE;
+import com.github.datasamudaya.common.Job.TRIGGER;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LoadJar;
-import com.github.datasamudaya.common.DataSamudayaCache;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
@@ -89,14 +95,12 @@ import com.github.datasamudaya.common.RemoteDataFetch;
 import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.Stage;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.TaskInfoYARN;
 import com.github.datasamudaya.common.TaskStatus;
 import com.github.datasamudaya.common.TasksGraphExecutor;
 import com.github.datasamudaya.common.TssHAChannel;
 import com.github.datasamudaya.common.TssHAHostPorts;
 import com.github.datasamudaya.common.WhoIsResponse;
-import com.github.datasamudaya.common.Job.JOBTYPE;
-import com.github.datasamudaya.common.Job.TRIGGER;
-import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.functions.AggregateReduceFunction;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.GroupByFunction;
@@ -133,11 +137,11 @@ import com.google.common.collect.Iterables;
  */
 public class StreamJobScheduler {
 
-  private static org.slf4j.Logger log = LoggerFactory.getLogger(StreamJobScheduler.class);
+	private static final Logger log = LoggerFactory.getLogger(StreamJobScheduler.class);
 
   public int batchsize;
   public Set<String> taskexecutors;
-  private Semaphore yarnmutex = new Semaphore(1);
+	private final Semaphore yarnmutex = new Semaphore(1);
   public static ConcurrentMap<String, OutputStream> resultstream = new ConcurrentHashMap<>();;
   @SuppressWarnings("rawtypes")
   Cache cache;
@@ -158,11 +162,11 @@ public class StreamJobScheduler {
 
   ExecutorService jobping = Executors.newWorkStealingPool();
   public Job job;
-  Boolean islocal;
+  public Boolean islocal;
   public Boolean isignite,ismesos,isyarn,isjgroups;
   JChannel chtssha;
   SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge> graph;
-  public ZookeeperOperations zo = null;
+  public ZookeeperOperations zo;
   /**
    * Schedule the job for parallelization
    * 
@@ -302,7 +306,6 @@ public class StreamJobScheduler {
           spts.getTask().filepath = job.getSavepath() + DataSamudayaConstants.HYPHEN + partitionnumber++;
         }
       }
-      Utils.writeToOstream(pipelineconfig.getOutput(), "stages: " + sptsl);
       if (isignite) {
         parallelExecutionPhaseIgnite(graph, new TaskProviderIgnite());
       }
@@ -323,40 +326,45 @@ public class StreamJobScheduler {
       }
       // If Yarn is scheduler run yarn scheduler via spring yarn
       // framework.
-      else if (Boolean.TRUE.equals(isyarn)) {
-        yarnmutex.acquire();
-        OutputStream os = pipelineconfig.getOutput();
-        pipelineconfig.setOutput(null);
-        new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
-        Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
-            DataSamudayaConstants.YARNOUTJAR);
-        var yarninputfolder =
-            DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH + job.getId();
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(sptsl, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE, pipelineconfig);
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(graph, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE, pipelineconfig);
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(tasksptsthread, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE, pipelineconfig);
-        RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jsidjsmap, yarninputfolder,
-            DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE, pipelineconfig);
-        decideContainerCountAndPhysicalMemoryByBlockSize(sptsl.size(),
-            Integer.parseInt(pipelineconfig.getBlocksize()));
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-            DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT,
-            getClass());
-        pipelineconfig.setOutput(os);
-        var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
-        client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, job.getId());
-        var appid = client.submitApplication(true);
-        var appreport = client.getApplicationReport(appid);
-        yarnmutex.release();
-        while (appreport.getYarnApplicationState() != YarnApplicationState.FINISHED
-            && appreport.getYarnApplicationState() != YarnApplicationState.FAILED) {
-          appreport = client.getApplicationReport(appid);
-          Thread.sleep(1000);
-        }
-      }
+		else if (Boolean.TRUE.equals(isyarn)) {
+			if (!pipelineconfig.getUseglobaltaskexecutors()) {
+				yarnmutex.acquire();
+				pipelineconfig.setJobid(job.getId());
+				Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
+				decideContainerCountAndPhysicalMemoryByBlockSize(sptsl.size(),
+						Integer.parseInt(pipelineconfig.getBlocksize()));
+				ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+						DataSamudayaConstants.FORWARD_SLASH + YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT,
+						getClass());
+				var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
+				if (nonNull(pipelineconfig.getJobname())) {
+					client.setAppName(pipelineconfig.getJobname());
+				} else {
+					client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
+				}
+				client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, job.getId());
+				var appid = client.submitApplication(true);
+				var appreport = client.getApplicationReport(appid);
+				yarnmutex.release();
+				while (appreport.getYarnApplicationState() != YarnApplicationState.RUNNING) {
+					appreport = client.getApplicationReport(appid);
+					Thread.sleep(1000);
+				}
+				Utils.sendJobToYARNDistributedQueue(zo, job.getId());
+				TaskInfoYARN tinfoyarn = Utils.getJobOutputStatusYARNDistributedQueueBlocking(zo, job.getId());
+				Utils.shutDownYARNContainer(zo, job.getId());
+				log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
+						job.getId().equals(tinfoyarn.getJobid()));
+			} else {
+				Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
+				Utils.sendJobToYARNDistributedQueue(pipelineconfig.getTejobid(), job.getId());
+				TaskInfoYARN tinfoyarn = Utils
+						.getJobOutputStatusYARNDistributedQueueBlocking(pipelineconfig.getTejobid());
+				log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
+						job.getId().equals(tinfoyarn.getJobid()));
+				log.info("Is output available {}", tinfoyarn.isIsresultavailable());
+			}
+		}
       // If Jgroups is the scheduler;
       else if (Boolean.TRUE.equals(isjgroups)) {
         Iterator<Task> toposort = new TopologicalOrderIterator(taskgraph);
@@ -374,7 +382,12 @@ public class StreamJobScheduler {
           tasksgraphexecutor[stagegraphexecutorindex] = new TasksGraphExecutor();
           tasksgraphexecutor[stagegraphexecutorindex].setTasks(new ArrayList<>());
           tasksgraphexecutor[stagegraphexecutorindex].setHostport(te);
-          tasksgraphexecutor[stagegraphexecutorindex].setStorage(pipelineconfig.getStorage());
+          if(job.getJobtype() == JOBTYPE.PIG || nonNull(pipelineconfig.getStorage()) 
+        		  && (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL)) {
+        	  tasksgraphexecutor[stagegraphexecutorindex].setStorage(pipelineconfig.getStorage());
+          } else {
+        	  tasksgraphexecutor[stagegraphexecutorindex].setStorage(STORAGE.DISK);
+          }
           taskgraphexecutormap.put(te, tasksgraphexecutor[stagegraphexecutorindex]);
           stagegraphexecutorindex++;
         }
@@ -406,10 +419,10 @@ public class StreamJobScheduler {
           }
         }
         var stagepartids =
-            tasks.parallelStream().map(taskpart -> taskpart.taskid).collect(Collectors.toSet());
+            tasks.parallelStream().map(taskpart -> taskpart.jobid + taskpart.taskid).collect(Collectors.toSet());
         var stagepartidstatusmapresp = new ConcurrentHashMap<String, WhoIsResponse.STATUS>();
         var stagepartidstatusmapreq = new ConcurrentHashMap<String, WhoIsResponse.STATUS>();
-        try (var channel = Utils.getChannelTaskExecutor(job.getId(),
+        try (var channel = Utils.getChannelTaskExecutor(jobid,
             NetworkUtil.getNetworkAddress(
                 DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST)),
             Integer
@@ -456,10 +469,7 @@ public class StreamJobScheduler {
         broadcastJobStageToTaskExecutors(new ArrayList<>(taskgraph.vertexSet()));
         graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) parallelExecutionPhaseDExecutor(graph);
       }
-
-      if(job.getJobtype() == JOBTYPE.PIG && job.getTrigger()!=TRIGGER.PIGDUMP) {
-    	  return getFinalPhasesWithNoSuccessors(taskgraph);
-      }
+      
       // Obtain the final stage job results after final stage is
       // completed.
       List finalstageoutput = new ArrayList<>();
@@ -467,24 +477,12 @@ public class StreamJobScheduler {
     	  finalstageoutput = new ArrayList<>(sptss);
       } else {
     	  finalstageoutput = getLastStageOutput(sptss, graph, sptsl, ismesos, isyarn, islocal,
-          isjgroups, resultstream);
-      }
-      if (Boolean.TRUE.equals(isjgroups)) {
+          isjgroups, resultstream, taskgraph);
+      }      
+      if (Boolean.TRUE.equals(isjgroups) && job.getJobtype() != JOBTYPE.PIG) {
         closeResourcesTaskExecutor(tasksgraphexecutor);
       }
-      job.setIscompleted(true);
-      job.getJm().setJobcompletiontime(System.currentTimeMillis());
-      Utils.writeToOstream(pipelineconfig.getOutput(),
-          "\nConcluded job in "
-              + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
-              + " seconds");
-      log.info("Concluded job in "
-          + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
-          + " seconds");
-      job.getJm().setTotaltimetaken(
-          (job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0);
-      Utils.writeToOstream(pipelineconfig.getOutput(), "Job stats " + job.getJm());
-      log.info("Job stats " + job.getJm());
+      printStats();
       return finalstageoutput;
     } catch (InterruptedException e) {
       log.warn("Interrupted!", e);
@@ -495,7 +493,7 @@ public class StreamJobScheduler {
       log.error(PipelineConstants.JOBSCHEDULERERROR, ex);
       throw new PipelineException(PipelineConstants.JOBSCHEDULERERROR, ex);
     } finally {
-      if (!Objects.isNull(job.getIgcache())) {
+      if (!Objects.isNull(job.getIgcache()) && job.getTrigger()!=TRIGGER.FOREACH) {
         job.getIgcache().close();
       }
       if ((Boolean.FALSE.equals(ismesos) && Boolean.FALSE.equals(isyarn)
@@ -530,6 +528,23 @@ public class StreamJobScheduler {
 
   }
 
+  /**
+   * Print Status of job
+   * @throws Exception
+   */
+  protected void printStats() throws Exception {
+	  job.setIscompleted(true);
+      job.getJm().setJobcompletiontime(System.currentTimeMillis());
+      Utils.writeToOstream(pipelineconfig.getOutput(),
+          "\nConcluded job in "
+              + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
+              + " seconds");
+      log.info("Concluded job in "
+          + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
+          + " seconds");
+      job.getJm().setTotaltimetaken(
+          (job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0);
+  }
   
   /**
    * Get final stages which has no successors.
@@ -564,6 +579,9 @@ public class StreamJobScheduler {
 		jobexecutorsmap.keySet().stream().forEach(key -> {
 			try (var baos = new ByteArrayOutputStream(); var output = new Output(baos)) {
 				JobStage js = (JobStage) jsidjsmap.get(key);
+				if (nonNull(js)) {
+					js.setTejobid(finaljobid);
+				}
 				kryo.writeClassAndObject(output, js);
 				output.flush();
 				for (String te : jobexecutorsmap.get(key)) {
@@ -582,51 +600,66 @@ public class StreamJobScheduler {
    */
   @SuppressWarnings("unchecked")
   public void getTaskExecutorsHostPort() throws PipelineException {
-    try {
-      GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();      
-      var loadjar = new LoadJar();
-      loadjar.setMrjar(pipelineconfig.getJar());
-      if (nonNull(pipelineconfig.getCustomclasses())
-          && !pipelineconfig.getCustomclasses().isEmpty()) {
-        loadjar.setClasses(pipelineconfig.getCustomclasses().stream().map(clz -> clz.getName())
-            .collect(Collectors.toCollection(LinkedHashSet::new)));
-      }
-      for (var lc : job.getLcs()) {
-        List<Integer> ports = null;
-        if (pipelineconfig.getUseglobaltaskexecutors()) {
-          ports = lc.getCla().getCr().stream().map(cr -> {
-            return cr.getPort();
-          }).collect(Collectors.toList());
-        } else {
-          ports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(), lc, DataSamudayaConstants.EMPTY);
-        }
-        int index = 0;
-        String tehost = lc.getNodehostport().split("_")[0];
-        while (index < ports.size()) {
-          while (true) {
-            try (Socket sock = new Socket(tehost, ports.get(index))) {
-              break;
-            } catch (Exception ex) {
-              Thread.sleep(200);
-            }
-          }
-          if (nonNull(loadjar.getMrjar())) {
-        	  log.debug("{}", Utils.getResultObjectByInput(
-                tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar, job.getId()));
-          }
-          index++;
-        }
-      }
-      String jobid = job.getId();
-      if(pipelineconfig.getUseglobaltaskexecutors()) {
-    	  jobid = pipelineconfig.getTejobid();
-      }
-      var tes = zo.getTaskExectorsByJobId(jobid);
-      taskexecutors = new LinkedHashSet<>(tes);
-      while (taskexecutors.size() != job.getTaskexecutors().size()) {
-        Thread.sleep(500);
-      }
-    } catch (InterruptedException e) {
+		try {
+			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
+			var loadjar = new LoadJar();
+			loadjar.setMrjar(pipelineconfig.getJar());
+			if (nonNull(pipelineconfig.getCustomclasses()) && !pipelineconfig.getCustomclasses().isEmpty()) {
+				loadjar.setClasses(pipelineconfig.getCustomclasses().stream().map(clz -> clz.getName())
+						.collect(Collectors.toCollection(LinkedHashSet::new)));
+			}
+			Map<String, List<Integer>> nodehostportteports = new ConcurrentHashMap<>();
+			for (var lc : job.getLcs()) {
+				List<Integer> ports = null;
+				if (pipelineconfig.getUseglobaltaskexecutors()) {
+					ports = lc.getCla().getCr().stream().map(cr -> {
+						return cr.getPort();
+					}).collect(Collectors.toList());
+				} else {
+					ports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(), lc,
+							DataSamudayaConstants.EMPTY);
+				}
+				if (CollectionUtils.isNotEmpty(nodehostportteports.get(lc.getNodehostport()))) {
+					nodehostportteports.get(lc.getNodehostport()).addAll(ports);
+				} else {
+					nodehostportteports.put(lc.getNodehostport(), ports);
+				}
+			}
+			int sotimeoutcountmax = 100;
+			int sotimeoutcount = 0;
+			for(Entry<String, List<Integer>> nodehostportentry : nodehostportteports.entrySet()) {
+				String nodehostport = nodehostportentry.getKey();
+				String tehost = nodehostport.split("_")[0];
+				List<Integer> ports = nodehostportentry.getValue();
+				for (int port : ports) {
+					sotimeoutcount = 0;
+					while (sotimeoutcount < sotimeoutcountmax) {
+						try (Socket sock = new Socket()) {
+							sock.connect(new InetSocketAddress(tehost, port), 2000);
+							break;
+						} catch (Exception ex) {
+							Thread.sleep(200);
+						}
+						sotimeoutcount++;
+					}
+					if (nonNull(loadjar.getMrjar())) {
+						log.debug("{}",
+								Utils.getResultObjectByInput(tehost + DataSamudayaConstants.UNDERSCORE + port, loadjar,
+										pipelineconfig.getUseglobaltaskexecutors() ? pipelineconfig.getTejobid()
+												: job.getId()));
+					}
+				}
+			}
+			String jobid = job.getId();
+			if (pipelineconfig.getUseglobaltaskexecutors()) {
+				jobid = pipelineconfig.getTejobid();
+			}
+			var tes = zo.getTaskExectorsByJobId(jobid);
+			taskexecutors = new LinkedHashSet<>(tes);
+			if (taskexecutors.size() != job.getTaskexecutors().size()) {
+				log.warn("Current Task Executors {} is not same as predetermined taskexecutors for current job {}",taskexecutors, job.getTaskexecutors());
+			}
+		} catch (InterruptedException e) {
       log.warn("Interrupted!", e);
       // Restore interrupted state...
       Thread.currentThread().interrupt();
@@ -779,8 +812,8 @@ public class StreamJobScheduler {
       }
       var semaphores = new ConcurrentHashMap<String, Semaphore>();
       for (var cr : chpcres.entrySet()) {
-        batchsize += cr.getValue().getCpu() * 2;
-        semaphores.put(cr.getKey(), new Semaphore(cr.getValue().getCpu() * 2));
+        batchsize += cr.getValue().getCpu();
+        semaphores.put(cr.getKey(), new Semaphore(cr.getValue().getCpu()));
       }
       es = newExecutor(batchsize);
       
@@ -820,10 +853,13 @@ public class StreamJobScheduler {
           } else {
         	  currentcontainers = zo.getTaskExectorsByJobId(job.getId());
           }
-          var containersfailed = new ArrayList<>(this.taskexecutors);
+          var containersfailed = job.getTaskexecutors();
           containersfailed.removeAll(currentcontainers);
-          lineagegraph = generateLineageGraph(lineagegraph,containersfailed, currentcontainers);
-          log.info("Tasks Errored: Original Graph {} \nGenerating Lineage Graph: {}", origgraph, lineagegraph);
+          updateOriginalGraph(lineagegraph, containersfailed, currentcontainers);
+          tetotaltaskscompleted.clear();
+          servertotaltasks.clear();
+          broadcastJobStageToTaskExecutors(lineagegraph.vertexSet().stream().map(spts->spts.getTask()).collect(Collectors.toList()));
+          log.debug("Tasks Errored: Original Graph {} \nGenerating Lineage Graph: {}", origgraph, lineagegraph);
         }
 
         numexecute++;
@@ -856,7 +892,7 @@ public class StreamJobScheduler {
   
   public boolean isErrored(Set<StreamPipelineTaskSubmitter> spts) {
 	  Optional<StreamPipelineTaskSubmitter> optionalspts = 
-	  spts.stream().parallel().filter(spt->!spt.isCompletedexecution()).findFirst();
+	  spts.stream().parallel().filter(spt -> !spt.isCompletedexecution()).findFirst();
 	  if(optionalspts.isPresent()) {
 		  return true;
 	  }
@@ -879,50 +915,90 @@ public class StreamJobScheduler {
    * @param availableNodes
    * @return lineage graph
    */
-	public Graph<StreamPipelineTaskSubmitter, DAGEdge> generateLineageGraph(
-			Graph<StreamPipelineTaskSubmitter, DAGEdge> graphToProcess, List<String> downNodeIPs,
-			List<String> availableNodes) {		
-		Graph<StreamPipelineTaskSubmitter, DAGEdge> lineagegraph = new SimpleDirectedGraph<>(DAGEdge.class);
-		TopologicalOrderIterator<StreamPipelineTaskSubmitter, DAGEdge> sort = new TopologicalOrderIterator<>(
-				graphToProcess);
-		Map<String, StreamPipelineTaskSubmitter> map = new HashMap<>();
-		// update nodes with available nodes
-		while (sort.hasNext()) {
-			StreamPipelineTaskSubmitter spts = sort.next();			
-			// update node with available node IP
-			Set<DAGEdge> defaultEdge = graphToProcess.incomingEdgesOf(spts);
-			StreamPipelineTaskSubmitter updatedNode = new StreamPipelineTaskSubmitter(spts.getTask(),
-					spts.getHostPort(), job.getPipelineconfig());
-			updatedNode.setCompletedexecution(spts.isCompletedexecution());
-			if (defaultEdge.size() > 0) {
-				if (downNodeIPs.contains(spts.getHostPort())) {
-					DAGEdge edg = defaultEdge.iterator().next();
-					StreamPipelineTaskSubmitter sourceNode = graphToProcess.getEdgeSource(edg);
-					StreamPipelineTaskSubmitter source = map.get(sourceNode.getTask().taskid);
-					updatedNode.getTask().hostport = source.getHostPort();
-					updatedNode.setHostPort(source.getHostPort());
-					updatedNode.setCompletedexecution(false);
-				}
-			} else {
-				if (downNodeIPs.contains(spts.getHostPort())) {
-					String availableNodeIP = getAvailableTaskExecutor(spts.getTask(), availableNodes);
-					updatedNode.getTask().hostport = availableNodeIP;
-					updatedNode.setHostPort(availableNodeIP);
-					updatedNode.setCompletedexecution(false);
-				}
-			}
-			lineagegraph.addVertex(updatedNode);
-			map.put(updatedNode.getTask().taskid, updatedNode);
-			for (DAGEdge edge : defaultEdge) {
-				StreamPipelineTaskSubmitter sourceNode = graphToProcess.getEdgeSource(edge);
-				if (map.containsKey(sourceNode.getTask().taskid)) {
-					lineagegraph.addEdge(map.get(sourceNode.getTask().taskid), updatedNode);
-					reConfigureParentRDFForStageExecution(updatedNode, map.get(sourceNode.getTask().taskid));
-				}
-			}
-		}
-		return lineagegraph;
+	public void updateOriginalGraph(
+			Graph<StreamPipelineTaskSubmitter, DAGEdge> graphtoprocess, List<String> downteips,
+			List<String> availabletes) {		
+		List<StreamPipelineTaskSubmitter> failedtasks = getFailedTasks(graphtoprocess, downteips);
+		updateGraph(graphtoprocess, failedtasks, availabletes, downteips);
 	}
+	
+	/**
+	 * Update the Tasks with the available taskexecutors
+	 * @param graph
+	 * @param failedtasks
+	 * @param availableteips
+	 * @param downteips
+	 */
+	protected void updateGraph(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph, List<StreamPipelineTaskSubmitter> failedtasks,
+			List<String> availableteips, List<String> downteips) {
+        // Iterate through all failed nodes
+        for (StreamPipelineTaskSubmitter failedtask : failedtasks) {
+            // Update the graph for each failed node        	
+            updateChildren(graph, failedtask, getAvailableTaskExecutor(failedtask.getTask(), availableteips), downteips);
+        }
+    }
+	
+	/**
+	 * Update children with the taskexecutors of parents.
+	 * @param graph
+	 * @param parentNode
+	 */
+	protected void updateChildren(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph, 
+			StreamPipelineTaskSubmitter currenttask,
+			String hostporttoupdate, List<String> downnodeips) {
+		
+		if(downnodeips.contains(currenttask.getHostPort())) {
+            // Update the child node with the parent's IP address and port
+			currenttask.setHostPort(hostporttoupdate);
+			currenttask.getTask().setHostport(hostporttoupdate);
+			currenttask.setCompletedexecution(false);			
+    	} else {
+    		var incomingedges = graph.incomingEdgesOf(currenttask);
+    		for(DAGEdge dagedge:incomingedges){
+    			reConfigureParentRDFForStageExecution(currenttask, graph.getEdgeSource(dagedge));
+    		}
+    		updateChildrenTaskIncompleted(graph, currenttask);
+    		return;
+    	}
+		
+        for (DAGEdge edge : graph.outgoingEdgesOf(currenttask)) {
+        	StreamPipelineTaskSubmitter childtask = graph.getEdgeTarget(edge);
+            // Recursively update the child's children
+            updateChildren(graph, childtask, hostporttoupdate, downnodeips);
+        }
+    }
+
+	
+	/**
+	 * Update Children When Task Incompleted
+	 * @param graph
+	 * @param parenttask
+	 */
+	public void updateChildrenTaskIncompleted(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph,
+			StreamPipelineTaskSubmitter parenttask) {
+		parenttask.setCompletedexecution(false);
+		for (DAGEdge edge : graph.outgoingEdgesOf(parenttask)) {
+        	StreamPipelineTaskSubmitter childtask = graph.getEdgeTarget(edge);
+            // Recursively update the child's children
+        	updateChildrenTaskIncompleted(graph, childtask);
+        }
+	}
+	
+	
+	/**
+	 * Get Failed Tasks based on Dead Task Executor
+	 * @param graph
+	 * @param downNodeIps
+	 * @return all the tasks that are failed
+	 */
+	protected List<StreamPipelineTaskSubmitter> getFailedTasks(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph,
+			List<String> downnodeips) {
+		List<StreamPipelineTaskSubmitter> failedNodes = new ArrayList<>();
+        graph.vertexSet().stream().filter(spts->downnodeips.contains(spts.getHostPort())).forEach(failedNodes::add);
+        return failedNodes;
+    }
+	
+	
 	Random rand = new Random(System.currentTimeMillis());
 	public String getAvailableTaskExecutor(Task task, List<String> availableNodes) {
 		Object[] inputs = task.getInput();
@@ -931,14 +1007,14 @@ public class StreamJobScheduler {
 				if(obj instanceof BlocksLocation bl) {
 					Block[] bls = bl.getBlock();
 					Map<String, Set<String>> dnxref = bls[0].getDnxref();
-					Optional<String> dnxrefopt = availableNodes.stream().parallel().map(node-> node.split(DataSamudayaConstants.UNDERSCORE)[0])
-					.map(ip->dnxref.get(ip)).filter(dnaddrs->nonNull(dnaddrs))
-					.flatMap(dnaddrs->dnaddrs.stream()).findFirst();
+					Optional<String> dnxrefopt = availableNodes.stream().parallel().map(node -> node.split(DataSamudayaConstants.UNDERSCORE)[0])
+					.map(ip -> dnxref.get(ip)).filter(dnaddrs -> nonNull(dnaddrs))
+					.flatMap(dnaddrs -> dnaddrs.stream()).findFirst();
 					if(dnxrefopt.isPresent()) {
 						String dn = dnxrefopt.get();
 						bls[0].setHp(dn);
 						Optional<String> availablenode = availableNodes.stream().parallel()
-						.filter(node->dn.startsWith(node.split(DataSamudayaConstants.UNDERSCORE)[0])).findFirst();
+						.filter(node -> dn.startsWith(node.split(DataSamudayaConstants.UNDERSCORE)[0])).findFirst();
 						if(availablenode.isPresent()) {
 							return availablenode.get();
 						}
@@ -957,10 +1033,12 @@ public class StreamJobScheduler {
 	public void reConfigureParentRDFForStageExecution(StreamPipelineTaskSubmitter spts,
 			StreamPipelineTaskSubmitter pred) {
 		var prdf = spts.getTask().parentremotedatafetch;
-		for (var rdf : prdf) {
-			if (!Objects.isNull(rdf) && rdf.getTaskid().equals(pred.getTask().getTaskid())) {
-				rdf.setHp(pred.getHostPort());
-				break;
+		if (nonNull(prdf)) {
+			for (var rdf : prdf) {
+				if (!Objects.isNull(rdf) && rdf.getTaskid().equals(pred.getTask().getTaskid())) {
+					rdf.setHp(pred.getHostPort());
+					break;
+				}
 			}
 		}
 	}
@@ -993,7 +1071,7 @@ public class StreamJobScheduler {
           try (var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), new Configuration());) {
             semaphore.acquire();
             StreamPipelineTaskExecutorLocal sptel = null;
-            if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
+            if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
             	sptel = new StreamPipelineTaskExecutorLocalSQL(
                         jsidjsmap.get(task.jobid + task.stageid), resultstream, cache);
             } else {
@@ -1047,12 +1125,12 @@ public class StreamJobScheduler {
         public StreamPipelineTaskExecutorIgnite execute() {
           var task = spts.getTask();
           StreamPipelineTaskExecutorIgnite mdste = null;
-          if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
+          if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
         	  mdste = new StreamPipelineTaskExecutorIgniteSQL(jsidjsmap.get(task.jobid + task.stageid), task);
-        	  mdste.setHdfspath(hdfsfilepath);
           } else {
         	  mdste = new StreamPipelineTaskExecutorIgnite(jsidjsmap.get(task.jobid + task.stageid), task);
           }
+          mdste.setHdfspath(hdfsfilepath);
           try {
             semaphore.acquire();
             var compute = job.getIgnite().compute(job.getIgnite().cluster().forServers());
@@ -1076,7 +1154,7 @@ public class StreamJobScheduler {
    * @author arun The task provider for the standlone mode stage execution.
    */
   public class DAGScheduler implements TaskProvider<StreamPipelineTaskSubmitter, Boolean> {
-    org.slf4j.Logger log = LoggerFactory.getLogger(DAGScheduler.class);
+    Logger log = LoggerFactory.getLogger(DAGScheduler.class);
     double totaltasks;
     double counttaskscomp = 0;
     double counttasksfailed = 0;
@@ -1101,9 +1179,9 @@ public class StreamJobScheduler {
         	
         	@Override
 			public Boolean execute() {
-				if (!spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
-					try {
-						semaphores.get(spts.getTask().getHostport()).acquire();
+				try {
+					semaphores.get(spts.getTask().getHostport()).acquire();
+					if (!spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
 						Task result = (Task) spts.call();
 						log.info("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
 						printresult.acquire();
@@ -1118,26 +1196,43 @@ public class StreamJobScheduler {
 						Utils.writeToOstream(pipelineconfig.getOutput(), "\nPercentage Completed TE("
 								+ spts.getHostPort() + ") " + percentagecompleted + "% \n");
 						job.getJm().getContainersallocated().put(spts.getHostPort(), percentagecompleted);
+						if (Objects.isNull(job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()))) {
+							job.getJm().getTaskexcutortasks().put(spts.getTask().getHostport(), new ArrayList<>());
+						}
 						printresult.release();
-						if(result.taskstatus == TaskStatus.FAILED) {
+						if (result.taskstatus == TaskStatus.FAILED) {
 							spts.getTask().setTaskstatus(TaskStatus.FAILED);
 							spts.getTask().stagefailuremessage = result.stagefailuremessage;
 							spts.setCompletedexecution(false);
 							shouldcontinueprocessing.set(false);
 							throw new IllegalArgumentException("Task Failed");
-						} else if(result.taskstatus == TaskStatus.COMPLETED) {
+						} else if (result.taskstatus == TaskStatus.COMPLETED) {
 							spts.setCompletedexecution(true);
+							job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()).add(result);
 						}
 						spts.getTask().setPiguuid(result.getPiguuid());
 						return true;
-					} catch (IllegalArgumentException e) {
-						throw e;
-					} catch (Exception e) {
-						log.error(DataSamudayaConstants.EMPTY, e);
-						spts.setCompletedexecution(false);
-					} finally {
-						semaphores.get(spts.getTask().getHostport()).release();
+					} else if (spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
+						printresult.acquire();
+						if (Objects.isNull(tetotaltaskscompleted.get(spts.getHostPort()))) {
+							tetotaltaskscompleted.put(spts.getHostPort(), 0d);
+						}
+						tetotaltaskscompleted.put(spts.getHostPort(),
+								tetotaltaskscompleted.get(spts.getHostPort()) + 1);
+						double percentagecompleted = Math.floor((tetotaltaskscompleted.get(spts.getHostPort())
+								/ servertotaltasks.get(spts.getHostPort())) * 100.0);
+						Utils.writeToOstream(pipelineconfig.getOutput(), "\nPercentage Completed TE("
+								+ spts.getHostPort() + ") " + percentagecompleted + "% \n");
+						job.getJm().getContainersallocated().put(spts.getHostPort(), percentagecompleted);
+						printresult.release();
 					}
+				} catch (IllegalArgumentException e) {
+					throw e;
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+					spts.setCompletedexecution(false);
+				} finally {
+					semaphores.get(spts.getTask().getHostport()).release();
 				}
 				return spts.isCompletedexecution();
 
@@ -1154,20 +1249,21 @@ public class StreamJobScheduler {
    * @param stagecount
    */
   private void decideContainerCountAndPhysicalMemoryByBlockSize(int stagecount, int blocksize) {
-    com.sun.management.OperatingSystemMXBean os =
-        (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory
-            .getOperatingSystemMXBean();
-    var availablememorysize = os.getFreePhysicalMemorySize();
-    var processors = os.getAvailableProcessors();
-    blocksize = blocksize * 1024 * 1024;
-    availablememorysize = (availablememorysize - blocksize) / processors;
-    availablememorysize = availablememorysize / (1024 * 1024);
-    System.setProperty("jobcount", "" + stagecount);
-    System.setProperty("containercount", "" + processors);
-    System.setProperty("containermemory", "" + availablememorysize);
+    System.setProperty("jobcount", "1");
+    System.setProperty("containercount", "" + pipelineconfig.getNumberofcontainers());
+    long containermemory;
+    System.setProperty("containercpu", "" + pipelineconfig.getImplicitcontainercpu());
+    if(pipelineconfig.getImplicitcontainermemory().equals(DataSamudayaConstants.GB)) {
+    	containermemory = Long.valueOf(pipelineconfig.getImplicitcontainermemorysize()).longValue() * 1024;
+    } else if(pipelineconfig.getImplicitcontainermemory().equals(DataSamudayaConstants.MB)) {
+    	containermemory = Long.valueOf(pipelineconfig.getImplicitcontainermemorysize()).longValue();
+    } else {
+    	containermemory = Long.valueOf(pipelineconfig.getImplicitcontainermemorysize()).longValue()/DataSamudayaConstants.MB;
+    }
+    System.setProperty("containermemory", "" + containermemory);
   }
 
-  private Map<String, StreamPipelineTaskSubmitter> tasksptsthread = new ConcurrentHashMap<>();
+	private final Map<String, StreamPipelineTaskSubmitter> tasksptsthread = new ConcurrentHashMap<>();
 
   /**
    * Form a graph for physical execution plan for obtaining the topological ordering of physical
@@ -1333,11 +1429,11 @@ public class StreamJobScheduler {
         }
       }
       // Form the nodes and edges for coalesce function.
-		else if ((function instanceof Coalesce coalesce)) {
+		else if (function instanceof Coalesce coalesce) {
 			var partkeys = Iterables.partition(outputparent1, (outputparent1.size()) / coalesce.getCoalescepartition())
 					.iterator();
 			if (islocal || isignite || isyarn || ismesos) {
-				for (; partkeys.hasNext();) {
+				for (;partkeys.hasNext();) {
 					var parentpartitioned = (List) partkeys.next();
 					partitionindex++;
 					var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
@@ -1359,7 +1455,7 @@ public class StreamJobScheduler {
 					}
 				}
 			} else {
-				for (; partkeys.hasNext();) {
+				for (;partkeys.hasNext();) {
 					var parentpartitioned = (List<StreamPipelineTaskSubmitter>) partkeys.next();
 
 					Map<String, List<StreamPipelineTaskSubmitter>> hpspts = parentpartitioned.stream()
@@ -1472,8 +1568,8 @@ public class StreamJobScheduler {
 		} else if (input instanceof Task task) {
 			spts = getPipelineTasks(jobid, task, currentstage, partitionindex, 
 					currentstage.number, null);
-			tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + 
-					spts.getTask().taskid, spts);
+			tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid 
+					+ spts.getTask().taskid, spts);
 			graph.addVertex(spts);
 			taskgraph.addVertex(task);
 			taskgraph.addVertex(spts.getTask());
@@ -1545,9 +1641,9 @@ public class StreamJobScheduler {
    * @throws PipelineException
    */
   @SuppressWarnings({"rawtypes"})
-  public List getLastStageOutput(Set<StreamPipelineTaskSubmitter> sptss, Graph graph,
+  public List getLastStageOutput(Set<StreamPipelineTaskSubmitter> sptss, Graph<StreamPipelineTaskSubmitter, DAGEdge> graph,
       List<StreamPipelineTaskSubmitter> sptsl, Boolean ismesos, Boolean isyarn, Boolean islocal,
-      Boolean isjgroups, ConcurrentMap<String, OutputStream> resultstream)
+      Boolean isjgroups, ConcurrentMap<String, OutputStream> resultstream, Graph<Task, DAGEdge> taskgraph)
       throws PipelineException {
     log.debug("HDFS Path TO Retrieve Final Task Output: " + hdfsfilepath);
 
@@ -1559,10 +1655,8 @@ public class StreamJobScheduler {
         int partition = 0;
         for (var spts : sptss) {
           job.getOutput().add(spts);
-          if (job.isIsresultrequired()) {
-            // Get final stage results from ignite
-            writeResultsFromIgnite(spts.getTask(), partition++, stageoutput);
-          }
+          // Get final stage results from ignite
+          writeResultsFromIgnite(spts.getTask(), partition++, stageoutput);
         }
       } else if (Boolean.TRUE.equals(islocal)) {
         if (job.getTrigger() != job.getTrigger().SAVERESULTSTOFILE) {
@@ -1584,7 +1678,17 @@ public class StreamJobScheduler {
         }
       } else if (Boolean.TRUE.equals(ismesos) || Boolean.TRUE.equals(isyarn)) {
         int partition = 0;
-        if (job.getTrigger() != job.getTrigger().SAVERESULTSTOFILE) {
+        if(Boolean.TRUE.equals(isyarn) && job.getTrigger()==TRIGGER.PIGDUMP) {
+        	var vertices = taskgraph.vertexSet();
+        	var tasks = vertices.stream().filter(spts -> Graphs.successorListOf(taskgraph, spts).isEmpty())
+        	        .collect(Collectors.toCollection(LinkedHashSet::new));
+        	PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput(), true);
+        	for (var task : tasks) {
+                // Get final stage results mesos or yarn
+                writeOutputToHDFS(hdfs, task, partition++, stageoutput);                
+          	  	Utils.printTableOrError((List) stageoutput.get(stageoutput.size()-1), out, JOBTYPE.PIG);
+              }
+        } else if (job.getTrigger() != TRIGGER.SAVERESULTSTOFILE) {
           for (var spts : sptss) {
             // Get final stage results mesos or yarn
             writeOutputToHDFS(hdfs, spts.getTask(), partition++, stageoutput);
@@ -1613,11 +1717,11 @@ public class StreamJobScheduler {
             boolean isJGroups = Boolean.parseBoolean(pipelineconfig.getJgroups());
             rdf.setMode(isJGroups ? DataSamudayaConstants.JGROUPS : DataSamudayaConstants.STANDALONE);
             RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
-            try (var input = new Input(pipelineconfig.getStorage()==STORAGE.INMEMORY || pipelineconfig.getStorage()==STORAGE.COLUMNARSQL?new ByteArrayInputStream(rdf.getData()):new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
+            try (var input = new Input(pipelineconfig.getStorage() == STORAGE.INMEMORY || isjgroups ? new ByteArrayInputStream(rdf.getData()) : new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
               var result = Utils.getKryo().readClassAndObject(input);;              
               if(job.getJobtype() == JOBTYPE.PIG) {
             	  PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
-            	  Utils.printTableOrError((List)result, out, JOBTYPE.PIG);
+            	  Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
               } else {
             	  writeOutputToFile(stageoutput.size(), result);
             	  stageoutput.add(result);
@@ -1662,12 +1766,9 @@ public class StreamJobScheduler {
           BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fsdos))) {
 
         if (result instanceof List res) {
-          for (var value : res) {
-            bw.write(value.toString());
-            bw.write(DataSamudayaConstants.NEWLINE);
-          }
+          Utils.convertToCsv(res, fsdos);
         } else {
-          bw.write(result.toString());
+        	Utils.convertToCsv(Arrays.asList(result), fsdos);
         }
         bw.flush();
         fsdos.flush();
@@ -1805,6 +1906,9 @@ public class StreamJobScheduler {
         if (!Objects.isNull(job.getUri())) {
           job.setTrigger(job.getTrigger().SAVERESULTSTOFILE);
           writeOutputToFile(partition, obj);
+        } if(job.getJobtype() == JOBTYPE.PIG) {
+      	  PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
+      	  Utils.printTableOrError((List) obj, out, JOBTYPE.PIG);
         } else {
           stageoutput.add(obj);
         }
@@ -1841,7 +1945,7 @@ public class StreamJobScheduler {
       int partitionindex, int currentstage, List<Object> parentthreads) throws PipelineException {
     try {
       var task = new Task();
-      task.setTaskid(DataSamudayaConstants.TASK+DataSamudayaConstants.HYPHEN+job.getTaskidgenerator().getAndIncrement());
+      task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + job.getTaskidgenerator().getAndIncrement());
       task.jobid = jobid;
       task.stageid = stage.id;
       task.storage = pipelineconfig.getStorage();
@@ -1854,10 +1958,10 @@ public class StreamJobScheduler {
           hp = ((BlocksLocation) task.input[0]).getExecutorhp();
         } else if (input instanceof BlocksLocation bl) {
           hp = bl.getExecutorhp();
-          task.input = new Object[] {input};
+          task.input = new Object[]{input};
 		} else if (input instanceof Task inputtask) {
 			hp = inputtask.getHostport();
-			task.input = new Object[] { inputtask };
+			task.input = new Object[]{inputtask};
 			task.parentremotedatafetch = new RemoteDataFetch[1];
 		}
        
@@ -1865,7 +1969,7 @@ public class StreamJobScheduler {
       } else {
         task.input = new Object[parentthreads.size()];
         task.parentremotedatafetch = new RemoteDataFetch[parentthreads.size()];
-        for (var parentcount = 0; parentcount < parentthreads.size(); parentcount++) {
+        for (var parentcount = 0;parentcount < parentthreads.size();parentcount++) {
           if (parentthreads.get(parentcount) instanceof StreamPipelineTaskSubmitter spts) {
             if (!isignite) {
               task.parentremotedatafetch[parentcount] = new RemoteDataFetch();
@@ -1874,7 +1978,7 @@ public class StreamJobScheduler {
               task.parentremotedatafetch[parentcount].setTaskid(spts.getTask().taskid);
               task.parentremotedatafetch[parentcount].setHp(spts.getHostPort());
               task.parentremotedatafetch[parentcount].setTejobid(task.jobid);
-              if(pipelineconfig.getUseglobaltaskexecutors()) {
+              if (pipelineconfig.getUseglobaltaskexecutors()) {
             	  task.parentremotedatafetch[parentcount].setTejobid(pipelineconfig.getTejobid());
               }
               if (Boolean.parseBoolean(pipelineconfig.getJgroups())) {
@@ -1896,7 +2000,7 @@ public class StreamJobScheduler {
       }
       var spts = new StreamPipelineTaskSubmitter(task, hp, job.getPipelineconfig());
       task.hostport = hp;
-      zo.createTasksForJobNode(jobid, task, (event)->{
+      zo.createTasksForJobNode(jobid, task, event -> {
     	  var taskid = task.taskid;
     	  log.info("Task {} created in zookeeper", taskid);
       });

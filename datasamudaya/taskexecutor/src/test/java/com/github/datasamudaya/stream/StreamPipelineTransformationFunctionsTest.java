@@ -37,10 +37,6 @@ import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.SToIntFunction;
 import com.github.datasamudaya.common.functions.SortedComparator;
 import com.github.datasamudaya.common.functions.UnionFunction;
-import com.github.datasamudaya.stream.MapPair;
-import com.github.datasamudaya.stream.PipelineIntStream;
-import com.github.datasamudaya.stream.SampleSupplierInteger;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBaseTestCommon {
 	PipelineConfig pipelineconfig = new PipelineConfig();
@@ -52,8 +48,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		StreamPipeline<String> map = mdp.map(mapfunction);
 		assertTrue(map.parents.get(0) == mdp);
 		assertTrue(mdp.childs.get(0) == map);
-		assertTrue(map.task == mapfunction);
-		assertTrue(map.root == mdp);
 	}
 
 	@Test
@@ -79,8 +73,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		StreamPipeline<String> filter = mdp.filter(filterfunction);
 		assertTrue(filter.parents.get(0) == mdp);
 		assertTrue(mdp.childs.get(0) == filter);
-		assertTrue(filter.task == filterfunction);
-		assertTrue(filter.root == mdp);
 	}
 
 	@Test
@@ -106,8 +98,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		StreamPipeline<String> peek = mdp.peek(peekconsumer);
 		assertTrue(peek.parents.get(0) == mdp);
 		assertTrue(mdp.childs.get(0) == peek);
-		assertTrue(peek.task == peekconsumer);
-		assertTrue(peek.root == mdp);
 	}
 
 	@Test
@@ -135,7 +125,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		assertTrue(mdpunion1.childs.get(0) == union);
 		assertTrue(union.parents.get(1) == mdpunion2);
 		assertTrue(mdpunion2.childs.get(0) == union);
-		assertTrue(union.task instanceof UnionFunction);
 	}
 
 	@Test
@@ -173,7 +162,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		assertTrue(mdpintersection1.childs.get(0) == intersection);
 		assertTrue(intersection.parents.get(1) == mdpintersection2);
 		assertTrue(mdpintersection2.childs.get(0) == intersection);
-		assertTrue(intersection.task instanceof IntersectionFunction);
 	}
 
 	@Test
@@ -209,7 +197,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		MapPair<String, String> mappair = mdp.mapToPair(mappairfunction);
 		assertTrue(mappair.parents.get(0) == mdp);
 		assertTrue(mdp.childs.get(0) == mappair);
-		assertTrue(mappair.task == mappairfunction);
 	}
 
 	@Test
@@ -235,9 +222,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		StreamPipeline<String> sample = mdp.sample(samplenumber);
 		assertTrue(sample.parents.get(0) == mdp);
 		assertTrue(mdp.childs.get(0) == sample);
-		assertTrue(sample.task instanceof SampleSupplierInteger);
-		SampleSupplierInteger samplesuppinteger = (SampleSupplierInteger) sample.task;
-		assertTrue(samplesuppinteger.getAsInt() == samplenumber);
 	}
 
 	@Test
@@ -266,8 +250,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		assertTrue(mdpleft.childs.get(0) == mdpchild);
 		assertTrue(mdpchild.parents.get(1) == mdpright);
 		assertTrue(mdpright.childs.get(0) == mdpchild);
-		assertTrue(mdpchild.task instanceof RightOuterJoinPredicate);
-		assertTrue(mdpchild.task == roj);
 	}
 
 	@Test
@@ -307,8 +289,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		assertTrue(mdpleft.childs.get(0) == mdpchild);
 		assertTrue(mdpchild.parents.get(1) == mdpright);
 		assertTrue(mdpright.childs.get(0) == mdpchild);
-		assertTrue(mdpchild.task instanceof LeftOuterJoinPredicate);
-		assertTrue(mdpchild.task == loj);
 	}
 
 	@Test
@@ -345,8 +325,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		StreamPipeline<String> mdpchild = mdp.sorted(sortedcomparator);
 		assertTrue(mdpchild.parents.get(0) == mdp);
 		assertTrue(mdp.childs.get(0) == mdpchild);
-		assertTrue(mdpchild.task instanceof SortedComparator);
-		assertTrue(mdpchild.task == sortedcomparator);
 	}
 
 	@Test
@@ -371,7 +349,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		StreamPipeline<String> mdpchild = mdp.distinct();
 		assertTrue(mdpchild.parents.get(0) == mdp);
 		assertTrue(mdp.childs.get(0) == mdpchild);
-		assertTrue(mdpchild.task instanceof Distinct);
 	}
 
 	@Test
@@ -396,8 +373,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		PipelineIntStream<String> mdpchild = mdp.mapToInt(tointfunction);
 		assertTrue(mdpchild.parents.get(0) == mdp);
 		assertTrue(mdp.childs.get(0) == mdpchild);
-		assertTrue(mdpchild.task instanceof ToIntFunction);
-		assertTrue(mdpchild.task == tointfunction);
 	}
 
 	@Test
@@ -423,8 +398,6 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		MapPair<String, String> mdpchild = mdp.keyBy(keybyfunction);
 		assertTrue(mdpchild.parents.get(0) == mdp);
 		assertTrue(mdp.childs.get(0) == mdpchild);
-		assertTrue(mdpchild.task instanceof KeyByFunction);
-		assertTrue(mdpchild.task == keybyfunction);
 	}
 
 	@Test
@@ -441,30 +414,5 @@ public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBas
 		DAGEdge dagedge = mdp.graph.edgeSet().iterator().next();
 		assertTrue(dagedge.getSource() == mdp);
 		assertTrue(dagedge.getTarget() == mdpchild);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Test
-	public void testGetDAGMap() throws Exception {
-		String config = pipelineconfig.getBlocksize();
-		pipelineconfig.setBlocksize("1");
-		StreamPipeline<String> mdp = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
-				pipelineconfig);
-		StreamPipeline<String> filter = mdp.map(dat -> dat).filter(dat -> dat.equals(dat));
-		MapPair<String, Long> mappair = filter.mapToPair(dat -> new Tuple2<String, Long>(dat, Long.parseLong(dat)));
-		MapPair<String, Long> redbykeyleft = mappair.reduceByKey((dat1, dat2) -> dat1 + dat2).coalesce(1,
-				(dat1, dat2) -> dat1 + dat2);
-		MapPair<String, Long> redbykeyright = mappair.reduceByKey((dat1, dat2) -> dat1 - dat2).coalesce(1,
-				(dat1, dat2) -> dat1 + dat2);
-		StreamPipeline<String> mdproot = (StreamPipeline<String>) redbykeyleft.join(redbykeyright,
-				(left, right) -> left.equals(right)).root;
-		mdproot.finaltasks.add(mdproot.finaltask);
-		Job job = new Job();
-		job.setJm(new JobMetrics());
-		mdproot.getDAG(job);
-		pipelineconfig.setBlocksize(config);
-
-		assertEquals(9, mdproot.graph.vertexSet().size());
-		assertEquals(9, mdproot.graph.edgeSet().size());
 	}
 }

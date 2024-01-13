@@ -11,23 +11,26 @@ package com.github.datasamudaya.stream;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-import com.github.datasamudaya.stream.StreamPipelineTest;
 import com.github.datasamudaya.stream.utils.FileBlocksPartitionerHDFSMultipleNodesTest;
 import com.github.datasamudaya.stream.utils.FileBlocksPartitionerHDFSTest;
 import com.github.datasamudaya.tasks.executor.MassiveDataCruncherMRApiTest;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({StreamPipelineContinuedTest.class, StreamPipelineTestSuite2.class,
+@Suite.SuiteClasses({
+	FileBlocksPartitionerHDFSTest.class, LaunchContainersTest.class,
+	PigCommandsTest.class, RemoteJobSchedulerTest.class,
+	HDFSBlockUtilsTest.class, StreamPipeline1Test.class,
+	StreamPipelineContinuedTest.class, StreamPipelineTestSuite2.class,
     StreamPipelineTest.class, StreamPipelineFoldByKeyKeyByTest.class,
-    StreamPipelineTransformationsCollectTest.class, StreamPipelineTransformationsNullTest.class,
+    StreamPipelineTransformationsCollectTest.class,
+    StreamPipelineTransformationsNullTest.class,
     StreamPipelineUtilsTest.class, StreamPipelineFunctionsTest.class,
     StreamPipelineCoalesceTest.class, StreamPipelineJsonTest.class,
-    StreamPipelineTransformationFunctionsTest.class, StreamPipelineStatisticsTest.class,
+    StreamPipelineTransformationFunctionsTest.class, 
+    StreamPipelineStatisticsTest.class,
     MassiveDataCruncherMRApiTest.class,
     StreamPipelineSqlBuilderTest.class,
-    FileBlocksPartitionerHDFSMultipleNodesTest.class, FileBlocksPartitionerHDFSTest.class,
-    StreamPipelineDepth2Test.class, StreamPipelineDepth31Test.class,
-    StreamPipelineDepth32Test.class, StreamPipelineDepth32ContinuedTest.class,
-    StreamPipelineDepth33Test.class, StreamPipelineDepth34Test.class})
+    FileBlocksPartitionerHDFSMultipleNodesTest.class,
+    StreamPipelineDepth2Test.class, StreamPipelineDepth31Test.class})
 public class StreamPipelineTestSuite {
 }

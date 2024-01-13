@@ -17,6 +17,7 @@ package com.github.datasamudaya.stream;
 
 import java.util.List;
 import java.util.function.IntUnaryOperator;
+
 import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.functions.AtomicBiConsumer;
@@ -25,7 +26,6 @@ import com.github.datasamudaya.common.functions.AtomicObjIntConsumer;
 import com.github.datasamudaya.common.functions.Distinct;
 import com.github.datasamudaya.common.functions.Max;
 import com.github.datasamudaya.common.functions.Min;
-import com.github.datasamudaya.common.functions.SToIntFunction;
 import com.github.datasamudaya.common.functions.StandardDeviation;
 import com.github.datasamudaya.common.functions.Sum;
 import com.github.datasamudaya.common.functions.SummaryStatistics;
@@ -36,7 +36,7 @@ import com.github.datasamudaya.common.functions.SummaryStatistics;
  *
  * @param <I1>
  */
-public final class PipelineIntStream<I1> extends AbstractPipeline {
+public final class PipelineIntStream<I1> extends StreamPipeline {
 	private static Logger log = Logger.getLogger(PipelineIntStream.class);
 
 	/**
@@ -44,86 +44,13 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @param root
 	 * @param tointfunction
 	 */
-	PipelineIntStream(AbstractPipeline root,
-			SToIntFunction<I1> tointfunction)  {
-		this.task = tointfunction;
-		this.root = root;
-		root.finaltask = task;
+	PipelineIntStream(AbstractPipeline parent,
+			Object tointfunction) {
+		this.parents.add(parent);
+		parent.childs.add(this);
+		tasks.add(tointfunction);
 	}
 
-
-	/**
-	 * private constructor for unary operator
-	 * @param root
-	 * @param intunaryoperator
-	 */
-	private PipelineIntStream(AbstractPipeline root,
-			IntUnaryOperator intunaryoperator)  {
-		this.task = intunaryoperator;
-		this.root = root;
-		root.finaltask = task;
-	}
-
-
-	/**
-	 * The private constructor for statistical summary.
-	 * @param root
-	 * @param summarystatistics
-	 */
-	private PipelineIntStream(AbstractPipeline root,
-			SummaryStatistics summarystatistics)  {
-		this.task = summarystatistics;
-		this.root = root;
-		root.finaltask = task;
-	}
-
-
-	/**
-	 * The private constructor for statistical sum function.
-	 * @param root
-	 * @param sum
-	 */
-	private PipelineIntStream(AbstractPipeline root,
-			Sum sum)  {
-		this.task = sum;
-		this.root = root;
-		root.finaltask = task;
-	}
-
-	/**
-	 * The private constructor for statistical max function.
-	 * @param root
-	 * @param max
-	 */
-	private PipelineIntStream(AbstractPipeline root,
-			Max max)  {
-		this.task = max;
-		this.root = root;
-		root.finaltask = task;
-	}
-
-	/**
-	 * The private constructor for statistical min function.
-	 * @param root
-	 * @param min
-	 */
-	private PipelineIntStream(AbstractPipeline root,
-			Min min)  {
-		this.task = min;
-		this.root = root;
-		root.finaltask = task;
-	}
-	/**
-	 * The private constructor for statistical standard deviation function.
-	 * @param root
-	 * @param min
-	 */
-	private PipelineIntStream(AbstractPipeline root,
-			StandardDeviation stddev)  {
-		this.task = stddev;
-		this.root = root;
-		root.finaltask = task;
-	}
 
 	/**
 	 * The public constructor for integer unary operator. 
@@ -131,50 +58,23 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	 * @return
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	public PipelineIntStream<I1> map(IntUnaryOperator intunaryoperator)  {
-		var map = new PipelineIntStream(root, intunaryoperator);
-		map.parents.add(this);
-		this.childs.add(map);
+	public PipelineIntStream<I1> map(IntUnaryOperator intunaryoperator) {
+		var map = new PipelineIntStream(this, intunaryoperator);		
 		return map;
 	}
 
-	/**
-	 * The private constructor for distinct function. 
-	 * @param root
-	 * @param distinct
-	 */
-	private PipelineIntStream(AbstractPipeline root,
-			Distinct distinct) {
-		this.task = distinct;
-		this.root = root;
-		root.finaltask = task;
-	}
-
+	
 	/**
 	 * The public constructor for distinct function. 
 	 * @return integer stream pipeline object
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	public PipelineIntStream<I1> distinct()  {
+	public PipelineIntStream<I1> distinct() {
 		var distinct = new Distinct();
-		var map = new PipelineIntStream(root, distinct);
-		map.parents.add(this);
-		this.childs.add(map);
+		var map = new PipelineIntStream(this, distinct);
 		return map;
 	}
 
-
-	/**
-	 * The private constructor for the pipeline collect
-	 * @param root
-	 * @param piplinint
-	 */
-	private PipelineIntStream(AbstractPipeline root,
-			PipelineIntStreamCollect piplinint)  {
-		this.task = piplinint;
-		this.root = root;
-		root.finaltask = task;
-	}
 
 	/**
 	 * The collect function which starts execution and provide results. 
@@ -189,17 +89,11 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public <R> List collect(boolean toexecute, AtomicIntegerSupplier<R> supplier,
 			AtomicObjIntConsumer<R> objintconsumer,
-			AtomicBiConsumer<R, R> biconsumer) throws PipelineException  {
+			AtomicBiConsumer<R, R> biconsumer) throws PipelineException {
 		log.debug("Collect task begin...");
-		var pintstr = new PipelineIntStream(root, new PipelineIntStreamCollect(supplier,
+		var pintstr = new PipelineIntStream(this, new PipelineIntStreamCollect(supplier,
 				objintconsumer, biconsumer));
-		pintstr.parents.add(this);
-		this.childs.add(pintstr);
-		var mdscollect = (StreamPipeline) pintstr.root;
-		mdscollect.finaltasks.clear();
-		mdscollect.finaltasks.add(pintstr.task);
-		mdscollect.mdsroots.add(root);
-		var result = mdscollect.collect(toexecute, null);
+		var result = pintstr.collect(toexecute, null);
 		log.debug("Collect task ended.");
 		return result;
 	}
@@ -212,14 +106,8 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public List summaryStatistics() throws PipelineException {
 		log.debug("Summary Statistics task begin...");
-		var map = new PipelineIntStream(root, new SummaryStatistics());
-		map.parents.add(this);
-		this.childs.add(map);
-		var mdscollect = (StreamPipeline) root;
-		mdscollect.finaltasks.clear();
-		mdscollect.finaltasks.add(map.task);
-		mdscollect.mdsroots.add(root);
-		var result = mdscollect.collect(true, null);
+		var map = new PipelineIntStream(this, new SummaryStatistics());
+		var result = map.collect(true, null);
 		log.debug("Summary Statistics task ended.");
 		return result;
 	}
@@ -232,14 +120,8 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public List sum() throws PipelineException {
 		log.debug("Sum task begin...");
-		var map = new PipelineIntStream(root, new Sum());
-		map.parents.add(this);
-		this.childs.add(map);
-		var mdscollect = (StreamPipeline) root;
-		mdscollect.finaltasks.clear();
-		mdscollect.finaltasks.add(map.task);
-		mdscollect.mdsroots.add(root);
-		var result = mdscollect.collect(true, null);
+		var map = new PipelineIntStream(this, new Sum());
+		var result = map.collect(true, null);
 		log.debug("Sum task ended.");
 		return result;
 	}
@@ -252,14 +134,8 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public List max() throws PipelineException {
 		log.debug("Max task begin...");
-		var map = new PipelineIntStream(root, new Max());
-		map.parents.add(this);
-		this.childs.add(map);
-		var mdscollect = (StreamPipeline) root;
-		mdscollect.finaltasks.clear();
-		mdscollect.finaltasks.add(map.task);
-		mdscollect.mdsroots.add(root);
-		var result = mdscollect.collect(true, null);
+		var map = new PipelineIntStream(this, new Max());
+		var result = map.collect(true, null);
 		log.debug("Max task ended.");
 		return result;
 	}
@@ -271,14 +147,8 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public List min() throws PipelineException {
 		log.debug("Min task begin...");
-		var map = new PipelineIntStream(root, new Min());
-		map.parents.add(this);
-		this.childs.add(map);
-		var mdscollect = (StreamPipeline) root;
-		mdscollect.finaltasks.clear();
-		mdscollect.finaltasks.add(map.task);
-		mdscollect.mdsroots.add(root);
-		var result = mdscollect.collect(true, null);
+		var map = new PipelineIntStream(this, new Min());
+		var result = map.collect(true, null);
 		log.debug("Min task ended.");
 		return result;
 	}
@@ -291,14 +161,8 @@ public final class PipelineIntStream<I1> extends AbstractPipeline {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public List standardDeviation() throws PipelineException {
 		log.debug("StandardDeviation task begin...");
-		var map = new PipelineIntStream(root, new StandardDeviation());
-		map.parents.add(this);
-		this.childs.add(map);
-		var mdscollect = (StreamPipeline) root;
-		mdscollect.finaltasks.clear();
-		mdscollect.finaltasks.add(map.task);
-		mdscollect.mdsroots.add(root);
-		var result = mdscollect.collect(true, null);
+		var map = new PipelineIntStream(this, new StandardDeviation());
+		var result = map.collect(true, null);
 		log.debug("StandardDeviation task ended.");
 		return result;
 	}

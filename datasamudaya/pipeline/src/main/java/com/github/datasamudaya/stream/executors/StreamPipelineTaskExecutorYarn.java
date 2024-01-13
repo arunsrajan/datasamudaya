@@ -90,7 +90,7 @@ public class StreamPipelineTaskExecutorYarn extends StreamPipelineTaskExecutor {
 
 			if (task.input != null && task.parentremotedatafetch != null) {
 				var numinputs = task.parentremotedatafetch.length;
-				for (var inputindex = 0; inputindex < numinputs; inputindex++) {
+				for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 					var input = task.parentremotedatafetch[inputindex];
 					if (input != null) {
 						var rdf = (RemoteDataFetch) input;

@@ -28,7 +28,7 @@ import org.eclipse.jetty.server.ServerConnector;
  *
  */
 public class MesosThirdPartyLibraryDistributor {
-	private String dir;
+	private final String dir;
 	private Server server;
 
 	public MesosThirdPartyLibraryDistributor(String dir) {

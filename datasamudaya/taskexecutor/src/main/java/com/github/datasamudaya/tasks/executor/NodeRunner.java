@@ -24,6 +24,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.AllocateContainers;
@@ -46,7 +47,7 @@ import com.github.datasamudaya.common.utils.ZookeeperOperations;
  *
  */
 public class NodeRunner implements Callable<Object> {
-  private static org.slf4j.Logger log = LoggerFactory.getLogger(NodeRunner.class);
+	private static final Logger log = LoggerFactory.getLogger(NodeRunner.class);
   String proploaderpath;
   ConcurrentMap<String, Map<String, Process>> containerprocesses;
   FileSystem hdfs;
@@ -79,7 +80,7 @@ public class NodeRunner implements Callable<Object> {
       Object deserobj = receivedobject;
       if (deserobj instanceof AllocateContainers ac) {
         List<Integer> ports = new ArrayList<>();
-        for (int numport = 0; numport < ac.getNumberofcontainers(); numport++) {
+        for (int numport = 0;numport < ac.getNumberofcontainers();numport++) {
         	  int port = Utils.getRandomPort();
               log.info("Alloting Port " + port);
               ports.add(port);
@@ -92,7 +93,7 @@ public class NodeRunner implements Callable<Object> {
         List<Integer> ports = new ArrayList<>();
         Process proc;
         var host = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST);
-        for (int port = 0; port < lc.getCla().getNumberofcontainers(); port++) {
+        for (int port = 0;port < lc.getCla().getNumberofcontainers();port++) {
           var cr = lc.getCla().getCr().get(port);
           log.info("Dispatching chamber {}....", (cr.getPort()));
           proc = processes.get((cr.getPort()) + DataSamudayaConstants.EMPTY);
@@ -101,7 +102,7 @@ public class NodeRunner implements Callable<Object> {
                 (String) DataSamudayaProperties.get().get(DataSamudayaConstants.CACHEDISKPATH),
                 TaskExecutorRunner.class, proploaderpath, cr, lc.getJobid());
             processes.put((cr.getPort()) + DataSamudayaConstants.EMPTY, proc);
-            String hp = host+DataSamudayaConstants.UNDERSCORE+cr.getPort();
+            String hp = host + DataSamudayaConstants.UNDERSCORE + cr.getPort();
           }
           ports.add(cr.getPort());
         }

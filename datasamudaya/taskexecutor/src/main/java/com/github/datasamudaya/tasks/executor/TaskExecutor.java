@@ -19,6 +19,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.ehcache.Cache;
@@ -30,14 +31,14 @@ import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
 import com.github.datasamudaya.common.CloseStagesGraphExecutor;
-import com.github.datasamudaya.common.CompressedVectorSchemaRoot;
 import com.github.datasamudaya.common.Context;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.FreeResourcesCompletedJob;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.ReducerValues;
 import com.github.datasamudaya.common.RemoteDataFetch;
@@ -48,13 +49,12 @@ import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskStatus;
 import com.github.datasamudaya.common.TaskType;
 import com.github.datasamudaya.common.TasksGraphExecutor;
-import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutor;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemory;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemoryDisk;
-import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemorySQL;
+import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemoryDiskSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroups;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroupsSQL;
 
@@ -64,7 +64,7 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroup
  *
  */
 public class TaskExecutor implements Callable<Object> {
-  private static Logger log = LoggerFactory.getLogger(TaskExecutor.class);
+	private static final Logger log = LoggerFactory.getLogger(TaskExecutor.class);
   int port;
   ExecutorService es;
   ConcurrentMap<String, OutputStream> resultstream;
@@ -78,7 +78,7 @@ public class TaskExecutor implements Callable<Object> {
   Map<String, JobStage> jobidstageidjobstagemap;
   Task tasktoreturn;
   ZookeeperOperations zo;
-  ConcurrentMap<BlocksLocation, CompressedVectorSchemaRoot> blvectorsmap;
+  ConcurrentMap<BlocksLocation, String> blorcmap;
   @SuppressWarnings({"rawtypes"})
   public TaskExecutor(ClassLoader cl, int port, ExecutorService es, Configuration configuration,
       Map<String, Object> apptaskexecutormap, Map<String, Object> jobstageexecutormap,
@@ -86,7 +86,7 @@ public class TaskExecutor implements Callable<Object> {
       
       Map<String, Map<String, Object>> jobidstageidexecutormap, Task tasktoreturn,
       Map<String, JobStage> jobidstageidjobstagemap,
-      ZookeeperOperations zo, ConcurrentMap<BlocksLocation, CompressedVectorSchemaRoot> blvectorsmap) {
+      ZookeeperOperations zo, ConcurrentMap<BlocksLocation, String> blorcmap) {
     this.cl = cl;
     this.port = port;
     this.es = es;
@@ -100,7 +100,7 @@ public class TaskExecutor implements Callable<Object> {
     this.tasktoreturn = tasktoreturn;
     this.jobidstageidjobstagemap = jobidstageidjobstagemap;
     this.zo = zo;
-    this.blvectorsmap = blvectorsmap;
+    this.blorcmap = blorcmap;
   }
 
   ClassLoader cl;
@@ -119,8 +119,8 @@ public class TaskExecutor implements Callable<Object> {
 	
 	var hp = host+DataSamudayaConstants.UNDERSCORE+port;
 	
-	zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), (event)->{
-		log.info("TaskExecutor {} initialized and started",hp);
+	zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
+		log.info("TaskExecutor {} initialized and started", hp);
 	});
 
   }
@@ -154,8 +154,8 @@ public class TaskExecutor implements Callable<Object> {
                   ? new StreamPipelineTaskExecutorInMemory(jobidstageidjobstagemap.get(key),
                       resultstream, inmemorycache)
                   : task.storage == STORAGE.COLUMNARSQL
-                          ? new StreamPipelineTaskExecutorInMemorySQL(jobidstageidjobstagemap.get(key),
-                                  resultstream, inmemorycache, blvectorsmap):new StreamPipelineTaskExecutor(jobidstageidjobstagemap.get(key), inmemorycache);
+                          ? new StreamPipelineTaskExecutorInMemoryDiskSQL(jobidstageidjobstagemap.get(key),
+                                  resultstream, inmemorycache):new StreamPipelineTaskExecutor(jobidstageidjobstagemap.get(key), inmemorycache);
           spte.setTask(task);
           spte.setExecutor(es);
           jobstageexecutormap.remove(key + task.taskid);
@@ -175,6 +175,12 @@ public class TaskExecutor implements Callable<Object> {
           tasktoreturn.tasktype = TaskType.EXECUTEUSERTASK;
           tasktoreturn.taskid = task.taskid;
           tasktoreturn.piguuid = task.piguuid;
+          tasktoreturn.taskexecutionstartime = task.taskexecutionstartime;
+          tasktoreturn.taskexecutionendtime = task.taskexecutionendtime;
+          tasktoreturn.timetakenseconds = task.timetakenseconds;
+          tasktoreturn.numbytesprocessed = task.numbytesprocessed;
+          tasktoreturn.numbytesconverted = task.numbytesconverted;
+          tasktoreturn.numbytesgenerated = task.numbytesgenerated;
           if(tasktoreturn.taskstatus == TaskStatus.FAILED) {
         	  tasktoreturn.stagefailuremessage = task.stagefailuremessage;
           }
@@ -191,9 +197,9 @@ public class TaskExecutor implements Callable<Object> {
 			StreamPipelineTaskExecutor sptej = null;
 			if (stagesgraph.getStorage() == STORAGE.COLUMNARSQL) {
 				sptej = new StreamPipelineTaskExecutorJGroupsSQL(jobidstageidjobstagemap, stagesgraph.getTasks(), port,
-						inmemorycache, blvectorsmap);
+						inmemorycache, blorcmap);
 				log.info("In JGroups Storage Columnar Object {}", sptej);
-			} else {
+			} else if (stagesgraph.getStorage() == STORAGE.DISK){
 				sptej = new StreamPipelineTaskExecutorJGroups(jobidstageidjobstagemap, stagesgraph.getTasks(), port,
 						inmemorycache);
 				log.info("In JGroups Storage Object {}", sptej);
@@ -266,7 +272,7 @@ public class TaskExecutor implements Callable<Object> {
                 rdf.setData(IOUtils.readBytesAndClose(new ByteBufferInputStream(bbos.get()),
                     bbos.get().limit()));
               }
-            } else if (task.storage == DataSamudayaConstants.STORAGE.INMEMORY_DISK) {
+            } else if (task.storage == DataSamudayaConstants.STORAGE.INMEMORY_DISK || task.storage == DataSamudayaConstants.STORAGE.COLUMNARSQL) {
               var path = Utils.getIntermediateInputStreamRDF(rdf);
               rdf.setData((byte[]) inmemorycache.get(path));
             } else {
@@ -305,21 +311,20 @@ public class TaskExecutor implements Callable<Object> {
                   .getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)),
                   configuration)) {
                 log.info("Application Submitted:" + applicationid + "-" + taskid);
-
                 mdtemc = new TaskExecutorMapperCombiner(blockslocation,
                     HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs), applicationid,
-                    taskid, cl, port);
+                    taskid, cl, port);              
+	              apptaskexecutormap.put(apptaskid, mdtemc);
+	              mdtemc.call();
+	              var keys = mdtemc.ctx.keys();
+	              RetrieveKeys rk = new RetrieveKeys();
+	              rk.keys = new LinkedHashSet<>(keys);
+	              rk.applicationid = applicationid;
+	              rk.taskid = taskid;
+	              rk.response = true;
+	              log.info("destroying MapperCombiner {}", apptaskid);
+	              return rk;
               }
-              apptaskexecutormap.put(apptaskid, mdtemc);
-              mdtemc.call();
-              var keys = mdtemc.ctx.keys();
-              RetrieveKeys rk = new RetrieveKeys();
-              rk.keys = new LinkedHashSet<>(keys);
-              rk.applicationid = applicationid;
-              rk.taskid = taskid;
-              rk.response = true;
-              log.info("destroying MapperCombiner {}", apptaskid);
-              return rk;
             }
           } else if (object instanceof ReducerValues rv) {
         	var executorid = (String) objects.get(3);

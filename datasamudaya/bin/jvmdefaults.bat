@@ -93,6 +93,7 @@ if %java_version% GEQ 17 (
     --add-opens=jdk.jshell/jdk.jshell=ALL-UNNAMED ^
     --add-opens=java.base/sun.util.calendar=ALL-UNNAMED ^
     --add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED ^
+    --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED ^
     --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED ^
     --add-opens=java.base/java.text=ALL-UNNAMED ^
     %current_value%

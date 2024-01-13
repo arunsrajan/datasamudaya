@@ -22,9 +22,6 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.json.simple.JSONObject;
 import org.junit.Test;
 
-import com.github.datasamudaya.stream.JsonStream;
-import com.github.datasamudaya.stream.StreamPipeline;
-
 public class StreamPipelineJsonTest extends StreamPipelineBaseTestCommon {
 	boolean toexecute = true;
 	Logger log = Logger.getLogger(StreamPipelineDepth2Test.class);

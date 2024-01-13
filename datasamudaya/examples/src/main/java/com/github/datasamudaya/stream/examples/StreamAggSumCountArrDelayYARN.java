@@ -28,7 +28,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamAggSumCountArrDelayYARN implements Serializable, Pipeline {
 	private static final long serialVersionUID = -1073668309871473457L;
-	private Logger log = Logger.getLogger(StreamAggSumCountArrDelayYARN.class);
+	private final Logger log = Logger.getLogger(StreamAggSumCountArrDelayYARN.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");
@@ -43,6 +43,7 @@ public class StreamAggSumCountArrDelayYARN implements Serializable, Pipeline {
 		pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 		pipelineconfig.setBatchsize(args[4]);
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		pipelineconfig.setJobname(StreamAggSumCountArrDelayYARN.class.getName());
 		testMapValuesReduceByValues(args, pipelineconfig);
 	}
 

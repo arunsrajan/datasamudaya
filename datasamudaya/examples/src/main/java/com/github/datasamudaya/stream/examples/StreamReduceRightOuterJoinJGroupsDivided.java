@@ -26,7 +26,7 @@ import com.github.datasamudaya.stream.Pipeline;
 import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceRightOuterJoinJGroupsDivided implements Pipeline {
-	private Logger log = Logger.getLogger(StreamReduceRightOuterJoinJGroupsDivided.class);
+	private final Logger log = Logger.getLogger(StreamReduceRightOuterJoinJGroupsDivided.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setIsblocksuserdefined("false");

@@ -39,16 +39,16 @@ public class PipelineGraphWebServlet extends HttpServlet {
 				+ request.getLocalPort();
 		String jobId = request.getParameter("jobId");
 		String graph = request.getParameter("graph");
-		boolean istasks = graph.equalsIgnoreCase("task");
-		boolean isstage = graph.equalsIgnoreCase("stage");
+		boolean istasks = "task".equalsIgnoreCase(graph);
+		boolean isstage = "stage".equalsIgnoreCase(graph);
 		try {
 			var jm = DataSamudayaJobMetrics.get().get(jobId);
 			StringBuilder builder = new StringBuilder();
-			builder.append(String.format("""
+			builder.append(("""
 					        <!DOCTYPE html>
 					<html>
 					<head>
-						<title>""" +jobId+ """
+						<title>""" + jobId + """
 								</title>
 						<script src="%s/resources/jquery-3.6.0.min.js"></script>
 						<script src="%s/resources/highcharts.js"></script>
@@ -75,7 +75,7 @@ public class PipelineGraphWebServlet extends HttpServlet {
 										}
 									},
 									series: [{
-										data: [""" + (isstage?getStageGraphEdges(jm.getStageGraphs()):istasks?getTaskGraphEdges(jm.getTaskGraphs()):getStageGraphEdges(jm.getStageGraphs())) + """
+										data: [""" + (isstage ? getStageGraphEdges(jm.getStageGraphs()) : istasks ? getTaskGraphEdges(jm.getTaskGraphs()) : getStageGraphEdges(jm.getStageGraphs())) + """
 
 										],
 										dataLabels: {
@@ -87,7 +87,7 @@ public class PipelineGraphWebServlet extends HttpServlet {
 										}
 									}],
 									title: {
-										text: '"""+jobId+"""
+										text: '""" + jobId + """
 												'
 									}
 								};
@@ -98,7 +98,7 @@ public class PipelineGraphWebServlet extends HttpServlet {
 						</script>
 					</body>
 					</html>
-					""",contextpath,contextpath,contextpath,contextpath));
+					""").formatted(contextpath, contextpath, contextpath, contextpath));
 			writer.write(builder.toString());
 		} finally {
 
@@ -119,13 +119,13 @@ public class PipelineGraphWebServlet extends HttpServlet {
 			Stage stagesource = (Stage) edge.getSource();
 			Stage stagetarget = (Stage) edge.getTarget();			
 			builder.append("{ from: '"
-			+getStageTasks(sourcebuilder, stagesource)+"', to: '"
-					+getStageTasks(targetbuilder, stagetarget)+"', name: '"+stagesource.getId()+DataSamudayaConstants.HYPHEN+stagetarget.getId()+"' },");
+			+ getStageTasks(sourcebuilder, stagesource) + "', to: '"
+					+ getStageTasks(targetbuilder, stagetarget) + "', name: '" + stagesource.getId() + DataSamudayaConstants.HYPHEN + stagetarget.getId() + "' },");
 			sourcebuilder.delete(0, sourcebuilder.length());
 			targetbuilder.delete(0, targetbuilder.length());
 		}
 		String fromtobuild = builder.toString();
-		return fromtobuild.substring(0,fromtobuild.length()-1);
+		return fromtobuild.substring(0, fromtobuild.length() - 1);
 	}
 	
 	/**
@@ -142,13 +142,13 @@ public class PipelineGraphWebServlet extends HttpServlet {
 			Task tasksource = (Task) edge.getSource();
 			Task tasktarget = (Task) edge.getTarget();			
 			builder.append("{ from: '"
-			+getTasks(sourcebuilder, tasksource)+"', to: '"
-					+getTasks(targetbuilder, tasktarget)+"', name: '"+tasksource.taskid+DataSamudayaConstants.HYPHEN+tasktarget.taskid+"' },");
+			+ getTasks(sourcebuilder, tasksource) + "', to: '"
+					+ getTasks(targetbuilder, tasktarget) + "', name: '" + tasksource.taskid + DataSamudayaConstants.HYPHEN + tasktarget.taskid + "' },");
 			sourcebuilder.delete(0, sourcebuilder.length());
 			targetbuilder.delete(0, targetbuilder.length());
 		}
 		String fromtobuild = builder.toString();
-		return fromtobuild.substring(0,fromtobuild.length()-1);
+		return fromtobuild.substring(0, fromtobuild.length() - 1);
 	}
 	/**
 	 * Gets all tasks from stage.
@@ -156,7 +156,7 @@ public class PipelineGraphWebServlet extends HttpServlet {
 	 * @param stage
 	 * @return tasks in html format.
 	 */
-	public String getStageTasks(StringBuilder builder,Stage stage) {
+	public String getStageTasks(StringBuilder builder, Stage stage) {
 		for (var task : stage.tasks) {
 			builder.append(PipelineUtils.getFunctions(task));
 			builder.append("<BR/>");
@@ -171,7 +171,7 @@ public class PipelineGraphWebServlet extends HttpServlet {
 	 * @param task
 	 * @return task in html format
 	 */
-	public String getTasks(StringBuilder builder,Task task) {
+	public String getTasks(StringBuilder builder, Task task) {
 		Object[] input = task.input;
 		for(Object obj:input) {
 			if(obj instanceof BlocksLocation bl) {

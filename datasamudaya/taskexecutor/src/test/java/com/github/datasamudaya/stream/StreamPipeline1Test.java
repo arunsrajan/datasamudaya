@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.functions.HashPartitioner;
-import com.github.datasamudaya.stream.StreamPipeline;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipeline1Test extends StreamPipelineBaseTestCommon {
@@ -41,10 +40,10 @@ public class StreamPipeline1Test extends StreamPipelineBaseTestCommon {
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		List<List<Tuple2<Integer,List<Tuple2<String,Integer>>>>> tupleslist = (List) datastream.map(str -> str.split(","))
-				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14])).mapToPair(str -> new Tuple2<String,Integer>(str[1], Integer.parseInt(str[14])))
+				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14])).mapToPair(str -> new Tuple2<String, Integer>(str[1], Integer.parseInt(str[14])))
 				.partition(new HashPartitioner(3))
-				.flatMap(tuples->tuples.v2().stream())
-				.reduceByKey((a,b)->a+b)
+				.flatMap(tuples -> tuples.v2().stream())
+				.reduceByKey((a, b) -> a + b)
 				.partition(new HashPartitioner(3))
 				.collect(toexecute, null);
 		int sum = 0;
@@ -71,7 +70,7 @@ public class StreamPipeline1Test extends StreamPipelineBaseTestCommon {
 				pipelineconfig);
 		List<List<Tuple2<Map, List<String[]>>>> tupleslist = (List) datastream.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14]))
-				.groupBy(str->{
+				.groupBy(str -> {
 					Map<String, Object> map = new HashMap<>();
 					map.put("MonthOfYear", str[1]);
 					map.put("DayOfMonth", str[2]);

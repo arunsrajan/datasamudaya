@@ -34,15 +34,17 @@ import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.Pipeline;
 
+import static java.util.Objects.isNull;
+
 /**
  * 
  * @author Arun
  * The stream pipelining API task scheduler thread to execut the MR jar file.
  */
 public class StreamPipelineTaskScheduler implements Runnable {
-	private static Logger log = Logger.getLogger(StreamPipelineTaskScheduler.class);
-	private byte[] mrjar;
-	private Socket tss;
+	private static final Logger log = Logger.getLogger(StreamPipelineTaskScheduler.class);
+	private final byte[] mrjar;
+	private final Socket tss;
 	private String[] args;
 	String filename;
 
@@ -94,7 +96,9 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			classes.add(main);
 			pipelineconfig.setOutput(tss.getOutputStream());
 			var pipeline = (Pipeline) main.getDeclaredConstructor().newInstance();
-			pipelineconfig.setJobname(main.getSimpleName());
+			if(isNull(pipelineconfig.getJobname())) {
+				pipelineconfig.setJobname(main.getSimpleName());
+			}
 			pipeline.runPipeline(args, pipelineconfig);
 			message = "Successfully Completed executing the Job from main class " + mainclass;
 			Utils.writeToOstream(tss.getOutputStream(), message);

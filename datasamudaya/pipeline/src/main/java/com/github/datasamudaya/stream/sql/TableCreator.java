@@ -27,8 +27,8 @@ public class TableCreator {
 	 * @return Table Created message
 	 * @throws Exception
 	 */
-	public static String createAlterTable(String db,String createCommand) throws Exception {
-			try(Connection conn = DriverManager.getConnection(DataSamudayaConstants.SQLDB_URL+db, 
+	public static String createAlterTable(String db, String createCommand) throws Exception {
+			try(Connection conn = DriverManager.getConnection(DataSamudayaConstants.SQLDB_URL + db, 
 					DataSamudayaProperties.get()
 					.getProperty(DataSamudayaConstants.SQLDBUSERNAME, DataSamudayaConstants.SQLDBUSERNAME_DEFAULT), 
 					DataSamudayaProperties.get()
@@ -53,7 +53,7 @@ public class TableCreator {
 	 * @throws Exception
 	 */
 	public static String dropTable(String db, String createCommand) throws Exception {
-		try(Connection conn = DriverManager.getConnection(DataSamudayaConstants.SQLDB_URL+db, 
+		try(Connection conn = DriverManager.getConnection(DataSamudayaConstants.SQLDB_URL + db, 
 				DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.SQLDBUSERNAME, DataSamudayaConstants.SQLDBUSERNAME_DEFAULT), 
 				DataSamudayaProperties.get()
@@ -72,7 +72,7 @@ public class TableCreator {
 	}
 	
 	public static List<String> showTables(String db, String showcommand) throws Exception {
-		try(Connection conn = DriverManager.getConnection(DataSamudayaConstants.SQLDB_URL+db, 
+		try(Connection conn = DriverManager.getConnection(DataSamudayaConstants.SQLDB_URL + db, 
 				DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.SQLDBUSERNAME, DataSamudayaConstants.SQLDBUSERNAME_DEFAULT), 
 				DataSamudayaProperties.get()
@@ -102,18 +102,18 @@ public class TableCreator {
 	 * @throws Exception
 	 */
 	public static String getColumnMetadataFromTable(String db, String tablename, List<ColumnMetadata> columnMetadatas) throws Exception {
-		try(Connection conn = DriverManager.getConnection(DataSamudayaConstants.SQLDB_URL+db, 
+		try(Connection conn = DriverManager.getConnection(DataSamudayaConstants.SQLDB_URL + db, 
 				DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.SQLDBUSERNAME, DataSamudayaConstants.SQLDBUSERNAME_DEFAULT), 
 				DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.SQLDBPASSWORD, DataSamudayaConstants.SQLDBPASSWORD_DEFAULT));
 				var stmt = conn.prepareStatement("SELECT COLUMN_NAME, DATA_TYPE, COLUMN_DEFAULT, CHARACTER_MAXIMUM_LENGTH"
 						+ " FROM INFORMATION_SCHEMA.COLUMNS "
-						+ " WHERE TABLE_NAME = '"+tablename.toUpperCase()+"'");
-				java.sql.ResultSet result = stmt.executeQuery();){
+						+ " WHERE TABLE_NAME = '" + tablename.toUpperCase() + "'");
+				ResultSet result = stmt.executeQuery();){
 			while(result.next()) {
 				var columnMetadata = new ColumnMetadata(result.getString("COLUMN_NAME"),
-						result.getString("DATA_TYPE"),result.getInt("CHARACTER_MAXIMUM_LENGTH"),result.getString("COLUMN_DEFAULT"));
+						result.getString("DATA_TYPE"), result.getInt("CHARACTER_MAXIMUM_LENGTH"), result.getString("COLUMN_DEFAULT"));
 				columnMetadatas.add(columnMetadata);
 			}
 			return "Metadata Retrieved for table "+tablename;
@@ -126,4 +126,7 @@ public class TableCreator {
 			}
 		}
 }
+
+	private TableCreator() {
+	}
 }

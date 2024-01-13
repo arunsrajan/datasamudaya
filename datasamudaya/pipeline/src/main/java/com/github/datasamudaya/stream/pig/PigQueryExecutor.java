@@ -1,12 +1,22 @@
 package com.github.datasamudaya.stream.pig;
 
+import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.impl.util.MultiMap;
 import org.apache.pig.newplan.Operator;
+import org.apache.pig.newplan.OperatorPlan;
+import org.apache.pig.newplan.logical.expression.LogicalExpression;
 import org.apache.pig.newplan.logical.expression.LogicalExpressionPlan;
 import org.apache.pig.newplan.logical.expression.ProjectExpression;
 import org.apache.pig.newplan.logical.relational.LOCogroup;
@@ -19,14 +29,16 @@ import org.apache.pig.newplan.logical.relational.LOSort;
 import org.apache.pig.newplan.logical.relational.LOStore;
 import org.apache.pig.newplan.logical.relational.LogicalPlan;
 import org.apache.pig.newplan.logical.relational.LogicalRelationalOperator;
-import org.apache.pig.parser.PigParserNode;
-import org.apache.pig.parser.QueryParserDriver;
+import org.apache.pig.newplan.logical.relational.LogicalSchema.LogicalFieldSchema;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
+import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.StreamPipeline;
+
 /**
  * Pig Query Executor
+ * 
  * @author arun
  *
  */
@@ -34,6 +46,7 @@ public class PigQueryExecutor {
 
 	/**
 	 * Executes Pig Command
+	 * 
 	 * @param pigAliasExecutedObjectMap
 	 * @param queryParserDriver
 	 * @param pigQueries
@@ -44,77 +57,254 @@ public class PigQueryExecutor {
 	 * @return
 	 * @throws Exception
 	 */
-	public static Object execute(Map<String, Object> pigAliasExecutedObjectMap, QueryParserDriver queryParserDriver,
-			List<String> pigQueries, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
+	public static void executePlan(LogicalPlan logicalPlan, boolean isstore, String alias, String user, String jobid, String tejobid,
+			PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
-		pipelineconfig.setUseglobaltaskexecutors(true);		
+		pipelineconfig.setUseglobaltaskexecutors(true);
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		StringBuilder pigCommands = new StringBuilder();
-		pigQueries.forEach(pigCommands::append);
-		LogicalPlan logicalPlan = PigUtils.getLogicalPlan(pigCommands.toString(), queryParserDriver);
-		Iterator<Operator> lofilteroperator = logicalPlan.getOperators();
-		Operator operator = null;
-		while (lofilteroperator.hasNext()) {
-			operator = lofilteroperator.next();
+		if(isstore) {
+			traversePlan(logicalPlan, isstore, alias, user, jobid, tejobid, pipelineconfig);
+			return;
 		}
-		if (operator instanceof LOLoad loload) {
-			pigAliasExecutedObjectMap.put(loload.getAlias(), PigUtils.executeLOLoad(user, jobid, tejobid, loload, pipelineconfig));
-		} else if (operator instanceof LOFilter loFilter) {
-			PigParserNode node = (PigParserNode) loFilter.getLocation().node().getChildren().get(0);
-			pigAliasExecutedObjectMap.put(loFilter.getAlias(),PigUtils.executeLOFilter((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap
-					.get(node.getText()), loFilter));
-		} else if (operator instanceof LOStore lostore) {
-			PigParserNode node = (PigParserNode) lostore.getLocation().node().getChildren().get(0);
-			PigUtils.executeLOStore((StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap
-					.get(node.getText()), lostore);
-		} else if (operator instanceof LOCogroup loCogroup) {
-			PigParserNode node = (PigParserNode) loCogroup.getLocation().node().getChildren().get(0);
-			pigAliasExecutedObjectMap.put(loCogroup.getAlias(),
-					PigUtils.executeLOCoGroup(
-							(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText()),
-							loCogroup));
-		} else if (operator instanceof LOForEach loForEach) {
-			PigParserNode node = (PigParserNode) loForEach.getLocation().node().getChildren().get(0);
-			pigAliasExecutedObjectMap.put(loForEach.getAlias(), PigUtils.executeLOForEach(
-					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText()),
-					loForEach));
-		} else if (operator instanceof LOSort loSort) {
-			PigParserNode node = (PigParserNode) loSort.getLocation().node().getChildren().get(0);
-			pigAliasExecutedObjectMap.put(loSort.getAlias(), PigUtils.executeLOSort(
-					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText()),
-					loSort));
-		} else if (operator instanceof LODistinct loDistinct) {
-			PigParserNode node = (PigParserNode) loDistinct.getLocation().node().getChildren().get(0);
-			pigAliasExecutedObjectMap.put(loDistinct.getAlias(), PigUtils.executeLODistinct(
-					(StreamPipeline<Map<String, Object>>) pigAliasExecutedObjectMap.get(node.getText())));
-		} else if (operator instanceof LOJoin loJoin) {
-			List<Operator> operators = loJoin.getInputs(logicalPlan);
-			List<String> expjoinalias = new ArrayList<>(); 
-			for (Operator input : operators) {
-                LogicalRelationalOperator inputOp = (LogicalRelationalOperator) input;
-                expjoinalias.add(inputOp.getAlias());
-            }
-			int noofjoinexp = expjoinalias.size();
-			MultiMap<Integer, LogicalExpressionPlan> expplans = loJoin.getExpressionPlans();
-			List<List<String>> joincolumns = new ArrayList<>();
-			for(int mapindex=0;mapindex<noofjoinexp; mapindex++) {
-				List<LogicalExpressionPlan> leps = expplans.get(mapindex);
-				List<String> columnstojoin = new ArrayList<>();
-				joincolumns.add(columnstojoin);
-				for(LogicalExpressionPlan lep:leps) {
-					columnstojoin.add(((ProjectExpression)lep.getOperators().next()).getColAlias());
+		PigUtils.executeDump(traversePlan(logicalPlan, isstore, alias, user, jobid, tejobid, pipelineconfig), user, jobid, tejobid, pipelineconfig); ;
+	}
+
+	/**
+	 * The function which traverses to the plan and returns pipeline object.
+	 * @param plan
+	 * @param alias
+	 * @param user
+	 * @param jobid
+	 * @param tejobid
+	 * @param pipelineconfig
+	 * @return pipeline object
+	 * @throws Exception
+	 */
+	public static StreamPipeline<?> traversePlan(OperatorPlan plan, boolean isstore, String alias, String user, String jobid,
+			String tejobid, PipelineConfig pipelineconfig) throws Exception {
+		Operator operatortoexec = findLatestAssignment(plan, isstore, alias);
+		List<Operator> operatorstoexec = new ArrayList<>();
+		if(operatortoexec instanceof LOStore lostore) {
+			traverseOperator(operatortoexec, 0, operatorstoexec);
+		}
+		else if(operatortoexec instanceof LOJoin lojoin) {
+			operatorstoexec.add(operatortoexec);
+		}
+		else if (operatortoexec instanceof LogicalRelationalOperator lro) {
+			if (lro.getAlias().equalsIgnoreCase(alias)) {
+				traverseOperator(operatortoexec, 0, operatorstoexec);
+			} else {
+				List<Operator> operatorspred = operatortoexec.getPlan().getPredecessors(operatortoexec);
+				for (Operator predoper : operatorspred) {
+					if (predoper instanceof LogicalRelationalOperator lropred) {
+						if (lropred.getAlias().equalsIgnoreCase(alias)) {
+							traverseOperator(predoper, 0, operatorstoexec);
+						}
+					}
 				}
 			}
-			pigAliasExecutedObjectMap.put(loJoin.getAlias(), PigUtils.executeLOJoin(
-					(StreamPipeline<Map<String, Object>>)pigAliasExecutedObjectMap.get(expjoinalias.get(0)),
-					(StreamPipeline<Map<String, Object>>)pigAliasExecutedObjectMap.get(expjoinalias.get(1)),
-					joincolumns.get(0),
-					joincolumns.get(1),
-					loJoin));
+		} else {
+			traversePlan(operatortoexec.getPlan(), isstore, alias, user, jobid, tejobid, pipelineconfig);
 		}
-		return "";
+
+		List<Operator> operatorstoobtainschemas = new ArrayList<>(operatorstoexec);
+		Set<String> requiredcolumns = new LinkedHashSet<>(); 
+
+		if(!(operatortoexec instanceof LOJoin)) {
+			Operator operatorloload = operatorstoobtainschemas.remove(0);
+			Set<String> allcolumns = new LinkedHashSet<>(); 
+			extractRequiredColumns(Arrays.asList(operatorloload), allcolumns, null);
+			extractRequiredColumns(operatorstoobtainschemas, requiredcolumns, allcolumns);
+		}
+		
+		return executeOperators(operatorstoexec, requiredcolumns, (LogicalPlan) plan, user, jobid, tejobid, pipelineconfig);		
+	}
+	
+	
+	/**
+	 * Obtain only the required columns from schema
+	 * @param operators
+	 * @param requiredColumns
+	 * @throws ExecException
+	 * @throws Exception 
+	 */
+	private static void extractRequiredColumns(List<Operator> operators, Set<String> requiredColumns, Set<String> allcolumns) throws ExecException, Exception {
+		boolean isforeach = false;
+		if (nonNull(operators)) {
+			for (Operator successor : operators) {
+				if (successor instanceof LOForEach) {
+					isforeach = true;
+					break;
+				}
+			}
+		}
+        // Recursively traverse the current operator
+        for (int index=0;index<operators.size();index++) {
+        	Operator operator = operators.get(index);
+        	if (operator instanceof LOJoin) {
+                // Handle LOJoin specific logic
+                for (Operator predecessor : operator.getPlan().getPredecessors(operator)) {
+                    extractRequiredColumns(Arrays.asList(predecessor), requiredColumns, allcolumns);
+                }
+            } else if (operator instanceof LOLoad loadOperator) {
+                // Handle LOLoad specific logic
+                requiredColumns.addAll(getColumnsFromSchemaFields(loadOperator.getSchema().getFields(), allcolumns));
+            } else if (operator instanceof LOFilter loFilter) {
+                // Handle LOFilter or LOForEach specific logic
+            	if(isforeach) {
+	            	LogicalExpressionPlan lep = loFilter.getFilterPlan();
+	        		List<Operator> exp = lep.getSources();
+	        		List<String> columns = new ArrayList<>();
+	        		PigUtils.getColumnsFromExpressions((LogicalExpression)exp.get(0), columns);
+    				requiredColumns.addAll(columns);
+            	} else {
+            		LogicalRelationalOperator relationalOperator = (LogicalRelationalOperator) operator;
+            		requiredColumns.addAll(getColumnsFromSchemaFields(relationalOperator.getSchema().getFields(), allcolumns));
+            	}
+            } else if(operator instanceof LOForEach loForEach) {
+            	List<FunctionParams> functionparams = PigUtils.getFunctionsWithParamsGrpBy(loForEach);
+        		LogicalExpression[] lexp = PigUtils.getLogicalExpressions(functionparams);
+        		if(nonNull(lexp)) {
+        			List<String> columns = new ArrayList<>();
+        			for(LogicalExpression lex:lexp) {
+        				PigUtils.getColumnsFromExpressions(lex, columns);
+        				requiredColumns.addAll(columns);
+        				columns.clear();
+        			}
+        		}
+            } else if (operator instanceof LOCogroup cogroupOperator) {
+                // Handle LOCogroup specific logic
+                requiredColumns.addAll(getColumnsFromSchemaFields(cogroupOperator.getSchema().getFields(), allcolumns));
+            } else if (operator instanceof LOSort sortOperator) {
+                // Handle LOSort specific logic
+                requiredColumns.addAll(getColumnsFromSchemaFields(sortOperator.getSchema().getFields(), allcolumns));
+            } else if (operator instanceof LODistinct distinctOperator) {
+                // Handle LODistinct specific logic
+                requiredColumns.addAll(getColumnsFromSchemaFields(distinctOperator.getSchema().getFields(), allcolumns));
+            }
+        }
+    }
+
+	/**
+	 * Get Columns from logical schema fields.
+	 * @param schemafields
+	 * @return set of schema field names.
+	 */
+	private static Set<String> getColumnsFromSchemaFields(List<LogicalFieldSchema> schemafields, Set<String> allcolumns){
+		if(isNull(allcolumns)) {
+			return schemafields.parallelStream().map(field->field.alias).collect(Collectors.toCollection(LinkedHashSet::new));
+		}
+		return schemafields.parallelStream().filter(field->allcolumns.contains(field.alias)).map(field->field.alias).collect(Collectors.toCollection(LinkedHashSet::new));
+	}
+	
+	
+	/**
+	 * The function returns the latest assignment for the given operator plan and alias
+	 * @param plan
+	 * @param alias
+	 * @return latest assignment operator plan
+	 */
+	private static Operator findLatestAssignment(OperatorPlan plan, boolean isstore, String alias) {
+        Iterator<Operator> operators = plan.getOperators();
+        Operator latestoperatorforalias = null;
+        for (;operators.hasNext();) {
+            Operator operator = operators.next();
+            if(isstore && operator instanceof LOStore) {
+            	latestoperatorforalias = operator;
+            }
+            else if (operator instanceof LogicalRelationalOperator lro) {
+                if (lro.getAlias().equals(alias)) {
+                    // Found the latest assignment
+                	latestoperatorforalias = operator;
+                }
+            }
+        }
+        return latestoperatorforalias; // Alias not found
+    }
+	
+	
+	/**
+	 * The function traverses the operator
+	 * @param operator
+	 * @param depth
+	 * @param operatorstoexec
+	 * @throws ExecException
+	 */
+	private static void traverseOperator(Operator operator, int depth, List<Operator> operatorstoexec)
+			throws ExecException {
+		List<Operator> operators = operator.getPlan().getPredecessors(operator);
+		// Recursively traverse the successors of the current operator
+		operatorstoexec.add(0, operator);
+		if (nonNull(operators)) {
+			for (Operator predecessor : operators) {				
+				traverseOperator(predecessor, depth + 1, operatorstoexec);
+			}
+		}
+	}
+
+	/**
+	 * The function returns pipeline object for operators in order.
+	 * @param operatorstoexec
+	 * @param plan
+	 * @param user
+	 * @param jobid
+	 * @param tejobid
+	 * @param pipelineconfig
+	 * @return pipeline object
+	 * @throws Exception
+	 */
+	private static StreamPipeline<?> executeOperators(List<Operator> operatorstoexec, Set<String> requiredcolumns, LogicalPlan plan, String user,
+			String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
+		StreamPipeline<?> sp = null;
+		for (Operator operator : operatorstoexec) {
+			if (operator instanceof LOLoad loload) {
+				sp = PigUtils.executeLOLoad(user, jobid, tejobid, loload, pipelineconfig);
+				CsvOptionsSQL csvoptsql = ((CsvOptionsSQL) sp.getCsvOptions());
+				csvoptsql.setRequiredcolumns(new ArrayList<>(requiredcolumns));
+			} else if (operator instanceof LOFilter loFilter) {
+				sp = PigUtils.executeLOFilter((StreamPipeline<Map<String, Object>>) sp, loFilter);
+			} else if (operator instanceof LOStore lostore) {
+				PigUtils.executeLOStore(sp, lostore);
+			} else if (operator instanceof LOCogroup loCogroup) {
+				sp = PigUtils.executeLOCoGroup((StreamPipeline<Map<String, Object>>) sp, loCogroup);
+			} else if (operator instanceof LOForEach loForEach) {
+				sp = PigUtils.executeLOForEach((StreamPipeline<Map<String, Object>>) sp, loForEach);
+			} else if (operator instanceof LOSort loSort) {
+				sp = PigUtils.executeLOSort((StreamPipeline<Map<String, Object>>) sp, loSort);
+			} else if (operator instanceof LODistinct loDistinct) {
+				sp = PigUtils.executeLODistinct((StreamPipeline<Map<String, Object>>) sp);
+			} else if (operator instanceof LOJoin loJoin) {
+				List<Operator> operators = loJoin.getInputs(plan);
+				List<String> expjoinalias = new ArrayList<>();
+				for (Operator input : operators) {
+					LogicalRelationalOperator inputOp = (LogicalRelationalOperator) input;
+					expjoinalias.add(inputOp.getAlias());
+				}
+				int noofjoinexp = expjoinalias.size();
+				MultiMap<Integer, LogicalExpressionPlan> expplans = loJoin.getExpressionPlans();
+				List<List<String>> joincolumns = new ArrayList<>();
+				for (int mapindex = 0; mapindex < noofjoinexp; mapindex++) {
+					List<LogicalExpressionPlan> leps = expplans.get(mapindex);
+					List<String> columnstojoin = new ArrayList<>();
+					joincolumns.add(columnstojoin);
+					for (LogicalExpressionPlan lep : leps) {
+						columnstojoin.add(((ProjectExpression) lep.getOperators().next()).getColAlias());
+					}
+				}
+				sp = PigUtils.executeLOJoin(
+						(StreamPipeline<Map<String, Object>>) traversePlan(operator.getPlan(), false, expjoinalias.get(0),
+								user, jobid, tejobid, pipelineconfig),
+						(StreamPipeline<Map<String, Object>>) traversePlan(operator.getPlan(), false, expjoinalias.get(1),
+								user, jobid, tejobid, pipelineconfig),
+						joincolumns.get(0), joincolumns.get(1), loJoin);
+			}
+		}
+		return sp;
+	}
+
+	private PigQueryExecutor() {
 	}
 
 }

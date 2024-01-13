@@ -26,10 +26,8 @@ import com.github.datasamudaya.stream.utils.PipelineConfigValidatorTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-		StreamPipelineTest.class,
 		StreamPipelineTaskExecutorJGroupsTest.class,
 		PipelineConfigValidatorTest.class,
-		FileBlocksPartitionerTest.class,
 		StreamPipelineTaskExecutorIgniteTest.class})
 public class PipelineExecutorsTestSuite{
 
