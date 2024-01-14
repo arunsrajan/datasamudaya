@@ -56,6 +56,8 @@ import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 import com.github.datasamudaya.tasks.scheduler.TaskScheduler;
 import com.github.datasamudaya.tasks.scheduler.sql.SQLServerMR;
 
+import io.prometheus.client.exporter.HTTPServer;
+
 /**
  * This class starts the stream scheduler, mr scheduler and node launcher.
  * @author arun
@@ -86,8 +88,11 @@ public class EmbeddedSchedulersNodeLauncher {
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
 		StaticComponentContainer.Modules.exportAllToAll();
-		var cdl = new CountDownLatch(3);		
-		try (var zo = new ZookeeperOperations();) {			
+		var cdl = new CountDownLatch(3);
+		int metricsport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.METRICS_EXPORTER_PORT,
+                DataSamudayaConstants.METRICS_EXPORTER_PORT_DEFAULT));		
+		try (var zo = new ZookeeperOperations();
+				HTTPServer server = new HTTPServer(metricsport);) {			
 			zo.connect();
 			zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
 				log.info("Node Created");

@@ -23,6 +23,7 @@ import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Job.JOBTYPE;
+import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.Utils;
 
 /**
@@ -244,8 +245,10 @@ public class SQLServer {
 											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 											List<List> results = null; 
 											if (isignite) {
+												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
 												results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid);
 											} else {
+												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
 												results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups, isyarn);
 											}
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;

@@ -594,4 +594,8 @@ public class DataSamudayaConstants {
   public static final String TRUE = Boolean.toString(Boolean.TRUE);
   public static final String SQLCOUNTFORAVG = "-count";
   public static final String CSV = "csv";
+  
+  public static final String METRICS_EXPORTER_PORT = "metrics.exporter.port";
+  public static final String METRICS_EXPORTER_PORT_DEFAULT = "9010";
+  
 }

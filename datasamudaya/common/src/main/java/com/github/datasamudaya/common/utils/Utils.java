@@ -1197,8 +1197,7 @@ public class Utils {
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
 			log.info("Chamber dispatched node: {} with ports: {}", restolaunch.getNodeport(), launchedcontainerports);
 		}
-		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
-		
+		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();		
 		int index = 0;
 		while (index < launchedcontainerhostports.size()) {
 			while (true) {
@@ -1223,7 +1222,7 @@ public class Utils {
 			index++;
 		}
 		
-		
+		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsAllocatedCounter().inc(globallaunchcontainers.size());
 		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
 		return globallaunchcontainers;
 	}
@@ -1542,7 +1541,7 @@ public class Utils {
 		if (isNull(usersshare)) {
 			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
-		var lcs = GlobalContainerLaunchers.get(user, jobid);
+		var lcs = GlobalContainerLaunchers.get(user, jobid);		
 		lcs.stream().forEach(lc -> {
 			try {
 				ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources.getAllocatedResources().get(lc.getNodehostport());
@@ -1556,6 +1555,7 @@ public class Utils {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		});
+		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsDeAllocatedCounter().inc(lcs.size());
 		GlobalContainerLaunchers.remove(user, jobid);		
 		GlobalJobFolderBlockLocations.remove(jobid);
 		Map<String,List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);

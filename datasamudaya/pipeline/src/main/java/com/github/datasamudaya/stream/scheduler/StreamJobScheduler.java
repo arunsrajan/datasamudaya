@@ -113,6 +113,7 @@ import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.RightJoin;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.UnionFunction;
+import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.PipelineException;
@@ -307,6 +308,8 @@ public class StreamJobScheduler {
         }
       }
       if (isignite) {
+    	DataSamudayaMetricsExporter.getNumberOfJobSubmittedCounter().inc();
+    	DataSamudayaMetricsExporter.getNumberOfJobSubmittedIgniteModeCounter().inc();
         parallelExecutionPhaseIgnite(graph, new TaskProviderIgnite());
       }
       // If local scheduler
@@ -315,6 +318,8 @@ public class StreamJobScheduler {
         batchsize = Integer.parseInt(pipelineconfig.getBatchsize());
         semaphore = new Semaphore(batchsize);
         cache = DataSamudayaCache.get();
+        DataSamudayaMetricsExporter.getNumberOfJobSubmittedCounter().inc();
+    	DataSamudayaMetricsExporter.getNumberOfJobSubmittedLocalModeCounter().inc();
         parallelExecutionPhaseDExecutorLocalMode(graph,
             new TaskProviderLocalMode(graph.vertexSet().size()));
       }
@@ -327,6 +332,8 @@ public class StreamJobScheduler {
       // If Yarn is scheduler run yarn scheduler via spring yarn
       // framework.
 		else if (Boolean.TRUE.equals(isyarn)) {
+			DataSamudayaMetricsExporter.getNumberOfJobSubmittedCounter().inc();
+	    	DataSamudayaMetricsExporter.getNumberOfJobSubmittedYarnModeCounter().inc();
 			if (!pipelineconfig.getUseglobaltaskexecutors()) {
 				yarnmutex.acquire();
 				pipelineconfig.setJobid(job.getId());
@@ -429,6 +436,8 @@ public class StreamJobScheduler {
                 .parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_PORT)),
             stagepartidstatusmapreq, stagepartidstatusmapresp);) {
           var totaltasks = tasks.size();
+          DataSamudayaMetricsExporter.getNumberOfJobSubmittedCounter().inc();
+	      DataSamudayaMetricsExporter.getNumberOfJobSubmittedJgroupsModeCounter().inc();
           while (true) {
             Utils.whoare(channel);
             var totalcompleted = 0.0;
@@ -466,6 +475,8 @@ public class StreamJobScheduler {
       // If not yarn or mesos schedule via standalone task executors
       // daemon.
       else {
+    	  DataSamudayaMetricsExporter.getNumberOfJobSubmittedCounter().inc();
+	      DataSamudayaMetricsExporter.getNumberOfJobSubmittedStandaloneModeCounter().inc();
         broadcastJobStageToTaskExecutors(new ArrayList<>(taskgraph.vertexSet()));
         graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) parallelExecutionPhaseDExecutor(graph);
       }
