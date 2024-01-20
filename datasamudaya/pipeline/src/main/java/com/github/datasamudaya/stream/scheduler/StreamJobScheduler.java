@@ -118,6 +118,7 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutor;
+import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorCalciteLocalSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgnite;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgniteSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocal;
@@ -1083,7 +1084,7 @@ public class StreamJobScheduler {
             semaphore.acquire();
             StreamPipelineTaskExecutorLocal sptel = null;
             if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
-            	sptel = new StreamPipelineTaskExecutorLocalSQL(
+            	sptel = new StreamPipelineTaskExecutorCalciteLocalSQL(
                         jsidjsmap.get(task.jobid + task.stageid), resultstream, cache);
             } else {
             	sptel = new StreamPipelineTaskExecutorLocal(

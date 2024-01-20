@@ -2040,6 +2040,26 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
                             Collectors.toCollection(Vector::new), executor,
                             Runtime.getRuntime().availableProcessors()));
                     joinpairsout = (List) cf.get();
+            } else if(tuple2.v1 instanceof Object[] 
+            		&& (tuple2.v2 == null || tuple2.v2 instanceof Object[] )) {
+            	Object[]  origobjarray = (Object[] ) inputs2.get(0);
+            	Object[][]  nullobjarr = new Object[2][((Object[])origobjarray[0]).length];
+            	for(int numvalues=0;numvalues<nullobjarr[0].length;numvalues++) {
+            		nullobjarr[1][numvalues] = true;
+              	}
+            	var cf = (CompletableFuture) joinpairsout.stream()
+                        .filter(val -> val instanceof Tuple2).map(value -> {
+                          Tuple2 maprec = (Tuple2) value;
+                          Object[] rec1 = (Object[]) maprec.v1;
+                          Object[] rec2 = (Object[]) maprec.v2;
+                          if (rec2 == null) {
+                        	  return new Tuple2(rec1, nullobjarr); 
+                          }
+                          return maprec;
+                        }).collect(ParallelCollectors.parallel(value -> value,
+                            Collectors.toCollection(Vector::new), executor,
+                            Runtime.getRuntime().availableProcessors()));
+                    joinpairsout = (List) cf.get();
             }
           }
         } catch (Exception ex) {
@@ -2200,7 +2220,29 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
                             Collectors.toCollection(Vector::new), executor,
                             Runtime.getRuntime().availableProcessors()));
                     joinpairsout = (List) cf.get();
-            }
+            } else if((tuple2.v1 == null || tuple2.v1 instanceof Object[]) 
+              		&& tuple2.v2 instanceof Object[]) {
+
+              	Object[] origvalarr = (Object[]) inputs1.get(0);
+              	Object[][] nullobjarr = new Object[2][((Object[])origvalarr[0]).length];
+              	for(int numvalues=0;numvalues<nullobjarr[0].length;numvalues++) {
+              		nullobjarr[1][numvalues] = true;
+              	}
+              	var cf = (CompletableFuture) joinpairsout.stream()
+                          .filter(val -> val instanceof Tuple2).map(value -> {
+                            Tuple2 maprec = (Tuple2) value;
+                            Object[] rec1 = (Object[]) maprec.v1;
+                            Object[] rec2 = (Object[]) maprec.v2;
+                            if (rec1 == null) {
+                          	  return new Tuple2(nullobjarr, rec2); 
+                            }
+                            return maprec;
+                          }).collect(ParallelCollectors.parallel(value -> value,
+                              Collectors.toCollection(Vector::new), executor,
+                              Runtime.getRuntime().availableProcessors()));
+                      joinpairsout = (List) cf.get();
+              
+              }
           }
         } catch (Exception ex) {
           log.error(PipelineConstants.PROCESSRIGHTOUTERJOIN, ex);

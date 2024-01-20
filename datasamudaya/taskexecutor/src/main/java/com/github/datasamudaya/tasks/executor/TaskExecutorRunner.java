@@ -10,6 +10,7 @@ package com.github.datasamudaya.tasks.executor;
 
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
@@ -54,6 +55,15 @@ import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.scheduler.StreamJobScheduler;
 import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
+
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exporter.HTTPServer;
+import io.prometheus.client.hotspot.DefaultExports;
 
 /**
  * Launches the task executor.
@@ -112,10 +122,21 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid);
 			ter.start(zo, jobid);
+			int metricsport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT))+200;
+			DefaultExports.initialize(); // Initialize JVM metrics    	 
+	        PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT, CollectorRegistry.defaultRegistry, Clock.SYSTEM);
+			meterRegistry.config().commonTags("application", DataSamudayaConstants.DATASAMUDAYA.toLowerCase());
+			// Bind JVM metrics to the registry
+			new JvmMemoryMetrics().bindTo(meterRegistry);
+			new JvmThreadMetrics().bindTo(meterRegistry);
+			HTTPServer server = new HTTPServer(new InetSocketAddress(metricsport), meterRegistry.getPrometheusRegistry());
+	        // Start an HTTP server to expose metrics
+			log.info("TaskExecuterRunner evoked at metrics port....." + metricsport);
 			log.info("TaskExecuterRunner evoked at port....." + System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 			log.info("Reckoning stoppage holder...");
 			shutdown.await();
 			log.info("Ceasing the connections...");
+			server.close();
 			ter.destroy();
 			ByteBufferPoolDirect.destroy();
 			log.info("Freed the assets...");

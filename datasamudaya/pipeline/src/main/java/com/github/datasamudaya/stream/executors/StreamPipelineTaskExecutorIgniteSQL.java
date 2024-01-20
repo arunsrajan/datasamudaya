@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -155,7 +156,6 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 									sqltypenamel, Arrays.asList(headers));
 							if(iscsv) {
 								CsvParserSettings settings = new CsvParserSettings();							
-								settings.selectIndexes(Utils.indexOfRequiredColumns(originalcolsorder, Arrays.asList(headers)));
 								settings.getFormat().setLineSeparator("\n");
 								settings.setNullValue(DataSamudayaConstants.EMPTY);
 								CsvParser parser = new CsvParser(settings);							
@@ -167,18 +167,22 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
 								intermediatestreamobject = stringstream.map(values -> {
 									Map data = Maps.newLinkedHashMap();
-									Map datatoprocess = Maps.newLinkedHashMap();
+									List<Object> valueobjects = new ArrayList<>();
+									List<Boolean> toconsidervalueobjects = new ArrayList<>();
 									try {
 										oco.forEach(col->{
 											SQLUtils.setYosegiObjectByValue(values[oco.indexOf(col)], sqltypename.get(col), data,
 													col);
-											SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
+											SQLUtils.getValueFromYosegiObject(valueobjects, toconsidervalueobjects , col, data);
 										});
 										writerdataload.addRow(data);
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
-									return datatoprocess;
+									Object[] valueswithconsideration = new Object[2];
+									valueswithconsideration[0]=valueobjects;
+									valueswithconsideration[1]=toconsidervalueobjects;
+									return valueswithconsideration;
 								});
 							} else {
 								baos = new ByteArrayOutputStream();
@@ -188,7 +192,8 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 									try {
 										JSONObject jsonobj = (JSONObject) new JSONParser().parse((String) line);
 										Map data = Maps.newLinkedHashMap();
-										Map datatoprocess = Maps.newLinkedHashMap();
+										List<Object> valueobjects = new ArrayList<>();
+										List<Boolean> toconsidervalueobjects = new ArrayList<>();
 										try {
 											oco.forEach(col->{
 												String reccolval = "";
@@ -201,13 +206,16 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 												}
 												SQLUtils.setYosegiObjectByValue(reccolval, sqltypename.get(col), data,
 														col);
-												SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
+												SQLUtils.getValueFromYosegiObject(valueobjects, toconsidervalueobjects, col, data);
 											});
 											writerdataload.addRow(data);
 										} catch (Exception ex) {
 											log.error(DataSamudayaConstants.EMPTY, ex);
 										}
-										return datatoprocess;
+										Object[] valueswithconsideration = new Object[2];
+										valueswithconsideration[0]=valueobjects.toArray(new Object[0]);
+										valueswithconsideration[1]=toconsidervalueobjects.toArray(new Object[0]);
+										return valueswithconsideration;
 									} catch (ParseException e) {
 										return null;
 									}

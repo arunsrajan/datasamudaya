@@ -187,6 +187,13 @@ public class Optimizer {
                 OperandTypes.STRING,
                 SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
+		SqlFunction trimFunction = new SqlFunction("trimstr",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.STRING,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
 		
 		SqlFunction normalizespaces = new SqlFunction("normalizespaces",
                 SqlKind.OTHER_FUNCTION,
@@ -300,7 +307,8 @@ public class Optimizer {
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces,
 				substring, base64encode, base64decode,
 				uppercase, lowercase, loge, pow, sqrt,
-				ceil, floor, round, abs, current_iso_date, grp_concat);
+				ceil, floor, round, abs, current_iso_date, grp_concat,
+				trimFunction);
 		
 	}
 	

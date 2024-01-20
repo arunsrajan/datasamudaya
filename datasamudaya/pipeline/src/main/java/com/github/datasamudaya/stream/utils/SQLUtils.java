@@ -38,8 +38,24 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
+import org.apache.calcite.adapter.enumerable.EnumerableAggregateBase;
+import org.apache.calcite.adapter.enumerable.EnumerableConvention;
+import org.apache.calcite.adapter.enumerable.EnumerableRules;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rel.rules.CoreRules;
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.fun.SqlFloorFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.tools.RuleSet;
+import org.apache.calcite.tools.RuleSets;
+import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.Pair;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
@@ -175,9 +191,13 @@ public class SQLUtils {
 				return Long.valueOf(value);
 			} else if(type == SqlTypeName.VARCHAR){
 				return String.valueOf(value);
+			} else if(type == SqlTypeName.CHAR){
+				return String.valueOf(value);
 			} else if(type == SqlTypeName.FLOAT) {
 				return Float.valueOf(value);			
 			} else if(type == SqlTypeName.DOUBLE) {
+				return Double.valueOf(value);
+			} else if(type == SqlTypeName.DECIMAL) {
 				return Double.valueOf(value);
 			} else {
 				return String.valueOf(value);
@@ -477,6 +497,8 @@ public class SQLUtils {
 				return Math.abs(fv);
 			} else if (value instanceof Integer iv) {
 				return Math.abs(iv);
+			} else {
+				return 0;
 			}
 		case "length":
 			// Get the length of string value
@@ -490,80 +512,92 @@ public class SQLUtils {
 			return val.trim();
 		case "round":
 			
-			if (value instanceof Double dv) {
-				return Math.round(dv);
-			} else if (value instanceof Long lv) {
-				return Math.round(lv);
-			} else if (value instanceof Float fv) {
-				return Math.round(fv);
-			} else if (value instanceof Integer iv) {
-				return Math.round(iv);
+			if (value instanceof Double rdv) {
+				return Math.round(rdv);
+			} else if (value instanceof Long rlv) {
+				return Math.round(rlv);
+			} else if (value instanceof Float rfv) {
+				return Math.round(rfv);
+			} else if (value instanceof Integer riv) {
+				return Math.round(riv);
+			}else {
+				return 0;
 			}
 		case "ceil":
 			
-			if (value instanceof Double dv) {
-				return Math.ceil(dv);
-			} else if (value instanceof Long lv) {
-				return Math.ceil(lv);
-			} else if (value instanceof Float fv) {
-				return Math.ceil(fv);
-			} else if (value instanceof Integer iv) {
-				return Math.ceil(iv);
+			if (value instanceof Double cdv) {
+				return Math.ceil(cdv);
+			} else if (value instanceof Long clv) {
+				return Math.ceil(clv);
+			} else if (value instanceof Float cfv) {
+				return Math.ceil(cfv);
+			} else if (value instanceof Integer civ) {
+				return Math.ceil(civ);
+			} else {
+				return 0;
 			}
 		case "floor":
 			
-			if (value instanceof Double dv) {
-				return Math.floor(dv);
-			} else if (value instanceof Long lv) {
-				return Math.floor(lv);
-			} else if (value instanceof Float fv) {
-				return Math.floor(fv);
-			} else if (value instanceof Integer iv) {
-				return Math.floor(iv);
+			if (value instanceof Double fdv) {
+				return Math.floor(fdv);
+			} else if (value instanceof Long flv) {
+				return Math.floor(flv);
+			} else if (value instanceof Float ffv) {
+				return Math.floor(ffv);
+			} else if (value instanceof Integer fiv) {
+				return Math.floor(fiv);
+			} else {
+				return 0;
 			}
 		case "pow":
 			
-			if (value instanceof Double dv && powerval instanceof Integer powval) {
-				return Math.pow(dv, powval);
-			} else if (value instanceof Long lv && powerval instanceof Integer powval) {
-				return Math.pow(lv, powval);
-			} else if (value instanceof Float fv && powerval instanceof Integer powval) {
-				return Math.pow(fv, powval);
-			} else if (value instanceof Integer iv && powerval instanceof Integer powval) {
-				return Math.pow(iv, powval);
+			if (value instanceof Double pdv && powerval instanceof Integer powval) {
+				return Math.pow(pdv, powval);
+			} else if (value instanceof Long plv && powerval instanceof Integer powval) {
+				return Math.pow(plv, powval);
+			} else if (value instanceof Float pfv && powerval instanceof Integer powval) {
+				return Math.pow(pfv, powval);
+			} else if (value instanceof Integer piv && powerval instanceof Integer powval) {
+				return Math.pow(piv, powval);
+			} else {
+				return 0;
 			}
 		case "sqrt":
 			
-			if (value instanceof Double dv) {
-				return Math.sqrt(dv);
-			} else if (value instanceof Long lv) {
-				return Math.sqrt(lv);
-			} else if (value instanceof Float fv) {
-				return Math.sqrt(fv);
-			} else if (value instanceof Integer iv) {
-				return Math.sqrt(iv);
+			if (value instanceof Double sdv) {
+				return Math.sqrt(sdv);
+			} else if (value instanceof Long slv) {
+				return Math.sqrt(slv);
+			} else if (value instanceof Float sfv) {
+				return Math.sqrt(sfv);
+			} else if (value instanceof Integer siv) {
+				return Math.sqrt(siv);
+			} else {
+				return 0;
 			}
 		case "exp":
 			
-			if (value instanceof Double dv) {
-				return Math.exp(dv);
-			} else if (value instanceof Long lv) {
-				return Math.exp(lv);
-			} else if (value instanceof Float fv) {
-				return Math.exp(fv);
-			} else if (value instanceof Integer iv) {
-				return Math.exp(iv);
+			if (value instanceof Double edv) {
+				return Math.exp(edv);
+			} else if (value instanceof Long elv) {
+				return Math.exp(elv);
+			} else if (value instanceof Float efv) {
+				return Math.exp(efv);
+			} else if (value instanceof Integer eiv) {
+				return Math.exp(eiv);
 			}
 		case "loge":
 			
-			if (value instanceof Double dv) {
-				return Math.log(dv);
-			} else if (value instanceof Long lv) {
-				return Math.log(lv);
-			} else if (value instanceof Float fv) {
-				return Math.log(fv);
-			} else if (value instanceof Integer iv) {
-				return Math.log(iv);
+			if (value instanceof Double ldv) {
+				return Math.log(ldv);
+			} else if (value instanceof Long llv) {
+				return Math.log(llv);
+			} else if (value instanceof Float lfv) {
+				return Math.log(lfv);
+			} else if (value instanceof Integer liv) {
+				return Math.log(liv);
+			} else {
+				return 0;
 			}
 		case "lowercase":
 			
@@ -2200,10 +2234,11 @@ public class SQLUtils {
 	 * @param tablecolumntypesmap
 	 * @param sql
 	 * @param db
+	 * @return 
 	 * @return optimized query
 	 * @throws Exception
 	 */
-	public static void validateSql(ConcurrentMap<String, List<String>> tablecolumnsmap,
+	public static RelNode validateSql(ConcurrentMap<String, List<String>> tablecolumnsmap,
 			ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap,
 			String sql,
 			String db) throws Exception {
@@ -2217,8 +2252,25 @@ public class SQLUtils {
 		SimpleSchema schema = builder.build();
 		Optimizer optimizer = Optimizer.create(schema);
 		SqlNode sqlTree = optimizer.parse(sql);
-		optimizer.validate(sqlTree);
-		
+		sqlTree = optimizer.validate(sqlTree);
+		RelNode relTree = optimizer.convert(sqlTree);
+		RuleSet rules = RuleSets.ofList(
+				CoreRules.FILTER_TO_CALC, 
+				CoreRules.PROJECT_TO_CALC,
+				CoreRules.FILTER_CALC_MERGE, 
+				CoreRules.PROJECT_CALC_MERGE, 
+				CoreRules.AGGREGATE_PROJECT_MERGE,
+				CoreRules.PROJECT_FILTER_VALUES_MERGE, 
+				EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
+				EnumerableRules.ENUMERABLE_PROJECT_RULE, 
+				EnumerableRules.ENUMERABLE_FILTER_RULE,
+				EnumerableRules.ENUMERABLE_AGGREGATE_RULE, 
+				EnumerableRules.ENUMERABLE_SORT_RULE,
+				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE,
+			    EnumerableRules.ENUMERABLE_JOIN_RULE);
+
+		return optimizer.optimize(relTree,
+				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
 	}
 	
 	/**
@@ -2487,41 +2539,43 @@ public class SQLUtils {
 			if(type == SqlTypeName.INTEGER) {
 				if (NumberUtils.isCreatable((String) value)) {
 					mapvalues.put(col, new IntegerObj(Integer.valueOf(value)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new IntegerObj(1));
+					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(true));
 				} else {
 					mapvalues.put(col, new IntegerObj(Integer.valueOf(0)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new IntegerObj(0));
+					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
 				}
 			} else if(type == SqlTypeName.BIGINT) {
 				if (NumberUtils.isCreatable((String) value)) {
 					mapvalues.put(col, new LongObj(Long.valueOf(value)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new IntegerObj(1));
+					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
 				} else {
 					mapvalues.put(col, new LongObj(Long.valueOf(0l)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new IntegerObj(0));
+					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
 				}
 			} else if(type == SqlTypeName.VARCHAR){
 				mapvalues.put(col, new StringObj(value));
 			} else if(type == SqlTypeName.FLOAT) {
 				if (NumberUtils.isCreatable((String) value)) {
 					mapvalues.put(col, new FloatObj(Float.valueOf(value)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new IntegerObj(1));
+					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
 				} else {
 					mapvalues.put(col, new FloatObj(Float.valueOf(0.0f)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new IntegerObj(0));
+					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
 				}
 			} else if(type == SqlTypeName.DOUBLE) {
 				if (NumberUtils.isCreatable((String) value)) {
 					mapvalues.put(col, new DoubleObj(Double.valueOf(value)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new IntegerObj(1));
+					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
 				} else {
 					mapvalues.put(col,  new DoubleObj(Double.valueOf(0.0d)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new IntegerObj(0));
+					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(false));
 				}
 			} else if(type == SqlTypeName.BOOLEAN) {
 					mapvalues.put(col,  new BooleanObj(Boolean.valueOf(value)));
+					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
 			} else {
 				mapvalues.put(col, new StringObj(value));
+				mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
 			}
 		} catch(Exception ex) {
 			mapvalues.put(col, new StringObj(DataSamudayaConstants.EMPTY));
@@ -2537,7 +2591,7 @@ public class SQLUtils {
 	 * @return stream of map
 	 * @throws Exception
 	 */
-	public static Stream<Map<String, Object>> getYosegiStreamRecords(byte[] yosegibytes, 
+	public static Stream<Object[]> getYosegiStreamRecords(byte[] yosegibytes, 
 			List<String> reqcols, List<String> allcols, List<SqlTypeName> sqltypes) throws Exception {
 		InputStream in = new ByteArrayInputStream(yosegibytes);
 		YosegiSchemaReader reader = new YosegiSchemaReader();
@@ -2553,30 +2607,791 @@ public class SQLUtils {
 	 * @param col
 	 * @param po
 	 */
-	public static void getValueFromYosegiObject(Map<String, Object> map, String col, Map<String, Object> mapforavg) {
+	public static void getValueFromYosegiObject(List<Object> valueobjects,List<Boolean> toconsidervalueobjects, String col, Map<String, Object> mapforavg) {
 		PrimitiveObject po = (PrimitiveObject) mapforavg.get(col);
     	try {    		
     		if(po instanceof IntegerObj iobj) {
-    			map.put(col, iobj.getInt());
-    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
+    			valueobjects.add(iobj.getInt());
+    			toconsidervalueobjects.add(((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean());
     		} else if(po instanceof LongObj lobj) {
-    			map.put(col, lobj.getLong());
-    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
+    			valueobjects.add(lobj.getLong());
+    			toconsidervalueobjects.add(((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean());
     		} else if(po instanceof FloatObj fobj) {
-    			map.put(col, fobj.getFloat());
-    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
+    			valueobjects.add(fobj.getFloat());
+    			toconsidervalueobjects.add(((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean());
     		} else if(po instanceof DoubleObj dobj) {
-    			map.put(col, dobj.getDouble());
-    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, ((IntegerObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getInt());
+    			valueobjects.add(dobj.getDouble());
+    			toconsidervalueobjects.add(((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean());
     		} else if(po instanceof BooleanObj bobj) {
-    			map.put(col, bobj.getBoolean());
+    			valueobjects.add(bobj.getBoolean());
+    			toconsidervalueobjects.add(true);
     		} else if(po instanceof StringObj sobj) {
-    			map.put(col, sobj.getString());
+    			valueobjects.add(sobj.getString());
+    			toconsidervalueobjects.add(true);
     		}
     	} catch(Exception ex) {
     		if(po instanceof StringObj sobj) {
-    			map.put(col, "");
+    			valueobjects.add("");
+    			toconsidervalueobjects.add(false);
     		}
     	}
 	}
+	
+	/**
+	 * Evaluates expression
+	 * @param node
+	 * @param values
+	 * @return predicate as true or false
+	 */
+	public static boolean evaluateExpression(RexNode node, Object[] values) {
+		if (node.isA(SqlKind.AND)) {
+            // For AND nodes, recursively evaluate left and right children
+            RexCall call = (RexCall) node;
+            boolean initvalue = true;
+            for(int operandindex=0;operandindex<call.operands.size();operandindex++) {
+            	initvalue = initvalue && evaluateExpression(call.operands.get(operandindex), values);
+            	if(!initvalue) {
+            		break;
+            	}
+            }
+            return initvalue;
+        } else if (node.isA(SqlKind.OR)) {
+            // For OR nodes, recursively evaluate left and right children
+            RexCall call = (RexCall) node;
+            boolean initvalue = false;
+            for(int operandindex=0;operandindex<call.operands.size();operandindex++) {
+            	initvalue = initvalue || evaluateExpression(call.operands.get(operandindex), values);
+            	if(initvalue) {
+            		break;
+            	}
+            }
+            return initvalue;
+        } else if (node.isA(SqlKind.EQUALS)) {
+            // For EQUALS nodes, evaluate left and right children
+            RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values);
+            Object value2 = getValueObject(call.operands.get(1), values);
+            return  evaluatePredicate(value1, value2, "=");
+        } else if (node.isA(SqlKind.NOT_EQUALS)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values);
+            Object value2 = getValueObject(call.operands.get(1), values);
+            return  evaluatePredicate(value1, value2, "<>");
+        } else if (node.isA(SqlKind.GREATER_THAN)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values);
+            Object value2 = getValueObject(call.operands.get(1), values);
+            return  evaluatePredicate(value1, value2, ">");
+        } else if (node.isA(SqlKind.GREATER_THAN_OR_EQUAL)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values);
+            Object value2 = getValueObject(call.operands.get(1), values);
+            return  evaluatePredicate(value1, value2, ">=");
+        } else if (node.isA(SqlKind.LESS_THAN)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values);
+            Object value2 = getValueObject(call.operands.get(1), values);
+            return  evaluatePredicate(value1, value2, "<");
+        } else if (node.isA(SqlKind.LESS_THAN_OR_EQUAL)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values);
+            Object value2 = getValueObject(call.operands.get(1), values);
+            return  evaluatePredicate(value1, value2, "<=");
+        } else if (node.isA(SqlKind.LIKE)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values);
+            Object value2 = getValueObject(call.operands.get(1), values);
+            return  value1.equals(value2);
+        } else {
+        	return false;
+        }
+    }
+	
+	/**
+	 * Evaluate whether to consider for aggregate
+	 * @param rexnode
+	 * @param boolvalues
+	 * @return true or false 
+	 */
+	public static boolean toEvaluateRexNode(RexNode rexnode, Object[] boolvalues) {
+		if (rexnode.isA(SqlKind.PLUS) ||
+				rexnode.isA(SqlKind.MINUS)||
+				rexnode.isA(SqlKind.TIMES)||
+				rexnode.isA(SqlKind.DIVIDE)) {
+	        // For addition nodes, recursively evaluate left and right children
+	        RexCall call = (RexCall) rexnode;
+	        return toEvaluateRexNode(call.operands.get(0), boolvalues) && toEvaluateRexNode(call.operands.get(1), boolvalues);
+	    } else if (rexnode.isA(SqlKind.LITERAL)) {
+	        return true;
+	    } else if (rexnode instanceof RexInputRef inputRef) {
+            // Handle column references            
+            return (Boolean) boolvalues[inputRef.getIndex()];
+        } else if(rexnode instanceof RexCall call) {
+			String name = call.getOperator().getName().toLowerCase();
+			if(name.equals("pow")) {
+				return toEvaluateRexNode(call.operands.get(0), boolvalues) 
+						&& toEvaluateRexNode(call.operands.get(1), boolvalues);
+			} else if(name.equals("substring")){
+				return toEvaluateRexNode(call.operands.get(0), boolvalues) && toEvaluateRexNode(call.operands.get(1), boolvalues) && toEvaluateRexNode(call.operands.get(2), boolvalues);
+			} else {
+				return toEvaluateRexNode(call.operands.get(0), boolvalues);
+			}
+        } else {
+        	return false;
+        }
+	}
+	
+	
+	
+	/**
+	 * Gets value Object from RexNode and values
+	 * @param node
+	 * @param values
+	 * @return returns the values of RexNode
+	 */
+	public static Object getValueObject(RexNode node, Object[] values) {
+		if (node.isA(SqlKind.PLUS)) {
+	        // For addition nodes, recursively evaluate left and right children
+	        RexCall call = (RexCall) node;
+	        return evaluateValuesByOperator(getValueObject(call.operands.get(0), values) , getValueObject(call.operands.get(1), values), "+");
+	    } else if (node.isA(SqlKind.MINUS)) {
+	        // For subtraction nodes, recursively evaluate left and right children
+	        RexCall call = (RexCall) node;
+	        return evaluateValuesByOperator(getValueObject(call.operands.get(0),values), getValueObject(call.operands.get(1), values), "-");
+	    } else if (node.isA(SqlKind.TIMES)) {
+	        // For multiplication nodes, recursively evaluate left and right children
+	        RexCall call = (RexCall) node;
+	        return evaluateValuesByOperator(getValueObject(call.operands.get(0),values) , getValueObject(call.operands.get(1), values),"*");
+	    } else if (node.isA(SqlKind.DIVIDE)) {
+	        // For division nodes, recursively evaluate left and right children
+	        RexCall call = (RexCall) node;
+	        return evaluateValuesByOperator(getValueObject(call.operands.get(0), values) , getValueObject(call.operands.get(1), values), "/");
+	    } else if (node.isA(SqlKind.LITERAL)) {
+	        // For literals, return their value
+	        RexLiteral literal = (RexLiteral) node;	        
+	        return getValue(literal, literal.getType().getSqlTypeName());
+	    } else if (node.isA(SqlKind.FUNCTION)) {
+	        // For functions, return their value
+	        return evaluateRexNode(node, values);
+	    } else if (node instanceof RexInputRef inputRef) {
+            // Handle column references            
+            return values[inputRef.getIndex()];
+        } else {
+        	return null;
+        }
+	}
+	
+	public static Object getValue(RexLiteral value, SqlTypeName type) {
+		try {
+			if(type == SqlTypeName.INTEGER) {
+				return value.getValueAs(Integer.class);
+			} else if(type == SqlTypeName.BIGINT) {
+				return value.getValueAs(Long.class);
+			} else if(type == SqlTypeName.VARCHAR){
+				return value.getValueAs(String.class);
+			} else if(type == SqlTypeName.CHAR){
+				return value.getValueAs(String.class);
+			} else if(type == SqlTypeName.FLOAT) {
+				return value.getValueAs(Float.class);
+			} else if(type == SqlTypeName.DOUBLE) {
+				return value.getValueAs(Double.class);
+			} else if(type == SqlTypeName.DECIMAL) {
+				return value.getValueAs(Double.class);
+			} else {
+				return value.getValueAs(String.class);
+			}
+		} catch(Exception ex) {
+			if(type == SqlTypeName.INTEGER) {
+				return Integer.valueOf(0);
+			} else if(type == SqlTypeName.BIGINT) {
+				return Long.valueOf(0);
+			} else if(type == SqlTypeName.VARCHAR){
+				return String.valueOf(DataSamudayaConstants.EMPTY);
+			} else if(type == SqlTypeName.FLOAT) {
+				return Float.valueOf(0.0f);			
+			} else if(type == SqlTypeName.DOUBLE) {
+				return Double.valueOf(0.0d);
+			} else {
+				return String.valueOf(DataSamudayaConstants.EMPTY);
+			}
+		}
+	}
+	
+	
+	/**
+	 * 
+	 * @param aggfunctions
+	 * @param tuple1
+	 * @param tuple2
+	 * @return evaluated function
+	 */
+	public static Tuple evaluateTuple(List<Pair<AggregateCall, String>>  aggfunctions,Tuple tuple1, Tuple tuple2) {
+		try {
+            // Get the class of the Tuple
+            Class<?> tupleClass = tuple1.getClass();
+            // Create a new instance of the Tuple
+            Tuple result = (Tuple) tupleClass.getConstructor(tuple2.getClass()).newInstance(tuple1);
+            // Get all the fields of the Tuple class
+            java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
+            int index = 0;
+            boolean avgindex = false;
+            Pair<AggregateCall, String> func = aggfunctions.get(index);
+            // Iterate over the fields and perform summation
+            for (java.lang.reflect.Field field : fields) {
+                // Make the field accessible, as it might be private
+                field.setAccessible(true);
+
+                // Get the values of the fields from both tuples
+                Object value1 = field.get(tuple1);
+                Object value2 = field.get(tuple2);
+                field.set(result,evaluateFunction(func, value1, value2));
+                // Set the sum of the values in the result tuple                
+                if(index+1<aggfunctions.size()) {
+                	if(avgindex) {
+                		func = aggfunctions.get(index);
+                    	avgindex = false;
+                    	index++;
+                	} else if(!aggfunctions.get(index).getKey().getAggregation().getName().equalsIgnoreCase("avg")) {
+                		func = aggfunctions.get(index+1);
+                		index++;
+                		avgindex = false;
+                	} else {
+                    	func = aggfunctions.get(index);
+                    	avgindex = true;
+                    }
+                } 
+            }
+
+            return result;
+        } catch (Exception ex) {
+        	log.error(DataSamudayaConstants.EMPTY, ex);
+        }
+		return null;
+	}
+	
+	/**
+	 * Evaluates function By function name
+	 * @param func
+	 * @param leftValue
+	 * @param rightValue
+	 * @return evaluated values
+	 */
+	public static Object evaluateFunction(Pair<AggregateCall, String> func, Object leftValue, Object rightValue) {
+		String functionname = func.getKey().getAggregation().getName().toLowerCase();
+		if (functionname.startsWith("count") || functionname.startsWith("sum") || functionname.startsWith("avg")) {			
+			return evaluateValuesByOperator(leftValue, rightValue, "+");
+		} else if (functionname.startsWith("grpconcat")) {
+			String sv = (String) func.getValue();
+			return evaluateGroupConcat(leftValue, rightValue, sv);
+		} else if (functionname.startsWith("min")) {
+			return SQLUtils.evaluateValuesByFunctionMin(leftValue, rightValue);
+		} else if (functionname.startsWith("max")) {
+			return SQLUtils.evaluateValuesByFunctionMax(leftValue, rightValue);
+		}
+		return null;
+	}
+	
+	/**
+	 * Gets Object from tuple
+	 * @param tuple
+	 * @return values array
+	 */
+	public static Object[] populateObjectFromTuple(Tuple tuple) {
+		if(tuple instanceof Tuple1 tup && tup.v1().equals(DataSamudayaConstants.EMPTY)) {
+			return null;
+		} else if(tuple instanceof Tuple1 tup) {
+			Object[] mapvalues = new Object[1];
+			mapvalues[0] =tup.v1();
+			return mapvalues;
+		} else if(tuple instanceof Tuple2 tup) {
+			Object[] mapvalues = new Object[2];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			return mapvalues;
+		} else if(tuple instanceof Tuple3 tup) {
+			Object[] mapvalues = new Object[3];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			return mapvalues;
+		} else if(tuple instanceof Tuple4 tup) {
+			Object[] mapvalues = new Object[4];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			return mapvalues;
+		}else if(tuple instanceof Tuple5 tup) {
+			Object[] mapvalues = new Object[5];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			return mapvalues;
+		}else if(tuple instanceof Tuple6 tup) {
+			Object[] mapvalues = new Object[6];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			return mapvalues;
+		}else if(tuple instanceof Tuple7 tup) {
+			Object[] mapvalues = new Object[7];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			return mapvalues;
+		}else if(tuple instanceof Tuple8 tup) {
+			Object[] mapvalues = new Object[8];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			mapvalues[7] =  tup.v8();
+			return mapvalues;
+		}else if(tuple instanceof Tuple9 tup) {
+			Object[] mapvalues = new Object[9];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			mapvalues[7] =  tup.v8();
+			mapvalues[8] =  tup.v9();
+			return mapvalues;
+		}else if(tuple instanceof Tuple10 tup) {
+			Object[] mapvalues = new Object[10];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			mapvalues[7] =  tup.v8();
+			mapvalues[8] =  tup.v9();
+			mapvalues[9] =  tup.v10();
+			return mapvalues;
+		}else if(tuple instanceof Tuple11 tup) {
+			Object[] mapvalues = new Object[11];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			mapvalues[7] =  tup.v8();
+			mapvalues[8] =  tup.v9();
+			mapvalues[9] =  tup.v10();
+			mapvalues[10] =  tup.v11();
+			return mapvalues;
+		}else if(tuple instanceof Tuple12 tup) {
+			Object[] mapvalues = new Object[12];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			mapvalues[7] =  tup.v8();
+			mapvalues[8] =  tup.v9();
+			mapvalues[9] =  tup.v10();
+			mapvalues[10] =  tup.v11();
+			mapvalues[11] =  tup.v12();
+			return mapvalues;
+		} else if(tuple instanceof Tuple13 tup) {
+			Object[] mapvalues = new Object[13];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			mapvalues[7] =  tup.v8();
+			mapvalues[8] =  tup.v9();
+			mapvalues[9] =  tup.v10();
+			mapvalues[10] =  tup.v11();
+			mapvalues[11] =  tup.v12();
+			mapvalues[12] =  tup.v13();
+			return mapvalues;
+		} else if(tuple instanceof Tuple14 tup) {
+			Object[] mapvalues = new Object[14];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			mapvalues[7] =  tup.v8();
+			mapvalues[8] =  tup.v9();
+			mapvalues[9] =  tup.v10();
+			mapvalues[10] =  tup.v11();
+			mapvalues[11] =  tup.v12();
+			mapvalues[12] =  tup.v13();
+			mapvalues[13] =  tup.v14();
+			return mapvalues;
+		}else if(tuple instanceof Tuple15 tup) {
+			Object[] mapvalues = new Object[15];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			mapvalues[7] =  tup.v8();
+			mapvalues[8] =  tup.v9();
+			mapvalues[9] =  tup.v10();
+			mapvalues[10] =  tup.v11();
+			mapvalues[11] =  tup.v12();
+			mapvalues[12] =  tup.v13();
+			mapvalues[13] =  tup.v14();
+			mapvalues[14] =  tup.v15();
+			return mapvalues;
+		}else if(tuple instanceof Tuple16 tup) {
+			Object[] mapvalues = new Object[16];
+			mapvalues[0] =tup.v1();
+			mapvalues[1] = tup.v2();
+			mapvalues[2] = tup.v3();
+			mapvalues[3] = tup.v4();
+			mapvalues[4] =  tup.v5();
+			mapvalues[5] =  tup.v6();
+			mapvalues[6] =  tup.v7();
+			mapvalues[7] =  tup.v8();
+			mapvalues[8] =  tup.v9();
+			mapvalues[9] =  tup.v10();
+			mapvalues[10] =  tup.v11();
+			mapvalues[11] =  tup.v12();
+			mapvalues[12] =  tup.v13();
+			mapvalues[13] =  tup.v14();
+			mapvalues[14] =  tup.v15();
+			mapvalues[15] =  tup.v16();
+			return mapvalues;
+		}else {
+			throw new UnsupportedOperationException("Max supported Column is 16");
+		}
+	}
+	
+	/**
+	 * The function returns array of group by column indexes
+	 * @param aggregate
+	 * @return column indexes
+	 */
+	public static int[] getGroupByColumnIndexes(EnumerableAggregateBase aggregate) {
+        // Extract the BitSet representing the Group By columns
+        ImmutableBitSet groupSet = aggregate.getGroupSet();
+
+        // Convert the BitSet to an array of integers
+        int[] groupByColumnIndexes = new int[groupSet.cardinality()];
+        int index = 0;
+        for (int i = groupSet.nextSetBit(0); i >= 0; i = groupSet.nextSetBit(i + 1)) {
+            groupByColumnIndexes[index++] = i;
+        }
+
+        return groupByColumnIndexes;
+    }
+	
+	
+	public static Object[] populateObjectFromFunctions(Tuple tuple, List<Pair<AggregateCall, String>> functions) {
+		try {
+			Class<?> cls = tuple.getClass();
+			List<Object> processedvalues = new ArrayList<>();
+			for (int funcindex = 0, valueindex = 1; funcindex < functions.size(); funcindex++) {
+				Pair<AggregateCall, String> func = functions.get(funcindex);
+				String funname = func.getKey().getAggregation().getName();
+				if (funname.toLowerCase().startsWith("avg")) {
+					java.lang.reflect.Method method = cls.getMethod("v" + valueindex);
+					Object valuesum = method.invoke(tuple);
+					valueindex++;
+					method = cls.getMethod("v" + valueindex);
+					Object valuecount = method.invoke(tuple);
+					processedvalues.add(evaluateValuesByOperator(valuesum, valuecount, "/"));
+				} else {
+					java.lang.reflect.Method method = cls.getMethod("v" + valueindex);
+					Object value = method.invoke(tuple);
+					processedvalues.add(value);
+				}
+				valueindex++;
+			}
+			return processedvalues.toArray(new Object[0]);
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	}
+	
+	/**
+	 * The functions checks whether the RelNode has decendants. 
+	 * @param relnode
+	 * @param descendants
+	 * @return true or false
+	 */
+	public static boolean hasDescendants(RelNode relnode, Map<RelNode, Boolean> descendants) {
+		return descendants.get(relnode);
+    }
+	
+	/**
+	 * This function evaluates expression.
+	 * @param node
+	 * @param values1
+	 * @param values2
+	 * @return
+	 */
+	public static boolean evaluateExpression(RexNode node, Object[] values1, Object[] values2) {
+		if (node.isA(SqlKind.AND)) {
+            // For AND nodes, recursively evaluate left and right children
+            RexCall call = (RexCall) node;
+            return evaluateExpression(call.operands.get(0), values1, values2) 
+            		&& evaluateExpression(call.operands.get(1), values1, values2);
+        } else if (node.isA(SqlKind.OR)) {
+            // For OR nodes, recursively evaluate left and right children
+            RexCall call = (RexCall) node;
+            return evaluateExpression(call.operands.get(0), values1, values2) || 
+            		evaluateExpression(call.operands.get(1), values1, values2);
+        } else if (node.isA(SqlKind.EQUALS)) {
+            // For EQUALS nodes, evaluate left and right children
+            RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values1, values2);
+            Object value2 = getValueObject(call.operands.get(1), values1, values2);
+            return  evaluatePredicate(value1, value2, "=");
+        } else if (node.isA(SqlKind.NOT_EQUALS)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values1, values2);
+            Object value2 = getValueObject(call.operands.get(1), values1, values2);
+            return  evaluatePredicate(value1, value2, "<>");
+        } else if (node.isA(SqlKind.GREATER_THAN)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values1, values2);
+            Object value2 = getValueObject(call.operands.get(1), values1, values2);
+            return  evaluatePredicate(value1, value2, ">");
+        } else if (node.isA(SqlKind.GREATER_THAN_OR_EQUAL)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values1, values2);
+            Object value2 = getValueObject(call.operands.get(1), values1, values2);
+            return  evaluatePredicate(value1, value2, ">=");
+        } else if (node.isA(SqlKind.LESS_THAN)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values1, values2);
+            Object value2 = getValueObject(call.operands.get(1), values1, values2);
+            return  evaluatePredicate(value1, value2, "<");
+        } else if (node.isA(SqlKind.LESS_THAN_OR_EQUAL)) {
+            // For EQUALS nodes, evaluate left and right children
+        	RexCall call = (RexCall) node;
+            Object value1 = getValueObject(call.operands.get(0), values1, values2);
+            Object value2 = getValueObject(call.operands.get(1), values1, values2);
+            return  evaluatePredicate(value1, value2, "<=");
+        } else {
+        	return false;
+        }
+    }
+	
+	/**
+	 * The function returns the values from value object for evaluation
+	 * @param node
+	 * @param values1
+	 * @param values2
+	 * @return values from value objects
+	 */
+	public static Object getValueObject(RexNode node, Object[] values1, Object[] values2) {
+		if (node.isA(SqlKind.PLUS)) {
+	        // For addition nodes, recursively evaluate left and right children
+	        RexCall call = (RexCall) node;
+	        return evaluateValuesByOperator(getValueObject(call.operands.get(0), values1, values2) , getValueObject(call.operands.get(1), values1, values2), "+");
+	    } else if (node.isA(SqlKind.MINUS)) {
+	        // For subtraction nodes, recursively evaluate left and right children
+	        RexCall call = (RexCall) node;
+	        return evaluateValuesByOperator(getValueObject(call.operands.get(0),values1, values2), getValueObject(call.operands.get(1), values1, values2), "-");
+	    } else if (node.isA(SqlKind.TIMES)) {
+	        // For multiplication nodes, recursively evaluate left and right children
+	        RexCall call = (RexCall) node;
+	        return evaluateValuesByOperator(getValueObject(call.operands.get(0),values1, values2) , getValueObject(call.operands.get(1), values1, values2),"*");
+	    } else if (node.isA(SqlKind.DIVIDE)) {
+	        // For division nodes, recursively evaluate left and right children
+	        RexCall call = (RexCall) node;
+	        return evaluateValuesByOperator(getValueObject(call.operands.get(0), values1, values2) , getValueObject(call.operands.get(1), values1, values2), "/");
+	    } else if (node.isA(SqlKind.LITERAL)) {
+	        // For literals, return their value
+	        RexLiteral literal = (RexLiteral) node;	        
+	        return literal.getValue2();
+	    } else if (node instanceof RexInputRef inputRef) {
+            // Handle column references
+	    	return inputRef.getIndex() < values1.length?values1[inputRef.getIndex()]:values2[inputRef.getIndex()-values1.length];
+        } else {
+        	return null;
+        }
+	}
+	
+	/**
+	 * Evaluates function RexNode with given values 
+	 * @param node
+	 * @param values
+	 * @return value processed
+	 */
+	public static Object evaluateRexNode(RexNode node, Object[] values) {
+		if(node.isA(SqlKind.FUNCTION)) {
+			RexCall call = (RexCall) node;
+			RexNode expfunc = call.getOperands().get(0);
+			String name = call.getOperator().getName().toLowerCase();
+			switch (name) {
+				case "abs":
+	                	               
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "abs");
+				case "length":
+	                // Get the length of string value	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "length");
+	                
+				case "round":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "round");
+				case "ceil":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "ceil");
+				case "floor":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "floor");
+				case "pow":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), evaluateRexNode(call.getOperands().get(1), values), "pow");
+				case "sqrt":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "sqrt");
+				case "exp":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "exp");
+				case "loge":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "loge");
+				case "lowercase":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "lowercase");
+				case "uppercase":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "uppercase");
+				case "base64encode":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "base64encode");
+				case "base64decode":
+	                
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "base64decode");
+				case "normalizespaces":
+					
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "normalizespaces");
+				case "trimstr":
+					
+	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "trim");
+				case "substring":
+	                
+					RexLiteral pos = (RexLiteral) call.getOperands().get(1);
+					RexLiteral length = (RexLiteral) call.getOperands().get(2);
+					String val = (String) evaluateRexNode(expfunc, values);
+	                return val.substring((int) pos.getValue(), Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
+				case "cast":
+					return evaluateRexNode(expfunc, values);
+				case "grpconcat":
+					RexNode rexnode1 = call.getOperands().get(0);
+					RexNode  rexnode2 = call.getOperands().get(1);
+					return (String)evaluateRexNode(rexnode1, values) + evaluateRexNode(rexnode2, values);
+			}
+		} else if(node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction){
+			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null, call.getOperator().getName().toLowerCase());
+		} else {
+			return getValueObject(node, values);
+		}
+		return null; 
+	}
+	
+	
+	/**
+	 * This function gets the greatest type in RexNode expression
+	 * @param rexNode
+	 * @return greatest type
+	 */
+	public static SqlTypeName findGreatestType(RexNode rexNode) {
+        SqlTypeName greatestType = null;
+
+        // Traverse the tree and compare types
+        switch (rexNode.getKind()) {
+            case INPUT_REF:
+            case LITERAL:
+                greatestType = rexNode.getType().getSqlTypeName();
+                break;
+
+            case PLUS:
+            case MINUS:
+            case TIMES:
+            // Add more cases for other node types as needed
+
+            default:
+                // Traverse the children
+                for (RexNode operand : ((RexCall)rexNode).getOperands()) {
+                    SqlTypeName operandType = findGreatestType(operand);
+
+                    // Compare types
+                    if (greatestType == null || operandType.compareTo(greatestType) > 0) {
+                        greatestType = operandType;
+                    }
+                }
+        }
+
+        return greatestType;
+	}
+	
+	/**
+	 * The function generates zero for literal
+	 * @param sqlTypeName
+	 * @return zero based on type
+	 */
+	public static Object generateZeroLiteral(SqlTypeName sqlTypeName) {
+        switch (sqlTypeName) {
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            	return 0;
+            case BIGINT:
+                return 0L;
+
+            case DECIMAL:
+            case FLOAT:
+                return 0.0;
+
+            case REAL:
+            case DOUBLE:
+                return 0.0d;
+
+            case CHAR:
+            case VARCHAR:
+                return "";
+
+            // Add more cases for other data types as needed
+
+            default:
+                throw new UnsupportedOperationException("Unsupported SqlTypeName: " + sqlTypeName);
+        }
+    }
 }

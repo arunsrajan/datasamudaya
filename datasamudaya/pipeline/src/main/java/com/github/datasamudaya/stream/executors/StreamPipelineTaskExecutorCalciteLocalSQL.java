@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Vector;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -44,6 +47,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.ehcache.Cache;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -71,6 +75,7 @@ import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 import com.google.common.collect.Maps;
+import com.pivovarit.collectors.ParallelCollectors;
 import com.univocity.parsers.common.IterableResult;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.ResultIterator;
@@ -83,18 +88,18 @@ import jp.co.yahoo.yosegi.config.Configuration;
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
 /**
- * This class executes tasks in ignite.
  * 
- * @author Arun
+ * @author Arun Task executors thread for standalone task executors daemon.
  */
 @SuppressWarnings("rawtypes")
-public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecutorYarn {
+public final class StreamPipelineTaskExecutorCalciteLocalSQL extends StreamPipelineTaskExecutorLocal {
+	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorCalciteLocalSQL.class);
 
-	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorYarnSQL.class);
+	static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
 
-
-	public StreamPipelineTaskExecutorYarnSQL(String hdfsnn, JobStage jobstage) {
-		super(hdfsnn, jobstage);
+	public StreamPipelineTaskExecutorCalciteLocalSQL(JobStage jobstage, ConcurrentMap<String, OutputStream> resultstream,
+			Cache cache) {
+		super(jobstage, resultstream, cache);
 	}
 
 	/**
@@ -113,7 +118,8 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
 		YosegiRecordWriter writer = null;
-		ByteArrayOutputStream baos = null;
+		ByteArrayOutputStream baos = null;		
+		var fsdos = new ByteArrayOutputStream();
 		BufferedReader buffer = null;
 		InputStream bais = null;
 		CsvWriter writercsv = null;
@@ -122,7 +128,6 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 		List<SqlTypeName> sqltypenamel = null;
 		String[] headers = null;
 		boolean iscsv = false;
-		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);) {
 			Stream intermediatestreamobject;
 			try {				
@@ -179,8 +184,8 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
 									Object[] valueswithconsideration = new Object[2];
-									valueswithconsideration[0]=valueobjects;
-									valueswithconsideration[1]=toconsidervalueobjects;
+									valueswithconsideration[0]=valueobjects.toArray(new Object[0]);
+									valueswithconsideration[1]=toconsidervalueobjects.toArray(new Object[0]);
 									return valueswithconsideration;
 								});
 							} else {
@@ -279,7 +284,10 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 
 				} else if (finaltask instanceof StandardDeviation) {
 					out = new Vector<>();
-					var streamtmp = ((IntStream) streammap).boxed().collect(Collectors.toList());
+					CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
+							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+									executor, Runtime.getRuntime().availableProcessors()));
+					var streamtmp = cf.get();
 					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
 					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
@@ -306,25 +314,27 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 						}
 						return (System.currentTimeMillis() - starttime) / 1000.0;
 					} else {
-						log.info("Map assembly processing");
-						out = ((Stream) streammap)
-								.toList();
-						log.info("Map assembly completed");
+						CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
+								.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+										executor, Runtime.getRuntime().availableProcessors()));
+						out = cf.get();
 					}
 					log.info("Map assembly concluded");
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
 				output.flush();
+				task.setNumbytesgenerated(fsdos.toByteArray().length);
+				cacheAble(fsdos);
 				var wr = new WeakReference<List>(out);
 				out = null;
-				if (!(task.finalphase && task.saveresulttohdfs)) {
-					writeIntermediateDataToDirectByteBuffer(fsdos);
-				}
 				log.debug("Exiting StreamPipelineTaskExecutor.processBlockHDFSMap");
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 				log.debug("Time taken to compute the Map Task is " + timetaken + " seconds");
 				log.debug("GC Status Map task:" + Utils.getGCStats());
 				return timetaken;
+			} catch (IOException ioe) {
+				log.error(PipelineConstants.FILEIOERROR, ioe);
+				throw new PipelineException(PipelineConstants.FILEIOERROR, ioe);
 			} catch (Exception ex) {
 				log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 				throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
@@ -339,7 +349,7 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 				} catch (Exception e) {
 					log.error(DataSamudayaConstants.EMPTY, e);
 				}
-			}	
+			}			
 			if (nonNull(writer)) {				
 				try {
 					writer.close();
@@ -385,7 +395,11 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 					log.error(DataSamudayaConstants.EMPTY, e);
 				}
 			}
+			if (!(task.finalphase && task.saveresulttohdfs)) {
+				writeIntermediateDataToDirectByteBuffer(fsdos);
+			}
 		}
 
 	}
+
 }

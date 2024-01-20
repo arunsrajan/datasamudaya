@@ -1,6 +1,7 @@
 package com.github.datasamudaya.tasks.scheduler.executor.standalone;
 
 import java.io.DataInputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URL;
@@ -56,7 +57,14 @@ import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 import com.github.datasamudaya.tasks.scheduler.TaskScheduler;
 import com.github.datasamudaya.tasks.scheduler.sql.SQLServerMR;
 
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.HTTPServer;
+import io.prometheus.client.hotspot.DefaultExports;
 
 /**
  * This class starts the stream scheduler, mr scheduler and node launcher.
@@ -90,9 +98,16 @@ public class EmbeddedSchedulersNodeLauncher {
 		StaticComponentContainer.Modules.exportAllToAll();
 		var cdl = new CountDownLatch(3);
 		int metricsport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.METRICS_EXPORTER_PORT,
-                DataSamudayaConstants.METRICS_EXPORTER_PORT_DEFAULT));		
+                DataSamudayaConstants.METRICS_EXPORTER_PORT_DEFAULT));
+		DefaultExports.initialize(); // Initialize JVM metrics    	 
+        PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT, CollectorRegistry.defaultRegistry, Clock.SYSTEM);
+		meterRegistry.config().commonTags("application", DataSamudayaConstants.DATASAMUDAYA.toLowerCase());
+		// Bind JVM metrics to the registry
+		new JvmMemoryMetrics().bindTo(meterRegistry);
+		new JvmThreadMetrics().bindTo(meterRegistry);
+        // Start an HTTP server to expose metrics
 		try (var zo = new ZookeeperOperations();
-				HTTPServer server = new HTTPServer(metricsport);) {			
+				HTTPServer server = new HTTPServer(new InetSocketAddress(metricsport), meterRegistry.getPrometheusRegistry());) {			
 			zo.connect();
 			zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
 				log.info("Node Created");
