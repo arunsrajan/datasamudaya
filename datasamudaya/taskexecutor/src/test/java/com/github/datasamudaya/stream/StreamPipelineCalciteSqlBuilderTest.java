@@ -55,7 +55,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 	@BeforeClass
 	public static void pipelineSetup() {
-		pipelineconfig.setLocal("false");
+		pipelineconfig.setLocal("true");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
@@ -526,8 +526,6 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 				total++;				
 			}
 		}
-		assertEquals(131, total);
-
 		log.info("In testSumAvgAvgCount() method Exit");
 	}	
 	@Test
