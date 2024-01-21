@@ -2592,12 +2592,12 @@ public class SQLUtils {
 	 * @throws Exception
 	 */
 	public static Stream<Object[]> getYosegiStreamRecords(byte[] yosegibytes, 
-			List<String> reqcols, List<String> allcols, List<SqlTypeName> sqltypes) throws Exception {
+			List<Integer> reqcols, List<String> allcols, List<SqlTypeName> sqltypes) throws Exception {
 		InputStream in = new ByteArrayInputStream(yosegibytes);
 		YosegiSchemaReader reader = new YosegiSchemaReader();
 		reader.setNewStream(in, Long.valueOf(yosegibytes.length), new jp.co.yahoo.yosegi.config.Configuration());
 		Map<String, SqlTypeName> sqltypesallcols = getColumnTypesByColumn(sqltypes, allcols);
-		return StreamSupport.stream(new YosegiRecordSpliterator(reader, reqcols, sqltypesallcols), false);
+		return StreamSupport.stream(new YosegiRecordSpliterator(reader, reqcols, allcols, sqltypesallcols), false);
 
 	}
 	
@@ -2607,32 +2607,33 @@ public class SQLUtils {
 	 * @param col
 	 * @param po
 	 */
-	public static void getValueFromYosegiObject(List<Object> valueobjects,List<Boolean> toconsidervalueobjects, String col, Map<String, Object> mapforavg) {
+	public static void getValueFromYosegiObject(Object[] valueobjects,Object[] toconsidervalueobjects, String col, Map<String, Object> mapforavg,
+			int index) {
 		PrimitiveObject po = (PrimitiveObject) mapforavg.get(col);
     	try {    		
     		if(po instanceof IntegerObj iobj) {
-    			valueobjects.add(iobj.getInt());
-    			toconsidervalueobjects.add(((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean());
+    			valueobjects[index]=iobj.getInt();
+    			toconsidervalueobjects[index]=((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean();
     		} else if(po instanceof LongObj lobj) {
-    			valueobjects.add(lobj.getLong());
-    			toconsidervalueobjects.add(((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean());
+    			valueobjects[index]=lobj.getLong();
+    			toconsidervalueobjects[index]=((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean();
     		} else if(po instanceof FloatObj fobj) {
-    			valueobjects.add(fobj.getFloat());
-    			toconsidervalueobjects.add(((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean());
+    			valueobjects[index]=fobj.getFloat();
+    			toconsidervalueobjects[index]=((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean();
     		} else if(po instanceof DoubleObj dobj) {
-    			valueobjects.add(dobj.getDouble());
-    			toconsidervalueobjects.add(((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean());
+    			valueobjects[index]=dobj.getDouble();
+    			toconsidervalueobjects[index]=((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean();
     		} else if(po instanceof BooleanObj bobj) {
-    			valueobjects.add(bobj.getBoolean());
-    			toconsidervalueobjects.add(true);
+    			valueobjects[index]=bobj.getBoolean();
+    			toconsidervalueobjects[index]=true;
     		} else if(po instanceof StringObj sobj) {
-    			valueobjects.add(sobj.getString());
-    			toconsidervalueobjects.add(true);
+    			valueobjects[index]=sobj.getString();
+    			toconsidervalueobjects[index]=true;
     		}
     	} catch(Exception ex) {
     		if(po instanceof StringObj sobj) {
-    			valueobjects.add("");
-    			toconsidervalueobjects.add(false);
+    			valueobjects[index]="";
+    			toconsidervalueobjects[index]=false;
     		}
     	}
 	}
@@ -2831,7 +2832,7 @@ public class SQLUtils {
 	 * @param tuple2
 	 * @return evaluated function
 	 */
-	public static Tuple evaluateTuple(List<Pair<AggregateCall, String>>  aggfunctions,Tuple tuple1, Tuple tuple2) {
+	public static Tuple evaluateTuple(List<String> aggfunctions, Tuple tuple1, Tuple tuple2) {
 		try {
             // Get the class of the Tuple
             Class<?> tupleClass = tuple1.getClass();
@@ -2841,7 +2842,7 @@ public class SQLUtils {
             java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
             int index = 0;
             boolean avgindex = false;
-            Pair<AggregateCall, String> func = aggfunctions.get(index);
+            String func = aggfunctions.get(index);
             // Iterate over the fields and perform summation
             for (java.lang.reflect.Field field : fields) {
                 // Make the field accessible, as it might be private
@@ -2857,7 +2858,7 @@ public class SQLUtils {
                 		func = aggfunctions.get(index);
                     	avgindex = false;
                     	index++;
-                	} else if(!aggfunctions.get(index).getKey().getAggregation().getName().equalsIgnoreCase("avg")) {
+                	} else if(!aggfunctions.get(index).equalsIgnoreCase("avg")) {
                 		func = aggfunctions.get(index+1);
                 		index++;
                 		avgindex = false;
@@ -2882,13 +2883,9 @@ public class SQLUtils {
 	 * @param rightValue
 	 * @return evaluated values
 	 */
-	public static Object evaluateFunction(Pair<AggregateCall, String> func, Object leftValue, Object rightValue) {
-		String functionname = func.getKey().getAggregation().getName().toLowerCase();
+	public static Object evaluateFunction(String functionname, Object leftValue, Object rightValue) {
 		if (functionname.startsWith("count") || functionname.startsWith("sum") || functionname.startsWith("avg")) {			
 			return evaluateValuesByOperator(leftValue, rightValue, "+");
-		} else if (functionname.startsWith("grpconcat")) {
-			String sv = (String) func.getValue();
-			return evaluateGroupConcat(leftValue, rightValue, sv);
 		} else if (functionname.startsWith("min")) {
 			return SQLUtils.evaluateValuesByFunctionMin(leftValue, rightValue);
 		} else if (functionname.startsWith("max")) {
@@ -3114,13 +3111,12 @@ public class SQLUtils {
     }
 	
 	
-	public static Object[] populateObjectFromFunctions(Tuple tuple, List<Pair<AggregateCall, String>> functions) {
+	public static Object[] populateObjectFromFunctions(Tuple tuple, List<String> functions) {
 		try {
 			Class<?> cls = tuple.getClass();
 			List<Object> processedvalues = new ArrayList<>();
 			for (int funcindex = 0, valueindex = 1; funcindex < functions.size(); funcindex++) {
-				Pair<AggregateCall, String> func = functions.get(funcindex);
-				String funname = func.getKey().getAggregation().getName();
+				String funname = functions.get(funcindex);
 				if (funname.toLowerCase().startsWith("avg")) {
 					java.lang.reflect.Method method = cls.getMethod("v" + valueindex);
 					Object valuesum = method.invoke(tuple);

@@ -55,7 +55,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 	@BeforeClass
 	public static void pipelineSetup() {
-		pipelineconfig.setLocal("true");
+		pipelineconfig.setLocal("false");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
@@ -504,7 +504,32 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 		log.info("In testCountAllColumnsWithWhereAndJoin() method Exit");
 	}
+	
+	@Test
+	public void testSumAvgAvgCount() throws Exception {
+		log.info("In testSumAvgAvgCount() method Entry");
 
+		String statement = """
+				select sum(airline.arrdelay) as sumadelay,avg(airline.arrdelay) as adelay
+				,avg(airline.depdelay) as ddelay,count(*) as recordcnt 
+				from airline group by airline.uniquecarrier
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		int total = 0;
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				total++;				
+			}
+		}
+		assertEquals(131, total);
+
+		log.info("In testSumAvgAvgCount() method Exit");
+	}	
 	@Test
 	public void testPrintAllColumnsCountWithWhereAndJoin() throws Exception {
 		log.info("In testPrintAllColumnsCountWithWhereAndJoin() method Entry");

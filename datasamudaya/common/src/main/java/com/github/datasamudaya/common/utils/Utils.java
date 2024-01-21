@@ -61,6 +61,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
+import org.apache.calcite.rex.RexNode;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
@@ -93,7 +94,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.util.CollectionUtils;
-import org.springframework.yarn.YarnSystemConstants;
 import org.springframework.yarn.client.CommandYarnClient;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -126,14 +126,6 @@ import com.github.datasamudaya.common.GlobalYARNResources;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.Job.JOBTYPE;
 import com.github.datasamudaya.common.JobConfiguration;
-import com.github.datasamudaya.common.exceptions.JGroupsException;
-import com.github.datasamudaya.common.exceptions.JobException;
-import com.github.datasamudaya.common.exceptions.OutputStreamException;
-import com.github.datasamudaya.common.exceptions.PropertiesException;
-import com.github.datasamudaya.common.exceptions.RpcRegistryException;
-import com.github.datasamudaya.common.exceptions.TaskExecutorException;
-import com.github.datasamudaya.common.exceptions.YarnLaunchException;
-import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.PipelineConfig;
@@ -152,6 +144,14 @@ import com.github.datasamudaya.common.WhoAreRequest;
 import com.github.datasamudaya.common.WhoAreResponse;
 import com.github.datasamudaya.common.WhoIsRequest;
 import com.github.datasamudaya.common.WhoIsResponse;
+import com.github.datasamudaya.common.exceptions.JGroupsException;
+import com.github.datasamudaya.common.exceptions.JobException;
+import com.github.datasamudaya.common.exceptions.OutputStreamException;
+import com.github.datasamudaya.common.exceptions.PropertiesException;
+import com.github.datasamudaya.common.exceptions.RpcRegistryException;
+import com.github.datasamudaya.common.exceptions.TaskExecutorException;
+import com.github.datasamudaya.common.exceptions.YarnLaunchException;
+import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.sun.management.OperatingSystemMXBean;
 import com.univocity.parsers.csv.CsvWriter;
@@ -351,6 +351,7 @@ public class Utils {
 		});
 		kryo.register(Closure.class, new ClosureSerializer());
 		kryo.register(JShell.class, new CompatibleFieldSerializer<JShell>(kryo, JShell.class));
+		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));
 		return kryo;
 	}
 
@@ -1800,44 +1801,17 @@ public class Utils {
 	 * @param tableData
 	 * @param out
 	 */
-	private static void printTable(List<Map<String, Object>> tableData, PrintWriter out) {
+	private static void printTable(List<Object[]> tableData, PrintWriter out) {
         if (tableData.isEmpty()) {
             out.println("Table is empty.");
             out.flush();
             return;
         }
 
-                
-        // Calculate column widths
-        Map<String, Integer> columnWidths = new HashMap<>();
-        Map<String, Object> mapforkeys = tableData.get(0);
-        Set<String> keys = mapforkeys.keySet();
-        for(String key: keys) {
-        	columnWidths.put(key, key.length());
-        }       
-        for (Map<String, Object> row : tableData) {
-            for (Map.Entry<String, Object> entry : row.entrySet()) {
-                String key = entry.getKey();
-                String value = String.valueOf(entry.getValue());
-                int width = Math.max(columnWidths.getOrDefault(key, 0), value.length());
-                columnWidths.put(key, width);
-            }
-        }
-
-        // Print table header
-        for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
-            out.printf(String.format("%%-%ds | ", entry.getValue()), entry.getKey());
-            out.flush();
-        }
-        out.println();
-        out.flush();
-
         // Print table rows
-        for (Map<String, Object> row : tableData) {
-            for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
-                String key = entry.getKey();
-                Object value = row.get(key);
-                out.printf(String.format("%%-%ds | ", entry.getValue()), value);
+        for (Object[] rows : tableData) {
+            for (Object row : rows) {
+                out.printf(String.format("%%-%ds | ", 15), row);
                 out.flush();
             }
             out.println();
