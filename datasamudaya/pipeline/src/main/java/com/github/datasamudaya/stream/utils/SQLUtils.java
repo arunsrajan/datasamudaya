@@ -9,8 +9,10 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -484,7 +486,7 @@ public class SQLUtils {
 			getColumnsFromExpression(subExpression, columns);
 		}
 	}
-	
+	static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 	public static Object evaluateFunctionsWithType(Object value, Object powerval, String name) {
 		switch (name) {
 		case "abs":
@@ -614,6 +616,9 @@ public class SQLUtils {
 		case "normalizespaces":
 			
 			return StringUtils.normalizeSpace((String) value);
+		case "currentisodate":
+			
+			return dateFormat.format(new Date(System.currentTimeMillis()));
 		}
 		return name;
 	}
@@ -3252,7 +3257,7 @@ public class SQLUtils {
 	public static Object evaluateRexNode(RexNode node, Object[] values) {
 		if(node.isA(SqlKind.FUNCTION)) {
 			RexCall call = (RexCall) node;
-			RexNode expfunc = call.getOperands().get(0);
+			RexNode expfunc = call.getOperands().size()>0?call.getOperands().get(0):null;
 			String name = call.getOperator().getName().toLowerCase();
 			switch (name) {
 				case "abs":
@@ -3298,6 +3303,9 @@ public class SQLUtils {
 				case "normalizespaces":
 					
 	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "normalizespaces");
+				case "currentisodate":
+					
+					return evaluateFunctionsWithType(null, null, "currentisodate");
 				case "trimstr":
 					
 	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "trim");
