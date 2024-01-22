@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -182,7 +183,8 @@ public class StreamPipelineSqlBuilder implements Serializable {
 			log.error("Syntax error in SQL {}", errors);
 			throw new Exception("Syntax error in SQL");
 		}
-		SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db);
+		var isDistinct = new AtomicBoolean(false);
+		SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
 		Statement statement = parserManager.parse(new StringReader(sql));
 		return new StreamPipelineSql(execute(statement));
 	}

@@ -1343,7 +1343,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 			for (Object[] rec : recs) {
 				log.info(Arrays.toString(rec));
 				assertEquals(1, rec.length);
-				uc.add(rec[1]);
+				uc.add(rec[0]);
 			}
 		}
 		assertTrue(uc.contains("AQ"));
@@ -1364,7 +1364,28 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 			for (Object[] rec : recs) {
 				log.info(Arrays.toString(rec));
 				assertEquals(2, rec.length);
-				uc.add(rec[1]);
+				uc.add(rec[0]);
+			}
+		}
+		assertTrue(uc.contains("AQ"));
+		log.info("In testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere() method Exit");
+	}
+	
+	@Test
+	public void testDistinctUniqueCarrierYearAndMonthWithWhere() throws Exception {
+		log.info("In testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere() method Entry");
+		String statement = "SELECT distinct airlines.UniqueCarrier,airlines.AirlineYear,airlines.MonthOfYear from airlines where airlines.UniqueCarrier <> 'UniqueCarrier' order by airlines.AirlineYear,airlines.MonthOfYear,airlines.UniqueCarrier";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		var uc = new ArrayList<>();
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(3, rec.length);
+				uc.add(rec[0]);
 			}
 		}
 		assertTrue(uc.contains("AQ"));

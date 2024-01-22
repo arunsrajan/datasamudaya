@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -52,6 +53,7 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.fun.SqlFloorFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RuleSet;
@@ -2246,7 +2248,7 @@ public class SQLUtils {
 	public static RelNode validateSql(ConcurrentMap<String, List<String>> tablecolumnsmap,
 			ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap,
 			String sql,
-			String db) throws Exception {
+			String db,AtomicBoolean isDistinct) throws Exception {
 		Set<String> tablesfromconfig = tablecolumnsmap.keySet();
 		SimpleSchema.Builder builder = SimpleSchema.newBuilder(db);
 		for (String table : tablesfromconfig) {
@@ -2258,6 +2260,10 @@ public class SQLUtils {
 		Optimizer optimizer = Optimizer.create(schema);
 		SqlNode sqlTree = optimizer.parse(sql);
 		sqlTree = optimizer.validate(sqlTree);
+		if (sqlTree.getKind() == SqlKind.SELECT) {
+            SqlSelect selectNode = (SqlSelect) sqlTree;
+            isDistinct.set(selectNode.isDistinct());
+		}
 		RelNode relTree = optimizer.convert(sqlTree);
 		RuleSet rules = RuleSets.ofList(
 				CoreRules.FILTER_TO_CALC, 
@@ -3314,7 +3320,7 @@ public class SQLUtils {
 					RexLiteral pos = (RexLiteral) call.getOperands().get(1);
 					RexLiteral length = (RexLiteral) call.getOperands().get(2);
 					String val = (String) evaluateRexNode(expfunc, values);
-	                return val.substring((int) pos.getValue(), Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
+	                return val.substring((Integer)getValue(pos, SqlTypeName.INTEGER), Math.min(((String) val).length(), (Integer)getValue(pos, SqlTypeName.INTEGER) + (Integer) getValue(length, SqlTypeName.INTEGER)));
 				case "cast":
 					return evaluateRexNode(expfunc, values);
 				case "grpconcat":

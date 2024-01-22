@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -154,7 +155,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 		this.fileformat = fileformat;
 		return this;
 	}
-
+	AtomicBoolean isDistinct = new AtomicBoolean(false);
 	/**
 	 * The build method to create sql pipeline object.
 	 * 
@@ -174,7 +175,8 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 			log.error("Syntax error in SQL {}", errors);
 			throw new Exception("Syntax error in SQL");
 		}
-		RelNode relnode = SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db);
+		
+		RelNode relnode = SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
 		descendants.put(relnode, false);
 		log.info("Required Columns: {}", new RequiredColumnsExtractor(requiredcolumnindex, tablecolumnsmap).getRequiredColumns(relnode));
 		return new StreamPipelineSql(execute(relnode, 0));
@@ -320,6 +322,56 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 				return new Object[] {valuestoprocess.toArray(new Object[0]),valuestoconsider.toArray(new Object[0])};
 			}});
 		} else if(relNode instanceof EnumerableAggregate || relNode instanceof EnumerableSortedAggregate) {
+			if(isDistinct.get()) {
+				EnumerableAggregateBase grpby = (EnumerableAggregateBase) relNode;
+				int[] grpcolindexes = SQLUtils.getGroupByColumnIndexes(grpby);
+				return sp.get(0)
+						.map(new MapToPairFunction<Object[], Object[]>() {
+							private static final long serialVersionUID = 918430313352259174L;
+							final int[] grpcolindex =  grpcolindexes;
+							@Override
+							public Object[] apply(Object[] record) {
+								Object[] grpbyobj = {DataSamudayaConstants.EMPTY};
+								int index = 0;
+								if (nonNull(grpcolindex) && grpcolindex.length > 0) {
+									grpbyobj = new Object[grpcolindex.length];
+									for (; index < grpcolindex.length; index++) {
+										grpbyobj[index] = ((Object[]) record[0])[grpcolindex[index]];
+									}
+								}
+								return grpbyobj;
+							}
+
+						}).map(Arrays::asList).distinct()
+						.map(list -> list.toArray(new Object[0]))
+						.mapToPair(new MapToPairFunction<Object[], Tuple2<Object[], Double>>() {
+							private static final long serialVersionUID = -6412672309048067129L;
+
+							@Override
+							public Tuple2<Object[], Double> apply(Object[] record) {
+
+								return new Tuple2<Object[], Double>(record, 0.0d);
+							}
+
+						}).reduceByKey(new ReduceByKeyFunction<Double>() {
+							private static final long serialVersionUID = -2395505885613892042L;
+
+							@Override
+							public Double apply(Double t, Double u) {
+								return t + u;
+							}
+
+						}).coalesce(1, new CoalesceFunction<Double>() {
+							private static final long serialVersionUID = -2395505885613892042L;
+
+							@Override
+							public Double apply(Double t, Double u) {
+								return t + u;
+							}
+
+						}).map(tup2->tup2.v1()).map(Arrays::asList).distinct()
+						.map(list -> list.toArray(new Object[0]));
+			} 
 			EnumerableAggregateBase grpby = (EnumerableAggregateBase) relNode;
 			List<Pair<AggregateCall, String>> aggfunctions = grpby.getNamedAggCalls();
 			List<String> functionnames = new ArrayList<>();
