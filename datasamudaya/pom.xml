@@ -188,7 +188,7 @@
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryo</artifactId>
-			<version>5.4.0</version>
+			<version>5.6.0</version>
 		</dependency>
 		
 		<dependency>
@@ -268,8 +268,19 @@
 		<dependency>
 			<groupId>org.ow2.asm</groupId>
 			<artifactId>asm</artifactId>
-			<version>5.0.4</version>
+			<version>9.6</version>
 		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-tree</artifactId>
+			<version>9.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-analysis</artifactId>
+			<version>9.6</version>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.jooq</groupId>
 			<artifactId>jool</artifactId>
@@ -459,6 +470,11 @@
 		    <groupId>io.micrometer</groupId>
 		    <artifactId>micrometer-registry-prometheus</artifactId>
 		    <version>1.12.2</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.ea.agentloader</groupId>
+		    <artifactId>ea-agent-loader</artifactId>
+		    <version>1.0.3</version>
 		</dependency>
 	</dependencies>
 	<dependencyManagement>
@@ -875,6 +891,7 @@
 				<module>pipeline</module>
 				<module>examples</module>
 				<module>coverage</module>
+				<module>dsagent</module>
 			</modules>
 		</profile>
 		<profile>

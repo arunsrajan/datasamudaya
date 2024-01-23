@@ -156,6 +156,13 @@ import com.github.datasamudaya.common.functions.Coalesce;
 import com.sun.management.OperatingSystemMXBean;
 import com.univocity.parsers.csv.CsvWriter;
 
+import de.javakaffee.kryoserializers.guava.ImmutableListSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableMapSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableMultimapSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableSetSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableTableSerializer;
+import de.javakaffee.kryoserializers.guava.ReverseListSerializer;
+import de.javakaffee.kryoserializers.guava.UnmodifiableNavigableSetSerializer;
 import jdk.jshell.JShell;
 import net.sf.jsqlparser.parser.SimpleNode;
 import net.sf.jsqlparser.schema.Table;
@@ -307,6 +314,13 @@ public class Utils {
 		kryo.setReferences(true);
 		kryo.setRegistrationRequired(false);
 		kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
+		ImmutableListSerializer.registerSerializers( kryo );
+		ImmutableSetSerializer.registerSerializers( kryo );
+		ImmutableMapSerializer.registerSerializers( kryo );
+		ImmutableMultimapSerializer.registerSerializers( kryo );
+		ImmutableTableSerializer.registerSerializers( kryo );
+		ReverseListSerializer.registerSerializers( kryo );
+		UnmodifiableNavigableSetSerializer.registerSerializers( kryo );
 		kryo.register(Object.class);
 		kryo.register(Object[].class);
 		kryo.register(byte.class);
@@ -351,7 +365,7 @@ public class Utils {
 		});
 		kryo.register(Closure.class, new ClosureSerializer());
 		kryo.register(JShell.class, new CompatibleFieldSerializer<JShell>(kryo, JShell.class));
-		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));
+		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));		
 		return kryo;
 	}
 

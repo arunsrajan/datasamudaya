@@ -540,10 +540,10 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 			var fcs = es.getCollation().getFieldCollations();
 			pipelinefunction = pipelinefunction.sorted(new SortedComparator<Object[]>(){			
 				private static final long serialVersionUID = -6990320537324377720L;
-
+				List<RelFieldCollation> rfcs = new ArrayList<>(fcs);
 				public int compare(Object[] obj1, Object[] obj2) {
-				for (int i = 0;i < fcs.size();i++) {
-					RelFieldCollation fc = fcs.get(i);
+				for (int i = 0;i < rfcs.size();i++) {
+					RelFieldCollation fc = rfcs.get(i);
 					String sortOrder = fc.getDirection().name();
 					Object value1 = obj1[0].getClass() == Object[].class?((Object[])obj1[0])[fc.getFieldIndex()]:obj1[fc.getFieldIndex()];
 					Object value2 = obj2[0].getClass() == Object[].class?((Object[])obj2[0])[fc.getFieldIndex()]:obj2[fc.getFieldIndex()];
