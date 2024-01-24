@@ -386,6 +386,67 @@ public class PigUtils {
                     .toArray(); 
     } 
 	
+	
+	/**
+	 * This function evaluates to consider the expression 
+	 * @param expression
+	 * @param row
+	 * @param aliasorcolname
+	 * @return true or false
+	 * @throws Exception
+	 */
+	public static boolean toEvaluateBinaryExpression(LogicalExpression expression, Object[] row, List<String> aliasorcolname) throws Exception {
+		if(expression instanceof BinaryExpression bex) {
+			String operator = expression.getName();
+			LogicalExpression leftExpression = bex.getLhs();
+			LogicalExpression rightExpression = bex.getRhs();
+		    boolean leftValue=false;
+		    boolean rightValue=false;
+		    if(leftExpression instanceof UserFuncExpression fn) {
+		    	leftValue = toEvaluateBinaryExpression(leftExpression, row, aliasorcolname);
+		    }
+		    else if (leftExpression instanceof ConstantExpression lv) {
+		    	leftValue =  true;
+		    } else if (leftExpression instanceof ProjectExpression pex) {
+		        String columnName = pex.getFieldSchema().alias;
+				Object value = ((Object[])row[1])[aliasorcolname.indexOf(columnName)];
+				leftValue =  (boolean) value;
+		    } else if (leftExpression instanceof BinaryExpression) {
+		    	leftValue = toEvaluateBinaryExpression(leftExpression, row, aliasorcolname);
+		    }
+		    
+		    if(rightExpression instanceof UserFuncExpression fn) {
+		    	rightValue = toEvaluateBinaryExpression(rightExpression, row, aliasorcolname);
+		    }
+		    else if (rightExpression instanceof ConstantExpression lv) {
+		    	rightValue =  true;
+		    } else if (rightExpression instanceof ProjectExpression pex) {
+		        String columnName = pex.getFieldSchema().alias;
+				Object value = ((Object[])row[1])[aliasorcolname.indexOf(columnName)];
+				rightValue =  (boolean) value;
+		    } else if (rightExpression instanceof BinaryExpression) {
+		    	rightValue = toEvaluateBinaryExpression(rightExpression, row, aliasorcolname);
+		    }
+		    switch (operator) {
+		        case "Add":
+		        case "Subtract":
+		        case "Multiply":
+		        case "Divide":
+		        	return leftValue && rightValue;
+		        default:
+		            throw new IllegalArgumentException("Invalid operator: " + operator);
+		    }
+		} 
+		else if (expression instanceof ConstantExpression lv) {
+	    	return true;
+	    } else if (expression instanceof ProjectExpression pex) {
+	        String columnName = pex.getFieldSchema().alias;
+			return (boolean)((Object[])row[1])[aliasorcolname.indexOf(columnName)];
+	    }
+		return false;
+	}
+	
+	
 	/**
 	 * Flatten source map to formatted map
 	 * @param sp
@@ -416,24 +477,33 @@ public class PigUtils {
 		
 		List<FunctionParams> aggfunctions = getAggFunctions(functionparams);
 		List<FunctionParams> nonaggfunctions = getNonAggFunctions(functionparams);
-		final AtomicBoolean iscount = new AtomicBoolean(false), isaverage = new AtomicBoolean(false);
 		if(CollectionUtils.isEmpty(aggfunctions) && CollectionUtils.isEmpty(nonaggfunctions)) {
-			sp = sp.map(obj -> {
+			sp = sp.filter(obj->{
+				try {
+					List<String> aliascolumns = aliasorcolumns;
+					LogicalExpression[] headera = lexp;
+					boolean toevaluateexpression = true;
+					for (LogicalExpression exp : headera) {
+						toevaluateexpression = toevaluateexpression
+								&& toEvaluateBinaryExpression(exp, obj, aliascolumns);
+						if (!toevaluateexpression) {
+							break;
+						}
+					}
+					return toevaluateexpression;
+				} catch(Exception ex) {
+					return false;
+				}
+			}).map(obj -> {
 					Object[] formattedvalues = new Object[lexp.length];
 					Object[] formattedvaluestoconsider = new Object[lexp.length];
-					List<String> aliasesl = aliases;
+					List<String> aliascolumns = aliasorcolumns;
 				try {
 					LogicalExpression[] headera = lexp;
-					Iterator<String> aliasi = aliasesl.iterator();
 					int indexformatted = 0;
 					for (LogicalExpression exp : headera) {
-						String index = aliasi.next();
-						if((boolean)((Object[])obj[1])[aliasorcolumns.indexOf(index)]) {
-							formattedvalues[indexformatted]=evaluateBinaryExpression(exp, obj, null, aliasorcolumns);
-							formattedvaluestoconsider[indexformatted] = true;
-						} else {
-							formattedvaluestoconsider[indexformatted] = false;
-						}
+						formattedvalues[indexformatted]=evaluateBinaryExpression(exp, obj, null, aliascolumns);
+						formattedvaluestoconsider[indexformatted] = true;
 						indexformatted++;
 					}
 					Object[] finalobject = new Object[2];
@@ -461,8 +531,8 @@ public class PigUtils {
 					@Override
 					public Object[] apply(Object[] mapvalues) {
 						Object[] nonaggfnvalues = new Object[2];
-						Object[] grpbyfnvalues = new Object[grpby.length + nonagg.size()];
-						Object[] valuestoconsider = new Object[grpby.length + nonagg.size()];
+						Object[] grpbyfnvalues = new Object[(nonNull(grpby)?grpby.length:0) + nonagg.size()];
+						Object[] valuestoconsider = new Object[(nonNull(grpby)?grpby.length:0) + + nonagg.size()];
 						int index = 0;
 						if (nonNull(grpby) && grpby.length > 0) {
 							for (LogicalExpression grpobj : grpby) {
