@@ -150,7 +150,7 @@ public final class StreamPipelineTaskExecutorCalciteLocalSQL extends StreamPipel
 						headers = null;
 					}
 					byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString() + reqcols.toString());
-					final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted().toList(); 
+					final List<Integer> oco = originalcolsorder.stream().map(Integer::parseInt).toList(); 
 					if (CollectionUtils.isNotEmpty(originalcolsorder)) {
 						if (isNull(yosegibytes) || yosegibytes.length == 0 || nonNull(blockslocation.getToreprocess()) && blockslocation.getToreprocess().booleanValue()) {
 							log.info("Unable To Find vector for blocks {}", blockslocation);
