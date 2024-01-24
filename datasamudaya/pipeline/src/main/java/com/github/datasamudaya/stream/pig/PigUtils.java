@@ -46,6 +46,7 @@ import org.apache.pig.newplan.logical.relational.LOStore;
 import org.apache.pig.newplan.logical.relational.LogicalPlan;
 import org.apache.pig.newplan.logical.relational.LogicalRelationalOperator;
 import org.apache.pig.newplan.logical.relational.LogicalSchema;
+import org.apache.pig.newplan.logical.relational.LogicalSchema.LogicalFieldSchema;
 import org.apache.pig.parser.QueryParserDriver;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple1;
@@ -186,11 +187,11 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static StreamPipeline<?> executeLOLoad(String user, String jobid, String tejobid, LOLoad loload, PipelineConfig pipelineconfig) throws Exception {		
-		String[] airlinehead = getHeaderFromSchema(loload.getSchema());
+		String[] headers = getHeaderFromSchema(loload.getSchema());
 		List<SqlTypeName> schematypes = getTypesFromSchema(loload.getSchema());
 		return StreamPipeline.newCsvStreamHDFSSQL(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT), loload.getSchemaFile(),
-				pipelineconfig, airlinehead, schematypes, Arrays.asList(airlinehead));
+				pipelineconfig, headers, schematypes, Arrays.asList(headers));
 	}
 	
 	/**
@@ -308,9 +309,17 @@ public class PigUtils {
 	public static StreamPipeline<Object[]> executeLODistinct(StreamPipeline<Object[]> sp) throws Exception {
 		
 		return sp
-				.mapToPair(new MapToPairFunction<Object[], Tuple2<Object[], Double>>() {
+				.map(new MapToPairFunction<Object[], Object[]>() {
+					private static final long serialVersionUID = 918430313352259174L;
+					@Override
+					public Object[] apply(Object[] record) {						
+						return ((Object[])record[0]);
+					}
 
-					private static final long serialVersionUID = -3551573628068024090L;
+				}).map(Arrays::asList).distinct()
+				.map(list -> list.toArray(new Object[0]))
+				.mapToPair(new MapToPairFunction<Object[], Tuple2<Object[], Double>>() {
+					private static final long serialVersionUID = -6412672309048067129L;
 
 					@Override
 					public Tuple2<Object[], Double> apply(Object[] record) {
@@ -319,7 +328,7 @@ public class PigUtils {
 					}
 
 				}).reduceByKey(new ReduceByKeyFunction<Double>() {
-					private static final long serialVersionUID = 3097410316134663986L;
+					private static final long serialVersionUID = -2395505885613892042L;
 
 					@Override
 					public Double apply(Double t, Double u) {
@@ -327,14 +336,15 @@ public class PigUtils {
 					}
 
 				}).coalesce(1, new CoalesceFunction<Double>() {
-					private static final long serialVersionUID = -854840061382081717L;
+					private static final long serialVersionUID = -2395505885613892042L;
 
 					@Override
 					public Double apply(Double t, Double u) {
 						return t + u;
 					}
 
-				}).map(val -> val.v1).distinct();
+				}).map(tup2->tup2.v1()).map(Arrays::asList).distinct()
+				.map(list -> list.toArray(new Object[0]));
 	}
 	
 	/**
@@ -347,17 +357,35 @@ public class PigUtils {
 	 */
 	public static StreamPipeline<Object[]> executeLOJoin(StreamPipeline<Object[]> sp1,
 			StreamPipeline<Object[]> sp2,
-			List<String> columnsleft, List<String> columnsright,
-			LOJoin loJoin) throws Exception {
+			List<String> columnsleft, List<String> columnsright,			
+			LOJoin loJoin,
+			List<String> reqcolsleft, 
+			List<String> allcolsleft,
+			List<String> reqcolsright, 
+			List<String> allcolsright,
+			List<String> aliasleft, 
+			List<String> aliasright,
+			boolean hasdescendants) throws Exception {
 		
-		return sp1.join(sp2, new JoinPredicate<Object[], Object[]>() {
+		StreamPipeline<Object[]> sp = sp1.join(sp2, new JoinPredicate<Object[], Object[]>() {
 			private static final long serialVersionUID = -2218859526944624786L;
 			List<String> leftablecol = columnsleft;
 			List<String> righttablecol = columnsright;
-
+			List<String> reqcolleft = reqcolsleft;
+			List<String> allcolleft = allcolsleft;
+			List<String> reqcolright = reqcolsright;
+			List<String> allcolright = allcolsright;
+			List<String> alileft = aliasleft; 
+			List<String> aliright = aliasright; 
 			public boolean test(Object[] rowleft, Object[] rowright) {
 				for (int columnindex = 0;columnindex < leftablecol.size();columnindex++) {
-					return false;
+					String leftcol = leftablecol.get(columnindex);
+					String rightcol = righttablecol.get(columnindex);
+					Object leftvalue = ((Object[])rowleft[0])[alileft.indexOf(leftcol)];
+					Object rightvalue = ((Object[])rowright[0])[aliright.indexOf(rightcol)];
+					if(leftvalue==null && rightvalue == null||nonNull(leftvalue) && nonNull(rightvalue) && !leftvalue.equals(rightvalue)) {
+						return false;
+					}
 				}
 				return true;
 			}
@@ -366,10 +394,16 @@ public class PigUtils {
 
 			@Override
 			public Object[] apply(
-					Tuple2<Object[], Object[]> tuple2) {				
-				return concatenate(tuple2.v1,tuple2.v2);
+					Tuple2<Object[], Object[]> tup2) {				
+				return new Object[] {concatenate(((Object[])tup2.v1()[0]), ((Object[])tup2.v2()[0])), 
+						concatenate(((Object[])tup2.v1()[1]), ((Object[])tup2.v2()[1]))};
 			}
 		});
+		
+		if(!hasdescendants) {
+			return sp.map(obj->((Object[])obj[0]));
+		}
+		return sp;
 	}
 	
 	/**
@@ -1403,7 +1437,10 @@ public class PigUtils {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		StreamPipeline<?> sp = PigQueryExecutor.traversePlan(lp, false, alias, user, jobid, tejobid, pipelineconfig);
+		Set<String> requiredcolumns = new LinkedHashSet<>();
+		Set<String> allcolumns = new LinkedHashSet<>();
+		List<String> aliascols = new ArrayList<>();
+		StreamPipeline<?> sp = PigQueryExecutor.traversePlan(lp, false, alias, user, jobid, tejobid, pipelineconfig, requiredcolumns, allcolumns, aliascols, alias);
 		return sp.map(val->val).collect(true, null);
 	}
 	
@@ -1423,7 +1460,10 @@ public class PigUtils {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		PigQueryExecutor.traversePlan(lp, true, alias, user, jobid, tejobid, pipelineconfig);
+		Set<String> requiredcolumns = new LinkedHashSet<>();
+		Set<String> allcolumns = new LinkedHashSet<>();
+		List<String> aliascols = new ArrayList<>();
+		PigQueryExecutor.traversePlan(lp, true, alias, user, jobid, tejobid, pipelineconfig, requiredcolumns, allcolumns, aliascols, alias);
 	}
 	
 	/**
@@ -1686,6 +1726,19 @@ public class PigUtils {
 		default:
 			throw new UnsupportedOperationException("Unsupported operator: " + operator);
 		}
+		
 	}
-	
+	/**
+	 * Get Aliases of operator
+	 * @param operator
+	 * @param aliases
+	 * @throws Exception 
+	 */
+	public static void getAliaseForJoin(Operator operator, List<String> aliases) throws Exception {
+		if (operator instanceof LOForEach loForEach) {
+			for(LogicalFieldSchema lfs : loForEach.getSchema().getFields()){
+				aliases.add(lfs.alias);
+			}
+		}
+	}	
 }

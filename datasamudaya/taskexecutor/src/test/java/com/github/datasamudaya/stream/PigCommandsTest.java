@@ -113,14 +113,15 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.add("carriers = LOAD '/carriers' AS (Code: chararray,Description: chararray);");
 		pigQueriesToExecute.add("data3 = JOIN data2 BY UniqueCarrier, carriers BY Code;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data3", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
 		int totalrecords = 0;
-		for (List<Map<String, Object>> recordspart : results) {
+		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(53, map.size());
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(8, obj.length);
 			}
 		}
 	}
@@ -147,7 +148,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertEquals(3, obj.length);			
 			}
 		}
-		assertEquals(46361, totalrecords);
+		assertEquals(46360, totalrecords);
 	}
 	
 	@Test
@@ -476,17 +477,15 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.add("filtered_data = FILTER data2 BY MonthOfYear > 11 AND DayofMonth >= 6;");
 		pigQueriesToExecute.add("distinct_data = Distinct filtered_data;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "distinct_data",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
 		int totalrecords = 0;
-		for (List<Map<String, Object>> recordspart : results) {
+		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(3, map.size());
-				assertTrue(map.containsKey("UniqueCarrier"));
-				assertTrue(map.containsKey("DayofMonth"));
-				assertTrue(map.containsKey("MonthOfYear"));
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.asList(obj));
+				assertEquals(3, obj.length);
 			}
 		}
 		assertEquals(26, totalrecords);
@@ -829,7 +828,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 	}
 
 	@Test
-	public void testPigLoadExpressionsMultipleOpertors() throws Exception {
+	public void testPigLoadExpressionsMultipleOperators() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
 				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		pigQueriesToExecute.clear();
@@ -863,15 +862,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE UniqueCarrier, uppercase(UniqueCarrier) as ucuc;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("UniqueCarrier"));
-				assertTrue(map.containsKey("ucuc"));
-				assertEquals(((String) map.get("UniqueCarrier")).toUpperCase(), map.get("ucuc"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);				
+				assertEquals(((String) obj[0]).toUpperCase(), obj[1]);
 			}
 		}
 	}
@@ -887,15 +885,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE UniqueCarrier, lowercase(UniqueCarrier) as lcuc;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("UniqueCarrier"));
-				assertTrue(map.containsKey("lcuc"));
-				assertEquals(((String) map.get("UniqueCarrier")).toLowerCase(), map.get("lcuc"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);
+				assertEquals(((String) obj[0]).toLowerCase(), obj[1]);
 			}
 		}
 	}
@@ -911,16 +908,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				.add("data1 = FOREACH data GENERATE UniqueCarrier, base64encode(UniqueCarrier) as base64uc;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("UniqueCarrier"));
-				assertTrue(map.containsKey("base64uc"));
-				assertEquals(map.get("base64uc"),
-						Base64.getEncoder().encodeToString(((String) map.get("UniqueCarrier")).getBytes()));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);				
+				assertEquals(Base64.getEncoder().encodeToString(((String) obj[0]).getBytes()), obj[1]);
 			}
 		}
 	}
@@ -938,15 +933,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute
 				.add("data2 = FOREACH data1 GENERATE UniqueCarrier, base64decode(base64uc) as base64decode;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data2", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("UniqueCarrier"));
-				assertTrue(map.containsKey("base64decode"));
-				assertEquals(map.get("UniqueCarrier"), map.get("base64decode"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);
+				assertEquals(obj[0], obj[1]);
 			}
 		}
 	}
@@ -960,15 +954,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, pow(DayofMonth, 2) as powdom;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("DayofMonth"));
-				assertTrue(map.containsKey("powdom"));
-				assertEquals(Math.pow(((long) map.get("DayofMonth")), 2), map.get("powdom"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);
+				assertEquals(Math.pow(((long) obj[0]), 2), obj[1]);
 			}
 		}
 	}
@@ -984,15 +977,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, ceil(DayofMonth) as ceildom;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("DayofMonth"));
-				assertTrue(map.containsKey("ceildom"));
-				assertEquals(Math.ceil(((long) map.get("DayofMonth"))), map.get("ceildom"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);
+				assertEquals(Math.ceil(((long) obj[0])), obj[1]);
 			}
 		}
 	}
@@ -1007,15 +999,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, floor(DayofMonth) as floordom;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("DayofMonth"));
-				assertTrue(map.containsKey("floordom"));
-				assertEquals(Math.ceil(((int) map.get("DayofMonth"))), map.get("floordom"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);
+				assertEquals(Math.floor(((long) obj[0])), obj[1]);
 			}
 		}
 	}
@@ -1029,15 +1020,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, sqrt(DayofMonth) as sqrtdom;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("DayofMonth"));
-				assertTrue(map.containsKey("sqrtdom"));
-				assertEquals(Math.sqrt(((long) map.get("DayofMonth"))), map.get("sqrtdom"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);
+				assertEquals(Math.sqrt(((long) obj[0])), obj[1]);
 			}
 		}
 	}
@@ -1052,15 +1042,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, exp(DayofMonth) as expdom;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("DayofMonth"));
-				assertTrue(map.containsKey("expdom"));
-				assertEquals(Math.exp(((long) map.get("DayofMonth"))), map.get("expdom"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);
+				assertEquals(Math.exp(((long) obj[0])), obj[1]);
 			}
 		}
 	}
@@ -1075,15 +1064,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, loge(DayofMonth) as logdom;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("DayofMonth"));
-				assertTrue(map.containsKey("logdom"));
-				assertEquals(Math.log(((long) map.get("DayofMonth"))), map.get("logdom"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);
+				assertEquals(Math.log(((long) obj[0])), obj[1]);
 			}
 		}
 	}
@@ -1099,15 +1087,14 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, exp(DayofMonth) as expdom;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 
-		List<List<Map<String, Object>>> results = (List<List<Map<String, Object>>>) PigUtils.executeCollect(
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1", pipelineconfig.getUser(),
 				jobid, tejobid, pipelineconfig);
-		for (List<Map<String, Object>> recordspart : results) {
-			for (Map<String, Object> map : recordspart) {
-				assertEquals(2, map.size());
-				assertTrue(map.containsKey("DayofMonth"));
-				assertTrue(map.containsKey("expdom"));
-				assertEquals(Math.exp(((long) map.get("DayofMonth"))), map.get("expdom"));
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(2, obj.length);
+				assertEquals(Math.exp(((long) obj[0])), obj[1]);
 			}
 		}
 	}

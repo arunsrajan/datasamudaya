@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.impl.util.MultiMap;
 import org.apache.pig.newplan.Operator;
@@ -29,9 +30,13 @@ import org.apache.pig.newplan.logical.relational.LOStore;
 import org.apache.pig.newplan.logical.relational.LogicalPlan;
 import org.apache.pig.newplan.logical.relational.LogicalRelationalOperator;
 import org.apache.pig.newplan.logical.relational.LogicalSchema.LogicalFieldSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.minlog.Log;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
+import com.github.datasamudaya.common.functions.MapFunction;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.StreamPipeline;
 
@@ -43,6 +48,8 @@ import com.github.datasamudaya.stream.StreamPipeline;
  */
 public class PigQueryExecutor {
 
+	private static Logger log = LoggerFactory.getLogger(PigQueryExecutor.class);
+	
 	/**
 	 * Executes Pig Command
 	 * 
@@ -63,11 +70,14 @@ public class PigQueryExecutor {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
+		Set<String> requiredcolumns = new LinkedHashSet<>();
+		Set<String> allcolumns = new LinkedHashSet<>();
+		List<String> aliasjoin = new ArrayList<>();
 		if(isstore) {
-			traversePlan(logicalPlan, isstore, alias, user, jobid, tejobid, pipelineconfig);
+			traversePlan(logicalPlan, isstore, alias, user, jobid, tejobid, pipelineconfig, requiredcolumns, allcolumns, aliasjoin, alias);
 			return;
 		}
-		PigUtils.executeDump(traversePlan(logicalPlan, isstore, alias, user, jobid, tejobid, pipelineconfig), user, jobid, tejobid, pipelineconfig); ;
+		PigUtils.executeDump(traversePlan(logicalPlan, isstore, alias, user, jobid, tejobid, pipelineconfig, requiredcolumns, allcolumns, aliasjoin, alias), user, jobid, tejobid, pipelineconfig);
 	}
 
 	/**
@@ -82,7 +92,11 @@ public class PigQueryExecutor {
 	 * @throws Exception
 	 */
 	public static StreamPipeline<?> traversePlan(OperatorPlan plan, boolean isstore, String alias, String user, String jobid,
-			String tejobid, PipelineConfig pipelineconfig) throws Exception {
+			String tejobid, PipelineConfig pipelineconfig,
+			Set<String> requiredcolumns,
+			Set<String> allcolumns,
+			List<String> aliasjoin,
+			String termalias) throws Exception {
 		Operator operatortoexec = findLatestAssignment(plan, isstore, alias);
 		List<Operator> operatorstoexec = new ArrayList<>();
 		if(operatortoexec instanceof LOStore lostore) {
@@ -105,19 +119,19 @@ public class PigQueryExecutor {
 				}
 			}
 		} else {
-			traversePlan(operatortoexec.getPlan(), isstore, alias, user, jobid, tejobid, pipelineconfig);
+			traversePlan(operatortoexec.getPlan(), isstore, alias, user, jobid, tejobid, pipelineconfig, requiredcolumns, allcolumns, aliasjoin, termalias);
 		}
 
-		List<Operator> operatorstoobtainschemas = new ArrayList<>(operatorstoexec);
-		Set<String> requiredcolumns = new LinkedHashSet<>(); 
+		List<Operator> operatorstoobtainschemas = new ArrayList<>(operatorstoexec); 
 
 		final List<String> columns;
-		Set<String> allcolumns;
 		if(!(operatortoexec instanceof LOJoin)) {
 			Operator operatorloload = operatorstoobtainschemas.remove(0);
-			allcolumns = new LinkedHashSet<>(); 
 			extractRequiredColumns(Arrays.asList(operatorloload), allcolumns, null);
 			extractRequiredColumns(operatorstoobtainschemas, requiredcolumns, allcolumns);
+			if(CollectionUtils.isEmpty(operatorstoobtainschemas)) {
+				requiredcolumns.addAll(allcolumns);
+			}
 			columns = new ArrayList<>();
 			columns.addAll(allcolumns);			
 		} else {
@@ -125,7 +139,7 @@ public class PigQueryExecutor {
 			allcolumns = new LinkedHashSet<>();
 		}
 		requiredcolumns = requiredcolumns.stream().map(col->columns.indexOf(col)+DataSamudayaConstants.EMPTY).collect(Collectors.toCollection(LinkedHashSet::new));
-		return executeOperators(operatorstoexec, requiredcolumns, new ArrayList<>(), new ArrayList<>(allcolumns), (LogicalPlan) plan, user, jobid, tejobid, pipelineconfig);		
+		return executeOperators(operatorstoexec, requiredcolumns, new ArrayList<>(), new ArrayList<>(allcolumns), (LogicalPlan) plan, user, jobid, tejobid, pipelineconfig, aliasjoin, termalias);		
 	}
 	
 	
@@ -289,41 +303,75 @@ public class PigQueryExecutor {
 			List<String> outcols,
 			List<String> allcols,
 			LogicalPlan plan, String user,
-			String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
+			String jobid, 
+			String tejobid, 
+			PipelineConfig pipelineconfig,
+			List<String> alias,
+			String termalias) throws Exception {
 		StreamPipeline<?> sp = null;
 		for (int numoper=0;numoper<operatorstoexec.size();numoper++) {
-			Operator operator = operatorstoexec.get(numoper);
-			if (operator instanceof LOLoad loload) {
+			Operator operator = operatorstoexec.get(numoper);			
+			if (operator instanceof LOLoad loload) {				
 				sp = PigUtils.executeLOLoad(user, jobid, tejobid, loload, pipelineconfig);
 				CsvOptionsSQL csvoptsql = ((CsvOptionsSQL) sp.getCsvOptions());
 				csvoptsql.setRequiredcolumns(new ArrayList<>(requiredcolumns));
 				requiredcolumns.clear();
 				requiredcolumns.addAll(allcols);
+				if(numoper == operatorstoexec.size()-1) {
+					alias.addAll(allcols);
+				}
+				sp = sp.map(new MapFunction() {
+
+					@Override
+					public Object apply(Object t) {
+						return t;
+					}
+				});
 			} else if (operator instanceof LOFilter loFilter) {
-				sp = PigUtils.executeLOFilter((StreamPipeline<Object[]>) sp, loFilter, new ArrayList<>(requiredcolumns), outcols, numoper<operatorstoexec.size()-1);
+				String operalias = loFilter.getAlias();
+				sp = PigUtils.executeLOFilter((StreamPipeline<Object[]>) sp, loFilter, new ArrayList<>(requiredcolumns), outcols, !termalias.equals(operalias));
 				requiredcolumns.clear();
 				requiredcolumns.addAll(outcols);
 				outcols.clear();
+				if(numoper == operatorstoexec.size()-1) {
+					PigUtils.getAliaseForJoin(operator, alias);
+				}
 			} else if (operator instanceof LOStore lostore) {
 				PigUtils.executeLOStore(sp, lostore);
 			} else if (operator instanceof LOCogroup loCogroup) {
-				sp = PigUtils.executeLOCoGroup((StreamPipeline<Object[]>) sp, loCogroup, new ArrayList<>(requiredcolumns), outcols, numoper<operatorstoexec.size()-1);
+				String operalias = loCogroup.getAlias();
+				sp = PigUtils.executeLOCoGroup((StreamPipeline<Object[]>) sp, loCogroup, new ArrayList<>(requiredcolumns), outcols, !termalias.equals(operalias));
 				requiredcolumns.clear();
 				requiredcolumns.addAll(outcols);
 				outcols.clear();
+				if(numoper == operatorstoexec.size()-1) {
+					PigUtils.getAliaseForJoin(operator, alias);
+				}
 			} else if (operator instanceof LOForEach loForEach) {
-				sp = PigUtils.executeLOForEach((StreamPipeline<Object[]>) sp, loForEach, new ArrayList<>(requiredcolumns), outcols, numoper<operatorstoexec.size()-1);
+				String operalias = loForEach.getAlias();
+				sp = PigUtils.executeLOForEach((StreamPipeline<Object[]>) sp, loForEach, new ArrayList<>(requiredcolumns), outcols, !termalias.equals(operalias));
 				requiredcolumns.clear();
 				requiredcolumns.addAll(outcols);
 				outcols.clear();
+				if(numoper == operatorstoexec.size()-1) {
+					PigUtils.getAliaseForJoin(operator, alias);
+				}
 			} else if (operator instanceof LOSort loSort) {
-				sp = PigUtils.executeLOSort((StreamPipeline<Object[]>) sp, loSort, new ArrayList<>(requiredcolumns), outcols, numoper<operatorstoexec.size()-1);
+				String operalias = loSort.getAlias();
+				sp = PigUtils.executeLOSort((StreamPipeline<Object[]>) sp, loSort, new ArrayList<>(requiredcolumns), outcols, !termalias.equals(operalias));
 				requiredcolumns.clear();
 				requiredcolumns.addAll(outcols);
 				outcols.clear();
+				if(numoper == operatorstoexec.size()-1) {
+					PigUtils.getAliaseForJoin(operator, alias);
+				}
 			} else if (operator instanceof LODistinct loDistinct) {
 				sp = PigUtils.executeLODistinct((StreamPipeline<Object[]>) sp);
+				if(numoper == operatorstoexec.size()-1) {
+					PigUtils.getAliaseForJoin(operator, alias);
+				}
 			} else if (operator instanceof LOJoin loJoin) {
+				String operalias = loJoin.getAlias();
 				List<Operator> operators = loJoin.getInputs(plan);
 				List<String> expjoinalias = new ArrayList<>();
 				for (Operator input : operators) {
@@ -341,12 +389,19 @@ public class PigQueryExecutor {
 						columnstojoin.add(((ProjectExpression) lep.getOperators().next()).getColAlias());
 					}
 				}
+				Set<String> requiredcolumnsleft = new LinkedHashSet<>();
+				Set<String> allcolumnsleft = new LinkedHashSet<>();
+				Set<String> requiredcolumnsright = new LinkedHashSet<>();
+				Set<String> allcolumnsright = new LinkedHashSet<>();
+				List<String> aliasleft = new ArrayList<>();
+				List<String> aliasright = new ArrayList<>();
 				sp = PigUtils.executeLOJoin(
 						(StreamPipeline<Object[]>) traversePlan(operator.getPlan(), false, expjoinalias.get(0),
-								user, jobid, tejobid, pipelineconfig),
+								user, jobid, tejobid, pipelineconfig, requiredcolumnsleft, allcolumnsleft, aliasleft, termalias),
 						(StreamPipeline<Object[]>) traversePlan(operator.getPlan(), false, expjoinalias.get(1),
-								user, jobid, tejobid, pipelineconfig),
-						joincolumns.get(0), joincolumns.get(1), loJoin);
+								user, jobid, tejobid, pipelineconfig, requiredcolumnsright, allcolumnsright, aliasright, termalias),
+						joincolumns.get(0), joincolumns.get(1), loJoin, new ArrayList<>(requiredcolumnsleft), new ArrayList<>(allcolumnsleft), 
+						new ArrayList<>(requiredcolumnsright), new ArrayList<>(allcolumnsright), aliasleft, aliasright, !termalias.equals(operalias));
 			}
 		}
 		return sp;
