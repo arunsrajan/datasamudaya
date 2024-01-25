@@ -227,11 +227,12 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 							tablecolumnsmap.get(table).toArray(new String[0]),
 							tablecolumntypesmap.get(table), nonNull(requiredcolumnindex.get(table))?new ArrayList<>(requiredcolumnindex.get(table)):new ArrayList<>());
 		} else if(relNode instanceof EnumerableFilter ef) {
+			RexNode condit = ef.getCondition(); 
 			StreamPipeline<Object[]> spfilter = sp.get(0).filter(new PredicateSerializable<Object[]>() {			
 				private static final long serialVersionUID = -1944001612116967247L;
-
+				RexNode condition = condit;
 			public boolean test(Object[] values) {
-				return SQLUtils.evaluateExpression(ef.getCondition(), (Object[]) values[0]);
+				return SQLUtils.evaluateExpression(condition, (Object[]) values[0]);
 			}});
 			if (!SQLUtils.hasDescendants(relNode, descendants)) {
 				return spfilter.map(new MapFunction<Object[],Object[]>(){					

@@ -19,6 +19,7 @@ package com.github.datasamudaya.common.utils;
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 import static com.esotericsoftware.kryo.util.Util.className;
+import static java.util.Objects.nonNull;
 
 import java.io.Serializable;
 import java.lang.invoke.CallSite;
@@ -41,7 +42,12 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.minlog.Log;
 
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
 public class ClosureSerializer extends Serializer {
+	
+	private static Logger log = LoggerFactory.getLogger(ClosureSerializer.class);
 	
 	public static class Closure {
 	}
@@ -86,7 +92,7 @@ public class ClosureSerializer extends Serializer {
 		for (int i = 0; i < count; i++)
 			kryo.writeClassAndObject(output, serializedLambda.getCapturedArg(i));
 		try {
-			kryo.writeClass(output, getCapturingClass(serializedLambda));
+			kryo.writeClass(output, getCapturingClass(serializedLambda, kryo));
 		} catch (ClassNotFoundException ex) {
 			throw new KryoException("Error writing closure.", ex);
 		}
@@ -119,7 +125,7 @@ public class ClosureSerializer extends Serializer {
 	public Object copy (Kryo kryo, Object original) {
 		try {
 			SerializedLambda lambda = toSerializedLambda(original);
-			Class<?> capturingClass = getCapturingClass(lambda);
+			Class<?> capturingClass = getCapturingClass(lambda, kryo);
 			return readResolve(capturingClass, lambda);
 		} catch (Exception ex) {
 			throw new KryoException("Error copying closure.", ex);
@@ -128,8 +134,9 @@ public class ClosureSerializer extends Serializer {
 
 	private Object readResolve (Class<?> capturingClass, SerializedLambda lambda) throws Exception {
 		ClassLoader cl = capturingClass.getClassLoader();
-		Class<?> implClass = cl.loadClass(lambda.getImplClass().replace('/', '.'));
+		Class<?> implClass = cl.loadClass(lambda.getImplClass().replace('/', '.'));		
 		Class<?> interfaceType = cl.loadClass(lambda.getFunctionalInterfaceClass().replace('/', '.'));
+		log.info("Capturing Class {} Impl Class {} InterfaceType {}",capturingClass, implClass, interfaceType);
 		Lookup lookup = getLookup(implClass);
 		MethodType implType = MethodType.fromMethodDescriptorString(lambda.getImplMethodSignature(),
 		        cl);
@@ -201,15 +208,14 @@ public class ClosureSerializer extends Serializer {
 		}
 	}
 
-	private static Class<?> getCapturingClass (SerializedLambda serializedLambda) throws ClassNotFoundException {
-		if (capturingClass != null) {
-			try {
-				return (Class<?>)capturingClass.get(serializedLambda);
-			} catch (IllegalAccessException ignored) {
-				// ignore
-			}
+	private static Class<?> getCapturingClass (SerializedLambda serializedLambda, Kryo kryo) throws ClassNotFoundException {
+		if(nonNull(kryo.getClassLoader())) {
+			log.info("Initialized Class Based on ClassLoader {} for capturing class {}", kryo.getClassLoader(), serializedLambda.getCapturingClass());
+			return Class.forName(serializedLambda.getCapturingClass().replace('/', '.'), true, kryo.getClassLoader());
+		} else {
+			log.info("Initialized Class Without ClassLoader {} for capturing class {}", kryo.getClassLoader(), serializedLambda.getCapturingClass());
+			return Class.forName(serializedLambda.getCapturingClass().replace('/', '.'));
 		}
-		return Class.forName(serializedLambda.getCapturingClass().replace('/', '.'));
 	}
 	
 	 private Lookup getLookup(Class<?> owner)

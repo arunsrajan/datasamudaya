@@ -1726,10 +1726,8 @@ public class Utils {
 			return;
 		}
 		
-		if(jobtype == JOBTYPE.NORMAL) {
+		if(jobtype == JOBTYPE.NORMAL || jobtype == JOBTYPE.PIG) {
 			printTable(data, out);
-		} else if(jobtype == JOBTYPE.PIG) {
-			printTablePig(data, out);
 		}
 	}
 	

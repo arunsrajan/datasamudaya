@@ -309,7 +309,7 @@ public class PigUtils {
 	public static StreamPipeline<Object[]> executeLODistinct(StreamPipeline<Object[]> sp) throws Exception {
 		
 		return sp
-				.map(new MapToPairFunction<Object[], Object[]>() {
+				.map(new MapFunction<Object[], Object[]>() {
 					private static final long serialVersionUID = 918430313352259174L;
 					@Override
 					public Object[] apply(Object[] record) {						
@@ -317,7 +317,15 @@ public class PigUtils {
 					}
 
 				}).map(Arrays::asList).distinct()
-				.map(list -> list.toArray(new Object[0]))
+				.map(new MapFunction<List<Object>, Object[]>() {
+					private static final long serialVersionUID = 1L;
+
+					@Override
+					public Object[] apply(List<Object> list) {
+						return list.toArray(new Object[0]);
+					}
+					
+				})
 				.mapToPair(new MapToPairFunction<Object[], Tuple2<Object[], Double>>() {
 					private static final long serialVersionUID = -6412672309048067129L;
 
@@ -343,8 +351,24 @@ public class PigUtils {
 						return t + u;
 					}
 
-				}).map(tup2->tup2.v1()).map(Arrays::asList).distinct()
-				.map(list -> list.toArray(new Object[0]));
+				}).map(new MapFunction<Tuple2<Object[], Double>, Object[]>() {
+					private static final long serialVersionUID = -7888406734785506543L;
+
+					@Override
+					public Object[] apply(Tuple2<Object[], Double> tup2) {
+						return tup2.v1();
+					}
+					
+				}).map(Arrays::asList).distinct()
+				.map(new MapFunction<List<Object>, Object[]>() {
+					private static final long serialVersionUID = 1L;
+
+					@Override
+					public Object[] apply(List<Object> list) {
+						return list.toArray(new Object[0]);
+					}
+					
+				});
 	}
 	
 	/**
@@ -614,7 +638,7 @@ public class PigUtils {
 					List<FunctionParams> aggfunc = aggfunctions;
 					LogicalExpression[] grpby = headers;
 					List<List<String>> columnsevaluation = columnstoeval;
-
+					List<String> aliascolumns = aliasorcolumns;
 					@Override
 					public Tuple2<Tuple, Tuple> apply(Object[] mapvalues) {
 						List<Object> fnobj = new ArrayList<>();
@@ -625,7 +649,7 @@ public class PigUtils {
 							grpbyobj = new Object[grpby.length];
 							for (LogicalExpression grpobj : grpby) {
 								try {
-									grpbyobj[index] = evaluateBinaryExpression(grpobj, mapvalues, null, aliasorcolumns);
+									grpbyobj[index] = evaluateBinaryExpression(grpobj, mapvalues, null, aliascolumns);
 								} catch (Exception e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
 								}
@@ -641,11 +665,11 @@ public class PigUtils {
 								fnobj.add(1);
 							} else {
 								try {
-									fnobj.add(evaluateBinaryExpression(functionParam.getParams(), mapvalues, functionParam.getFunctionName(), aliasorcolumns));
+									fnobj.add(evaluateBinaryExpression(functionParam.getParams(), mapvalues, functionParam.getFunctionName(), aliascolumns));
 									long cval = 1;
 									if (functionParam.getFunctionName().startsWith("avg")) {
 										for (String column : columnsevaluation.get(index)) {
-											boolean valuetocount = (boolean) ((Object[])mapvalues[1])[aliasorcolumns.indexOf(column)];
+											boolean valuetocount = (boolean) ((Object[])mapvalues[1])[aliascolumns.indexOf(column)];
 											if (!valuetocount) {
 												cval = 0;
 												break;
@@ -686,20 +710,21 @@ public class PigUtils {
 					private static final long serialVersionUID = 9098846821052824347L;
 					List<FunctionParams> functionParam = aggfunctions;
 					List<String> grpby = new ArrayList<>(grpbyheader);
+					List<String> alias = aliases;
 					@Override
 					public Object[] apply(Tuple2<Tuple, Tuple> tuple2) {
 						Object[] valueobject = new Object[2];
-						valueobject[0] = new Object[aliases.size()];
-						valueobject[1] = new Object[aliases.size()];
-						for(int count=0;count<aliases.size();count++) {
+						valueobject[0] = new Object[alias.size()];
+						valueobject[1] = new Object[alias.size()];
+						for(int count=0;count<alias.size();count++) {
 							((Object[])valueobject[1])[count]=true;
 						}
 						try {
-							populateGroupByFunction((Object[]) valueobject[0], tuple2.v1, grpby, aliases);
+							populateGroupByFunction((Object[]) valueobject[0], tuple2.v1, grpby, alias);
 						} catch (Exception e) {
 							log.error(DataSamudayaConstants.EMPTY, e);
 						}
-						populateMapFromFunctions((Object[]) valueobject[0], tuple2.v2, functionParam, aliases);
+						populateMapFromFunctions((Object[]) valueobject[0], tuple2.v2, functionParam, alias);
 						return valueobject;
 					}
 				});
@@ -1418,7 +1443,13 @@ public class PigUtils {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		sp.map(data -> data).dumpPigResults(true, null);
+		sp.map(new MapFunction() {			
+			@Override
+			public Object apply(Object obj) {				
+				return obj;
+			}
+			
+		}).dumpPigResults(true, null);
 	}
 	
 	/**
@@ -1553,7 +1584,7 @@ public class PigUtils {
 	 * @param row
 	 * @return returns value from expression
 	 */
-	private static Object getValueString(LogicalExpression expression, Object[] row, List<String> coloralias) {
+	public static Object getValueString(LogicalExpression expression, Object[] row, List<String> coloralias) {
 		if (expression instanceof ConstantExpression constantexpression) {
 			return constantexpression.getValue();
 		}
