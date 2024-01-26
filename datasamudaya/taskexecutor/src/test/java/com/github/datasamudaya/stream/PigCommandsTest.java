@@ -492,6 +492,33 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 	}
 
 	@Test
+	public void testPigLoadForEachDistinct() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE UniqueCarrier, ArrDelay, DepDelay;");
+		
+		pigQueriesToExecute.add("distinct_data = DISTINCT data1;");
+		
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "distinct_data",
+				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
+		int totalrecords = 0;
+		for (List<Object[]> recordspart : results) {
+			totalrecords += recordspart.size();
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.asList(obj));
+				assertEquals(3, obj.length);
+			}
+		}
+		log.info(totalrecords);
+	}
+	
+	@Test
 	public void testPigLoadCount() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
 				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();

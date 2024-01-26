@@ -16,6 +16,7 @@
 package com.github.datasamudaya.stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -1326,6 +1327,30 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		}
 		assertTrue(uc.contains("AQ"));
 		log.info("In testFlightsDistinctUniqueCarrier() method Exit");
+	}
+	
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testFlightsDistinctUniqueCarrierArrDelayDepDelay() throws Exception {
+		log.info("In testFlightsDistinctUniqueCarrierArrDelayDepDelay() method Entry");
+		String statement = "SELECT distinct airlines.UniqueCarrier,airlines.ArrDelay,airlines.DepDelay from airlines";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		int sum = 0;
+		
+		for (List<Object[]> recs : records) {
+			sum += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+			}
+		}
+		log.info(sum);
+		assertNotEquals(0 , sum);
+		log.info("In testFlightsDistinctUniqueCarrierArrDelayDepDelay() method Exit");
 	}
 
 	@SuppressWarnings({ "unchecked" })

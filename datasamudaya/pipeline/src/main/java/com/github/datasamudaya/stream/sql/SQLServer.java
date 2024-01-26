@@ -253,11 +253,14 @@ public class SQLServer {
 											}
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 											int partitionno = 1;
+											long totalrecords = 0;
 											for (List result : results) {
 												out.println("Partition" + partitionno);
-												Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
+												totalrecords += Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
 												partitionno++;
 											}
+											out.printf("Total records processed %d", totalrecords);
+											out.println("");
 											out.println("Time taken " + timetaken + " seconds");
 											out.println("");
 										} else {

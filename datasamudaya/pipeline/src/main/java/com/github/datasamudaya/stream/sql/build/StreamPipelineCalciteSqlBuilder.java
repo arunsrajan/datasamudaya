@@ -30,6 +30,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Pair;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.pig.newplan.logical.expression.LogicalExpression;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
@@ -327,6 +328,27 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 				EnumerableAggregateBase grpby = (EnumerableAggregateBase) relNode;
 				int[] grpcolindexes = SQLUtils.getGroupByColumnIndexes(grpby);
 				return sp.get(0)
+						.filter(new PredicateSerializable<Object[]>() {
+							private static final long serialVersionUID = -695416686128972590L;
+							final int[] grpcolindex =  grpcolindexes;
+							public boolean test(Object[] obj) {
+							try {
+								int index = 0;
+								boolean toevaluateexpression = true;
+								if (nonNull(grpcolindex) && grpcolindex.length > 0) {
+									for (; index < grpcolindex.length; index++) {
+									toevaluateexpression = toevaluateexpression
+											&& (boolean)((Object[]) obj[1])[grpcolindex[index]];
+									if (!toevaluateexpression) {
+										break;
+									}
+								}
+								}
+								return toevaluateexpression;
+							} catch(Exception ex) {
+								return false;
+							}
+						}})
 						.map(new MapToPairFunction<Object[], Object[]>() {
 							private static final long serialVersionUID = 918430313352259174L;
 							final int[] grpcolindex =  grpcolindexes;
@@ -351,22 +373,13 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 								return Arrays.asList(obj);
 							}
 						}).distinct()
-						.map(new MapFunction<List<Object>, Object[]>() {
-							private static final long serialVersionUID = -5474103369238677315L;
-
-							@Override
-							public Object[] apply(List<Object> list) {
-								return list.toArray(new Object[0]);
-							}
-							
-						})
-						.mapToPair(new MapToPairFunction<Object[], Tuple2<Object[], Double>>() {
+						.mapToPair(new MapToPairFunction<List<Object>, Tuple2<List<Object>, Double>>() {
 							private static final long serialVersionUID = -6412672309048067129L;
 
 							@Override
-							public Tuple2<Object[], Double> apply(Object[] record) {
+							public Tuple2<List<Object>, Double> apply(List<Object> record) {
 
-								return new Tuple2<Object[], Double>(record, 0.0d);
+								return new Tuple2<List<Object>, Double>(record, 1.0d);
 							}
 
 						}).reduceByKey(new ReduceByKeyFunction<Double>() {
@@ -385,21 +398,14 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 								return t + u;
 							}
 
-						}).map(new MapFunction<Tuple2<Object[], Double>, Object[]>() {
+						}).map(new MapFunction<Tuple2<List<Object>, Double>, List<Object>>() {
 							private static final long serialVersionUID = -7888406734785506543L;
 
 							@Override
-							public Object[] apply(Tuple2<Object[], Double> tup2) {
+							public List<Object> apply(Tuple2<List<Object>, Double> tup2) {
 								return tup2.v1();
 							}
 							
-						}).map(new MapFunction<Object[],List<Object>>(){					
-							private static final long serialVersionUID = 4839257897910999653L;
-
-							@Override
-							public List<Object> apply(Object[] obj) {
-								return Arrays.asList(obj);
-							}
 						}).distinct()
 						.map(new MapFunction<List<Object>, Object[]>() {
 							private static final long serialVersionUID = 3768933876177835880L;

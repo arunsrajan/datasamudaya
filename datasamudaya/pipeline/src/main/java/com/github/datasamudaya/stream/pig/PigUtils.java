@@ -74,6 +74,7 @@ import com.github.datasamudaya.common.functions.CoalesceFunction;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.MapFunction;
 import com.github.datasamudaya.common.functions.MapToPairFunction;
+import com.github.datasamudaya.common.functions.PredicateSerializable;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.utils.SQLUtils;
@@ -302,40 +303,21 @@ public class PigUtils {
 	 * @return distinct values
 	 * @throws Exception
 	 */
-	public static StreamPipeline<Object[]> executeLODistinct(StreamPipeline<Object[]> sp, boolean hasdescendants) throws Exception {
+	public static StreamPipeline<Object[]> executeLODistinct(StreamPipeline<Object[]> spparent, boolean hasdescendants) throws Exception {
 		
-		sp = sp
-				.map(new MapFunction<Object[], Object[]>() {
-					private static final long serialVersionUID = 918430313352259174L;
-					@Override
-					public Object[] apply(Object[] record) {						
-						return ((Object[])record[0]);
-					}
-
-				}).map(new MapFunction<Object[],List<Object>>(){					
+		StreamPipeline<Object[]> spdistinct = spparent
+				.map(new MapFunction<Object[],List<Object>>(){					
 					private static final long serialVersionUID = 4839257897910999653L;
-
 					@Override
-					public List<Object> apply(Object[] obj) {
-						return Arrays.asList(obj);
+					public List<Object> apply(Object[] distobj) {
+						return Arrays.asList(((Object[])distobj[0]));
 					}
 				}).distinct()
-				.map(new MapFunction<List<Object>, Object[]>() {
-					private static final long serialVersionUID = 1L;
-
+				.mapToPair(new MapToPairFunction<List<Object>, Tuple2<List<Object>, Double>>() {
+					private static final long serialVersionUID = -6412672309048067129L;		
 					@Override
-					public Object[] apply(List<Object> list) {
-						return list.toArray(new Object[0]);
-					}
-					
-				})
-				.mapToPair(new MapToPairFunction<Object[], Tuple2<Object[], Double>>() {
-					private static final long serialVersionUID = -6412672309048067129L;
-
-					@Override
-					public Tuple2<Object[], Double> apply(Object[] record) {
-
-						return new Tuple2<Object[], Double>(record, 0.0d);
+					public Tuple2<List<Object>, Double> apply(List<Object> record) {
+						return new Tuple2<>(record, 1.0d);
 					}
 
 				}).reduceByKey(new ReduceByKeyFunction<Double>() {
@@ -347,31 +329,24 @@ public class PigUtils {
 					}
 
 				}).coalesce(1, new CoalesceFunction<Double>() {
-					private static final long serialVersionUID = -2395505885613892042L;
+					private static final long serialVersionUID = 8667714333390649847L;
 
 					@Override
 					public Double apply(Double t, Double u) {
 						return t + u;
 					}
 
-				}).map(new MapFunction<Tuple2<Object[], Double>, Object[]>() {
+				}).map(new MapFunction<Tuple2<List<Object>, Double>, List<Object>>() {
 					private static final long serialVersionUID = -7888406734785506543L;
 
 					@Override
-					public Object[] apply(Tuple2<Object[], Double> tup2) {
+					public List<Object> apply(Tuple2<List<Object>, Double> tup2) {
 						return tup2.v1();
 					}
 					
-				}).map(new MapFunction<Object[],List<Object>>(){					
-					private static final long serialVersionUID = 4839257897910999653L;
-
-					@Override
-					public List<Object> apply(Object[] obj) {
-						return Arrays.asList(obj);
-					}
 				}).distinct()
 				.map(new MapFunction<List<Object>, Object[]>() {
-					private static final long serialVersionUID = 1L;
+					private static final long serialVersionUID = 5319711801798549984L;
 
 					@Override
 					public Object[] apply(List<Object> list) {
@@ -386,9 +361,9 @@ public class PigUtils {
 					
 				});
 		if(!hasdescendants) {
-			return sp.map(obj->((Object[])obj[0]));
+			return spdistinct.map(obj->((Object[])obj[0]));
 		}
-		return sp;
+		return spdistinct;
 	}
 	
 	/**
@@ -556,7 +531,10 @@ public class PigUtils {
 		List<FunctionParams> aggfunctions = getAggFunctions(functionparams);
 		List<FunctionParams> nonaggfunctions = getNonAggFunctions(functionparams);
 		if(CollectionUtils.isEmpty(aggfunctions) && CollectionUtils.isEmpty(nonaggfunctions)) {
-			sp = sp.filter(obj->{
+			sp = sp.filter(new PredicateSerializable<Object[]>() {
+				private static final long serialVersionUID = 1042338514393215380L;
+
+				public boolean test(Object[] obj) {
 				try {
 					List<String> aliascolumns = aliasorcolumns;
 					LogicalExpression[] headera = lexp;
@@ -572,27 +550,27 @@ public class PigUtils {
 				} catch(Exception ex) {
 					return false;
 				}
-			}).map(new MapFunction<Object[], Object[]>() {				
+			}}).map(new MapFunction<Object[], Object[]>() {				
 				private static final long serialVersionUID = -2439404591638356925L;
 				LogicalExpression[] lexpression = lexp;
 				List<String> aliascolumns = aliasorcolumns;
 				@Override
 				public Object[] apply(Object[] obj) {
 					Object[] formattedvalues = new Object[lexpression.length];
-					Object[] formattedvaluestoconsider = new Object[lexpression.length];					
-				try {
-					LogicalExpression[] headera = lexpression;
-					int indexformatted = 0;
-					for (LogicalExpression exp : headera) {
-						formattedvalues[indexformatted]=evaluateBinaryExpression(exp, obj, null, aliascolumns);
-						formattedvaluestoconsider[indexformatted] = true;
-						indexformatted++;
-					}
-					Object[] finalobject = new Object[2];
-					finalobject[0] = formattedvalues;
-					finalobject[1] = formattedvaluestoconsider;
-					return finalobject;
-				} catch (Exception ex) {
+					Object[] formattedvaluestoconsider = new Object[lexpression.length];
+					try {
+						LogicalExpression[] headera = lexpression;
+						int indexformatted = 0;
+						for (LogicalExpression exp : headera) {
+							formattedvalues[indexformatted] = evaluateBinaryExpression(exp, obj, null, aliascolumns);
+							formattedvaluestoconsider[indexformatted] = true;
+							indexformatted++;
+						}
+						Object[] finalobject = new Object[2];
+						finalobject[0] = formattedvalues;
+						finalobject[1] = formattedvaluestoconsider;
+						return finalobject;
+					} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
 					return new Object[2];

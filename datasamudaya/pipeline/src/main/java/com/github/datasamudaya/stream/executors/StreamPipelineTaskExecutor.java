@@ -2654,7 +2654,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
           keyvaluepairs.addAll((List) Utils.getKryo().readClassAndObject(input));
         }
       }
-      log.debug("Coalesce Data Size:" + keyvaluepairs.size());
+      log.info("Coalesce Data Size:" + keyvaluepairs.size());
       // Parallel execution of reduce by key stream execution.
       List out = null;
       if (Objects.nonNull(coalescefunction.get(0))

@@ -1695,11 +1695,17 @@ public class StreamJobScheduler {
         	var tasks = vertices.stream().filter(spts -> Graphs.successorListOf(taskgraph, spts).isEmpty())
         	        .collect(Collectors.toCollection(LinkedHashSet::new));
         	PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput(), true);
-        	for (var task : tasks) {
-                // Get final stage results mesos or yarn
-                writeOutputToHDFS(hdfs, task, partition++, stageoutput);                
-          	  	Utils.printTableOrError((List) stageoutput.get(stageoutput.size()-1), out, JOBTYPE.PIG);
-              }
+        	long totalrecords = 0;
+			for (var task : tasks) {
+				// Get final stage results mesos or yarn
+				writeOutputToHDFS(hdfs, task, partition++, stageoutput);
+				totalrecords += Utils.printTableOrError((List) stageoutput.get(stageoutput.size() - 1), out,
+						JOBTYPE.PIG);
+			}
+			out.println();
+			out.printf("Total records processed %d", totalrecords);
+			out.println();
+			out.flush();
         } else if (job.getTrigger() != TRIGGER.SAVERESULTSTOFILE) {
           for (var spts : sptss) {
             // Get final stage results mesos or yarn
@@ -1731,10 +1737,15 @@ public class StreamJobScheduler {
             RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
             try (var input = new Input(pipelineconfig.getStorage() == STORAGE.INMEMORY || isjgroups ? new ByteArrayInputStream(rdf.getData()) : new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
               var result = Utils.getKryo().readClassAndObject(input);;              
-              if(job.getJobtype() == JOBTYPE.PIG) {
-            	  PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
-            	  Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
-              } else {
+				if (job.getJobtype() == JOBTYPE.PIG) {
+					long totalrecords = 0;
+					PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
+					totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
+					out.println();
+					out.printf("Total records processed %d", totalrecords);
+					out.println();
+					out.flush();
+				} else {
             	  writeOutputToFile(stageoutput.size(), result);
             	  stageoutput.add(result);
               }
@@ -1918,10 +1929,16 @@ public class StreamJobScheduler {
         if (!Objects.isNull(job.getUri())) {
           job.setTrigger(job.getTrigger().SAVERESULTSTOFILE);
           writeOutputToFile(partition, obj);
-        } if(job.getJobtype() == JOBTYPE.PIG) {
-      	  PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
-      	  Utils.printTableOrError((List) obj, out, JOBTYPE.PIG);
-        } else {
+		}
+		if (job.getJobtype() == JOBTYPE.PIG) {
+			PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
+			long totalrecords = 0;
+			totalrecords += Utils.printTableOrError((List) obj, out, JOBTYPE.PIG);
+			out.println();
+			out.printf("Total records processed %d", totalrecords);
+			out.println();
+			out.flush();
+		} else {
           stageoutput.add(obj);
         }
       } catch (Exception ex) {

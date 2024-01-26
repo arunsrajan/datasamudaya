@@ -323,7 +323,7 @@ public final class StreamPipelineTaskExecutorLocalSQL extends StreamPipelineTask
 										executor, Runtime.getRuntime().availableProcessors()));
 						out = cf.get();
 					}
-					log.info("Map assembly concluded");
+					log.info("Map assembly concluded with size {}", out.size());
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
 				output.flush();

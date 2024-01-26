@@ -234,6 +234,7 @@ public class DataSamudayaConstants {
   public static final String YARN_CLIENT = "yarnClient";
 
   public static final String PREDICATESERIALIZABLE = "PredicateSerializable";
+  public static final String DISTINCT = "Distinct";
   public static final String MAPFUNCTION = "MapFunction";
   public static final String REDUCEFUNCTION = "ReduceFunction";
   public static final String REDUCEBYKEYFUNCTION = "ReduceByKeyFunction";

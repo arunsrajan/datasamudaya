@@ -1682,17 +1682,17 @@ public class Utils {
 	 * @param data
 	 * @param out
 	 */
-	public static void printTableOrError(List data, PrintWriter out, JOBTYPE jobtype) {
+	public static long printTableOrError(List data, PrintWriter out, JOBTYPE jobtype) {
 		if (data.isEmpty()) {
 			out.println("No data available to display.");
-			return;
+			return 0;
 		}
 
 		if (data.get(0) instanceof String errors) {
 			for (Object error : data) {
 				out.println(error);
 			}
-			return;
+			return 0;
 		} else if (data.get(0) instanceof DataCruncherContext dcc) {
 			Map<String, Object> mapheadervalue = (Map<String, Object>) dcc.get("Reducer").iterator().next();
 			String[] headers = mapheadervalue.keySet().toArray(new String[0]);
@@ -1711,24 +1711,25 @@ public class Utils {
 				}
 				out.println();
 			}
-			return;
+			return dcc.get("Reducer").size();
 		} else if (data.get(0) instanceof Double value) {
 			out.println(value);
-			return;
+			return 1;
 		} else if (data.get(0) instanceof Integer intval) {
 			out.println(intval);
-			return;
+			return 1;
 		} else if (data.get(0) instanceof Float floatval) {
 			out.println(floatval);
-			return;
+			return 1;
 		} else if (data.get(0) instanceof Long lvalue) {
 			out.println(lvalue);
-			return;
+			return 1;
 		}
 		
 		if(jobtype == JOBTYPE.NORMAL || jobtype == JOBTYPE.PIG) {
-			printTable(data, out);
+			return printTable(data, out);
 		}
+		return 0;
 	}
 	
 	/**
@@ -1813,11 +1814,11 @@ public class Utils {
 	 * @param tableData
 	 * @param out
 	 */
-	private static void printTable(List<Object[]> tableData, PrintWriter out) {
+	private static long printTable(List<Object[]> tableData, PrintWriter out) {
         if (tableData.isEmpty()) {
             out.println("Table is empty.");
             out.flush();
-            return;
+            return 0;
         }
 
         // Print table rows
@@ -1829,6 +1830,7 @@ public class Utils {
             out.println();
             out.flush();
         }
+        return tableData.size();
     }
 	
 	/**
