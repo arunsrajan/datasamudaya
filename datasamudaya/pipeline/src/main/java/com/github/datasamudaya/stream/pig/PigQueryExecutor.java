@@ -320,13 +320,6 @@ public class PigQueryExecutor {
 				if(numoper == operatorstoexec.size()-1) {
 					alias.addAll(allcols);
 				}
-				sp = sp.map(new MapFunction() {
-
-					@Override
-					public Object apply(Object t) {
-						return t;
-					}
-				});
 			} else if (operator instanceof LOFilter loFilter) {
 				String operalias = loFilter.getAlias();
 				sp = PigUtils.executeLOFilter((StreamPipeline<Object[]>) sp, loFilter, new ArrayList<>(requiredcolumns), outcols, !termalias.equals(operalias));
@@ -366,7 +359,8 @@ public class PigQueryExecutor {
 					PigUtils.getAliaseForJoin(operator, alias);
 				}
 			} else if (operator instanceof LODistinct loDistinct) {
-				sp = PigUtils.executeLODistinct((StreamPipeline<Object[]>) sp);
+				String operalias = loDistinct.getAlias();
+				sp = PigUtils.executeLODistinct((StreamPipeline<Object[]>) sp, !termalias.equals(operalias));
 				if(numoper == operatorstoexec.size()-1) {
 					PigUtils.getAliaseForJoin(operator, alias);
 				}

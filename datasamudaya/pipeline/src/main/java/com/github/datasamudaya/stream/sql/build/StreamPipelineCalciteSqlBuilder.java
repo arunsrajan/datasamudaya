@@ -1,10 +1,8 @@
 package com.github.datasamudaya.stream.sql.build;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,6 +11,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import org.apache.calcite.adapter.enumerable.EnumerableAggregate;
@@ -324,6 +323,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 			}});
 		} else if(relNode instanceof EnumerableAggregate || relNode instanceof EnumerableSortedAggregate) {
 			if(isDistinct.get()) {
+				boolean hasdecendants = SQLUtils.hasDescendants(relNode, descendants);
 				EnumerableAggregateBase grpby = (EnumerableAggregateBase) relNode;
 				int[] grpcolindexes = SQLUtils.getGroupByColumnIndexes(grpby);
 				return sp.get(0)
@@ -343,8 +343,23 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 								return grpbyobj;
 							}
 
-						}).map(Arrays::asList).distinct()
-						.map(list -> list.toArray(new Object[0]))
+						}).map(new MapFunction<Object[],List<Object>>(){					
+							private static final long serialVersionUID = 4839257897910999653L;
+
+							@Override
+							public List<Object> apply(Object[] obj) {
+								return Arrays.asList(obj);
+							}
+						}).distinct()
+						.map(new MapFunction<List<Object>, Object[]>() {
+							private static final long serialVersionUID = -5474103369238677315L;
+
+							@Override
+							public Object[] apply(List<Object> list) {
+								return list.toArray(new Object[0]);
+							}
+							
+						})
 						.mapToPair(new MapToPairFunction<Object[], Tuple2<Object[], Double>>() {
 							private static final long serialVersionUID = -6412672309048067129L;
 
@@ -370,8 +385,40 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 								return t + u;
 							}
 
-						}).map(tup2->tup2.v1()).map(Arrays::asList).distinct()
-						.map(list -> list.toArray(new Object[0]));
+						}).map(new MapFunction<Tuple2<Object[], Double>, Object[]>() {
+							private static final long serialVersionUID = -7888406734785506543L;
+
+							@Override
+							public Object[] apply(Tuple2<Object[], Double> tup2) {
+								return tup2.v1();
+							}
+							
+						}).map(new MapFunction<Object[],List<Object>>(){					
+							private static final long serialVersionUID = 4839257897910999653L;
+
+							@Override
+							public List<Object> apply(Object[] obj) {
+								return Arrays.asList(obj);
+							}
+						}).distinct()
+						.map(new MapFunction<List<Object>, Object[]>() {
+							private static final long serialVersionUID = 3768933876177835880L;
+							boolean descendants = hasdecendants;
+							@Override
+							public Object[] apply(List<Object> list) {
+								if(!descendants) {
+									return list.toArray(new Object[0]);
+								}
+								Object[] objdistinct = new Object[2];
+								objdistinct[0] = list.toArray(new Object[0]);
+								objdistinct[1] = new Object[list.size()];
+								for(int index=0;index<list.size(); index++) {
+									((Object[])objdistinct[1])[index] = true;
+								}
+								return objdistinct;
+							}
+							
+						});
 			} 
 			EnumerableAggregateBase grpby = (EnumerableAggregateBase) relNode;
 			List<Pair<AggregateCall, String>> aggfunctions = grpby.getNamedAggCalls();
