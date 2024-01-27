@@ -533,11 +533,10 @@ public class PigUtils {
 		if(CollectionUtils.isEmpty(aggfunctions) && CollectionUtils.isEmpty(nonaggfunctions)) {
 			sp = sp.filter(new PredicateSerializable<Object[]>() {
 				private static final long serialVersionUID = 1042338514393215380L;
-
+				List<String> aliascolumns = aliasorcolumns;
+				LogicalExpression[] headera = lexp;
 				public boolean test(Object[] obj) {
-				try {
-					List<String> aliascolumns = aliasorcolumns;
-					LogicalExpression[] headera = lexp;
+				try {					
 					boolean toevaluateexpression = true;
 					for (LogicalExpression exp : headera) {
 						toevaluateexpression = toevaluateexpression
