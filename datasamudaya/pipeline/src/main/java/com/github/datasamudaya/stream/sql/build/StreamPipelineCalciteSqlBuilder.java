@@ -289,11 +289,13 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 			return sp.get(0).map(new MapFunction<Object[],Object[]>() {
 				private static final long serialVersionUID = -1502525188707133614L;
 				List<RexNode> columns = columnsp;
+				List<SqlTypeName> togeneratezero = togeneratezerobytype;
+				boolean nodehasdescendants = hasdecendants;
 				public Object[] apply(Object[] values) {				
 		        // Extract the expressions from the Project
 				List<Object> valuestoprocess = new ArrayList<>();
 				List<Boolean> valuestoconsider = null;
-				if(hasdecendants) {
+				if(nodehasdescendants) {
 					valuestoconsider = new ArrayList<>();
 				}
 				if (values[0] instanceof Object[] && values.length == 2 && values[1] instanceof Object[]) {
@@ -301,12 +303,12 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 						RexNode cols = columns.get(valueindex);
 						if (SQLUtils.toEvaluateRexNode(cols, (Object[]) values[1])) {
 							valuestoprocess.add(SQLUtils.evaluateRexNode(cols, (Object[]) values[0]));
-							if (hasdecendants) {
+							if (nodehasdescendants) {
 								valuestoconsider.add(true);
 							}
 						} else {
-							valuestoprocess.add(SQLUtils.generateZeroLiteral(togeneratezerobytype.get(valueindex)));
-							if (hasdecendants) {
+							valuestoprocess.add(SQLUtils.generateZeroLiteral(togeneratezero.get(valueindex)));
+							if (nodehasdescendants) {
 								valuestoconsider.add(false);
 							}
 						}
@@ -317,11 +319,11 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 						valuestoprocess.add(SQLUtils.evaluateRexNode(cols, values));
 					}
 				}
-				if(!hasdecendants) {
+				if(!nodehasdescendants) {
 					return valuestoprocess.toArray(new Object[0]);
 				}
 				return new Object[] {valuestoprocess.toArray(new Object[0]),valuestoconsider.toArray(new Object[0])};
-			}});
+			}});			
 		} else if(relNode instanceof EnumerableAggregate || relNode instanceof EnumerableSortedAggregate) {
 			if(isDistinct.get()) {
 				boolean hasdecendants = SQLUtils.hasDescendants(relNode, descendants);
@@ -461,7 +463,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 							String functionname = functions.get(index);
 							if (functionname.equalsIgnoreCase("count")) {
 								fnobj.add(1l);
-							} else {
+							} else {								
 								fnobj.add(((Object[])values[0])[colindex.get(index)]);
 								long cval = 0l;
 								if ((boolean)((Object[])values[1])[colindex.get(index)]) {

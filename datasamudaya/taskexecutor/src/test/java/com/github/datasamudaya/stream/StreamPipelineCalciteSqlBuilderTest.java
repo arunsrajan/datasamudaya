@@ -1433,6 +1433,23 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 		log.info("In testAllColumnsAvg() method Exit");
 	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testAllColumnsAvgArrDelayPlusArrDelay() throws Exception {
+		log.info("In testAllColumnsAvgArrDelayPlusArrDelay() method Entry");
+
+		String statement = "SELECT avg(airline.ArrDelay + airline.DepDelay) FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+
+		assertEquals(Double.valueOf("-0.9489740409513241"), records.get(0).get(0)[0]);
+
+		log.info("In testAllColumnsAvgArrDelayPlusArrDelay() method Exit");
+	}
 
 	@SuppressWarnings({ "unchecked" })
 	@Test
