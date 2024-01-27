@@ -210,10 +210,8 @@ public class ClosureSerializer extends Serializer {
 
 	private static Class<?> getCapturingClass (SerializedLambda serializedLambda, Kryo kryo) throws ClassNotFoundException {
 		if(nonNull(kryo.getClassLoader())) {
-			log.info("Initialized Class Based on ClassLoader {} for capturing class {}", kryo.getClassLoader(), serializedLambda.getCapturingClass());
 			return Class.forName(serializedLambda.getCapturingClass().replace('/', '.'), true, kryo.getClassLoader());
 		} else {
-			log.info("Initialized Class Without ClassLoader {} for capturing class {}", kryo.getClassLoader(), serializedLambda.getCapturingClass());
 			return Class.forName(serializedLambda.getCapturingClass().replace('/', '.'));
 		}
 	}
