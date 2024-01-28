@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -79,10 +78,11 @@ import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipelineTaskExecutorInMemoryDisk {
 	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorInMemoryDiskSQL.class);
 	public double timetaken = 0.0;
-
+	private boolean topersist = false;
 	public StreamPipelineTaskExecutorInMemoryDiskSQL(JobStage jobstage,
-			ConcurrentMap<String, OutputStream> resultstream, Cache cache) throws Exception {
+			ConcurrentMap<String, OutputStream> resultstream, Cache cache, boolean topersist) throws Exception {
 		super(jobstage, resultstream, cache);
+		this.topersist = topersist;
 	}
 
 	/**
@@ -153,9 +153,11 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 								IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);   
 								ResultIterator<String[], ParsingContext> iterator = iter.iterator();
 						        Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.SIZED | Spliterator.SUBSIZED);
-						        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);								
-								baos = new ByteArrayOutputStream();								
-								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+						        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);
+						        if(topersist) {
+						        	baos = new ByteArrayOutputStream();
+						        }
+								YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos, new Configuration()):null;
 								intermediatestreamobject = stringstream.map(values -> {
 									Map data = Maps.newLinkedHashMap();
 									Object[] valuesobject = new Object[headers.length];
@@ -168,7 +170,9 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 											SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects , headers[oco.get(valuesindex)], data, oco.get(valuesindex));
 											valuesindex++;
 										}
-										writerdataload.addRow(data);
+										if(topersist) {
+											writerdataload.addRow(data);
+										}
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
@@ -178,8 +182,10 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 									return valueswithconsideration;
 								});
 							} else {
-								baos = new ByteArrayOutputStream();
-								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+								if(topersist) {
+									baos = new ByteArrayOutputStream();
+								}
+								YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos, new Configuration()):null;
 								intermediatestreamobject = buffer.lines();
 								intermediatestreamobject = intermediatestreamobject.map(line -> {
 									try {
@@ -201,7 +207,9 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 														headers[index]);
 												SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects, headers[index], data, index);
 											});
-											writerdataload.addRow(data);
+											if(topersist) {
+												writerdataload.addRow(data);
+											}
 										} catch (Exception ex) {
 											log.error(DataSamudayaConstants.EMPTY, ex);
 										}

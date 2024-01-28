@@ -599,4 +599,8 @@ public class DataSamudayaConstants {
   public static final String METRICS_EXPORTER_PORT = "metrics.exporter.port";
   public static final String METRICS_EXPORTER_PORT_DEFAULT = "9010";
   
+  
+  public static final String TOPERSISTYOSEGICOLUMNAR = "columnar.persist";
+  public static final String TOPERSISTYOSEGICOLUMNAR_DEFAULT = "false";
+  
 }

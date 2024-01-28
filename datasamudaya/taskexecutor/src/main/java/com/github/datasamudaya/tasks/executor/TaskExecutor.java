@@ -79,6 +79,7 @@ public class TaskExecutor implements Callable<Object> {
   Task tasktoreturn;
   ZookeeperOperations zo;
   ConcurrentMap<BlocksLocation, String> blorcmap;
+  boolean topersist = false;
   @SuppressWarnings({"rawtypes"})
   public TaskExecutor(ClassLoader cl, int port, ExecutorService es, Configuration configuration,
       Map<String, Object> apptaskexecutormap, Map<String, Object> jobstageexecutormap,
@@ -101,6 +102,7 @@ public class TaskExecutor implements Callable<Object> {
     this.jobidstageidjobstagemap = jobidstageidjobstagemap;
     this.zo = zo;
     this.blorcmap = blorcmap;
+    this.topersist = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR, DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT));
   }
 
   ClassLoader cl;
@@ -155,7 +157,8 @@ public class TaskExecutor implements Callable<Object> {
                       resultstream, inmemorycache)
                   : task.storage == STORAGE.COLUMNARSQL
                           ? new StreamPipelineTaskExecutorInMemoryDiskSQL(jobidstageidjobstagemap.get(key),
-                                  resultstream, inmemorycache):new StreamPipelineTaskExecutor(jobidstageidjobstagemap.get(key), inmemorycache);
+                                  resultstream, inmemorycache, topersist)
+                        		  :new StreamPipelineTaskExecutor(jobidstageidjobstagemap.get(key), inmemorycache);
           spte.setTask(task);
           spte.setExecutor(es);
           jobstageexecutormap.remove(key + task.taskid);
@@ -197,7 +200,7 @@ public class TaskExecutor implements Callable<Object> {
 			StreamPipelineTaskExecutor sptej = null;
 			if (stagesgraph.getStorage() == STORAGE.COLUMNARSQL) {
 				sptej = new StreamPipelineTaskExecutorJGroupsSQL(jobidstageidjobstagemap, stagesgraph.getTasks(), port,
-						inmemorycache, blorcmap);
+						inmemorycache, blorcmap, topersist);
 				log.info("In JGroups Storage Columnar Object {}", sptej);
 			} else if (stagesgraph.getStorage() == STORAGE.DISK){
 				sptej = new StreamPipelineTaskExecutorJGroups(jobidstageidjobstagemap, stagesgraph.getTasks(), port,

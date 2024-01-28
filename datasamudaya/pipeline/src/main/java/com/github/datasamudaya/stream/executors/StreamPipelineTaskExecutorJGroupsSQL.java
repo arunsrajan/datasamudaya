@@ -26,11 +26,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,13 +116,16 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 	public JChannel channel;
 	private int port;
 	ConcurrentMap<BlocksLocation, String> blorcmap;
+	boolean topersist;
 	public StreamPipelineTaskExecutorJGroupsSQL(Map<String, JobStage> jsidjsmap, List<Task> tasks, int port, Cache cache,
-			ConcurrentMap<BlocksLocation, String> blorcmap) {
+			ConcurrentMap<BlocksLocation, String> blorcmap,
+			boolean topersist) {
 		super(jsidjsmap.get(tasks.get(0).jobid + tasks.get(0).stageid), cache);
 		this.jsidjsmap = jsidjsmap;
 		this.tasks = tasks;
 		this.port = port;
-		this.blorcmap = blorcmap; 
+		this.blorcmap = blorcmap;
+		this.topersist = topersist;
 	}
 	ExecutorService es;
 	
@@ -225,9 +228,11 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 												IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);   
 												ResultIterator<String[], ParsingContext> iterator = iter.iterator();
 										        Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.SIZED | Spliterator.SUBSIZED);
-										        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);								
-												baos = new ByteArrayOutputStream();								
-												YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos);
+										        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);
+										        if(topersist) {
+										        	baos = new ByteArrayOutputStream();
+										        }
+												YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos):null;
 												intermediatestreamobject = stringstream.map(values -> {
 													Map data = Maps.newLinkedHashMap();
 													Object[] valuesobject = new Object[headers.length];
@@ -240,7 +245,9 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 															SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects , headers[oco.get(valuesindex)], data, oco.get(valuesindex));
 															valuesindex++;
 														}
-														writerdataload.addRow(data);
+														if(topersist) {
+															writerdataload.addRow(data);
+														}
 													} catch (Exception ex) {
 														log.error(DataSamudayaConstants.EMPTY, ex);
 													}
@@ -250,8 +257,10 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 													return valueswithconsideration;
 												});
 											} else {
-												baos = new ByteArrayOutputStream();
-												YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos);
+												if(topersist) {
+													baos = new ByteArrayOutputStream();
+												}
+												YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos):null;
 												intermediatestreamobject = buffer.lines();
 												intermediatestreamobject = intermediatestreamobject.map(line -> {
 													try {
@@ -273,7 +282,9 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 																		headers[index]);
 																SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects, headers[index], data, index);
 															});
-															writerdataload.addRow(data);
+															if(topersist) {
+																writerdataload.addRow(data);
+															}
 														} catch (Exception ex) {
 															log.error(DataSamudayaConstants.EMPTY, ex);
 														}
@@ -294,7 +305,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									} else {
 										istreamnocols = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 										buffernocols = new BufferedReader(new InputStreamReader(istreamnocols));
-										intermediatestreamobject = buffernocols.lines().map(line -> new Object[1]);
+										intermediatestreamobject = buffernocols.lines().map(line ->new Object[1]);
 									}
 								} finally {
 								}
@@ -305,7 +316,6 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 								log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 								throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 							}
-
 
 							intermediatestreamobject.onClose(() -> {
 								log.debug("Stream closed");
@@ -346,14 +356,11 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 
 								} else if (finaltask instanceof StandardDeviation) {
 									out = new Vector<>();
-									CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap)
-											.boxed()
-											.collect(ParallelCollectors.parallel(value -> value,
-													Collectors.toCollection(Vector::new), executor,
-													Runtime.getRuntime().availableProcessors()));
+									CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
+											.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+													executor, Runtime.getRuntime().availableProcessors()));
 									var streamtmp = cf.get();
-									var mean = streamtmp.stream().mapToInt(Integer.class::cast).average()
-											.getAsDouble();
+									var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
 									var variance = streamtmp.stream().mapToInt(Integer.class::cast)
 											.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
 									var standardDeviation = Math.sqrt(variance);
@@ -390,7 +397,9 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 								output.flush();
 								task.setNumbytesgenerated(fsdos.toByteArray().length);
 								cacheAble(fsdos);
-								log.debug("Exiting StreamPipelineTaskExecutorJGroupsSQL.processBlockHDFSMap");
+								var wr = new WeakReference<List>(out);
+								out = null;
+								log.debug("Exiting StreamPipelineTaskExecutorInMemoryDiskSQL.processBlockHDFSMap");
 								var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 								log.debug("Time taken to compute the Map Task is " + timetaken + " seconds");
 								log.debug("GC Status Map task:" + Utils.getGCStats());

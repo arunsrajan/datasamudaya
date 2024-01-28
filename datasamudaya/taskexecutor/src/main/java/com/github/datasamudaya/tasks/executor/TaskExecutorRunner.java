@@ -21,8 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
@@ -79,7 +79,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
   Map<String, Map<String, Object>> jobidstageidexecutormap = new ConcurrentHashMap<>();
   Map<String, JobStage> jobidstageidjobstagemap = new ConcurrentHashMap<>();
   Queue<Object> taskqueue = new LinkedBlockingQueue<Object>();
-  static ExecutorService es;
+  static ExecutorService estask;
+  static ExecutorService escompute;
   static CountDownLatch shutdown = new CountDownLatch(1);
   static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
 
@@ -118,7 +119,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 				            + DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			int numberofprocessors = Runtime.getRuntime().availableProcessors();
-			es = Executors.newWorkStealingPool(numberofprocessors * 2);
+			estask = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS, new LinkedBlockingQueue());
+			escompute = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS, new LinkedBlockingQueue());
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid);
 			ter.start(zo, jobid);
@@ -221,10 +223,10 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
         	  return js.schedule(job);
           } else if (!Objects.isNull(deserobj)) {
         	  log.info("Deserialized object:{} ", deserobj);
-            TaskExecutor taskexecutor = new TaskExecutor(cl, port, es, configuration,
+            TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,
                 apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
                 jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap);
-            return taskexecutor.call();
+            return estask.submit(taskexecutor).get(); 
           }
         } catch (Throwable ex) {
           log.error(DataSamudayaConstants.EMPTY, ex);
@@ -248,10 +250,14 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
    */
   @Override
   public void destroy() throws Exception {
-    if (es != null) {
-      es.shutdownNow();
-      es.awaitTermination(1, TimeUnit.SECONDS);
+    if (estask != null) {
+      estask.shutdownNow();
+      estask.awaitTermination(1, TimeUnit.SECONDS);
     }
+    if (escompute != null) {
+    	escompute.shutdownNow();
+    	escompute.awaitTermination(1, TimeUnit.SECONDS);
+      }
   }
 
 }
