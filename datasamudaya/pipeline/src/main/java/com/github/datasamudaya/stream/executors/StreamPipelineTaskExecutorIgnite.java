@@ -826,13 +826,11 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	@Override
 	public void run() {
 		log.debug("Entered MassiveDataStreamTaskIgnite.call");		
-		try (var inputjs = new Input(jobstagebytes);var hdfs = FileSystem.newInstance(new URI(hdfspath), new Configuration());) {			
+		try (var hdfs = FileSystem.newInstance(new URI(hdfspath), new Configuration());) {
 			this.hdfs = hdfs;
-			Kryo kryo = Utils.getKryoInstance();
-			jobstage = (JobStage) kryo.readClassAndObject(inputjs);
+			deserializeJobStage();
 			var stagePartition = jobstage.getStageid();
-			cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
-			
+			cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);			
 			if (task.input != null && task.parentremotedatafetch != null) {
 				if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
 					var numinputs = task.parentremotedatafetch.length;
@@ -1807,5 +1805,15 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	    }
 	  }
 	
-	
+	  /**
+	   * Deserialize the byte array to JobStage object 
+	   */
+	public void deserializeJobStage() {
+		try(var inputjs = new Input(jobstagebytes);){
+			Kryo kryo = Utils.getKryoInstance();
+			jobstage = (JobStage) kryo.readClassAndObject(inputjs);
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+	}
 }
