@@ -140,7 +140,8 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 						if (nonNull(tasktoprocess.getStorage()) && tasktoprocess.getStorage() == STORAGE.COLUMNARSQL) {
 							yarnexecutor = new StreamPipelineTaskExecutorYarnSQL(
 									containerprops.get(DataSamudayaConstants.HDFSNAMENODEURL),
-									jsidjsmap.get(tasktoprocess.jobid + tasktoprocess.stageid));
+									jsidjsmap.get(tasktoprocess.jobid + tasktoprocess.stageid),
+									tasktoprocess.isTopersist());
 							yarnexecutor.setCache(inmemorycache);
 						} else {
 							yarnexecutor = new StreamPipelineTaskExecutorYarn(

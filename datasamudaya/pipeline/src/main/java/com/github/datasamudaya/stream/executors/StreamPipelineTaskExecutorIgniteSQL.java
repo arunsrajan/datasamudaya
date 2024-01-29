@@ -26,14 +26,11 @@ import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -91,10 +88,11 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 	private static final long serialVersionUID = -3824414146677196362L;
 	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorIgniteSQL.class);
 
-	private static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
-
-	public StreamPipelineTaskExecutorIgniteSQL(JobStage jobstage, Task task) {
+	boolean topersist;
+	
+	public StreamPipelineTaskExecutorIgniteSQL(byte[] jobstage, Task task, boolean topersist) {
 		super(jobstage, task);
+		this.topersist = topersist;
 	}
 
 	/**
@@ -164,9 +162,11 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 								IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);   
 								ResultIterator<String[], ParsingContext> iterator = iter.iterator();
 						        Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.SIZED | Spliterator.SUBSIZED);
-						        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);								
-								baos = new ByteArrayOutputStream();								
-								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+						        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);
+						        if(topersist) {
+						        	baos = new ByteArrayOutputStream();
+						        }
+								YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos, new Configuration()):null;
 								intermediatestreamobject = stringstream.map(values -> {
 									Map data = Maps.newLinkedHashMap();
 									Object[] valuesobject = new Object[headers.length];
@@ -179,7 +179,9 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 											SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects , headers[oco.get(valuesindex)], data, oco.get(valuesindex));
 											valuesindex++;
 										}
-										writerdataload.addRow(data);
+										if(topersist) {
+											writerdataload.addRow(data);
+										}
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
@@ -189,8 +191,10 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 									return valueswithconsideration;
 								});
 							} else {
-								baos = new ByteArrayOutputStream();
-								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+								if(topersist) {
+									baos = new ByteArrayOutputStream();
+								}
+								YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos, new Configuration()):null;
 								intermediatestreamobject = buffer.lines();
 								intermediatestreamobject = intermediatestreamobject.map(line -> {
 									try {
@@ -212,7 +216,9 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 														headers[index]);
 												SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects, headers[index], data, index);
 											});
-											writerdataload.addRow(data);
+											if(topersist) {
+												writerdataload.addRow(data);
+											}
 										} catch (Exception ex) {
 											log.error(DataSamudayaConstants.EMPTY, ex);
 										}
@@ -233,7 +239,7 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 					} else {
 						istreamnocols = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 						buffernocols = new BufferedReader(new InputStreamReader(istreamnocols));
-						intermediatestreamobject = buffernocols.lines().map(line -> new Object[1]);
+						intermediatestreamobject = buffernocols.lines().map(line ->new Object[1]);
 					}
 				} finally {
 				}

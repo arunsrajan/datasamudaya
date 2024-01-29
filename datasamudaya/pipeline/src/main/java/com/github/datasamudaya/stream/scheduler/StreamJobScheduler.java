@@ -47,10 +47,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.ehcache.Cache;
 import org.jgrapht.Graph;
@@ -122,7 +122,6 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorCalcit
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgnite;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgniteSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocal;
-import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocalSQL;
 import com.github.datasamudaya.stream.mesos.scheduler.MesosScheduler;
 import com.github.dexecutor.core.DefaultDexecutor;
 import com.github.dexecutor.core.DexecutorConfig;
@@ -401,8 +400,6 @@ public class StreamJobScheduler {
         }
         stagegraphexecutorindex = 0;
         Task tasktmp = null;
-        var rand = new Random(System.currentTimeMillis());
-        var taskhpmap = new ConcurrentHashMap<Task, String>();
         toposort = new TopologicalOrderIterator(taskgraph);
         // Sequential ordering of topological ordering is obtained to
         // process for parallelization.
@@ -1137,10 +1134,15 @@ public class StreamJobScheduler {
         public StreamPipelineTaskExecutorIgnite execute() {
           var task = spts.getTask();
           StreamPipelineTaskExecutorIgnite mdste = null;
+          Kryo kryo = Utils.getKryoInstance();
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          Output out = new Output(baos);
+          kryo.writeClassAndObject(out, jsidjsmap.get(task.jobid + task.stageid));
+          out.flush();
           if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
-        	  mdste = new StreamPipelineTaskExecutorIgniteSQL(jsidjsmap.get(task.jobid + task.stageid), task);
+        	  mdste = new StreamPipelineTaskExecutorIgniteSQL(baos.toByteArray(), task, pipelineconfig.isTopersistcolumnar());
           } else {
-        	  mdste = new StreamPipelineTaskExecutorIgnite(jsidjsmap.get(task.jobid + task.stageid), task);
+        	  mdste = new StreamPipelineTaskExecutorIgnite(baos.toByteArray(), task);
           }
           mdste.setHdfspath(hdfsfilepath);
           try {
@@ -1974,6 +1976,7 @@ public class StreamJobScheduler {
       int partitionindex, int currentstage, List<Object> parentthreads) throws PipelineException {
     try {
       var task = new Task();
+      task.setTopersist(pipelineconfig.isTopersistcolumnar());
       task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + job.getTaskidgenerator().getAndIncrement());
       task.jobid = jobid;
       task.stageid = stage.id;

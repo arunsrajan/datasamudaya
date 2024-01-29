@@ -364,7 +364,6 @@ public class Utils {
 			}
 		});
 		kryo.register(Closure.class, new ClosureSerializer());
-		kryo.register(JShell.class, new CompatibleFieldSerializer<JShell>(kryo, JShell.class));
 		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));		
 		return kryo;
 	}

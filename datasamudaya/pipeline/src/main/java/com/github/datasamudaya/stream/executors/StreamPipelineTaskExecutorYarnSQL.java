@@ -27,7 +27,6 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -40,9 +39,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -91,9 +90,11 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 
 	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorYarnSQL.class);
 
+	boolean topersist;
 
-	public StreamPipelineTaskExecutorYarnSQL(String hdfsnn, JobStage jobstage) {
+	public StreamPipelineTaskExecutorYarnSQL(String hdfsnn, JobStage jobstage, boolean topersist) {
 		super(hdfsnn, jobstage);
+		this.topersist = topersist;
 	}
 
 	/**
@@ -163,9 +164,11 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 								IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);   
 								ResultIterator<String[], ParsingContext> iterator = iter.iterator();
 						        Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.SIZED | Spliterator.SUBSIZED);
-						        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);								
-								baos = new ByteArrayOutputStream();								
-								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+						        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);
+						        if(topersist) {
+						        	baos = new ByteArrayOutputStream();
+						        }
+								YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos, new Configuration()):null;
 								intermediatestreamobject = stringstream.map(values -> {
 									Map data = Maps.newLinkedHashMap();
 									Object[] valuesobject = new Object[headers.length];
@@ -178,7 +181,9 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 											SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects , headers[oco.get(valuesindex)], data, oco.get(valuesindex));
 											valuesindex++;
 										}
-										writerdataload.addRow(data);
+										if(topersist) {
+											writerdataload.addRow(data);
+										}
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
@@ -188,8 +193,10 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 									return valueswithconsideration;
 								});
 							} else {
-								baos = new ByteArrayOutputStream();
-								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+								if(topersist) {
+									baos = new ByteArrayOutputStream();
+								}
+								YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos, new Configuration()):null;
 								intermediatestreamobject = buffer.lines();
 								intermediatestreamobject = intermediatestreamobject.map(line -> {
 									try {
@@ -211,7 +218,9 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 														headers[index]);
 												SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects, headers[index], data, index);
 											});
-											writerdataload.addRow(data);
+											if(topersist) {
+												writerdataload.addRow(data);
+											}
 										} catch (Exception ex) {
 											log.error(DataSamudayaConstants.EMPTY, ex);
 										}
@@ -232,7 +241,7 @@ public class StreamPipelineTaskExecutorYarnSQL extends StreamPipelineTaskExecuto
 					} else {
 						istreamnocols = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 						buffernocols = new BufferedReader(new InputStreamReader(istreamnocols));
-						intermediatestreamobject = buffernocols.lines().map(line -> new Object[1]);
+						intermediatestreamobject = buffernocols.lines().map(line ->new Object[1]);
 					}
 				} finally {
 				}
