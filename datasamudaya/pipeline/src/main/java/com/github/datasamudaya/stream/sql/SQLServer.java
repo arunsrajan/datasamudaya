@@ -234,6 +234,8 @@ public class SQLServer {
 											out.println(TableCreator.dropTable(dbdefault, inputLine));
 										} else if (inputLine.startsWith("show")) {
 											Utils.printTableOrError(TableCreator.showTables(dbdefault, inputLine), out, JOBTYPE.NORMAL);
+										} else if (inputLine.startsWith("explain")) {
+											SelectQueryExecutor.explain(dbdefault, inputLine.replaceFirst("explain", ""), out);
 										} else if (inputLine.startsWith("describe")) {
 											var columns = new ArrayList<ColumnMetadata>();
 											TableCreator.getColumnMetadataFromTable(dbdefault, inputLine.split(" ")[1], columns);
