@@ -325,8 +325,8 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 				return new Object[] {valuestoprocess.toArray(new Object[0]),valuestoconsider.toArray(new Object[0])};
 			}});			
 		} else if(relNode instanceof EnumerableAggregate || relNode instanceof EnumerableSortedAggregate) {
-			if(isDistinct.get()) {
-				boolean hasdecendants = SQLUtils.hasDescendants(relNode, descendants);
+			boolean hasdecendants = SQLUtils.hasDescendants(relNode, descendants);
+			if(isDistinct.get()) {				
 				EnumerableAggregateBase grpby = (EnumerableAggregateBase) relNode;
 				int[] grpcolindexes = SQLUtils.getGroupByColumnIndexes(grpby);
 				return sp.get(0)
@@ -497,28 +497,45 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 				}).map(new MapFunction<Tuple2<Tuple, Tuple>, Object[]>() {						
 					private static final long serialVersionUID = 8056744594467835712L;
 					final List<String> functions = functionnames;
+					boolean descendants = hasdecendants;
 					@Override
 					public Object[] apply(Tuple2<Tuple, Tuple> tuple2) {						
 						Object[] valuesgrpby = SQLUtils.populateObjectFromTuple(tuple2.v1);
 						Object[] valuesfromfunctions = SQLUtils.populateObjectFromFunctions(tuple2.v2, functions);
 						Object[] mergeobject =  null;
+						Object[] valuestoconsider = null;
 						if(nonNull(valuesgrpby)) {
 							mergeobject = new Object[valuesgrpby.length+valuesfromfunctions.length];
+							if(descendants) {
+								valuestoconsider = new Object[valuesgrpby.length+valuesfromfunctions.length];
+							}
 						} else {
 							mergeobject = new Object[valuesfromfunctions.length];
+							if(descendants) {
+								valuestoconsider = new Object[valuesfromfunctions.length];
+							}
 						}
 						int valuecount = 0;
 						if(nonNull(valuesgrpby)) {
 							for(Object value:valuesgrpby) {
 								mergeobject[valuecount] = value;
+								if(descendants) {
+									valuestoconsider[valuecount] = true;
+								}
 								valuecount++;
 							}
 						}
 						for(Object value:valuesfromfunctions) {
 							mergeobject[valuecount] = value;
+							if(descendants) {
+								valuestoconsider[valuecount] = true;
+							}
 							valuecount++;
 						}
-						return mergeobject;
+						if(!descendants) {
+							return mergeobject;
+						}
+						return new Object[] {mergeobject, valuestoconsider};
 				}});
 		}
 		return sp.get(0);
@@ -558,25 +575,27 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 		if (jointype == JoinRelType.INNER) {
 			return pipeline1.join(pipeline2, new JoinPredicate<Object[], Object[]>() {
 				private static final long serialVersionUID = -1432723151946554217L;
+				RexNode expr = expression;
 				public boolean test(Object[] rowleft, Object[] rowright) {
-					return SQLUtils.evaluateExpression(expression, ((Object[])rowleft[0]), ((Object[])rowright[0]));
+					return SQLUtils.evaluateExpression(expr, ((Object[])rowleft[0]), ((Object[])rowright[0]));
 				}
 			});
 		} else if (jointype == JoinRelType.LEFT) {
 			return pipeline1.leftOuterjoin(pipeline2,
 					new LeftOuterJoinPredicate<Object[], Object[]>() {
 						private static final long serialVersionUID = -9071237179844212655L;
-
+						RexNode expr = expression;
 						public boolean test(Object[] rowleft, Object[] rowright) {
-							return SQLUtils.evaluateExpression(expression, ((Object[])rowleft[0]), ((Object[])rowright[0]));
+							return SQLUtils.evaluateExpression(expr, ((Object[])rowleft[0]), ((Object[])rowright[0]));
 						}
 					});
 		} else if(jointype == JoinRelType.RIGHT) {
 			return pipeline1.rightOuterjoin(pipeline2,
 					new RightOuterJoinPredicate<Object[], Object[]>() {
-						private static final long serialVersionUID = 7097332223096552391L;						
+						private static final long serialVersionUID = 7097332223096552391L;
+						RexNode expr = expression;
 						public boolean test(Object[] rowleft, Object[] rowright) {
-							return SQLUtils.evaluateExpression(expression, ((Object[])rowleft[0]), ((Object[])rowright[0]));
+							return SQLUtils.evaluateExpression(expr, ((Object[])rowleft[0]), ((Object[])rowright[0]));
 						}
 					});
 		}
