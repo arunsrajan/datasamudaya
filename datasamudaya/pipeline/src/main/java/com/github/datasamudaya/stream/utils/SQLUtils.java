@@ -2752,7 +2752,10 @@ public class SQLUtils {
 			} else if(name.equals("substring")){
 				return toEvaluateRexNode(call.operands.get(0), boolvalues) && toEvaluateRexNode(call.operands.get(1), boolvalues) && toEvaluateRexNode(call.operands.get(2), boolvalues);
 			} else {
-				return toEvaluateRexNode(call.operands.get(0), boolvalues);
+				for (RexNode opernode : call.operands) {
+					return toEvaluateRexNode(opernode, boolvalues);
+				}
+				return true;
 			}
         } else {
         	return false;
