@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.datasamudaya.stream;
+package com.github.datasamudaya.stream.ignite;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.log4j.Logger;
@@ -31,10 +31,10 @@ import org.junit.Test;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
-import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 
-public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
+public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBase {
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
 			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime",
 			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
@@ -49,7 +49,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			SqlTypeName.BIGINT);
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
-	Logger log = Logger.getLogger(StreamPipelineSqlBuilderTest.class);
+	Logger log = Logger.getLogger(IgnitePipelineCalciteSqlBuilderTest.class);
 	List<String> airportsheader = Arrays.asList("iata", "airport", "city", "state", "country", "latitude", "longitude");
 	List<SqlTypeName> airportstype = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
@@ -69,16 +69,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT * FROM airline ";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 29);
-				log.info(record);
+				assertTrue(record.length == 29);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(46360, total);
@@ -93,17 +93,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 29);
-				assertTrue(((Long) record.get("DayofMonth")) == 8 && ((Long) record.get("MonthOfYear")) == 12);
-				log.info(record);
+				assertTrue(record.length == 29);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(132, total);
@@ -118,20 +117,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DepDelay FROM airline ";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 3);
-				assertTrue(record.keySet().size() == 3);
-				assertTrue(record.containsKey("UniqueCarrier"));
-				assertTrue(record.containsKey("ArrDelay"));
-				assertTrue(record.containsKey("DepDelay"));
-				log.info(record);
+				assertTrue(record.length == 3);				
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(46360, total);
@@ -145,20 +140,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhere() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DepDelay FROM airline WHERE airline.DayofMonth=8 and airline.MonthOfYear=12";
 
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		int total = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 3);
-				assertTrue(record.containsKey("UniqueCarrier"));
-				assertTrue(record.containsKey("ArrDelay"));
-				assertTrue(record.containsKey("DepDelay"));
-				log.info(record);
+				assertTrue(record.length == 3);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(132, total);
@@ -176,19 +168,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline \
 				WHERE airline.DayofMonth>8 and airline.MonthOfYear>6\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(((Long) rec.get("DayofMonth")) > 8);
-				assertTrue(((Long) rec.get("MonthOfYear")) > 6);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);				
+				assertTrue(((Long)rec[2]) > 8);
+				assertTrue((Long)rec[3] > 6);
 			}
 		}
 
@@ -205,19 +195,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline \
 				WHERE airline.DayofMonth<8 and airline.MonthOfYear<6\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(((Long) rec.get("DayofMonth")) < 8);
-				assertTrue(((Long) rec.get("MonthOfYear")) < 6);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);				
+				assertTrue(((Long) rec[2]) < 8);
+				assertTrue(((Long) rec[3]) < 6);
 			}
 		}
 
@@ -234,19 +222,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline \
 				WHERE airline.DayofMonth>=8 and airline.MonthOfYear>=6\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(((Long) rec.get("DayofMonth")) >= 8.0);
-				assertTrue(((Long) rec.get("MonthOfYear")) >= 6.0);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);
+				assertTrue(((Long) rec[2]) >= 8.0);
+				assertTrue(((Long) rec[3]) >= 6.0);
 			}
 		}
 
@@ -263,19 +249,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline \
 				WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(((Long) rec.get("DayofMonth")) <= 8);
-				assertTrue(((Long) rec.get("MonthOfYear")) <= 6);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);
+				assertTrue(((Long) rec[2]) <= 8);
+				assertTrue(((Long) rec[3]) <= 6);
 			}
 		}
 
@@ -292,20 +276,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline \
 				WHERE 8=airline.DayofMonth and 12=airline.MonthOfYear\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertEquals(8l, rec.get("DayofMonth"));
-				assertEquals(12l, rec.get("MonthOfYear"));
-				log.info(rec);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				assertTrue(rec.length == 4);
+				assertEquals(8l, rec[2]);
+				assertEquals(12l, rec[3]);
+				log.info(Arrays.toString(rec));
 			}
 		}
 
@@ -322,19 +304,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline \
 				WHERE airline.DayofMonth=airline.MonthOfYear\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(rec.get("DayofMonth").equals(rec.get("MonthOfYear")));
-				log.info(rec);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				assertTrue(rec.length == 4);
+				assertTrue(rec[2] == rec[3]);
+				log.info(Arrays.toString(rec));
 			}
 		}
 
@@ -347,30 +327,48 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsCount() method Entry");
 
 		String statement = "SELECT count(*) FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(46360l, records.get(0).get(0).get("count(*)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(46360l, records.get(0).get(0)[0]);
 
 		log.info("In testRequiredColumnsCount() method Exit");
 	}
 
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testAllColumnsCountSum() throws Exception {
+		log.info("In testAllColumnsCountSum() method Entry");
+
+		String statement = "SELECT count(*),sum(airline.ArrDelay) FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(46360l, records.get(0).get(0)[0]);
+		assertEquals(-63278l, records.get(0).get(0)[1]);
+
+		log.info("In testAllColumnsCountSum() method Exit");
+	}
+	
 	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsCountWithWhere() throws Exception {
 		log.info("In testRequiredColumnsCountWithWhere() method Entry");
 
 		String statement = "SELECT count(*) FROM airline WHERE airline.DayofMonth=airline.MonthOfYear";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
-		assertEquals(1522l, records.get(0).get(0).get("count(*)"));
+		assertEquals(1522l, records.get(0).get(0)[0]);
 
 		log.info("In testRequiredColumnsCountWithWhere() method Exit");
 	}
@@ -381,13 +379,13 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsSumWithWhere() method Entry");
 
 		String statement = "SELECT sum(airline.ArrDelay) FROM airline WHERE 8=airline.DayofMonth and 12=airline.MonthOfYear";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
-		assertEquals(-362l, records.get(0).get(0).get("sum(airline.ArrDelay)"));
+		assertEquals(-362l, records.get(0).get(0)[0]);
 
 		log.info("In testAllColumnsSumWithWhere() method Exit");
 	}
@@ -398,12 +396,12 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsMinWithWhere() method Entry");
 
 		String statement = "SELECT min(airline.ArrDelay) FROM airline WHERE 8=airline.DayofMonth and 12=airline.MonthOfYear";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(Long.valueOf(-27), records.get(0).get(0).get("min(airline.ArrDelay)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(Long.valueOf(-27), records.get(0).get(0)[0]);
 
 		log.info("In testAllColumnsMinWithWhere() method Exit");
 	}
@@ -414,12 +412,12 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsMaxWithWhere() method Entry");
 
 		String statement = "SELECT max(airline.ArrDelay) FROM airline WHERE 8=airline.DayofMonth and 12=airline.MonthOfYear";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(Long.valueOf(44), records.get(0).get(0).get("max(airline.ArrDelay)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(Long.valueOf(44), records.get(0).get(0)[0]);
 
 		log.info("In testAllColumnsMaxWithWhere() method Exit");
 	}
@@ -433,22 +431,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		long totalrecords = 0;
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
 			totalrecords += recs.size();
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("Code"));
-				assertEquals(8l, rec.get("DayofMonth"));
-				assertEquals(12l, rec.get("MonthOfYear"));
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);				
+				assertEquals(8l, rec[0]);
+				assertEquals(12l, rec[1]);
 			}
 		}
 		assertEquals(132, totalrecords);
@@ -465,22 +461,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ'\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 6);
-				assertTrue(rec.containsKey("DepDelay"));
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(rec.containsKey("Code"));
-				assertTrue(rec.containsKey("Description"));
-				assertEquals(8l, rec.get("DayofMonth"));
-				assertEquals(8l, rec.get("MonthOfYear"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));	
+				assertEquals(6, rec.length);
+				assertEquals(8l, rec[2]);
+				assertEquals(8l, rec[3]);
+				assertEquals("AQ", rec[4]);
 			}
 		}
 
@@ -496,23 +489,46 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ' and carriers.Code<>'Code'\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		int total = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				total += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				total += (Long) rec[0];
 			}
 		}
 		assertEquals(131, total);
 
 		log.info("In testCountAllColumnsWithWhereAndJoin() method Exit");
 	}
+	
+	@Test
+	public void testSumAvgAvgCount() throws Exception {
+		log.info("In testSumAvgAvgCount() method Entry");
 
+		String statement = """
+				select sum(airline.arrdelay) as sumadelay,avg(airline.arrdelay) as adelay
+				,avg(airline.depdelay) as ddelay,count(*) as recordcnt 
+				from airline group by airline.uniquecarrier
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		int total = 0;
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				total++;				
+			}
+		}
+		log.info("In testSumAvgAvgCount() method Exit");
+	}	
 	@Test
 	public void testPrintAllColumnsCountWithWhereAndJoin() throws Exception {
 		log.info("In testPrintAllColumnsCountWithWhereAndJoin() method Entry");
@@ -522,21 +538,21 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=8 and carriers.Code='AQ' and carriers.Code<>'Code'\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		int total = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
 				total++;
-				assertTrue(rec.keySet().size() == 31);
-				assertTrue(((Long) rec.get("DayofMonth")) == 8);
-				assertTrue(((Long) rec.get("MonthOfYear")) == 8);
-				assertTrue(rec.get("Code").equals("AQ"));
-				log.info(rec);
+				assertTrue(rec.length == 31);
+				assertTrue(((Long) rec[2]) == 8);
+				assertTrue(((Long) rec[1]) == 8);
+				assertTrue(rec[29].equals("AQ"));
+				log.info(Arrays.toString(rec));
 			}
 		}
 		assertEquals(131, total);
@@ -553,18 +569,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
 				 inner join airports on airports.iata = airline.Origin \
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		int recordcount = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
 				recordcount++;
-				log.info(rec);
+				log.info(Arrays.toString(rec));
 			}
 		}
 		assertEquals(46360, recordcount);
@@ -581,18 +597,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				 inner join airports on airports.iata = airline.Origin \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		int recordcount = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
 				recordcount++;
-				log.info(rec);
+				log.info(Arrays.toString(rec));
 			}
 		}
 		assertEquals(132, recordcount);
@@ -608,18 +624,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code \
 				 inner join airports on airports.iata = airline.Origin \
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		int recordcount = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				recordcount += (Long) rec.get("count(*)");
-				log.info(rec);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				recordcount += (Long) rec[0];
+				log.info(Arrays.toString(rec));
 			}
 		}
 		assertEquals(46360, recordcount);
@@ -636,18 +652,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				 inner join airports on airports.iata = airline.Origin \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		int recordcount = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				recordcount += (Long) rec.get("count(*)");
-				log.info(rec);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				recordcount += (Long) rec[0];
+				log.info(Arrays.toString(rec));
 			}
 		}
 		assertEquals(132, recordcount);
@@ -663,22 +679,22 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				 inner join airports on airports.iata = airline.Origin \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		Double recordcount = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				assertTrue(rec.size() == 2);
-				recordcount += (Long) rec.get("count(*)");
-				log.info(rec);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		int recordcount = 0;
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				assertTrue(rec.length == 2);
+				recordcount += (Long) rec[1];
+				log.info(Arrays.toString(rec));
 			}
 		}
-		assertTrue(recordcount == 132.0);
+		assertEquals(132, recordcount);
 		log.info("In testRequiredColumnsJoinTwoTablesColumnCountWhere() method Exit");
 	}
 
@@ -691,19 +707,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				 inner join airports on airports.iata = airline.Origin \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		Double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				assertTrue(rec.size() == 2);
-				sum += (Long) rec.get("sum(airline.ArrDelay)");
-				log.info(rec);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				assertTrue(rec.length == 2);
+				sum += (Long) rec[1];
+				log.info(Arrays.toString(rec));
 			}
 		}
 		assertTrue(sum == -362.0);
@@ -719,19 +735,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				 inner join airports on airports.iata = airline.Origin \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		Long arrdelaymin = 0l;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				assertTrue(rec.size() == 2);
-				arrdelaymin = (Long) rec.get("min(airline.ArrDelay)");
-				log.info(rec);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				assertTrue(rec.length == 2);
+				arrdelaymin = (Long) rec[1];
+				log.info(Arrays.toString(rec));
 			}
 		}
 		assertTrue(arrdelaymin == -27.0);
@@ -747,19 +763,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				 inner join airports on airports.iata = airline.Origin \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		Long arrdelaymax = 0l;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				assertTrue(rec.size() == 2);
-				arrdelaymax = (Long) rec.get("max(airline.ArrDelay)");
-				log.info(rec);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				assertTrue(rec.length == 2);
+				arrdelaymax = (Long) rec[1];
+				log.info(Arrays.toString(rec));
 			}
 		}
 		assertTrue(arrdelaymax == 44.0);
@@ -775,19 +791,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				 inner join airports on airports.iata = airline.Origin \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airports.iata,airline.UniqueCarrier\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		Double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				assertTrue(rec.size() == 3);
-				sum += (Long) rec.get("sum(airline.ArrDelay)");
-				log.info(rec);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				assertTrue(rec.length == 3);
+				sum += (Long) rec[2];
+				log.info(Arrays.toString(rec));
 			}
 		}
 		assertTrue(sum == -362.0);
@@ -802,21 +818,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				SELECT airline.UniqueCarrier,sum(airline.ArrDelay) \
 				FROM airline group by airline.UniqueCarrier\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
-				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		Double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 2);
-				sum += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 2);
+				sum += (Long) rec[1];
 			}
 		}
-		assertTrue(-63278.0 == sum);
+		assertTrue(-63278 == sum);
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumWhereNoFilter() method Exit");
 	}
 
@@ -828,22 +843,21 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				SELECT airline.UniqueCarrier,min(airline.ArrDelay),count(*),max(airline.ArrDelay),sum(airline.ArrDelay) \
 				FROM airline where airline.DayofMonth=8 and airline.MonthOfYear=12 group by airline.UniqueCarrier\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
-				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		Long sum = 0l, min = 0l, max = 0l;
 		Long count = 0l;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 5);
-				min = (Long) rec.get("min(airline.ArrDelay)");
-				sum = (Long) rec.get("sum(airline.ArrDelay)");
-				max = (Long) rec.get("max(airline.ArrDelay)");
-				count = (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 5);
+				min = (Long) rec[1];
+				sum = (Long) rec[4];
+				max = (Long) rec[3];
+				count = (Long) rec[2];
 			}
 		}
 		assertTrue(min == -27);
@@ -863,20 +877,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				 inner join airports on airports.iata = airline.Origin \
 				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 group by airports.iata,airline.UniqueCarrier\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.add(airportssample, "airports", airportsheader, airportstype).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		Double sum = 0.0d, count = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 6);
-				sum += (Long) rec.get("sum(airline.ArrDelay)");
-				count += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 6);
+				sum += (Long) rec[2];
+				count += (Long) rec[5];
 			}
 		}
 		assertTrue(sum == -362.0);
@@ -886,55 +900,28 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 
 	@SuppressWarnings({ "unchecked" })
 	@Test
-	public void testMultipleAllColumnsAndOrCondition() throws Exception {
-		log.info("In testMultipleAllColumnsAndOrCondition() method Entry");
+	public void testMultipleAllColumnsOrCondition() throws Exception {
+		log.info("In testMultipleAllColumnsOrCondition() method Entry");
 		String statement = """
 				SELECT * from airline \
-				WHERE airline.DayofMonth=8 and airline.MonthOfYear=12\
+				WHERE airline.DayofMonth=8 or airline.MonthOfYear=12\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
-				assertTrue(((Long) rec.get("DayofMonth")) == 8 && ((Long) rec.get("MonthOfYear")) == 12
-						|| rec.get("ArrDelay").equals("ArrDelay") || rec.get("ArrDelay").equals("NA"));
-				sum++;
-			}
-		}
-		assertTrue(sum == 132);
-		log.info("In testMultipleAllColumnsAndOrCondition() method Exit");
-	}
-
-	@SuppressWarnings({ "unchecked" })
-	@Test
-	public void testMultipleAllColumnsOrAndCondition() throws Exception {
-		log.info("In testMultipleAllColumnsOrAndCondition() method Entry");
-		String statement = """
-				SELECT * from airline \
-				WHERE (airline.DayofMonth=8 or airline.MonthOfYear=12)\
-				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
-				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
-				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
-				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
-				assertTrue(((Long) rec.get("DayofMonth")) == 8 || ((Long) rec.get("MonthOfYear")) == 12);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
+				assertTrue(((Long) rec[2]) == 8 || ((Long) rec[1]) == 12);
 				sum++;
 			}
 		}
 		assertTrue(sum == 5405.0);
-		log.info("In testMultipleAllColumnsOrAndCondition() method Exit");
+		log.info("In testMultipleAllColumnsOrCondition() method Exit");
 	}
 
 	@SuppressWarnings({ "unchecked" })
@@ -942,17 +929,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testNumberOfFlightsByCarrier() throws Exception {
 		log.info("In testNumberOfFlightsByCarrier() method Entry");
 		String statement = "SELECT airline.UniqueCarrier, count(*) FROM airline GROUP BY airline.UniqueCarrier";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 2);
-				sum += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 2);
+				sum += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == 46360);
@@ -964,17 +951,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testNumberOfFlightsByDayOfWeek() throws Exception {
 		log.info("In testNumberOfFlightsByDayOfWeek() method Entry");
 		String statement = "SELECT airline.DayOfWeek, count(*) FROM airline GROUP BY airline.DayOfWeek";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 2);
-				sum += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 2);
+				sum += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == 46360);
@@ -986,16 +973,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testNumberOfFlightsCancelled() throws Exception {
 		log.info("In testNumberOfFlightsCancelled() method Entry");
 		String statement = "SELECT count(*) FROM airline WHERE airline.Cancelled = 1";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				sum += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				sum += (Long) rec[0];
 			}
 		}
 		assertTrue(sum == 388.0);
@@ -1007,16 +994,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testNumberOfFlightsDiverted() throws Exception {
 		log.info("In testNumberOfFlightsDiverted() method Entry");
 		String statement = "SELECT count(*) FROM airline WHERE airline.Diverted = 1";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				sum += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				sum += (Long) rec[0];
 			}
 		}
 		assertTrue(sum == 15);
@@ -1028,17 +1015,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testTotalDistanceFlownByCarrier() throws Exception {
 		log.info("In testTotalDistanceFlownByCarrier() method Entry");
 		String statement = "SELECT airline.UniqueCarrier, sum(airline.Distance) FROM airline GROUP BY airline.UniqueCarrier";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 2);
-				sum += (Long) rec.get("sum(airline.Distance)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 2);
+				sum += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == 19882075.0);
@@ -1050,17 +1037,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testDayOfWeekWithMostFlights() throws Exception {
 		log.info("In testDayOfWeekWithMostFlights() method Entry");
 		String statement = "SELECT airline.DayOfWeek, count(*) FROM airline GROUP BY airline.DayOfWeek";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 2);
-				sum += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 2);
+				sum += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == 46360);
@@ -1072,17 +1059,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testMonthOfYearWithMostFlights() throws Exception {
 		log.info("In testMonthOfYearWithMostFlights() method Entry");
 		String statement = "SELECT airline.MonthOfYear, count(*) FROM airline GROUP BY airline.MonthOfYear";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 2);
-				sum += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 2);
+				sum += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == 46360);
@@ -1094,17 +1081,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testAirportsWithDepartures() throws Exception {
 		log.info("In testAirportsWithDepartures() method Entry");
 		String statement = "SELECT airline.Origin, count(*) FROM airline GROUP BY airline.Origin";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 2);
-				sum += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 2);
+				sum += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == 46360);
@@ -1116,17 +1103,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testAirportsWithArrivals() throws Exception {
 		log.info("In testAirportsWithArrivals() method Entry");
 		String statement = "SELECT airline.Dest, count(*) FROM airline GROUP BY airline.Dest";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 2);
-				sum += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 2);
+				sum += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == 46360);
@@ -1138,19 +1125,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testDelayTimeByDayOfWeek() throws Exception {
 		log.info("In testDelayTimeByDayOfWeek() method Entry");
 		String statement = "SELECT airline.DayOfWeek, sum(airline.ArrDelay),count(*) FROM airline GROUP BY airline.DayOfWeek";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
 		double arrdelay = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 3);
-				sum += (Long) rec.get("count(*)");
-				arrdelay += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 3);
+				sum += (Long) rec[2];
+				arrdelay += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == 46360.0);
@@ -1163,19 +1150,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testTotalDelayTimeByMonthOfYear() throws Exception {
 		log.info("In testTotalDelayTimeByMonthOfYear() method Entry");
 		String statement = "SELECT airline.MonthOfYear, sum(airline.ArrDelay), count(*) FROM airline GROUP BY airline.MonthOfYear";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
 		Double arrdelay = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 3);
-				sum += (Long) rec.get("count(*)");
-				arrdelay += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 3);
+				sum += (Long) rec[2];
+				arrdelay += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == 46360.0);
@@ -1188,19 +1175,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testAverageDelayByDestinationAirport() throws Exception {
 		log.info("In testAverageDelayByDestinationAirport() method Entry");
 		String statement = "SELECT airline.Dest, sum(airline.ArrDelay),avg(airline.ArrDelay) AvgDelay FROM airline GROUP BY airline.Dest";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
 		Double avgarrdelay = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 3);
-				avgarrdelay += (Double) rec.get("AvgDelay");
-				sum += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 3);
+				avgarrdelay += (Double) rec[2];
+				sum += (Long) rec[1];
 			}
 		}
 		assertTrue(sum == -63278.0);
@@ -1213,18 +1200,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsCancelledAndCancellationCode() throws Exception {
 		log.info("In testFlightsCancelledAndCancellationCode() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.Cancelled,airline.CancellationCode FROM airline WHERE airline.Cancelled = 1";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 3);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 3);
 				sum++;
-				assertTrue(((Long) rec.get("Cancelled")) == 1 && !rec.get("CancellationCode").equals("NA"));
+				assertTrue((Long) rec[1] == 1 && !rec[2].equals("NA"));
 			}
 		}
 		assertTrue(sum == 388);
@@ -1236,18 +1223,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsCancelledDueToWeather() throws Exception {
 		log.info("In testFlightsCancelledDueToWeather() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.Cancelled,airline.CancellationCode FROM airline WHERE airline.Cancelled = 1 AND airline.CancellationCode = 'B'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 3);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 3);
 				sum++;
-				assertTrue(((Long) rec.get("Cancelled")) == 1 && rec.get("CancellationCode").equals("B"));
+				assertTrue(((Long) rec[1]) == 1 && rec[2].equals("B"));
 			}
 		}
 		assertTrue(sum == 0);
@@ -1259,21 +1246,21 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsDivertedDueToWeather() throws Exception {
 		log.info("In testFlightsDivertedDueToWeather() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.Diverted,airline.WeatherDelay FROM airline WHERE airline.Diverted = 1";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 3);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		int sum = 0;
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 3);
 				sum++;
-				assertTrue(((Long) rec.get("Diverted")) == 1 && !rec.get("WeatherDelay").equals("NA"));
+				assertTrue(((Long) rec[1]) == 1 && !rec[2].equals("NA"));
 			}
 		}
-		assertTrue(sum == 15.0);
+		assertTrue(sum == 15);
 		log.info("In testFlightsDivertedDueToWeather() method Exit");
 	}
 
@@ -1282,18 +1269,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsDivertedDueToWeatherSortBy() throws Exception {
 		log.info("In testFlightsDivertedDueToWeatherSortBy() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 or airline.MonthOfYear=12 ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
-				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) == 8 || ((Long) rec.get("MonthOfYear")) == 12);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
+				assertTrue(((Long) rec[2]) == 8 || ((Long) rec[1]) == 12);
 			}
 		}
 		log.info("In testFlightsDivertedDueToWeatherSortBy() method Exit");
@@ -1304,18 +1289,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsjoinGroupBy() throws Exception {
 		log.info("In testFlightsjoinGroupBy() method Entry");
 		String statement = "SELECT airlines.Origin,airports.airport,count(*) FROM airlines inner join airports on airports.iata = airlines.Origin GROUP BY airlines.Origin,airports.airport";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 3);
-				sum += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 3);
+				sum += (Long) rec[2];
 			}
 		}
 		assertTrue(sum == 46360);
@@ -1327,22 +1312,45 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsDistinctUniqueCarrier() throws Exception {
 		log.info("In testFlightsDistinctUniqueCarrier() method Entry");
 		String statement = "SELECT distinct airlines.UniqueCarrier from airlines";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		var uc = new ArrayList<>();
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				uc.add(rec.get("UniqueCarrier"));
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				uc.add(rec[0]);
 			}
 		}
 		assertTrue(uc.contains("AQ"));
 		log.info("In testFlightsDistinctUniqueCarrier() method Exit");
+	}
+	
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testFlightsDistinctUniqueCarrierArrDelayDepDelay() throws Exception {
+		log.info("In testFlightsDistinctUniqueCarrierArrDelayDepDelay() method Entry");
+		String statement = "SELECT distinct airlines.UniqueCarrier,airlines.ArrDelay,airlines.DepDelay from airlines";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		int sum = 0;
+		
+		for (List<Object[]> recs : records) {
+			sum += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+			}
+		}
+		log.info(sum);
+		assertNotEquals(0 , sum);
+		log.info("In testFlightsDistinctUniqueCarrierArrDelayDepDelay() method Exit");
 	}
 
 	@SuppressWarnings({ "unchecked" })
@@ -1350,18 +1358,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsDistinctUniqueCarrierWithWhere() throws Exception {
 		log.info("In testFlightsDistinctUniqueCarrierWithWhere() method Entry");
 		String statement = "SELECT distinct airlines.UniqueCarrier from airlines where airlines.UniqueCarrier <> 'UniqueCarrier'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		var uc = new ArrayList<>();
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				uc.add(rec.get("UniqueCarrier"));
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				uc.add(rec[0]);
 			}
 		}
 		assertTrue(uc.contains("AQ"));
@@ -1372,19 +1379,38 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere() throws Exception {
 		log.info("In testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere() method Entry");
 		String statement = "SELECT distinct airlines.UniqueCarrier,airlines.AirlineYear from airlines where airlines.UniqueCarrier <> 'UniqueCarrier' order by airlines.AirlineYear,airlines.UniqueCarrier";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		var uc = new ArrayList<>();
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("AirlineYear"));
-				uc.add(rec.get("UniqueCarrier"));
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
+				uc.add(rec[0]);
+			}
+		}
+		assertTrue(uc.contains("AQ"));
+		log.info("In testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere() method Exit");
+	}
+	
+	@Test
+	public void testDistinctUniqueCarrierYearAndMonthWithWhere() throws Exception {
+		log.info("In testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere() method Entry");
+		String statement = "SELECT distinct airlines.UniqueCarrier,airlines.AirlineYear,airlines.MonthOfYear from airlines where airlines.UniqueCarrier <> 'UniqueCarrier' order by airlines.AirlineYear,airlines.MonthOfYear,airlines.UniqueCarrier";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		var uc = new ArrayList<>();
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(3, rec.length);
+				uc.add(rec[0]);
 			}
 		}
 		assertTrue(uc.contains("AQ"));
@@ -1397,15 +1423,32 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsAvg() method Entry");
 
 		String statement = "SELECT avg(airline.ArrDelay) FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
-		assertEquals(Double.valueOf("-1.3768957938942925"), records.get(0).get(0).get("avg(airline.ArrDelay)"));
+		assertEquals(Double.valueOf("-1.3768957938942925"), records.get(0).get(0)[0]);
 
 		log.info("In testAllColumnsAvg() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testAllColumnsAvgArrDelayPlusArrDelay() throws Exception {
+		log.info("In testAllColumnsAvgArrDelayPlusArrDelay() method Entry");
+
+		String statement = "SELECT avg(airline.ArrDelay + airline.DepDelay) FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+
+		assertEquals(Double.valueOf("-0.9489740409513241"), records.get(0).get(0)[0]);
+
+		log.info("In testAllColumnsAvgArrDelayPlusArrDelay() method Exit");
 	}
 
 	@SuppressWarnings({ "unchecked" })
@@ -1414,14 +1457,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsAvgArrDelayPerCarrier() method Entry");
 
 		String statement = "SELECT airline.UniqueCarrier,avg(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
-		assertEquals("AQ", records.get(0).get(0).get("UniqueCarrier"));
-		assertEquals(Double.valueOf("-1.3768957938942925"), records.get(0).get(0).get("avg(airline.ArrDelay)"));
+		assertEquals("AQ", records.get(0).get(0)[0]);
+		assertEquals(Double.valueOf("-1.3768957938942925"), records.get(0).get(0)[1]);
 
 		log.info("In testAllColumnsAvgArrDelayPerCarrier() method Exit");
 	}
@@ -1432,14 +1475,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsAvgArrDelayPerCarrierWithWhere() method Entry");
 
 		String statement = "SELECT airline.UniqueCarrier,avg(airline.ArrDelay) FROM airline where airline.DayOfWeek=1 group by airline.UniqueCarrier";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
-		assertEquals("AQ", records.get(0).get(0).get("UniqueCarrier"));
-		assertEquals(Double.valueOf(-2.2600950118764844), records.get(0).get(0).get("avg(airline.ArrDelay)"));
+		assertEquals("AQ", records.get(0).get(0)[0]);
+		assertEquals(Double.valueOf(-2.2600950118764844), records.get(0).get(0)[1]);
 
 		log.info("In testAllColumnsAvgArrDelayPerCarrierWithWhere() method Exit");
 	}
@@ -1454,24 +1497,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				sum(airline.ArrDelay) as sumarrdelay, count(*) as ct, min(airline.ArrDelay) as minarrdelay, max(airline.ArrDelay) as maxarrdelay\
 				 FROM airline group by airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear order by airline.UniqueCarrier, avgarrdelay\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(8, rec.size());
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("DayofMonth"));
-				assertTrue(rec.containsKey("MonthOfYear"));
-				assertTrue(rec.containsKey("avgarrdelay"));
-				assertTrue(rec.containsKey("sumarrdelay"));
-				assertTrue(rec.containsKey("ct"));
-				assertTrue(rec.containsKey("maxarrdelay"));
-				assertTrue(rec.containsKey("minarrdelay"));
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(8, rec.length);				
 			}
 		}
 
@@ -1487,21 +1522,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				sum(airline.ArrDelay) as sumarrdelay, count(*) as ct, min(airline.ArrDelay) as minarrdelay, max(airline.ArrDelay) as maxarrdelay\
 				 FROM airline group by airline.MonthOfYear order by avgarrdelay\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(5, rec.size());
-				assertTrue(rec.containsKey("avgarrdelay"));
-				assertTrue(rec.containsKey("sumarrdelay"));
-				assertTrue(rec.containsKey("ct"));
-				assertTrue(rec.containsKey("maxarrdelay"));
-				assertTrue(rec.containsKey("minarrdelay"));
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(5, rec.length);
 			}
 		}
 
@@ -1514,16 +1544,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnLength() method Entry");
 
 		String statement = "SELECT length(airline.Origin)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("length(airline.Origin)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnLength() method Exit");
@@ -1535,17 +1564,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnWithLength() method Entry");
 
 		String statement = "SELECT airline.Origin,length(airline.Origin)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("length(airline.Origin)"));
-				assertTrue(rec.containsKey("Origin"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testRequiredColumnWithLength() method Exit");
@@ -1557,18 +1584,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnWithMultipleLengths() method Entry");
 
 		String statement = "SELECT airline.Origin,length(airline.Origin),length(airline.Dest)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(3, rec.size());
-				assertTrue(rec.containsKey("length(airline.Origin)"));
-				assertTrue(rec.containsKey("length(airline.Dest)"));
-				assertTrue(rec.containsKey("Origin"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(3, rec.length);
 			}
 		}
 		log.info("In testRequiredColumnWithMultipleLengths() method Exit");
@@ -1580,19 +1604,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Entry");
 
 		String statement = "SELECT lowercase(airline.Origin),lowercase(airline.Dest),length(airline.Origin),length(airline.Dest)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(4, rec.size());
-				assertTrue(rec.containsKey("length(airline.Origin)"));
-				assertTrue(rec.containsKey("length(airline.Dest)"));
-				assertTrue(rec.containsKey("lowercase(airline.Origin)"));
-				assertTrue(rec.containsKey("lowercase(airline.Dest)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(4, rec.length);
 			}
 		}
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Exit");
@@ -1603,19 +1623,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnWithLengthsAndUppercase() method Entry");
 
 		String statement = "SELECT uppercase(airline.Origin),uppercase(airline.Dest),length(airline.Origin),length(airline.Dest)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(4, rec.size());
-				assertTrue(rec.containsKey("length(airline.Origin)"));
-				assertTrue(rec.containsKey("length(airline.Dest)"));
-				assertTrue(rec.containsKey("uppercase(airline.Origin)"));
-				assertTrue(rec.containsKey("uppercase(airline.Dest)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(4, rec.length);
 			}
 		}
 		log.info("In testRequiredColumnWithLengthsAndUppercase() method Exit");
@@ -1625,18 +1641,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testRequiredColumnTrim() throws Exception {
 		log.info("In testRequiredColumnTrim() method Entry");
 
-		String statement = "SELECT trim(airline.Origin + ' ') trmorig ,trim(' ' + airline.Dest) trimdest FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT trimstr(grpconcat(airline.Origin , ' ')) trmorig ,trimstr(grpconcat(' ' , airline.Dest)) trimdest FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("trmorig"));
-				assertTrue(rec.containsKey("trimdest"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testRequiredColumnTrim() method Exit");
@@ -1647,17 +1661,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnBase64Encode() method Entry");
 
 		String statement = "SELECT base64encode(airline.Origin),base64encode(airline.Dest)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("base64encode(airline.Origin)"));
-				assertTrue(rec.containsKey("base64encode(airline.Dest)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testRequiredColumnBase64Encode() method Exit");
@@ -1668,17 +1680,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnSubStringAlias() method Entry");
 
 		String statement = "SELECT airline.Origin,substring(airline.Origin,0,1) as substr  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("substr"));
-				assertTrue(rec.containsKey("Origin"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testRequiredColumnSubStringAlias() method Exit");
@@ -1689,19 +1699,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnSubString() method Entry");
 
 		String statement = "SELECT airline.Origin,substring(airline.Origin,0,1),airline.Dest,substring(airline.Dest,0,2) FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(4, rec.size());
-				assertTrue(rec.containsKey("substring(airline.Origin, 0, 1)"));
-				assertTrue(rec.containsKey("Origin"));
-				assertTrue(rec.containsKey("Dest"));
-				assertTrue(rec.containsKey("substring(airline.Dest, 0, 2)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(4, rec.length);
 			}
 		}
 		log.info("In testRequiredColumnSubString() method Exit");
@@ -1712,17 +1718,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnNormailizeSpaces() method Entry");
 
 		String statement = "SELECT normalizespaces(airline.Dest),normalizespaces(' This is   good  work') eg FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("eg"));
-				assertTrue(rec.containsKey("normalizespaces(airline.Dest)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testRequiredColumnNormailizeSpaces() method Exit");
@@ -1733,17 +1737,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testDate() method Entry");
 
 		String statement = "SELECT normalizespaces(' This is   good  work') normspace,currentisodate() isodate FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("normspace"));
-				assertTrue(rec.containsKey("isodate"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testDate() method Exit");
@@ -1754,18 +1756,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testDateWithCount() method Entry");
 
 		String statement = "SELECT normalizespaces(' This is   good  work') normspace,currentisodate() isodate,count(*) numrec FROM airline group by airline.AirlineYear";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(3, rec.size());
-				assertTrue(rec.containsKey("normspace"));
-				assertTrue(rec.containsKey("isodate"));
-				assertTrue(rec.containsKey("numrec"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(3, rec.length);
 			}
 		}
 		log.info("In testDateWithCount() method Exit");
@@ -1776,12 +1775,12 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testDate() method Entry");
 
 		String statement = "SELECT sum(airline.ArrDelay * 2) FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(-126556l, records.get(0).get(0).get("sum(airline.ArrDelay * 2)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(-126556l, records.get(0).get(0)[0]);
 		log.info("In testDate() method Exit");
 	}
 
@@ -1790,12 +1789,12 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSumWithAddition() method Entry");
 
 		String statement = "SELECT sum(airline.ArrDelay + 2) FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(29442l, records.get(0).get(0).get("sum(airline.ArrDelay + 2)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(28636l, records.get(0).get(0)[0]);
 		log.info("In testSumWithAddition() method Exit");
 	}
 
@@ -1804,13 +1803,28 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSumWithSubtraction() method Entry");
 
 		String statement = "SELECT sum(airline.ArrDelay - 2) FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(-155998l, records.get(0).get(0).get("sum(airline.ArrDelay - 2)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(-155192l, records.get(0).get(0)[0]);
 		log.info("In testSumWithSubtraction() method Exit");
+	}
+	
+	
+	@Test
+	public void testSum() throws Exception {
+		log.info("In testSum() method Entry");
+
+		String statement = "SELECT sum(airline.ArrDelay) FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(-63278l, records.get(0).get(0)[0]);
+		log.info("In testSum() method Exit");
 	}
 
 	@Test
@@ -1818,22 +1832,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSumWithBase64Encode() method Entry");
 
 		String statement = "SELECT base64encode(airline.Origin) originalias,sum(airline.ArrDelay - 2) FROM airline group by airline.Origin";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("sum(airline.ArrDelay - 2)"));
-				assertTrue(rec.containsKey("originalias"));
-				sum += (Long) rec.get("sum(airline.ArrDelay - 2)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
+				sum += (Long) rec[1];
 			}
 		}
-		assertEquals(Double.valueOf(-155998.0), Double.valueOf(sum));
+		assertEquals(Double.valueOf(-155192.0), Double.valueOf(sum));
 		log.info("In testSumWithBase64Encode() method Exit");
 	}
 
@@ -1842,22 +1854,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSumWithColumnAndLength() method Entry");
 
 		String statement = "SELECT airline.UniqueCarrier,length(airline.UniqueCarrier),sum(airline.ArrDelay - 2) FROM airline group by airline.UniqueCarrier";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(3, rec.size());
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("length(airline.UniqueCarrier)"));
-				sum += (Long) rec.get("sum(airline.ArrDelay - 2)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(3, rec.length);				
+				sum += (Long) rec[2];
 			}
 		}
-		assertEquals(Double.valueOf(-155998.0), Double.valueOf(sum));
+		assertEquals(Double.valueOf(-155192.0), Double.valueOf(sum));
 		log.info("In testSumWithColumnAndLength() method Exit");
 	}
 
@@ -1865,20 +1875,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testSelectWithAggFunctionWithGroupBy() throws Exception {
 		log.info("In testSelectWithAggFunctionColumnsWithoutGroupBy() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay - 2) FROM airline group by airline.MonthOfYear,airline.DayofMonth";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Long) rec.get("sum(airline.ArrDelay - 2)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Long) rec[0];
 			}
 		}
-		assertEquals(Double.valueOf(-155998.0), Double.valueOf(sum));
+		assertEquals(Double.valueOf(-155192.0), Double.valueOf(sum));
 		log.info("In testSelectWithAggFunctionColumnsWithoutGroupBy() method Exit");
 	}
 
@@ -1887,12 +1897,12 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSumWithDivision() method Entry");
 
 		String statement = "SELECT sum(airline.ArrDelay / 2) FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(Double.valueOf(-31639.0), records.get(0).get(0).get("sum(airline.ArrDelay / 2)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(Double.valueOf(-31639.0), records.get(0).get(0)[0]);
 		log.info("In testSumWithDivision() method Exit");
 	}
 
@@ -1901,12 +1911,12 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSumWithSubtractionAndMultiplication() method Entry");
 
 		String statement = "SELECT sum((airline.ArrDelay - 2) * 3.5) FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(Double.valueOf(-545993.0), records.get(0).get(0).get("sum((airline.ArrDelay - 2) * 3.5)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(-543172.0, records.get(0).get(0)[0]);
 		log.info("In testSumWithSubtractionAndMultiplication() method Exit");
 	}
 
@@ -1915,12 +1925,12 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSumWithAdditionAndMultiplication() method Entry");
 
 		String statement = "SELECT sum((airline.ArrDelay + 2) * 2.5) FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		assertEquals(73605.0, records.get(0).get(0).get("sum((airline.ArrDelay + 2) * 2.5)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		assertEquals(71590.0, records.get(0).get(0)[0]);
 		log.info("In testSumWithAdditionAndMultiplication() method Exit");
 	}
 
@@ -1928,47 +1938,47 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testSelectWithWhereIn() throws Exception {
 		log.info("In testSelectWithWhereIn() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (11,12) ";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Long) rec[0];
 			}
 		}
 
 		statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (11) ";
-		spsql = StreamPipelineSqlBuilder.newBuilder()
+		spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum11 = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum11 += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum11 += (Long) rec[0];
 			}
 		}
 
 		statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (12) ";
-		spsql = StreamPipelineSqlBuilder.newBuilder()
+		spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum12 = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum12 += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum12 += (Long) rec[0];
 			}
 		}
 
@@ -1980,17 +1990,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testSelectCountWithWhereLike() throws Exception {
 		log.info("In testSelectCountWithWhereLike() method Entry");
 		String statement = "SELECT count(*) FROM airline where airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double count = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				count += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				count += (Long) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(5995.0), Double.valueOf(count));
@@ -2001,17 +2011,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testSelectSumWithWhereLike() throws Exception {
 		log.info("In testSelectSumWithWhereLike() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Long) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(-6500.0), Double.valueOf(sum));
@@ -2022,17 +2032,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testSelectSumWithWhereInAndLikeClause() throws Exception {
 		log.info("In testSelectSumWithWhereInAndLikeClause() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (11,12) and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Long) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(-1199.0), Double.valueOf(sum));
@@ -2043,17 +2053,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testSelectCountWithWhereInAndLikeClause() throws Exception {
 		log.info("In testSelectCountWithWhereInAndLikeClause() method Entry");
 		String statement = "SELECT count(*) FROM airline where airline.MonthOfYear in (11,12) and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double count = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				count += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				count += (Long) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(1029.0), Double.valueOf(count));
@@ -2063,18 +2073,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testSelectCountWithWhereLikeAndBetweenClause() throws Exception {
 		log.info("In testSelectCountWithWhereLikeAndBetweenClause() method Entry");
-		String statement = "SELECT count(*) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT count(*) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double count = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				count += (Long) rec.get("count(*)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				count += (Long) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(1029.0), Double.valueOf(count));
@@ -2084,18 +2094,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testSelectSumWithWhereLikeAndBetweenClause() throws Exception {
 		log.info("In testSelectSumWithWhereLikeAndBetweenClause() method Entry");
-		String statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Long) rec.get("sum(airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Long) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(-1199.0), Double.valueOf(sum));
@@ -2105,21 +2115,21 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testSelectSumWithNestedAbsFunction() throws Exception {
 		log.info("In testSelectSumWithNestedAbsFunction() method Entry");
-		String statement = "SELECT sum(abs(airline.MonthOfYear) + airline.ArrDelay) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(abs(airline.MonthOfYear) + airline.ArrDelay) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Long) rec.get("sum(abs(airline.MonthOfYear) + airline.ArrDelay)");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Long) rec[0];
 			}
 		}
-		assertEquals(Double.valueOf(10642.0), Double.valueOf(sum));
+		assertEquals(Double.valueOf(10467.0), Double.valueOf(sum));
 		log.info("In testSelectSumWithNestedAbsFunction() method Exit");
 	}
 
@@ -2127,38 +2137,38 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testSelectSumWithNestedAbsFunctions() throws Exception {
 		log.info("In testSelectSumWithNestedAbsFunctions() method Entry");
 		String statement = "SELECT sum(abs(airline.MonthOfYear) + abs(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Long) rec.get("sum(abs(airline.MonthOfYear) + abs(airline.ArrDelay))");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Long) rec[0];
 			}
 		}
-		assertEquals(Double.valueOf(18896.0), Double.valueOf(sum));
+		assertEquals(Double.valueOf(28284.0), Double.valueOf(sum));
 		log.info("In testSelectSumWithNestedAbsFunctions() method Exit");
 	}
 
 	@Test
 	public void testSelectSumWithNestedAbsAndLengthFunctions() throws Exception {
 		log.info("In testSelectSumWithNestedAbsAndLengthFunctions() method Entry");
-		String statement = "SELECT sum(abs(length(airline.Origin)) + abs(length(airline.Dest))) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(abs(length(airline.Origin)) + abs(length(airline.Dest))) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Long) rec.get("sum(abs(length(airline.Origin)) + abs(length(airline.Dest)))");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Long) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(6174.0), Double.valueOf(sum));
@@ -2171,16 +2181,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnAbs() method Entry");
 
 		String statement = "SELECT abs(airline.ArrDelay)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("abs(airline.ArrDelay)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnAbs() method Exit");
@@ -2192,17 +2201,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnRound() method Entry");
 
 		String statement = "SELECT airline.ArrDelay, round(airline.ArrDelay)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(rec.containsKey("round(airline.ArrDelay)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testColumnRound() method Exit");
@@ -2214,17 +2221,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnCeil() method Entry");
 
 		String statement = "SELECT airline.ArrDelay, ceil(airline.ArrDelay)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(rec.containsKey("ceil(airline.ArrDelay)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testColumnCeil() method Exit");
@@ -2236,17 +2241,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnFloor() method Entry");
 
 		String statement = "SELECT airline.ArrDelay,floor(airline.ArrDelay)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(rec.containsKey("floor(airline.ArrDelay)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testColumnFloor() method Exit");
@@ -2258,17 +2261,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnPower() method Entry");
 
 		String statement = "SELECT airline.ArrDelay, pow(airline.ArrDelay, 2) powcal  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("ArrDelay"));
-				assertTrue(rec.containsKey("powcal"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testColumnPower() method Exit");
@@ -2280,17 +2281,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnSqrt() method Entry");
 
 		String statement = "SELECT airline.MonthOfYear, sqrt(airline.MonthOfYear)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("MonthOfYear"));
-				assertTrue(rec.containsKey("sqrt(airline.MonthOfYear)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testColumnSqrt() method Exit");
@@ -2302,16 +2301,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnExponential() method Entry");
 
 		String statement = "SELECT exp(airline.MonthOfYear)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("exp(airline.MonthOfYear)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnExponential() method Exit");
@@ -2323,16 +2321,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnloge() method Entry");
 
 		String statement = "SELECT loge(airline.MonthOfYear) as log  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("log"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnloge() method Exit");
@@ -2341,18 +2338,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testSelectSumWithNestedRound() throws Exception {
 		log.info("In testSelectSumWithNestedRound() method Entry");
-		String statement = "SELECT sum(round(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(round(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Integer) rec.get("sum(round(airline.ArrDelay))");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Long) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(-1199.0), Double.valueOf(sum));
@@ -2362,18 +2359,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testSelectSumWithNestedCeil() throws Exception {
 		log.info("In testSelectSumWithNestedCeil() method Entry");
-		String statement = "SELECT sum(ceil(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(ceil(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Double) rec.get("sum(ceil(airline.ArrDelay))");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Double) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(-1199.0), Double.valueOf(sum));
@@ -2383,18 +2380,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testSelectSumWithNestedFloor() throws Exception {
 		log.info("In testSelectSumWithNestedFloor() method Entry");
-		String statement = "SELECT sum(floor(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(floor(airline.ArrDelay)) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Double) rec.get("sum(floor(airline.ArrDelay))");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Double) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(-1199.0), Double.valueOf(sum));
@@ -2404,39 +2401,39 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testSelectSumWithNestedPower() throws Exception {
 		log.info("In testSelectSumWithNestedPower() method Entry");
-		String statement = "SELECT sum(pow(airline.MonthOfYear, 2)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(pow(airline.MonthOfYear, 2)) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Double) rec.get("sum(pow(airline.MonthOfYear, 2))");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Double) rec[0];
 			}
 		}
-		assertEquals(Double.valueOf(3489.7898118120693), Double.valueOf(sum));
+		assertEquals(Double.valueOf(136515.0), Double.valueOf(sum));
 		log.info("In testSelectSumWithNestedPower() method Exit");
 	}
 
 	@Test
 	public void testSelectSumWithNestedSqrt() throws Exception {
 		log.info("In testSelectSumWithNestedSqrt() method Entry");
-		String statement = "SELECT sum(sqrt(airline.MonthOfYear)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(sqrt(airline.MonthOfYear)) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Double) rec.get("sum(sqrt(airline.MonthOfYear))");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Double) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(3489.7898118120693), Double.valueOf(sum));
@@ -2446,18 +2443,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testSelectSumWithNestedExponential() throws Exception {
 		log.info("In testSelectSumWithNestedExponential() method Entry");
-		String statement = "SELECT sum(exp(airline.MonthOfYear)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(exp(airline.MonthOfYear)) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Double) rec.get("sum(exp(airline.MonthOfYear))");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Double) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(1.153141909703247E8), Double.valueOf(sum));
@@ -2467,18 +2464,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testSelectSumWithNestedloge() throws Exception {
 		log.info("In testSelectSumWithNestedloge() method Entry");
-		String statement = "SELECT sum(loge(airline.MonthOfYear)) FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sum(loge(airline.MonthOfYear)) FROM airline where airline.MonthOfYear between 11 and 12 and airline.Origin like 'HNL' and  airline.Dest like 'OGG'";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				sum += (Double) rec.get("sum(loge(airline.MonthOfYear))");
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				sum += (Double) rec[0];
 			}
 		}
 		assertEquals(Double.valueOf(2512.854174498125), Double.valueOf(sum));
@@ -2489,17 +2486,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testSelectGroupConcatGroupBy() throws Exception {
 		log.info("In testSelectGroupConcatGroupBy() method Entry");
 		String statement = "SELECT airline.DayofMonth, grpconcat(airline.TailNum, '||') FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG' group by airline.DayofMonth,airline.TailNum";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(2, rec.size());
-				assertTrue(rec.containsKey("DayofMonth"));
-				assertTrue(rec.containsKey("grpconcat(airline.TailNum, '||')"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2, rec.length);
 			}
 		}
 		log.info("In testSelectGroupConcatGroupBy() method Exit");
@@ -2510,17 +2505,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnLengthWithExp() throws Exception {
 		log.info("In testColumnLengthWithExp() method Entry");
 
-		String statement = "SELECT length(airline.Origin + airline.Dest)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT length(grpconcat(airline.Origin , airline.Dest))  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("length(airline.Origin + airline.Dest)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnLengthWithExp() method Exit");
@@ -2531,17 +2525,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnAbsLengthWithExp() throws Exception {
 		log.info("In testColumnAbsLengthWithExp() method Entry");
 
-		String statement = "SELECT abs(length(airline.Origin + airline.Dest))  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT abs(length(grpconcat(airline.Origin , airline.Dest)))  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("abs(length(airline.Origin + airline.Dest))"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnAbsLengthWithExp() method Exit");
@@ -2552,17 +2545,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnRoundLengthWithExp() throws Exception {
 		log.info("In testColumnRoundLengthWithExp() method Entry");
 
-		String statement = "SELECT round(length(airline.Origin + airline.Dest) + 0.4)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT round(length(grpconcat(airline.Origin , airline.Dest)) + 0.4)  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("round(length(airline.Origin + airline.Dest) + 0.4)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnRoundLengthWithExp() method Exit");
@@ -2573,17 +2565,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnRoundLengthWithExpWithInc() throws Exception {
 		log.info("In testColumnRoundLengthWithExpWithInc() method Entry");
 
-		String statement = "SELECT round(length(airline.Origin + airline.Dest) + 0.6)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT round(length(grpconcat(airline.Origin , airline.Dest)) + 0.6)  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("round(length(airline.Origin + airline.Dest) + 0.6)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnRoundLengthWithExpWithInc() method Exit");
@@ -2594,17 +2585,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnCeilLengthWithExpWithInc() throws Exception {
 		log.info("In testColumnCeilLengthWithExpWithInc() method Entry");
 
-		String statement = "SELECT ceil(length(airline.Origin + airline.Dest) + 0.6)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT ceil(length(grpconcat(airline.Origin , airline.Dest)) + 0.6)  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("ceil(length(airline.Origin + airline.Dest) + 0.6)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnCeilLengthWithExpWithInc() method Exit");
@@ -2615,17 +2605,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnCeilLengthWithExp() throws Exception {
 		log.info("In testColumnCeilLengthWithExp() method Entry");
 
-		String statement = "SELECT ceil(length(airline.Origin + airline.Dest) + 0.4)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT ceil(length(grpconcat(airline.Origin , airline.Dest)) + 0.4)  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("ceil(length(airline.Origin + airline.Dest) + 0.4)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnCeilLengthWithExp() method Exit");
@@ -2636,17 +2625,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnFloorLengthWithExpWithInc() throws Exception {
 		log.info("In testColumnFloorLengthWithExpWithInc() method Entry");
 
-		String statement = "SELECT floor(length(airline.Origin + airline.Dest) + 0.6)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT floor(length(grpconcat(airline.Origin , airline.Dest)) + 0.6)  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("floor(length(airline.Origin + airline.Dest) + 0.6)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnFloorLengthWithExpWithInc() method Exit");
@@ -2657,17 +2645,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnFloorLengthWithExp() throws Exception {
 		log.info("In testColumnFloorLengthWithExp() method Entry");
 
-		String statement = "SELECT floor(length(airline.Origin + airline.Dest) + 0.4)  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT floor(length(grpconcat(airline.Origin , airline.Dest)) + 0.4)  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("floor(length(airline.Origin + airline.Dest) + 0.4)"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnFloorLengthWithExp() method Exit");
@@ -2678,17 +2665,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnLengthWithParanthesisExp() throws Exception {
 		log.info("In testColumnLengthWithParanthesisExp() method Entry");
 
-		String statement = "SELECT (length(airline.Origin + airline.Dest) + 0.4) paransum  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT (length(grpconcat(airline.Origin , airline.Dest)) + 0.4) paransum  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("paransum"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnLengthWithParanthesisExp() method Exit");
@@ -2699,17 +2685,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnPowerLengthWithExp() throws Exception {
 		log.info("In testColumnPowerLengthWithExp() method Entry");
 
-		String statement = "SELECT pow(length(airline.Origin + airline.Dest), 2) powlen  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT pow(length(grpconcat(airline.Origin , airline.Dest)), 2) powlen  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("powlen"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnPowerLengthWithExp() method Exit");
@@ -2720,17 +2705,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnSqrtLengthWithExp() throws Exception {
 		log.info("In testColumnSqrtLengthWithExp() method Entry");
 
-		String statement = "SELECT sqrt(length(airline.Origin + airline.Dest)) sqrtlen  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT sqrt(length(grpconcat(airline.Origin , airline.Dest))) sqrtlen  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("sqrtlen"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
+				assertTrue(rec[0] instanceof Double);
 			}
 		}
 		log.info("In testColumnSqrtLengthWithExp() method Exit");
@@ -2741,17 +2726,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnExpLengthWithExp() throws Exception {
 		log.info("In testColumnExpLengthWithExp() method Entry");
 
-		String statement = "SELECT exp(length(airline.Origin + airline.Dest)) explen  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT exp(length(grpconcat(airline.Origin , airline.Dest))) explen  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("explen"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnExpLengthWithExp() method Exit");
@@ -2762,17 +2746,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnLogLengthWithExp() throws Exception {
 		log.info("In testColumnLogLengthWithExp() method Entry");
 
-		String statement = "SELECT loge(length(airline.Origin + airline.Dest)) loglen  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT loge(length(grpconcat(airline.Origin , airline.Dest))) loglen  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("loglen"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnLogLengthWithExp() method Exit");
@@ -2783,17 +2766,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnLowerCaseWithUpperCaseWithExp() throws Exception {
 		log.info("In testColumnLowerCaseWithUpperCaseWithExp() method Entry");
 
-		String statement = "SELECT lowercase(uppercase(airline.Origin + airline.Dest + 'low') + 'UPP') lowup  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT lowercase(uppercase(grpconcat(airline.Origin , airline.Dest) + 'low') + 'UPP') lowup  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("lowup"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnLowerCaseWithUpperCaseWithExp() method Exit");
@@ -2804,17 +2786,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') uplow  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') uplow  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("uplow"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnUpperCaseWithLowerCaseWithExp() method Exit");
@@ -2825,17 +2806,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnTrimUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnTrimUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT trim('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ') uplow  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT trimstr('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ') uplow  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("uplow"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnTrimUpperCaseWithLowerCaseWithExp() method Exit");
@@ -2846,17 +2826,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnBase64_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnBase64_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ') encstring  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ') encstring  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("encstring"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnBase64_EncUpperCaseWithLowerCaseWithExp() method Exit");
@@ -2867,17 +2846,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT base64decode(base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ')) decstring  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT base64decode(base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')) decstring  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("decstring"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Exit");
@@ -2888,17 +2866,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT normalizespaces(base64decode(base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      '))) normalizedstring  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT normalizespaces(base64decode(base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      '))) normalizedstring  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("normalizedstring"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Exit");
@@ -2909,17 +2886,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT substring(base64decode(base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6) substr  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT substring(base64decode(base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6) substr  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("substr"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Exit");
@@ -2930,17 +2906,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT normalizespaces(substring(base64decode(base64encode('     ' + uppercase(lowercase(airline.Origin + airline.Dest + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6)) normsubstr  FROM airline";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		String statement = "SELECT normalizespaces(substring(base64decode(base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6)) normsubstr  FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertEquals(1, rec.size());
-				assertTrue(rec.containsKey("normsubstr"));
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1, rec.length);
 			}
 		}
 		log.info("In testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Exit");
@@ -2955,22 +2930,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
 				FROM carriers left join airline on airline.UniqueCarrier = carriers.Code\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		long totalrecords = 0;
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
 			totalrecords += recs.size();
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("Code"));
-				assertTrue(rec.containsKey("DayofMonth"));
-				assertTrue(rec.containsKey("MonthOfYear"));
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);
 			}
 		}
 		assertEquals(47851, totalrecords);
@@ -2987,22 +2958,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
 				FROM airline right join carriers on airline.UniqueCarrier = carriers.Code\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		long totalrecords = 0;
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
 			totalrecords += recs.size();
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("Code"));
-				assertTrue(rec.containsKey("DayofMonth"));
-				assertTrue(rec.containsKey("MonthOfYear"));
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);
 			}
 		}
 		assertEquals(47851, totalrecords);
@@ -3015,19 +2982,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOr() throws Exception {
 		log.info("In testFlightsAndOr() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 or airline.DayOfWeek=3 ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) == 8 && ((Long) rec.get("MonthOfYear")) == 12
-						|| ((Long) rec.get("DayOfWeek")) == 3);
+				assertTrue(((Long) rec[2]) == 8 && ((Long) rec[1]) == 12
+						|| ((Long) rec[3]) == 3);
 			}
 		}
 		log.info("In testFlightsAndOr() method Exit");
@@ -3038,19 +3005,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOrAnd() throws Exception {
 		log.info("In testFlightsAndOrAnd() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 and airline.MonthOfYear=12 or airline.DayOfWeek=3 and airline.DayofMonth=1 ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) == 8 && ((Long) rec.get("MonthOfYear")) == 12
-						|| ((Long) rec.get("DayOfWeek")) == 3 && ((Long) rec.get("DayofMonth")) == 1);
+				assertTrue(((Long) rec[2]) == 8 && ((Long) rec[1]) == 12
+						|| ((Long) rec[3]) == 3 && ((Long) rec[2]) == 1);
 			}
 		}
 		log.info("In testFlightsAndOrAnd() method Exit");
@@ -3061,19 +3028,19 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOrAndParanthesis() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesis() method Entry");
 		String statement = "SELECT * FROM airline WHERE (airline.DayofMonth=8 and airline.MonthOfYear=12) or (airline.DayOfWeek=3 and airline.DayofMonth=1) ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) == 8 && ((Long) rec.get("MonthOfYear")) == 12
-						|| ((Long) rec.get("DayOfWeek")) == 3 && ((Long) rec.get("DayofMonth")) == 1);
+				assertTrue(((Long) rec[2]) == 8 && ((Long) rec[1]) == 12
+						|| ((Long) rec[3]) == 3 && ((Long) rec[2]) == 1);
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesis() method Exit");
@@ -3084,20 +3051,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOrAndParanthesisOr() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOr() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth=8 and (airline.MonthOfYear=12 or airline.DayOfWeek=3) and airline.Origin='LIH' ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) == 8
-						&& (((Long) rec.get("MonthOfYear")) == 12 || ((Long) rec.get("DayOfWeek")) == 3)
-						&& "LIH".equals(((String) rec.get("Origin"))));
+				assertTrue(((Long) rec[2]) == 8
+						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOr() method Exit");
@@ -3108,20 +3075,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthPlus2() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2() method Entry");
 		String statement = "SELECT * FROM airline WHERE airline.DayofMonth+2 = 8 and (airline.MonthOfYear=12 or airline.DayOfWeek=3) and airline.Origin='LIH' ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) == 6
-						&& (((Long) rec.get("MonthOfYear")) == 12 || ((Long) rec.get("DayOfWeek")) == 3)
-						&& "LIH".equals(((String) rec.get("Origin"))));
+				assertTrue(((Long) rec[2]) == 6
+						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2() method Exit");
@@ -3132,20 +3099,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthPlus2ColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2ColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 8 = airline.DayofMonth+2 and (12=airline.MonthOfYear or 3=airline.DayOfWeek) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) == 6
-						&& (((Long) rec.get("MonthOfYear")) == 12 || ((Long) rec.get("DayOfWeek")) == 3)
-						&& "LIH".equals(((String) rec.get("Origin"))));
+				assertTrue(((Long) rec[2]) == 6
+						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2ColumnRight() method Exit");
@@ -3156,20 +3123,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthPlusDayOfWeekMultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlusDayOfWeekMultipleColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 8 = airline.DayofMonth + airline.DayOfWeek and (airline.MonthOfYear=12 or airline.DayOfWeek=3) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) + ((Long) rec.get("DayOfWeek")) == 8
-						&& (((Long) rec.get("MonthOfYear")) == 12 || ((Long) rec.get("DayOfWeek")) == 3)
-						&& "LIH".equals(((String) rec.get("Origin"))));
+				assertTrue(((Long) rec[2]) + ((Long) rec[3]) == 8
+						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlusDayOfWeekMultipleColumnRight() method Exit");
@@ -3180,20 +3147,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthMinus2MultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMinus2MultipleColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 8 = airline.DayofMonth - 2 and (12=airline.MonthOfYear or 3=airline.DayOfWeek) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) == 10
-						&& (((Long) rec.get("MonthOfYear")) == 12 || ((Long) rec.get("DayOfWeek")) == 3)
-						&& "LIH".equals(((String) rec.get("Origin"))));
+				assertTrue(((Long) rec[2]) == 10
+						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMinus2MultipleColumnRight() method Exit");
@@ -3204,20 +3171,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthMultiply2MultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMultiply2MultipleColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 8 = airline.DayofMonth * 2 and (12=airline.MonthOfYear or 3=airline.DayOfWeek) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) == 4
-						&& (((Long) rec.get("MonthOfYear")) == 12 || ((Long) rec.get("DayOfWeek")) == 3)
-						&& "LIH".equals(((String) rec.get("Origin"))));
+				assertTrue(((Long) rec[2]) == 4
+						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMultiply2MultipleColumnRight() method Exit");
@@ -3228,20 +3195,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthDivideBy2MultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthDivideBy2MultipleColumnRight() method Entry");
 		String statement = "SELECT * FROM airline WHERE 4.0 <= airline.DayofMonth / 2 and (12=airline.MonthOfYear or 3=airline.DayOfWeek) and 'LIH' = airline.Origin ORDER BY airline.DayOfWeek DESC";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0;
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.size() == 29);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec.get("DayofMonth")) >= 8
-						&& (((Long) rec.get("MonthOfYear")) == 12 || ((Long) rec.get("DayOfWeek")) == 3)
-						&& "LIH".equals(((String) rec.get("Origin"))));
+				assertTrue(((Long) rec[2]) >= 8
+						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthDivideBy2MultipleColumnRight() method Exit");
@@ -3254,16 +3221,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT AirlineYear,MonthOfYear FROM (select * from airline)";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 2);
-				log.info(record);
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(46360, total);
@@ -3278,16 +3245,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT UniqueCarrier,sum(ArrDelay) sumdelay FROM (select * from airline) group by UniqueCarrier";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 2);
-				log.info(record);
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
 			}
 		}
 		log.info("In testRequiredColumnsFunctionsSubSelect() method Exit");
@@ -3300,17 +3267,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT sumarrdelay FROM (select sum(airline.ArrDelay) sumarrdelay from airline  group by airline.UniqueCarrier)";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 1);
-				assertTrue(record.containsKey("sumarrdelay"));
-				log.info(record);
+				assertTrue(record.length == 1);
+				log.info(Arrays.toString(record));
 			}
 		}
 		log.info("In testRequiredColumnsSubSelectFunctions() method Exit");
@@ -3323,18 +3289,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT sumarrdelay,countrec FROM (select sum(airline.ArrDelay) sumarrdelay, count(*) countrec from airline  group by airline.UniqueCarrier)";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 2);
-				assertTrue(record.containsKey("sumarrdelay"));
-				assertTrue(record.containsKey("countrec"));
-				log.info(record);
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
 			}
 		}
 		log.info("In testRequiredColumnsSubSelectFunctionsSumCount() method Exit");
@@ -3347,19 +3311,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT UniqueCarrier,DayofMonth,MonthOfYear,avg(ArrDelay) FROM (select airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear,airline.ArrDelay from airline) group by UniqueCarrier,DayofMonth,MonthOfYear";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 4);
-				assertTrue(record.containsKey("UniqueCarrier"));
-				assertTrue(record.containsKey("DayofMonth"));
-				assertTrue(record.containsKey("MonthOfYear"));
-				log.info(record);
+				assertTrue(record.length == 4);
+				log.info(Arrays.toString(record));
 			}
 		}
 		log.info("In testRequiredColumnsFunctionsAvgSubSelect() method Exit");
@@ -3372,19 +3333,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT UniqueCarrier,DayofMonth,MonthOfYear,avg(ArrDelay),sum(ArrDelay),count(*) cnt FROM (select airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear,airline.ArrDelay from airline) group by UniqueCarrier,DayofMonth,MonthOfYear";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 6);
-				assertTrue(record.containsKey("UniqueCarrier"));
-				assertTrue(record.containsKey("DayofMonth"));
-				assertTrue(record.containsKey("MonthOfYear"));
-				log.info(record);
+				assertTrue(record.length == 6);
+				log.info(Arrays.toString(record));
 			}
 		}
 		log.info("In testRequiredColumnsFunctionsAvgSumCountSubSelect() method Exit");
@@ -3397,17 +3355,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT avg(avgdelay) delay from(SELECT UniqueCarrier,DayofMonth,MonthOfYear,avg(ArrDelay) avgdelay,sum(ArrDelay) sumdelay,count(*) cnt FROM (select airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear,airline.ArrDelay from airline) group by UniqueCarrier,DayofMonth,MonthOfYear)";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 1);
-				assertTrue(record.containsKey("delay"));
-				log.info(record);
+				assertTrue(record.length == 1);
+				log.info(Arrays.toString(record));
 			}
 		}
 		log.info("In testRequiredColumnsFunctionsAvgSumCountSubSelect() method Exit");
@@ -3420,16 +3377,16 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT * FROM (select * from airline) ";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 29);
-				log.info(record);
+				assertTrue(record.length == 29);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(46360, total);
@@ -3444,17 +3401,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT * FROM (select * from airline where airline.DayofMonth = 12) ";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 29);
-				assertTrue((Long) record.get("DayofMonth") == 12);
-				log.info(record);
+				assertTrue(record.length == 29);
+				assertTrue((Long) record[2] == 12);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(1533, total);
@@ -3469,17 +3426,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		String statement = "SELECT * FROM (select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 29);
-				assertTrue((Long) record.get("DayofMonth") == 12 && (Long) record.get("DayOfWeek") == 3);
-				log.info(record);
+				assertTrue(record.length == 29);
+				assertTrue((Long) record[2] == 12 && (Long) record[3] == 3);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(255, total);
@@ -3497,17 +3454,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				""";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 4);
-				assertTrue((Long) record.get("DayofMonth") == 12 && (Long) record.get("DayOfWeek") == 3);
-				log.info(record);
+				assertTrue(record.length == 4);
+				assertTrue((Long) record[2] == 12 && (Long) record[3] == 3);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(255, total);
@@ -3524,16 +3481,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				(select * from airline where airline.DayofMonth = 12) where DayOfWeek = 3\
 				""";
 
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
-				assertTrue(record.keySet().size() == 1);
-				assertTrue(record.containsKey("sqrtabs"));
-				log.info(record);
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				assertTrue(record.length == 1);
+				log.info(Arrays.toString(record));
 			}
 		}
 		log.info("In testNonAggSqrtAggAvgFunctionWithWhereSubSelectAllColumnsWithWhere() method Exit");
@@ -3548,22 +3504,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				SELECT * FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear)\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		long totalrecords = 0;
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
 			totalrecords += recs.size();
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("Code"));
-				assertEquals(8l, rec.get("DayofMonth"));
-				assertEquals(12l, rec.get("MonthOfYear"));
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);
+				assertEquals(8l, rec[0]);
+				assertEquals(12l, rec[1]);
 			}
 		}
 		assertEquals(132, totalrecords);
@@ -3580,22 +3534,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				SELECT ijres.DayofMonth,ijres.MonthOfYear,ijres.UniqueCarrier,ijres.Code FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear) ijres\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		long totalrecords = 0;
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
 			totalrecords += recs.size();
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("Code"));
-				assertEquals(8l, rec.get("DayofMonth"));
-				assertEquals(12l, rec.get("MonthOfYear"));
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);
+				assertEquals(8l, rec[0]);
+				assertEquals(12l, rec[1]);
 			}
 		}
 		assertEquals(132, totalrecords);
@@ -3613,22 +3565,20 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear) ijres inner \
 				join carriers on ijres.UniqueCarrier = carriers.Code\
 				""";
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		long totalrecords = 0;
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
 			totalrecords += recs.size();
-			for (Map<String, Object> rec : recs) {
-				log.info(rec);
-				assertTrue(rec.keySet().size() == 4);
-				assertTrue(rec.containsKey("UniqueCarrier"));
-				assertTrue(rec.containsKey("Code"));
-				assertEquals(8l, rec.get("DayofMonth"));
-				assertEquals(12l, rec.get("MonthOfYear"));
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 4);
+				assertEquals(8l, rec[0]);
+				assertEquals(12l, rec[1]);
 			}
 		}
 		assertEquals(132, totalrecords);
@@ -3646,17 +3596,17 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				""";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 3);
-				assertTrue((Long) record.get("DayofMonth") == 12 && (Long) record.get("DayOfWeek") == 3);
-				log.info(record);
+				assertTrue(record.length == 3);
+				assertTrue((Long) record[2] == 12 && (Long) record[1] == 3);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(255, total);
@@ -3674,18 +3624,18 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				""";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
-		List<List<Map<String, Object>>> records = (List<List<Map<String, Object>>>) spsql.collect(true, null);
-		for (List<Map<String, Object>> recs : records) {
-			for (Map<String, Object> record : recs) {
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.keySet().size() == 4);
-				assertTrue((Long) record.get("DayofMonth") == 12 && (Long) record.get("DayOfWeek") == 3
-						&& (Long) record.get("MonthOfYear") == 12);
-				log.info(record);
+				assertTrue(record.length == 4);
+				assertTrue((Long) record[1] == 12 && (Long) record[2] == 3
+						&& (Long) record[3] == 12);
+				log.info(Arrays.toString(record));
 			}
 		}
 		assertEquals(130, total);

@@ -47,7 +47,6 @@ public class ContainerLauncher {
       argumentsForSpawn.add("-Xms256m");
       //Maximum heap to launch container.
       argumentsForSpawn.add("-Xmx" + cr.getMaxmemory());
-      argumentsForSpawn.add("-javaagent:../modules/dsagent-2.0.jar");
       //Maximum number of cpu power to restrict execution thread
       argumentsForSpawn.add("-XX:ActiveProcessorCount=" + cr.getCpu());
       argumentsForSpawn

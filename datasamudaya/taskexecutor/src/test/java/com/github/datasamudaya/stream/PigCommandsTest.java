@@ -802,7 +802,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(3, obj.length);				
-				assertEquals(((long) obj[0]) - ((long) obj[1]), obj[2]);
+				assertEquals(((int) obj[0]) - ((int) obj[1]), obj[2]);
 			}
 		}
 	}
@@ -1033,7 +1033,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(2, obj.length);
-				assertEquals(Math.floor(((long) obj[0])), obj[1]);
+				assertEquals(Math.floor(((int) obj[0])), obj[1]);
 			}
 		}
 	}
