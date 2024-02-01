@@ -104,6 +104,7 @@ import com.esotericsoftware.kryo.serializers.ClosureSerializer.Closure;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.StringArraySerializer;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.EnumSerializer;
+import com.esotericsoftware.kryo.serializers.ImmutableCollectionsSerializers;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.datasamudaya.common.AllocateContainers;
@@ -311,6 +312,7 @@ public class Utils {
 	 */
 	public static Kryo getKryoInstance() {
 		Kryo kryo = new Kryo();
+		kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
 		kryo.setReferences(true);
 		kryo.setRegistrationRequired(false);
 		kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
@@ -321,6 +323,7 @@ public class Utils {
 		ImmutableTableSerializer.registerSerializers( kryo );
 		ReverseListSerializer.registerSerializers( kryo );
 		UnmodifiableNavigableSetSerializer.registerSerializers( kryo );
+		ImmutableCollectionsSerializers.registerSerializers(kryo);
 		kryo.register(Object.class);
 		kryo.register(Object[].class);
 		kryo.register(byte.class);
