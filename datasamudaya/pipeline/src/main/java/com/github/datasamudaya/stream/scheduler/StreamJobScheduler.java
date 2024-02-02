@@ -1131,34 +1131,35 @@ public class StreamJobScheduler {
 
         private static final long serialVersionUID = 1L;
 
-        public StreamPipelineTaskExecutorIgnite execute() {
-          var task = spts.getTask();
-          StreamPipelineTaskExecutorIgnite mdste = null;
-          Kryo kryo = Utils.getKryoInstance();
-          ByteArrayOutputStream baos = new ByteArrayOutputStream();
-          Output out = new Output(baos);
-          kryo.writeClassAndObject(out, jsidjsmap.get(task.jobid + task.stageid));
-          out.flush();
-          if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
-        	  mdste = new StreamPipelineTaskExecutorIgniteSQL(baos.toByteArray(), task, pipelineconfig.isTopersistcolumnar());
-          } else {
-        	  mdste = new StreamPipelineTaskExecutorIgnite(baos.toByteArray(), task);
-          }
-          mdste.setHdfspath(hdfsfilepath);
-          try {
-            semaphore.acquire();
-            var compute = job.getIgnite().compute(job.getIgnite().cluster().forServers());
-            compute.affinityRun(DataSamudayaConstants.DATASAMUDAYACACHE, task.input[0], mdste);
-            semaphore.release();
-          } catch (InterruptedException e) {
-            log.warn("Interrupted!", e);
-            // Restore interrupted state...
-            Thread.currentThread().interrupt();
-          } catch (Exception e) {
-            log.error("TaskProviderIgnite error", e);
-          }
-          return mdste;
-        }
+			public StreamPipelineTaskExecutorIgnite execute() {
+				var task = spts.getTask();
+				StreamPipelineTaskExecutorIgnite mdste = null;
+				try {
+					Kryo kryo = Utils.getKryoInstance();
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					Output out = new Output(baos);
+					kryo.writeClassAndObject(out, jsidjsmap.get(task.jobid + task.stageid));
+					out.flush();
+					if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
+						mdste = new StreamPipelineTaskExecutorIgniteSQL(baos.toByteArray(), task,
+								pipelineconfig.isTopersistcolumnar());
+					} else {
+						mdste = new StreamPipelineTaskExecutorIgnite(baos.toByteArray(), task);
+					}
+					mdste.setHdfspath(hdfsfilepath);
+					semaphore.acquire();
+					var compute = job.getIgnite().compute(job.getIgnite().cluster().forServers());
+					compute.affinityRun(DataSamudayaConstants.DATASAMUDAYACACHE, task.input[0], mdste);
+					semaphore.release();
+				} catch (InterruptedException e) {
+					log.warn("Interrupted!", e);
+					// Restore interrupted state...
+					Thread.currentThread().interrupt();
+				} catch (Exception e) {
+					log.error("TaskProviderIgnite error", e);
+				}
+				return mdste;
+			}
       };
     }
   }

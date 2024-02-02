@@ -30,6 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Vector;
@@ -93,6 +94,7 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.PipelineUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
+import com.pivovarit.collectors.ParallelCollectors;
 
 /**
  * This class executes tasks in ignite.
@@ -1220,7 +1222,24 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 										}
 										return maprec;
 									}).collect(Collectors.toList());
-						}
+						} else if(tuple2.v1 instanceof Object[] 
+			            		&& (tuple2.v2 == null || tuple2.v2 instanceof Object[] )) {
+			            	Object[]  origobjarray = (Object[] ) inputs2.get(0);
+			            	Object[][]  nullobjarr = new Object[2][((Object[])origobjarray[0]).length];
+			            	for(int numvalues=0;numvalues<nullobjarr[0].length;numvalues++) {
+			            		nullobjarr[1][numvalues] = true;
+			              	}
+			            	joinpairsout = (List) joinpairsout.stream()
+			                        .filter(val -> val instanceof Tuple2).map(value -> {
+			                          Tuple2 maprec = (Tuple2) value;
+			                          Object[] rec1 = (Object[]) maprec.v1;
+			                          Object[] rec2 = (Object[]) maprec.v2;
+			                          if (rec2 == null) {
+			                        	  return new Tuple2(rec1, nullobjarr); 
+			                          }
+			                          return maprec;
+			                        }).collect(Collectors.toList());			                   
+			            }
 					}
 				} catch (Exception ex) {
 					log.error(PipelineConstants.PROCESSLEFTOUTERJOIN, ex);
@@ -1346,7 +1365,25 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			                          }
 			                          return maprec;
 			                        }).collect(Collectors.toList());
-			            }
+			            } else if((tuple2.v1 == null || tuple2.v1 instanceof Object[]) 
+			              		&& tuple2.v2 instanceof Object[]) {
+
+			              	Object[] origvalarr = (Object[]) inputs1.get(0);
+			              	Object[][] nullobjarr = new Object[2][((Object[])origvalarr[0]).length];
+			              	for(int numvalues=0;numvalues<nullobjarr[0].length;numvalues++) {
+			              		nullobjarr[1][numvalues] = true;
+			              	}
+			              	joinpairsout = (List) joinpairsout.stream()
+			                          .filter(val -> val instanceof Tuple2).map(value -> {
+			                            Tuple2 maprec = (Tuple2) value;
+			                            Object[] rec1 = (Object[]) maprec.v1;
+			                            Object[] rec2 = (Object[]) maprec.v2;
+			                            if (rec1 == null) {
+			                          	  return new Tuple2(nullobjarr, rec2); 
+			                            }
+			                            return maprec;
+			                          }).collect(Collectors.toList());
+			              }
 			          }
 				} catch (Exception ex) {
 					log.error(PipelineConstants.PROCESSRIGHTOUTERJOIN, ex);

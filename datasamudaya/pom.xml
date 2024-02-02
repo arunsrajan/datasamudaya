@@ -722,13 +722,12 @@
 							<reuseForks>true</reuseForks>
 							<argLine>
 								${argLine}
-								-Xms256m -Xmx6g
+								-Xms256m -Xmx2g
+								-javaagent:../lib/dsagent-2.0.jar
 								--add-opens
 								java.base/java.math=ALL-UNNAMED
 								--add-opens
 								java.base/java.lang=ALL-UNNAMED
-								--add-modules
-								jdk.incubator.foreign
 								--add-opens
 								java.base/jdk.internal.ref=ALL-UNNAMED
 								--add-opens
