@@ -266,6 +266,95 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		log.info("In testRequiredColumnsWithWhereLessThanEquals() method Exit");
 	}
 
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsWithWhereLessThanEqualsAndCase() throws Exception {
+		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCase() method Entry");
+
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear, \
+				case when airline.DayofMonth < 6 then 'day of month is under 6' else 'day of month is over 6' end, \
+				case when airline.MonthOfYear < 6 then 'month of year is under 6' else 'month of year is over 6' end \
+				FROM airline \
+				WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6\
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 6);
+				assertTrue(((Long) rec[2]) <= 8);
+				assertTrue(((Long) rec[3]) <= 6);
+			}
+		}
+
+		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCase() method Exit");
+	}
+	
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhen() throws Exception {
+		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhen() method Entry");
+
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear, \
+				case when airline.DayofMonth < 6 then 'day of month is under 6' when airline.DayofMonth = 6 then 'day of month equals 6' else 'day of month is over 6' end, \
+				case when airline.MonthOfYear < 6 then 'month of year is under 6' when airline.MonthOfYear = 6 then 'month of year equals 6' else 'month of year is over 6' end \
+				FROM airline \
+				WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6\
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 6);
+				assertTrue(((Long) rec[2]) <= 8);
+				assertTrue(((Long) rec[3]) <= 6);
+			}
+		}
+
+		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhen() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhenExpression() throws Exception {
+		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhenExpression() method Entry");
+
+		String statement = """
+				SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DayofMonth,airline.MonthOfYear, \
+				case when airline.DayofMonth < 6 then airline.DayofMonth+1 when airline.DayofMonth = 6 then airline.DayofMonth - 2 else airline.DayofMonth + 3 end, \
+				case when airline.MonthOfYear < 6 then 'month of year is under 6' when airline.MonthOfYear = 6 then 'month of year equals 6' else 'month of year is over 6' end \
+				FROM airline \
+				WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6\
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertTrue(rec.length == 6);
+				assertTrue(((Long) rec[2]) <= 8);
+				assertTrue(((Long) rec[3]) <= 6);
+			}
+		}
+
+		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhenExpression() method Exit");
+	}
+	
 	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLiteralFirst() throws Exception {

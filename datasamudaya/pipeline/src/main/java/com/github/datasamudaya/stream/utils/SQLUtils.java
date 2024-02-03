@@ -45,7 +45,6 @@ import org.apache.calcite.adapter.enumerable.EnumerableAggregateBase;
 import org.apache.calcite.adapter.enumerable.EnumerableConvention;
 import org.apache.calcite.adapter.enumerable.EnumerableRules;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
@@ -59,7 +58,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 import org.apache.calcite.util.ImmutableBitSet;
-import org.apache.calcite.util.Pair;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
@@ -3264,7 +3262,7 @@ public class SQLUtils {
 	 * @return value processed
 	 */
 	public static Object evaluateRexNode(RexNode node, Object[] values) {
-		if(node.isA(SqlKind.FUNCTION)) {
+		if(node.isA(SqlKind.FUNCTION) || node.isA(SqlKind.CASE)) {
 			RexCall call = (RexCall) node;
 			RexNode expfunc = call.getOperands().size()>0?call.getOperands().get(0):null;
 			String name = call.getOperator().getName().toLowerCase();
@@ -3330,6 +3328,16 @@ public class SQLUtils {
 					RexNode rexnode1 = call.getOperands().get(0);
 					RexNode  rexnode2 = call.getOperands().get(1);
 					return (String)evaluateRexNode(rexnode1, values) + evaluateRexNode(rexnode2, values);
+				case "case":
+					List<RexNode> rexnodes = call.getOperands();
+					for(int numnodes=0;numnodes<rexnodes.size();numnodes+=2) {
+						if(evaluateExpression(rexnodes.get(numnodes), values)) {
+							return evaluateRexNode(rexnodes.get(numnodes + 1), values);
+						} else if(numnodes+2 == rexnodes.size()-1) {
+							return evaluateRexNode(rexnodes.get(numnodes + 2), values);
+						}
+					}
+					return "";
 			}
 		} else if(node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction){
 			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null, call.getOperator().getName().toLowerCase());
