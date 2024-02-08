@@ -365,24 +365,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.scala-lang</groupId>
-			<artifactId>scala-library</artifactId>
-			<version>2.11.12</version>
-		</dependency>
-
-		<dependency>
-			<groupId>sh.den</groupId>
-			<artifactId>scala-offheap_2.11</artifactId>
-			<version>0.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>sh.den</groupId>
-			<artifactId>scala-offheap-macros_2.11</artifactId>
-			<version>0.1</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.30</version>
@@ -614,43 +596,7 @@
 		<profile>
 			<id>modules</id>
 			<build>
-				<plugins>
-					<plugin>
-						<groupId>net.alchim31.maven</groupId>
-						<artifactId>scala-maven-plugin</artifactId>
-						<version>4.6.2</version>
-						<configuration>
-							<scalaCompatVersion>2.11.12</scalaCompatVersion>
-							<scalaVersion>2.11.12</scalaVersion>
-							<includes>**/*.scala</includes>
-							<source>1.8</source>
-							<target>1.8</target>
-							<compilerPlugins>
-								<compilerPlugin>
-									<groupId>org.scalamacros</groupId>
-									<artifactId>paradise_2.11.12</artifactId>
-									<version>2.1.1</version>
-								</compilerPlugin>
-							</compilerPlugins>
-						</configuration>
-						<executions>
-							<execution>
-								<id>scala-compile</id>
-								<phase>compile</phase>
-								<goals>
-									<goal>add-source</goal>
-									<goal>compile</goal>
-								</goals>
-							</execution>
-							<execution>
-								<id>scala-test-compile</id>
-								<phase>test-compile</phase>
-								<goals>
-									<goal>testCompile</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
+				<plugins>					
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-clean-plugin</artifactId>
