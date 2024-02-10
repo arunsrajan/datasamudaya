@@ -518,13 +518,14 @@
 						<configuration>
 							<target name="copy files to web project">
 								<echo message="prepare phase" />
-								<unzip
-									src="target/datasamudaya-${project.version}-jdk17.zip"
+								<mkdir dir="target/unpack/opt/datasamudaya" />
+								<gunzip
+									src="target/datasamudaya-${project.version}-jdk21.tar.gz"
 									dest="target/unpack/opt/datasamudaya" />
 								<mkdir dir="target/unpack/usr/local/java" />
-								<gunzip src="target/openjdk-17.0.2_linux-x64_bin.tar.gz"
+								<gunzip src="target/openjdk-21.0.2_linux-x64_bin.tar.gz"
 									dest="target/" />
-								<untar src="target/openjdk-17.0.2_linux-x64_bin.tar"
+								<untar src="target/openjdk-21.0.2_linux-x64_bin.tar"
 									dest="target/unpack/usr/local/java" />
 								<copy todir="target/datasamudayastandalone">
 									<fileset dir="dockerdatasamudayastandalone" includes="entry.sh" />
@@ -567,11 +568,11 @@
 					<executable>curl</executable>
 					<arguments>
 						<argument>
-							https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz
+							https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz
 						</argument>
-						<argument>target/openjdk-17.0.2_linux-x64_bin.tar.gz</argument>
+						<argument>target/openjdk-21.0.2_linux-x64_bin.tar.gz</argument>
 						<argument>--output</argument>
-						<argument>target/openjdk-17.0.2_linux-x64_bin.tar.gz</argument>
+						<argument>target/openjdk-21.0.2_linux-x64_bin.tar.gz</argument>
 					</arguments>
 				</configuration>
 			</plugin>
@@ -609,7 +610,7 @@
 									<followSymlinks>false</followSymlinks>
 									<useDefaultExcludes>true</useDefaultExcludes>
 									<excludes>
-										<exclude>openjdk-17.0.2_linux-x64_bin.tar.gz</exclude>
+										<exclude>openjdk-21.0.2_linux-x64_bin.tar.gz</exclude>
 									</excludes>
 								</fileset>
 							</filesets>
@@ -756,7 +757,7 @@
 										<resource>
 											<directory>${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk17.tar.gz</include>
+												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -774,7 +775,7 @@
 										<resource>
 											<directory>${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk17.tar.gz</include>
+												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -792,7 +793,7 @@
 										<resource>
 											<directory>${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk17.tar.gz</include>
+												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -810,7 +811,7 @@
 										<resource>
 											<directory>${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk17.tar.gz</include>
+												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -909,7 +910,7 @@
 												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
 											<permission>
-												<file>/usr/local/java/jdk-17.0.2/bin/*</file>
+												<file>/usr/local/java/jdk-21.0.2/bin/*</file>
 												<mode>777
 												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
@@ -995,7 +996,7 @@
 												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
 											<permission>
-												<file>/usr/local/java/jdk-17.0.2/bin/*</file>
+												<file>/usr/local/java/jdk-21.0.2/bin/*</file>
 												<mode>777
 												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
