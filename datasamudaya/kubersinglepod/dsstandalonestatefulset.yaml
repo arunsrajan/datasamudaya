@@ -55,11 +55,13 @@ spec:
           resources:
               requests:
                 memory: "64Mi"
-                cpu: "8"
+                cpu: "6"
               limits:
-                memory: "10240Mi"
-                cpu: "10"
+                memory: "7168Mi"
+                cpu: "8"
           env:
+            - name: DATASAMUDAYA_HOME
+              value: /opt/datasamudaya
             - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
               value: 'false'
             - name: HDFS_CONF_dfs_datanode_data_dir

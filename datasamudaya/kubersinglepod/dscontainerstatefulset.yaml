@@ -18,6 +18,8 @@ spec:
         - name: datasamudayacontainer
           image: arunsrajan/datasamudayacontainer:latest
           env:
+            - name: DATASAMUDAYA_HOME
+              value: /opt/datasamudaya
             - name: CORE_CONF_fs_defaultFS
               value: hdfs://namenode:9000
             - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
