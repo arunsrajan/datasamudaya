@@ -30,7 +30,6 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Pair;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.pig.newplan.logical.expression.LogicalExpression;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
