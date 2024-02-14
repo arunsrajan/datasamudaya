@@ -7,10 +7,14 @@ import java.util.function.Predicate;
 
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
@@ -20,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
+import com.github.datasamudaya.stream.utils.Optimizer;
+import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.SimpleSchema;
 import com.github.datasamudaya.stream.utils.SimpleTable;
 
@@ -36,6 +42,9 @@ public class DataFrame {
 	private static Logger log = LoggerFactory.getLogger(DataFrame.class);
 	protected DataFrame(DataFrameContext dfcontext) {
 		this.dfcontext = dfcontext;
+		SqlStdOperatorTable sqlStdOperatorTable = SqlStdOperatorTable.instance();
+		List<SqlFunction> sqlFunctions = SQLUtils.getAllSqlFunctions();
+		sqlFunctions.stream().forEach(sqlFunction -> sqlStdOperatorTable.register(sqlFunction));
 		SchemaPlus schemaplus = Frameworks.createRootSchema(true);
 		SimpleSchema.Builder schemabuilder = SimpleSchema.newBuilder(dfcontext.db);
 		schemabuilder.addTable(
@@ -71,9 +80,15 @@ public class DataFrame {
 	 * @return dataframe object
 	 */
 	public DataFrame select(String... requiredcolumns) {
+		RelDataType updatedRowType = builder.peek().getRowType();
+		List<RelDataTypeField> updatedFields = updatedRowType.getFieldList();
 		List<RexNode> columnsbuilder = new ArrayList<>();
+		List<String> addedColumns = new ArrayList<>();
+		for (RelDataTypeField field : updatedFields) {
+		        addedColumns.add(field.getName());
+		}
 		for (String column: requiredcolumns) {
-			columnsbuilder.add(builder.field(columns.indexOf(column)));
+			columnsbuilder.add(builder.field(addedColumns.indexOf(column)));
 		}
 		builder = builder.project(columnsbuilder);
 		return this;
@@ -90,6 +105,17 @@ public class DataFrame {
 			columnsbuilder.add(builder.field(column));
 		}
 		builder = builder.project(columnsbuilder);
+		return this;
+	}
+	
+	/**
+	 * The function add functions to the select expression
+	 * @param funcbuilder
+	 * @return dataframe object
+	 */
+	public DataFrame selectWithFunc(FunctionBuilder funcbuilder) {
+		List<RexNode> functions = funcbuilder.build(builder);
+		builder = builder.project(functions);
 		return this;
 	}
 	
@@ -142,7 +168,7 @@ public class DataFrame {
 	 * @param sqlDialect
 	 * @return SqlNode object
 	 */
-	public static String convertRelNodeToSqlString(RelNode relNode, SqlDialect sqlDialect) {
+	protected static String convertRelNodeToSqlString(RelNode relNode, SqlDialect sqlDialect) {
 		RelToSqlConverter converter = new RelToSqlConverter(sqlDialect);
 		SqlNode sqlNode = converter.visitRoot(relNode).asStatement();
 		return sqlNode.toSqlString(sqlDialect).getSql();

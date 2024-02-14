@@ -290,4 +290,65 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
+	
+	@Test
+	public void testDataFrameAggregateFunctionAliasOrColumnInSelect() throws Exception{
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.setTablename("airline")
+				.setDb("db")
+				.setColumns(airlineheader.toArray(new String[0]))
+				.setFileFormat("csv")
+				.setHdfs(hdfsfilepath)
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
+		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		df.select("AirlineYear","MonthOfYear", "ArrDelay")
+		.filter(new OrPredicate(new NumericExpressionPredicate(NumericOperator.EQUALS, 
+				new Column("MonthOfYear"), 
+				new Literal(10)),new NumericExpressionPredicate(NumericOperator.EQUALS, 
+						new Column("MonthOfYear"), 
+						new Literal(11))))
+		.aggregate(builder, "AirlineYear", "MonthOfYear").select("avgdelay", "sumdelay", "cnt");
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for(List<Object[]> valuel:output) {
+			for(Object[] values:valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(3,values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameAggregateFunctionAndNonAggregate() throws Exception{
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.setTablename("airline")
+				.setDb("db")
+				.setColumns(airlineheader.toArray(new String[0]))
+				.setFileFormat("csv")
+				.setHdfs(hdfsfilepath)
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
+		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		df.select("AirlineYear","MonthOfYear", "ArrDelay")
+		.filter(new OrPredicate(new NumericExpressionPredicate(NumericOperator.EQUALS, 
+				new Column("MonthOfYear"), 
+				new Literal(10)),new NumericExpressionPredicate(NumericOperator.EQUALS, 
+						new Column("MonthOfYear"), 
+						new Literal(11))))
+		.aggregate(builder, "AirlineYear", "MonthOfYear")
+		.select("avgdelay", "sumdelay", "cnt");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder()
+				.addField(null, new String[]{"avgdelay"})
+				.addField(null, new String[]{"sumdelay"})
+				.addField(null, new String[]{"cnt"})
+				.addFunction("loge", "logfunc", new String[]{"cnt"});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for(List<Object[]> valuel:output) {
+			for(Object[] values:valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(4,values.length);
+			}
+		}
+	}
 }

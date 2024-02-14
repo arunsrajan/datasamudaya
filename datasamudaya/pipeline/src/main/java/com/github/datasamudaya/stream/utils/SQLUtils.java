@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -50,10 +51,14 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.fun.SqlFloorFunction;
+import org.apache.calcite.sql.type.OperandTypes;
+import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
@@ -3415,4 +3420,151 @@ public class SQLUtils {
                 throw new UnsupportedOperationException("Unsupported SqlTypeName: " + sqlTypeName);
         }
     }
+	
+	/**
+	 * The function returns all the supported sql functions
+	 * @return list of supported sql functions
+	 */
+	public static List<SqlFunction> getAllSqlFunctions() {
+		
+		SqlFunction sqrtFunction = new SqlFunction("sqrt",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.DOUBLE,
+                null,
+                OperandTypes.ANY,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		
+		SqlFunction lengthFunction = new SqlFunction("length",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.INTEGER,
+                null,
+                OperandTypes.STRING,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction trimFunction = new SqlFunction("trimstr",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.STRING,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		
+		SqlFunction normalizespaces = new SqlFunction("normalizespaces",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.STRING,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction substring = new SqlFunction("substring",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.and(OperandTypes.STRING,
+                		OperandTypes.INTEGER,
+                		OperandTypes.INTEGER),
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction base64encode = new SqlFunction("base64encode",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.STRING,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction base64decode = new SqlFunction("base64decode",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.STRING,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction uppercase = new SqlFunction("uppercase",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.STRING,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction lowercase = new SqlFunction("lowercase",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.STRING,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction loge = new SqlFunction("loge",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.DOUBLE,
+                null,
+                OperandTypes.NUMERIC,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction pow = new SqlFunction("pow",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.DOUBLE,
+                null,
+                OperandTypes.NUMERIC_NUMERIC,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction exp = new SqlFunction("exp",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.DOUBLE,
+                null,
+                OperandTypes.NUMERIC,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		
+		SqlFunction ceil = new SqlFunction("ceil",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.DOUBLE,
+                null,
+                OperandTypes.NUMERIC,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction floor = new SqlFunction("floor",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.DOUBLE,
+                null,
+                OperandTypes.NUMERIC,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction round = new SqlFunction("round",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.DOUBLE,
+                null,
+                OperandTypes.NUMERIC,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction abs = new SqlFunction("abs",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.INTEGER,
+                null,
+                OperandTypes.NUMERIC,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction current_iso_date = new SqlFunction("currentisodate",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.NILADIC,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		
+		SqlFunction grp_concat = new SqlFunction("grpconcat",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.VARCHAR_4,
+                null,
+                OperandTypes.STRING_STRING,
+                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces,
+				substring, base64encode, base64decode,
+				uppercase, lowercase, loge, pow, exp,
+				ceil, floor, round, abs, current_iso_date, grp_concat,
+				trimFunction);
+		
+	}
+	
 }
