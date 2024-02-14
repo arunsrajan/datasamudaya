@@ -93,6 +93,11 @@ public class RequiredColumnsExtractor extends RelShuttleImpl {
 			}
 			addColumnsToMap(childparentrel.get(ef), ef);
 			visited.put(child, true);
+			if(child instanceof EnumerableTableScan ets && isNull(childparentrel.get(ef))) {
+				for(int index=0;index<child.getTable().getRowType().getFieldCount();index++) {
+					addColumnsToRequiredColumnsMap(ets.getTable().getQualifiedName().get(1), DataSamudayaConstants.EMPTY+index);
+				}
+			}
 			analyzeCondition(ef.getCondition());
 		} else if (parent instanceof EnumerableHashJoin ehj) {
 			RelNode left = ehj.getLeft();

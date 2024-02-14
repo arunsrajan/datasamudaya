@@ -38,12 +38,61 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0]))
 				.setFileFormat("csv")
 				.setHdfs(hdfsfilepath)
-				.setFolder("/airlinesamplesql").setTypes(airlineheadertypes).build();
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
 				assertEquals(29,values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameAllColumnsWithFilter() throws Exception{
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.setTablename("airline")
+				.setDb("db")
+				.setColumns(airlineheader.toArray(new String[0]))
+				.setFileFormat("csv")
+				.setHdfs(hdfsfilepath)
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		List<List<Object[]>> output = (List<List<Object[]>>) df
+				.filter(new OrPredicate(new NumericExpressionPredicate(NumericOperator.EQUALS, 
+						new Column("MonthOfYear"), 
+						new Literal(10)),new NumericExpressionPredicate(NumericOperator.EQUALS, 
+								new Column("MonthOfYear"), 
+								new Literal(11))))
+				.execute();
+		for(List<Object[]> valuel:output) {
+			for(Object[] values:valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(29,values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameAllColumnsWithFilterAndSelect() throws Exception{
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.setTablename("airline")
+				.setDb("db")
+				.setColumns(airlineheader.toArray(new String[0]))
+				.setFileFormat("csv")
+				.setHdfs(hdfsfilepath)
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		List<List<Object[]>> output = (List<List<Object[]>>) df
+				.filter(new OrPredicate(new NumericExpressionPredicate(NumericOperator.EQUALS, 
+						new Column("MonthOfYear"), 
+						new Literal(10)),new NumericExpressionPredicate(NumericOperator.EQUALS, 
+								new Column("MonthOfYear"), 
+								new Literal(11))))
+				.select("DayofMonth","MonthOfYear","AirlineYear")
+				.execute();
+		for(List<Object[]> valuel:output) {
+			for(Object[] values:valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(3,values.length);
 			}
 		}
 	}
@@ -56,7 +105,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0]))
 				.setFileFormat("csv")
 				.setHdfs(hdfsfilepath)
-				.setFolder("/airlinesamplesql").setTypes(airlineheadertypes).build();
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		df.select("AirlineYear","MonthOfYear");
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for(List<Object[]> valuel:output) {
@@ -75,7 +124,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0]))
 				.setFileFormat("csv")
 				.setHdfs(hdfsfilepath)
-				.setFolder("/airlinesamplesql").setTypes(airlineheadertypes).build();
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		df.select("AirlineYear","MonthOfYear")
 		.filter(new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
@@ -95,7 +144,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0]))
 				.setFileFormat("csv")
 				.setHdfs(hdfsfilepath)
-				.setFolder("/airlinesamplesql").setTypes(airlineheadertypes).build();
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		df.select("AirlineYear","MonthOfYear")
 		.filter(new NumericExpressionPredicate(NumericOperator.GREATER_THAN, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
@@ -115,7 +164,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0]))
 				.setFileFormat("csv")
 				.setHdfs(hdfsfilepath)
-				.setFolder("/airlinesamplesql").setTypes(airlineheadertypes).build();
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		df.select("AirlineYear","MonthOfYear")
 		.filter(new NumericExpressionPredicate(NumericOperator.GREATER_THAN_EQUALS, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
@@ -135,7 +184,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0]))
 				.setFileFormat("csv")
 				.setHdfs(hdfsfilepath)
-				.setFolder("/airlinesamplesql").setTypes(airlineheadertypes).build();
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		df.select("AirlineYear","MonthOfYear")
 		.filter(new NumericExpressionPredicate(NumericOperator.LESS_THAN, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
@@ -155,7 +204,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0]))
 				.setFileFormat("csv")
 				.setHdfs(hdfsfilepath)
-				.setFolder("/airlinesamplesql").setTypes(airlineheadertypes).build();
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		df.select("AirlineYear","MonthOfYear")
 		.filter(new NumericExpressionPredicate(NumericOperator.LESS_THAN_EQUALS, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
@@ -175,7 +224,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0]))
 				.setFileFormat("csv")
 				.setHdfs(hdfsfilepath)
-				.setFolder("/airlinesamplesql").setTypes(airlineheadertypes).build();
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		df.select("AirlineYear","MonthOfYear")
 		.filter(new AndPredicate(new NumericExpressionPredicate(NumericOperator.EQUALS, 
 				new Column("MonthOfYear"), 
@@ -199,7 +248,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0]))
 				.setFileFormat("csv")
 				.setHdfs(hdfsfilepath)
-				.setFolder("/airlinesamplesql").setTypes(airlineheadertypes).build();
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		df.select("AirlineYear","MonthOfYear")
 		.filter(new OrPredicate(new NumericExpressionPredicate(NumericOperator.EQUALS, 
 				new Column("MonthOfYear"), 
@@ -215,5 +264,30 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		}
 	}
 	
-	
+	@Test
+	public void testDataFrameAggregateFunction() throws Exception{
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.setTablename("airline")
+				.setDb("db")
+				.setColumns(airlineheader.toArray(new String[0]))
+				.setFileFormat("csv")
+				.setHdfs(hdfsfilepath)
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
+		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		df.select("AirlineYear","MonthOfYear", "ArrDelay")
+		.filter(new OrPredicate(new NumericExpressionPredicate(NumericOperator.EQUALS, 
+				new Column("MonthOfYear"), 
+				new Literal(10)),new NumericExpressionPredicate(NumericOperator.EQUALS, 
+						new Column("MonthOfYear"), 
+						new Literal(11))))
+		.aggregate(builder, "AirlineYear", "MonthOfYear").select(0, 1, 2, 3, 4);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for(List<Object[]> valuel:output) {
+			for(Object[] values:valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(5,values.length);
+			}
+		}
+	}
 }

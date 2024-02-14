@@ -5,26 +5,21 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.apache.calcite.adapter.enumerable.EnumerableConvention;
-import org.apache.calcite.adapter.enumerable.EnumerableRules;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
-import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
-import org.apache.calcite.tools.RuleSet;
-import org.apache.calcite.tools.RuleSets;
+import org.apache.calcite.tools.RelBuilder.AggCall;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
-import com.github.datasamudaya.stream.utils.Optimizer;
 import com.github.datasamudaya.stream.utils.SimpleSchema;
 import com.github.datasamudaya.stream.utils.SimpleTable;
 
@@ -38,6 +33,7 @@ public class DataFrame {
 	RelBuilder builder;
 	List<String> columns;
 	SimpleSchema simpleschema;
+	private static Logger log = LoggerFactory.getLogger(DataFrame.class);
 	protected DataFrame(DataFrameContext dfcontext) {
 		this.dfcontext = dfcontext;
 		SchemaPlus schemaplus = Frameworks.createRootSchema(true);
@@ -84,6 +80,20 @@ public class DataFrame {
 	}
 	
 	/**
+	 * Select With Ordinal
+	 * @param ordinal
+	 * @return dataframe object
+	 */
+	public DataFrame select(Integer... ordinal) {
+		List<RexNode> columnsbuilder = new ArrayList<>();
+		for (Integer column: ordinal) {
+			columnsbuilder.add(builder.field(column));
+		}
+		builder = builder.project(columnsbuilder);
+		return this;
+	}
+	
+	/**
 	 * The function builds the filter condition
 	 * @param filtercondition
 	 * @return dataframe object
@@ -95,6 +105,17 @@ public class DataFrame {
 	}
 	
 	/**
+	 * This function builds the aggregate functions and adds to the builder
+	 * @param aggfunctionbuilder
+	 * @param groupby
+	 * @return dataframe object
+	 */
+	public DataFrame aggregate(AggregateFunctionBuilder aggfunctionbuilder,String... groupby) {
+		List<AggCall> aggfunctions = aggfunctionbuilder.build(builder);
+		builder.aggregate(builder.groupKey(groupby), aggfunctions.toArray(new AggCall[0]));
+		return this;
+	}
+	/**
 	 * The method executes the sql
 	 * @return executed sql output
 	 * @throws Exception 
@@ -102,6 +123,7 @@ public class DataFrame {
 	public Object execute() throws Exception {
 		RelNode relnode = builder.build();
 		String sql = convertRelNodeToSqlString(relnode, SqlDialect.DatabaseProduct.H2.getDialect());
+		log.info("SQL From DataFrame Builder {}",sql);
 		StreamPipelineSql sps = StreamPipelineCalciteSqlBuilder.newBuilder()
 		.add(dfcontext.folder, dfcontext.tablename, 
 				Arrays.asList(dfcontext.columns), dfcontext.types)
