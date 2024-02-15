@@ -1,6 +1,7 @@
 package com.github.datasamudaya.stream.sql.dataframe.build;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -9,6 +10,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
+import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.stream.StreamPipelineBaseTestCommon;
 
 public class DataFrameTest extends StreamPipelineBaseTestCommon {
@@ -67,13 +69,14 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])==10||((long)values[1])==11);
 				assertEquals(29,values.length);
 			}
 		}
 	}
 	
 	@Test
-	public void testDataFrameAllColumnsWithFilterAndSelect() throws Exception{
+	public void testDataFrameAllColumnsWithFilterOrSelect() throws Exception{
 		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
 				.setTablename("airline")
 				.setDb("db")
@@ -92,6 +95,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])==10||((long)values[1])==11);
 				assertEquals(3,values.length);
 			}
 		}
@@ -131,6 +135,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])==10);
 				assertEquals(2,values.length);
 			}
 		}
@@ -151,6 +156,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])>10);
 				assertEquals(2,values.length);
 			}
 		}
@@ -171,6 +177,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])>=10);
 				assertEquals(2,values.length);
 			}
 		}
@@ -191,6 +198,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])<10);
 				assertEquals(2,values.length);
 			}
 		}
@@ -211,6 +219,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])<=10);
 				assertEquals(2,values.length);
 			}
 		}
@@ -235,6 +244,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])==10&&((long)values[1])<=11);
 				assertEquals(2,values.length);
 			}
 		}
@@ -259,6 +269,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])==10||((long)values[1])==11);
 				assertEquals(2,values.length);
 			}
 		}
@@ -286,6 +297,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])==10||((long)values[1])==11);
 				assertEquals(5,values.length);
 			}
 		}
@@ -319,7 +331,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 	}
 	
 	@Test
-	public void testDataFrameAggregateFunctionAndNonAggregate() throws Exception{
+	public void testDataFrameAggregateFunctionAndNonAggregateLoge() throws Exception{
 		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
 				.setTablename("airline")
 				.setDb("db")
@@ -347,7 +359,36 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		for(List<Object[]> valuel:output) {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
+				assertTrue(Math.log(Double.valueOf(DataSamudayaConstants.EMPTY+values[2]))==(double)values[3]);
 				assertEquals(4,values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateLength() throws Exception{
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.setTablename("airline")
+				.setDb("db")
+				.setColumns(airlineheader.toArray(new String[0]))
+				.setFileFormat("csv")
+				.setHdfs(hdfsfilepath)
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		df.select("UniqueCarrier","Origin", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder()
+				.addField(null, new String[]{"UniqueCarrier"})
+				.addField(null, new String[]{"Origin"})
+				.addField(null, new String[]{"Dest"})
+				.addFunction("length", "lengthorigin", new String[]{"Origin"})
+				.addFunction("length", "lengthdest", new String[]{"Dest"});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for(List<Object[]> valuel:output) {
+			for(Object[] values:valuel) {
+				log.info(Arrays.toString(values));
+				assertTrue(((String)values[1]).length() == (long)values[3]);
+				assertTrue(((String)values[2]).length() == (long)values[4]);
+				assertEquals(5,values.length);
 			}
 		}
 	}
