@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.log4j.Logger;
+import org.jooq.lambda.tuple.Tuple2;
 import org.junit.Test;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -326,6 +327,65 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			for(Object[] values:valuel) {
 				log.info(Arrays.toString(values));
 				assertEquals(3,values.length);
+			}
+		}
+	}
+	
+	
+	@Test
+	public void testDataFrameAggregateFunctionSort() throws Exception{
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.setTablename("airline")
+				.setDb("db")
+				.setColumns(airlineheader.toArray(new String[0]))
+				.setFileFormat("csv")
+				.setHdfs(hdfsfilepath)
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
+		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		df.select("AirlineYear","MonthOfYear", "DayofMonth", "ArrDelay")
+		.filter(new OrPredicate(new NumericExpressionPredicate(NumericOperator.EQUALS, 
+				new Column("MonthOfYear"), 
+				new Literal(10)),new NumericExpressionPredicate(NumericOperator.EQUALS, 
+						new Column("MonthOfYear"), 
+						new Literal(11))))
+		.aggregate(builder, "AirlineYear", "MonthOfYear", "DayofMonth")
+		.sortBy(new Tuple2<String,String>("AirlineYear","ASC"), new Tuple2<String,String>("DayofMonth","DESC"), new Tuple2<String,String>("MonthOfYear","ASC"));
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for(List<Object[]> valuel:output) {
+			for(Object[] values:valuel) {
+				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])==10||((long)values[1])==11);
+				assertEquals(6,values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameAggregateFunctionSortOrdinal() throws Exception{
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.setTablename("airline")
+				.setDb("db")
+				.setColumns(airlineheader.toArray(new String[0]))
+				.setFileFormat("csv")
+				.setHdfs(hdfsfilepath)
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
+		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		df.select("AirlineYear","MonthOfYear", "DayofMonth", "ArrDelay")
+		.filter(new OrPredicate(new NumericExpressionPredicate(NumericOperator.EQUALS, 
+				new Column("MonthOfYear"), 
+				new Literal(10)),new NumericExpressionPredicate(NumericOperator.EQUALS, 
+						new Column("MonthOfYear"), 
+						new Literal(11))))
+		.aggregate(builder, "AirlineYear", "MonthOfYear", "DayofMonth")
+		.sortByOrdinal(new Tuple2<Integer,String>(0,"ASC"), new Tuple2<Integer,String>(1,"DESC"), new Tuple2<Integer,String>(5,"ASC"));
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for(List<Object[]> valuel:output) {
+			for(Object[] values:valuel) {
+				log.info(Arrays.toString(values));
+				assertTrue(((long)values[1])==10||((long)values[1])==11);
+				assertEquals(6,values.length);
 			}
 		}
 	}

@@ -5,6 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
+import org.apache.calcite.rel.RelFieldCollation;
+import org.apache.calcite.rel.RelFieldCollation.Direction;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationImpl;
+import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
 import org.apache.calcite.rel.type.RelDataType;
@@ -19,15 +24,17 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.tools.RelBuilder.AggCall;
+import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
-import com.github.datasamudaya.stream.utils.Optimizer;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.SimpleSchema;
 import com.github.datasamudaya.stream.utils.SimpleTable;
+
+import static java.util.Objects.isNull;
 
 /**
  * The DataFrame Object to manipulate the columns and build output using calcite
@@ -91,6 +98,44 @@ public class DataFrame {
 			columnsbuilder.add(builder.field(addedColumns.indexOf(column)));
 		}
 		builder = builder.project(columnsbuilder);
+		return this;
+	}
+	
+	/**
+	 * The function sorts the output from previous RelNode
+	 * @param requiredcolumns
+	 * @return dataframe object
+	 */
+	public DataFrame sortBy(Tuple2<String,String>... requiredcolumns) {
+		RelDataType updatedRowType = builder.peek().getRowType();
+		List<RelDataTypeField> updatedFields = updatedRowType.getFieldList();
+		List<RelFieldCollation> columnsbuilder = new ArrayList<>();
+		List<String> addedColumns = new ArrayList<>();
+		for (RelDataTypeField field : updatedFields) {
+		        addedColumns.add(field.getName());
+		}
+		for (Tuple2<String,String> column: requiredcolumns) {			
+			RelFieldCollation relfieldcollation = new RelFieldCollation(addedColumns.indexOf(column.v1), isNull(column.v2)||column.v2.equals("ASC")?Direction.ASCENDING:Direction.DESCENDING);
+			columnsbuilder.add(relfieldcollation);
+		}
+		RelCollation relcollation = RelCollations.of(columnsbuilder);
+		builder = builder.sort(relcollation);
+		return this;
+	}
+	
+	/**
+	 * The function sorts the output from previous RelNode using ordinal
+	 * @param ordinal
+	 * @return dataframe object
+	 */
+	public DataFrame sortByOrdinal(Tuple2<Integer,String>... ordinal) {
+		List<RelFieldCollation> columnsbuilder = new ArrayList<>();
+		for (Tuple2<Integer,String> column: ordinal) {
+			RelFieldCollation relfieldcollation = new RelFieldCollation(column.v1, isNull(column.v2)||column.v2.equals("ASC")?Direction.ASCENDING:Direction.DESCENDING);
+			columnsbuilder.add(relfieldcollation);
+		}
+		RelCollation relcollation = RelCollations.of(columnsbuilder);
+		builder = builder.sort(relcollation);
 		return this;
 	}
 	

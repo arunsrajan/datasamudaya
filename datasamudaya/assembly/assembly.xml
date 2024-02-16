@@ -71,6 +71,12 @@
 			<directoryMode>0777</directoryMode>
 		</fileSet>
 		<fileSet>
+			<directory>target/site/apidocs</directory>
+			<outputDirectory>docs</outputDirectory>
+			<fileMode>0777</fileMode>
+			<directoryMode>0777</directoryMode>
+		</fileSet>
+		<fileSet>
 			<directory>dockerdatasamudayacontainer</directory>
 			<outputDirectory>devops/docker/dockerdatasamudayacontainer</outputDirectory>
 			<fileMode>0777</fileMode>
