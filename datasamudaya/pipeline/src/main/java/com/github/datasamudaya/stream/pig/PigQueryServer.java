@@ -29,6 +29,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.PipelineConfig;
+import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.Utils;
 
 /**
@@ -275,6 +276,7 @@ public class PigQueryServer {
 											pigQueriesToExecute.clear();
 											pigQueriesToExecute.addAll(pigQueries);
 											pigQueriesToExecute.add("\n");
+											DataSamudayaMetricsExporter.getNumberOfPigQueriesDumpExecutedCounter().inc();
 											LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 											PigQueryExecutor.executePlan(lp,false, dumpwithalias[1].trim(), user, jobid, tejobid, pipelineconfig);
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;											
@@ -291,6 +293,7 @@ public class PigQueryServer {
 											pigQueriesToExecute.add("\n");
 											LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 											if(nonNull(lp)) {
+												DataSamudayaMetricsExporter.getNumberOfPigQueriesCounter().inc();
 												if(inputLine.startsWith("store") || inputLine.startsWith("STORE")) {
 													String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 													PigQueryExecutor.executePlan(lp, true, DataSamudayaConstants.EMPTY, user, jobid, tejobid, pipelineconfig);

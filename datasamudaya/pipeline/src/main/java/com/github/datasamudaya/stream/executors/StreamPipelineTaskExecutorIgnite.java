@@ -30,6 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Vector;
@@ -56,6 +57,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.xerial.snappy.SnappyInputStream;
 
+import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Blocks;
@@ -92,6 +94,7 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.PipelineUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
+import com.pivovarit.collectors.ParallelCollectors;
 
 /**
  * This class executes tasks in ignite.
@@ -101,6 +104,7 @@ import com.github.datasamudaya.stream.utils.StreamUtils;
 public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 
 	private static final long serialVersionUID = -3824414146677196362L;
+	protected byte[] jobstagebytes;
 	protected JobStage jobstage;
 	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorIgnite.class);
 	protected FileSystem hdfs;
@@ -112,8 +116,8 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 
 	IgniteCache<Object, byte[]> cache;
 
-	public StreamPipelineTaskExecutorIgnite(JobStage jobstage, Task task) {
-		this.jobstage = jobstage;
+	public StreamPipelineTaskExecutorIgnite(byte[] jobstagebytes, Task task) {
+		this.jobstagebytes = jobstagebytes;
 		this.task = task;
 	}
 
@@ -823,12 +827,12 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	 */
 	@Override
 	public void run() {
-		log.debug("Entered MassiveDataStreamTaskIgnite.call");
-		var stagePartition = jobstage.getStageid();
+		log.debug("Entered MassiveDataStreamTaskIgnite.call");		
 		try (var hdfs = FileSystem.newInstance(new URI(hdfspath), new Configuration());) {
 			this.hdfs = hdfs;
-			cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
-			
+			deserializeJobStage();
+			var stagePartition = jobstage.getStageid();
+			cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);			
 			if (task.input != null && task.parentremotedatafetch != null) {
 				if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
 					var numinputs = task.parentremotedatafetch.length;
@@ -856,7 +860,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			log.info("Finished step: " + stagePartition);
 			completed = true;
 		} catch (Exception ex) {
-			log.error("Failed stage: " + stagePartition, ex);
+			log.error("Failed stage:", ex);
 		}
 		log.debug("Exiting MassiveDataStreamTaskIgnite.call");
 	}
@@ -1218,7 +1222,24 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 										}
 										return maprec;
 									}).collect(Collectors.toList());
-						}
+						} else if(tuple2.v1 instanceof Object[] 
+			            		&& (tuple2.v2 == null || tuple2.v2 instanceof Object[] )) {
+			            	Object[]  origobjarray = (Object[] ) inputs2.get(0);
+			            	Object[][]  nullobjarr = new Object[2][((Object[])origobjarray[0]).length];
+			            	for(int numvalues=0;numvalues<nullobjarr[0].length;numvalues++) {
+			            		nullobjarr[1][numvalues] = true;
+			              	}
+			            	joinpairsout = (List) joinpairsout.stream()
+			                        .filter(val -> val instanceof Tuple2).map(value -> {
+			                          Tuple2 maprec = (Tuple2) value;
+			                          Object[] rec1 = (Object[]) maprec.v1;
+			                          Object[] rec2 = (Object[]) maprec.v2;
+			                          if (rec2 == null) {
+			                        	  return new Tuple2(rec1, nullobjarr); 
+			                          }
+			                          return maprec;
+			                        }).collect(Collectors.toList());			                   
+			            }
 					}
 				} catch (Exception ex) {
 					log.error(PipelineConstants.PROCESSLEFTOUTERJOIN, ex);
@@ -1344,7 +1365,25 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			                          }
 			                          return maprec;
 			                        }).collect(Collectors.toList());
-			            }
+			            } else if((tuple2.v1 == null || tuple2.v1 instanceof Object[]) 
+			              		&& tuple2.v2 instanceof Object[]) {
+
+			              	Object[] origvalarr = (Object[]) inputs1.get(0);
+			              	Object[][] nullobjarr = new Object[2][((Object[])origvalarr[0]).length];
+			              	for(int numvalues=0;numvalues<nullobjarr[0].length;numvalues++) {
+			              		nullobjarr[1][numvalues] = true;
+			              	}
+			              	joinpairsout = (List) joinpairsout.stream()
+			                          .filter(val -> val instanceof Tuple2).map(value -> {
+			                            Tuple2 maprec = (Tuple2) value;
+			                            Object[] rec1 = (Object[]) maprec.v1;
+			                            Object[] rec2 = (Object[]) maprec.v2;
+			                            if (rec1 == null) {
+			                          	  return new Tuple2(nullobjarr, rec2); 
+			                            }
+			                            return maprec;
+			                          }).collect(Collectors.toList());
+			              }
 			          }
 				} catch (Exception ex) {
 					log.error(PipelineConstants.PROCESSRIGHTOUTERJOIN, ex);
@@ -1803,5 +1842,15 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	    }
 	  }
 	
-	
+	  /**
+	   * Deserialize the byte array to JobStage object 
+	   */
+	public void deserializeJobStage() {
+		try(var inputjs = new Input(jobstagebytes);){
+			Kryo kryo = Utils.getKryoInstance();
+			jobstage = (JobStage) kryo.readClassAndObject(inputjs);
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+	}
 }

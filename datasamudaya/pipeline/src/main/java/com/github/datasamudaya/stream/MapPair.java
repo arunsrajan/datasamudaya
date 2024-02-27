@@ -105,8 +105,6 @@ public sealed class MapPair<I1,I2> extends AbstractPipeline permits MapValues{
 			throw new PipelineException(PipelineConstants.MAPFUNCTIONNULL);
 		}
 		var mapobj = new StreamPipeline(this, map);
-		this.childs.add(mapobj);
-		mapobj.parents.add(this);
 		return mapobj;
 	}
 	

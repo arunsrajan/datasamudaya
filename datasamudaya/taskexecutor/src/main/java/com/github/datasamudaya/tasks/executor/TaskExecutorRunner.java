@@ -10,6 +10,7 @@ package com.github.datasamudaya.tasks.executor;
 
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
@@ -20,8 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
@@ -55,6 +56,15 @@ import com.github.datasamudaya.stream.scheduler.StreamJobScheduler;
 import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exporter.HTTPServer;
+import io.prometheus.client.hotspot.DefaultExports;
+
 /**
  * Launches the task executor.
  * @author arun
@@ -69,7 +79,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
   Map<String, Map<String, Object>> jobidstageidexecutormap = new ConcurrentHashMap<>();
   Map<String, JobStage> jobidstageidjobstagemap = new ConcurrentHashMap<>();
   Queue<Object> taskqueue = new LinkedBlockingQueue<Object>();
-  static ExecutorService es;
+  static ExecutorService estask;
+  static ExecutorService escompute;
   static CountDownLatch shutdown = new CountDownLatch(1);
   static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
 
@@ -108,14 +119,26 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 				            + DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			int numberofprocessors = Runtime.getRuntime().availableProcessors();
-			es = Executors.newWorkStealingPool(numberofprocessors * 2);
+			estask = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS, new LinkedBlockingQueue());
+			escompute = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS, new LinkedBlockingQueue());
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid);
 			ter.start(zo, jobid);
+			int metricsport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT))+200;
+			DefaultExports.initialize(); // Initialize JVM metrics    	 
+	        PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT, CollectorRegistry.defaultRegistry, Clock.SYSTEM);
+			meterRegistry.config().commonTags("application", DataSamudayaConstants.DATASAMUDAYA.toLowerCase());
+			// Bind JVM metrics to the registry
+			new JvmMemoryMetrics().bindTo(meterRegistry);
+			new JvmThreadMetrics().bindTo(meterRegistry);
+			HTTPServer server = new HTTPServer(new InetSocketAddress(metricsport), meterRegistry.getPrometheusRegistry());
+	        // Start an HTTP server to expose metrics
+			log.info("TaskExecuterRunner evoked at metrics port....." + metricsport);
 			log.info("TaskExecuterRunner evoked at port....." + System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 			log.info("Reckoning stoppage holder...");
 			shutdown.await();
 			log.info("Ceasing the connections...");
+			server.close();
 			ter.destroy();
 			ByteBufferPoolDirect.destroy();
 			log.info("Freed the assets...");
@@ -200,10 +223,10 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
         	  return js.schedule(job);
           } else if (!Objects.isNull(deserobj)) {
         	  log.info("Deserialized object:{} ", deserobj);
-            TaskExecutor taskexecutor = new TaskExecutor(cl, port, es, configuration,
+            TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,
                 apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
                 jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap);
-            return taskexecutor.call();
+            return estask.submit(taskexecutor).get(); 
           }
         } catch (Throwable ex) {
           log.error(DataSamudayaConstants.EMPTY, ex);
@@ -227,10 +250,14 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
    */
   @Override
   public void destroy() throws Exception {
-    if (es != null) {
-      es.shutdownNow();
-      es.awaitTermination(1, TimeUnit.SECONDS);
+    if (estask != null) {
+      estask.shutdownNow();
+      estask.awaitTermination(1, TimeUnit.SECONDS);
     }
+    if (escompute != null) {
+    	escompute.shutdownNow();
+    	escompute.awaitTermination(1, TimeUnit.SECONDS);
+      }
   }
 
 }

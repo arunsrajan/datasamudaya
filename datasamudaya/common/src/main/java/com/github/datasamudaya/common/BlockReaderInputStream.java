@@ -16,8 +16,8 @@ public class BlockReaderInputStream extends InputStream implements Serializable{
     private long bytesRead;
     private transient FSDataInputStream br;
     byte[] onebyt = new byte[1];
-    int startoffset = 0;
-    public BlockReaderInputStream(FSDataInputStream br,int startoffset, long limit) throws IOException {
+    long startoffset = 0;
+    public BlockReaderInputStream(FSDataInputStream br,long startoffset, long limit) throws IOException {
     	this.br = br;
     	this.startoffset = startoffset;
     	br.seek(startoffset);

@@ -175,7 +175,13 @@ public class NodeRunner implements Callable<Object> {
         Map<String, List<Thread>> threads = containeridcontainerthreads.remove(dc.getJobid());
         if (!Objects.isNull(threads)) {
           threads.keySet().stream().map(threads::get).flatMap(thrlist -> thrlist.stream())
-              .forEach(thr -> thr.stop());
+              .forEach(thr -> {
+				try {
+					thr.stop();
+				} catch (Exception e) {
+					log.warn(DataSamudayaConstants.EMPTY, e);
+				}
+			});
         }
       } else if (deserobj instanceof DestroyContainer dc) {
         log.debug("Destroying the Container with id: " + dc.getJobid());

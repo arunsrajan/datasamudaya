@@ -3,9 +3,8 @@
 	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3 http://maven.apache.org/xsd/assembly-1.1.3.xsd">
-	<id>jdk17</id>
+	<id>jdk21</id>
 	<formats>
-		<format>zip</format>
 		<format>tar.gz</format>
 	</formats>
 	<includeBaseDirectory>false</includeBaseDirectory>
@@ -24,6 +23,7 @@
 				<include>com.github.datasamudaya:taskscheduler:jar:*</include>
 				<include>com.github.datasamudaya:common:jar:*</include>
 				<include>com.github.datasamudaya:pipeline:jar:*</include>
+				<include>com.github.datasamudaya:dsagent:jar:*</include>
 			</includes>
 			<binaries>
 				<includeDependencies>false</includeDependencies>
@@ -67,6 +67,12 @@
 		<fileSet>
 			<directory>scripts</directory>
 			<outputDirectory>bin</outputDirectory>
+			<fileMode>0777</fileMode>
+			<directoryMode>0777</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>target/site/apidocs</directory>
+			<outputDirectory>docs</outputDirectory>
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 		</fileSet>

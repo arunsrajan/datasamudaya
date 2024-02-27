@@ -2,7 +2,6 @@ package com.github.datasamudaya.stream.utils;
 
 import static java.util.Objects.nonNull;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -25,55 +24,59 @@ import jp.co.yahoo.yosegi.message.objects.StringObj;
 import jp.co.yahoo.yosegi.message.parser.IParser;
 import jp.co.yahoo.yosegi.reader.YosegiSchemaReader;
 
-public class YosegiRecordSpliterator extends Spliterators.AbstractSpliterator<Map<String, Object>> {
+public class YosegiRecordSpliterator extends Spliterators.AbstractSpliterator<Object[]> {
     private final YosegiSchemaReader reader;
-    List<String> reqcols;
+    List<Integer> reqcols;
     Map<String,SqlTypeName> sqltypename;
-    public YosegiRecordSpliterator(YosegiSchemaReader reader, List<String> reqcols,
-    		Map<String,SqlTypeName> sqltypename) {
+    List<String> allcols;
+    public YosegiRecordSpliterator(YosegiSchemaReader reader, List<Integer> reqcols,
+    		List<String> allcols, Map<String,SqlTypeName> sqltypename) {
         super(Long.MAX_VALUE, Spliterator.ORDERED);
         this.reader = reader;
         this.reqcols = reqcols;
+        this.allcols = allcols;
         this.sqltypename = sqltypename;
     }
-    public void getValueFromIParser(Map<String, Object> map, String col, IParser cv) {
+    public void getValueFromIParser(Object[] valueobjects, Object[] toconsider, String col, IParser cv, int index) {
     	try {
     		PrimitiveObject po = cv.get(col);
     		if(po instanceof IntegerObj iobj) {
-    			map.put(col, iobj.getInt());
+    			valueobjects[index]=iobj.getInt();
     			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
-    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
+    			toconsider[index]=posqlcount.getBoolean();
     		} else if(po instanceof LongObj lobj) {
-    			map.put(col, lobj.getLong());
+    			valueobjects[index]=lobj.getLong();
     			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
-    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
+    			toconsider[index]=posqlcount.getBoolean();
     		} else if(po instanceof FloatObj fobj) {
-    			map.put(col, fobj.getFloat());
+    			valueobjects[index]=fobj.getFloat();
     			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
-    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
+    			toconsider[index]=posqlcount.getBoolean();
     		} else if(po instanceof DoubleObj dobj) {
-    			map.put(col, dobj.getDouble());
+    			valueobjects[index]=dobj.getDouble();
     			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
-    			map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
+    			toconsider[index]=posqlcount.getBoolean();
     		} else if(po instanceof BooleanObj boolobj) {
-    			map.put(col, boolobj.getBoolean());
+    			valueobjects[index]=boolobj.getBoolean();
+    			toconsider[index]=true;
     		} else if(po instanceof StringObj sobj) {
-    			map.put(col, sobj.getString());
+    			valueobjects[index]=sobj.getString();
+    			toconsider[index]=true;
     		} else if(po instanceof ByteObj bobj) {
-    			map.put(col, Long.valueOf(bobj.getByte()));
+    			valueobjects[index]=Long.valueOf(bobj.getByte());
     			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
     			if(nonNull(posqlcount)) {
-    				map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
+    				toconsider[index]=posqlcount.getBoolean();
     			} else {
-    				map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, 0);
+    				toconsider[index]=false;
     			}
     		} else if(po instanceof ShortObj shobj) {
-    			map.put(col, Long.valueOf(shobj.getShort()));
+    			valueobjects[index]=Long.valueOf(shobj.getShort());
     			PrimitiveObject posqlcount = cv.get(col+DataSamudayaConstants.SQLCOUNTFORAVG);
     			if(nonNull(posqlcount)) {
-    				map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, posqlcount.getInt());
+    				toconsider[index]=posqlcount.getBoolean();
     			} else {
-    				map.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, 0);
+    				toconsider[index]=false;
     			}
     		}
     	} catch(Exception ex) {
@@ -81,18 +84,22 @@ public class YosegiRecordSpliterator extends Spliterators.AbstractSpliterator<Ma
     	}
 	}
     @Override
-    public boolean tryAdvance(Consumer<? super Map<String, Object>> action) {    
+    public boolean tryAdvance(Consumer<? super Object[]> action) {    
         try {
         	if(!reader.hasNext()) {
         		return false;
         	}
         	while (reader.hasNext()) {
     			IParser parser = reader.next();
-    			Map<String, Object> map = new LinkedHashMap<>();
-    			reqcols.stream().forEach(col -> {
-    				getValueFromIParser(map, col, parser);
+    			Object[] values = new Object[allcols.size()];
+    			Object[] toconsider = new Object[allcols.size()];
+    			reqcols.stream().forEach(index -> {
+    				getValueFromIParser(values, toconsider, allcols.get(index), parser, index);
     			});
-    			action.accept(map);
+    			Object[] valuewithconsideration = new Object[2];
+    			valuewithconsideration[0] = values;
+    			valuewithconsideration[1] = toconsider;
+    			action.accept(valuewithconsideration);
     		}
     		reader.close();         
             return true;

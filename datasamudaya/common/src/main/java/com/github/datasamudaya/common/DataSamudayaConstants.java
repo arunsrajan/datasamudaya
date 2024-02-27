@@ -234,6 +234,7 @@ public class DataSamudayaConstants {
   public static final String YARN_CLIENT = "yarnClient";
 
   public static final String PREDICATESERIALIZABLE = "PredicateSerializable";
+  public static final String DISTINCT = "Distinct";
   public static final String MAPFUNCTION = "MapFunction";
   public static final String REDUCEFUNCTION = "ReduceFunction";
   public static final String REDUCEBYKEYFUNCTION = "ReduceByKeyFunction";
@@ -594,4 +595,12 @@ public class DataSamudayaConstants {
   public static final String TRUE = Boolean.toString(Boolean.TRUE);
   public static final String SQLCOUNTFORAVG = "-count";
   public static final String CSV = "csv";
+  
+  public static final String METRICS_EXPORTER_PORT = "metrics.exporter.port";
+  public static final String METRICS_EXPORTER_PORT_DEFAULT = "9010";
+  
+  
+  public static final String TOPERSISTYOSEGICOLUMNAR = "columnar.persist";
+  public static final String TOPERSISTYOSEGICOLUMNAR_DEFAULT = "false";
+  
 }
