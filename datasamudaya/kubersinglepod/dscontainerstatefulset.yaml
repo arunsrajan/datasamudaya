@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: datasamudayacontainer
+  labels:
+    app: datasamudayacontainer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datasamudayacontainer
+  template:
+    metadata:
+      labels:
+        app: datasamudayacontainer
+    spec:
+      containers:
+        - name: datasamudayacontainer
+          image: arunsrajan/datasamudayacontainer:latest
+          env:
+            - name: DATASAMUDAYA_HOME
+              value: /opt/datasamudaya
+            - name: CORE_CONF_fs_defaultFS
+              value: hdfs://namenode:9000
+            - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
+              value: "false"
+            - name: ZKHOSTPORT
+              value: zoo:2181
+            - name: HDFS_CONF_dfs_datanode_data_dir
+              value: /opt/dockershare/data
+            - name: HOST
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: PORT
+              value: "10101"
+            - name: NODEPORT
+              value: "12121"
+            - name: MEMCONFIGLOW
+              value: -Xms512M
+            - name: TSHOST
+              value: -Xmx512M
+          ports:
+            - containerPort: 12121
+              name: nodep
+          volumeMounts:
+            - name: hdfsdatanode
+              mountPath: /opt/dockershare/data
+  volumeClaimTemplates:
+        - metadata:
+            name: hdfsdatanode
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi

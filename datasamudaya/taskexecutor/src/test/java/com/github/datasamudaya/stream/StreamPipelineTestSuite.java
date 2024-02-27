@@ -29,7 +29,7 @@ import com.github.datasamudaya.tasks.executor.MassiveDataCruncherMRApiTest;
     StreamPipelineTransformationFunctionsTest.class, 
     StreamPipelineStatisticsTest.class,
     MassiveDataCruncherMRApiTest.class,
-    StreamPipelineSqlBuilderTest.class,
+    StreamPipelineCalciteSqlBuilderTest.class,
     FileBlocksPartitionerHDFSMultipleNodesTest.class,
     StreamPipelineDepth2Test.class, StreamPipelineDepth31Test.class})
 public class StreamPipelineTestSuite {

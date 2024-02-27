@@ -30,6 +30,7 @@ import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.CoalesceFunction;
 import com.github.datasamudaya.common.functions.CountByKeyFunction;
 import com.github.datasamudaya.common.functions.CountByValueFunction;
+import com.github.datasamudaya.common.functions.Distinct;
 import com.github.datasamudaya.common.functions.DoubleFlatMapFunction;
 import com.github.datasamudaya.common.functions.FlatMapFunction;
 import com.github.datasamudaya.common.functions.FoldByKey;
@@ -152,6 +153,8 @@ public class PipelineUtils {
 			return DataSamudayaConstants.REDUCEFUNCTIONVALUES;
 		} else if (obj instanceof Dummy) {
 			return DataSamudayaConstants.DUMMY;
+		} else if (obj instanceof Distinct) {
+			return DataSamudayaConstants.DISTINCT;
 		}
 		return DataSamudayaConstants.EMPTY;
 	}

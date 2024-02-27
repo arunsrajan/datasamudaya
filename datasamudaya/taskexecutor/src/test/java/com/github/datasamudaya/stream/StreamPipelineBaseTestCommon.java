@@ -47,6 +47,7 @@ import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.DataSamudayaCacheManager;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.NetworkUtil;
@@ -94,6 +95,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			CacheUtils.initBlockMetadataCache(DataSamudayaConstants.BLOCKCACHE);
 			hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 1);
 			pipelineconfig.setBlocksize("20");
+			pipelineconfig.setStorage(STORAGE.INMEMORY);
 			testingserver = new TestingServer(zookeeperport);
 			testingserver.start();
 			zo = new ZookeeperOperations();

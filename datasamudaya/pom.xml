@@ -15,14 +15,15 @@
 		<datasamudaya.version>2.0</datasamudaya.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<skip.assemblyxml>true</skip.assemblyxml>
-		<ignite.version>2.14.0</ignite.version>
+		<ignite.version>2.16.0</ignite.version>
 		<calcite.version>1.25.0</calcite.version>
-		<maven.compiler.source>17</maven.compiler.source>
-		<maven.compiler.target>17</maven.compiler.target>
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
 		<main.basedir>${basedir}</main.basedir>
 		<sonar.coverage.jacoco.xmlReportPaths>
 			${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml
 		</sonar.coverage.jacoco.xmlReportPaths>
+		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
 	</properties>
 
 	<dependencies>
@@ -188,7 +189,7 @@
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryo</artifactId>
-			<version>5.4.0</version>
+			<version>5.6.0</version>
 		</dependency>
 		
 		<dependency>
@@ -268,8 +269,19 @@
 		<dependency>
 			<groupId>org.ow2.asm</groupId>
 			<artifactId>asm</artifactId>
-			<version>5.0.4</version>
+			<version>9.6</version>
 		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-tree</artifactId>
+			<version>9.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-analysis</artifactId>
+			<version>9.6</version>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.jooq</groupId>
 			<artifactId>jool</artifactId>
@@ -354,24 +366,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.scala-lang</groupId>
-			<artifactId>scala-library</artifactId>
-			<version>2.11.12</version>
-		</dependency>
-
-		<dependency>
-			<groupId>sh.den</groupId>
-			<artifactId>scala-offheap_2.11</artifactId>
-			<version>0.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>sh.den</groupId>
-			<artifactId>scala-offheap-macros_2.11</artifactId>
-			<version>0.1</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.30</version>
@@ -430,7 +424,70 @@
 	        <artifactId>hadoop-client-runtime</artifactId>
 	        <version>3.3.4</version>
 	    </dependency>
+	    <dependency>
+	        <groupId>io.prometheus</groupId>
+	        <artifactId>simpleclient</artifactId>
+	        <version>0.16.0</version>
+	    </dependency>
+		<dependency>
+		    <groupId>io.prometheus</groupId>
+		    <artifactId>simpleclient_httpserver</artifactId>
+		    <version>0.16.0</version>
+		</dependency>
+		<dependency>
+	        <groupId>io.prometheus</groupId>
+	        <artifactId>simpleclient_common</artifactId>
+	        <version>0.16.0</version>
+	    </dependency>
+	    <dependency>
+	        <groupId>io.prometheus</groupId>
+	        <artifactId>simpleclient_hotspot</artifactId>
+	        <version>0.16.0</version>
+	    </dependency>
+		<dependency>
+		    <groupId>io.micrometer</groupId>
+		    <artifactId>micrometer-core</artifactId>
+		    <version>1.12.2</version>
+		</dependency>
+		<dependency>
+		    <groupId>io.micrometer</groupId>
+		    <artifactId>micrometer-registry-prometheus</artifactId>
+		    <version>1.12.2</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.ea.agentloader</groupId>
+		    <artifactId>ea-agent-loader</artifactId>
+		    <version>1.0.3</version>
+		</dependency>
 	</dependencies>
+	<reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.6.3</version>
+        <configuration>
+			<failOnError>false</failOnError>
+            <doclint>none</doclint>
+        </configuration>
+        <reportSets>
+          <reportSet>
+            <id>aggregate</id>
+            <inherited>false</inherited>
+            <reports>
+              <report>aggregate</report>
+            </reports>
+          </reportSet>
+          <reportSet>
+            <id>default</id>
+            <reports>
+              <report>javadoc</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+    </plugins>
+  </reporting>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -490,13 +547,14 @@
 						<configuration>
 							<target name="copy files to web project">
 								<echo message="prepare phase" />
-								<unzip
-									src="target/datasamudaya-${project.version}-jdk17.zip"
+								<mkdir dir="target/unpack/opt/datasamudaya" />
+								<gunzip
+									src="target/datasamudaya-${project.version}-jdk21.tar.gz"
 									dest="target/unpack/opt/datasamudaya" />
 								<mkdir dir="target/unpack/usr/local/java" />
-								<gunzip src="target/openjdk-17.0.2_linux-x64_bin.tar.gz"
+								<gunzip src="target/openjdk-21.0.2_linux-x64_bin.tar.gz"
 									dest="target/" />
-								<untar src="target/openjdk-17.0.2_linux-x64_bin.tar"
+								<untar src="target/openjdk-21.0.2_linux-x64_bin.tar"
 									dest="target/unpack/usr/local/java" />
 								<copy todir="target/datasamudayastandalone">
 									<fileset dir="dockerdatasamudayastandalone" includes="entry.sh" />
@@ -539,11 +597,11 @@
 					<executable>curl</executable>
 					<arguments>
 						<argument>
-							https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz
+							https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz
 						</argument>
-						<argument>target/openjdk-17.0.2_linux-x64_bin.tar.gz</argument>
+						<argument>target/openjdk-21.0.2_linux-x64_bin.tar.gz</argument>
 						<argument>--output</argument>
-						<argument>target/openjdk-17.0.2_linux-x64_bin.tar.gz</argument>
+						<argument>target/openjdk-21.0.2_linux-x64_bin.tar.gz</argument>
 					</arguments>
 				</configuration>
 			</plugin>
@@ -559,7 +617,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<release>17</release>
+					<release>21</release>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -568,43 +626,7 @@
 		<profile>
 			<id>modules</id>
 			<build>
-				<plugins>
-					<plugin>
-						<groupId>net.alchim31.maven</groupId>
-						<artifactId>scala-maven-plugin</artifactId>
-						<version>4.6.2</version>
-						<configuration>
-							<scalaCompatVersion>2.11.12</scalaCompatVersion>
-							<scalaVersion>2.11.12</scalaVersion>
-							<includes>**/*.scala</includes>
-							<source>1.8</source>
-							<target>1.8</target>
-							<compilerPlugins>
-								<compilerPlugin>
-									<groupId>org.scalamacros</groupId>
-									<artifactId>paradise_2.11.12</artifactId>
-									<version>2.1.1</version>
-								</compilerPlugin>
-							</compilerPlugins>
-						</configuration>
-						<executions>
-							<execution>
-								<id>scala-compile</id>
-								<phase>compile</phase>
-								<goals>
-									<goal>add-source</goal>
-									<goal>compile</goal>
-								</goals>
-							</execution>
-							<execution>
-								<id>scala-test-compile</id>
-								<phase>test-compile</phase>
-								<goals>
-									<goal>testCompile</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
+				<plugins>					
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-clean-plugin</artifactId>
@@ -617,7 +639,7 @@
 									<followSymlinks>false</followSymlinks>
 									<useDefaultExcludes>true</useDefaultExcludes>
 									<excludes>
-										<exclude>openjdk-17.0.2_linux-x64_bin.tar.gz</exclude>
+										<exclude>openjdk-21.0.2_linux-x64_bin.tar.gz</exclude>
 									</excludes>
 								</fileset>
 							</filesets>
@@ -628,9 +650,9 @@
 						<artifactId>maven-compiler-plugin</artifactId>
 						<version>3.8.1</version>
 						<configuration>
-							<release>17</release>
-							<source>17</source>
-							<target>17</target>
+							<release>21</release>
+							<source>21</source>
+							<target>21</target>
 							<forceJavacCompilerUse>false</forceJavacCompilerUse>
 						</configuration>
 						<executions>
@@ -645,7 +667,7 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.8.8</version>
+						<version>0.8.11</version>
 						<executions>
 							<execution>
 								<id>prepare-unit-tests</id>
@@ -676,13 +698,12 @@
 							<reuseForks>true</reuseForks>
 							<argLine>
 								${argLine}
-								-Xms256m -Xmx6g
+								-Xms256m -Xmx2g
+								-javaagent:../lib/dsagent-2.0.jar
 								--add-opens
 								java.base/java.math=ALL-UNNAMED
 								--add-opens
 								java.base/java.lang=ALL-UNNAMED
-								--add-modules
-								jdk.incubator.foreign
 								--add-opens
 								java.base/jdk.internal.ref=ALL-UNNAMED
 								--add-opens
@@ -765,7 +786,7 @@
 										<resource>
 											<directory>${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk17.tar.gz</include>
+												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -783,7 +804,7 @@
 										<resource>
 											<directory>${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk17.tar.gz</include>
+												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -801,7 +822,7 @@
 										<resource>
 											<directory>${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk17.tar.gz</include>
+												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -819,7 +840,7 @@
 										<resource>
 											<directory>${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk17.tar.gz</include>
+												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -845,6 +866,7 @@
 				<module>pipeline</module>
 				<module>examples</module>
 				<module>coverage</module>
+				<module>dsagent</module>
 			</modules>
 		</profile>
 		<profile>
@@ -917,7 +939,7 @@
 												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
 											<permission>
-												<file>/usr/local/java/jdk-17.0.2/bin/*</file>
+												<file>/usr/local/java/jdk-21.0.2/bin/*</file>
 												<mode>777
 												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
@@ -1003,7 +1025,7 @@
 												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>
 											<permission>
-												<file>/usr/local/java/jdk-17.0.2/bin/*</file>
+												<file>/usr/local/java/jdk-21.0.2/bin/*</file>
 												<mode>777
 												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
 											</permission>

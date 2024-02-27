@@ -31,6 +31,7 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -41,6 +42,9 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.GregorianCalendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,6 +65,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
@@ -86,6 +92,7 @@ import org.jgroups.ObjectMessage;
 import org.jgroups.Receiver;
 import org.jgroups.View;
 import org.jgroups.util.UUID;
+import org.joda.time.*;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.objenesis.strategy.StdInstantiatorStrategy;
@@ -93,7 +100,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.util.CollectionUtils;
-import org.springframework.yarn.YarnSystemConstants;
 import org.springframework.yarn.client.CommandYarnClient;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -104,6 +110,7 @@ import com.esotericsoftware.kryo.serializers.ClosureSerializer.Closure;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.StringArraySerializer;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.EnumSerializer;
+import com.esotericsoftware.kryo.serializers.ImmutableCollectionsSerializers;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.datasamudaya.common.AllocateContainers;
@@ -126,14 +133,6 @@ import com.github.datasamudaya.common.GlobalYARNResources;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.Job.JOBTYPE;
 import com.github.datasamudaya.common.JobConfiguration;
-import com.github.datasamudaya.common.exceptions.JGroupsException;
-import com.github.datasamudaya.common.exceptions.JobException;
-import com.github.datasamudaya.common.exceptions.OutputStreamException;
-import com.github.datasamudaya.common.exceptions.PropertiesException;
-import com.github.datasamudaya.common.exceptions.RpcRegistryException;
-import com.github.datasamudaya.common.exceptions.TaskExecutorException;
-import com.github.datasamudaya.common.exceptions.YarnLaunchException;
-import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.PipelineConfig;
@@ -152,10 +151,51 @@ import com.github.datasamudaya.common.WhoAreRequest;
 import com.github.datasamudaya.common.WhoAreResponse;
 import com.github.datasamudaya.common.WhoIsRequest;
 import com.github.datasamudaya.common.WhoIsResponse;
+import com.github.datasamudaya.common.exceptions.JGroupsException;
+import com.github.datasamudaya.common.exceptions.JobException;
+import com.github.datasamudaya.common.exceptions.OutputStreamException;
+import com.github.datasamudaya.common.exceptions.PropertiesException;
+import com.github.datasamudaya.common.exceptions.RpcRegistryException;
+import com.github.datasamudaya.common.exceptions.TaskExecutorException;
+import com.github.datasamudaya.common.exceptions.YarnLaunchException;
+import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.functions.Coalesce;
+import com.google.common.collect.ImmutableList;
 import com.sun.management.OperatingSystemMXBean;
 import com.univocity.parsers.csv.CsvWriter;
 
+import de.javakaffee.kryoserializers.KryoReflectionFactorySupport;
+import de.javakaffee.kryoserializers.ArraysAsListSerializer;
+import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
+import de.javakaffee.kryoserializers.CollectionsEmptyMapSerializer;
+import de.javakaffee.kryoserializers.CollectionsEmptySetSerializer;
+import de.javakaffee.kryoserializers.CollectionsSingletonListSerializer;
+import de.javakaffee.kryoserializers.CollectionsSingletonSetSerializer;
+import de.javakaffee.kryoserializers.CollectionsSingletonMapSerializer;
+import de.javakaffee.kryoserializers.GregorianCalendarSerializer;
+import de.javakaffee.kryoserializers.JdkProxySerializer;
+import de.javakaffee.kryoserializers.SynchronizedCollectionsSerializer;
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
+import de.javakaffee.kryoserializers.cglib.CGLibProxySerializer;
+import de.javakaffee.kryoserializers.dexx.ListSerializer;
+import de.javakaffee.kryoserializers.dexx.MapSerializer;
+import de.javakaffee.kryoserializers.dexx.SetSerializer;
+import de.javakaffee.kryoserializers.guava.ArrayListMultimapSerializer;
+import de.javakaffee.kryoserializers.guava.ArrayTableSerializer;
+import de.javakaffee.kryoserializers.guava.HashBasedTableSerializer;
+import de.javakaffee.kryoserializers.guava.HashMultimapSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableListSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableMapSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableMultimapSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableSetSerializer;
+import de.javakaffee.kryoserializers.guava.ImmutableTableSerializer;
+import de.javakaffee.kryoserializers.guava.LinkedHashMultimapSerializer;
+import de.javakaffee.kryoserializers.guava.LinkedListMultimapSerializer;
+import de.javakaffee.kryoserializers.guava.ReverseListSerializer;
+import de.javakaffee.kryoserializers.guava.TreeBasedTableSerializer;
+import de.javakaffee.kryoserializers.guava.TreeMultimapSerializer;
+import de.javakaffee.kryoserializers.guava.UnmodifiableNavigableSetSerializer;
+import de.javakaffee.kryoserializers.jodatime.*;
 import jdk.jshell.JShell;
 import net.sf.jsqlparser.parser.SimpleNode;
 import net.sf.jsqlparser.schema.Table;
@@ -304,9 +344,47 @@ public class Utils {
 	 */
 	public static Kryo getKryoInstance() {
 		Kryo kryo = new Kryo();
+		kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
 		kryo.setReferences(true);
 		kryo.setRegistrationRequired(false);
 		kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
+		kryo.register( Arrays.asList( "" ).getClass(), new ArraysAsListSerializer() );
+		kryo.register( Collections.EMPTY_LIST.getClass(), new CollectionsEmptyListSerializer() );
+		kryo.register( Collections.EMPTY_MAP.getClass(), new CollectionsEmptyMapSerializer() );
+		kryo.register( Collections.EMPTY_SET.getClass(), new CollectionsEmptySetSerializer() );
+		kryo.register( Collections.singletonList( "" ).getClass(), new CollectionsSingletonListSerializer() );
+		kryo.register( Collections.singleton( "" ).getClass(), new CollectionsSingletonSetSerializer() );
+		kryo.register( Collections.singletonMap( "", "" ).getClass(), new CollectionsSingletonMapSerializer() );
+		kryo.register( GregorianCalendar.class, new GregorianCalendarSerializer() );
+		kryo.register( InvocationHandler.class, new JdkProxySerializer() );
+		UnmodifiableCollectionsSerializer.registerSerializers( kryo );
+		SynchronizedCollectionsSerializer.registerSerializers( kryo );
+
+		// custom serializers for non-jdk libs
+
+		// register CGLibProxySerializer, works in combination with the appropriate action in handleUnregisteredClass (see below)
+		kryo.register( CGLibProxySerializer.CGLibProxyMarker.class, new CGLibProxySerializer());
+		// joda DateTime, LocalDate, LocalDateTime and LocalTime
+		kryo.register( DateTime.class, new JodaDateTimeSerializer() );
+		kryo.register( LocalDate.class, new JodaLocalDateSerializer() );
+		kryo.register( LocalDateTime.class, new JodaLocalDateTimeSerializer() );
+		kryo.register( LocalDateTime.class, new JodaLocalTimeSerializer() );
+		ImmutableListSerializer.registerSerializers( kryo );
+		ImmutableSetSerializer.registerSerializers( kryo );
+		ImmutableMapSerializer.registerSerializers( kryo );
+		ImmutableMultimapSerializer.registerSerializers( kryo );
+		ImmutableTableSerializer.registerSerializers( kryo );
+		ReverseListSerializer.registerSerializers( kryo );
+		UnmodifiableNavigableSetSerializer.registerSerializers( kryo );
+		ArrayListMultimapSerializer.registerSerializers( kryo );
+		HashMultimapSerializer.registerSerializers( kryo );
+		LinkedHashMultimapSerializer.registerSerializers( kryo );
+		LinkedListMultimapSerializer.registerSerializers( kryo );
+		TreeMultimapSerializer.registerSerializers( kryo );
+		ArrayTableSerializer.registerSerializers( kryo );
+		HashBasedTableSerializer.registerSerializers( kryo );
+		TreeBasedTableSerializer.registerSerializers( kryo );
+		kryo.register(ImmutableList.copyOf(SqlTypeFamily.DATETIME_INTERVAL.getTypeNames()).getClass(), new ImmutableListSerializer());
 		kryo.register(Object.class);
 		kryo.register(Object[].class);
 		kryo.register(byte.class);
@@ -350,7 +428,7 @@ public class Utils {
 			}
 		});
 		kryo.register(Closure.class, new ClosureSerializer());
-		kryo.register(JShell.class, new CompatibleFieldSerializer<JShell>(kryo, JShell.class));
+		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));		
 		return kryo;
 	}
 
@@ -1197,8 +1275,7 @@ public class Utils {
 			DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), crl);
 			log.info("Chamber dispatched node: {} with ports: {}", restolaunch.getNodeport(), launchedcontainerports);
 		}
-		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
-		
+		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();		
 		int index = 0;
 		while (index < launchedcontainerhostports.size()) {
 			while (true) {
@@ -1223,7 +1300,7 @@ public class Utils {
 			index++;
 		}
 		
-		
+		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsAllocatedCounter().inc(globallaunchcontainers.size());
 		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
 		return globallaunchcontainers;
 	}
@@ -1542,7 +1619,7 @@ public class Utils {
 		if (isNull(usersshare)) {
 			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
-		var lcs = GlobalContainerLaunchers.get(user, jobid);
+		var lcs = GlobalContainerLaunchers.get(user, jobid);		
 		lcs.stream().forEach(lc -> {
 			try {
 				ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources.getAllocatedResources().get(lc.getNodehostport());
@@ -1556,6 +1633,7 @@ public class Utils {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		});
+		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsDeAllocatedCounter().inc(lcs.size());
 		GlobalContainerLaunchers.remove(user, jobid);		
 		GlobalJobFolderBlockLocations.remove(jobid);
 		Map<String,List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);
@@ -1667,17 +1745,17 @@ public class Utils {
 	 * @param data
 	 * @param out
 	 */
-	public static void printTableOrError(List data, PrintWriter out, JOBTYPE jobtype) {
+	public static long printTableOrError(List data, PrintWriter out, JOBTYPE jobtype) {
 		if (data.isEmpty()) {
 			out.println("No data available to display.");
-			return;
+			return 0;
 		}
 
 		if (data.get(0) instanceof String errors) {
 			for (Object error : data) {
 				out.println(error);
 			}
-			return;
+			return 0;
 		} else if (data.get(0) instanceof DataCruncherContext dcc) {
 			Map<String, Object> mapheadervalue = (Map<String, Object>) dcc.get("Reducer").iterator().next();
 			String[] headers = mapheadervalue.keySet().toArray(new String[0]);
@@ -1696,26 +1774,25 @@ public class Utils {
 				}
 				out.println();
 			}
-			return;
+			return dcc.get("Reducer").size();
 		} else if (data.get(0) instanceof Double value) {
 			out.println(value);
-			return;
+			return 1;
 		} else if (data.get(0) instanceof Integer intval) {
 			out.println(intval);
-			return;
+			return 1;
 		} else if (data.get(0) instanceof Float floatval) {
 			out.println(floatval);
-			return;
+			return 1;
 		} else if (data.get(0) instanceof Long lvalue) {
 			out.println(lvalue);
-			return;
+			return 1;
 		}
 		
-		if(jobtype == JOBTYPE.NORMAL) {
-			printTable(data, out);
-		} else if(jobtype == JOBTYPE.PIG) {
-			printTablePig(data, out);
+		if(jobtype == JOBTYPE.NORMAL || jobtype == JOBTYPE.PIG) {
+			return printTable(data, out);
 		}
+		return 0;
 	}
 	
 	/**
@@ -1800,49 +1877,23 @@ public class Utils {
 	 * @param tableData
 	 * @param out
 	 */
-	private static void printTable(List<Map<String, Object>> tableData, PrintWriter out) {
+	private static long printTable(List<Object[]> tableData, PrintWriter out) {
         if (tableData.isEmpty()) {
             out.println("Table is empty.");
             out.flush();
-            return;
+            return 0;
         }
-
-                
-        // Calculate column widths
-        Map<String, Integer> columnWidths = new HashMap<>();
-        Map<String, Object> mapforkeys = tableData.get(0);
-        Set<String> keys = mapforkeys.keySet();
-        for(String key: keys) {
-        	columnWidths.put(key, key.length());
-        }       
-        for (Map<String, Object> row : tableData) {
-            for (Map.Entry<String, Object> entry : row.entrySet()) {
-                String key = entry.getKey();
-                String value = String.valueOf(entry.getValue());
-                int width = Math.max(columnWidths.getOrDefault(key, 0), value.length());
-                columnWidths.put(key, width);
-            }
-        }
-
-        // Print table header
-        for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
-            out.printf(String.format("%%-%ds | ", entry.getValue()), entry.getKey());
-            out.flush();
-        }
-        out.println();
-        out.flush();
 
         // Print table rows
-        for (Map<String, Object> row : tableData) {
-            for (Map.Entry<String, Integer> entry : columnWidths.entrySet()) {
-                String key = entry.getKey();
-                Object value = row.get(key);
-                out.printf(String.format("%%-%ds | ", entry.getValue()), value);
+        for (Object[] rows : tableData) {
+            for (Object row : rows) {
+                out.printf(String.format("%%-%ds | ", 15), row);
                 out.flush();
             }
             out.println();
             out.flush();
         }
+        return tableData.size();
     }
 	
 	/**

@@ -23,6 +23,7 @@ import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Job.JOBTYPE;
+import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.Utils;
 
 /**
@@ -233,6 +234,8 @@ public class SQLServer {
 											out.println(TableCreator.dropTable(dbdefault, inputLine));
 										} else if (inputLine.startsWith("show")) {
 											Utils.printTableOrError(TableCreator.showTables(dbdefault, inputLine), out, JOBTYPE.NORMAL);
+										} else if (inputLine.startsWith("explain")) {
+											SelectQueryExecutor.explain(dbdefault, inputLine.replaceFirst("explain", ""), out);
 										} else if (inputLine.startsWith("describe")) {
 											var columns = new ArrayList<ColumnMetadata>();
 											TableCreator.getColumnMetadataFromTable(dbdefault, inputLine.split(" ")[1], columns);
@@ -244,17 +247,22 @@ public class SQLServer {
 											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 											List<List> results = null; 
 											if (isignite) {
+												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
 												results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid);
 											} else {
+												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
 												results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups, isyarn);
 											}
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 											int partitionno = 1;
+											long totalrecords = 0;
 											for (List result : results) {
 												out.println("Partition" + partitionno);
-												Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
+												totalrecords += Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
 												partitionno++;
 											}
+											out.printf("Total records processed %d", totalrecords);
+											out.println("");
 											out.println("Time taken " + timetaken + " seconds");
 											out.println("");
 										} else {

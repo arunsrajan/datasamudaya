@@ -116,7 +116,7 @@ public class LaunchContainersTest extends StreamPipelineBaseTestCommon{
 		MapPair<String, Tuple2<Long, Long>> mstll = datastream.map(dat -> dat.split(",")).filter(dat -> dat != null && !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14])).mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14]))).mapValues(mv -> new Tuple2<Long, Long>(mv, 1l)).reduceByValues((tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2)).coalesce(1, (tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2));
 		joinresult = mstll.collect(true, null);
 		joinresult.stream().forEach(result -> log.info("{}", result));
-		Utils.destroyContainers("arun", pc.getJobid());
+		Utils.destroyContainers("arun", pc.getTejobid());
 		pc.setLocal("true");
 	}
 

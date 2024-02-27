@@ -92,10 +92,15 @@ public class ZookeeperOperations implements AutoCloseable{
      */
     public void createNodesNode(String node, Resources data, Watcher watcher) throws ZookeeperException {
 		try {
+			if (curator.checkExists().forPath(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.NODESZK + DataSamudayaConstants.FORWARD_SLASH + node) != null) {
+				deleteNode(DataSamudayaConstants.ROOTZNODEZK
+						+ DataSamudayaConstants.NODESZK + DataSamudayaConstants.FORWARD_SLASH + node);
+			}
 			curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
-					.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
-							+ DataSamudayaConstants.NODESZK + DataSamudayaConstants.FORWARD_SLASH + node,
-							objectMapper.writeValueAsBytes(data));
+			.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.NODESZK + DataSamudayaConstants.FORWARD_SLASH + node,
+					objectMapper.writeValueAsBytes(data));
 			curator.getChildren().usingWatcher(watcher)
 					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.NODESZK);
 		} catch(Exception ex) {

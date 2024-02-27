@@ -15,9 +15,6 @@
  */
 package com.github.datasamudaya.stream;
 
-import org.jooq.lambda.tuple.Tuple2;
-
-import com.github.datasamudaya.common.functions.MapValuesFunction;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunctionValues;
 
 /**
@@ -33,6 +30,9 @@ public final class MapValues<I1, I2> extends MapPair<I1, I2> {
 		parent.childs.add(this);
 		this.parents.add(parent);
 		tasks.add(task);
+		this.pipelineconfig = parent.pipelineconfig;
+		this.csvoptions = parent.csvoptions;
+		this.json = parent.json;
 	}
 
 	/**

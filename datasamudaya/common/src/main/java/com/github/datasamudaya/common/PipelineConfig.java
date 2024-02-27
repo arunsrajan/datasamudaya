@@ -82,6 +82,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	private String tejobid;
 	private Boolean isremotescheduler;
 	private String sqlpigquery;
+	private boolean topersistcolumnar;
 
 	public void setOutput(OutputStream  output) {
 		this.output = output;
@@ -447,6 +448,17 @@ public class PipelineConfig implements Serializable, Cloneable {
 			return isremotescheduler;
 		}
 		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IS_REMOTE_SCHEDULER, DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT) : DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT);
+	}
+
+	public boolean isTopersistcolumnar() {
+		if(nonNull(topersistcolumnar)) {
+			return topersistcolumnar;
+		}
+		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR, DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT) : DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT);
+	}
+
+	public void setTopersistcolumnar(boolean topersistcolumnar) {
+		this.topersistcolumnar = topersistcolumnar;
 	}
 
 	public void setIsremotescheduler(Boolean isremotescheduler) {

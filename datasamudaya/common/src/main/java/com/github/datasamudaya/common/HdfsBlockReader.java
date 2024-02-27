@@ -179,7 +179,7 @@ public class HdfsBlockReader {
 				if (nonNull(block)) {
 					log.info("Obtaining Data for the " + block + " with offset: " + block.getBlockOffset());
 					FSDataInputStream dfsis = hdfs.open(new Path(block.getFilename()));
-					BlockReaderInputStream bris = new BlockReaderInputStream(dfsis, (int) (block.getBlockOffset() + block.getBlockstart()),
+					BlockReaderInputStream bris = new BlockReaderInputStream(dfsis, (long) (block.getBlockOffset() + block.getBlockstart()),
 							block.getBlockend() - block.getBlockstart());
 					inputstreams.add(bris);
 				}

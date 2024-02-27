@@ -25,6 +25,7 @@ import java.io.File;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -50,6 +51,8 @@ import com.esotericsoftware.kryo.serializers.ClosureSerializer;
 
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.utils.Utils;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
 
 import jdk.jshell.JShell;
 
@@ -626,6 +629,24 @@ public class UtilsTest {
 		    // Assert that the exception message or type indicates the server is not available
 		}
 
+	}
+	
+	@Test
+	public void testKryoImmutableCollection() {
+		var baos = new ByteArrayOutputStream();
+		Output output = new Output(baos);
+		Kryo kryo = Utils.getKryoInstance();
+		ImmutableCollection<Integer> col = ImmutableList.copyOf(Arrays.asList(1,2,3,4));
+		kryo.writeClassAndObject(output, col);
+		output.flush();
+		output.close();
+
+		// Example of deserialization
+		var bais = new java.io.ByteArrayInputStream(baos.toByteArray());
+		Input input = new Input(bais);
+		Object deserializedCollection = kryo.readClassAndObject(input);
+		assertNotNull(deserializedCollection);
+		input.close();
 	}
 	
 }

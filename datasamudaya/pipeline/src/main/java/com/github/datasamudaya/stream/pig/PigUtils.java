@@ -1,7 +1,7 @@
 package com.github.datasamudaya.stream.pig;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,8 +11,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
@@ -44,6 +44,7 @@ import org.apache.pig.newplan.logical.relational.LOStore;
 import org.apache.pig.newplan.logical.relational.LogicalPlan;
 import org.apache.pig.newplan.logical.relational.LogicalRelationalOperator;
 import org.apache.pig.newplan.logical.relational.LogicalSchema;
+import org.apache.pig.newplan.logical.relational.LogicalSchema.LogicalFieldSchema;
 import org.apache.pig.parser.QueryParserDriver;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple1;
@@ -73,6 +74,7 @@ import com.github.datasamudaya.common.functions.CoalesceFunction;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.MapFunction;
 import com.github.datasamudaya.common.functions.MapToPairFunction;
+import com.github.datasamudaya.common.functions.PredicateSerializable;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.utils.SQLUtils;
@@ -181,12 +183,12 @@ public class PigUtils {
 	 * @return stream object
 	 * @throws Exception
 	 */
-	public static StreamPipeline<Map<String, Object>> executeLOLoad(String user, String jobid, String tejobid, LOLoad loload, PipelineConfig pipelineconfig) throws Exception {		
-		String[] airlinehead = getHeaderFromSchema(loload.getSchema());
+	public static StreamPipeline<?> executeLOLoad(String user, String jobid, String tejobid, LOLoad loload, PipelineConfig pipelineconfig) throws Exception {		
+		String[] headers = getHeaderFromSchema(loload.getSchema());
 		List<SqlTypeName> schematypes = getTypesFromSchema(loload.getSchema());
 		return StreamPipeline.newCsvStreamHDFSSQL(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT), loload.getSchemaFile(),
-				pipelineconfig, airlinehead, schematypes, Arrays.asList(airlinehead));
+				pipelineconfig, headers, schematypes, Arrays.asList(headers));
 	}
 	
 	/**
@@ -234,19 +236,22 @@ public class PigUtils {
 	 * @return filtered data
 	 * @throws Exception
 	 */
-	public static StreamPipeline<Map<String, Object>> executeLOFilter(StreamPipeline<Map<String, Object>> sp, LOFilter loFilter) throws Exception {
-		
+	public static StreamPipeline<Object[]> executeLOFilter(StreamPipeline<Object[]> sp, LOFilter loFilter, List<String> coloralias, List<String> outcols, boolean hasdescendants) throws Exception {
+		outcols.addAll(coloralias);
 		LogicalExpressionPlan lep = loFilter.getFilterPlan();
 		List<Operator> exp = lep.getSources();
-		StreamPipeline<Map<String, Object>> fsp = sp
-				.filter(map -> {
+		sp = sp
+				.filter(obj -> {
 					try {
-						return evaluateExpression((LogicalExpression) exp.get(0), map);
+						return evaluateExpression((LogicalExpression) exp.get(0), obj, coloralias);
 					} catch (Exception e) {
 						return false;
 					}
 				});
-		return fsp;
+		if(!hasdescendants) {
+			return sp.map(obj->((Object[])obj[0]));
+		}
+		return sp;
 	}
 	
 	/**
@@ -256,8 +261,8 @@ public class PigUtils {
 	 * @return sorted stream in ascending or in descending order of columns
 	 * @throws Exception
 	 */
-	public static StreamPipeline<Map<String, Object>> executeLOSort(StreamPipeline<Map<String, Object>> sp, LOSort loSort) throws Exception {
-		
+	public static StreamPipeline<Object[]> executeLOSort(StreamPipeline<Object[]> sp, LOSort loSort, List<String> aliasorcolumns, List<String> outcols, boolean hasdescendants) throws Exception {
+		outcols.addAll(aliasorcolumns);
 		List<LogicalExpressionPlan> leps = loSort.getSortColPlans();
 		Iterator<Boolean> asccolumns = loSort.getAscendingCols().iterator();
 		List<SortOrderColumns> sortordercolumns = new ArrayList<>();
@@ -268,14 +273,14 @@ public class PigUtils {
 			soc.setIsasc(asccolumns.next());
 			sortordercolumns.add(soc);
 		}
-		return sp.sorted((map1, map2) -> {
+		sp = sp.sorted((map1, map2) -> {
 			List<SortOrderColumns> columnssortorder = sortordercolumns;
 
 			for (int i = 0;i < columnssortorder.size();i++) {
 				String columnName = columnssortorder.get(i).getColumn();
 				Boolean isAsc = columnssortorder.get(i).isIsasc();
-				Object value1 = map1.get(columnName);
-				Object value2 = map2.get(columnName);
+				Object value1 = ((Object[])map1[0])[aliasorcolumns.indexOf(columnName)];
+				Object value2 = ((Object[])map2[0])[aliasorcolumns.indexOf(columnName)];
 				int result = SQLUtils.compareTo(value1, value2);
 				if (!isAsc) {
 					result = -result;
@@ -286,6 +291,10 @@ public class PigUtils {
 			}
 			return 0;
 		});
+		if(!hasdescendants) {
+			return sp.map(obj->((Object[])obj[0]));
+		}
+		return sp;
 	}
 	
 	/**
@@ -294,21 +303,25 @@ public class PigUtils {
 	 * @return distinct values
 	 * @throws Exception
 	 */
-	public static StreamPipeline<Map<String, Object>> executeLODistinct(StreamPipeline<Map<String, Object>> sp) throws Exception {
+	public static StreamPipeline<Object[]> executeLODistinct(StreamPipeline<Object[]> spparent, boolean hasdescendants) throws Exception {
 		
-		return sp
-				.mapToPair(new MapToPairFunction<Map<String, Object>, Tuple2<Map<String, Object>, Double>>() {
-
-					private static final long serialVersionUID = -3551573628068024090L;
-
+		StreamPipeline<Object[]> spdistinct = spparent
+				.map(new MapFunction<Object[],List<Object>>(){					
+					private static final long serialVersionUID = 4839257897910999653L;
 					@Override
-					public Tuple2<Map<String, Object>, Double> apply(Map<String, Object> record) {
-
-						return new Tuple2<Map<String, Object>, Double>(record, 0.0d);
+					public List<Object> apply(Object[] distobj) {
+						return Arrays.asList(((Object[])distobj[0]));
+					}
+				}).distinct()
+				.mapToPair(new MapToPairFunction<List<Object>, Tuple2<List<Object>, Double>>() {
+					private static final long serialVersionUID = -6412672309048067129L;		
+					@Override
+					public Tuple2<List<Object>, Double> apply(List<Object> record) {
+						return new Tuple2<>(record, 1.0d);
 					}
 
 				}).reduceByKey(new ReduceByKeyFunction<Double>() {
-					private static final long serialVersionUID = 3097410316134663986L;
+					private static final long serialVersionUID = -2395505885613892042L;
 
 					@Override
 					public Double apply(Double t, Double u) {
@@ -316,14 +329,41 @@ public class PigUtils {
 					}
 
 				}).coalesce(1, new CoalesceFunction<Double>() {
-					private static final long serialVersionUID = -854840061382081717L;
+					private static final long serialVersionUID = 8667714333390649847L;
 
 					@Override
 					public Double apply(Double t, Double u) {
 						return t + u;
 					}
 
-				}).map(val -> val.v1).distinct();
+				}).map(new MapFunction<Tuple2<List<Object>, Double>, List<Object>>() {
+					private static final long serialVersionUID = -7888406734785506543L;
+
+					@Override
+					public List<Object> apply(Tuple2<List<Object>, Double> tup2) {
+						return tup2.v1();
+					}
+					
+				}).distinct()
+				.map(new MapFunction<List<Object>, Object[]>() {
+					private static final long serialVersionUID = 5319711801798549984L;
+
+					@Override
+					public Object[] apply(List<Object> list) {
+						Object[] objdistinct = new Object[2];
+						objdistinct[0] = list.toArray(new Object[0]);
+						objdistinct[1] = new Object[list.size()];
+						for(int index=0;index<list.size(); index++) {
+							((Object[])objdistinct[1])[index] = true;
+						}
+						return objdistinct;
+					}
+					
+				});
+		if(!hasdescendants) {
+			return spdistinct.map(obj->((Object[])obj[0]));
+		}
+		return spdistinct;
 	}
 	
 	/**
@@ -334,36 +374,131 @@ public class PigUtils {
 	 * @return joined stream object 
 	 * @throws Exception 
 	 */
-	public static StreamPipeline<Map<String, Object>> executeLOJoin(StreamPipeline<Map<String, Object>> sp1,
-			StreamPipeline<Map<String, Object>> sp2,
-			List<String> columnsleft, List<String> columnsright,
-			LOJoin loJoin) throws Exception {
-		return sp1.join(sp2, new JoinPredicate<Map<String, Object>, Map<String, Object>>() {
+	public static StreamPipeline<Object[]> executeLOJoin(StreamPipeline<Object[]> sp1,
+			StreamPipeline<Object[]> sp2,
+			List<String> columnsleft, List<String> columnsright,			
+			LOJoin loJoin,
+			List<String> reqcolsleft, 
+			List<String> allcolsleft,
+			List<String> reqcolsright, 
+			List<String> allcolsright,
+			List<String> aliasleft, 
+			List<String> aliasright,
+			boolean hasdescendants) throws Exception {
+		
+		StreamPipeline<Object[]> sp = sp1.join(sp2, new JoinPredicate<Object[], Object[]>() {
 			private static final long serialVersionUID = -2218859526944624786L;
 			List<String> leftablecol = columnsleft;
 			List<String> righttablecol = columnsright;
-
-			public boolean test(Map<String, Object> rowleft, Map<String, Object> rowright) {
+			List<String> reqcolleft = reqcolsleft;
+			List<String> allcolleft = allcolsleft;
+			List<String> reqcolright = reqcolsright;
+			List<String> allcolright = allcolsright;
+			List<String> alileft = aliasleft; 
+			List<String> aliright = aliasright; 
+			public boolean test(Object[] rowleft, Object[] rowright) {
 				for (int columnindex = 0;columnindex < leftablecol.size();columnindex++) {
-					if (!rowleft.get(leftablecol.get(columnindex))
-					.equals(rowright.get(righttablecol.get(columnindex)))) {
+					String leftcol = leftablecol.get(columnindex);
+					String rightcol = righttablecol.get(columnindex);
+					Object leftvalue = ((Object[])rowleft[0])[alileft.indexOf(leftcol)];
+					Object rightvalue = ((Object[])rowright[0])[aliright.indexOf(rightcol)];
+					if(leftvalue==null && rightvalue == null||nonNull(leftvalue) && nonNull(rightvalue) && !leftvalue.equals(rightvalue)) {
 						return false;
 					}
 				}
 				return true;
 			}
-		}).map(new MapFunction<Tuple2<Map<String, Object>, Map<String, Object>>, Map<String, Object>>() {
+		}).map(new MapFunction<Tuple2<Object[], Object[]>, Object[]>() {
 			private static final long serialVersionUID = -504784749432944561L;
 
 			@Override
-			public Map<String, Object> apply(
-					Tuple2<Map<String, Object>, Map<String, Object>> tuple2) {
-				Map<String, Object> columnvaluemap = new HashMap<>(tuple2.v1);
-				columnvaluemap.putAll(tuple2.v2);
-				return columnvaluemap;
+			public Object[] apply(
+					Tuple2<Object[], Object[]> tup2) {				
+				return new Object[] {concatenate(((Object[])tup2.v1()[0]), ((Object[])tup2.v2()[0])), 
+						concatenate(((Object[])tup2.v1()[1]), ((Object[])tup2.v2()[1]))};
 			}
 		});
+		
+		if(!hasdescendants) {
+			return sp.map(obj->((Object[])obj[0]));
+		}
+		return sp;
 	}
+	
+	/**
+	 * Merges two object array in to single
+	 * @param <T>
+	 * @param a
+	 * @param b
+	 * @return merged object
+	 */
+	public static <T> Object[] concatenate(T[] a, T[] b) 
+    { 
+        return Stream.of(a, b) 
+                    .flatMap(Stream::of) 
+                    .toArray(); 
+    } 
+	
+	
+	/**
+	 * This function evaluates to consider the expression 
+	 * @param expression
+	 * @param row
+	 * @param aliasorcolname
+	 * @return true or false
+	 * @throws Exception
+	 */
+	public static boolean toEvaluateBinaryExpression(LogicalExpression expression, Object[] row, List<String> aliasorcolname) throws Exception {
+		if(expression instanceof BinaryExpression bex) {
+			String operator = expression.getName();
+			LogicalExpression leftExpression = bex.getLhs();
+			LogicalExpression rightExpression = bex.getRhs();
+		    boolean leftValue=false;
+		    boolean rightValue=false;
+		    if(leftExpression instanceof UserFuncExpression fn) {
+		    	leftValue = toEvaluateBinaryExpression(leftExpression, row, aliasorcolname);
+		    }
+		    else if (leftExpression instanceof ConstantExpression lv) {
+		    	leftValue =  true;
+		    } else if (leftExpression instanceof ProjectExpression pex) {
+		        String columnName = pex.getFieldSchema().alias;
+				Object value = ((Object[])row[1])[aliasorcolname.indexOf(columnName)];
+				leftValue =  (boolean) value;
+		    } else if (leftExpression instanceof BinaryExpression) {
+		    	leftValue = toEvaluateBinaryExpression(leftExpression, row, aliasorcolname);
+		    }
+		    
+		    if(rightExpression instanceof UserFuncExpression fn) {
+		    	rightValue = toEvaluateBinaryExpression(rightExpression, row, aliasorcolname);
+		    }
+		    else if (rightExpression instanceof ConstantExpression lv) {
+		    	rightValue =  true;
+		    } else if (rightExpression instanceof ProjectExpression pex) {
+		        String columnName = pex.getFieldSchema().alias;
+				Object value = ((Object[])row[1])[aliasorcolname.indexOf(columnName)];
+				rightValue =  (boolean) value;
+		    } else if (rightExpression instanceof BinaryExpression) {
+		    	rightValue = toEvaluateBinaryExpression(rightExpression, row, aliasorcolname);
+		    }
+		    switch (operator) {
+		        case "Add":
+		        case "Subtract":
+		        case "Multiply":
+		        case "Divide":
+		        	return leftValue && rightValue;
+		        default:
+		            throw new IllegalArgumentException("Invalid operator: " + operator);
+		    }
+		} 
+		else if (expression instanceof ConstantExpression lv) {
+	    	return true;
+	    } else if (expression instanceof ProjectExpression pex) {
+	        String columnName = pex.getFieldSchema().alias;
+			return (boolean)((Object[])row[1])[aliasorcolname.indexOf(columnName)];
+	    }
+		return false;
+	}
+	
 	
 	/**
 	 * Flatten source map to formatted map
@@ -372,11 +507,13 @@ public class PigUtils {
 	 * @return formatted map stream
 	 * @throws Exception
 	 */
-	public static StreamPipeline<Map<String, Object>> executeLOForEach(StreamPipeline<Map<String, Object>> sp, LOForEach loForEach) throws Exception {
+	public static StreamPipeline<Object[]> executeLOForEach(StreamPipeline<Object[]> sp, LOForEach loForEach, List<String> aliasorcolumns, List<String> outcols, boolean hasdescendants) throws Exception {
 		
 		List<FunctionParams> functionparams = getFunctionsWithParamsGrpBy(loForEach);
 		LogicalExpression[] lexp = getLogicalExpressions(functionparams);
 		LogicalExpression[] headers = getHeaders(functionparams);
+		
+		outcols.addAll(functionparams.stream().map(fp->fp.getAlias()).toList());
 		
 		Set<String> grpbyheader = new LinkedHashSet<>();
 		
@@ -393,52 +530,94 @@ public class PigUtils {
 		
 		List<FunctionParams> aggfunctions = getAggFunctions(functionparams);
 		List<FunctionParams> nonaggfunctions = getNonAggFunctions(functionparams);
-		final AtomicBoolean iscount = new AtomicBoolean(false), isaverage = new AtomicBoolean(false);
 		if(CollectionUtils.isEmpty(aggfunctions) && CollectionUtils.isEmpty(nonaggfunctions)) {
-			return sp.map(map -> {
-					Map<String, Object> formattedmap = new HashMap<>();
-					List<String> aliasesl = aliases;
-				try {
-					LogicalExpression[] headera = lexp;
-					Iterator<String> aliasi = aliasesl.iterator();
+			sp = sp.filter(new PredicateSerializable<Object[]>() {
+				private static final long serialVersionUID = 1042338514393215380L;
+				List<String> aliascolumns = aliasorcolumns;
+				LogicalExpression[] headera = lexp;
+				public boolean test(Object[] obj) {
+				try {					
+					boolean toevaluateexpression = true;
 					for (LogicalExpression exp : headera) {
-						formattedmap.put(aliasi.next(), evaluateBinaryExpression(exp, map, null));
+						toevaluateexpression = toevaluateexpression
+								&& toEvaluateBinaryExpression(exp, obj, aliascolumns);
+						if (!toevaluateexpression) {
+							break;
+						}
 					}
-				} catch (Exception ex) {
+					return toevaluateexpression;
+				} catch(Exception ex) {
+					return false;
+				}
+			}}).map(new MapFunction<Object[], Object[]>() {				
+				private static final long serialVersionUID = -2439404591638356925L;
+				LogicalExpression[] lexpression = lexp;
+				List<String> aliascolumns = aliasorcolumns;
+				@Override
+				public Object[] apply(Object[] obj) {
+					Object[] formattedvalues = new Object[lexpression.length];
+					Object[] formattedvaluestoconsider = new Object[lexpression.length];
+					try {
+						LogicalExpression[] headera = lexpression;
+						int indexformatted = 0;
+						for (LogicalExpression exp : headera) {
+							formattedvalues[indexformatted] = evaluateBinaryExpression(exp, obj, null, aliascolumns);
+							formattedvaluestoconsider[indexformatted] = true;
+							indexformatted++;
+						}
+						Object[] finalobject = new Object[2];
+						finalobject[0] = formattedvalues;
+						finalobject[1] = formattedvaluestoconsider;
+						return finalobject;
+					} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
-					return formattedmap;
+					return new Object[2];
+				}
 				});
+			if(!hasdescendants) {
+				return sp.map(obj->((Object[])obj[0]));
+			}
+			return sp;
 		} else {
 			
-			StreamPipeline<Map<String, Object>> pipelinemap = sp;
+			StreamPipeline<Object[]> pipelinemap = sp;
 			if(!CollectionUtils.isEmpty(nonaggfunctions)) {
-				pipelinemap = pipelinemap.map(new MapFunction<Map<String, Object>, Map<String, Object>>() {
+				pipelinemap = pipelinemap.map(new MapFunction<Object[], Object[]>() {
 					private static final long serialVersionUID = 6329566708048046421L;
 					List<FunctionParams> nonagg = new ArrayList<>(nonaggfunctions);
 					LogicalExpression[] grpby = headers;
 					
 					@Override
-					public Map<String, Object> apply(Map<String, Object> mapvalues) {
-						Map<String, Object> nonaggfnvalues = new HashMap<>();
+					public Object[] apply(Object[] mapvalues) {
+						Object[] nonaggfnvalues = new Object[2];
+						Object[] grpbyfnvalues = new Object[(nonNull(grpby)?grpby.length:0) + nonagg.size()];
+						Object[] valuestoconsider = new Object[(nonNull(grpby)?grpby.length:0) + + nonagg.size()];
+						int index = 0;
 						if (nonNull(grpby) && grpby.length > 0) {
 							for (LogicalExpression grpobj : grpby) {
 								try {
-									nonaggfnvalues.put(grpobj.getFieldSchema().alias, evaluateBinaryExpression(grpobj, mapvalues, null));
+									grpbyfnvalues[index] =  evaluateBinaryExpression(grpobj, mapvalues, null, aliasorcolumns);
+									valuestoconsider[index] = true;
 								} catch (Exception e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
 								}
+								index++;
 							}
 						}
 						for (FunctionParams fn : nonagg) {
 							Object value = null;
 							try {
-								value = evaluateBinaryExpression(fn.getParams(), mapvalues, fn.getFunctionName());
+								value = evaluateBinaryExpression(fn.getParams(), mapvalues, fn.getFunctionName(), aliasorcolumns);
+								valuestoconsider[index] = true;
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
-							nonaggfnvalues.put(fn.getAlias(), value);
-						}						
+							grpbyfnvalues[index] =  value;
+							index++;
+						}
+						nonaggfnvalues[0] = grpbyfnvalues;
+						nonaggfnvalues[1] = valuestoconsider;
 						return nonaggfnvalues;
 	
 					}
@@ -456,14 +635,14 @@ public class PigUtils {
 							columnstoeval.add(new ArrayList<>());
 						}						
 				}
-				pipelinemap = pipelinemap.mapToPair(new MapToPairFunction<Map<String, Object>, Tuple2<Tuple, Tuple>>() {
+				pipelinemap = pipelinemap.mapToPair(new MapToPairFunction<Object[], Tuple2<Tuple, Tuple>>() {
 					private static final long serialVersionUID = 8102198486566760753L;
-					List<FunctionParams> functionParams = aggfunctions;
+					List<FunctionParams> aggfunc = aggfunctions;
 					LogicalExpression[] grpby = headers;
 					List<List<String>> columnsevaluation = columnstoeval;
-
+					List<String> aliascolumns = aliasorcolumns;
 					@Override
-					public Tuple2<Tuple, Tuple> apply(Map<String, Object> mapvalues) {
+					public Tuple2<Tuple, Tuple> apply(Object[] mapvalues) {
 						List<Object> fnobj = new ArrayList<>();
 						Object[] grpbyobj = null;
 
@@ -472,25 +651,28 @@ public class PigUtils {
 							grpbyobj = new Object[grpby.length];
 							for (LogicalExpression grpobj : grpby) {
 								try {
-									grpbyobj[index] = evaluateBinaryExpression(grpobj, mapvalues, null);
+									grpbyobj[index] = evaluateBinaryExpression(grpobj, mapvalues, null, aliascolumns);
 								} catch (Exception e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
 								}
 								index++;
 							}
+						} else {
+							grpbyobj = new Object[1];
+							grpbyobj[0] = DataSamudayaConstants.EMPTY;
 						}
 						index = 0;
-						for (FunctionParams functionParam : functionParams) {
+						for (FunctionParams functionParam : aggfunc) {
 							if (functionParam.getFunctionName().equals("count")) {
 								fnobj.add(1);
 							} else {
 								try {
-									fnobj.add(evaluateBinaryExpression(functionParam.getParams(), mapvalues, functionParam.getFunctionName()));
+									fnobj.add(evaluateBinaryExpression(functionParam.getParams(), mapvalues, functionParam.getFunctionName(), aliascolumns));
 									long cval = 1;
 									if (functionParam.getFunctionName().startsWith("avg")) {
 										for (String column : columnsevaluation.get(index)) {
-											Integer valuetocount = (Integer) mapvalues.get(column+DataSamudayaConstants.SQLCOUNTFORAVG);
-											if (isNull(valuetocount)||nonNull(valuetocount)&&valuetocount == 0) {
+											boolean valuetocount = (boolean) ((Object[])mapvalues[1])[aliascolumns.indexOf(column)];
+											if (!valuetocount) {
 												cval = 0;
 												break;
 											}
@@ -526,22 +708,54 @@ public class PigUtils {
 						return evaluateTuple(tuple1, tuple2, functionParams);
 					}
 
-				}).map(new MapFunction<Tuple2<Tuple, Tuple>, Map<String, Object>>() {							
+				}).map(new MapFunction<Tuple2<Tuple, Tuple>, Object[]>() {							
 					private static final long serialVersionUID = 9098846821052824347L;
 					List<FunctionParams> functionParam = aggfunctions;
 					List<String> grpby = new ArrayList<>(grpbyheader);
-					AtomicBoolean iscnt = iscount;
-					AtomicBoolean isavg = isaverage;
+					List<String> alias = aliases;
 					@Override
-					public Map<String, Object> apply(Tuple2<Tuple, Tuple> tuple2) {
-						Map<String, Object> mapwithfinalvalues = new HashMap<>();
-						SQLUtils.populateMapFromTuple(mapwithfinalvalues, tuple2.v1, grpby);
-						populateMapFromFunctions(mapwithfinalvalues, tuple2.v2, functionParam);
-						return mapwithfinalvalues;
+					public Object[] apply(Tuple2<Tuple, Tuple> tuple2) {
+						Object[] valueobject = new Object[2];
+						valueobject[0] = new Object[alias.size()];
+						valueobject[1] = new Object[alias.size()];
+						for(int count=0;count<alias.size();count++) {
+							((Object[])valueobject[1])[count]=true;
+						}
+						try {
+							populateGroupByFunction((Object[]) valueobject[0], tuple2.v1, grpby, alias);
+						} catch (Exception e) {
+							log.error(DataSamudayaConstants.EMPTY, e);
+						}
+						populateMapFromFunctions((Object[]) valueobject[0], tuple2.v2, functionParam, alias);
+						return valueobject;
 					}
 				});
 			}
+			if(!hasdescendants) {
+				return pipelinemap.map(obj->((Object[])obj[0]));
+			}
 			return pipelinemap;
+		}
+	}
+	
+	/**
+	 * This function populates group by value in value object
+	 * @param valueobject
+	 * @param grpbyvalues
+	 * @param grpby
+	 * @param aliases
+	 * @throws NoSuchMethodException
+	 * @throws SecurityException
+	 * @throws IllegalAccessException
+	 * @throws IllegalArgumentException
+	 * @throws InvocationTargetException
+	 */
+	protected static void populateGroupByFunction(Object[] valueobject, Tuple grpbyvalues, List<String> grpby, List<String> aliases) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		Class<?> cls = grpbyvalues.getClass();
+		for(int grpindex=1;grpindex<=grpby.size();grpindex++) {
+			java.lang.reflect.Method method = cls.getMethod("v"+grpindex);
+			Object valuesum = method.invoke(grpbyvalues);
+			valueobject[aliases.indexOf(grpby.get(grpindex-1))] = valuesum;
 		}
 	}
 	
@@ -552,66 +766,66 @@ public class PigUtils {
 	 * @return Evaluated value
 	 * @throws Exception
 	 */
-	public static Object evaluateBinaryExpression(LogicalExpression expression, Map<String,Object> row, String name) throws Exception {
+	public static Object evaluateBinaryExpression(LogicalExpression expression, Object[] row, String name, List<String> aliasorcolname) throws Exception {
 		if(expression instanceof UserFuncExpression fn) {
 			switch (name) {
 				case "sum":
                 // Get the absolute value of the first parameter	               
-                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "sum", fn.getEvalFunc());
+                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "sum", fn.getEvalFunc());
 				case "count":
 	                // Get the absolute value of the first parameter	               
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "count", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "count", fn.getEvalFunc());
 				case "avg":
 	                // Get the absolute value of the first parameter	               
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "avg", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "avg", fn.getEvalFunc());
 				case "abs":
 	                // Get the absolute value of the first parameter	               
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "abs", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "abs", fn.getEvalFunc());
 				case "length":
 	                // Get the length of string value	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "length", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "length", fn.getEvalFunc());
 	                
 				case "round":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "round", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "round", fn.getEvalFunc());
 				case "ceil":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "ceil", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "ceil", fn.getEvalFunc());
 				case "floor":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "floor", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "floor", fn.getEvalFunc());
 				case "pow":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), evaluateBinaryExpression(fn.getArguments().get(1), row, name), "pow", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), evaluateBinaryExpression(fn.getArguments().get(1), row, name, aliasorcolname), "pow", fn.getEvalFunc());
 				case "sqrt":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "sqrt", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "sqrt", fn.getEvalFunc());
 				case "exp":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "exp", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "exp", fn.getEvalFunc());
 				case "loge":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "loge", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "loge", fn.getEvalFunc());
 				case "lowercase":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "lowercase", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "lowercase", fn.getEvalFunc());
 				case "uppercase":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "uppercase", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "uppercase", fn.getEvalFunc());
 				case "base64encode":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "base64encode", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "base64encode", fn.getEvalFunc());
 				case "base64decode":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "base64decode", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "base64decode", fn.getEvalFunc());
 				case "normalizespaces":
 	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name), null, "normalizespaces", fn.getEvalFunc());
+	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "normalizespaces", fn.getEvalFunc());
 				case "substring":
 	                // Get the absolute value of the first parameter
 					ConstantExpression pos = (ConstantExpression) fn.getArguments().get(1);
 					ConstantExpression length = (ConstantExpression) fn.getArguments().get(2);
-					String val = (String) evaluateBinaryExpression(fn.getArguments().get(0), row, name);
+					String val = (String) evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname);
 	                return val.substring((int) pos.getValue(), Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
 			}
 		} else if(expression instanceof BinaryExpression bex) {
@@ -621,29 +835,29 @@ public class PigUtils {
 		    Object leftValue=null;
 		    Object rightValue=null;
 		    if(leftExpression instanceof UserFuncExpression fn) {
-		    	leftValue = evaluateBinaryExpression(leftExpression, row, null);
+		    	leftValue = evaluateBinaryExpression(leftExpression, row, null, aliasorcolname);
 		    }
 		    else if (leftExpression instanceof ConstantExpression lv) {
 		    	leftValue =  lv.getValue();
 		    } else if (leftExpression instanceof ProjectExpression pex) {
 		        String columnName = pex.getFieldSchema().alias;
-				Object value = row.get(columnName);
+				Object value = ((Object[])row[0])[aliasorcolname.indexOf(columnName)];
 				leftValue =  value;
 		    } else if (leftExpression instanceof BinaryExpression) {
-		    	leftValue = evaluateBinaryExpression(leftExpression, row, null);
+		    	leftValue = evaluateBinaryExpression(leftExpression, row, null, aliasorcolname);
 		    }
 		    
 		    if(rightExpression instanceof UserFuncExpression fn) {
-		    	rightValue = evaluateBinaryExpression(rightExpression, row, null);
+		    	rightValue = evaluateBinaryExpression(rightExpression, row, null, aliasorcolname);
 		    }
 		    else if (rightExpression instanceof ConstantExpression lv) {
 		    	rightValue =  lv.getValue();
 		    } else if (rightExpression instanceof ProjectExpression pex) {
 		        String columnName = pex.getFieldSchema().alias;
-				Object value = row.get(columnName);
+				Object value = ((Object[])row[0])[aliasorcolname.indexOf(columnName)];
 				rightValue =  value;
 		    } else if (rightExpression instanceof BinaryExpression) {
-		    	rightValue = evaluateBinaryExpression(rightExpression, row, null);
+		    	rightValue = evaluateBinaryExpression(rightExpression, row, null, aliasorcolname);
 		    }
 		    switch (operator) {
 		        case "Add":
@@ -662,7 +876,7 @@ public class PigUtils {
 	    	return lv.getValue();
 	    } else if (expression instanceof ProjectExpression pex) {
 	        String columnName = pex.getFieldSchema().alias;
-			return row.get(columnName);
+			return ((Object[])row[0])[aliasorcolname.indexOf(columnName)];
 	    }
 		return Double.valueOf(0.0d);
 	}
@@ -810,7 +1024,7 @@ public class PigUtils {
 	 * @param functions
 	 * @param functionalias
 	 */
-	public static void populateMapFromFunctions(Map<String, Object> mapvalues, Tuple tuple, List<FunctionParams> functions) {
+	public static void populateMapFromFunctions(Object[] values, Tuple tuple, List<FunctionParams> functions, List<String> aliasorcolname) {
 		try {
 		Class<?> cls = tuple.getClass();
 		for(int funcindex=0,valueindex=1;funcindex<functions.size();funcindex++) {
@@ -822,11 +1036,11 @@ public class PigUtils {
 				valueindex++;
 				method = cls.getMethod("v"+valueindex);
 				Object valuecount = method.invoke(tuple);
-				mapvalues.put(getAliasForFunction(func), evaluateValuesByOperator(valuesum, valuecount, "/"));
+				values[aliasorcolname.indexOf(getAliasForFunction(func))] = evaluateValuesByOperator(valuesum, valuecount, "/");
 			} else {
 				java.lang.reflect.Method method = cls.getMethod("v"+valueindex);
 				Object value = method.invoke(tuple);
-				mapvalues.put(getAliasForFunction(func), value);				
+				values[aliasorcolname.indexOf(getAliasForFunction(func))] = value;				
 			}
 			valueindex++;
 		}
@@ -852,162 +1066,47 @@ public class PigUtils {
 	 * @return Tuple
 	 */
 	public static Tuple evaluateTuple(Tuple tuple1, Tuple tuple2, List<FunctionParams> aggfunctions) {
-		int index=0;
-		if(tuple1 instanceof Tuple1 tup11 && tuple2 instanceof Tuple1 tup21) {
-			return Tuple.tuple(evaluateFunction(tup11.v1(), tup21.v1(), aggfunctions.get(index)));
-		} else if(tuple1 instanceof Tuple2 tup12 && tuple2 instanceof Tuple2 tup22) {
-			return Tuple.tuple(evaluateFunction(tup12.v1(), tup22.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup12.v2(), tup22.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple3 tup13 && tuple2 instanceof Tuple3 tup23) {
-			return Tuple.tuple(evaluateFunction(tup13.v1(), tup23.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup13.v2(), tup23.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup13.v3(), tup23.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple4 tup14 && tuple2 instanceof Tuple4 tup24) {
-			return Tuple.tuple(evaluateFunction(tup14.v1(), tup24.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup14.v2(), tup24.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup14.v3(), tup24.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup14.v4(), tup24.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple5 tup15 && tuple2 instanceof Tuple5 tup25) {
-			return Tuple.tuple(evaluateFunction(tup15.v1(), tup25.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup15.v2(), tup25.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup15.v3(), tup25.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup15.v4(), tup25.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup15.v5(), tup25.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple6 tup16 && tuple2 instanceof Tuple6 tup26) {
-			return Tuple.tuple(evaluateFunction(tup16.v1(), tup26.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup16.v2(), tup26.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup16.v3(), tup26.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup16.v4(), tup26.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup16.v5(), tup26.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup16.v6(), tup26.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple7 tup17 && tuple2 instanceof Tuple7 tup27) {
-			return Tuple.tuple(evaluateFunction(tup17.v1(), tup27.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup17.v2(), tup27.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup17.v3(), tup27.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup17.v4(), tup27.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup17.v5(), tup27.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup17.v6(), tup27.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup17.v7(), tup27.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple8 tup18 && tuple2 instanceof Tuple8 tup28) {
-			return Tuple.tuple(evaluateFunction(tup18.v1(), tup28.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup18.v2(), tup28.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup18.v3(), tup28.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v4(), tup28.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v5(), tup28.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v6(), tup28.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v7(), tup28.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup18.v8(), tup28.v8(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple9 tup19 && tuple2 instanceof Tuple9 tup29) {
-			return Tuple.tuple(evaluateFunction(tup19.v1(), tup29.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup19.v2(), tup29.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup19.v3(), tup29.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v4(), tup29.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v5(), tup29.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v6(), tup29.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v7(), tup29.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v8(), tup29.v8(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup19.v9(), tup29.v9(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple10 tup1_10 && tuple2 instanceof Tuple10 tup2_10) {
-			return Tuple.tuple(evaluateFunction(tup1_10.v1(), tup2_10.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_10.v2(), tup2_10.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_10.v3(), tup2_10.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v4(), tup2_10.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v5(), tup2_10.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v6(), tup2_10.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v7(), tup2_10.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v8(), tup2_10.v8(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v9(), tup2_10.v9(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_10.v10(), tup2_10.v10(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple11 tup1_11 && tuple2 instanceof Tuple11 tup2_11) {
-			return Tuple.tuple(evaluateFunction(tup1_11.v1(), tup2_11.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_11.v2(), tup2_11.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_11.v3(), tup2_11.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v4(), tup2_11.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v5(), tup2_11.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v6(), tup2_11.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v7(), tup2_11.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v8(), tup2_11.v8(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v9(), tup2_11.v9(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v10(), tup2_11.v10(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_11.v11(), tup2_11.v11(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple12 tup1_12 && tuple2 instanceof Tuple12 tup2_12) {
-			return Tuple.tuple(evaluateFunction(tup1_12.v1(), tup2_12.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_12.v2(), tup2_12.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_12.v3(), tup2_12.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v4(), tup2_12.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v5(), tup2_12.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v6(), tup2_12.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v7(), tup2_12.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v8(), tup2_12.v8(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v9(), tup2_12.v9(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v10(), tup2_12.v10(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v11(), tup2_12.v11(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_12.v12(), tup2_12.v12(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple13 tup1_13 && tuple2 instanceof Tuple13 tup2_13) {
-			return Tuple.tuple(evaluateFunction(tup1_13.v1(), tup2_13.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_13.v2(), tup2_13.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_13.v3(), tup2_13.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v4(), tup2_13.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v5(), tup2_13.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v6(), tup2_13.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v7(), tup2_13.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v8(), tup2_13.v8(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v9(), tup2_13.v9(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v10(), tup2_13.v10(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v11(), tup2_13.v11(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v12(), tup2_13.v12(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_13.v13(), tup2_13.v13(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple14 tup1_14 && tuple2 instanceof Tuple14 tup2_14) {
-			return Tuple.tuple(evaluateFunction(tup1_14.v1(), tup2_14.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_14.v2(), tup2_14.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_14.v3(), tup2_14.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v4(), tup2_14.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v5(), tup2_14.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v6(), tup2_14.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v7(), tup2_14.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v8(), tup2_14.v8(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v9(), tup2_14.v9(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v10(), tup2_14.v10(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v11(), tup2_14.v11(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v12(), tup2_14.v12(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v13(), tup2_14.v13(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_14.v14(), tup2_14.v14(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple15 tup1_15 && tuple2 instanceof Tuple15 tup2_15) {
-			return Tuple.tuple(evaluateFunction(tup1_15.v1(), tup2_15.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_15.v2(), tup2_15.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_15.v3(), tup2_15.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v4(), tup2_15.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v5(), tup2_15.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v6(), tup2_15.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v7(), tup2_15.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v8(), tup2_15.v8(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v9(), tup2_15.v9(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v10(), tup2_15.v10(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v11(), tup2_15.v11(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v12(), tup2_15.v12(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v13(), tup2_15.v13(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v14(), tup2_15.v14(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_15.v15(), tup2_15.v15(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else if(tuple1 instanceof Tuple16 tup1_16 && tuple2 instanceof Tuple16 tup2_16) {
-			return Tuple.tuple(evaluateFunction(tup1_16.v1(), tup2_16.v1(), aggfunctions.get(index)), 
-					evaluateFunction(tup1_16.v2(), tup2_16.v2(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)), 
-					evaluateFunction(tup1_16.v3(), tup2_16.v3(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v4(), tup2_16.v4(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v5(), tup2_16.v5(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v6(), tup2_16.v6(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v7(), tup2_16.v7(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v8(), tup2_16.v8(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v9(), tup2_16.v9(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v10(), tup2_16.v10(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v11(), tup2_16.v11(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v12(), tup2_16.v12(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v13(), tup2_16.v13(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v14(), tup2_16.v14(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v15(), tup2_16.v15(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)),
-					evaluateFunction(tup1_16.v16(), tup2_16.v16(), aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")?aggfunctions.get(index):aggfunctions.get(++index)));
-		} else {
-			throw new UnsupportedOperationException("Max supported Column is 16");
-		}
+		try {
+            // Get the class of the Tuple
+            Class<?> tupleClass = tuple1.getClass();
+            // Create a new instance of the Tuple
+            Tuple result = (Tuple) tupleClass.getConstructor(tuple2.getClass()).newInstance(tuple1);
+            // Get all the fields of the Tuple class
+            java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
+            int index = 0;
+            boolean avgindex = false;
+            FunctionParams func = aggfunctions.get(index);
+            // Iterate over the fields and perform summation
+            for (java.lang.reflect.Field field : fields) {
+                // Make the field accessible, as it might be private
+                field.setAccessible(true);
+
+                // Get the values of the fields from both tuples
+                Object value1 = field.get(tuple1);
+                Object value2 = field.get(tuple2);
+                field.set(result,evaluateFunction(value1, value2, func));
+                // Set the sum of the values in the result tuple                
+                if(index+1<aggfunctions.size()) {
+                	if(avgindex) {
+                		func = aggfunctions.get(index);
+                    	avgindex = false;
+                    	index++;
+                	} else if(!aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")) {
+                		func = aggfunctions.get(index+1);
+                		index++;
+                		avgindex = false;
+                	} else {
+                    	func = aggfunctions.get(index);
+                    	avgindex = true;
+                    }
+                } 
+            }
+
+            return result;
+        } catch (Exception ex) {
+        	log.error(DataSamudayaConstants.EMPTY, ex);
+        }
+		return null;
 	}
 	
 	/**
@@ -1307,7 +1406,8 @@ public class PigUtils {
 	 * @return
 	 * @throws Exception
 	 */
-	public static StreamPipeline<Tuple2<Map<String, Object>, List<Map<String, Object>>>> executeLOCoGroup(StreamPipeline<Map<String, Object>> sp, LOCogroup loCogroup) throws Exception {
+	public static StreamPipeline<Tuple2<Object[], List<Object[]>>> executeLOCoGroup(StreamPipeline<Object[]> sp, LOCogroup loCogroup,
+			List<String> columnoralias, List<String> outcols, boolean hasdescendants) throws Exception {
 		List<LogicalExpressionPlan> leps = loCogroup.getExpressionPlans().get(0);
 		List<String> groupcolumns = new ArrayList<>();
 		
@@ -1317,12 +1417,13 @@ public class PigUtils {
 				groupcolumns.add(((ProjectExpression) operators.next()).getColAlias());
 			}
 		}
+		outcols.addAll(groupcolumns);
 		String[] groupcols = groupcolumns.toArray(new String[1]);
 		return sp.groupBy(map -> {
-			Map<String, Object> groupmap = new HashMap<>();
+			Object[] groupmap = new Object[groupcols.length];
 			String[] grpcols = groupcols;
 			for (String grpcol :grpcols)
-				groupmap.put(grpcol, map.get(grpcol));
+				groupmap[columnoralias.indexOf(grpcol)] = map[columnoralias.indexOf(grpcol)];
 			return groupmap;
 		});
 	}
@@ -1344,7 +1445,13 @@ public class PigUtils {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		sp.map(data -> data).dumpPigResults(true, null);
+		sp.map(new MapFunction() {			
+			@Override
+			public Object apply(Object obj) {				
+				return obj;
+			}
+			
+		}).dumpPigResults(true, null);
 	}
 	
 	/**
@@ -1363,7 +1470,10 @@ public class PigUtils {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		StreamPipeline<?> sp = PigQueryExecutor.traversePlan(lp, false, alias, user, jobid, tejobid, pipelineconfig);
+		Set<String> requiredcolumns = new LinkedHashSet<>();
+		Set<String> allcolumns = new LinkedHashSet<>();
+		List<String> aliascols = new ArrayList<>();
+		StreamPipeline<?> sp = PigQueryExecutor.traversePlan(lp, false, alias, user, jobid, tejobid, pipelineconfig, requiredcolumns, allcolumns, aliascols, alias);
 		return sp.map(val->val).collect(true, null);
 	}
 	
@@ -1383,7 +1493,10 @@ public class PigUtils {
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		PigQueryExecutor.traversePlan(lp, true, alias, user, jobid, tejobid, pipelineconfig);
+		Set<String> requiredcolumns = new LinkedHashSet<>();
+		Set<String> allcolumns = new LinkedHashSet<>();
+		List<String> aliascols = new ArrayList<>();
+		PigQueryExecutor.traversePlan(lp, true, alias, user, jobid, tejobid, pipelineconfig, requiredcolumns, allcolumns, aliascols, alias);
 	}
 	
 	/**
@@ -1422,7 +1535,7 @@ public class PigUtils {
 	 * @return true or false
 	 * @throws Exception
 	 */
-	public static boolean evaluateExpression(LogicalExpression expression, Map<String,Object> row) throws Exception {
+	public static boolean evaluateExpression(LogicalExpression expression, Object[] row, List<String> coloraliasname) throws Exception {
 		if (expression instanceof BinaryExpression binaryExpression) {
 			String opType = expression.getName();
 			LogicalExpression leftExpression = binaryExpression.getLhs();
@@ -1431,38 +1544,38 @@ public class PigUtils {
 			
 			switch (operator) {
 			case "And":
-				return evaluateExpression(leftExpression, row) && evaluateExpression(rightExpression, row);
+				return evaluateExpression(leftExpression, row, coloraliasname) && evaluateExpression(rightExpression, row, coloraliasname);
 			case "Or":
-				return evaluateExpression(leftExpression, row) || evaluateExpression(rightExpression, row);
+				return evaluateExpression(leftExpression, row , coloraliasname) || evaluateExpression(rightExpression, row, coloraliasname);
 			case "GreaterThan":
-				Object leftValue = getValueString(leftExpression, row);
-				Object rightValue = getValueString(rightExpression, row);
+				Object leftValue = getValueString(leftExpression, row, coloraliasname);
+				Object rightValue = getValueString(rightExpression, row, coloraliasname);
 				return evaluatePredicate(leftValue, rightValue, operator);
 			case "GreaterThanEqual":
-				leftValue = getValueString(leftExpression, row);
-				rightValue = getValueString(rightExpression, row);
+				leftValue = getValueString(leftExpression, row, coloraliasname);
+				rightValue = getValueString(rightExpression, row, coloraliasname);
 				return evaluatePredicate(leftValue, rightValue, operator);
 			case "LessThan":
-				leftValue = getValueString(leftExpression, row);
-				rightValue = getValueString(rightExpression, row);
+				leftValue = getValueString(leftExpression, row, coloraliasname);
+				rightValue = getValueString(rightExpression, row, coloraliasname);
 				return evaluatePredicate(leftValue, rightValue, operator);
 			case "LessThanEqual":
-				leftValue = getValueString(leftExpression, row);
-				rightValue = getValueString(rightExpression, row);
+				leftValue = getValueString(leftExpression, row, coloraliasname);
+				rightValue = getValueString(rightExpression, row, coloraliasname);
 				return evaluatePredicate(leftValue, rightValue, operator);
 			case "Equal":
-				leftValue = getValueString(leftExpression, row);
-				rightValue = getValueString(rightExpression, row);
+				leftValue = getValueString(leftExpression, row, coloraliasname);
+				rightValue = getValueString(rightExpression, row, coloraliasname);
 				return evaluatePredicate(leftValue, rightValue, operator);
 			case "NotEqual":
-				leftValue = getValueString(leftExpression, row);
-				rightValue = getValueString(rightExpression, row);
+				leftValue = getValueString(leftExpression, row, coloraliasname);
+				rightValue = getValueString(rightExpression, row, coloraliasname);
 				return evaluatePredicate(leftValue, rightValue, operator);			
 			default:
 				throw new UnsupportedOperationException("Unsupported operator: " + operator);
 			}
 		} else {
-			Object value = getValueString(expression, row);
+			Object value = getValueString(expression, row, coloraliasname);
 			return Boolean.parseBoolean((String) value);
 		}
 	}
@@ -1473,14 +1586,14 @@ public class PigUtils {
 	 * @param row
 	 * @return returns value from expression
 	 */
-	private static Object getValueString(LogicalExpression expression, Map<String, Object> row) {
+	public static Object getValueString(LogicalExpression expression, Object[] row, List<String> coloralias) {
 		if (expression instanceof ConstantExpression constantexpression) {
 			return constantexpression.getValue();
 		}
 		else {
 			ProjectExpression column = (ProjectExpression) expression;
 			String columnName = column.getColAlias();
-			Object value = row.get(columnName);
+			Object value = ((Object[])row[0])[coloralias.indexOf(columnName)];
 			if(value instanceof String stringval) {
 				return String.valueOf(stringval);
 			}
@@ -1646,6 +1759,19 @@ public class PigUtils {
 		default:
 			throw new UnsupportedOperationException("Unsupported operator: " + operator);
 		}
+		
 	}
-	
+	/**
+	 * Get Aliases of operator
+	 * @param operator
+	 * @param aliases
+	 * @throws Exception 
+	 */
+	public static void getAliaseForJoin(Operator operator, List<String> aliases) throws Exception {
+		if (operator instanceof LOForEach loForEach) {
+			for(LogicalFieldSchema lfs : loForEach.getSchema().getFields()){
+				aliases.add(lfs.alias);
+			}
+		}
+	}	
 }

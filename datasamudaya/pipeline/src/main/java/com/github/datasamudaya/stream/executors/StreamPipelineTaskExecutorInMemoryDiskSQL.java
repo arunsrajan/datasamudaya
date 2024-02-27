@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -79,10 +78,11 @@ import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipelineTaskExecutorInMemoryDisk {
 	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorInMemoryDiskSQL.class);
 	public double timetaken = 0.0;
-
+	private boolean topersist = false;
 	public StreamPipelineTaskExecutorInMemoryDiskSQL(JobStage jobstage,
-			ConcurrentMap<String, OutputStream> resultstream, Cache cache) throws Exception {
+			ConcurrentMap<String, OutputStream> resultstream, Cache cache, boolean topersist) throws Exception {
 		super(jobstage, resultstream, cache);
+		this.topersist = topersist;
 	}
 
 	/**
@@ -108,7 +108,7 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 		List<String> reqcols = null;
 		List<String> originalcolsorder = null;
 		List<SqlTypeName> sqltypenamel = null;
-		String[] headers = null;
+		final String[] headers;
 		boolean iscsv = false;
 		try (var fsdos = new ByteArrayOutputStream();
 				var sos = new SnappyOutputStream(fsdos);
@@ -131,9 +131,11 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 						sqltypenamel = jsql.getTypes();
 						headers = jsql.getHeader();
 						iscsv = false;
+					} else {
+						headers = null;
 					}
 					byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString() + reqcols.toString());
-					final List<String> oco = originalcolsorder; 
+					final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted().toList(); 
 					if (CollectionUtils.isNotEmpty(originalcolsorder)) {
 						if (isNull(yosegibytes) || yosegibytes.length == 0 || nonNull(blockslocation.getToreprocess()) && blockslocation.getToreprocess().booleanValue()) {
 							log.info("Unable To Find vector for blocks {}", blockslocation);
@@ -144,59 +146,77 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 									sqltypenamel, Arrays.asList(headers));
 							if(iscsv) {
 								CsvParserSettings settings = new CsvParserSettings();							
-								settings.selectIndexes(Utils.indexOfRequiredColumns(originalcolsorder, Arrays.asList(headers)));
 								settings.getFormat().setLineSeparator("\n");
+								settings.selectIndexes(oco.toArray(new Integer[0]));
 								settings.setNullValue(DataSamudayaConstants.EMPTY);
 								CsvParser parser = new CsvParser(settings);							
 								IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);   
 								ResultIterator<String[], ParsingContext> iterator = iter.iterator();
 						        Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.SIZED | Spliterator.SUBSIZED);
-						        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);								
-								baos = new ByteArrayOutputStream();								
-								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+						        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);
+						        if(topersist) {
+						        	baos = new ByteArrayOutputStream();
+						        }
+								YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos, new Configuration()):null;
 								intermediatestreamobject = stringstream.map(values -> {
 									Map data = Maps.newLinkedHashMap();
-									Map datatoprocess = Maps.newLinkedHashMap();
+									Object[] valuesobject = new Object[headers.length];
+									Object[] toconsidervalueobjects = new Object[headers.length];
+									int valuesindex = 0;
 									try {
-										oco.forEach(col->{
-											SQLUtils.setYosegiObjectByValue(values[oco.indexOf(col)], sqltypename.get(col), data,
-													col);
-											SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
-										});
-										writerdataload.addRow(data);
+										for(String value:values) {
+											SQLUtils.setYosegiObjectByValue(value, sqltypename.get(headers[oco.get(valuesindex)]), data,
+													headers[oco.get(valuesindex)]);
+											SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects , headers[oco.get(valuesindex)], data, oco.get(valuesindex));
+											valuesindex++;
+										}
+										if(topersist) {
+											writerdataload.addRow(data);
+										}
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
-									return datatoprocess;
+									Object[] valueswithconsideration = new Object[2];
+									valueswithconsideration[0]=valuesobject;
+									valueswithconsideration[1]=toconsidervalueobjects;
+									return valueswithconsideration;
 								});
 							} else {
-								baos = new ByteArrayOutputStream();
-								YosegiRecordWriter writerdataload = writer = new YosegiRecordWriter(baos, new Configuration());
+								if(topersist) {
+									baos = new ByteArrayOutputStream();
+								}
+								YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos, new Configuration()):null;
 								intermediatestreamobject = buffer.lines();
 								intermediatestreamobject = intermediatestreamobject.map(line -> {
 									try {
 										JSONObject jsonobj = (JSONObject) new JSONParser().parse((String) line);
 										Map data = Maps.newLinkedHashMap();
-										Map datatoprocess = Maps.newLinkedHashMap();
+										Object[] valuesobject = new Object[headers.length];
+										Object[] toconsidervalueobjects = new Object[headers.length];
 										try {
-											oco.forEach(col->{
+											oco.forEach(index->{
 												String reccolval = "";
-												if(jsonobj.get(col) instanceof String val) {
+												if(jsonobj.get(headers[index]) instanceof String val) {
 													reccolval = val;
-												} else if(jsonobj.get(col) instanceof JSONObject jsonval){
+												} else if(jsonobj.get(headers[index]) instanceof JSONObject jsonval){
 													reccolval = jsonval.toString();
-												} else if(jsonobj.get(col) instanceof Boolean val) {
+												} else if(jsonobj.get(headers[index]) instanceof Boolean val) {
 													reccolval = val.toString();
 												}
-												SQLUtils.setYosegiObjectByValue(reccolval, sqltypename.get(col), data,
-														col);
-												SQLUtils.getValueFromYosegiObject(datatoprocess, col, data);
+												SQLUtils.setYosegiObjectByValue(reccolval, sqltypename.get(headers[index]), data,
+														headers[index]);
+												SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects, headers[index], data, index);
 											});
-											writerdataload.addRow(data);
+											if(topersist) {
+												writerdataload.addRow(data);
+											}
 										} catch (Exception ex) {
 											log.error(DataSamudayaConstants.EMPTY, ex);
 										}
-										return datatoprocess;
+										Object[] valueswithconsideration = new Object[2];
+										valueswithconsideration[0]=valuesobject;
+										valueswithconsideration[1]=toconsidervalueobjects;
+										return valueswithconsideration;
 									} catch (ParseException e) {
 										return null;
 									}
@@ -204,13 +224,13 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 							}
 						} else {
 							intermediatestreamobject = SQLUtils.getYosegiStreamRecords(yosegibytes,
-									originalcolsorder, Arrays.asList(headers),
+									oco, Arrays.asList(headers),
 									sqltypenamel);
 						}
 					} else {
 						istreamnocols = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 						buffernocols = new BufferedReader(new InputStreamReader(istreamnocols));
-						intermediatestreamobject = buffernocols.lines().map(line -> new HashMap<>());
+						intermediatestreamobject = buffernocols.lines().map(line ->new Object[1]);
 					}
 				} finally {
 				}

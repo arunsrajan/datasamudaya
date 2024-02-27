@@ -56,6 +56,7 @@ public class Task implements Serializable, Cloneable {
   public long numbytesprocessed;
   public long numbytesgenerated;
   public long numbytesconverted;
+  public boolean topersist;
   
   @Override
   public Object clone() throws CloneNotSupportedException {
