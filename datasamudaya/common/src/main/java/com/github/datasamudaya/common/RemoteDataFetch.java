@@ -16,6 +16,9 @@
 package com.github.datasamudaya.common;
 
 import java.io.Serializable;
+
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -43,4 +46,5 @@ public class RemoteDataFetch implements Serializable {
 	private String hp;
 	private byte[] data;
 	private String mode;
+	private STORAGE storage;
 }

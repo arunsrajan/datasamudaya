@@ -55,6 +55,7 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.ehcache.Cache;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
+import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.jgroups.JChannel;
@@ -82,6 +83,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.FreeResourcesCompletedJob;
+import com.github.datasamudaya.common.GetTaskActor;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.Job.JOBTYPE;
@@ -475,8 +477,12 @@ public class StreamJobScheduler {
       else {
     	  DataSamudayaMetricsExporter.getNumberOfJobSubmittedCounter().inc();
 	      DataSamudayaMetricsExporter.getNumberOfJobSubmittedStandaloneModeCounter().inc();
-        broadcastJobStageToTaskExecutors(new ArrayList<>(taskgraph.vertexSet()));
-        graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) parallelExecutionPhaseDExecutor(graph);
+	      broadcastJobStageToTaskExecutors(new ArrayList<>(taskgraph.vertexSet()));
+	      if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
+	    	  graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) parallelExecutionAkkaActors(graph);
+	      } else {
+	    	  graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) parallelExecutionPhaseDExecutor(graph);
+	      }
       }
       
       // Obtain the final stage job results after final stage is
@@ -899,14 +905,226 @@ public class StreamJobScheduler {
     return lineagegraph;
   }
   
-  public boolean isErrored(Set<StreamPipelineTaskSubmitter> spts) {
-	  Optional<StreamPipelineTaskSubmitter> optionalspts = 
-	  spts.stream().parallel().filter(spt -> !spt.isCompletedexecution()).findFirst();
-	  if(optionalspts.isPresent()) {
-		  return true;
+  
+  /**
+   * The method executes after converting the tasks to actors in the task executors 
+   * @param origgraph
+   * @return graph object lineage
+   * @throws Exception
+   */
+  public Graph<StreamPipelineTaskSubmitter, DAGEdge> parallelExecutionAkkaActors(final Graph<StreamPipelineTaskSubmitter, DAGEdge> origgraph)
+			throws Exception {
+		ExecutorService es = null;
+		var lineagegraph = origgraph;
+		try {
+			var completed = false;
+			var numexecute = 0;
+			var executioncount = Integer.parseInt(pipelineconfig.getExecutioncount());
+			batchsize = 0;
+			List<ExecutionResult<StreamPipelineTaskSubmitter, Boolean>> erroredresult = null;
+
+			var temdstdtmap = new ConcurrentHashMap<String, List<StreamPipelineTaskSubmitter>>();
+			var chpcres = GlobalContainerAllocDealloc.getHportcrs();
+			if (chpcres.isEmpty()) {
+				job.getLcs().stream().forEach(lcs -> {
+					String host = lcs.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
+					lcs.getCla().getCr().stream()
+							.forEach(cr -> chpcres.put(host + DataSamudayaConstants.UNDERSCORE + cr.getPort(), cr));
+				});
+			}
+			var semaphores = new ConcurrentHashMap<String, Semaphore>();
+			for (var cr : chpcres.entrySet()) {
+				batchsize += cr.getValue().getCpu();
+				semaphores.put(cr.getKey(), new Semaphore(cr.getValue().getCpu()));
+			}
+			es = newExecutor(batchsize);
+			while (!completed && numexecute < executioncount) {
+				temdstdtmap.clear();
+				var shouldcontinueprocessing = new AtomicBoolean(true);
+
+				Graph<StreamPipelineTaskSubmitter, DAGEdge> graphreversed = new EdgeReversedGraph<StreamPipelineTaskSubmitter, DAGEdge>(
+						lineagegraph);
+				TopologicalOrderIterator<StreamPipelineTaskSubmitter, DAGEdge> iterator = new TopologicalOrderIterator(
+						graphreversed);
+				String jobid;
+				if (nonNull(pipelineconfig) && pipelineconfig.getUseglobaltaskexecutors()) {
+					jobid = pipelineconfig.getTejobid();
+				} else {
+					jobid = job.getId();
+				}
+				while (iterator.hasNext()) {
+					StreamPipelineTaskSubmitter sptsreverse = iterator.next();
+					var predecessors = Graphs.predecessorListOf(graphreversed, sptsreverse);
+					if (CollectionUtils.isEmpty(predecessors)) {
+						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null,
+								Graphs.successorListOf(graphreversed, sptsreverse).size());
+						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
+						sptsreverse.getTask().setActorselection(task.getActorselection());
+					} else {
+						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
+								.collect(Collectors.toList());
+						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
+								Graphs.successorListOf(graphreversed, sptsreverse).size());
+						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
+						sptsreverse.getTask().setActorselection(task.getActorselection());
+						sptsreverse.setChildactors(childactorsoriggraph);
+					}
+				}
+				var configexec = new DexecutorConfig<StreamPipelineTaskSubmitter, Boolean>(es,
+						new AkkaActorsScheduler(lineagegraph.vertexSet().size(), semaphores, shouldcontinueprocessing));
+				var dexecutor = new DefaultDexecutor<StreamPipelineTaskSubmitter, Boolean>(configexec);
+
+				var vertices = lineagegraph.vertexSet();
+				for (var spts : vertices) {
+					var predecessors = Graphs.predecessorListOf(lineagegraph, spts);
+					if (CollectionUtils.isEmpty(predecessors)) {
+						dexecutor.addIndependent(spts);
+						if (Objects.isNull(servertotaltasks.get(spts.getHostPort()))) {
+							servertotaltasks.put(spts.getHostPort(), 1);
+						} else {
+							servertotaltasks.put(spts.getHostPort(), servertotaltasks.get(spts.getHostPort()) + 1);
+						}
+					}
+				}
+				var executionresultscomplete = dexecutor.execute(ExecutionConfig.NON_TERMINATING);
+				erroredresult = executionresultscomplete.getErrored();
+				if (erroredresult.isEmpty()) {
+					completed = true;
+				} else {
+					throw new PipelineException(
+							"Error In Executing Tasks"); 
+				}
+				numexecute++;
+			}
+			Utils.writeToOstream(pipelineconfig.getOutput(), "Number of Executions: " + numexecute);
+			if (!completed) {
+				StringBuilder sb = new StringBuilder();
+				if (erroredresult != null) {
+					erroredresult.forEach(exec -> {
+						sb.append(DataSamudayaConstants.NEWLINE);
+						sb.append(exec.getId().getTask().stagefailuremessage);
+					});
+					if (!sb.isEmpty()) {
+						throw new PipelineException(
+								PipelineConstants.ERROREDTASKS.replace("%s", "" + executioncount) + sb.toString());
+					}
+				}
+			}
+		} catch (Exception ex) {
+			log.error(PipelineConstants.JOBSCHEDULEPARALLELEXECUTIONERROR, ex);
+			throw new PipelineException(PipelineConstants.JOBSCHEDULEPARALLELEXECUTIONERROR, ex);
+		} finally {
+			if (!Objects.isNull(es)) {
+				es.shutdownNow();
+				es.awaitTermination(1, TimeUnit.SECONDS);
+			}
+		}
+		return lineagegraph;
+	}
+  
+  /**
+   * The Scheduler for Akka Actors Task 
+   * @author arun
+   *
+   */
+  public class AkkaActorsScheduler implements TaskProvider<StreamPipelineTaskSubmitter, Boolean> {
+	    Logger log = LoggerFactory.getLogger(AkkaActorsScheduler.class);
+	    double totaltasks;
+	    double counttaskscomp = 0;
+	    double counttasksfailed = 0;
+	    Map<String, Semaphore> semaphores;
+	    AtomicBoolean shouldcontinueprocessing;
+	    
+	    public AkkaActorsScheduler(double totaltasks, Map<String, Semaphore> semaphores, AtomicBoolean shouldcontinueprocessing) {
+	      this.totaltasks = totaltasks;
+	      this.semaphores = semaphores;
+	      this.shouldcontinueprocessing = shouldcontinueprocessing;
+	    }
+
+	    Semaphore printresult = new Semaphore(1);
+
+	    ConcurrentMap<String, Timer> jobtimer = new ConcurrentHashMap<>();
+
+	    public com.github.dexecutor.core.task.Task<StreamPipelineTaskSubmitter, Boolean> provideTask(
+	        final StreamPipelineTaskSubmitter spts) {
+
+	      return new com.github.dexecutor.core.task.Task<StreamPipelineTaskSubmitter, Boolean>() {
+	        private static final long serialVersionUID = 1L;
+	        	
+	        	@Override
+				public Boolean execute() {
+					try {
+						semaphores.get(spts.getTask().getHostport()).acquire();
+						if (!spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
+							Task result = (Task) spts.actors();
+							log.info("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
+							printresult.acquire();
+							if (Objects.isNull(tetotaltaskscompleted.get(spts.getHostPort()))) {
+								tetotaltaskscompleted.put(spts.getHostPort(), 0d);
+							}
+							counttaskscomp++;
+							tetotaltaskscompleted.put(spts.getHostPort(),
+									tetotaltaskscompleted.get(spts.getHostPort()) + 1);
+							double percentagecompleted = Math.floor((tetotaltaskscompleted.get(spts.getHostPort())
+									/ servertotaltasks.get(spts.getHostPort())) * 100.0);
+							Utils.writeToOstream(pipelineconfig.getOutput(), "\nPercentage Completed TE("
+									+ spts.getHostPort() + ") " + percentagecompleted + "% \n");
+							job.getJm().getContainersallocated().put(spts.getHostPort(), percentagecompleted);
+							if (Objects.isNull(job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()))) {
+								job.getJm().getTaskexcutortasks().put(spts.getTask().getHostport(), new ArrayList<>());
+							}
+							printresult.release();
+							if (result.taskstatus == TaskStatus.FAILED) {
+								spts.getTask().setTaskstatus(TaskStatus.FAILED);
+								spts.getTask().stagefailuremessage = result.stagefailuremessage;
+								spts.setCompletedexecution(false);
+								shouldcontinueprocessing.set(false);
+								throw new IllegalArgumentException("Task Failed");
+							} else if (result.taskstatus == TaskStatus.COMPLETED) {
+								spts.setCompletedexecution(true);
+								job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()).add(result);
+							}
+							spts.getTask().setPiguuid(result.getPiguuid());
+							return true;
+						} else if (spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
+							printresult.acquire();
+							if (Objects.isNull(tetotaltaskscompleted.get(spts.getHostPort()))) {
+								tetotaltaskscompleted.put(spts.getHostPort(), 0d);
+							}
+							tetotaltaskscompleted.put(spts.getHostPort(),
+									tetotaltaskscompleted.get(spts.getHostPort()) + 1);
+							double percentagecompleted = Math.floor((tetotaltaskscompleted.get(spts.getHostPort())
+									/ servertotaltasks.get(spts.getHostPort())) * 100.0);
+							Utils.writeToOstream(pipelineconfig.getOutput(), "\nPercentage Completed TE("
+									+ spts.getHostPort() + ") " + percentagecompleted + "% \n");
+							job.getJm().getContainersallocated().put(spts.getHostPort(), percentagecompleted);
+							printresult.release();
+						}
+					} catch (IllegalArgumentException e) {
+						throw e;
+					} catch (Exception e) {
+						log.error(DataSamudayaConstants.EMPTY, e);
+						spts.setCompletedexecution(false);
+					} finally {
+						semaphores.get(spts.getTask().getHostport()).release();
+					}
+					return spts.isCompletedexecution();
+
+				}
+	      };
+	    }
+
 	  }
-	  return false;
-  }
+  
+  
+	public boolean isErrored(Set<StreamPipelineTaskSubmitter> spts) {
+		Optional<StreamPipelineTaskSubmitter> optionalspts = spts.stream().parallel()
+				.filter(spt -> !spt.isCompletedexecution()).findFirst();
+		if (optionalspts.isPresent()) {
+			return true;
+		}
+		return false;
+	}
 
   /**
    * Creates Executors
@@ -1732,6 +1950,7 @@ public class StreamJobScheduler {
             rdf.setStageid(task.stageid);
             rdf.setTaskid(task.taskid);
             rdf.setTejobid(task.jobid);
+            rdf.setStorage(pipelineconfig.getStorage());
             if(pipelineconfig.getUseglobaltaskexecutors()) {
             	rdf.setTejobid(pipelineconfig.getTejobid());
             }

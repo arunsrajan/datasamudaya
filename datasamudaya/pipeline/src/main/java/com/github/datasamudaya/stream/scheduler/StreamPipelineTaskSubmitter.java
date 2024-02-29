@@ -10,10 +10,12 @@ package com.github.datasamudaya.stream.scheduler;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.List;
 import java.util.concurrent.Callable;
 import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.ExecuteTaskActor;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.StreamPipelineTaskSubmitterMBean;
@@ -34,6 +36,7 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 	private boolean completedexecution;
 	private boolean resultobtainedte;
 	private PipelineConfig pc;
+	private List<String> childactors;
 
 	public StreamPipelineTaskSubmitter() {
 	}
@@ -75,6 +78,29 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 			StreamDataCruncher sdc = (StreamDataCruncher) registry.lookup(DataSamudayaConstants.BINDTESTUB
 					+ DataSamudayaConstants.HYPHEN + jobid);
 			return sdc.postObject(task);
+		} catch (Exception ex) {
+			log.error("Unable to connect and submit tasks to executor with host and port: " + hp, ex);
+			throw ex;
+		}
+	}
+
+	/**
+	 * Execute Akka Actors
+	 * @return result
+	 * @throws Exception
+	 */
+	public Object actors() throws Exception {
+		try {
+			String jobid = task.jobid;
+			if(nonNull(pc) && pc.getUseglobaltaskexecutors()) {
+				jobid = pc.getTejobid();
+			}
+			String hostport[] = hp.split(DataSamudayaConstants.UNDERSCORE);
+			Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
+			StreamDataCruncher sdc = (StreamDataCruncher) registry.lookup(DataSamudayaConstants.BINDTESTUB
+					+ DataSamudayaConstants.HYPHEN + jobid);
+			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors); 
+			return sdc.postObject(eta);
 		} catch (Exception ex) {
 			log.error("Unable to connect and submit tasks to executor with host and port: " + hp, ex);
 			throw ex;
@@ -158,5 +184,15 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 	public void setPc(PipelineConfig pc) {
 		this.pc = pc;
 	}
+
+	public List<String> getChildactors() {
+		return childactors;
+	}
+
+	public void setChildactors(List<String> childactors) {
+		this.childactors = childactors;
+	}
+	
+	
 	
 }

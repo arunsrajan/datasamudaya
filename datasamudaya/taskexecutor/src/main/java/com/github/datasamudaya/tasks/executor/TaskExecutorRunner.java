@@ -11,9 +11,13 @@ package com.github.datasamudaya.tasks.executor;
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
@@ -25,7 +29,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
@@ -41,6 +47,8 @@ import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.ExecuteTaskActor;
+import com.github.datasamudaya.common.GetTaskActor;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LoadJar;
@@ -49,13 +57,27 @@ import com.github.datasamudaya.common.ServerUtils;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskExecutorShutdown;
+import com.github.datasamudaya.common.TaskStatus;
+import com.github.datasamudaya.common.TaskType;
 import com.github.datasamudaya.common.WebResourcesServlet;
+import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
+import com.github.datasamudaya.stream.CsvOptionsSQL;
+import com.github.datasamudaya.stream.executors.actors.ProcessCoalesce;
+import com.github.datasamudaya.stream.executors.actors.ProcessMapperByBlocksLocation;
+import com.github.datasamudaya.stream.executors.actors.ProcessMapperByStream;
 import com.github.datasamudaya.stream.scheduler.StreamJobScheduler;
 import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 
+import akka.actor.Actor;
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
@@ -65,27 +87,32 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
 
+import static java.util.Objects.*;
+
 /**
  * Launches the task executor.
+ * 
  * @author arun
  *
  */
 public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 
-  static Logger log = LoggerFactory.getLogger(TaskExecutorRunner.class);
-  Map<String, Object> apptaskexecutormap = new ConcurrentHashMap<>();
-  Map<String, Object> jobstageexecutormap = new ConcurrentHashMap<>();
-  ConcurrentMap<String, OutputStream> resultstream = new ConcurrentHashMap<>();
-  Map<String, Map<String, Object>> jobidstageidexecutormap = new ConcurrentHashMap<>();
-  Map<String, JobStage> jobidstageidjobstagemap = new ConcurrentHashMap<>();
-  Queue<Object> taskqueue = new LinkedBlockingQueue<Object>();
-  static ExecutorService estask;
-  static ExecutorService escompute;
-  static CountDownLatch shutdown = new CountDownLatch(1);
-  static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
+	static Logger log = LoggerFactory.getLogger(TaskExecutorRunner.class);
+	Map<String, Object> apptaskexecutormap = new ConcurrentHashMap<>();
+	Map<String, Object> jobstageexecutormap = new ConcurrentHashMap<>();
+	Map<String, Object> actornameactorrefmap = new ConcurrentHashMap<>();
+	ConcurrentMap<String, OutputStream> resultstream = new ConcurrentHashMap<>();
+	Map<String, Map<String, Object>> jobidstageidexecutormap = new ConcurrentHashMap<>();
+	Map<String, Boolean> jobidstageidtaskidcompletedmap = new ConcurrentHashMap<>();
+	Map<String, JobStage> jobidstageidjobstagemap = new ConcurrentHashMap<>();
+	Queue<Object> taskqueue = new LinkedBlockingQueue<Object>();
+	static ExecutorService estask;
+	static ExecutorService escompute;
+	static CountDownLatch shutdown = new CountDownLatch(1);
+	static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
 
 	public static void main(String[] args) throws Exception {
-		try (var zo = new ZookeeperOperations()) {						
+		try (var zo = new ZookeeperOperations()) {
 			URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 			if (args == null || args.length != 3) {
 				log.debug("Args" + args);
@@ -105,36 +132,45 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			}
 			String jobid = args[2];
 			String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-			PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+			PropertyConfigurator.configure(
+					datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
+							+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 			if (args[0].equals(DataSamudayaConstants.TEPROPLOADDISTROCONFIG)) {
-				Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
-						+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+				Utils.initializeProperties(
+						DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+								+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
+						DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 			}
 			StaticComponentContainer.Modules.exportAllToAll();
 			zo.connect();
 			ByteBufferPoolDirect.init(Long.parseLong(args[1]));
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-				            + DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
+							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			int numberofprocessors = Runtime.getRuntime().availableProcessors();
-			estask = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS, new LinkedBlockingQueue());
-			escompute = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS, new LinkedBlockingQueue());
+			estask = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS,
+					new LinkedBlockingQueue());
+			escompute = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS,
+					new LinkedBlockingQueue());
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid);
 			ter.start(zo, jobid);
-			int metricsport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT))+200;
-			DefaultExports.initialize(); // Initialize JVM metrics    	 
-	        PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT, CollectorRegistry.defaultRegistry, Clock.SYSTEM);
+			int metricsport = Integer
+					.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT)) + 200;
+			DefaultExports.initialize(); // Initialize JVM metrics
+			PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT,
+					CollectorRegistry.defaultRegistry, Clock.SYSTEM);
 			meterRegistry.config().commonTags("application", DataSamudayaConstants.DATASAMUDAYA.toLowerCase());
 			// Bind JVM metrics to the registry
 			new JvmMemoryMetrics().bindTo(meterRegistry);
 			new JvmThreadMetrics().bindTo(meterRegistry);
-			HTTPServer server = new HTTPServer(new InetSocketAddress(metricsport), meterRegistry.getPrometheusRegistry());
-	        // Start an HTTP server to expose metrics
-			log.info("TaskExecuterRunner evoked at metrics port....." + metricsport);
-			log.info("TaskExecuterRunner evoked at port....." + System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
+			HTTPServer server = new HTTPServer(new InetSocketAddress(metricsport),
+					meterRegistry.getPrometheusRegistry());
+			// Start an HTTP server to expose metrics
+			log.info("TaskExecuterRunner evoked at metrics port.....{}", metricsport);
+			log.info("TaskExecuterRunner evoked at port..... {}"
+					, System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 			log.info("Reckoning stoppage holder...");
 			shutdown.await();
 			log.info("Ceasing the connections...");
@@ -151,113 +187,223 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	/**
 	 * Initializes the zo.
 	 */
-  @Override
-  public void init(ZookeeperOperations zo, String jobid) throws Exception {
-	  
-	var host = NetworkUtil
-            .getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));  
-	var port = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT);
-	
-	var hp = host+DataSamudayaConstants.UNDERSCORE+port;
-	
-	zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
-		log.info("TaskExecutor {} initialized and started", hp);
-	});
+	@Override
+	public void init(ZookeeperOperations zo, String jobid) throws Exception {
 
-  }
+		var host = NetworkUtil
+				.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
+		var port = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT);
 
-  ClassLoader cl;
-  static Registry server;
+		var hp = host + DataSamudayaConstants.UNDERSCORE + port;
 
-  /**
-   * Starts and executes the tasks from scheduler via rpc registry.
-   */
-  @SuppressWarnings({})
-  @Override
-  public void start(ZookeeperOperations zo, String jobid) throws Exception {
-    var port = Integer.parseInt(System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
-    log.info("TaskExecutor Port: " + port);
-    var su = new ServerUtils();
-    log.info("Initializing Server at: {}", port);
-    su.init(port + DataSamudayaConstants.PORT_OFFSET,
-        new NodeWebServlet(new ConcurrentHashMap<String, Map<String, Process>>()),
-        DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
-        DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
-            + DataSamudayaConstants.ASTERIX,
-        new ResourcesMetricsServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA
-            + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
-			new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
-    log.info("Jetty Server initialized at: {}", port);
-    su.start();
-    log.info("Jetty Server started and listening: {}", port);
-    var configuration = new Configuration();
+		zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
+			log.info("TaskExecutor {} initialized and started", hp);
+		});
 
-    var inmemorycache = DataSamudayaCache.get();
-    cl = TaskExecutorRunner.class.getClassLoader();
-    
-    
-    var host = NetworkUtil
-            .getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));  
-    
-    dataCruncher = new StreamDataCruncher() {
-      public Object postObject(Object deserobj) throws RemoteException {
-        Task task = new Task();
-        try {
-          if (deserobj instanceof byte[] bytes) {
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-                var fstin = new Input(bais);) {
-            	Kryo kryo = Utils.getKryoInstance();
-            	kryo.setClassLoader(cl);
-            	deserobj = kryo.readClassAndObject(fstin);
-            }
-          }
-          if (deserobj instanceof TaskExecutorShutdown) {
-            shutdown.countDown();
-          } else if (deserobj instanceof LoadJar loadjar) {
-            log.info("Unpacking jars: " + loadjar.getMrjar());
-            cl = DataSamudayaMapReducePhaseClassLoader.newInstance(loadjar.getMrjar(), cl);
-            return DataSamudayaConstants.JARLOADED;
-          } else if (deserobj instanceof Job job) {
-        	  job.getPipelineconfig().setClsloader(cl);
-        	  StreamJobScheduler js = new StreamJobScheduler();
-        	  return js.schedule(job);
-          } else if (!Objects.isNull(deserobj)) {
-        	  log.info("Deserialized object:{} ", deserobj);
-            TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,
-                apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
-                jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap);
-            return estask.submit(taskexecutor).get(); 
-          }
-        } catch (Throwable ex) {
-          log.error(DataSamudayaConstants.EMPTY, ex);
-          if (ex instanceof Exception e) {
-          	Utils.getStackTrace(e, task);
-          }
-        }
-        return task;
-      }
-    };
-    log.info("Getting RPC Registry for port: {}", port);
-    server = Utils.getRPCRegistry(port, dataCruncher, jobid);
-    log.info("RPC Registry for port: {} Obtained", port);
-  }
+	}
 
-  static StreamDataCruncher stub;
-  static StreamDataCruncher dataCruncher;
+	ClassLoader cl;
+	static Registry server;
 
-  /**
-   * Destroy the thread pool.
-   */
-  @Override
-  public void destroy() throws Exception {
-    if (estask != null) {
-      estask.shutdownNow();
-      estask.awaitTermination(1, TimeUnit.SECONDS);
-    }
-    if (escompute != null) {
-    	escompute.shutdownNow();
-    	escompute.awaitTermination(1, TimeUnit.SECONDS);
-      }
-  }
+	/**
+	 * Starts and executes the tasks from scheduler via rpc registry.
+	 */
+	@SuppressWarnings({})
+	@Override
+	public void start(ZookeeperOperations zo, String jobid) throws Exception {
+		var port = Integer.parseInt(System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
+		log.info("TaskExecutor Port: " + port);
+		var su = new ServerUtils();
+		log.info("Initializing Server at: {}", port);
+		su.init(port + DataSamudayaConstants.PORT_OFFSET,
+				new NodeWebServlet(new ConcurrentHashMap<String, Map<String, Process>>()),
+				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
+				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
+						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+				new ResourcesMetricsServlet(),
+				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH
+						+ DataSamudayaConstants.ASTERIX,
+				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+		log.info("Jetty Server initialized at: {}", port);
+		su.start();
+		log.info("Jetty Server started and listening: {}", port);
+		var configuration = new Configuration();
+
+		var inmemorycache = DataSamudayaCache.get();
+		cl = TaskExecutorRunner.class.getClassLoader();
+		int akkaport = Utils.getRandomPort();
+		Config config = ConfigFactory.parseString("""
+				akka {
+				  actor {
+				    # provider=remote is possible, but prefer cluster
+				    provider = remote
+				    allow-java-serialization = true
+				  }
+				  remote {
+				    artery {
+				      transport = tcp # See Selecting a transport below
+				      canonical.hostname = \""""
+				+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
+				+ "\"\ncanonical.port = " + akkaport + """
+						    }
+						  }
+						}
+						""");
+		final ActorSystem system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
+		final String actorsystemurl = "akka://" + DataSamudayaConstants.ACTORUSERNAME + "@"
+				+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST) + ":" + akkaport
+				+ "/user";
+		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
+		var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);
+		var host = NetworkUtil
+				.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
+
+		dataCruncher = new StreamDataCruncher() {
+			public Object postObject(Object deserobj) throws RemoteException {
+				Task task = new Task();
+				try {
+					if (deserobj instanceof byte[] bytes) {
+						try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+								var fstin = new Input(bais);) {
+							Kryo kryo = Utils.getKryoInstance();
+							kryo.setClassLoader(cl);
+							deserobj = kryo.readClassAndObject(fstin);
+						}
+					}
+					if (deserobj instanceof TaskExecutorShutdown) {
+						shutdown.countDown();
+					} else if (deserobj instanceof LoadJar loadjar) {
+						log.info("Unpacking jars: " + loadjar.getMrjar());
+						cl = DataSamudayaMapReducePhaseClassLoader.newInstance(loadjar.getMrjar(), cl);
+						return DataSamudayaConstants.JARLOADED;
+					} else if (deserobj instanceof GetTaskActor taskactor) {
+						String jobstageid = taskactor.getTask().getJobid() + taskactor.getTask().getStageid();
+						JobStage js = jobidstageidjobstagemap.get(jobstageid);
+						if (js.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {
+							ActorRef actor = system.actorOf(
+									Props.create(ProcessMapperByBlocksLocation.class,
+											jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
+											jobidstageidtaskidcompletedmap, taskactor.getTask()),
+									jobstageid + taskactor.getTask().getTaskid());
+							actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
+							taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
+									+ jobstageid + taskactor.getTask().getTaskid());
+							return taskactor.getTask();
+						} else if (js.getStage().getTasks().get(0) instanceof Coalesce coalesce) {
+							ActorRef actor = null;
+							if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+								List<ActorSelection> childactors = new ArrayList<>();
+								for (String actorselectionurl : taskactor.getChildtaskactors()) {
+									childactors.add(system.actorSelection(actorselectionurl));
+								}
+								actor = system.actorOf(
+										Props.create(ProcessCoalesce.class, coalesce, childactors,
+												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+												inmemorycache, taskactor.getTask()),
+										jobstageid + taskactor.getTask().getTaskid());
+							} else {
+								actor = system.actorOf(
+										Props.create(ProcessCoalesce.class, coalesce, null,
+												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+												inmemorycache, taskactor.getTask()),
+										jobstageid + taskactor.getTask().getTaskid());
+							}
+							actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
+							taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
+									+ jobstageid + taskactor.getTask().getTaskid());
+							return taskactor.getTask();
+						} else {
+							List<ActorSelection> childactors = null;
+							if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+								childactors = new ArrayList<>();
+								for (String actorselectionurl : taskactor.getChildtaskactors()) {
+									childactors.add(system.actorSelection(actorselectionurl));
+								}
+							}
+							ActorRef actor = system
+									.actorOf(
+											Props.create(ProcessMapperByStream.class,
+													jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
+													jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors),
+											jobstageid + taskactor.getTask().getTaskid());
+							actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
+							taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
+									+ jobstageid + taskactor.getTask().getTaskid());
+							return taskactor.getTask();
+						}
+					} else if (deserobj instanceof ExecuteTaskActor taskactor) {
+						log.info("Processing Blocks {} actors {}", taskactor.getTask().getInput(),
+								taskactor.getTask().getActorselection());
+						List<ActorSelection> childactors = new ArrayList<>();
+						if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+							for (String actorselectionurl : taskactor.getChildtaskactors()) {
+								childactors.add(system.actorSelection(actorselectionurl));
+							}
+						}
+						ProcessMapperByBlocksLocation.BlocksLocationRecord blr = new ProcessMapperByBlocksLocation.BlocksLocationRecord(
+								(BlocksLocation) taskactor.getTask().getInput()[0], hdfs, childactors);
+						final ActorSelection mapreducetask = system
+								.actorSelection(taskactor.getTask().getActorselection());
+						mapreducetask.tell(blr, Actor.noSender());
+						var path = Utils.getIntermediateInputStreamTask(taskactor.getTask());
+						while(isNull(jobidstageidtaskidcompletedmap.get(path))||!jobidstageidtaskidcompletedmap.get(path)) {
+		            		Thread.sleep(1000);
+		            	}
+						Task tasktoexecute = taskactor.getTask();
+						log.info("Task Executed {}", tasktoexecute);
+						task.taskstatus = TaskStatus.COMPLETED;
+						task.tasktype = TaskType.EXECUTEUSERTASK;
+						task.taskid = tasktoexecute.taskid;
+						task.piguuid = tasktoexecute.piguuid;
+						task.taskexecutionstartime = tasktoexecute.taskexecutionstartime;
+						task.taskexecutionendtime = tasktoexecute.taskexecutionendtime;
+						task.timetakenseconds = tasktoexecute.timetakenseconds;
+						task.numbytesprocessed = tasktoexecute.numbytesprocessed;
+						task.numbytesconverted = tasktoexecute.numbytesconverted;
+						task.numbytesgenerated = tasktoexecute.numbytesgenerated;
+					} else if (deserobj instanceof Job job) {
+						job.getPipelineconfig().setClsloader(cl);
+						StreamJobScheduler js = new StreamJobScheduler();
+						return js.schedule(job);
+					} else if (!Objects.isNull(deserobj)) {
+						log.info("Deserialized object:{} ", deserobj);
+						TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,
+								apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
+								jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap,
+								jobidstageidtaskidcompletedmap);
+						return estask.submit(taskexecutor).get();
+					}
+				} catch (Throwable ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
+					if (ex instanceof Exception e) {
+						Utils.getStackTrace(e, task);
+					}
+				}
+				return task;
+			}
+		};
+		log.info("Getting RPC Registry for port: {}", port);
+		server = Utils.getRPCRegistry(port, dataCruncher, jobid);
+		log.info("RPC Registry for port: {} Obtained", port);
+	}
+
+	static StreamDataCruncher stub;
+	static StreamDataCruncher dataCruncher;
+
+	/**
+	 * Destroy the thread pool.
+	 */
+	@Override
+	public void destroy() throws Exception {
+		if (estask != null) {
+			estask.shutdownNow();
+			estask.awaitTermination(1, TimeUnit.SECONDS);
+		}
+		if (escompute != null) {
+			escompute.shutdownNow();
+			escompute.awaitTermination(1, TimeUnit.SECONDS);
+		}
+	}
 
 }

@@ -58,6 +58,8 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemo
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroups;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroupsSQL;
 
+import static java.util.Objects.isNull;
+
 /**
  * The executor that executes task executor tasks. 
  * @author arun
@@ -74,6 +76,7 @@ public class TaskExecutor implements Callable<Object> {
   Object deserobj;
   Map<String, Object> jobstageexecutormap;
   Map<String, Map<String, Object>> jobidstageidexecutormap;
+  Map<String, Boolean> jobidstageidtaskidcompletedmap;
   
   Map<String, JobStage> jobidstageidjobstagemap;
   Task tasktoreturn;
@@ -87,7 +90,8 @@ public class TaskExecutor implements Callable<Object> {
       
       Map<String, Map<String, Object>> jobidstageidexecutormap, Task tasktoreturn,
       Map<String, JobStage> jobidstageidjobstagemap,
-      ZookeeperOperations zo, ConcurrentMap<BlocksLocation, String> blorcmap) {
+      ZookeeperOperations zo, ConcurrentMap<BlocksLocation, String> blorcmap,
+      Map<String, Boolean> jobidstageidtaskidcompletedmap) {
     this.cl = cl;
     this.port = port;
     this.es = es;
@@ -103,6 +107,7 @@ public class TaskExecutor implements Callable<Object> {
     this.zo = zo;
     this.blorcmap = blorcmap;
     this.topersist = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR, DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT));
+    this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap; 
   }
 
   ClassLoader cl;
@@ -264,27 +269,36 @@ public class TaskExecutor implements Callable<Object> {
         var mdstde = (StreamPipelineTaskExecutor) taskexecutor;
         log.info("Task Executor Remote Data Fetch {}", taskexecutor);
         if (rdf.getMode().equals(DataSamudayaConstants.STANDALONE)) {
-          if (taskexecutor != null) {
-            Task task = mdstde.getTask();
-            if (task.storage == DataSamudayaConstants.STORAGE.INMEMORY) {
-              var os =
-                  ((StreamPipelineTaskExecutorInMemory) mdstde).getIntermediateInputStreamRDF(rdf);
-              log.info("Intermediate InputStream RDF {}", os);
-              if (!Objects.isNull(os)) {
-                ByteBufferOutputStream bbos = (ByteBufferOutputStream) os;
-                rdf.setData(IOUtils.readBytesAndClose(new ByteBufferInputStream(bbos.get()),
-                    bbos.get().limit()));
-              }
-            } else if (task.storage == DataSamudayaConstants.STORAGE.INMEMORY_DISK || task.storage == DataSamudayaConstants.STORAGE.COLUMNARSQL) {
-              var path = Utils.getIntermediateInputStreamRDF(rdf);
-              rdf.setData((byte[]) inmemorycache.get(path));
-            } else {
-              try (var is = mdstde.getIntermediateInputStreamFS(task);) {
-                rdf.setData((byte[]) is.readAllBytes());
-              }
-            }
-            return rdf;
-          }
+        	if(rdf.getStorage() == STORAGE.COLUMNARSQL) {
+        		var path = Utils.getIntermediateInputStreamRDF(rdf);
+            	while(isNull(jobidstageidtaskidcompletedmap.get(path))||!jobidstageidtaskidcompletedmap.get(path)) {
+            		Thread.sleep(1000);
+            	}
+            	rdf.setData((byte[]) inmemorycache.get(path));
+            	return rdf;
+			} else if (taskexecutor != null) {
+				Task task = mdstde.getTask();
+				if (task.storage == DataSamudayaConstants.STORAGE.INMEMORY) {
+					var os = ((StreamPipelineTaskExecutorInMemory) mdstde).getIntermediateInputStreamRDF(rdf);
+					log.info("Intermediate InputStream RDF {}", os);
+					if (!Objects.isNull(os)) {
+						ByteBufferOutputStream bbos = (ByteBufferOutputStream) os;
+						rdf.setData(
+								IOUtils.readBytesAndClose(new ByteBufferInputStream(bbos.get()), bbos.get().limit()));
+					}
+				} else if (task.storage == DataSamudayaConstants.STORAGE.INMEMORY_DISK) {
+					var path = Utils.getIntermediateInputStreamRDF(rdf);
+					while (!jobidstageidtaskidcompletedmap.get(path)) {
+						Thread.sleep(1000);
+					}
+					rdf.setData((byte[]) inmemorycache.get(path));
+				} else {
+					try (var is = mdstde.getIntermediateInputStreamFS(task);) {
+						rdf.setData((byte[]) is.readAllBytes());
+					}
+				}
+				return rdf;
+			}
         } else if (rdf.getMode().equals(DataSamudayaConstants.JGROUPS)) {
           try (var is = RemoteDataFetcher.readIntermediatePhaseOutputFromFS(rdf.getJobid(),
               rdf.getTaskid());) {
