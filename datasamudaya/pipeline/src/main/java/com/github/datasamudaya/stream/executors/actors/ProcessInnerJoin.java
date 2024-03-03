@@ -1,16 +1,16 @@
 package com.github.datasamudaya.stream.executors.actors;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 import org.apache.hadoop.fs.FileSystem;
-import org.jooq.lambda.tuple.Tuple;
-import org.jooq.lambda.tuple.Tuple2;
+import org.jooq.lambda.Seq;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
@@ -19,36 +19,34 @@ import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.Task;
-import com.github.datasamudaya.common.functions.Coalesce;
+import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.utils.Utils;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 
-import static java.util.Objects.nonNull;
-import static java.util.Objects.isNull;
-
-public class ProcessCoalesce extends AbstractActor {
+public class ProcessInnerJoin extends AbstractActor {
 	protected JobStage jobstage;
-	private static Logger log = LoggerFactory.getLogger(ProcessCoalesce.class);
+	private static Logger log = LoggerFactory.getLogger(ProcessInnerJoin.class);
 	protected FileSystem hdfs;
 	protected boolean completed;
 	Task task;
 	boolean iscacheable;
 	ExecutorService executor;
-	java.util.List<Tuple2> result = new java.util.Vector<>();
-	java.util.List<Tuple2> resultcollector = new java.util.Vector<>();
-	Coalesce coalesce;
+	JoinPredicate jp;
 	int terminatingsize;
 	int initialsize = 0;
 	List<ActorSelection> pipelines;
 	org.ehcache.Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-
-	private ProcessCoalesce(Coalesce coalesce, List<ActorSelection> pipelines, int terminatingsize,
+	OutputObject left;
+	OutputObject right;
+	
+	
+	private ProcessInnerJoin(JoinPredicate jp, List<ActorSelection> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, org.ehcache.Cache cache, Task task) {
-		this.coalesce = coalesce;
+		this.jp = jp;
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -58,39 +56,33 @@ public class ProcessCoalesce extends AbstractActor {
 
 	@Override
 	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processCoalesce).build();
+		return receiveBuilder().match(OutputObject.class, this::processInnerJoin).build();
 	}
 
-	private ProcessCoalesce processCoalesce(OutputObject object) {
-		if (Objects.nonNull(object) && Objects.nonNull(object.value())) {
-			initialsize++;
-			if(object.value() instanceof List values) {
-				result.addAll(values);
-			} else {
-				result.add((Tuple2) object.value());
-			}
-			log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
-			if (initialsize == terminatingsize) {
-				log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
-				result = result.parallelStream()
-				.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
-						(input1, input2) -> coalesce.getCoalescefunction().apply(input1, input2)))
-				.entrySet().parallelStream()
-				.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
-				.collect(Collectors.toList());
-				final boolean left = isNull(task.joinpos) ? false
-						: nonNull(task.joinpos) && task.joinpos.equals("left") ? true : false;
-				final boolean right = isNull(task.joinpos) ? false
-						: nonNull(task.joinpos) && task.joinpos.equals("right") ? true : false;
+	private ProcessInnerJoin processInnerJoin(OutputObject oo) {
+		if (oo.left()) {
+			left = nonNull(oo.value())?oo:left;
+		} else if(oo.right()) {
+			right = nonNull(oo.value())?oo:right;
+		}
+		if(nonNull(left) && nonNull(right) && isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
+		+ DataSamudayaConstants.HYPHEN + task.getTaskid()))){
+			final boolean leftvalue = isNull(task.joinpos)?false:nonNull(task.joinpos)&&task.joinpos.equals("left")?true:false;
+			final boolean rightvalue = isNull(task.joinpos)?false:nonNull(task.joinpos)&&task.joinpos.equals("right")?true:false;
+			try (var seq1 = Seq.of(((List)left.value()).toArray());
+		            var seq2 = Seq.of(((List)right.value()).toArray());
+		            var join = seq1.innerJoin(seq2, jp)) {
+				List joinpairsout = join.toList();
 				if (Objects.nonNull(pipelines)) {
 					pipelines.parallelStream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(result, left, right), ActorRef.noSender());
+						downstreampipe.tell(new OutputObject(joinpairsout, leftvalue, rightvalue), ActorRef.noSender());
+						downstreampipe.tell(new OutputObject(null, leftvalue, rightvalue), ActorRef.noSender());
 					});
 				} else {
 					try (var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);
 							var output = new Output(sos);) {
-						Utils.getKryo().writeClassAndObject(output, result);
+						Utils.getKryo().writeClassAndObject(output, joinpairsout);
 						output.flush();
 						task.setNumbytesgenerated(fsdos.toByteArray().length);
 						byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();
@@ -103,8 +95,7 @@ public class ProcessCoalesce extends AbstractActor {
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
 				return this;
 			}
-		}		
-		
+		}
 		return this;
 	}
 

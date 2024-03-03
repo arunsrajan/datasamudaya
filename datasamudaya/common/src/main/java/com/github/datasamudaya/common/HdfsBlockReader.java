@@ -195,14 +195,43 @@ public class HdfsBlockReader {
 	}
 
 	/**
+	 * The Merged InputStream
+	 * @param bl
+	 * @param hdfs
+	 * @return inputstream object
+	 * @throws Exception
+	 */
+	public static InputStream getBlockDataInputStreamMerge(final BlocksLocation bl, FileSystem hdfs) throws Exception {
+		try {
+			log.debug("Entered HdfsBlockReader.getBlockDataSnappyStream");
+			var block = bl.getBlock();
+			log.info("Obtaining Data for the " + block + " with offset: " + block[0].getBlockOffset());
+			FSDataInputStream dfsis = hdfs.open(new Path(block[0].getFilename()));
+			long blocklimit = block[0].getBlockend() - block[0].getBlockstart();
+			if (block.length > 1 && nonNull(block[1])) {
+				blocklimit += block[1].getBlockend() - block[1].getBlockstart();
+			}
+			BlockReaderInputStream bris = new BlockReaderInputStream(dfsis,
+					(long) (block[0].getBlockOffset() + block[0].getBlockstart()), blocklimit);
+			log.debug("Exiting HdfsBlockReader.getBlockDataSnappyStream");
+			return bris;
+		} catch (Exception ex) {
+			log.error("Unable to Obtain Block Data getBlockDataSnappyStream: ", ex);
+		}
+
+		return null;
+
+	}
+	
+	/**
 	 * To calculate the total amount of bytes required;
 	 * @param block
 	 * @return
 	 */
-	public static int calculateBytesRequired(Block[] block) {
-		int totalmemoryrequired = (int) (block[0].getBlockend() - block[0].getBlockstart());
+	public static long calculateBytesRequired(Block[] block) {
+		long totalmemoryrequired = (long) (block[0].getBlockend() - block[0].getBlockstart());
 		if (block.length > 1 && nonNull(block[1])) {
-			totalmemoryrequired += block[1].getBlockend() - block[1].getBlockstart();
+			totalmemoryrequired += (block[1].getBlockend() - block[1].getBlockstart());
 		}
 		return totalmemoryrequired;
 	}

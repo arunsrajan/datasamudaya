@@ -58,6 +58,7 @@ public class Task implements Serializable, Cloneable {
   public long numbytesconverted;
   public boolean topersist;
   public String actorselection;
+  public String joinpos;
   
   @Override
   public Object clone() throws CloneNotSupportedException {

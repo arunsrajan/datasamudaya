@@ -15,8 +15,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -24,7 +22,6 @@ import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.hadoop.fs.FileSystem;
@@ -60,17 +57,16 @@ import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 import com.google.common.collect.Maps;
 import com.pivovarit.collectors.ParallelCollectors;
-import com.univocity.parsers.common.IterableResult;
-import com.univocity.parsers.common.ParsingContext;
-import com.univocity.parsers.common.ResultIterator;
-import com.univocity.parsers.csv.CsvParser;
-import com.univocity.parsers.csv.CsvParserSettings;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
 
 import akka.actor.AbstractActor;
-import akka.actor.ActorSelection;
 import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvCallbackHandler;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.NamedCsvRecord;
 import jp.co.yahoo.yosegi.config.Configuration;
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
@@ -164,44 +160,35 @@ extends AbstractActor {
 						if (isNull(yosegibytes) || yosegibytes.length == 1 || nonNull(blockslocation.getToreprocess())
 								&& blockslocation.getToreprocess().booleanValue()) {
 							log.info("Unable To Find vector for blocks {}", blockslocation);
-							bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+							bais = HdfsBlockReader.getBlockDataInputStreamMerge(blockslocation, hdfs);
 							buffer = new BufferedReader(new InputStreamReader(bais));
 							tasktoprocess.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
 							Map<String, SqlTypeName> sqltypename = SQLUtils.getColumnTypesByColumn(sqltypenamel,
-									Arrays.asList(headers));
+									Arrays.asList(headers));							
 							if (iscsv) {
-								CsvParserSettings settings = new CsvParserSettings();
-								settings.getFormat().setLineSeparator("\n");
-								settings.selectIndexes(oco.toArray(new Integer[0]));
-								settings.setNullValue(DataSamudayaConstants.EMPTY);
-								CsvParser parser = new CsvParser(settings);
-								IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);
-								ResultIterator<String[], ParsingContext> iterator = iter.iterator();
-								Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator,
-										Spliterator.SIZED | Spliterator.SUBSIZED);
-								Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);
+								CsvCallbackHandler<NamedCsvRecord> callbackHandler =
+									    new de.siegmar.fastcsv.reader.NamedCsvRecordHandler(headers);
+								CsvReader<NamedCsvRecord> csv = CsvReader.builder().fieldSeparator(',')
+									    .quoteCharacter('"')
+									    .commentStrategy(CommentStrategy.SKIP)
+									    .commentCharacter('#')
+									    .skipEmptyLines(true)
+									    .ignoreDifferentFieldCount(false)
+									    .detectBomHeader(false).build(callbackHandler, buffer);
 								if (topersist) {
 									baos = new ByteArrayOutputStream();
 								}
 								YosegiRecordWriter writerdataload = writer = topersist
 										? new YosegiRecordWriter(baos, new Configuration())
 										: null;
-								intermediatestreamobject = stringstream.map(values -> {
-									Map data = Maps.newLinkedHashMap();
+								intermediatestreamobject = csv.stream().parallel().map(values -> {
 									Object[] valuesobject = new Object[headers.length];
 									Object[] toconsidervalueobjects = new Object[headers.length];
-									int valuesindex = 0;
 									try {
-										for (String value : values) {
-											SQLUtils.setYosegiObjectByValue(value,
-													sqltypename.get(headers[oco.get(valuesindex)]), data,
-													headers[oco.get(valuesindex)]);
-											SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects,
-													headers[oco.get(valuesindex)], data, oco.get(valuesindex));
-											valuesindex++;
-										}
-										if (topersist) {
-											writerdataload.addRow(data);
+										for (Integer index : oco) {
+											SQLUtils.getValueByIndex(values.getField(index),
+													sqltypename.get(headers[index]), valuesobject,
+													toconsidervalueobjects, index);
 										}
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
@@ -341,16 +328,19 @@ extends AbstractActor {
 							});
 						}
 					} else {
-						if(CollectionUtils.isNotEmpty(blr.pipeline)) {
-							((Stream) streammap).forEach(value -> {
-	
-								blr.pipeline().parallelStream().forEach(action -> action.tell(new OutputObject(value), ActorRef.noSender()));
-	
-							});
-							blr.pipeline().parallelStream().forEach(action -> action.tell(new OutputObject(null), ActorRef.noSender()));
+						final boolean left = isNull(tasktoprocess.joinpos) ? false
+								: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
+						final boolean right = isNull(tasktoprocess.joinpos) ? false
+								: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true
+										: false;
+						List result = (List) ((Stream) streammap).collect(Collectors.toList());
+						if (CollectionUtils.isNotEmpty(blr.pipeline)) {
+							blr.pipeline().parallelStream().forEach(
+									action -> action.tell(new OutputObject(result, left, right), ActorRef.noSender()));
+							blr.pipeline().parallelStream().forEach(
+									action -> action.tell(new OutputObject(null, left, right), ActorRef.noSender()));
 						} else {
-							out = (List) ((Stream) streammap).collect(Collectors.toList());
-							Utils.getKryo().writeClassAndObject(output, out);
+							Utils.getKryo().writeClassAndObject(output, result);
 							output.flush();
 							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 							cacheAble(fsdos);

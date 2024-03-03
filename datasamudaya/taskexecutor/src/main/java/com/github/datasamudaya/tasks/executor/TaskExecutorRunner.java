@@ -68,6 +68,7 @@ import com.github.datasamudaya.stream.executors.actors.ProcessCoalesce;
 import com.github.datasamudaya.stream.executors.actors.ProcessMapperByBlocksLocation;
 import com.github.datasamudaya.stream.executors.actors.ProcessMapperByStream;
 import com.github.datasamudaya.stream.scheduler.StreamJobScheduler;
+import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 import com.typesafe.config.Config;
@@ -277,91 +278,16 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						log.info("Unpacking jars: " + loadjar.getMrjar());
 						cl = DataSamudayaMapReducePhaseClassLoader.newInstance(loadjar.getMrjar(), cl);
 						return DataSamudayaConstants.JARLOADED;
-					} else if (deserobj instanceof GetTaskActor taskactor) {
-						String jobstageid = taskactor.getTask().getJobid() + taskactor.getTask().getStageid();
-						JobStage js = jobidstageidjobstagemap.get(jobstageid);
-						if (js.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {
-							ActorRef actor = system.actorOf(
-									Props.create(ProcessMapperByBlocksLocation.class,
-											jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
-											jobidstageidtaskidcompletedmap, taskactor.getTask()),
-									jobstageid + taskactor.getTask().getTaskid());
-							actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
-							taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
-									+ jobstageid + taskactor.getTask().getTaskid());
-							return taskactor.getTask();
-						} else if (js.getStage().getTasks().get(0) instanceof Coalesce coalesce) {
-							ActorRef actor = null;
-							if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-								List<ActorSelection> childactors = new ArrayList<>();
-								for (String actorselectionurl : taskactor.getChildtaskactors()) {
-									childactors.add(system.actorSelection(actorselectionurl));
-								}
-								actor = system.actorOf(
-										Props.create(ProcessCoalesce.class, coalesce, childactors,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()),
-										jobstageid + taskactor.getTask().getTaskid());
-							} else {
-								actor = system.actorOf(
-										Props.create(ProcessCoalesce.class, coalesce, null,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()),
-										jobstageid + taskactor.getTask().getTaskid());
-							}
-							actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
-							taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
-									+ jobstageid + taskactor.getTask().getTaskid());
-							return taskactor.getTask();
-						} else {
-							List<ActorSelection> childactors = null;
-							if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-								childactors = new ArrayList<>();
-								for (String actorselectionurl : taskactor.getChildtaskactors()) {
-									childactors.add(system.actorSelection(actorselectionurl));
-								}
-							}
-							ActorRef actor = system
-									.actorOf(
-											Props.create(ProcessMapperByStream.class,
-													jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
-													jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors),
-											jobstageid + taskactor.getTask().getTaskid());
-							actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
-							taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
-									+ jobstageid + taskactor.getTask().getTaskid());
-							return taskactor.getTask();
-						}
-					} else if (deserobj instanceof ExecuteTaskActor taskactor) {
-						log.info("Processing Blocks {} actors {}", taskactor.getTask().getInput(),
-								taskactor.getTask().getActorselection());
-						List<ActorSelection> childactors = new ArrayList<>();
-						if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-							for (String actorselectionurl : taskactor.getChildtaskactors()) {
-								childactors.add(system.actorSelection(actorselectionurl));
-							}
-						}
-						ProcessMapperByBlocksLocation.BlocksLocationRecord blr = new ProcessMapperByBlocksLocation.BlocksLocationRecord(
-								(BlocksLocation) taskactor.getTask().getInput()[0], hdfs, childactors);
-						final ActorSelection mapreducetask = system
-								.actorSelection(taskactor.getTask().getActorselection());
-						mapreducetask.tell(blr, Actor.noSender());
-						var path = Utils.getIntermediateInputStreamTask(taskactor.getTask());
-						while(isNull(jobidstageidtaskidcompletedmap.get(path))||!jobidstageidtaskidcompletedmap.get(path)) {
-		            		Thread.sleep(1000);
-		            	}
-						Task tasktoexecute = taskactor.getTask();
-						log.info("Task Executed {}", tasktoexecute);
-						task.taskstatus = TaskStatus.COMPLETED;
-						task.tasktype = TaskType.EXECUTEUSERTASK;
-						task.taskid = tasktoexecute.taskid;
-						task.piguuid = tasktoexecute.piguuid;
-						task.taskexecutionstartime = tasktoexecute.taskexecutionstartime;
-						task.taskexecutionendtime = tasktoexecute.taskexecutionendtime;
-						task.timetakenseconds = tasktoexecute.timetakenseconds;
-						task.numbytesprocessed = tasktoexecute.numbytesprocessed;
-						task.numbytesconverted = tasktoexecute.numbytesconverted;
-						task.numbytesgenerated = tasktoexecute.numbytesgenerated;
+					} else if (deserobj instanceof GetTaskActor gettaskactor) {
+						return SQLUtils.getAkkaActor(system, gettaskactor, 
+								jobidstageidjobstagemap, hdfs, 
+								inmemorycache, jobidstageidtaskidcompletedmap, 
+								actornameactorrefmap, actorsystemurl);
+					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
+						return SQLUtils.getAkkaActor(system, executetaskactor, 
+								jobidstageidjobstagemap, hdfs, 
+								inmemorycache, jobidstageidtaskidcompletedmap, 
+								actornameactorrefmap, actorsystemurl);
 					} else if (deserobj instanceof Job job) {
 						job.getPipelineconfig().setClsloader(cl);
 						StreamJobScheduler js = new StreamJobScheduler();
