@@ -4,6 +4,8 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.utils.StreamUtils;
@@ -47,6 +50,8 @@ public class ProcessMapperByStream extends AbstractActor {
 	List<ActorSelection> childpipes;
 	int terminatingsize;
 	int initialsize = 0;
+	DiskSpillingList diskspilllistinterm;
+	DiskSpillingList diskspilllist;
 	protected List getFunctions() {
 		log.debug("Entered ProcessMapperByStream");
 		var tasks = jobstage.getStage().tasks;
@@ -69,30 +74,35 @@ public class ProcessMapperByStream extends AbstractActor {
 		this.tasktoprocess = tasktoprocess;
 		this.childpipes = childpipes;
 		this.terminatingsize = terminatingsize;
+		diskspilllistinterm = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, true, false, false);
+		diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, false, false, false);
 	}
 
 	public static record BlocksLocationRecord(FileSystem hdfs, List<ActorSelection> pipeline) implements Serializable {
 	}
-
-	java.util.List<Object> result = new java.util.Vector<>();
-	java.util.List<Object> resultcollector = new java.util.Vector<>();
 
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder().match(OutputObject.class, this::processBlocksLocationRecord).build();
 	}
 
-	private void processBlocksLocationRecord(OutputObject object) throws PipelineException {
+	private void processBlocksLocationRecord(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.value())) {
 			initialsize++;
-			if (object.value() instanceof List values) {
-				result.addAll(values);
+			if(object.value() instanceof DiskSpillingList dsl) {
+				if(dsl.isSpilled()) {
+					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
+				} else {
+					diskspilllistinterm.addAll(dsl.getData());
+				}
 			} else {
-				result.add(object.value());
+				diskspilllistinterm.add(object.value());
 			}
 			if (initialsize == terminatingsize) {
 				if (CollectionUtils.isEmpty(childpipes)) {
-					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), result.stream());
+					Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
+							getLocalFilePathForTask(diskspilllistinterm.getTask(), true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))):diskspilllistinterm.getData().stream();
+					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
 							var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);
 							var output = new Output(sos);) {
@@ -111,10 +121,12 @@ public class ProcessMapperByStream extends AbstractActor {
 							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
 					final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true : false;
-					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), result.stream());) {
-						List out = (List) streammap.collect(Collectors.toList());
+					Stream datastream = diskspilllistinterm.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
+							getLocalFilePathForTask(diskspilllistinterm.getTask(), true, false, false))):diskspilllistinterm.getData().stream();
+					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
+						streammap.forEach(diskspilllist::add);
 						childpipes.parallelStream().forEach(
-								action -> action.tell(new OutputObject(out, leftvalue, rightvalue), ActorRef.noSender()));
+								action -> action.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
 					} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}

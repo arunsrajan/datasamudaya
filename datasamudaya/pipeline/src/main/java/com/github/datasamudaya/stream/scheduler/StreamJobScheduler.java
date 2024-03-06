@@ -337,6 +337,7 @@ public class StreamJobScheduler {
 			int akkaport = Utils.getRandomPort();
 			Config config = ConfigFactory.parseString("""
 					akka {
+					  jvm-exit-on-fatal-error = false
 					  actor {
 					    # provider=remote is possible, but prefer cluster
 					    provider = remote

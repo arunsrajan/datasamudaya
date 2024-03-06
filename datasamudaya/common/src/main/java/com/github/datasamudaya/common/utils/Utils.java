@@ -26,13 +26,14 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.lang.invoke.SerializedLambda;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -44,8 +45,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.GregorianCalendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -55,15 +56,20 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeFamily;
@@ -92,7 +98,9 @@ import org.jgroups.ObjectMessage;
 import org.jgroups.Receiver;
 import org.jgroups.View;
 import org.jgroups.util.UUID;
-import org.joda.time.*;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.objenesis.strategy.StdInstantiatorStrategy;
@@ -110,7 +118,6 @@ import com.esotericsoftware.kryo.serializers.ClosureSerializer.Closure;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.StringArraySerializer;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.EnumSerializer;
-import com.esotericsoftware.kryo.serializers.ImmutableCollectionsSerializers;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.datasamudaya.common.AllocateContainers;
@@ -164,22 +171,18 @@ import com.google.common.collect.ImmutableList;
 import com.sun.management.OperatingSystemMXBean;
 import com.univocity.parsers.csv.CsvWriter;
 
-import de.javakaffee.kryoserializers.KryoReflectionFactorySupport;
 import de.javakaffee.kryoserializers.ArraysAsListSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyMapSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptySetSerializer;
 import de.javakaffee.kryoserializers.CollectionsSingletonListSerializer;
-import de.javakaffee.kryoserializers.CollectionsSingletonSetSerializer;
 import de.javakaffee.kryoserializers.CollectionsSingletonMapSerializer;
+import de.javakaffee.kryoserializers.CollectionsSingletonSetSerializer;
 import de.javakaffee.kryoserializers.GregorianCalendarSerializer;
 import de.javakaffee.kryoserializers.JdkProxySerializer;
 import de.javakaffee.kryoserializers.SynchronizedCollectionsSerializer;
 import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
 import de.javakaffee.kryoserializers.cglib.CGLibProxySerializer;
-import de.javakaffee.kryoserializers.dexx.ListSerializer;
-import de.javakaffee.kryoserializers.dexx.MapSerializer;
-import de.javakaffee.kryoserializers.dexx.SetSerializer;
 import de.javakaffee.kryoserializers.guava.ArrayListMultimapSerializer;
 import de.javakaffee.kryoserializers.guava.ArrayTableSerializer;
 import de.javakaffee.kryoserializers.guava.HashBasedTableSerializer;
@@ -195,8 +198,10 @@ import de.javakaffee.kryoserializers.guava.ReverseListSerializer;
 import de.javakaffee.kryoserializers.guava.TreeBasedTableSerializer;
 import de.javakaffee.kryoserializers.guava.TreeMultimapSerializer;
 import de.javakaffee.kryoserializers.guava.UnmodifiableNavigableSetSerializer;
-import de.javakaffee.kryoserializers.jodatime.*;
-import jdk.jshell.JShell;
+import de.javakaffee.kryoserializers.jodatime.JodaDateTimeSerializer;
+import de.javakaffee.kryoserializers.jodatime.JodaLocalDateSerializer;
+import de.javakaffee.kryoserializers.jodatime.JodaLocalDateTimeSerializer;
+import de.javakaffee.kryoserializers.jodatime.JodaLocalTimeSerializer;
 import net.sf.jsqlparser.parser.SimpleNode;
 import net.sf.jsqlparser.schema.Table;
 
@@ -2158,5 +2163,73 @@ public class Utils {
         }
         return capacity;
     }
+	
+	/**
+	 * This method forms the Local File File Path for Spilling data to disk 
+	 * @param task
+	 * @return local file path to temporary dir
+	 */
+	public static String getLocalFilePathForTask(Task task, boolean appendintermediate, boolean left, boolean right) {
+		new File(System.getProperty(DataSamudayaConstants.TMPDIR)+DataSamudayaConstants.FORWARD_SLASH+task.getJobid()).mkdirs();
+		return System.getProperty(DataSamudayaConstants.TMPDIR)+DataSamudayaConstants.FORWARD_SLASH+task.getJobid()
+		+DataSamudayaConstants.FORWARD_SLASH+task.getJobid()+
+		DataSamudayaConstants.HYPHEN+task.getStageid()+
+		DataSamudayaConstants.HYPHEN+task.getTaskid()
+		+(appendintermediate?DataSamudayaConstants.HYPHEN+DataSamudayaConstants.INTERMEDIATE:DataSamudayaConstants.EMPTY)
+		+(left||right?left?DataSamudayaConstants.HYPHEN+DataSamudayaConstants.INTERMEDIATEJOINLEFT:DataSamudayaConstants.HYPHEN+DataSamudayaConstants.INTERMEDIATEJOINRIGHT:DataSamudayaConstants.EMPTY)
+		+DataSamudayaConstants.DOT+DataSamudayaConstants.DATA;
+	}
+	
+	/**
+	 * The Copy of the spilled data from one file to another file
+	 * @param dslinput
+	 * @param kryo
+	 * @param dslout
+	 */
+	public static void copySpilledDataSourceToDestination(DiskSpillingList dslinput, DiskSpillingList dslout) {
+		Kryo kryo = Utils.getKryo();
+		try (FileInputStream istream = new FileInputStream(Utils.
+				getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				com.esotericsoftware.kryo.io.Input input = new com.esotericsoftware.kryo.io.Input(istream);
+				DiskSpillingList dsloutclose=dslout){
+			while(input.available()>0) {
+				dslout.addAll((List) kryo.readClassAndObject(input));
+			}
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+	}
+	
+	/**
+	 * The method gets stream of data from file
+	 * @param is
+	 * @return stream of objects
+	 */
+	public static Stream<?> getStreamData(InputStream is) {
+		Kryo kryo = Utils.getKryo();
+		Input input = new Input(is);
+		return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
+				Spliterator.SIZED | Spliterator.SUBSIZED) {
+			public boolean tryAdvance(Consumer<? super Object> action) {
+				try {
+					if (input.available() > 0) {
+						List<?> intermdata = (List<?>) kryo.readClassAndObject(input);
+						for (Object obj : intermdata) {
+							action.accept(obj);
+						}
+					}
+					if(input.available()<=0) {
+						input.close();
+						is.close();
+						return false;
+					}
+					return true;
+				} catch (Exception ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
+				}
+				return false;
+			}
+		}, false);
+	}
 	
 }

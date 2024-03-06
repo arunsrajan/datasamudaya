@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -28,6 +29,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
+import org.jooq.lambda.tuple.Tuple2;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -48,6 +50,7 @@ import com.github.datasamudaya.common.functions.Min;
 import com.github.datasamudaya.common.functions.StandardDeviation;
 import com.github.datasamudaya.common.functions.Sum;
 import com.github.datasamudaya.common.functions.SummaryStatistics;
+import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.JsonSQL;
@@ -129,9 +132,15 @@ extends AbstractActor {
 		List<SqlTypeName> sqltypenamel = null;
 		final String[] headers;
 		boolean iscsv = false;
+		final boolean left = isNull(tasktoprocess.joinpos) ? false
+				: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
+		final boolean right = isNull(tasktoprocess.joinpos) ? false
+				: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true
+						: false;		
 		try (var fsdos = new ByteArrayOutputStream();
 				var sos = new SnappyOutputStream(fsdos);
-				var output = new Output(sos);) {
+				var output = new Output(sos);
+				DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, false, left, right);) {
 			Stream intermediatestreamobject;
 			try {
 				try {
@@ -181,7 +190,7 @@ extends AbstractActor {
 								YosegiRecordWriter writerdataload = writer = topersist
 										? new YosegiRecordWriter(baos, new Configuration())
 										: null;
-								intermediatestreamobject = csv.stream().parallel().map(values -> {
+								intermediatestreamobject = csv.stream().map(values -> {
 									Object[] valuesobject = new Object[headers.length];
 									Object[] toconsidervalueobjects = new Object[headers.length];
 									try {
@@ -328,19 +337,17 @@ extends AbstractActor {
 							});
 						}
 					} else {
-						final boolean left = isNull(tasktoprocess.joinpos) ? false
-								: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
-						final boolean right = isNull(tasktoprocess.joinpos) ? false
-								: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true
-										: false;
-						List result = (List) ((Stream) streammap).collect(Collectors.toList());
+						
+						((Stream) streammap).forEach(diskspilllist::add);						
 						if (CollectionUtils.isNotEmpty(blr.pipeline)) {
 							blr.pipeline().parallelStream().forEach(
-									action -> action.tell(new OutputObject(result, left, right), ActorRef.noSender()));
+									action -> action.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender()));
 							blr.pipeline().parallelStream().forEach(
 									action -> action.tell(new OutputObject(null, left, right), ActorRef.noSender()));
 						} else {
-							Utils.getKryo().writeClassAndObject(output, result);
+							Stream<Tuple2> datastream = diskspilllist.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
+									getLocalFilePathForTask(diskspilllist.getTask(), false, false, false))):diskspilllist.getData().stream();
+							Utils.getKryo().writeClassAndObject(output, datastream.collect(Collectors.toList()));
 							output.flush();
 							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 							cacheAble(fsdos);
