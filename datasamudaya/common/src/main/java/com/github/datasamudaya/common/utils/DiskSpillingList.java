@@ -12,6 +12,7 @@ import java.util.concurrent.Semaphore;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -33,7 +34,7 @@ public class DiskSpillingList<T> implements AutoCloseable{
 	private Runtime rt;
 	private String diskfilepath;
 	private boolean isspilled = false;
-	private int batchsize = 0;
+	private int batchsize = 5000;
 	private Task task;
 	private Semaphore lock;
 	private boolean left;
@@ -42,12 +43,13 @@ public class DiskSpillingList<T> implements AutoCloseable{
 	private FileOutputStream ostream;
 	private com.esotericsoftware.kryo.io.Output op;
 	private Kryo kryo;
+	private SnappyOutputStream sos;
 	public DiskSpillingList(Task task, int spillexceedpercentage, boolean appendintermediate, boolean left, boolean right) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendintermediate, left, right);
 		dataList = new Vector<>();
 		rt = Runtime.getRuntime();
-		totalmemoryavailable = rt.maxMemory() * (100 - spillexceedpercentage) / 100;
+		totalmemoryavailable = rt.maxMemory() * spillexceedpercentage / 100;
 		lock = new Semaphore(1);
 		this.left = left;
 		this.right = right;
@@ -126,42 +128,52 @@ public class DiskSpillingList<T> implements AutoCloseable{
 	
 	protected void spillToDiskIntermediate() {
 		try {
-			if (rt.freeMemory() < totalmemoryavailable
-					|| isspilled && CollectionUtils.isNotEmpty(dataList) && dataList.size() > batchsize) {
-				batchsize = dataList.size();
-				isspilled = true;			
+			lock.acquire();
+			if ((rt.totalMemory() > totalmemoryavailable
+					|| isspilled) && CollectionUtils.isNotEmpty(dataList)) {
 				if(isNull(ostream)) {
+					isspilled = true;
 					ostream = new FileOutputStream( new File(diskfilepath), true);
+					sos = new SnappyOutputStream(ostream);
 					op = new com.esotericsoftware.kryo.io.Output(
-							ostream);
+							sos);
 					kryo = Utils.getKryo();
 				}
-				spillToDisk();
+				if(rt.totalMemory() > totalmemoryavailable || dataList.size()>=batchsize) {
+					kryo.writeClassAndObject(op, new Vector<>(dataList));
+					op.flush();
+					dataList.clear();
+				}
 			}
 		} catch(Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
+		} finally {
+			lock.release();
 		}
 	}
 
-	protected void spillToDisk() {
-		try {
-			kryo.writeClassAndObject(op, dataList);
-			op.flush();
-			dataList.clear();
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {			
-		}
-	}
 
 	@Override
-	public void close() throws Exception {		
-		if(nonNull(ostream)) {
-			if(CollectionUtils.isNotEmpty(dataList)) {
-				spillToDisk();
+	public void close() throws Exception {	
+		try {
+			if(nonNull(ostream)) {
+				if(CollectionUtils.isNotEmpty(dataList)) {
+					batchsize = dataList.size();
+					spillToDiskIntermediate();
+				}
+				if(nonNull(op)) {
+					op.close();
+				}
+				if(nonNull(sos)) {
+					sos.close();
+				}
+				ostream.close();
+				op = null;
+				sos = null;
+				ostream = null;
 			}
-			op.close();
-			ostream.close();
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
 

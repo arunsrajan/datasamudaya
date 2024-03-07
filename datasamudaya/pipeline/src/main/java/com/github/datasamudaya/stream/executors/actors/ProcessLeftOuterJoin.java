@@ -109,8 +109,8 @@ public class ProcessLeftOuterJoin extends AbstractActor {
 							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), true,
 									diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
 					: diskspilllistintermright.getData().stream();
-			try (var seq1 = Seq.of(datastreamleft.toArray());
-					var seq2 = Seq.of(datastreamright.toArray());
+			try (var seq1 = Seq.seq(datastreamleft);
+					var seq2 = Seq.seq(datastreamright);
 					var join = seq1.leftOuterJoin(seq2, lojp)) {
 				join.forEach(diskspilllistinterm::add);
 				Stream datastreamrightfirstelem = diskspilllistintermright.isSpilled()
@@ -122,7 +122,12 @@ public class ProcessLeftOuterJoin extends AbstractActor {
 				for (int numvalues = 0; numvalues < nullobjarr[0].length; numvalues++) {
 					nullobjarr[1][numvalues] = true;
 				}
-				diskspilllistinterm.getData().stream().filter(val -> val instanceof Tuple2).map(value -> {
+				diskspilllistinterm.close();
+				Stream diskspilllistintermstream = diskspilllistinterm.isSpilled()
+						? (Stream<Tuple2>) Utils.getStreamData(
+								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), true,
+										diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))): diskspilllistinterm.getData().stream();
+				diskspilllistintermstream.filter(val -> val instanceof Tuple2).map(value -> {
 					Tuple2 maprec = (Tuple2) value;
 					Object[] rec1 = (Object[]) maprec.v1;
 					Object[] rec2 = (Object[]) maprec.v2;

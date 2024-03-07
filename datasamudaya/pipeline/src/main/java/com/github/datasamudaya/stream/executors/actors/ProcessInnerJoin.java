@@ -102,11 +102,12 @@ public class ProcessInnerJoin extends AbstractActor {
 							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), true,
 									diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
 					: diskspilllistintermright.getData().stream();
-			try (var seq1 = Seq.of(datastreamleft.toArray());
-					var seq2 = Seq.of(datastreamright.toArray());
+			try (var seq1 = Seq.seq(datastreamleft);
+					var seq2 = Seq.seq(datastreamright);
 					var join = seq1.innerJoin(seq2, jp);
 					DiskSpillingList diskspill = diskspilllist) {
 				join.forEach(diskspilllist::add);
+				diskspilllist.close();
 				if (Objects.nonNull(pipelines)) {
 					pipelines.parallelStream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue),

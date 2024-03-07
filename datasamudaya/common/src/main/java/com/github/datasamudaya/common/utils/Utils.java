@@ -26,7 +26,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.lang.invoke.SerializedLambda;
 import java.lang.management.ManagementFactory;
@@ -109,6 +108,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.util.CollectionUtils;
 import org.springframework.yarn.client.CommandYarnClient;
+import org.xerial.snappy.SnappyInputStream;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
@@ -2190,11 +2190,13 @@ public class Utils {
 		Kryo kryo = Utils.getKryo();
 		try (FileInputStream istream = new FileInputStream(Utils.
 				getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
-				com.esotericsoftware.kryo.io.Input input = new com.esotericsoftware.kryo.io.Input(istream);
+				var sis = new SnappyInputStream(istream);
+				com.esotericsoftware.kryo.io.Input input = new com.esotericsoftware.kryo.io.Input(sis);				
 				DiskSpillingList dsloutclose=dslout){
-			while(input.available()>0) {
-				dslout.addAll((List) kryo.readClassAndObject(input));
-			}
+				while(input.available()>0) {
+					List records = (List) kryo.readClassAndObject(input);
+					dslout.addAll(records);
+				}
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
@@ -2207,29 +2209,35 @@ public class Utils {
 	 */
 	public static Stream<?> getStreamData(InputStream is) {
 		Kryo kryo = Utils.getKryo();
-		Input input = new Input(is);
-		return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
-				Spliterator.SIZED | Spliterator.SUBSIZED) {
-			public boolean tryAdvance(Consumer<? super Object> action) {
-				try {
-					if (input.available() > 0) {
-						List<?> intermdata = (List<?>) kryo.readClassAndObject(input);
-						for (Object obj : intermdata) {
-							action.accept(obj);
+		
+		try {
+			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
+					0) {
+				InputStream istream = is;
+				SnappyInputStream sisinternal = new SnappyInputStream(istream);
+				Input inputinternal = new Input(sisinternal);
+				public boolean tryAdvance(Consumer<? super Object> action) {
+					try {
+						while (inputinternal.available() > 0) {
+							List<?> intermdata = (List<?>) kryo.readClassAndObject(inputinternal);
+							for (Object obj : intermdata) {
+								action.accept(obj);
+							}
 						}
-					}
-					if(input.available()<=0) {
-						input.close();
-						is.close();
+						inputinternal.close();
+						sisinternal.close();
+						istream.close();
 						return false;
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
-					return true;
-				} catch (Exception ex) {
-					log.error(DataSamudayaConstants.EMPTY, ex);
+					return false;
 				}
-				return false;
-			}
-		}, false);
+			}, false);
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
 	}
 	
 }

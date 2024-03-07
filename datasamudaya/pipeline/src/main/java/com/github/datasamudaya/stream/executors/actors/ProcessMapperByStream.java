@@ -95,8 +95,6 @@ public class ProcessMapperByStream extends AbstractActor {
 				} else {
 					diskspilllistinterm.addAll(dsl.getData());
 				}
-			} else {
-				diskspilllistinterm.add(object.value());
 			}
 			if (initialsize == terminatingsize) {
 				if (CollectionUtils.isEmpty(childpipes)) {
@@ -125,6 +123,7 @@ public class ProcessMapperByStream extends AbstractActor {
 							getLocalFilePathForTask(diskspilllistinterm.getTask(), true, false, false))):diskspilllistinterm.getData().stream();
 					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
 						streammap.forEach(diskspilllist::add);
+						diskspilllist.close();
 						childpipes.parallelStream().forEach(
 								action -> action.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
 					} catch (Exception ex) {

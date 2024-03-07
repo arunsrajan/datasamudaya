@@ -139,8 +139,7 @@ extends AbstractActor {
 						: false;		
 		try (var fsdos = new ByteArrayOutputStream();
 				var sos = new SnappyOutputStream(fsdos);
-				var output = new Output(sos);
-				DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, false, left, right);) {
+				var output = new Output(sos);) {
 			Stream intermediatestreamobject;
 			try {
 				try {
@@ -337,20 +336,20 @@ extends AbstractActor {
 							});
 						}
 					} else {
-						
-						((Stream) streammap).forEach(diskspilllist::add);						
+						DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, false, left, right);
+						((Stream) streammap).forEach(diskspilllist::add);
+						diskspilllist.close();
 						if (CollectionUtils.isNotEmpty(blr.pipeline)) {
 							blr.pipeline().parallelStream().forEach(
 									action -> action.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender()));
-							blr.pipeline().parallelStream().forEach(
-									action -> action.tell(new OutputObject(null, left, right), ActorRef.noSender()));
 						} else {
-							Stream<Tuple2> datastream = diskspilllist.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
+							Stream datastream = diskspilllist.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
 									getLocalFilePathForTask(diskspilllist.getTask(), false, false, false))):diskspilllist.getData().stream();
 							Utils.getKryo().writeClassAndObject(output, datastream.collect(Collectors.toList()));
 							output.flush();
 							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 							cacheAble(fsdos);
+							diskspilllist.getData().clear();
 						}
 						jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 					}

@@ -8,6 +8,7 @@
  */
 package com.github.datasamudaya.stream.scheduler;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.BufferedWriter;
@@ -121,7 +122,6 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutor;
-import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorCalciteLocalSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgnite;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgniteSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocal;
@@ -138,8 +138,6 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import akka.actor.ActorSystem;
-
-import static java.util.Objects.isNull;
 
 /**
  * 
@@ -2151,6 +2149,7 @@ public class StreamJobScheduler {
           ishdfs = new URL(job.getUri()).getProtocol().equals(DataSamudayaConstants.HDFS_PROTOCOL);
         }
         sptss = getFinalPhasesWithNoSuccessors(graph, new ArrayList<StreamPipelineTaskSubmitter>(graph.vertexSet()));
+        long totalrecords = 0;
         for (var spts : sptss) {
           // Get final stage results
           if (spts.isCompletedexecution() && job.getTrigger() != job.getTrigger().SAVERESULTSTOFILE
@@ -2170,9 +2169,11 @@ public class StreamJobScheduler {
             rdf.setMode(isJGroups ? DataSamudayaConstants.JGROUPS : DataSamudayaConstants.STANDALONE);
             RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
             try (var input = new Input(pipelineconfig.getStorage() == STORAGE.INMEMORY || isjgroups ? new ByteArrayInputStream(rdf.getData()) : new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
-              var result = Utils.getKryo().readClassAndObject(input);;              
-				if (job.getJobtype() == JOBTYPE.PIG) {
-					long totalrecords = 0;
+              var result = Utils.getKryo().readClassAndObject(input);
+              	if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL) {              		
+					PrintWriter out = pipelineconfig.getWriter();
+					totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);					
+              	} else if (job.getJobtype() == JOBTYPE.PIG) {
 					PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
 					totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
 					out.println();
@@ -2189,6 +2190,13 @@ public class StreamJobScheduler {
             }
           }
         }
+		if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL) {
+			PrintWriter out = pipelineconfig.getWriter();
+			out.println();
+			out.printf("Total records processed %d", totalrecords);
+			out.println();
+			out.flush();
+		}
       }
       sptss.clear();
       sptss = null;

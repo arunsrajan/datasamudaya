@@ -78,8 +78,6 @@ public class ProcessCoalesce extends AbstractActor {
 				} else {
 					diskspilllistinterm.addAll(dsl.getData());
 				}
-			} else {
-				diskspilllistinterm.add((Tuple2) object.value());
 			}
 			log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
 			if (initialsize == terminatingsize) {
@@ -88,14 +86,14 @@ public class ProcessCoalesce extends AbstractActor {
 				getLocalFilePathForTask(diskspilllistinterm.getTask(), true, false, false))):diskspilllistinterm.getData().stream();
 				datastream.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
 						(input1, input2) -> coalesce.getCoalescefunction().apply(input1, input2)))
-				.entrySet().parallelStream()
+				.entrySet().stream()
 				.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
 				.forEach(diskspilllist::add);
+				diskspilllist.close();
 				final boolean left = isNull(task.joinpos) ? false
 						: nonNull(task.joinpos) && task.joinpos.equals("left") ? true : false;
 				final boolean right = isNull(task.joinpos) ? false
 						: nonNull(task.joinpos) && task.joinpos.equals("right") ? true : false;
-				try(DiskSpillingList diskspill = diskspilllist){
 					if (Objects.nonNull(pipelines)) {
 						pipelines.parallelStream().forEach(downstreampipe -> {
 							downstreampipe.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender());
@@ -115,7 +113,7 @@ public class ProcessCoalesce extends AbstractActor {
 							log.error("Error in putting output in cache", ex);
 						}
 					}
-				}
+				
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
 				return this;

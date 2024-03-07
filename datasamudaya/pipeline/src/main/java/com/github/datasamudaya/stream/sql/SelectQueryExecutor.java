@@ -51,9 +51,10 @@ public class SelectQueryExecutor {
 	 * @throws Exception
 	 */
 	public static List executeSelectQuery(String dbdefault, String selectquery, String user, String jobid,
-			String tejobid, boolean isjgroups, boolean isyarn) throws Exception {
+			String tejobid, boolean isjgroups, boolean isyarn, PrintWriter writerresult) throws Exception {
 		try {
 			PipelineConfig pc = new PipelineConfig();
+			pc.setWriter(writerresult);
 			pc.setLocal("false");
 			if(isjgroups) {
 				pc.setJgroups("true");

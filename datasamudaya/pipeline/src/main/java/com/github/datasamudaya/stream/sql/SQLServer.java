@@ -251,7 +251,7 @@ public class SQLServer {
 												results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid);
 											} else {
 												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
-												results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups, isyarn);
+												results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups, isyarn, out);
 											}
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 											int partitionno = 1;

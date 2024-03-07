@@ -18,6 +18,7 @@ package com.github.datasamudaya.common;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Set;
@@ -83,6 +84,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	private Boolean isremotescheduler;
 	private String sqlpigquery;
 	private boolean topersistcolumnar;
+	private transient PrintWriter writer;
 
 	public void setOutput(OutputStream  output) {
 		this.output = output;
@@ -557,4 +559,12 @@ public class PipelineConfig implements Serializable, Cloneable {
 
 	}
 
+	public PrintWriter getWriter() {
+		return writer;
+	}
+
+	public void setWriter(PrintWriter writer) {
+		this.writer = writer;
+	}
+	
 }

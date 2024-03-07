@@ -1970,13 +1970,16 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		double sum = 0.0d;
+		int totalreccount = 0;
 		for (List<Object[]> recs : records) {
+			totalreccount+=recs.size();
 			for (Object[] rec : recs) {
 				log.info(Arrays.toString(rec));
 				assertEquals(1, rec.length);
 				sum += (Long) rec[0];
 			}
 		}
+		assertEquals(365, totalreccount);
 		assertEquals(Double.valueOf(-155192.0), Double.valueOf(sum));
 		log.info("In testSelectWithAggFunctionColumnsWithoutGroupBy() method Exit");
 	}
