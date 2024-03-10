@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
@@ -70,6 +71,7 @@ public class ProcessCoalesce extends AbstractActor {
 	}
 
 	private ProcessCoalesce processCoalesce(OutputObject object) throws Exception {
+		log.info("In Process Coalesce {}", object.value());
 		if (Objects.nonNull(object) && Objects.nonNull(object.value())) {
 			initialsize++;
 			if(object.value() instanceof DiskSpillingList dsl) {
@@ -82,38 +84,49 @@ public class ProcessCoalesce extends AbstractActor {
 			log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
 			if (initialsize == terminatingsize) {
 				log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
-				Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-				getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false))):diskspilllistinterm.getData().stream();
-				datastream.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
-						(input1, input2) -> coalesce.getCoalescefunction().apply(input1, input2)))
-				.entrySet().stream()
-				.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
-				.forEach(diskspilllist::add);
+				diskspilllistinterm.close();
+				Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
+						? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
+								Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
+						: diskspilllistinterm.readListFromBytes().stream();
+				datastream
+						.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
+								(input1, input2) -> coalesce.getCoalescefunction().apply(input1, input2)))
+						.entrySet().stream()
+						.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
+						.forEach(diskspilllist::add);
 				diskspilllist.close();
 				final boolean left = isNull(task.joinpos) ? false
 						: nonNull(task.joinpos) && task.joinpos.equals("left") ? true : false;
 				final boolean right = isNull(task.joinpos) ? false
 						: nonNull(task.joinpos) && task.joinpos.equals("right") ? true : false;
-					if (Objects.nonNull(pipelines)) {
-						pipelines.parallelStream().forEach(downstreampipe -> {
-							downstreampipe.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender());
-						});
-					} else {
-						Stream<Tuple2> datastreamsplilled = diskspilllist.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-								getLocalFilePathForTask(diskspilllist.getTask(), null, true, diskspilllist.getLeft(), diskspilllist.getRight()))):diskspilllist.readListFromBytes().stream();
-						try (var fsdos = new ByteArrayOutputStream();
-								var sos = new SnappyOutputStream(fsdos);
-								var output = new Output(sos);) {
-							Utils.getKryo().writeClassAndObject(output, datastreamsplilled.toList());
-							output.flush();
-							task.setNumbytesgenerated(fsdos.toByteArray().length);
-							byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();
-							cache.put(getIntermediateDataFSFilePath(task), bt);
-						} catch (Exception ex) {
-							log.error("Error in putting output in cache", ex);
-						}
+				if (CollectionUtils.isNotEmpty(pipelines)) {
+					log.info("Process Coalesce To Pipeline Started {}",pipelines);
+					pipelines.stream().forEach(downstreampipe -> {
+						downstreampipe.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender());
+					});
+					log.info("Process Coalesce To Pipeline Ended {}",pipelines);
+				} else {
+					log.info("Process Coalesce To Cache Started");
+					Stream<Tuple2> datastreamsplilled = diskspilllist.isSpilled()
+							? (Stream<Tuple2>) Utils.getStreamData(
+									new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null,
+											true, diskspilllist.getLeft(), diskspilllist.getRight())))
+							: diskspilllist.readListFromBytes().stream();
+					try (var fsdos = new ByteArrayOutputStream();
+							var sos = new SnappyOutputStream(fsdos);
+							var output = new Output(sos);) {
+						Utils.getKryo().writeClassAndObject(output, datastreamsplilled.toList());
+						output.flush();
+						task.setNumbytesgenerated(fsdos.toByteArray().length);
+						byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();
+						cache.put(getIntermediateDataFSFilePath(task), bt);
+					} catch (Exception ex) {
+						log.error("Error in putting output in cache", ex);
 					}
-				
+					log.info("Process Coalesce To Cache Ended");
+				}
+
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
 				return this;

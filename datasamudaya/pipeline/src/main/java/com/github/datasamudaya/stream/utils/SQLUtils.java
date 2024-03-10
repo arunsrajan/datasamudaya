@@ -3681,7 +3681,7 @@ public class SQLUtils {
 				ActorRef actor = system.actorOf(
 						Props.create(ProcessMapperByBlocksLocation.class,
 								jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
-								jobidstageidtaskidcompletedmap, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
+								jobidstageidtaskidcompletedmap, taskactor.getTask()),
 						jobstageid + taskactor.getTask().getTaskid());
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
@@ -3694,7 +3694,7 @@ public class SQLUtils {
 				}
 				ActorRef actor = system.actorOf(
 						Props.create(ProcessShuffle.class,
-								jobidstageidtaskidcompletedmap, taskactor.getTask(),childactors).withDispatcher("blocking-dispatcher"),
+								jobidstageidtaskidcompletedmap, taskactor.getTask(),childactors),
 						jobstageid + taskactor.getTask().getTaskid());
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
@@ -3708,7 +3708,7 @@ public class SQLUtils {
 				ActorRef actor = system.actorOf(
 						Props.create(ProcessReduce.class,
 								jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
-								jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()).withDispatcher("blocking-dispatcher"),
+								jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()),
 						jobstageid + taskactor.getTask().getTaskid());
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
@@ -3724,13 +3724,13 @@ public class SQLUtils {
 					actor = system.actorOf(
 							Props.create(ProcessCoalesce.class, coalesce, childactors,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
+									inmemorycache, taskactor.getTask()),
 							jobstageid + taskactor.getTask().getTaskid());
 				} else {
 					actor = system.actorOf(
 							Props.create(ProcessCoalesce.class, coalesce, null,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
+									inmemorycache, taskactor.getTask()),
 							jobstageid + taskactor.getTask().getTaskid());
 				}
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
@@ -3747,13 +3747,13 @@ public class SQLUtils {
 					actor = system.actorOf(
 							Props.create(ProcessInnerJoin.class, joinpred, childactors,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
+									inmemorycache, taskactor.getTask()),
 							jobstageid + taskactor.getTask().getTaskid());
 				} else {
 					actor = system.actorOf(
 							Props.create(ProcessInnerJoin.class, joinpred, null,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
+									inmemorycache, taskactor.getTask()),
 							jobstageid + taskactor.getTask().getTaskid());
 				}
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
@@ -3770,13 +3770,13 @@ public class SQLUtils {
 					actor = system.actorOf(
 							Props.create(ProcessRightOuterJoin.class, rojoinpred, childactors,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
+									inmemorycache, taskactor.getTask()),
 							jobstageid + taskactor.getTask().getTaskid());
 				} else {
 					actor = system.actorOf(
 							Props.create(ProcessRightOuterJoin.class, rojoinpred, null,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
+									inmemorycache, taskactor.getTask()),
 							jobstageid + taskactor.getTask().getTaskid());
 				}
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
@@ -3793,13 +3793,13 @@ public class SQLUtils {
 					actor = system.actorOf(
 							Props.create(ProcessLeftOuterJoin.class, lojoinpred, childactors,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
+									inmemorycache, taskactor.getTask()),
 							jobstageid + taskactor.getTask().getTaskid());
 				} else {
 					actor = system.actorOf(
 							Props.create(ProcessLeftOuterJoin.class, lojoinpred, null,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
+									inmemorycache, taskactor.getTask()),
 							jobstageid + taskactor.getTask().getTaskid());
 				}
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
@@ -3811,18 +3811,23 @@ public class SQLUtils {
 				int totalfilepartspernode = 3;
 				int indexfilepartpernode = 0;
 				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+					log.info("ChildActors {}", taskactor.getChildtaskactors());
 					childactors = new ArrayList<>();
 					for (String actorselectionurl : taskactor.getChildtaskactors()) {
 						ActorSelection actorselection = system.actorSelection(actorselectionurl);
-						childactors.add(actorselection);
-						if (nonNull(taskactor.getTask().getFilepartitionsid())) {
-							for (int filepartcount = 0; filepartcount < totalfilepartspernode; filepartcount++) {
-								taskactor.getTask().getFilepartitionsid().get(filepartcount + indexfilepartpernode)
-										.setActorSelection(actorselection);
-							}
+						childactors.add(actorselection);					
+					}
+				}
+				if (CollectionUtils.isNotEmpty(taskactor.getTask().getShufflechildactors())) {
+					log.info("ShuffleChildActors {}", taskactor.getTask().getShufflechildactors());
+					for (Task actortask : taskactor.getTask().getShufflechildactors()) {
+						ActorSelection actorselection = system.actorSelection(actortask.getActorselection());
+						for (int filepartcount = 0; filepartcount < totalfilepartspernode; filepartcount++) {
+							taskactor.getTask().getFilepartitionsid().get(filepartcount + indexfilepartpernode)
+									.setActorSelection(actorselection);
 						}
 						indexfilepartpernode += totalfilepartspernode;
-					}
+					}					
 				}
 				ActorRef actor = system
 						.actorOf(
@@ -3830,7 +3835,7 @@ public class SQLUtils {
 										jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
 										jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors, 
 										taskactor.getTask().getFilepartitionsid(),
-										taskactor.getTerminatingparentcount()).withDispatcher("blocking-dispatcher"),
+										taskactor.getTerminatingparentcount()),
 								jobstageid + taskactor.getTask().getTaskid());
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
@@ -3844,17 +3849,22 @@ public class SQLUtils {
 			int indexfilepartpernode = 0;
 			List<ActorSelection> childactors = new ArrayList<>();
 			if (CollectionUtils.isNotEmpty(exectaskactor.getChildtaskactors())) {
+				log.info("ChildActors {}", exectaskactor.getChildtaskactors());
 				for (String actorselectionurl : exectaskactor.getChildtaskactors()) {
 					ActorSelection actorselection = system.actorSelection(actorselectionurl);
-					childactors.add(actorselection);
-					if (nonNull(exectaskactor.getTask().getFilepartitionsid())) {
-						for (int filepartcount = 0; filepartcount < totalfilepartspernode; filepartcount++) {
-							exectaskactor.getTask().getFilepartitionsid().get(filepartcount + indexfilepartpernode)
-									.setActorSelection(actorselection);
-						}
+					childactors.add(actorselection);					
+				}
+			}
+			if (CollectionUtils.isNotEmpty(exectaskactor.getTask().getShufflechildactors())) {
+				log.info("ShuffleChildActors {}", exectaskactor.getTask().getShufflechildactors());
+				for (Task actortask : exectaskactor.getTask().getShufflechildactors()) {
+					ActorSelection actorselection = system.actorSelection(actortask.getActorselection());
+					for (int filepartcount = 0; filepartcount < totalfilepartspernode; filepartcount++) {
+						exectaskactor.getTask().getFilepartitionsid().get(filepartcount + indexfilepartpernode)
+								.setActorSelection(actorselection);
 					}
 					indexfilepartpernode += totalfilepartspernode;
-				}
+				}				
 			}
 			ProcessMapperByBlocksLocation.BlocksLocationRecord blr = new ProcessMapperByBlocksLocation.BlocksLocationRecord(
 					(BlocksLocation) exectaskactor.getTask().getInput()[0], hdfs, exectaskactor.getTask().getFilepartitionsid(), childactors);

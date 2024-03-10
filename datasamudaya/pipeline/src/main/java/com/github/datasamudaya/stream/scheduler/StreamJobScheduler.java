@@ -1957,7 +1957,7 @@ public class StreamJobScheduler {
           	int startrange = 0;
           	int endrange = nooffilepartitions;          	
           	List<StreamPipelineTaskSubmitter> parents = outputparent1;
-			if (nonNull(parents.get(0).getHostPort())) {
+			if (CollectionUtils.isNotEmpty(job.getTaskexecutors())) {
 				Map<String, List<Object>> hpsptsl = parents.stream()
 						.collect(Collectors.groupingBy(StreamPipelineTaskSubmitter::getHostPort,
 								Collectors.mapping(spts -> spts, Collectors.toList())));
@@ -2027,6 +2027,12 @@ public class StreamJobScheduler {
 						}
 						graph.addEdge(parentthread, spts);
 						taskgraph.addEdge(parentthread.getTask(), spts.getTask());
+					}
+				}
+				List<Task> tasksshuffle = tasks.stream().map(spts -> spts.getTask()).collect(Collectors.toList());
+				for (var input : outputparent1) {
+					if (input instanceof StreamPipelineTaskSubmitter parentthread) {
+						parentthread.getTask().setShufflechildactors(tasksshuffle);
 					}
 				}
 			}
