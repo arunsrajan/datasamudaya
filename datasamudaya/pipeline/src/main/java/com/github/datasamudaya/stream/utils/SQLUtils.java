@@ -2305,7 +2305,6 @@ public class SQLUtils {
 				CoreRules.PROJECT_CALC_MERGE, 
 				CoreRules.AGGREGATE_PROJECT_MERGE,
 				CoreRules.PROJECT_FILTER_VALUES_MERGE,
-				CoreRules.FILTER_INTO_JOIN,
 				EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
 				EnumerableRules.ENUMERABLE_PROJECT_RULE, 
 				EnumerableRules.ENUMERABLE_FILTER_RULE,
@@ -3682,7 +3681,7 @@ public class SQLUtils {
 				ActorRef actor = system.actorOf(
 						Props.create(ProcessMapperByBlocksLocation.class,
 								jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
-								jobidstageidtaskidcompletedmap, taskactor.getTask()),
+								jobidstageidtaskidcompletedmap, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
 						jobstageid + taskactor.getTask().getTaskid());
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
@@ -3695,7 +3694,7 @@ public class SQLUtils {
 				}
 				ActorRef actor = system.actorOf(
 						Props.create(ProcessShuffle.class,
-								jobidstageidtaskidcompletedmap, taskactor.getTask(),childactors),
+								jobidstageidtaskidcompletedmap, taskactor.getTask(),childactors).withDispatcher("blocking-dispatcher"),
 						jobstageid + taskactor.getTask().getTaskid());
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
@@ -3709,7 +3708,7 @@ public class SQLUtils {
 				ActorRef actor = system.actorOf(
 						Props.create(ProcessReduce.class,
 								jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
-								jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()),
+								jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()).withDispatcher("blocking-dispatcher"),
 						jobstageid + taskactor.getTask().getTaskid());
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
@@ -3725,13 +3724,13 @@ public class SQLUtils {
 					actor = system.actorOf(
 							Props.create(ProcessCoalesce.class, coalesce, childactors,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()),
+									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
 							jobstageid + taskactor.getTask().getTaskid());
 				} else {
 					actor = system.actorOf(
 							Props.create(ProcessCoalesce.class, coalesce, null,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()),
+									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
 							jobstageid + taskactor.getTask().getTaskid());
 				}
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
@@ -3748,13 +3747,13 @@ public class SQLUtils {
 					actor = system.actorOf(
 							Props.create(ProcessInnerJoin.class, joinpred, childactors,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()),
+									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
 							jobstageid + taskactor.getTask().getTaskid());
 				} else {
 					actor = system.actorOf(
 							Props.create(ProcessInnerJoin.class, joinpred, null,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()),
+									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
 							jobstageid + taskactor.getTask().getTaskid());
 				}
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
@@ -3771,13 +3770,13 @@ public class SQLUtils {
 					actor = system.actorOf(
 							Props.create(ProcessRightOuterJoin.class, rojoinpred, childactors,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()),
+									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
 							jobstageid + taskactor.getTask().getTaskid());
 				} else {
 					actor = system.actorOf(
 							Props.create(ProcessRightOuterJoin.class, rojoinpred, null,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()),
+									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
 							jobstageid + taskactor.getTask().getTaskid());
 				}
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
@@ -3794,13 +3793,13 @@ public class SQLUtils {
 					actor = system.actorOf(
 							Props.create(ProcessLeftOuterJoin.class, lojoinpred, childactors,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()),
+									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
 							jobstageid + taskactor.getTask().getTaskid());
 				} else {
 					actor = system.actorOf(
 							Props.create(ProcessLeftOuterJoin.class, lojoinpred, null,
 									taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-									inmemorycache, taskactor.getTask()),
+									inmemorycache, taskactor.getTask()).withDispatcher("blocking-dispatcher"),
 							jobstageid + taskactor.getTask().getTaskid());
 				}
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
@@ -3831,7 +3830,7 @@ public class SQLUtils {
 										jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
 										jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors, 
 										taskactor.getTask().getFilepartitionsid(),
-										taskactor.getTerminatingparentcount()),
+										taskactor.getTerminatingparentcount()).withDispatcher("blocking-dispatcher"),
 								jobstageid + taskactor.getTask().getTaskid());
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH

@@ -76,7 +76,7 @@ public class ProcessCoalesce extends AbstractActor {
 				if(dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
-					diskspilllistinterm.addAll(dsl.getData());
+					diskspilllistinterm.addAll(dsl.readListFromBytes());
 				}
 			}
 			log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
@@ -100,7 +100,7 @@ public class ProcessCoalesce extends AbstractActor {
 						});
 					} else {
 						Stream<Tuple2> datastreamsplilled = diskspilllist.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-								getLocalFilePathForTask(diskspilllist.getTask(), null, true, diskspilllist.getLeft(), diskspilllist.getRight()))):diskspilllist.getData().stream();
+								getLocalFilePathForTask(diskspilllist.getTask(), null, true, diskspilllist.getLeft(), diskspilllist.getRight()))):diskspilllist.readListFromBytes().stream();
 						try (var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {

@@ -99,13 +99,15 @@ public class ProcessMapperByStream extends AbstractActor {
 				if(dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
-					diskspilllistinterm.addAll(dsl.getData());
+					diskspilllistinterm.addAll(dsl.readListFromBytes());
 				}
 			}
 			if (initialsize == terminatingsize) {
 				if (CollectionUtils.isEmpty(childpipes)) {
+					diskspilllistinterm.close();
+					log.info("processMapStream::Started InitialSize {} , Terminating Size {}", initialsize, terminatingsize);
 					Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))):diskspilllistinterm.getData().stream();
+							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))):diskspilllistinterm.readListFromBytes().stream();
 					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
 							var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);
@@ -129,9 +131,9 @@ public class ProcessMapperByStream extends AbstractActor {
 							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false))):diskspilllistinterm.getData().stream();
 					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {						
 						if (MapUtils.isNotEmpty(shufflerectowrite)) {
-							int numberoffilepartitions = shufflerectowrite.size();
-							Map<Integer, DiskSpillingList> results = ((Stream<Tuple2>) streammap).collect(
-									Collectors.groupingByConcurrent(tup2 -> tup2.v1.hashCode() % numberoffilepartitions,
+							int numfilepart = shufflerectowrite.size();
+							Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap).collect(
+									Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 											Collectors.mapping(tup2 -> tup2,
 													Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 															DataSamudayaConstants.SPILLTODISK_PERCENTAGE,

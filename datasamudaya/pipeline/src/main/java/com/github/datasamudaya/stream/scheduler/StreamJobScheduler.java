@@ -340,24 +340,9 @@ public class StreamJobScheduler {
     	DataSamudayaMetricsExporter.getNumberOfJobSubmittedLocalModeCounter().inc();
     	if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
 			int akkaport = Utils.getRandomPort();
-			Config config = ConfigFactory.parseString("""
-					akka {
-					  jvm-exit-on-fatal-error = false
-					  actor {
-					    # provider=remote is possible, but prefer cluster
-					    provider = remote
-					    allow-java-serialization = true
-					  }
-					  remote {
-					    artery {
-					      transport = tcp # See Selecting a transport below
-					      canonical.hostname = \""""
-					+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST)
-					+ "\"\ncanonical.port = " + akkaport + """
-							    }
-							  }
-							}
-							""");
+			Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST)
+					, akkaport,
+					Runtime.getRuntime().availableProcessors());
     		system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
     		final String actorsystemurl = "akka://" + DataSamudayaConstants.ACTORUSERNAME + "@"
     				+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST) + ":" + akkaport
@@ -585,6 +570,7 @@ public class StreamJobScheduler {
       jobping.shutdownNow();
       if(nonNull(system)) {
     	  system.terminate();
+    	  FileUtils.deleteDirectory(new File(Utils.getFolderPathForJob(job.getId())));
       }
     }
 
@@ -2203,7 +2189,6 @@ public class StreamJobScheduler {
 						throw ex;
 					}
 				}
-		    	  FileUtils.deleteDirectory(new File(Utils.getFolderPathForJob(job.getId())));
 			} else {
 	          for (var spts : sptss) {
 	            var key = getIntermediateResultFS(spts.getTask());

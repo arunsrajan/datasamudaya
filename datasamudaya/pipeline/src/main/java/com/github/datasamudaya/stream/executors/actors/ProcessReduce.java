@@ -5,10 +5,7 @@ import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +34,6 @@ import com.github.datasamudaya.stream.utils.StreamUtils;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
-import akka.cluster.ddata.protobuf.msg.ReplicatedDataMessages.GCounter.Entry;
 
 public class ProcessReduce extends AbstractActor {
 	protected JobStage jobstage;
@@ -88,7 +84,7 @@ public class ProcessReduce extends AbstractActor {
 			initialsize++;			
 			if (initialsize == terminatingsize) {
 				if (CollectionUtils.isEmpty(childpipes) && object.value() instanceof Map filemap) {
-					((Map<Integer, String>) filemap).entrySet().forEach(entry -> {
+					((Map<Integer, String>) filemap).entrySet().parallelStream().forEach(entry -> {
 						Stream<Tuple2> datastream = null;
 						try {
 							datastream = (Stream<Tuple2>) Utils
@@ -100,26 +96,25 @@ public class ProcessReduce extends AbstractActor {
 								var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {
-							log.info("Map assembly deriving");
 							Utils.getKryo().writeClassAndObject(output,
 									streammap.collect(Collectors.toList()));
 							output.flush();
 							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 							cacheAble(fsdos);
-							log.info("Map assembly concluded");
 						} catch (Exception ex) {
 							log.error(DataSamudayaConstants.EMPTY, ex);
 						}
 					});
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				} else {
+					log.info("Reduce Started");
 					diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, false, false);
 					Map<Integer, String> filemap = (Map<Integer, String>) object.value();
 					final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
 					final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true : false;
-					filemap.entrySet().forEach(entry -> {
+					filemap.entrySet().stream().forEach(entry -> {
 						Stream<Tuple2> datastream = null;
 						try {
 							datastream = (Stream<Tuple2>) Utils
@@ -127,17 +122,18 @@ public class ProcessReduce extends AbstractActor {
 						} catch (Exception e) {
 							log.error(DataSamudayaConstants.EMPTY, e);
 						}
-					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
-						streammap.forEach(diskspilllist::add);
-						
-					} catch (Exception ex) {
-						log.error(DataSamudayaConstants.EMPTY, ex);
-					}
+						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
+							streammap.forEach(diskspilllist::add);
+
+						} catch (Exception ex) {
+							log.error(DataSamudayaConstants.EMPTY, ex);
+						}
 					});
 					diskspilllist.close();
-					childpipes.parallelStream().forEach(
+					childpipes.stream().forEach(
 							action -> action.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
+					log.info("Reduce Completed");
 				}
 			}
 		}

@@ -233,23 +233,9 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		var inmemorycache = DataSamudayaCache.get();
 		cl = TaskExecutorRunner.class.getClassLoader();
 		int akkaport = Utils.getRandomPort();
-		Config config = ConfigFactory.parseString("""
-				akka {
-				  actor {
-				    # provider=remote is possible, but prefer cluster
-				    provider = remote
-				    allow-java-serialization = true
-				  }
-				  remote {
-				    artery {
-				      transport = tcp # See Selecting a transport below
-				      canonical.hostname = \""""
-				+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
-				+ "\"\ncanonical.port = " + akkaport + """
-						    }
-						  }
-						}
-						""");
+		Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
+				, akkaport,
+				Runtime.getRuntime().availableProcessors());
 		final ActorSystem system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
 		final String actorsystemurl = "akka://" + DataSamudayaConstants.ACTORUSERNAME + "@"
 				+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST) + ":" + akkaport

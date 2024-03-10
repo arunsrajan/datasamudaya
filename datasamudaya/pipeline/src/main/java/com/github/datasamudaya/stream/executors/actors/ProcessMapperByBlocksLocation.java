@@ -280,9 +280,10 @@ public class ProcessMapperByBlocksLocation extends AbstractActor {
 				List out;
 
 				if (MapUtils.isNotEmpty(blr.pipeline)) {
-					int numberoffilepartitions = blr.pipeline.keySet().size();
-					Map<Integer, DiskSpillingList> results = ((Stream<Tuple2>) streammap).collect(
-							Collectors.groupingByConcurrent(tup2 -> Math.abs(tup2.v1.hashCode()) % numberoffilepartitions,
+					int numfilepart = blr.pipeline.keySet().size();
+					int numfileperexec = 3;
+					Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap).collect(
+							Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 									Collectors.mapping(tup2 -> tup2,
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 													DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
@@ -298,7 +299,11 @@ public class ProcessMapperByBlocksLocation extends AbstractActor {
 						actorselection.tell(new OutputObject(new ShuffleBlock(blr.bl.getBlockid(),
 										blr.pipeline.get(entry.getKey()), entry.getValue()), left, right),
 										ActorRef.noSender());						
-					});					
+					});
+					IntStream.range(0,numfilepart).filter(val->val%numfileperexec==0).forEach(val->
+					blr.pipeline.get(val).getActorSelection().
+					tell(new OutputObject(new Dummy(), left, right),
+									ActorRef.noSender()));
 				} else if(CollectionUtils.isNotEmpty(blr.childactors)){
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess, 
 							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, left, right);

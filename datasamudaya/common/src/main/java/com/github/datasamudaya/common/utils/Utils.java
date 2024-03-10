@@ -169,6 +169,8 @@ import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.google.common.collect.ImmutableList;
 import com.sun.management.OperatingSystemMXBean;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import com.univocity.parsers.csv.CsvWriter;
 
 import de.javakaffee.kryoserializers.ArraysAsListSerializer;
@@ -2259,11 +2261,14 @@ public class Utils {
 				Input inputinternal = new Input(sisinternal);
 				public boolean tryAdvance(Consumer<? super Object> action) {
 					try {
-						while (inputinternal.available() > 0) {
+						if (inputinternal.available() > 0) {
 							List<?> intermdata = (List<?>) kryo.readClassAndObject(inputinternal);
 							for (Object obj : intermdata) {
 								action.accept(obj);
 							}
+						}
+						if (inputinternal.available() > 0) {
+							return true;
 						}
 						inputinternal.close();
 						sisinternal.close();
@@ -2274,11 +2279,53 @@ public class Utils {
 					}
 					return false;
 				}
-			}, false);
+			}, true);
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 		return null;
+	}
+	
+	/**
+	 * The function returns config of akka system
+	 * @param hostname
+	 * @param akkaport
+	 * @return configuration of akka system
+	 */
+	public static Config getAkkaSystemConfig(String hostname, int akkaport, int threadpool) {
+		return ConfigFactory.parseString("""
+				akka {
+				  jvm-exit-on-fatal-error = false
+				  actor {
+				    # provider=remote is possible, but prefer cluster
+				    provider = remote
+				    allow-java-serialization = true
+				  }
+				  remote {
+				    artery {
+				      transport = tcp # See Selecting a transport below
+				      canonical.hostname = \"""" + hostname + "\"\ncanonical.port = " + akkaport + """
+				    }
+				  }
+				}\n""" + """
+				forkjoin-io-dispatcher {
+				  type = Dispatcher
+				  executor = "fork-join-executor"
+				  fork-join-executor {
+				    parallelism-min = 5
+				    parallelism-factor = 3.0
+				    parallelism-max = """+threadpool+"""
+				  }
+				  throughput = 10000
+				}\n
+				blocking-dispatcher {
+				  type = Dispatcher
+				  executor = "thread-pool-executor"
+				  thread-pool-executor {
+				    fixed-pool-size = """+threadpool+"""
+				  }
+				}
+				""");
 	}
 	
 }

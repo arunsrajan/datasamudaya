@@ -42,7 +42,10 @@ public class ProcessShuffle extends AbstractActor {
 	List<ActorSelection> childpipes;
 	int terminatingsize;
 	int initialsize = 0;
+	int initialshufflesize = 0;
+	boolean shufflecompleted = false;
 	Map<Integer, String> fileblockpath=new ConcurrentHashMap<>();
+	Map<Integer, Output> outputstream=new ConcurrentHashMap<>();
 	Kryo kryo = Utils.getKryo();
 	private ProcessShuffle(Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<ActorSelection> childpipes) {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -67,30 +70,40 @@ public class ProcessShuffle extends AbstractActor {
 					fileblockpath.put(sb.partitionId().getPartitionNumber(), Utils.getLocalFilePathForTask(tasktoprocess, 
 							DataSamudayaConstants.EMPTY+sb.partitionId().getPartitionNumber(), false,false,false)
 							);
+					var fos = new FileOutputStream(fileblockpath.get(sb.partitionId().getPartitionNumber()), true);
+					var sos = new SnappyOutputStream(fos);
+					var output = new Output(sos);
+					outputstream.put(sb.partitionId().getPartitionNumber(), output);
 				}
-				try(var fos = new FileOutputStream(fileblockpath.get(sb.partitionId().getPartitionNumber()), true);
-						var sos = new SnappyOutputStream(fos);
-						var output = new Output(sos)){
+				try{
 					DiskSpillingList dsl = (DiskSpillingList) sb.data();
+					Output output = outputstream.get(sb.partitionId().getPartitionNumber());
 					if(dsl.isSpilled()) {
 						Utils.copySpilledDataSourceToFileShuffle(dsl, output);
 					} else {
-						kryo.writeClassAndObject(output, dsl.getData());
+						Utils.getKryo().writeClassAndObject(output, dsl.readListFromBytes());
 						output.flush();
 					}
 				}catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
-				initialsize++;
+				log.info("processShuffle::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
+			} else if(object.value() instanceof Dummy) {
+				initialshufflesize++;				
 			}
-			if (initialsize == terminatingsize) {
+			if (initialshufflesize == terminatingsize && !shufflecompleted) {
+				log.info("processShuffle::InitialSize {} , Terminating Size {}", initialsize, terminatingsize);
+				log.info("Shuffle Started");
 				if (CollectionUtils.isNotEmpty(childpipes)) {
+					outputstream.entrySet().stream().forEach(entry->entry.getValue().close());
 					final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
 					final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true : false;					
 					childpipes.parallelStream().forEach(childactorsel->childactorsel.tell(new OutputObject(fileblockpath, leftvalue, rightvalue), Actor.noSender()));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
+					log.info("Shuffle Completed");
+					shufflecompleted = true;
 				}
 			}
 		}
