@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.AbstractList;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
@@ -25,7 +26,7 @@ import com.github.datasamudaya.common.Task;
  * @author arun
  *
  */
-public class DiskSpillingList<T> implements AutoCloseable{
+public class DiskSpillingList<T> extends AbstractList<T> implements AutoCloseable{
 
 	private static final Logger log = LoggerFactory.getLogger(DiskSpillingList.class);
 	
@@ -44,9 +45,10 @@ public class DiskSpillingList<T> implements AutoCloseable{
 	private com.esotericsoftware.kryo.io.Output op;
 	private Kryo kryo;
 	private SnappyOutputStream sos;
-	public DiskSpillingList(Task task, int spillexceedpercentage, boolean appendintermediate, boolean left, boolean right) {
+	private String appendwithpath;
+	public DiskSpillingList(Task task, int spillexceedpercentage, String appendwithpath, boolean appendintermediate, boolean left, boolean right) {
 		this.task = task;
-		diskfilepath = Utils.getLocalFilePathForTask(task, appendintermediate, left, right);
+		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataList = new Vector<>();
 		rt = Runtime.getRuntime();
 		totalmemoryavailable = rt.maxMemory() * spillexceedpercentage / 100;
@@ -54,6 +56,7 @@ public class DiskSpillingList<T> implements AutoCloseable{
 		this.left = left;
 		this.right = right;
 		this.appendintermediate = appendintermediate;
+		this.appendwithpath = appendwithpath;
 	}
 
 	/**
@@ -79,10 +82,13 @@ public class DiskSpillingList<T> implements AutoCloseable{
 	 * exceeds limit
 	 * 
 	 * @param value
+	 * @return 
 	 */
-	public void add(T value) {
+	@Override
+	public boolean add(T value) {
 		dataList.add(value);
 		spillToDiskIntermediate();
+		return true;
 	}
 
 	/**
@@ -126,6 +132,14 @@ public class DiskSpillingList<T> implements AutoCloseable{
 		return this.right;
 	}
 	
+	/**
+	 * The function returns subpath to append with actual path
+	 * @return subpath
+	 */
+	public String getAppendwithpath() {
+		return appendwithpath;
+	}
+
 	protected void spillToDiskIntermediate() {
 		try {
 			lock.acquire();
@@ -175,6 +189,16 @@ public class DiskSpillingList<T> implements AutoCloseable{
 		} catch(Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
+	}
+
+	@Override
+	public int size() {		
+		return dataList.size();
+	}
+
+	@Override
+	public T get(int index) {		
+		return (T) dataList.get(index);
 	}
 
 }

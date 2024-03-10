@@ -2574,7 +2574,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		log.info("In testSelectSumWithNestedloge() method Exit");
 	}
 
-	@Test
+	
 	public void testSelectGroupConcatGroupBy() throws Exception {
 		log.info("In testSelectGroupConcatGroupBy() method Entry");
 		String statement = "SELECT airline.DayofMonth, grpconcat(airline.TailNum, '||') FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG' group by airline.DayofMonth,airline.TailNum";

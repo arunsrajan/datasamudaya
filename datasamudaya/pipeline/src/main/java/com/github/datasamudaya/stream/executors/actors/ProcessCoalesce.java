@@ -60,8 +60,8 @@ public class ProcessCoalesce extends AbstractActor {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, true, false, false);
-		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, false, false, false);
+		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false);
+		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false);
 	}
 
 	@Override
@@ -83,7 +83,7 @@ public class ProcessCoalesce extends AbstractActor {
 			if (initialsize == terminatingsize) {
 				log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
 				Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-				getLocalFilePathForTask(diskspilllistinterm.getTask(), true, false, false))):diskspilllistinterm.getData().stream();
+				getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false))):diskspilllistinterm.getData().stream();
 				datastream.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
 						(input1, input2) -> coalesce.getCoalescefunction().apply(input1, input2)))
 				.entrySet().stream()
@@ -100,7 +100,7 @@ public class ProcessCoalesce extends AbstractActor {
 						});
 					} else {
 						Stream<Tuple2> datastreamsplilled = diskspilllist.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-								getLocalFilePathForTask(diskspilllist.getTask(), true, diskspilllist.getLeft(), diskspilllist.getRight()))):diskspilllist.getData().stream();
+								getLocalFilePathForTask(diskspilllist.getTask(), null, true, diskspilllist.getLeft(), diskspilllist.getRight()))):diskspilllist.getData().stream();
 						try (var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {

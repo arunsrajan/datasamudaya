@@ -5,7 +5,6 @@ import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -16,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
@@ -25,7 +25,10 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
@@ -52,6 +55,7 @@ public class ProcessMapperByStream extends AbstractActor {
 	int initialsize = 0;
 	DiskSpillingList diskspilllistinterm;
 	DiskSpillingList diskspilllist;
+	Map<Integer, FilePartitionId> shufflerectowrite;
 	protected List getFunctions() {
 		log.debug("Entered ProcessMapperByStream");
 		var tasks = jobstage.getStage().tasks;
@@ -65,6 +69,7 @@ public class ProcessMapperByStream extends AbstractActor {
 
 	private ProcessMapperByStream(JobStage js, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<ActorSelection> childpipes,
+			Map<Integer, FilePartitionId> shufflerectowrite,
 			int terminatingsize) {
 		this.jobstage = js;
 		this.hdfs = hdfs;
@@ -73,9 +78,10 @@ public class ProcessMapperByStream extends AbstractActor {
 		this.iscacheable = true;
 		this.tasktoprocess = tasktoprocess;
 		this.childpipes = childpipes;
+		this.shufflerectowrite = shufflerectowrite;
 		this.terminatingsize = terminatingsize;
-		diskspilllistinterm = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, true, false, false);
-		diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, false, false, false);
+		diskspilllistinterm = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false);
+		diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false);
 	}
 
 	public static record BlocksLocationRecord(FileSystem hdfs, List<ActorSelection> pipeline) implements Serializable {
@@ -83,10 +89,10 @@ public class ProcessMapperByStream extends AbstractActor {
 
 	@Override
 	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processBlocksLocationRecord).build();
+		return receiveBuilder().match(OutputObject.class, this::processMapperByStream).build();
 	}
 
-	private void processBlocksLocationRecord(OutputObject object) throws PipelineException, Exception {
+	private void processMapperByStream(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.value())) {
 			initialsize++;
 			if(object.value() instanceof DiskSpillingList dsl) {
@@ -99,7 +105,7 @@ public class ProcessMapperByStream extends AbstractActor {
 			if (initialsize == terminatingsize) {
 				if (CollectionUtils.isEmpty(childpipes)) {
 					Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-							getLocalFilePathForTask(diskspilllistinterm.getTask(), true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))):diskspilllistinterm.getData().stream();
+							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))):diskspilllistinterm.getData().stream();
 					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
 							var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);
@@ -120,12 +126,35 @@ public class ProcessMapperByStream extends AbstractActor {
 					final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true : false;
 					Stream datastream = diskspilllistinterm.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-							getLocalFilePathForTask(diskspilllistinterm.getTask(), true, false, false))):diskspilllistinterm.getData().stream();
-					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
-						streammap.forEach(diskspilllist::add);
-						diskspilllist.close();
-						childpipes.parallelStream().forEach(
+							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false))):diskspilllistinterm.getData().stream();
+					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {						
+						if (MapUtils.isNotEmpty(shufflerectowrite)) {
+							int numberoffilepartitions = shufflerectowrite.size();
+							Map<Integer, DiskSpillingList> results = ((Stream<Tuple2>) streammap).collect(
+									Collectors.groupingByConcurrent(tup2 -> tup2.v1.hashCode() % numberoffilepartitions,
+											Collectors.mapping(tup2 -> tup2,
+													Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
+															DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
+															Utils.getUUID().toString(), false, leftvalue, rightvalue)))));
+							results.entrySet().forEach(entry -> {
+								try {
+									entry.getValue().close();
+								} catch (Exception ex) {
+									log.error(DataSamudayaConstants.EMPTY, ex);
+								}
+								shufflerectowrite.get(entry.getKey()).getActorSelection()
+										.tell(new OutputObject(new ShuffleBlock(null,
+												shufflerectowrite.get(entry.getKey()), entry.getValue()), leftvalue, rightvalue),
+												ActorRef.noSender());
+							});
+							shufflerectowrite.entrySet().stream().forEach(entry -> entry.getValue().getActorSelection()
+									.tell(new OutputObject(new Dummy(), leftvalue, rightvalue), ActorRef.noSender()));
+						} else {
+							streammap.forEach(diskspilllist::add);
+							diskspilllist.close();
+							childpipes.parallelStream().forEach(
 								action -> action.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
+						}
 					} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}

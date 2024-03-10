@@ -20,4 +20,5 @@ public class ExecuteTaskActor implements java.io.Serializable{
 	private static final long serialVersionUID = -4550987408435507107L;
 	private Task task;
 	private List<String> childtaskactors;
+	private int filepartitionstartindex;
 }

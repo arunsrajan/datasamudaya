@@ -10,6 +10,7 @@ package com.github.datasamudaya.common;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
@@ -59,6 +60,9 @@ public class Task implements Serializable, Cloneable {
   public boolean topersist;
   public String actorselection;
   public String joinpos;
+  public Map<Integer,FilePartitionId> filepartitionsid;
+  public int parentterminatingsize;
+  public List<Task> shufflechildactors;
   
   @Override
   public Object clone() throws CloneNotSupportedException {

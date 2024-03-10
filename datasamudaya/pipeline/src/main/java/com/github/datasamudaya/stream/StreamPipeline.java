@@ -93,10 +93,13 @@ import com.github.datasamudaya.common.functions.MapToPairFunction;
 import com.github.datasamudaya.common.functions.PeekConsumer;
 import com.github.datasamudaya.common.functions.PipelineCoalesceFunction;
 import com.github.datasamudaya.common.functions.PredicateSerializable;
+import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
+import com.github.datasamudaya.common.functions.ReduceByKeyFunctionValues;
 import com.github.datasamudaya.common.functions.ReduceFunction;
 import com.github.datasamudaya.common.functions.RightJoin;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.SToIntFunction;
+import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.SortedComparator;
 import com.github.datasamudaya.common.functions.TupleFlatMapFunction;
 import com.github.datasamudaya.common.functions.UnionFunction;
@@ -862,7 +865,14 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 							|| af.tasks.get(0) instanceof SampleSupplierPartition
 							|| af.tasks.get(0) instanceof UnionFunction
 							|| af.tasks.get(0) instanceof FoldByKey
-							|| af.tasks.get(0) instanceof IntersectionFunction)) {
+							|| af.tasks.get(0) instanceof IntersectionFunction
+							|| ((af.tasks.get(0) instanceof ReduceByKeyFunction
+							|| af.tasks.get(0) instanceof ReduceByKeyFunctionValues
+							||af.tasks.get(0) instanceof ReduceFunction
+							)&&pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+							&&pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)
+							))
+							) {
 						stageCreator(graphstages, taskstagemap, af, job);
 					} else if (!Objects.isNull(af.parents.get(0).tasks.get(0))
 							&& !(af.parents.get(0).tasks.get(0) instanceof Coalesce
@@ -883,7 +893,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 									|| af.parents.get(0).tasks.get(0) instanceof IntersectionFunction
 									|| af.parents.get(0).tasks.get(0) instanceof Join
 									|| af.parents.get(0).tasks.get(0) instanceof LeftJoin
-									|| af.parents.get(0).tasks.get(0) instanceof RightJoin)) {
+									|| af.parents.get(0).tasks.get(0) instanceof RightJoin
+									||((af.parents.get(0).tasks.get(0) instanceof ReduceByKeyFunction
+											|| af.parents.get(0).tasks.get(0) instanceof ReduceByKeyFunctionValues
+											||af.parents.get(0).tasks.get(0) instanceof ReduceFunction
+											)&&pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+													&&pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)
+											))) {
 						var parentstage = taskstagemap.get(af.parents.get(0).tasks.get(0));
 						parentstage.tasks.add(af.tasks.get(0));
 						taskstagemap.put(af.tasks.get(0), parentstage);
@@ -1025,6 +1041,21 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	private void stageCreator(DirectedAcyclicGraph<Stage, DAGEdge> graphstages,
 	Map<Object, Stage> taskstagemap, AbstractPipeline af, Job job) {
 		var parentstage = taskstagemap.get(af.parents.get(0).tasks.get(0));
+		if (af.tasks.get(0) instanceof ReduceByKeyFunction || af.tasks.get(0) instanceof ReduceByKeyFunctionValues
+				|| af.tasks.get(0) instanceof ReduceFunction && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+						&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)) {
+			var childstage = new Stage();
+			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+			var shuffleStage = new ShuffleStage();
+			childstage.tasks.add(shuffleStage);
+			graphstages.addVertex(parentstage);
+			graphstages.addVertex(childstage);
+			graphstages.addEdge(parentstage, childstage);
+			childstage.parent.add(parentstage);
+			parentstage.child.add(childstage);
+			taskstagemap.put(shuffleStage, childstage);
+			parentstage = childstage;
+		}
 		var childstage = new Stage();
 		childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
 		childstage.tasks.add(af.tasks.get(0));

@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
@@ -40,9 +41,12 @@ import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
+import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.functions.CalculateCount;
 import com.github.datasamudaya.common.functions.Max;
@@ -73,8 +77,7 @@ import de.siegmar.fastcsv.reader.NamedCsvRecord;
 import jp.co.yahoo.yosegi.config.Configuration;
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
-public class ProcessMapperByBlocksLocation
-extends AbstractActor {
+public class ProcessMapperByBlocksLocation extends AbstractActor {
 	protected JobStage jobstage;
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);
 	protected FileSystem hdfs;
@@ -85,6 +88,7 @@ extends AbstractActor {
 	ExecutorService executor;
 	private boolean topersist = false;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
+
 	protected List getFunctions() {
 		log.debug("Entered ProcessMapperByBlocksLocation.getFunctions");
 		var tasks = jobstage.getStage().tasks;
@@ -96,17 +100,18 @@ extends AbstractActor {
 		return functions;
 	}
 
-    private ProcessMapperByBlocksLocation(JobStage js, FileSystem hdfs, Cache cache, 
-    		Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess) {
-        this.jobstage = js;
-        this.hdfs = hdfs;
-        this.cache = cache;
-        this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
-        this.iscacheable = true;
-        this.tasktoprocess = tasktoprocess;
-    }
+	private ProcessMapperByBlocksLocation(JobStage js, FileSystem hdfs, Cache cache,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess) {
+		this.jobstage = js;
+		this.hdfs = hdfs;
+		this.cache = cache;
+		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
+		this.iscacheable = true;
+		this.tasktoprocess = tasktoprocess;
+	}
 
-	public static record BlocksLocationRecord(BlocksLocation bl, FileSystem hdfs, List<ActorSelection> pipeline) implements Serializable{
+	public static record BlocksLocationRecord(BlocksLocation bl, FileSystem hdfs,
+			Map<Integer, FilePartitionId> pipeline, List<ActorSelection> childactors) implements Serializable {
 	}
 
 	@Override
@@ -135,8 +140,7 @@ extends AbstractActor {
 		final boolean left = isNull(tasktoprocess.joinpos) ? false
 				: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
 		final boolean right = isNull(tasktoprocess.joinpos) ? false
-				: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true
-						: false;		
+				: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true : false;
 		try (var fsdos = new ByteArrayOutputStream();
 				var sos = new SnappyOutputStream(fsdos);
 				var output = new Output(sos);) {
@@ -172,17 +176,14 @@ extends AbstractActor {
 							buffer = new BufferedReader(new InputStreamReader(bais));
 							tasktoprocess.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
 							Map<String, SqlTypeName> sqltypename = SQLUtils.getColumnTypesByColumn(sqltypenamel,
-									Arrays.asList(headers));							
+									Arrays.asList(headers));
 							if (iscsv) {
-								CsvCallbackHandler<NamedCsvRecord> callbackHandler =
-									    new de.siegmar.fastcsv.reader.NamedCsvRecordHandler(headers);
+								CsvCallbackHandler<NamedCsvRecord> callbackHandler = new de.siegmar.fastcsv.reader.NamedCsvRecordHandler(
+										headers);
 								CsvReader<NamedCsvRecord> csv = CsvReader.builder().fieldSeparator(',')
-									    .quoteCharacter('"')
-									    .commentStrategy(CommentStrategy.SKIP)
-									    .commentCharacter('#')
-									    .skipEmptyLines(true)
-									    .ignoreDifferentFieldCount(false)
-									    .detectBomHeader(false).build(callbackHandler, buffer);
+										.quoteCharacter('"').commentStrategy(CommentStrategy.SKIP).commentCharacter('#')
+										.skipEmptyLines(true).ignoreDifferentFieldCount(false).detectBomHeader(false)
+										.build(callbackHandler, buffer);
 								if (topersist) {
 									baos = new ByteArrayOutputStream();
 								}
@@ -278,85 +279,54 @@ extends AbstractActor {
 					intermediatestreamobject);) {
 				List out;
 
-				if (finaltask instanceof CalculateCount) {
-					out = new Vector<>();
-					if (streammap instanceof IntStream stmap) {
-						out.add(stmap.count());
-					} else {
-						out.add(((Stream) streammap).count());
-					}
-				} else if (finaltask instanceof PipelineIntStreamCollect piplineistream) {
-					out = new Vector<>();
-					out.add(((IntStream) streammap).collect(piplineistream.getSupplier(),
-							piplineistream.getObjIntConsumer(), piplineistream.getBiConsumer()));
-
-				} else if (finaltask instanceof SummaryStatistics) {
-					out = new Vector<>();
-					out.add(((IntStream) streammap).summaryStatistics());
-
-				} else if (finaltask instanceof Max) {
-					out = new Vector<>();
-					out.add(((IntStream) streammap).max().getAsInt());
-
-				} else if (finaltask instanceof Min) {
-					out = new Vector<>();
-					out.add(((IntStream) streammap).min().getAsInt());
-
-				} else if (finaltask instanceof Sum) {
-					out = new Vector<>();
-					out.add(((IntStream) streammap).sum());
-
-				} else if (finaltask instanceof StandardDeviation) {
-					out = new Vector<>();
-					CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
-							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-									executor, Runtime.getRuntime().availableProcessors()));
-					var streamtmp = cf.get();
-					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
-					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
-							.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
-					var standardDeviation = Math.sqrt(variance);
-					out.add(standardDeviation);
-
+				if (MapUtils.isNotEmpty(blr.pipeline)) {
+					int numberoffilepartitions = blr.pipeline.keySet().size();
+					Map<Integer, DiskSpillingList> results = ((Stream<Tuple2>) streammap).collect(
+							Collectors.groupingByConcurrent(tup2 -> Math.abs(tup2.v1.hashCode()) % numberoffilepartitions,
+									Collectors.mapping(tup2 -> tup2,
+											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
+													DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
+													Utils.getUUID().toString(), false, left, right)))));
+					results.entrySet().forEach(entry -> {
+						try {
+							log.info("FilePartition {}",entry.getKey());
+							entry.getValue().close();
+						} catch (Exception ex) {
+							log.error(DataSamudayaConstants.EMPTY, ex);
+						}
+						ActorSelection actorselection = blr.pipeline.get(entry.getKey()).getActorSelection();						
+						actorselection.tell(new OutputObject(new ShuffleBlock(blr.bl.getBlockid(),
+										blr.pipeline.get(entry.getKey()), entry.getValue()), left, right),
+										ActorRef.noSender());						
+					});					
+				} else if(CollectionUtils.isNotEmpty(blr.childactors)){
+					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess, 
+							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, left, right);
+					((Stream) streammap).forEach(diskspilllist::add);
+					diskspilllist.close();
+					blr.childactors().stream().forEach(
+								action -> action.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender()));
+					blr.childactors().stream().forEach(
+							action -> action.tell(new OutputObject(new Dummy(), left, right), ActorRef.noSender()));
+					
 				} else {
-					log.info("Map assembly deriving");
-					if (tasktoprocess.finalphase && tasktoprocess.saveresulttohdfs) {
-						try (OutputStream os = hdfs.create(new Path(tasktoprocess.hdfsurl + tasktoprocess.filepath),
-								Short.parseShort(DataSamudayaProperties.get().getProperty(
-										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
-							CsvWriterSettings settings = new CsvWriterSettings();
-							CsvWriter csvtowrite = writercsv = new CsvWriter(os, settings);
-							((Stream) streammap).forEach(value -> {
-								try {
-									Utils.convertMapToCsv(value, csvtowrite);
-								} catch (Exception e) {
-									log.error(DataSamudayaConstants.EMPTY, e);
-								}
-							});
-						}
-					} else {
-						DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, false, left, right);
-						((Stream) streammap).forEach(diskspilllist::add);
-						diskspilllist.close();
-						if (CollectionUtils.isNotEmpty(blr.pipeline)) {
-							blr.pipeline().parallelStream().forEach(
-									action -> action.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender()));
-						} else {
-							Stream datastream = diskspilllist.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-									getLocalFilePathForTask(diskspilllist.getTask(), false, false, false))):diskspilllist.getData().stream();
-							Utils.getKryo().writeClassAndObject(output, datastream.collect(Collectors.toList()));
-							output.flush();
-							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
-							cacheAble(fsdos);
-							diskspilllist.getData().clear();
-						}
-						jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
-					}
-					log.info("Map assembly concluded");
+					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
+							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, left, right);
+					((Stream) streammap).forEach(diskspilllist::add);
+					diskspilllist.close();
+					Stream datastream = diskspilllist.isSpilled()
+							? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
+									Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, false, false, false)))
+							: diskspilllist.getData().stream();
+					Utils.getKryo().writeClassAndObject(output, datastream.collect(Collectors.toList()));
+					output.flush();
+					tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
+					cacheAble(fsdos);
+					diskspilllist.getData().clear();
 				}
+				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
+				log.info("Map assembly concluded");
 				tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
-				out = null;
 				log.debug("Exiting ProcessMapperByBlocksLocation.processBlocksLocationRecord");
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 				log.debug("Time taken to compute the Map Task is " + timetaken + " seconds");
@@ -370,64 +340,12 @@ extends AbstractActor {
 			}
 		} catch (Exception ex) {
 			log.error(PipelineConstants.PROCESSHDFSERROR, ex);
-		} finally {
-			if (nonNull(writercsv)) {
-				try {
-					writercsv.close();
-				} catch (Exception e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
-				}
-			}
-			if (nonNull(writer)) {
-				try {
-					writer.close();
-				} catch (IOException e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
-				}
-			}
-			if (nonNull(baos)) {
-				byte[] yosegibytes = baos.toByteArray();
-				cache.put(blockslocation.toBlString() + reqcols.toString(), yosegibytes);
-				tasktoprocess.numbytesconverted = yosegibytes.length;
-				try {
-					baos.close();
-				} catch (IOException e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
-				}
-			}
-			if (nonNull(buffer)) {
-				try {
-					buffer.close();
-				} catch (IOException e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
-				}
-			}
-			if (nonNull(bais)) {
-				try {
-					bais.close();
-				} catch (IOException e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
-				}
-			}
-			if (nonNull(buffernocols)) {
-				try {
-					buffernocols.close();
-				} catch (Exception e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
-				}
-			}
-			if (nonNull(istreamnocols)) {
-				try {
-					istreamnocols.close();
-				} catch (Exception e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
-				}
-			}
 		}
 	}
-	
+
 	/**
 	 * cachable stream
+	 * 
 	 * @param fsdos
 	 */
 	@SuppressWarnings("unchecked")
@@ -437,7 +355,7 @@ extends AbstractActor {
 			cache.put(getIntermediateDataFSFilePath(tasktoprocess), bt);
 		}
 	}
-	
+
 	/**
 	 * This method gets the path in jobid-stageid-taskid.
 	 */

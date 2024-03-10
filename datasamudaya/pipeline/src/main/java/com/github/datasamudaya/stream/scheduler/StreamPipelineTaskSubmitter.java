@@ -37,6 +37,7 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 	private boolean resultobtainedte;
 	private PipelineConfig pc;
 	private List<String> childactors;
+	private List<String> taskexecutors;
 
 	public StreamPipelineTaskSubmitter() {
 	}
@@ -99,7 +100,7 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 			Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
 			StreamDataCruncher sdc = (StreamDataCruncher) registry.lookup(DataSamudayaConstants.BINDTESTUB
 					+ DataSamudayaConstants.HYPHEN + jobid);
-			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors); 
+			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors, taskexecutors.indexOf(hostport)*3); 
 			return sdc.postObject(eta);
 		} catch (Exception ex) {
 			log.error("Unable to connect and submit tasks to executor with host and port: " + hp, ex);
@@ -192,7 +193,9 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 	public void setChildactors(List<String> childactors) {
 		this.childactors = childactors;
 	}
-	
-	
+
+	public void setTaskexecutors(List<String> taskexecutors) {
+		this.taskexecutors = taskexecutors;
+	}
 	
 }

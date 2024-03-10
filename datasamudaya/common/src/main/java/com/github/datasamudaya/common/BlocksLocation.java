@@ -37,6 +37,7 @@ import lombok.ToString;
 @NoArgsConstructor
 public class BlocksLocation implements Serializable, Cloneable {
 	private static final long serialVersionUID = 6205828696011624985L;
+	private String blockid;
 	private Block[] block = new Block[2];
 	private String executorhp;
 	private String xrefaddress;

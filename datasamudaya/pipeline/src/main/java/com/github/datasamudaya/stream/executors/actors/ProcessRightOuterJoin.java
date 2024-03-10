@@ -59,8 +59,8 @@ public class ProcessRightOuterJoin extends AbstractActor {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, false, false, false);
-		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, true, false, false);
+		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false);
+		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false);
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public class ProcessRightOuterJoin extends AbstractActor {
 	private ProcessRightOuterJoin processRightOuterJoin(OutputObject oo) throws Exception {
 		if (oo.left()) {
 			if (nonNull(oo.value()) && oo.value() instanceof DiskSpillingList dsl) {
-				diskspilllistintermleft = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, true, true, false);
+				diskspilllistintermleft = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, true, false);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
 				} else {
@@ -80,7 +80,7 @@ public class ProcessRightOuterJoin extends AbstractActor {
 			}
 		} else if (oo.right()) {
 			if (nonNull(oo.value()) && oo.value() instanceof DiskSpillingList dsl) {
-				diskspilllistintermright = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, true, false, true);
+				diskspilllistintermright = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, true);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
 				} else {
@@ -97,12 +97,12 @@ public class ProcessRightOuterJoin extends AbstractActor {
 					: nonNull(task.joinpos) && task.joinpos.equals("right") ? true : false;
 			Stream datastreamleft = diskspilllistintermleft.isSpilled()
 					? (Stream<Tuple2>) Utils.getStreamData(
-							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), true,
+							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), null, true,
 									diskspilllistintermleft.getLeft(), diskspilllistintermleft.getRight())))
 					: diskspilllistintermleft.getData().stream();
 			Stream datastreamright = diskspilllistintermright.isSpilled()
 					? (Stream<Tuple2>) Utils.getStreamData(
-							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), true,
+							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
 									diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
 					: diskspilllistintermright.getData().stream();
 			try (var seq1 = Seq.seq(datastreamleft);
@@ -111,7 +111,7 @@ public class ProcessRightOuterJoin extends AbstractActor {
 				join.forEach(diskspilllistinterm::add);
 				Stream datastreamleftfirstelem = diskspilllistintermleft.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
-								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), true,
+								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), null, true,
 										diskspilllistintermleft.getLeft(), diskspilllistintermleft.getRight())))
 						: diskspilllistintermleft.getData().stream();
 				Object[] origvalarr = (Object[]) datastreamleftfirstelem.findFirst().get();
@@ -122,7 +122,7 @@ public class ProcessRightOuterJoin extends AbstractActor {
 				diskspilllistinterm.close();
 				Stream diskspilllistintermstream = diskspilllistinterm.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
-								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), true,
+								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
 										diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))): diskspilllistinterm.getData().stream();
 				diskspilllistintermstream.filter(val -> val instanceof Tuple2).map(value -> {
 					Tuple2 maprec = (Tuple2) value;
@@ -143,7 +143,7 @@ public class ProcessRightOuterJoin extends AbstractActor {
 					} else {
 						Stream<Tuple2> datastream = diskspilllist.isSpilled()
 								? (Stream<Tuple2>) Utils.getStreamData(
-										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), true,
+										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, true,
 												diskspilllist.getLeft(), diskspilllist.getRight())))
 								: diskspilllist.getData().stream();
 						try (var fsdos = new ByteArrayOutputStream();

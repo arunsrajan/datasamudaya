@@ -117,13 +117,17 @@ import com.github.datasamudaya.common.TaskType;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.executors.actors.ProcessCoalesce;
 import com.github.datasamudaya.stream.executors.actors.ProcessInnerJoin;
 import com.github.datasamudaya.stream.executors.actors.ProcessLeftOuterJoin;
+import com.github.datasamudaya.stream.executors.actors.ProcessReduce;
 import com.github.datasamudaya.stream.executors.actors.ProcessRightOuterJoin;
+import com.github.datasamudaya.stream.executors.actors.ProcessShuffle;
 import com.github.datasamudaya.stream.executors.actors.ProcessMapperByBlocksLocation;
 import com.github.datasamudaya.stream.executors.actors.ProcessMapperByStream;
 
@@ -3684,6 +3688,33 @@ public class SQLUtils {
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
 						+ jobstageid + taskactor.getTask().getTaskid());
 				return taskactor.getTask();
+			} else if (js.getStage().tasks.get(0) instanceof ShuffleStage shuffle) {
+				List<ActorSelection> childactors = new ArrayList<>();
+				for (String actorselectionurl : taskactor.getChildtaskactors()) {
+					childactors.add(system.actorSelection(actorselectionurl));
+				}
+				ActorRef actor = system.actorOf(
+						Props.create(ProcessShuffle.class,
+								jobidstageidtaskidcompletedmap, taskactor.getTask(),childactors),
+						jobstageid + taskactor.getTask().getTaskid());
+				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
+						+ jobstageid + taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().tasks.get(0) instanceof ReduceByKeyFunction rbkf) {
+				List<ActorSelection> childactors = new ArrayList<>();
+				for (String actorselectionurl : taskactor.getChildtaskactors()) {
+					childactors.add(system.actorSelection(actorselectionurl));
+				}
+				ActorRef actor = system.actorOf(
+						Props.create(ProcessReduce.class,
+								jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
+								jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()),
+						jobstageid + taskactor.getTask().getTaskid());
+				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH
+						+ jobstageid + taskactor.getTask().getTaskid());
+				return taskactor.getTask();
 			} else if (js.getStage().getTasks().get(0) instanceof Coalesce coalesce) {
 				ActorRef actor = null;
 				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
@@ -3778,10 +3809,20 @@ public class SQLUtils {
 				return taskactor.getTask();
 			} else {
 				List<ActorSelection> childactors = null;
+				int totalfilepartspernode = 3;
+				int indexfilepartpernode = 0;
 				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
 					childactors = new ArrayList<>();
 					for (String actorselectionurl : taskactor.getChildtaskactors()) {
-						childactors.add(system.actorSelection(actorselectionurl));
+						ActorSelection actorselection = system.actorSelection(actorselectionurl);
+						childactors.add(actorselection);
+						if (nonNull(taskactor.getTask().getFilepartitionsid())) {
+							for (int filepartcount = 0; filepartcount < totalfilepartspernode; filepartcount++) {
+								taskactor.getTask().getFilepartitionsid().get(filepartcount + indexfilepartpernode)
+										.setActorSelection(actorselection);
+							}
+						}
+						indexfilepartpernode += totalfilepartspernode;
 					}
 				}
 				ActorRef actor = system
@@ -3789,6 +3830,7 @@ public class SQLUtils {
 								Props.create(ProcessMapperByStream.class,
 										jobidstageidjobstagemap.get(jobstageid), hdfs, inmemorycache,
 										jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors, 
+										taskactor.getTask().getFilepartitionsid(),
 										taskactor.getTerminatingparentcount()),
 								jobstageid + taskactor.getTask().getTaskid());
 				actornameactorrefmap.put(jobstageid + taskactor.getTask().getTaskid(), actor);
@@ -3796,21 +3838,31 @@ public class SQLUtils {
 						+ jobstageid + taskactor.getTask().getTaskid());
 				return taskactor.getTask();
 			}
-		} else if (obj instanceof ExecuteTaskActor taskactor) {
-			log.info("Processing Blocks {} actors {}", taskactor.getTask().getInput(),
-					taskactor.getTask().getActorselection());
+		} else if (obj instanceof ExecuteTaskActor exectaskactor) {
+			log.info("Processing Blocks {} actors {}", exectaskactor.getTask().getInput(),
+					exectaskactor.getTask().getActorselection());
+			int totalfilepartspernode = 3;
+			int indexfilepartpernode = 0;
 			List<ActorSelection> childactors = new ArrayList<>();
-			if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-				for (String actorselectionurl : taskactor.getChildtaskactors()) {
-					childactors.add(system.actorSelection(actorselectionurl));
+			if (CollectionUtils.isNotEmpty(exectaskactor.getChildtaskactors())) {
+				for (String actorselectionurl : exectaskactor.getChildtaskactors()) {
+					ActorSelection actorselection = system.actorSelection(actorselectionurl);
+					childactors.add(actorselection);
+					if (nonNull(exectaskactor.getTask().getFilepartitionsid())) {
+						for (int filepartcount = 0; filepartcount < totalfilepartspernode; filepartcount++) {
+							exectaskactor.getTask().getFilepartitionsid().get(filepartcount + indexfilepartpernode)
+									.setActorSelection(actorselection);
+						}
+					}
+					indexfilepartpernode += totalfilepartspernode;
 				}
 			}
 			ProcessMapperByBlocksLocation.BlocksLocationRecord blr = new ProcessMapperByBlocksLocation.BlocksLocationRecord(
-					(BlocksLocation) taskactor.getTask().getInput()[0], hdfs, childactors);
+					(BlocksLocation) exectaskactor.getTask().getInput()[0], hdfs, exectaskactor.getTask().getFilepartitionsid(), childactors);
 			final ActorSelection mapreducetask = system
-					.actorSelection(taskactor.getTask().getActorselection());
+					.actorSelection(exectaskactor.getTask().getActorselection());
 			mapreducetask.tell(blr, Actor.noSender());
-			var path = Utils.getIntermediateInputStreamTask(taskactor.getTask());
+			var path = Utils.getIntermediateInputStreamTask(exectaskactor.getTask());
 			while(isNull(jobidstageidtaskidcompletedmap.get(path))||!jobidstageidtaskidcompletedmap.get(path)) {
         		try {
 					Thread.sleep(1000);
@@ -3818,7 +3870,7 @@ public class SQLUtils {
 					log.error(DataSamudayaConstants.EMPTY, e);
 				}
         	}
-			Task tasktoexecute = taskactor.getTask();
+			Task tasktoexecute = exectaskactor.getTask();
 			log.info("Task Executed {}", tasktoexecute);
 			tasktoexecute.taskstatus = TaskStatus.COMPLETED;
 			tasktoexecute.tasktype = TaskType.EXECUTEUSERTASK;

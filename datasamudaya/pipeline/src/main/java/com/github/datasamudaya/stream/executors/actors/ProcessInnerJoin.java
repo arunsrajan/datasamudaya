@@ -57,7 +57,7 @@ public class ProcessInnerJoin extends AbstractActor {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, false, false, false);
+		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null,  false, false, false);
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public class ProcessInnerJoin extends AbstractActor {
 	private ProcessInnerJoin processInnerJoin(OutputObject oo) throws Exception {
 		if (oo.left()) {
 			if (nonNull(oo.value()) && oo.value() instanceof DiskSpillingList dsl) {
-				diskspilllistintermleft = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, true, true, false);
+				diskspilllistintermleft = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, true, false);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
 				} else {
@@ -77,7 +77,7 @@ public class ProcessInnerJoin extends AbstractActor {
 			}
 		} else if (oo.right()) {
 			if (nonNull(oo.value()) && oo.value() instanceof DiskSpillingList dsl) {
-				diskspilllistintermright = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, true, false, true);
+				diskspilllistintermright = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, true);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
 				} else {
@@ -94,12 +94,12 @@ public class ProcessInnerJoin extends AbstractActor {
 					: nonNull(task.joinpos) && task.joinpos.equals("right") ? true : false;
 			Stream<Tuple2> datastreamleft = diskspilllistintermleft.isSpilled()
 					? (Stream<Tuple2>) Utils.getStreamData(
-							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), true,
+							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), null, true,
 									diskspilllistintermleft.getLeft(), diskspilllistintermleft.getRight())))
 					: diskspilllistintermleft.getData().stream();
 			Stream<Tuple2> datastreamright = diskspilllistintermright.isSpilled()
 					? (Stream<Tuple2>) Utils.getStreamData(
-							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), true,
+							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
 									diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
 					: diskspilllistintermright.getData().stream();
 			try (var seq1 = Seq.seq(datastreamleft);
@@ -117,7 +117,7 @@ public class ProcessInnerJoin extends AbstractActor {
 				} else {
 					Stream<Tuple2> datastream = diskspilllist.isSpilled()
 							? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
-									diskspilllist.getTask(), true, diskspilllist.getLeft(), diskspilllist.getRight())))
+									diskspilllist.getTask(), null, true, diskspilllist.getLeft(), diskspilllist.getRight())))
 							: diskspilllist.getData().stream();
 					try (var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);

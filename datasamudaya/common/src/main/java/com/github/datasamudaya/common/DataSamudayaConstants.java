@@ -233,6 +233,7 @@ public class DataSamudayaConstants {
   public static final String MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE = "jobstagemapfile.dat";
   public static final String YARN_CLIENT = "yarnClient";
 
+  public static final String SHUFFLE = "Shuffle";
   public static final String PREDICATESERIALIZABLE = "PredicateSerializable";
   public static final String DISTINCT = "Distinct";
   public static final String MAPFUNCTION = "MapFunction";

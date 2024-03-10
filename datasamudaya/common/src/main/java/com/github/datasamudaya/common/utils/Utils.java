@@ -55,7 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,6 +73,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -852,6 +852,14 @@ public class Utils {
 	 * @return
 	 */
 	public static String getCacheID() {
+		return getUUID();
+	}
+	
+	/**
+	 * Get UUid
+	 * @return uuid
+	 */
+	public static String getUUID() {
 		return UUID.randomUUID().toString();
 	}
 
@@ -2169,15 +2177,25 @@ public class Utils {
 	 * @param task
 	 * @return local file path to temporary dir
 	 */
-	public static String getLocalFilePathForTask(Task task, boolean appendintermediate, boolean left, boolean right) {
+	public static String getLocalFilePathForTask(Task task, String appendwithpath,boolean appendintermediate, boolean left, boolean right) {
 		new File(System.getProperty(DataSamudayaConstants.TMPDIR)+DataSamudayaConstants.FORWARD_SLASH+task.getJobid()).mkdirs();
 		return System.getProperty(DataSamudayaConstants.TMPDIR)+DataSamudayaConstants.FORWARD_SLASH+task.getJobid()
 		+DataSamudayaConstants.FORWARD_SLASH+task.getJobid()+
 		DataSamudayaConstants.HYPHEN+task.getStageid()+
 		DataSamudayaConstants.HYPHEN+task.getTaskid()
+		+(StringUtils.isNotEmpty(appendwithpath)?DataSamudayaConstants.HYPHEN+appendwithpath:DataSamudayaConstants.EMPTY)
 		+(appendintermediate?DataSamudayaConstants.HYPHEN+DataSamudayaConstants.INTERMEDIATE:DataSamudayaConstants.EMPTY)
 		+(left||right?left?DataSamudayaConstants.HYPHEN+DataSamudayaConstants.INTERMEDIATEJOINLEFT:DataSamudayaConstants.HYPHEN+DataSamudayaConstants.INTERMEDIATEJOINRIGHT:DataSamudayaConstants.EMPTY)
 		+DataSamudayaConstants.DOT+DataSamudayaConstants.DATA;
+	}
+
+	/**
+	 * The function returns folder path for given jobid
+	 * @param jobid
+	 * @return folder path for given job
+	 */
+	public static String getFolderPathForJob(String jobid) {
+		return System.getProperty(DataSamudayaConstants.TMPDIR)+DataSamudayaConstants.FORWARD_SLASH+jobid;
 	}
 	
 	/**
@@ -2189,7 +2207,7 @@ public class Utils {
 	public static void copySpilledDataSourceToDestination(DiskSpillingList dslinput, DiskSpillingList dslout) {
 		Kryo kryo = Utils.getKryo();
 		try (FileInputStream istream = new FileInputStream(Utils.
-				getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(), dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
 				var sis = new SnappyInputStream(istream);
 				com.esotericsoftware.kryo.io.Input input = new com.esotericsoftware.kryo.io.Input(sis);				
 				DiskSpillingList dsloutclose=dslout){
@@ -2201,6 +2219,29 @@ public class Utils {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
+	
+	/**
+	 * If source is spilled and written in file copy to destination file
+	 * @param dslinput
+	 * @param fos
+	 */
+	public static void copySpilledDataSourceToFileShuffle(DiskSpillingList dslinput, Output output) {
+		Kryo kryo = Utils.getKryo();
+		try (FileInputStream istream = new FileInputStream(Utils.
+				getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(), dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				var sis = new SnappyInputStream(istream);
+				com.esotericsoftware.kryo.io.Input input = new com.esotericsoftware.kryo.io.Input(sis);				
+				){
+				while(input.available()>0) {
+					List records = (List) kryo.readClassAndObject(input);
+					kryo.writeClassAndObject(output, records);
+					output.flush();
+				}
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+	}
+	
 	
 	/**
 	 * The method gets stream of data from file

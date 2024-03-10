@@ -14,6 +14,7 @@ import static java.util.Objects.nonNull;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,6 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -83,6 +85,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.ExecuteTaskActor;
+import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.FreeResourcesCompletedJob;
 import com.github.datasamudaya.common.GetTaskActor;
@@ -114,8 +117,12 @@ import com.github.datasamudaya.common.functions.Join;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.LeftJoin;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
+import com.github.datasamudaya.common.functions.ReduceByKeyFunctionValues;
+import com.github.datasamudaya.common.functions.ReduceFunction;
 import com.github.datasamudaya.common.functions.RightJoin;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.UnionFunction;
 import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.Utils;
@@ -166,7 +173,7 @@ public class StreamJobScheduler {
   String hdfsfilepath;
   FileSystem hdfs;
   String hbphysicaladdress;
-
+  ActorSystem system;
   public StreamJobScheduler() {
     hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
         DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
@@ -351,7 +358,7 @@ public class StreamJobScheduler {
 							  }
 							}
 							""");
-    		final ActorSystem system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
+    		system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
     		final String actorsystemurl = "akka://" + DataSamudayaConstants.ACTORUSERNAME + "@"
     				+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST) + ":" + akkaport
     				+ "/user";	
@@ -576,6 +583,9 @@ public class StreamJobScheduler {
       }
       istaskcancelled.set(true);
       jobping.shutdownNow();
+      if(nonNull(system)) {
+    	  system.terminate();
+      }
     }
 
   }
@@ -1084,7 +1094,14 @@ public class StreamJobScheduler {
 				public Boolean execute() {
 					try (var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), new Configuration());) {
 						semaphore.acquire();
-						ExecuteTaskActor eta = new ExecuteTaskActor(task, spts.getChildactors());
+						int filepartitionstartindex = 0;
+						List<String> actorsselection; 
+						if(CollectionUtils.isNotEmpty(task.getShufflechildactors())){
+							actorsselection = task.getShufflechildactors().stream().map(task->task.actorselection).collect(Collectors.toList());
+						} else {
+							actorsselection = spts.getChildactors();
+						}
+						ExecuteTaskActor eta = new ExecuteTaskActor(task, actorsselection, filepartitionstartindex);
 						Task task = SQLUtils.getAkkaActor(system, eta, jsidjsmap, hdfs, cache,
 								jobidstageidtaskidcompletedmap, actornameactorrefmap, actorsystemurl);
 						Utils.writeToOstream(pipelineconfig.getOutput(),
@@ -1261,6 +1278,7 @@ public class StreamJobScheduler {
 					try {
 						semaphores.get(spts.getTask().getHostport()).acquire();
 						if (!spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
+							spts.setTaskexecutors(job.getTaskexecutors());
 							Task result = (Task) spts.actors();
 							log.info("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
 							printresult.acquire();
@@ -1945,7 +1963,91 @@ public class StreamJobScheduler {
           graph.addEdge(parentthread, spts);
           taskgraph.addEdge(parentthread.getTask(), spts.getTask());
         }
-      } else if (function instanceof HashPartitioner || function instanceof GroupByFunction) {
+      } else if (function instanceof ShuffleStage) {
+          	partitionindex++;
+          	Map<Integer,FilePartitionId> filepartitionsid = new ConcurrentHashMap<>();
+          	Map<String,StreamPipelineTaskSubmitter> taskexecshuffleblockmap = new ConcurrentHashMap<>();
+          	int nooffilepartitions = 3;
+          	int startrange = 0;
+          	int endrange = nooffilepartitions;          	
+          	List<StreamPipelineTaskSubmitter> parents = outputparent1;
+			if (nonNull(parents.get(0).getHostPort())) {
+				Map<String, List<Object>> hpsptsl = parents.stream()
+						.collect(Collectors.groupingBy(StreamPipelineTaskSubmitter::getHostPort,
+								Collectors.mapping(spts -> spts, Collectors.toList())));
+				for (int filepartcount = 0; filepartcount < job.getTaskexecutors().size(); filepartcount++) {
+					int initialrange = startrange;
+					for (; initialrange < endrange; initialrange++) {
+						filepartitionsid.put(initialrange, new FilePartitionId(Utils.getUUID(),
+								DataSamudayaConstants.EMPTY, null, startrange, endrange, initialrange));
+					}
+					startrange += nooffilepartitions;
+					endrange += nooffilepartitions;
+					var parentsgraph = hpsptsl.get(job.getTaskexecutors().get(filepartcount));
+					var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+							parentsgraph);
+					spts.getTask().parentterminatingsize = parents.size();
+					tasks.add(spts);
+					graph.addVertex(spts);
+					for (var parent : parentsgraph) {
+						StreamPipelineTaskSubmitter parentthread = (StreamPipelineTaskSubmitter) parent;
+						parentthread.getTask().filepartitionsid = filepartitionsid;
+						spts.getTask().filepartitionsid = filepartitionsid;
+						spts.getTask().parentterminatingsize = outputparent1.size();
+						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
+						taskgraph.addVertex(spts.getTask());
+						if (!graph.containsVertex(parentthread)) {
+							graph.addVertex(parentthread);
+						}
+						if (!taskgraph.containsVertex(parentthread.getTask())) {
+							taskgraph.addVertex(parentthread.getTask());
+						}
+						graph.addEdge(parentthread, spts);
+						taskgraph.addEdge(parentthread.getTask(), spts.getTask());
+					}
+				}
+				List<Task> tasksshuffle = tasks.stream().map(spts -> spts.getTask()).collect(Collectors.toList());
+				for (var input : outputparent1) {
+					if (input instanceof StreamPipelineTaskSubmitter parentthread) {
+						parentthread.getTask().setShufflechildactors(tasksshuffle);
+					}
+				}
+			} else {
+				for (int filepartcount = 0; filepartcount < 1; filepartcount++) {
+					int initialrange = startrange;
+					for (; initialrange < endrange; initialrange++) {
+						filepartitionsid.put(initialrange, new FilePartitionId(Utils.getUUID(),
+								DataSamudayaConstants.EMPTY, null, startrange, endrange, initialrange));
+					}
+					startrange += nooffilepartitions;
+					endrange += nooffilepartitions;
+					var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+							outputparent1);
+					spts.getTask().parentterminatingsize = parents.size();
+					tasks.add(spts);
+					graph.addVertex(spts);
+					for (var parent : outputparent1) {
+						StreamPipelineTaskSubmitter parentthread = (StreamPipelineTaskSubmitter) parent;
+						parentthread.getTask().filepartitionsid = filepartitionsid;
+						spts.getTask().filepartitionsid = filepartitionsid;
+						spts.getTask().parentterminatingsize = outputparent1.size();
+						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
+						taskgraph.addVertex(spts.getTask());
+						if (!graph.containsVertex(parentthread)) {
+							graph.addVertex(parentthread);
+						}
+						if (!taskgraph.containsVertex(parentthread.getTask())) {
+							taskgraph.addVertex(parentthread.getTask());
+						}
+						graph.addEdge(parentthread, spts);
+						taskgraph.addEdge(parentthread.getTask(), spts.getTask());
+					}
+				}
+			}
+        } else if (function instanceof HashPartitioner || function instanceof GroupByFunction
+    		  || function instanceof ReduceByKeyFunction
+              || function instanceof ReduceByKeyFunctionValues
+              || function instanceof ReduceFunction) {
           partitionindex++;          
 			for (var input : outputparent1) {								
 				if (input instanceof Task task) {
@@ -2101,6 +2203,7 @@ public class StreamJobScheduler {
 						throw ex;
 					}
 				}
+		    	  FileUtils.deleteDirectory(new File(Utils.getFolderPathForJob(job.getId())));
 			} else {
 	          for (var spts : sptss) {
 	            var key = getIntermediateResultFS(spts.getTask());
@@ -2196,6 +2299,7 @@ public class StreamJobScheduler {
 			out.printf("Total records processed %d", totalrecords);
 			out.println();
 			out.flush();
+			FileUtils.deleteDirectory(new File(Utils.getFolderPathForJob(job.getId())));
 		}
       }
       sptss.clear();

@@ -37,6 +37,8 @@ import org.apache.hadoop.hdfs.protocol.LocatedBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.utils.Utils;
+
 /**
  * 
  * @author arun
@@ -77,6 +79,7 @@ public class HDFSBlockUtils {
 					var skipbytes = 0l;
 					while (true) {
 						var bls = new BlocksLocation();
+						bls.setBlockid(Utils.getUUID());
 						bls.setColumns(columns);
 						var block = new Block[2];
 						block[0] = new Block();
