@@ -6,6 +6,7 @@ import static java.util.Objects.nonNull;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import org.xerial.snappy.SnappyOutputStream;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
@@ -35,7 +37,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 
-public class ProcessReduce extends AbstractActor {
+public class ProcessReduce extends AbstractActor implements Serializable{
 	protected JobStage jobstage;
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(ProcessReduce.class);
 	protected FileSystem hdfs;
@@ -108,7 +110,7 @@ public class ProcessReduce extends AbstractActor {
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				} else {
 					log.info("Reduce Started");
-					diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, false, false);
+					diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
 					Map<Integer, String> filemap = (Map<Integer, String>) object.value();
 					final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;

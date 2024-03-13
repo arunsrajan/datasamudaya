@@ -423,6 +423,7 @@ public class DataSamudayaConstants {
   public static final String JAR = "jar";
   public static final String ARGS = "arguments";
   public static final String CONF = "conf";
+  public static final String AKKACONF = "akka.conf";
   public static final String MRJARREQUIRED = "MR Jar Path Is Required";
   public static final String ARGUEMENTSOPTIONAL = "Arguments are Optional";
   public static final String ANTFORMATTER = "ant";
@@ -609,5 +610,8 @@ public class DataSamudayaConstants {
   public static final String INTERMEDIATEJOINLEFT = "intermediateleft";
   public static final String INTERMEDIATEJOINRIGHT = "intermediateright";
   public static final int SPILLTODISK_PERCENTAGE = 60;
+  public static final String AKKA_HOST="akka.host";
+  public static final String AKKA_HOST_DEFAULT = "127.0.0.1";
+  public static final String AKKA_URL_SCHEME = "akka";
   
 }

@@ -12,6 +12,9 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -20,6 +23,7 @@ import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.StreamPipelineTaskSubmitterMBean;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.utils.Utils;
 
 import static java.util.Objects.nonNull;
 
@@ -100,8 +104,12 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 			Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
 			StreamDataCruncher sdc = (StreamDataCruncher) registry.lookup(DataSamudayaConstants.BINDTESTUB
 					+ DataSamudayaConstants.HYPHEN + jobid);
-			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors, taskexecutors.indexOf(hostport)*3); 
-			return sdc.postObject(eta);
+			if(CollectionUtils.isNotEmpty(task.getShufflechildactors())){
+				childactors = task.getShufflechildactors().stream().map(task->task.actorselection).collect(Collectors.toList());
+			}
+			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors, taskexecutors.indexOf(hostport)*3);
+			byte[] objbytes = Utils.convertObjectToBytes(eta);
+			return sdc.postObject(objbytes);
 		} catch (Exception ex) {
 			log.error("Unable to connect and submit tasks to executor with host and port: " + hp, ex);
 			throw ex;

@@ -1,9 +1,11 @@
 package com.github.datasamudaya.stream.executors.actors;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -23,6 +25,7 @@ import org.xerial.snappy.SnappyOutputStream;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
@@ -32,10 +35,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 
-import static java.util.Objects.nonNull;
-import static java.util.Objects.isNull;
-
-public class ProcessCoalesce extends AbstractActor {
+public class ProcessCoalesce extends AbstractActor implements Serializable {
 	protected JobStage jobstage;
 	private static Logger log = LoggerFactory.getLogger(ProcessCoalesce.class);
 	protected FileSystem hdfs;
@@ -61,8 +61,8 @@ public class ProcessCoalesce extends AbstractActor {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false);
-		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false);
+		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false, null, null, 0);
+		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false, null, null, 0);
 	}
 
 	@Override
@@ -91,7 +91,8 @@ public class ProcessCoalesce extends AbstractActor {
 						: diskspilllistinterm.readListFromBytes().stream();
 				datastream
 						.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
-								(input1, input2) -> coalesce.getCoalescefunction().apply(input1, input2)))
+								(input1, input2) -> 
+						coalesce.getCoalescefunction().apply(input1, input2)))
 						.entrySet().stream()
 						.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
 						.forEach(diskspilllist::add);
@@ -101,7 +102,7 @@ public class ProcessCoalesce extends AbstractActor {
 				final boolean right = isNull(task.joinpos) ? false
 						: nonNull(task.joinpos) && task.joinpos.equals("right") ? true : false;
 				if (CollectionUtils.isNotEmpty(pipelines)) {
-					log.info("Process Coalesce To Pipeline Started {}",pipelines);
+					log.info("Process Coalesce To Pipeline Started {} IsSpilled{}",pipelines, diskspilllist.isSpilled());
 					pipelines.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender());
 					});

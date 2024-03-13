@@ -7,15 +7,15 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyInputStream;
@@ -23,7 +23,13 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.FilePartitionId;
+import com.github.datasamudaya.common.OutputObject;
+import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
+
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
 
 /**
  * The class which spills the data to disk when the memory exceeds the
@@ -42,7 +48,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements AutoCloseabl
 	private Runtime rt;
 	private String diskfilepath;
 	private boolean isspilled = false;
-	private int batchsize = 1000;
+	private int batchsize = 2000;
 	private Task task;
 	private Semaphore lock;
 	private boolean left;
@@ -53,7 +59,10 @@ public class DiskSpillingList<T> extends AbstractList<T> implements AutoCloseabl
 	private Kryo kryo;
 	private SnappyOutputStream sos;
 	private String appendwithpath;
-	public DiskSpillingList(Task task, int spillexceedpercentage, String appendwithpath, boolean appendintermediate, boolean left, boolean right) {
+	Map<Integer, ActorSelection> downstreampipelines;
+	Map<Integer, FilePartitionId> filepartids;
+	int numfileperexec;
+	public DiskSpillingList(Task task, int spillexceedpercentage, String appendwithpath, boolean appendintermediate, boolean left, boolean right,Map<Integer, FilePartitionId> filepartids, Map<Integer, ActorSelection> downstreampipelines,int numfileperexec) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataList = new ArrayList<>();
@@ -64,6 +73,9 @@ public class DiskSpillingList<T> extends AbstractList<T> implements AutoCloseabl
 		this.right = right;
 		this.appendintermediate = appendintermediate;
 		this.appendwithpath = appendwithpath;
+		this.downstreampipelines = downstreampipelines;
+		this.filepartids = filepartids;
+		this.numfileperexec = numfileperexec;
 	}
 
 	/**
@@ -94,7 +106,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements AutoCloseabl
 	@Override
 	public boolean add(T value) {
 		dataList.add(value);
-		spillToDiskIntermediate();
+		spillToDiskIntermediate(false);
 		return true;
 	}
 
@@ -170,24 +182,26 @@ public class DiskSpillingList<T> extends AbstractList<T> implements AutoCloseabl
 		return null;
 	}
 	
-	protected void spillToDiskIntermediate() {
+	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
 			if ((rt.freeMemory() < totalmemoryavailable
 					|| isspilled) && CollectionUtils.isNotEmpty(dataList)) {
-				if(isNull(ostream)) {
+				if (isNull(ostream)) {
 					isspilled = true;
-					ostream = new FileOutputStream( new File(diskfilepath), true);
+					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
-					op = new com.esotericsoftware.kryo.io.Output(
-							sos);
+					op = new com.esotericsoftware.kryo.io.Output(sos);
 					kryo = Utils.getKryo();
 				}
-				if(rt.freeMemory() < totalmemoryavailable || dataList.size()>=batchsize) {
+				if (rt.freeMemory() < totalmemoryavailable && (dataList.size() >= batchsize || isfstoclose && CollectionUtils.isNotEmpty(dataList))) {
 					kryo.writeClassAndObject(op, dataList);
 					op.flush();
 					dataList.clear();
 				}
+			} else if(nonNull(downstreampipelines) && dataList.size()>=batchsize) {
+				transferDataToDownStreamPipelines();
 			}
+			
 		} catch(Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		} finally {
@@ -201,8 +215,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements AutoCloseabl
 		try {
 			if(nonNull(ostream)) {
 				if(CollectionUtils.isNotEmpty(dataList)) {
-					batchsize = dataList.size();
-					spillToDiskIntermediate();
+					spillToDiskIntermediate(true);
 				}
 				if(nonNull(op)) {
 					op.close();
@@ -214,6 +227,8 @@ public class DiskSpillingList<T> extends AbstractList<T> implements AutoCloseabl
 				op = null;
 				sos = null;
 				ostream = null;
+			} else if(nonNull(downstreampipelines) && CollectionUtils.isNotEmpty(dataList)) {
+				transferDataToDownStreamPipelines();
 			} else {
 				try (var ostream = new ByteArrayOutputStream();
 						var sos = new SnappyOutputStream(ostream);
@@ -230,6 +245,24 @@ public class DiskSpillingList<T> extends AbstractList<T> implements AutoCloseabl
 		} catch(Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
+	}
+	
+	/**
+	 * The method transfers data list to downstream pipelines;
+	 */
+	protected void transferDataToDownStreamPipelines() {
+		Object obj = dataList.get(0);
+		int filetransferindex;
+		if(obj instanceof Tuple2 tup2) {
+			filetransferindex = Math.abs(tup2.v1.hashCode()) % numfileperexec;
+		} else {
+			filetransferindex = Math.abs(obj.hashCode()) % numfileperexec;
+		}
+		ActorSelection actorselection = downstreampipelines.get(filetransferindex);
+		actorselection.tell(new OutputObject(new ShuffleBlock(null,
+				Utils.convertObjectToBytes(filepartids.get(filetransferindex)), Utils.convertObjectToBytes(dataList)), left, right),
+				ActorRef.noSender());
+		dataList.clear();
 	}
 
 	@Override

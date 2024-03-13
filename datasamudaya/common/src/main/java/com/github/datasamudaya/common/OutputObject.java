@@ -1,4 +1,4 @@
-package com.github.datasamudaya.stream.executors.actors;
+package com.github.datasamudaya.common;
 
 import java.io.Serializable;
 

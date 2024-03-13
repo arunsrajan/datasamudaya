@@ -145,6 +145,9 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import akka.actor.ActorSystem;
+import akka.actor.AddressFromURIString;
+import akka.cluster.Cluster;
+import scala.collection.Seq;
 
 /**
  * 
@@ -344,9 +347,10 @@ public class StreamJobScheduler {
 					, akkaport,
 					Runtime.getRuntime().availableProcessors());
     		system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
-    		final String actorsystemurl = "akka://" + DataSamudayaConstants.ACTORUSERNAME + "@"
-    				+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST) + ":" + akkaport
-    				+ "/user";	
+    		Cluster cluster = Cluster.get(system);
+    		cluster.joinSeedNodes(Arrays.asList(cluster.selfAddress()));
+    		final String actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME+"://" + DataSamudayaConstants.ACTORUSERNAME + "@"
+    				+ system.provider().getDefaultAddress().getHost().get() + ":" + system.provider().getDefaultAddress().getPort().get()+"/user";
     		parallelExecutionAkkaActorsLocal(system, actorsystemurl, graph);
     	} else {
         	parallelExecutionPhaseDExecutorLocalMode(graph,
@@ -983,8 +987,7 @@ public class StreamJobScheduler {
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor,jsidjsmap, 
 								hdfs, cache
 								,jobidstageidtaskidcompletedmap,
-								actornameactorrefmap,
-								actorsystemurl);
+								actorsystemurl, Cluster.get(system));
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 					} else {
 						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
@@ -994,8 +997,7 @@ public class StreamJobScheduler {
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor,jsidjsmap, 
 								hdfs, cache
 								,jobidstageidtaskidcompletedmap,
-								actornameactorrefmap,
-								actorsystemurl);
+								actorsystemurl, Cluster.get(system));
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 						sptsreverse.setChildactors(childactorsoriggraph);
 					}					
@@ -1089,7 +1091,7 @@ public class StreamJobScheduler {
 						}
 						ExecuteTaskActor eta = new ExecuteTaskActor(task, actorsselection, filepartitionstartindex);
 						Task task = SQLUtils.getAkkaActor(system, eta, jsidjsmap, hdfs, cache,
-								jobidstageidtaskidcompletedmap, actornameactorrefmap, actorsystemurl);
+								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system));
 						Utils.writeToOstream(pipelineconfig.getOutput(),
 								"Completed Job And Stages: " + spts.getTask().jobid + DataSamudayaConstants.HYPHEN
 										+ spts.getTask().stageid + DataSamudayaConstants.HYPHEN + spts.getTask().taskid
@@ -1965,7 +1967,7 @@ public class StreamJobScheduler {
 					int initialrange = startrange;
 					for (; initialrange < endrange; initialrange++) {
 						filepartitionsid.put(initialrange, new FilePartitionId(Utils.getUUID(),
-								DataSamudayaConstants.EMPTY, null, startrange, endrange, initialrange));
+								DataSamudayaConstants.EMPTY, startrange, endrange, initialrange));
 					}
 					startrange += nooffilepartitions;
 					endrange += nooffilepartitions;
@@ -2003,7 +2005,7 @@ public class StreamJobScheduler {
 					int initialrange = startrange;
 					for (; initialrange < endrange; initialrange++) {
 						filepartitionsid.put(initialrange, new FilePartitionId(Utils.getUUID(),
-								DataSamudayaConstants.EMPTY, null, startrange, endrange, initialrange));
+								DataSamudayaConstants.EMPTY, startrange, endrange, initialrange));
 					}
 					startrange += nooffilepartitions;
 					endrange += nooffilepartitions;

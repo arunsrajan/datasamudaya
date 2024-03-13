@@ -42,6 +42,7 @@ import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
@@ -65,7 +66,7 @@ import de.siegmar.fastcsv.reader.NamedCsvRecord;
 import jp.co.yahoo.yosegi.config.Configuration;
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
-public class ProcessMapperByBlocksLocation extends AbstractActor {
+public class ProcessMapperByBlocksLocation extends AbstractActor implements Serializable {
 	protected JobStage jobstage;
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);
 	protected FileSystem hdfs;
@@ -99,7 +100,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor {
 	}
 
 	public static record BlocksLocationRecord(BlocksLocation bl, FileSystem hdfs,
-			Map<Integer, FilePartitionId> pipeline, List<ActorSelection> childactors) implements Serializable {
+			Map<Integer, FilePartitionId> filespartitions, List<ActorSelection> childactors, Map<Integer, ActorSelection> pipeline) implements Serializable {
 	}
 
 	@Override
@@ -275,26 +276,25 @@ public class ProcessMapperByBlocksLocation extends AbstractActor {
 									Collectors.mapping(tup2 -> tup2,
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 													DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
-													Utils.getUUID().toString(), false, left, right)))));
-					results.entrySet().forEach(entry -> {
+													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline,  numfileperexec)))));
+					results.entrySet().forEach(entry->{
 						try {
-							log.info("FilePartition {}",entry.getKey());
 							entry.getValue().close();
-						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);
+							blr.pipeline.get(entry.getKey()).tell(new OutputObject(new ShuffleBlock(null,
+									Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey())), entry.getValue()), left, right),
+									ActorRef.noSender());
+						} catch (Exception e) {
+							log.error(DataSamudayaConstants.EMPTY, e);
 						}
-						ActorSelection actorselection = blr.pipeline.get(entry.getKey()).getActorSelection();						
-						actorselection.tell(new OutputObject(new ShuffleBlock(blr.bl.getBlockid(),
-										blr.pipeline.get(entry.getKey()), entry.getValue()), left, right),
-										ActorRef.noSender());						
 					});
-					IntStream.range(0,numfilepart).filter(val->val%numfileperexec==0).forEach(val->
-					blr.pipeline.get(val).getActorSelection().
-					tell(new OutputObject(new Dummy(), left, right),
-									ActorRef.noSender()));
+					IntStream.range(0, numfilepart).filter(val -> val % numfileperexec == 0).forEach(val -> {
+						log.info("Sending Dummy To Actor: {}", blr.pipeline.get(val));
+						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right),
+								ActorRef.noSender());
+					});
 				} else if(CollectionUtils.isNotEmpty(blr.childactors)){
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess, 
-							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, left, right);
+							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);
 					diskspilllist.close();
 					blr.childactors().stream().forEach(
@@ -304,7 +304,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor {
 					
 				} else {
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
-							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, left, right);
+							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);
 					diskspilllist.close();
 					Stream datastream = diskspilllist.isSpilled()

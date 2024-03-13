@@ -19,12 +19,14 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.invoke.SerializedLambda;
@@ -37,6 +39,9 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -55,6 +60,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
@@ -109,6 +115,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.util.CollectionUtils;
 import org.springframework.yarn.client.CommandYarnClient;
 import org.xerial.snappy.SnappyInputStream;
+import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
@@ -2211,8 +2218,7 @@ public class Utils {
 		try (FileInputStream istream = new FileInputStream(Utils.
 				getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(), dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
 				var sis = new SnappyInputStream(istream);
-				com.esotericsoftware.kryo.io.Input input = new com.esotericsoftware.kryo.io.Input(sis);				
-				DiskSpillingList dsloutclose=dslout){
+				com.esotericsoftware.kryo.io.Input input = new com.esotericsoftware.kryo.io.Input(sis);){
 				while(input.available()>0) {
 					List records = (List) kryo.readClassAndObject(input);
 					dslout.addAll(records);
@@ -2250,26 +2256,25 @@ public class Utils {
 	 * @param is
 	 * @return stream of objects
 	 */
-	public static Stream<?> getStreamData(InputStream is) {
-		Kryo kryo = Utils.getKryo();
-		
+	public static Stream<?> getStreamData(InputStream is) {		
 		try {
-			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
-					0) {
+			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Tuple>(Long.MAX_VALUE,
+					Spliterator.IMMUTABLE| Spliterator.ORDERED | Spliterator.NONNULL) {
 				InputStream istream = is;
 				SnappyInputStream sisinternal = new SnappyInputStream(istream);
 				Input inputinternal = new Input(sisinternal);
-				public boolean tryAdvance(Consumer<? super Object> action) {
+				Kryo kryo = Utils.getKryo();
+				public boolean tryAdvance(Consumer<? super Tuple> action) {
 					try {
 						if (inputinternal.available() > 0) {
 							List<?> intermdata = (List<?>) kryo.readClassAndObject(inputinternal);
 							for (Object obj : intermdata) {
-								action.accept(obj);
+								action.accept((Tuple) obj);
 							}
-						}
-						if (inputinternal.available() > 0) {
-							return true;
-						}
+							if (inputinternal.available() > 0) {
+								return true;
+							}
+						}						
 						inputinternal.close();
 						sisinternal.close();
 						istream.close();
@@ -2279,7 +2284,7 @@ public class Utils {
 					}
 					return false;
 				}
-			}, true);
+			}, false);
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
@@ -2291,41 +2296,46 @@ public class Utils {
 	 * @param hostname
 	 * @param akkaport
 	 * @return configuration of akka system
+	 * @throws Exception 
+	 * @throws IOException 
 	 */
-	public static Config getAkkaSystemConfig(String hostname, int akkaport, int threadpool) {
-		return ConfigFactory.parseString("""
-				akka {
-				  jvm-exit-on-fatal-error = false
-				  actor {
-				    # provider=remote is possible, but prefer cluster
-				    provider = remote
-				    allow-java-serialization = true
-				  }
-				  remote {
-				    artery {
-				      transport = tcp # See Selecting a transport below
-				      canonical.hostname = \"""" + hostname + "\"\ncanonical.port = " + akkaport + """
-				    }
-				  }
-				}\n""" + """
-				forkjoin-io-dispatcher {
-				  type = Dispatcher
-				  executor = "fork-join-executor"
-				  fork-join-executor {
-				    parallelism-min = 5
-				    parallelism-factor = 3.0
-				    parallelism-max = """+threadpool+"""
-				  }
-				  throughput = 10000
-				}\n
-				blocking-dispatcher {
-				  type = Dispatcher
-				  executor = "thread-pool-executor"
-				  thread-pool-executor {
-				    fixed-pool-size = """+threadpool+"""
-				  }
-				}
-				""");
+	public static Config getAkkaSystemConfig(String hostname, int akkaport, int threadpool) throws IOException, Exception {
+		String akkaconf = Files.readString(java.nio.file.Path.of(DataSamudayaConstants.PREV_FOLDER+
+				DataSamudayaConstants.FORWARD_SLASH+DataSamudayaConstants.DIST_CONFIG_FOLDER+
+				DataSamudayaConstants.FORWARD_SLASH+DataSamudayaConstants.AKKACONF), Charset.defaultCharset());
+		return ConfigFactory.parseString(String.format(akkaconf, hostname, akkaport));
 	}
 	
+	/**
+	 * The function converts the java object to bytes using kryo serializer
+	 * @param obj
+	 * @return
+	 */
+	public static byte[] convertObjectToBytes(Object obj) {
+		try (var ostream = new ByteArrayOutputStream();				
+				var op = new com.esotericsoftware.kryo.io.Output(ostream);) {
+			Kryo kryo = Utils.getKryo();
+			kryo.writeClassAndObject(op, obj);
+			op.flush();
+			return ostream.toByteArray();
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	}
+	/**
+	 * The function converts bytes to Object using kryo
+	 * @param obj
+	 * @return bytes to object
+	 */
+	public static Object convertBytesToObject(byte[] obj) {
+		try (var istream = new ByteArrayInputStream(obj);				
+				var ip = new com.esotericsoftware.kryo.io.Input(istream);) {
+			Kryo kryo = Utils.getKryo();			
+			return kryo.readClassAndObject(ip);
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	}
 }

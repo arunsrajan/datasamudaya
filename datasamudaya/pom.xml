@@ -24,7 +24,7 @@
 			${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml
 		</sonar.coverage.jacoco.xmlReportPaths>
 		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
-		<akka.version>2.9.0</akka.version>     
+		<akka.version>2.9.1</akka.version>     
 	</properties>
 
 	<dependencies>
@@ -472,12 +472,6 @@
             <artifactId>akka-actor-typed_2.13</artifactId>
             <version>${akka.version}</version>
         </dependency>
-
-		<dependency>
-		    <groupId>com.typesafe.akka</groupId>
-		    <artifactId>akka-remote_2.13</artifactId>
-		    <version>${akka.version}</version>
-		</dependency>
 		
 		<dependency>
 		    <groupId>com.typesafe.akka</groupId>

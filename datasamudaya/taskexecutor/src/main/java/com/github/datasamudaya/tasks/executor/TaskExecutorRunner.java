@@ -79,6 +79,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.cluster.Cluster;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
@@ -233,13 +234,20 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		var inmemorycache = DataSamudayaCache.get();
 		cl = TaskExecutorRunner.class.getClassLoader();
 		int akkaport = Utils.getRandomPort();
-		Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
+		Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.AKKA_HOST
+				, DataSamudayaConstants.AKKA_HOST_DEFAULT)
 				, akkaport,
 				Runtime.getRuntime().availableProcessors());
 		final ActorSystem system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
-		final String actorsystemurl = "akka://" + DataSamudayaConstants.ACTORUSERNAME + "@"
-				+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST) + ":" + akkaport
-				+ "/user";
+		
+		Cluster cluster = Cluster.get(system);
+		cluster.joinSeedNodes(Arrays.asList(cluster.selfAddress()));
+		
+		final String actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME+"://" + DataSamudayaConstants.ACTORUSERNAME + "@"
+				+ system.provider().getDefaultAddress().getHost().get() + ":" + system.provider().getDefaultAddress().getPort().get()+"/user";
+		
+		log.info("Actor System Url {}",actorsystemurl);
+		
 		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 		var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);
@@ -268,12 +276,12 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						return SQLUtils.getAkkaActor(system, gettaskactor, 
 								jobidstageidjobstagemap, hdfs, 
 								inmemorycache, jobidstageidtaskidcompletedmap, 
-								actornameactorrefmap, actorsystemurl);
+								actorsystemurl, cluster);
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
 						return SQLUtils.getAkkaActor(system, executetaskactor, 
 								jobidstageidjobstagemap, hdfs, 
 								inmemorycache, jobidstageidtaskidcompletedmap, 
-								actornameactorrefmap, actorsystemurl);
+								actorsystemurl, cluster);
 					} else if (deserobj instanceof Job job) {
 						job.getPipelineconfig().setClsloader(cl);
 						StreamJobScheduler js = new StreamJobScheduler();

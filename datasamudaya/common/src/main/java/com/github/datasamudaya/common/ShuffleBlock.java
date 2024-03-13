@@ -7,6 +7,6 @@ import java.io.Serializable;
  * @author arun
  *
  */
-public record ShuffleBlock(String blockId, FilePartitionId partitionId, Object data) implements Serializable{
+public record ShuffleBlock(String blockId, byte[] partitionId, Object data) implements Serializable{
 
 }

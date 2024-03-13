@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +22,7 @@ import org.xerial.snappy.SnappyOutputStream;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
@@ -30,7 +32,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 
-public class ProcessRightOuterJoin extends AbstractActor {
+public class ProcessRightOuterJoin extends AbstractActor implements Serializable {
 	protected JobStage jobstage;
 	private static Logger log = LoggerFactory.getLogger(ProcessRightOuterJoin.class);
 	protected FileSystem hdfs;
@@ -59,8 +61,8 @@ public class ProcessRightOuterJoin extends AbstractActor {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false);
-		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false);
+		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false, null, null, 0);
+		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false, null, null, 0);
 	}
 
 	@Override
@@ -71,20 +73,20 @@ public class ProcessRightOuterJoin extends AbstractActor {
 	private ProcessRightOuterJoin processRightOuterJoin(OutputObject oo) throws Exception {
 		if (oo.left()) {
 			if (nonNull(oo.value()) && oo.value() instanceof DiskSpillingList dsl) {
-				diskspilllistintermleft = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, true, false);
+				diskspilllistintermleft = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, true, false, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
 				} else {
-					diskspilllistintermleft.addAll(dsl.getData());
+					diskspilllistintermleft.addAll(dsl.readListFromBytes());
 				}
 			}
 		} else if (oo.right()) {
 			if (nonNull(oo.value()) && oo.value() instanceof DiskSpillingList dsl) {
-				diskspilllistintermright = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, true);
+				diskspilllistintermright = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, true, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
 				} else {
-					diskspilllistintermright.addAll(dsl.getData());
+					diskspilllistintermright.addAll(dsl.readListFromBytes());
 				}
 			}
 		}
@@ -99,12 +101,12 @@ public class ProcessRightOuterJoin extends AbstractActor {
 					? (Stream<Tuple2>) Utils.getStreamData(
 							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), null, true,
 									diskspilllistintermleft.getLeft(), diskspilllistintermleft.getRight())))
-					: diskspilllistintermleft.getData().stream();
+					: diskspilllistintermleft.readListFromBytes().stream();
 			Stream datastreamright = diskspilllistintermright.isSpilled()
 					? (Stream<Tuple2>) Utils.getStreamData(
 							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
 									diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
-					: diskspilllistintermright.getData().stream();
+					: diskspilllistintermright.readListFromBytes().stream();
 			try (var seq1 = Seq.seq(datastreamleft);
 					var seq2 = Seq.seq(datastreamright);
 					var join = seq1.rightOuterJoin(seq2, rojp)) {
@@ -113,7 +115,7 @@ public class ProcessRightOuterJoin extends AbstractActor {
 						? (Stream<Tuple2>) Utils.getStreamData(
 								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), null, true,
 										diskspilllistintermleft.getLeft(), diskspilllistintermleft.getRight())))
-						: diskspilllistintermleft.getData().stream();
+						: diskspilllistintermleft.readListFromBytes().stream();
 				Object[] origvalarr = (Object[]) datastreamleftfirstelem.findFirst().get();
 				Object[][] nullobjarr = new Object[2][((Object[]) origvalarr[0]).length];
 				for (int numvalues = 0; numvalues < nullobjarr[0].length; numvalues++) {
@@ -123,7 +125,7 @@ public class ProcessRightOuterJoin extends AbstractActor {
 				Stream diskspilllistintermstream = diskspilllistinterm.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
 								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-										diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))): diskspilllistinterm.getData().stream();
+										diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))): diskspilllistinterm.readListFromBytes().stream();
 				diskspilllistintermstream.filter(val -> val instanceof Tuple2).map(value -> {
 					Tuple2 maprec = (Tuple2) value;
 					Object[] rec1 = (Object[]) maprec.v1;
@@ -145,7 +147,7 @@ public class ProcessRightOuterJoin extends AbstractActor {
 								? (Stream<Tuple2>) Utils.getStreamData(
 										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, true,
 												diskspilllist.getLeft(), diskspilllist.getRight())))
-								: diskspilllist.getData().stream();
+								: diskspilllist.readListFromBytes().stream();
 						try (var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {

@@ -20,7 +20,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
@@ -30,7 +32,7 @@ import akka.actor.AbstractActor;
 import akka.actor.Actor;
 import akka.actor.ActorSelection;
 
-public class ProcessShuffle extends AbstractActor {
+public class ProcessShuffle extends AbstractActor implements Serializable {
 	protected JobStage jobstage;
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(ProcessShuffle.class);
 	protected FileSystem hdfs;
@@ -63,36 +65,42 @@ public class ProcessShuffle extends AbstractActor {
 		return receiveBuilder().match(OutputObject.class, this::processShuffle).build();
 	}
 
-	private void processShuffle(OutputObject object) throws Exception {
+	private void processShuffle(OutputObject object) throws Exception {		
 		if (Objects.nonNull(object) && Objects.nonNull(object.value())) {			
 			if(object.value() instanceof ShuffleBlock sb) {
-				if(isNull(fileblockpath.get(sb.partitionId().getPartitionNumber()))) {
-					fileblockpath.put(sb.partitionId().getPartitionNumber(), Utils.getLocalFilePathForTask(tasktoprocess, 
-							DataSamudayaConstants.EMPTY+sb.partitionId().getPartitionNumber(), false,false,false)
+				FilePartitionId fpid = (FilePartitionId) Utils.convertBytesToObject(sb.partitionId());
+				if(isNull(fileblockpath.get(fpid.getPartitionNumber()))) {
+					fileblockpath.put(fpid.getPartitionNumber(), Utils.getLocalFilePathForTask(tasktoprocess, 
+							DataSamudayaConstants.EMPTY+fpid.getPartitionNumber(), false,false,false)
 							);
-					var fos = new FileOutputStream(fileblockpath.get(sb.partitionId().getPartitionNumber()), true);
+					var fos = new FileOutputStream(fileblockpath.get(fpid.getPartitionNumber()), true);
 					var sos = new SnappyOutputStream(fos);
 					var output = new Output(sos);
-					outputstream.put(sb.partitionId().getPartitionNumber(), output);
+					outputstream.put(fpid.getPartitionNumber(), output);
 				}
 				try{
-					DiskSpillingList dsl = (DiskSpillingList) sb.data();
-					Output output = outputstream.get(sb.partitionId().getPartitionNumber());
-					if(dsl.isSpilled()) {
-						Utils.copySpilledDataSourceToFileShuffle(dsl, output);
+					Object obj = sb.data();
+					Output output = outputstream.get(fpid.getPartitionNumber());
+					if(obj instanceof DiskSpillingList dsl) {						
+						if(dsl.isSpilled()) {
+							Utils.copySpilledDataSourceToFileShuffle(dsl, output);
+						} else {
+							Utils.getKryo().writeClassAndObject(output, dsl.readListFromBytes());
+							output.flush();
+						}
 					} else {
-						Utils.getKryo().writeClassAndObject(output, dsl.readListFromBytes());
+						Utils.getKryo().writeClassAndObject(output, Utils.convertBytesToObject((byte[]) obj));
 						output.flush();
 					}
 				}catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);
-				}
-				log.info("processShuffle::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
+				}				
 			} else if(object.value() instanceof Dummy) {
-				initialshufflesize++;				
+				initialshufflesize++;
+				log.info("processShuffle::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
 			}
 			if (initialshufflesize == terminatingsize && !shufflecompleted) {
-				log.info("processShuffle::InitialSize {} , Terminating Size {}", initialsize, terminatingsize);
+				log.info("processShuffle::InitialSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
 				log.info("Shuffle Started");
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					outputstream.entrySet().stream().forEach(entry->entry.getValue().close());
