@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 
@@ -55,11 +56,18 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
 
 	@BeforeClass
-	public static void pipelineSetup() {
+	public static void pipelineSetup() throws Exception, Throwable {
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
+		if(pipelineconfig.getLocal().equals("false")) {
+			pipelineconfig.setUseglobaltaskexecutors(true);
+			String teid = Utils.getUUID();
+			Utils.launchContainersUserSpec("arun", teid, 6, 512*DataSamudayaConstants.MB, 2);
+			pipelineconfig.setTejobid(teid);
+			pipelineconfig.setUser("arun");
+		}
 	}
 
 	@SuppressWarnings({ "unchecked" })
@@ -1587,7 +1595,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 				 FROM airline group by airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear order by airline.UniqueCarrier, avgarrdelay\
 				""";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
-				.add("/airline1989", "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
