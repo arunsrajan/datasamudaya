@@ -478,6 +478,19 @@
 		    <artifactId>akka-cluster-typed_2.13</artifactId>
 		    <version>${akka.version}</version>
 		</dependency>
+		
+		<dependency>
+	        <groupId>io.altoo</groupId>
+	        <artifactId>akka-kryo-serialization_2.13</artifactId>
+	        <version>2.5.2</version>
+	    </dependency>
+		
+		<dependency>
+		    <groupId>ch.qos.logback</groupId>
+		    <artifactId>logback-core</artifactId>
+		    <version>1.5.3</version>
+		</dependency>
+		
 	</dependencies>
 	<reporting>
     <plugins>

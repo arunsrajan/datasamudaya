@@ -19,14 +19,12 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.invoke.SerializedLambda;
@@ -39,7 +37,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.rmi.registry.LocateRegistry;
@@ -123,6 +120,7 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.ClosureSerializer.Closure;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
+import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.ByteArraySerializer;
 import com.esotericsoftware.kryo.serializers.DefaultArraySerializers.StringArraySerializer;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.EnumSerializer;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
@@ -211,6 +209,7 @@ import de.javakaffee.kryoserializers.jodatime.JodaDateTimeSerializer;
 import de.javakaffee.kryoserializers.jodatime.JodaLocalDateSerializer;
 import de.javakaffee.kryoserializers.jodatime.JodaLocalDateTimeSerializer;
 import de.javakaffee.kryoserializers.jodatime.JodaLocalTimeSerializer;
+import io.altoo.akka.serialization.kryo.serializer.scala.ScalaKryo;
 import net.sf.jsqlparser.parser.SimpleNode;
 import net.sf.jsqlparser.schema.Table;
 
@@ -339,9 +338,6 @@ public class Utils {
 		}
 	}
 	
-	
-	
-	
 	/**
 	 * Gets the kryo object from thread local.
 	 * 
@@ -351,6 +347,99 @@ public class Utils {
 		return conf.get();
 	}
 
+	/**
+	 * The function configures scala kryo for akka clusters
+	 * @param kryo  
+	 */
+	public static void configureScalaKryo(ScalaKryo kryo) {		
+		kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
+		kryo.setReferences(true);
+		kryo.setRegistrationRequired(false);
+		kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
+		kryo.register( Arrays.asList( "" ).getClass(), new ArraysAsListSerializer() );
+		kryo.register( Collections.EMPTY_LIST.getClass(), new CollectionsEmptyListSerializer() );
+		kryo.register( Collections.EMPTY_MAP.getClass(), new CollectionsEmptyMapSerializer() );
+		kryo.register( Collections.EMPTY_SET.getClass(), new CollectionsEmptySetSerializer() );
+		kryo.register( Collections.singletonList( "" ).getClass(), new CollectionsSingletonListSerializer() );
+		kryo.register( Collections.singleton( "" ).getClass(), new CollectionsSingletonSetSerializer() );
+		kryo.register( Collections.singletonMap( "", "" ).getClass(), new CollectionsSingletonMapSerializer() );
+		kryo.register( GregorianCalendar.class, new GregorianCalendarSerializer() );
+		kryo.register( InvocationHandler.class, new JdkProxySerializer() );
+		UnmodifiableCollectionsSerializer.registerSerializers( kryo );
+		SynchronizedCollectionsSerializer.registerSerializers( kryo );
+
+		// custom serializers for non-jdk libs
+
+		// register CGLibProxySerializer, works in combination with the appropriate action in handleUnregisteredClass (see below)
+		kryo.register( CGLibProxySerializer.CGLibProxyMarker.class, new CGLibProxySerializer());
+		// joda DateTime, LocalDate, LocalDateTime and LocalTime
+		kryo.register( DateTime.class, new JodaDateTimeSerializer() );
+		kryo.register( LocalDate.class, new JodaLocalDateSerializer() );
+		kryo.register( LocalDateTime.class, new JodaLocalDateTimeSerializer() );
+		kryo.register( LocalDateTime.class, new JodaLocalTimeSerializer() );
+		ImmutableListSerializer.registerSerializers( kryo );
+		ImmutableSetSerializer.registerSerializers( kryo );
+		ImmutableMapSerializer.registerSerializers( kryo );
+		ImmutableMultimapSerializer.registerSerializers( kryo );
+		ImmutableTableSerializer.registerSerializers( kryo );
+		ReverseListSerializer.registerSerializers( kryo );
+		UnmodifiableNavigableSetSerializer.registerSerializers( kryo );
+		ArrayListMultimapSerializer.registerSerializers( kryo );
+		HashMultimapSerializer.registerSerializers( kryo );
+		LinkedHashMultimapSerializer.registerSerializers( kryo );
+		LinkedListMultimapSerializer.registerSerializers( kryo );
+		TreeMultimapSerializer.registerSerializers( kryo );
+		ArrayTableSerializer.registerSerializers( kryo );
+		HashBasedTableSerializer.registerSerializers( kryo );
+		TreeBasedTableSerializer.registerSerializers( kryo );
+		kryo.register(ImmutableList.copyOf(SqlTypeFamily.DATETIME_INTERVAL.getTypeNames()).getClass(), new ImmutableListSerializer());
+		kryo.register(Object.class);
+		kryo.register(Object[].class);
+		kryo.register(byte.class);
+		kryo.register(byte[].class, new ByteArraySerializer());
+		kryo.register(String[].class, new StringArraySerializer());
+		kryo.register(Integer[].class);
+		kryo.register(Long[].class);
+		kryo.register(Float[].class);
+		kryo.register(Double[].class);
+		kryo.register(Vector.class);
+		kryo.register(DiskSpillingList.class, new CompatibleFieldSerializer<DiskSpillingList>(kryo,DiskSpillingList.class));
+		kryo.register(ArrayList.class);
+		kryo.register(HashMap.class);
+		kryo.register(ConcurrentHashMap.class);
+		kryo.register(LinkedHashSet.class);
+		kryo.register(HashSet.class);
+		kryo.register(WhoIsResponse.class);
+		kryo.register(WhoIsRequest.class);
+		kryo.register(WhoAreRequest.class);
+		kryo.register(WhoAreResponse.class);
+		kryo.register(Tuple2Serializable.class);
+		kryo.register(WhoIsResponse.STATUS.class, new EnumSerializer(WhoIsResponse.STATUS.class));
+		kryo.register(Coalesce.class, new CompatibleFieldSerializer<Coalesce>(kryo, Coalesce.class));
+		kryo.register(JobStage.class, new CompatibleFieldSerializer<JobStage>(kryo, JobStage.class));
+		kryo.register(Stage.class, new CompatibleFieldSerializer<Stage>(kryo, Stage.class));
+		kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
+		kryo.register(Table.class, new CompatibleFieldSerializer<Table>(kryo, Table.class));
+		kryo.register(SimpleNode.class, new CompatibleFieldSerializer<SimpleNode>(kryo, SimpleNode.class));
+		kryo.register(SerializedLambda.class);
+		kryo.register(Tuple2.class, new Serializer<Tuple2<?, ?>>() {
+			@Override
+			public void write(Kryo kryo, Output output, Tuple2<?, ?> tuple) {
+				kryo.writeClassAndObject(output, tuple.v1());
+				kryo.writeClassAndObject(output, tuple.v2());
+			}
+
+			@Override
+			public Tuple2<?, ?> read(Kryo kryo, Input input, Class<? extends Tuple2<?, ?>> type) {
+				Object v1 = kryo.readClassAndObject(input);
+				Object v2 = kryo.readClassAndObject(input);
+				return Tuple.tuple(v1, v2);
+			}
+		});
+		kryo.register(Closure.class, new ClosureSerializer());
+		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));		
+	}
+	
 	/**
 	 * Gets the kryo instance by registering the required objects for serialization.
 	 * 
@@ -402,13 +491,14 @@ public class Utils {
 		kryo.register(Object.class);
 		kryo.register(Object[].class);
 		kryo.register(byte.class);
-		kryo.register(byte[].class);
+		kryo.register(byte[].class, new ByteArraySerializer());
 		kryo.register(String[].class, new StringArraySerializer());
 		kryo.register(Integer[].class);
 		kryo.register(Long[].class);
 		kryo.register(Float[].class);
 		kryo.register(Double[].class);
 		kryo.register(Vector.class);
+		kryo.register(DiskSpillingList.class, new CompatibleFieldSerializer<DiskSpillingList>(kryo,DiskSpillingList.class));
 		kryo.register(ArrayList.class);
 		kryo.register(HashMap.class);
 		kryo.register(ConcurrentHashMap.class);
@@ -2258,18 +2348,18 @@ public class Utils {
 	 */
 	public static Stream<?> getStreamData(InputStream is) {		
 		try {
-			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Tuple>(Long.MAX_VALUE,
+			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
 					Spliterator.IMMUTABLE| Spliterator.ORDERED | Spliterator.NONNULL) {
 				InputStream istream = is;
 				SnappyInputStream sisinternal = new SnappyInputStream(istream);
 				Input inputinternal = new Input(sisinternal);
 				Kryo kryo = Utils.getKryo();
-				public boolean tryAdvance(Consumer<? super Tuple> action) {
+				public boolean tryAdvance(Consumer<? super Object> action) {
 					try {
 						if (inputinternal.available() > 0) {
 							List<?> intermdata = (List<?>) kryo.readClassAndObject(inputinternal);
 							for (Object obj : intermdata) {
-								action.accept((Tuple) obj);
+								action.accept(obj);
 							}
 							if (inputinternal.available() > 0) {
 								return true;
@@ -2303,7 +2393,7 @@ public class Utils {
 		String akkaconf = Files.readString(java.nio.file.Path.of(DataSamudayaConstants.PREV_FOLDER+
 				DataSamudayaConstants.FORWARD_SLASH+DataSamudayaConstants.DIST_CONFIG_FOLDER+
 				DataSamudayaConstants.FORWARD_SLASH+DataSamudayaConstants.AKKACONF), Charset.defaultCharset());
-		return ConfigFactory.parseString(String.format(akkaconf, hostname, akkaport));
+		return ConfigFactory.parseString(String.format(akkaconf, hostname, akkaport, hostname, akkaport));
 	}
 	
 	/**
@@ -2314,6 +2404,41 @@ public class Utils {
 	public static byte[] convertObjectToBytes(Object obj) {
 		try (var ostream = new ByteArrayOutputStream();				
 				var op = new com.esotericsoftware.kryo.io.Output(ostream);) {
+			Kryo kryo = Utils.getKryo();
+			kryo.writeClassAndObject(op, obj);
+			op.flush();
+			return ostream.toByteArray();
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	}
+	/**
+	 * The function converts compressed bytes to Object using kryo
+	 * @param obj
+	 * @return bytes to object
+	 */
+	public static Object convertBytesToObjectCompressed(byte[] obj) {
+		try (var istream = new ByteArrayInputStream(obj);
+				var sis = new SnappyInputStream(istream);
+				var ip = new com.esotericsoftware.kryo.io.Input(sis);) {
+			Kryo kryo = Utils.getKryo();			
+			return kryo.readClassAndObject(ip);
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	}
+	
+	/**
+	 * The function converts the java object to bytes using kryo serializer
+	 * @param obj
+	 * @return
+	 */
+	public static byte[] convertObjectToBytesCompressed(Object obj) {
+		try (var ostream = new ByteArrayOutputStream();
+				var sos = new SnappyOutputStream(ostream);
+				var op = new com.esotericsoftware.kryo.io.Output(sos);) {
 			Kryo kryo = Utils.getKryo();
 			kryo.writeClassAndObject(op, obj);
 			op.flush();

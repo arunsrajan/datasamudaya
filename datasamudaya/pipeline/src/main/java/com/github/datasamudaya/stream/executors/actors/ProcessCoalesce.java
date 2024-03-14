@@ -18,8 +18,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
@@ -34,10 +32,35 @@ import com.github.datasamudaya.common.utils.Utils;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
+import akka.cluster.Cluster;
+import akka.cluster.ClusterEvent;
+import akka.cluster.ClusterEvent.MemberEvent;
+import akka.cluster.ClusterEvent.UnreachableMember;
+import akka.cluster.ClusterEvent.MemberRemoved;
+import akka.cluster.ClusterEvent.MemberUp;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 
 public class ProcessCoalesce extends AbstractActor implements Serializable {
+	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+	  Cluster cluster = Cluster.get(getContext().getSystem());
+
+	  // subscribe to cluster changes
+	  @Override
+	  public void preStart() {
+	    // #subscribe
+		  cluster.subscribe(
+			        getSelf(), ClusterEvent.initialStateAsEvents(), 
+			        MemberEvent.class, UnreachableMember.class,
+			        MemberUp.class, MemberUp.class);
+	  }
+
+	  // re-subscribe when restart
+	  @Override
+	  public void postStop() {
+	    cluster.unsubscribe(getSelf());
+	  }
 	protected JobStage jobstage;
-	private static Logger log = LoggerFactory.getLogger(ProcessCoalesce.class);
 	protected FileSystem hdfs;
 	protected boolean completed;
 	Task task;
@@ -67,14 +90,31 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 
 	@Override
 	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processCoalesce).build();
+		return receiveBuilder()
+				.match(OutputObject.class, this::processCoalesce)
+				.match(
+			            MemberUp.class,
+			            mUp -> {
+			              log.info("Member is Up: {}", mUp.member());
+			            })
+			        .match(
+			            UnreachableMember.class,
+			            mUnreachable -> {
+			              log.info("Member detected as unreachable: {}", mUnreachable.member());
+			            })
+			        .match(
+			            MemberRemoved.class,
+			            mRemoved -> {
+			              log.info("Member is Removed: {}", mRemoved.member());
+			            })
+				.build();
 	}
 
 	private ProcessCoalesce processCoalesce(OutputObject object) throws Exception {
-		log.info("In Process Coalesce {}", object.value());
-		if (Objects.nonNull(object) && Objects.nonNull(object.value())) {
+		log.info("In Process Coalesce {}", object.getValue());
+		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			initialsize++;
-			if(object.value() instanceof DiskSpillingList dsl) {
+			if(object.getValue() instanceof DiskSpillingList dsl) {
 				if(dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
@@ -102,7 +142,7 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 				final boolean right = isNull(task.joinpos) ? false
 						: nonNull(task.joinpos) && task.joinpos.equals("right") ? true : false;
 				if (CollectionUtils.isNotEmpty(pipelines)) {
-					log.info("Process Coalesce To Pipeline Started {} IsSpilled{}",pipelines, diskspilllist.isSpilled());
+					log.info("Process Coalesce To Pipeline Started {} IsSpilled {} {}",pipelines, diskspilllist.isSpilled(), diskspilllist.getBytes());
 					pipelines.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender());
 					});

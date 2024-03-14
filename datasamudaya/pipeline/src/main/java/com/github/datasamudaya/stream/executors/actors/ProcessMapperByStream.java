@@ -20,7 +20,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
-import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
@@ -31,6 +30,7 @@ import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.TerminatingActorValue;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
@@ -39,10 +39,34 @@ import com.github.datasamudaya.stream.utils.StreamUtils;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
-
+import akka.cluster.Cluster;
+import akka.cluster.ClusterEvent;
+import akka.cluster.ClusterEvent.MemberRemoved;
+import akka.cluster.ClusterEvent.MemberUp;
+import akka.cluster.ClusterEvent.MemberEvent;
+import akka.cluster.ClusterEvent.UnreachableMember;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 public class ProcessMapperByStream extends AbstractActor implements Serializable {
+	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+	  Cluster cluster = Cluster.get(getContext().getSystem());
+
+	  // subscribe to cluster changes
+	  @Override
+	  public void preStart() {
+	    // #subscribe
+		  cluster.subscribe(
+			        getSelf(), ClusterEvent.initialStateAsEvents(), 
+			        MemberEvent.class, UnreachableMember.class,
+			        MemberUp.class, MemberUp.class);
+	  }
+
+	  // re-subscribe when restart
+	  @Override
+	  public void postStop() {
+	    cluster.unsubscribe(getSelf());
+	  }
 	protected JobStage jobstage;
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(ProcessMapperByStream.class);
 	protected FileSystem hdfs;
 	protected boolean completed;
 	Cache cache;
@@ -92,12 +116,29 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 
 	@Override
 	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processMapperByStream).build();
+		return receiveBuilder()
+				.match(OutputObject.class, this::processMapperByStream)
+				.match(
+			            MemberUp.class,
+			            mUp -> {
+			              log.info("Member is Up: {}", mUp.member());
+			            })
+			        .match(
+			            UnreachableMember.class,
+			            mUnreachable -> {
+			              log.info("Member detected as unreachable: {}", mUnreachable.member());
+			            })
+			        .match(
+			            MemberRemoved.class,
+			            mRemoved -> {
+			              log.info("Member is Removed: {}", mRemoved.member());
+			            })
+				.build();
 	}
 
 	private void processMapperByStream(OutputObject object) throws PipelineException, Exception {
-		if (Objects.nonNull(object) && Objects.nonNull(object.value())) {			
-			if(object.value() instanceof DiskSpillingList dsl) {
+		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {			
+			if(object.getValue() instanceof DiskSpillingList dsl) {
 				initialsize++;
 				if(dsl.isSpilled()) {
 					log.info("In Mapper Stream Spilled {}", dsl.isSpilled());
@@ -146,6 +187,8 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 													Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 															DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 															Utils.getUUID().toString(), false, leftvalue, rightvalue, null, null, 0)))));
+							pipeline.entrySet().stream().forEach(entry -> entry.getValue()
+									.tell(new OutputObject(new TerminatingActorValue(results.size()), leftvalue, rightvalue), ActorRef.noSender()));
 							results.entrySet().forEach(entry -> {
 								try {
 									entry.getValue().close();
@@ -162,7 +205,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 						} else {
 							streammap.forEach(diskspilllist::add);
 							diskspilllist.close();
-							childpipes.parallelStream().forEach(
+							childpipes.stream().forEach(
 								action -> action.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
 						}
 					} catch (Exception ex) {

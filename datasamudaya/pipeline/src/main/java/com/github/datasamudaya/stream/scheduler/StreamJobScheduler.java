@@ -574,7 +574,6 @@ public class StreamJobScheduler {
       jobping.shutdownNow();
       if(nonNull(system)) {
     	  system.terminate();
-    	  FileUtils.deleteDirectory(new File(Utils.getFolderPathForJob(job.getId())));
       }
     }
 
@@ -1858,10 +1857,10 @@ public class StreamJobScheduler {
         }
       }
       // Form the nodes and edges for coalesce function.
-		else if (function instanceof Coalesce coalesce) {
-			var partkeys = Iterables.partition(outputparent1, (outputparent1.size()) / coalesce.getCoalescepartition())
-					.iterator();
+		else if (function instanceof Coalesce coalesce) {			
 			if (islocal || isignite || isyarn || ismesos) {
+				var partkeys = Iterables.partition(outputparent1, (outputparent1.size()) / coalesce.getCoalescepartition())
+						.iterator();
 				for (;partkeys.hasNext();) {
 					var parentpartitioned = (List) partkeys.next();
 					partitionindex++;
@@ -1884,21 +1883,25 @@ public class StreamJobScheduler {
 					}
 				}
 			} else {
-				for (;partkeys.hasNext();) {
-					var parentpartitioned = (List<StreamPipelineTaskSubmitter>) partkeys.next();
+				var parentpartitioned = (List<StreamPipelineTaskSubmitter>) outputparent1;
 
-					Map<String, List<StreamPipelineTaskSubmitter>> hpspts = parentpartitioned.stream()
-							.collect(Collectors.groupingBy(sptsmap -> sptsmap.getHostPort(), HashMap::new,
-									Collectors.mapping(sptsmap -> sptsmap, Collectors.toList())));
-					List<StreamPipelineTaskSubmitter> sptsl = new ArrayList<>();
-					for (var entry : hpspts.entrySet()) {
+				Map<String, List<StreamPipelineTaskSubmitter>> hpspts = parentpartitioned.stream()
+						.collect(Collectors.groupingBy(sptsmap -> sptsmap.getHostPort(), HashMap::new,
+								Collectors.mapping(sptsmap -> sptsmap, Collectors.toList())));
+
+				for (Entry<String, List<StreamPipelineTaskSubmitter>> entry : hpspts.entrySet()) {
+					var partkeys = Iterables
+							.partition(entry.getValue(), (entry.getValue().size()) / coalesce.getCoalescepartition())
+							.iterator();
+					for (; partkeys.hasNext();) {
 						partitionindex++;
 						var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
 								(List) entry.getValue());
+						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
+						tasks.add(spts);
 						graph.addVertex(spts);
 						taskgraph.addVertex(spts.getTask());
-						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
-						for (var input : entry.getValue()) {
+						for (var input : partkeys.next()) {
 							var parentthread = (StreamPipelineTaskSubmitter) input;
 							if (!graph.containsVertex(parentthread)) {
 								graph.addVertex(parentthread);
@@ -1909,25 +1912,6 @@ public class StreamJobScheduler {
 							graph.addEdge(parentthread, spts);
 							taskgraph.addEdge(parentthread.getTask(), spts.getTask());
 						}
-						sptsl.add(spts);						
-					}
-					partitionindex++;
-					var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
-							(List) sptsl);
-					tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
-					tasks.add(spts);
-					graph.addVertex(spts);
-					taskgraph.addVertex(spts.getTask());
-					for (var input : sptsl) {
-						var parentthread = (StreamPipelineTaskSubmitter) input;
-						if (!graph.containsVertex(parentthread)) {
-							graph.addVertex(parentthread);
-						}
-						if (!taskgraph.containsVertex(parentthread.getTask())) {
-							taskgraph.addVertex(parentthread.getTask());
-						}
-						graph.addEdge(parentthread, spts);
-						taskgraph.addEdge(parentthread.getTask(), spts.getTask());
 					}
 				}
 			}
@@ -1963,7 +1947,7 @@ public class StreamJobScheduler {
 				Map<String, List<Object>> hpsptsl = parents.stream()
 						.collect(Collectors.groupingBy(StreamPipelineTaskSubmitter::getHostPort,
 								Collectors.mapping(spts -> spts, Collectors.toList())));
-				for (int filepartcount = 0; filepartcount < job.getTaskexecutors().size(); filepartcount++) {
+				for (Entry<String, List<Object>> entry:hpsptsl.entrySet()) {
 					int initialrange = startrange;
 					for (; initialrange < endrange; initialrange++) {
 						filepartitionsid.put(initialrange, new FilePartitionId(Utils.getUUID(),
@@ -1971,17 +1955,16 @@ public class StreamJobScheduler {
 					}
 					startrange += nooffilepartitions;
 					endrange += nooffilepartitions;
-					var parentsgraph = hpsptsl.get(job.getTaskexecutors().get(filepartcount));
+					var parentsgraph = hpsptsl.get(entry.getKey());
 					var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
 							parentsgraph);
-					spts.getTask().parentterminatingsize = parents.size();
+					spts.getTask().parentterminatingsize = outputparent1.size();
 					tasks.add(spts);
 					graph.addVertex(spts);
 					for (var parent : parentsgraph) {
 						StreamPipelineTaskSubmitter parentthread = (StreamPipelineTaskSubmitter) parent;
 						parentthread.getTask().filepartitionsid = filepartitionsid;
 						spts.getTask().filepartitionsid = filepartitionsid;
-						spts.getTask().parentterminatingsize = outputparent1.size();
 						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
 						taskgraph.addVertex(spts.getTask());
 						if (!graph.containsVertex(parentthread)) {
@@ -2266,7 +2249,7 @@ public class StreamJobScheduler {
             RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
             try (var input = new Input(pipelineconfig.getStorage() == STORAGE.INMEMORY || isjgroups ? new ByteArrayInputStream(rdf.getData()) : new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
               var result = Utils.getKryo().readClassAndObject(input);
-              	if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL) {              		
+              	if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL && nonNull(pipelineconfig.getWriter())) {              		
 					PrintWriter out = pipelineconfig.getWriter();
 					totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);					
               	} else if (job.getJobtype() == JOBTYPE.PIG) {
@@ -2286,13 +2269,12 @@ public class StreamJobScheduler {
             }
           }
         }
-		if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL) {
+		if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL && nonNull(pipelineconfig.getWriter())) {
 			PrintWriter out = pipelineconfig.getWriter();
 			out.println();
 			out.printf("Total records processed %d", totalrecords);
 			out.println();
 			out.flush();
-			FileUtils.deleteDirectory(new File(Utils.getFolderPathForJob(job.getId())));
 		}
       }
       sptss.clear();

@@ -19,7 +19,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
-import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
@@ -36,10 +35,35 @@ import com.github.datasamudaya.stream.utils.StreamUtils;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
+import akka.cluster.Cluster;
+import akka.cluster.ClusterEvent;
+import akka.cluster.ClusterEvent.MemberRemoved;
+import akka.cluster.ClusterEvent.MemberUp;
+import akka.cluster.ClusterEvent.MemberEvent;
+import akka.cluster.ClusterEvent.UnreachableMember;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 
 public class ProcessReduce extends AbstractActor implements Serializable{
+	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+	  Cluster cluster = Cluster.get(getContext().getSystem());
+
+	  // subscribe to cluster changes
+	  @Override
+	  public void preStart() {
+	    // #subscribe
+		  cluster.subscribe(
+			        getSelf(), ClusterEvent.initialStateAsEvents(), 
+			        MemberEvent.class, UnreachableMember.class,
+			        MemberUp.class, MemberUp.class);
+	  }
+
+	  // re-subscribe when restart
+	  @Override
+	  public void postStop() {
+	    cluster.unsubscribe(getSelf());
+	  }
 	protected JobStage jobstage;
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(ProcessReduce.class);
 	protected FileSystem hdfs;
 	protected boolean completed;
 	Cache cache;
@@ -78,19 +102,36 @@ public class ProcessReduce extends AbstractActor implements Serializable{
 
 	@Override
 	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processReduce).build();
+		return receiveBuilder()
+				.match(OutputObject.class, this::processReduce)
+				.match(
+			            MemberUp.class,
+			            mUp -> {
+			              log.info("Member is Up: {}", mUp.member());
+			            })
+			        .match(
+			            UnreachableMember.class,
+			            mUnreachable -> {
+			              log.info("Member detected as unreachable: {}", mUnreachable.member());
+			            })
+			        .match(
+			            MemberRemoved.class,
+			            mRemoved -> {
+			              log.info("Member is Removed: {}", mRemoved.member());
+			            })
+				.build();
 	}
 
 	private void processReduce(OutputObject object) throws PipelineException, Exception {
-		if (Objects.nonNull(object) && Objects.nonNull(object.value())) {
-			initialsize++;			
+		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
+			initialsize++;
 			if (initialsize == terminatingsize) {
-				if (CollectionUtils.isEmpty(childpipes) && object.value() instanceof Map filemap) {
-					((Map<Integer, String>) filemap).entrySet().parallelStream().forEach(entry -> {
+				if (CollectionUtils.isEmpty(childpipes) && object.getValue() instanceof Map filemap) {
+					((Map<Integer, String>) filemap).entrySet().stream().forEach(entry -> {
 						Stream<Tuple2> datastream = null;
 						try {
 							datastream = (Stream<Tuple2>) Utils
-									.getStreamData(new SnappyInputStream(new FileInputStream((String) entry.getValue())));
+									.getStreamData(new FileInputStream((String) entry.getValue()));
 						} catch (Exception e) {
 							log.error(DataSamudayaConstants.EMPTY, e);
 						}
@@ -98,8 +139,7 @@ public class ProcessReduce extends AbstractActor implements Serializable{
 								var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {
-							Utils.getKryo().writeClassAndObject(output,
-									streammap.collect(Collectors.toList()));
+							Utils.getKryo().writeClassAndObject(output, streammap.collect(Collectors.toList()));
 							output.flush();
 							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 							cacheAble(fsdos);
@@ -110,8 +150,9 @@ public class ProcessReduce extends AbstractActor implements Serializable{
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				} else {
 					log.info("Reduce Started");
-					diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
-					Map<Integer, String> filemap = (Map<Integer, String>) object.value();
+					diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
+							DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
+					Map<Integer, String> filemap = (Map<Integer, String>) object.getValue();
 					final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
 					final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
@@ -132,14 +173,14 @@ public class ProcessReduce extends AbstractActor implements Serializable{
 						}
 					});
 					diskspilllist.close();
-					childpipes.stream().forEach(
-							action -> action.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
+					childpipes.stream().forEach(action -> action
+							.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 					log.info("Reduce Completed");
 				}
 			}
+	
 		}
-
 		
 	}
 

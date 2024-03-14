@@ -15,8 +15,6 @@ import java.util.stream.Stream;
 import org.apache.hadoop.fs.FileSystem;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple2;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
@@ -31,10 +29,35 @@ import com.github.datasamudaya.common.utils.Utils;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
+import akka.cluster.Cluster;
+import akka.cluster.ClusterEvent;
+import akka.cluster.ClusterEvent.MemberRemoved;
+import akka.cluster.ClusterEvent.MemberUp;
+import akka.cluster.ClusterEvent.MemberEvent;
+import akka.cluster.ClusterEvent.UnreachableMember;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 
 public class ProcessRightOuterJoin extends AbstractActor implements Serializable {
+	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+	  Cluster cluster = Cluster.get(getContext().getSystem());
+
+	  // subscribe to cluster changes
+	  @Override
+	  public void preStart() {
+	    // #subscribe
+		  cluster.subscribe(
+			        getSelf(), ClusterEvent.initialStateAsEvents(), 
+			        MemberEvent.class, UnreachableMember.class,
+			        MemberUp.class, MemberUp.class);
+	  }
+
+	  // re-subscribe when restart
+	  @Override
+	  public void postStop() {
+	    cluster.unsubscribe(getSelf());
+	  }
 	protected JobStage jobstage;
-	private static Logger log = LoggerFactory.getLogger(ProcessRightOuterJoin.class);
 	protected FileSystem hdfs;
 	protected boolean completed;
 	Task task;
@@ -67,12 +90,29 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 
 	@Override
 	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processRightOuterJoin).build();
+		return receiveBuilder()
+				.match(OutputObject.class, this::processRightOuterJoin)
+				.match(
+			            MemberUp.class,
+			            mUp -> {
+			              log.info("Member is Up: {}", mUp.member());
+			            })
+			        .match(
+			            UnreachableMember.class,
+			            mUnreachable -> {
+			              log.info("Member detected as unreachable: {}", mUnreachable.member());
+			            })
+			        .match(
+			            MemberRemoved.class,
+			            mRemoved -> {
+			              log.info("Member is Removed: {}", mRemoved.member());
+			            })
+				.build();
 	}
 
 	private ProcessRightOuterJoin processRightOuterJoin(OutputObject oo) throws Exception {
-		if (oo.left()) {
-			if (nonNull(oo.value()) && oo.value() instanceof DiskSpillingList dsl) {
+		if (oo.isLeft()) {
+			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				diskspilllistintermleft = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, true, false, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
@@ -80,8 +120,8 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 					diskspilllistintermleft.addAll(dsl.readListFromBytes());
 				}
 			}
-		} else if (oo.right()) {
-			if (nonNull(oo.value()) && oo.value() instanceof DiskSpillingList dsl) {
+		} else if (oo.isRight()) {
+			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				diskspilllistintermright = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, true, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
@@ -93,6 +133,8 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
 				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
 						+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
+			diskspilllistintermleft.close();
+			diskspilllistintermright.close();
 			final boolean leftvalue = isNull(task.joinpos) ? false
 					: nonNull(task.joinpos) && task.joinpos.equals("left") ? true : false;
 			final boolean rightvalue = isNull(task.joinpos) ? false
@@ -135,6 +177,7 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 					}
 					return maprec;
 				}).forEach(diskspilllist::add);
+				diskspilllist.close();
 				try (DiskSpillingList diskspill = diskspilllist) {
 					if (Objects.nonNull(pipelines)) {
 						pipelines.parallelStream().forEach(downstreampipe -> {

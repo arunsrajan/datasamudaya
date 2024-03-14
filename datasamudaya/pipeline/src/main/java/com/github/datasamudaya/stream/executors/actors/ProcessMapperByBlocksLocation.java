@@ -32,7 +32,6 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
@@ -46,6 +45,7 @@ import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.TerminatingActorValue;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
@@ -59,6 +59,14 @@ import com.univocity.parsers.csv.CsvWriter;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
+import akka.cluster.Cluster;
+import akka.cluster.ClusterEvent;
+import akka.cluster.ClusterEvent.MemberRemoved;
+import akka.cluster.ClusterEvent.MemberUp;
+import akka.cluster.ClusterEvent.MemberEvent;
+import akka.cluster.ClusterEvent.UnreachableMember;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvCallbackHandler;
 import de.siegmar.fastcsv.reader.CsvReader;
@@ -67,8 +75,27 @@ import jp.co.yahoo.yosegi.config.Configuration;
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
 public class ProcessMapperByBlocksLocation extends AbstractActor implements Serializable {
+	
+	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+	  Cluster cluster = Cluster.get(getContext().getSystem());
+
+	  // subscribe to cluster changes
+	  @Override
+	  public void preStart() {
+	    // #subscribe
+		  cluster.subscribe(
+			        getSelf(), ClusterEvent.initialStateAsEvents(), 
+			        MemberEvent.class, UnreachableMember.class,
+			        MemberUp.class, MemberUp.class);
+	  }
+
+	  // re-subscribe when restart
+	  @Override
+	  public void postStop() {
+	    cluster.unsubscribe(getSelf());
+	  }
+	
 	protected JobStage jobstage;
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);
 	protected FileSystem hdfs;
 	protected boolean completed;
 	Cache cache;
@@ -105,7 +132,24 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 
 	@Override
 	public Receive createReceive() {
-		return receiveBuilder().match(BlocksLocationRecord.class, this::processBlocksLocationRecord).build();
+		return receiveBuilder()
+				.match(BlocksLocationRecord.class, this::processBlocksLocationRecord)
+				.match(
+			            MemberUp.class,
+			            mUp -> {
+			              log.info("Member is Up: {}", mUp.member());
+			            })
+			        .match(
+			            UnreachableMember.class,
+			            mUnreachable -> {
+			              log.info("Member detected as unreachable: {}", mUnreachable.member());
+			            })
+			        .match(
+			            MemberRemoved.class,
+			            mRemoved -> {
+			              log.info("Member is Removed: {}", mRemoved.member());
+			            })
+				.build();
 	}
 
 	private void processBlocksLocationRecord(BlocksLocationRecord blr) {
@@ -276,7 +320,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 									Collectors.mapping(tup2 -> tup2,
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 													DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
-													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline,  numfileperexec)))));
+													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline,  blr.pipeline.size())))));
 					results.entrySet().forEach(entry->{
 						try {
 							entry.getValue().close();
