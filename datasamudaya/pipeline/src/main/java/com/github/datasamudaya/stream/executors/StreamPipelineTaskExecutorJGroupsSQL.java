@@ -117,6 +117,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 	private int port;
 	ConcurrentMap<BlocksLocation, String> blorcmap;
 	boolean topersist;
+
 	public StreamPipelineTaskExecutorJGroupsSQL(Map<String, JobStage> jsidjsmap, List<Task> tasks, int port, Cache cache,
 			ConcurrentMap<BlocksLocation, String> blorcmap,
 			boolean topersist) {
@@ -128,7 +129,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 		this.topersist = topersist;
 	}
 	ExecutorService es;
-	
+
 	/**
 	 * This method call computes the tasks from stages and return 
 	 * whether the tasks are computed successfully.
@@ -189,17 +190,17 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 						var fsdos = new ByteArrayOutputStream();
 						try (var output = new Output(fsdos);) {
 							Stream intermediatestreamobject;
-							try {				
+							try {
 								try {
-									if(jobstage.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {
+									if (jobstage.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {
 										reqcols = new Vector<>(cosql.getRequiredcolumns());
 										originalcolsorder = new Vector<>(cosql.getRequiredcolumns());
 										Collections.sort(reqcols);
 										sqltypenamel = cosql.getTypes();
 										headers = cosql.getHeader();
 										iscsv = true;
-										
-									} else if(jobstage.getStage().tasks.get(0) instanceof JsonSQL jsql) {
+
+									} else if (jobstage.getStage().tasks.get(0) instanceof JsonSQL jsql) {
 										reqcols = new Vector<>(jsql.getRequiredcolumns());
 										originalcolsorder = new Vector<>(jsql.getRequiredcolumns());
 										Collections.sort(reqcols);
@@ -210,7 +211,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 										headers = null;
 									}
 									byte[] yosegibytes = (byte[]) cache.get(blockslocation.toBlString() + reqcols.toString());
-									final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted().toList(); 
+									final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted().toList();
 									if (CollectionUtils.isNotEmpty(originalcolsorder)) {
 										if (isNull(yosegibytes) || yosegibytes.length == 0 || nonNull(blockslocation.getToreprocess()) && blockslocation.getToreprocess().booleanValue()) {
 											log.info("Unable To Find vector for blocks {}", blockslocation);
@@ -219,48 +220,48 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 											task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
 											Map<String, SqlTypeName> sqltypename = SQLUtils.getColumnTypesByColumn(
 													sqltypenamel, Arrays.asList(headers));
-											if(iscsv) {
-												CsvParserSettings settings = new CsvParserSettings();							
+											if (iscsv) {
+												CsvParserSettings settings = new CsvParserSettings();
 												settings.getFormat().setLineSeparator("\n");
 												settings.selectIndexes(oco.toArray(new Integer[0]));
 												settings.setNullValue(DataSamudayaConstants.EMPTY);
-												CsvParser parser = new CsvParser(settings);							
-												IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);   
+												CsvParser parser = new CsvParser(settings);
+												IterableResult<String[], ParsingContext> iter = parser.iterate(buffer);
 												ResultIterator<String[], ParsingContext> iterator = iter.iterator();
-										        Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.SIZED | Spliterator.SUBSIZED);
-										        Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);
-										        if(topersist) {
-										        	baos = new ByteArrayOutputStream();
-										        }
-												YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos):null;
+												Spliterator<String[]> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.SIZED | Spliterator.SUBSIZED);
+												Stream<String[]> stringstream = StreamSupport.stream(spliterator, false);
+												if (topersist) {
+													baos = new ByteArrayOutputStream();
+												}
+												YosegiRecordWriter writerdataload = writer = topersist ? new YosegiRecordWriter(baos) : null;
 												intermediatestreamobject = stringstream.map(values -> {
 													Map data = Maps.newLinkedHashMap();
 													Object[] valuesobject = new Object[headers.length];
 													Object[] toconsidervalueobjects = new Object[headers.length];
 													int valuesindex = 0;
 													try {
-														for(String value:values) {
+														for (String value :values) {
 															SQLUtils.setYosegiObjectByValue(value, sqltypename.get(headers[oco.get(valuesindex)]), data,
 																	headers[oco.get(valuesindex)]);
-															SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects , headers[oco.get(valuesindex)], data, oco.get(valuesindex));
+															SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects, headers[oco.get(valuesindex)], data, oco.get(valuesindex));
 															valuesindex++;
 														}
-														if(topersist) {
+														if (topersist) {
 															writerdataload.addRow(data);
 														}
 													} catch (Exception ex) {
 														log.error(DataSamudayaConstants.EMPTY, ex);
 													}
 													Object[] valueswithconsideration = new Object[2];
-													valueswithconsideration[0]=valuesobject;
-													valueswithconsideration[1]=toconsidervalueobjects;
+													valueswithconsideration[0] = valuesobject;
+													valueswithconsideration[1] = toconsidervalueobjects;
 													return valueswithconsideration;
 												});
 											} else {
-												if(topersist) {
+												if (topersist) {
 													baos = new ByteArrayOutputStream();
 												}
-												YosegiRecordWriter writerdataload = writer = topersist?new YosegiRecordWriter(baos):null;
+												YosegiRecordWriter writerdataload = writer = topersist ? new YosegiRecordWriter(baos) : null;
 												intermediatestreamobject = buffer.lines();
 												intermediatestreamobject = intermediatestreamobject.map(line -> {
 													try {
@@ -269,28 +270,28 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 														Object[] valuesobject = new Object[headers.length];
 														Object[] toconsidervalueobjects = new Object[headers.length];
 														try {
-															oco.forEach(index->{
+															oco.forEach(index -> {
 																String reccolval = "";
-																if(jsonobj.get(headers[index]) instanceof String val) {
+																if (jsonobj.get(headers[index]) instanceof String val) {
 																	reccolval = val;
-																} else if(jsonobj.get(headers[index]) instanceof JSONObject jsonval){
+																} else if (jsonobj.get(headers[index]) instanceof JSONObject jsonval) {
 																	reccolval = jsonval.toString();
-																} else if(jsonobj.get(headers[index]) instanceof Boolean val) {
+																} else if (jsonobj.get(headers[index]) instanceof Boolean val) {
 																	reccolval = val.toString();
 																}
 																SQLUtils.setYosegiObjectByValue(reccolval, sqltypename.get(headers[index]), data,
 																		headers[index]);
 																SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects, headers[index], data, index);
 															});
-															if(topersist) {
+															if (topersist) {
 																writerdataload.addRow(data);
 															}
 														} catch (Exception ex) {
 															log.error(DataSamudayaConstants.EMPTY, ex);
 														}
 														Object[] valueswithconsideration = new Object[2];
-														valueswithconsideration[0]=valuesobject;
-														valueswithconsideration[1]=toconsidervalueobjects;
+														valueswithconsideration[0] = valuesobject;
+														valueswithconsideration[1] = toconsidervalueobjects;
 														return valueswithconsideration;
 													} catch (ParseException e) {
 														return null;
@@ -305,7 +306,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									} else {
 										istreamnocols = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 										buffernocols = new BufferedReader(new InputStreamReader(istreamnocols));
-										intermediatestreamobject = buffernocols.lines().map(line ->new Object[1]);
+										intermediatestreamobject = buffernocols.lines().map(line -> new Object[1]);
 									}
 								} finally {
 								}
@@ -376,13 +377,13 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 												) {
 											CsvWriterSettings settings = new CsvWriterSettings();
 											CsvWriter csvtowrite = writercsv = new CsvWriter(os, settings);
-											((Stream) streammap).forEach(value->{
+											((Stream) streammap).forEach(value -> {
 												try {
 													Utils.convertMapToCsv(value, csvtowrite);
 												} catch (Exception e) {
 													log.error(DataSamudayaConstants.EMPTY, e);
 												}
-											});	
+											});
 										}
 										return (System.currentTimeMillis() - starttime) / 1000.0;
 									} else {
@@ -415,21 +416,21 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 							log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 							throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 						} finally {
-							if(nonNull(writercsv)) {
+							if (nonNull(writercsv)) {
 								try {
 									writercsv.close();
 								} catch (Exception e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
 								}
-							}	
-							if (nonNull(writer)) {				
+							}
+							if (nonNull(writer)) {
 								try {
 									writer.close();
 								} catch (IOException e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
 								}
 							}
-							if(nonNull(baos)) {
+							if (nonNull(baos)) {
 								byte[] yosegibytes = baos.toByteArray();
 								cache.put(blockslocation.toBlString() + reqcols.toString(), yosegibytes);
 								task.numbytesconverted = yosegibytes.length;
@@ -439,14 +440,14 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									log.error(DataSamudayaConstants.EMPTY, e);
 								}
 							}
-							if(nonNull(buffer)) {
+							if (nonNull(buffer)) {
 								try {
 									buffer.close();
 								} catch (IOException e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
 								}
 							}
-							if(nonNull(bais)) {
+							if (nonNull(bais)) {
 								try {
 									bais.close();
 								} catch (IOException e) {
@@ -466,15 +467,15 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 								} catch (Exception e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
 								}
-							}				
+							}
 							if (!(task.finalphase && task.saveresulttohdfs)) {
 								writeIntermediateDataToDirectByteBuffer(fsdos);
 							}
 						}
 
 					}
-					
-					
+
+
 					public Boolean call() {
 						hdfs = hdfscompute;
 						task = tasktocompute;
@@ -545,7 +546,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 							log.error("Failed Stage " + tasks, ex);
 							completed = false;
 						} finally {
-							log.info("Releasing Semaphore: {} {}", task.hostport, semaphore); 
+							log.info("Releasing Semaphore: {} {}", task.hostport, semaphore);
 							semaphore.release();
 							log.info("Semaphore Released for next task host: {} {}", task.hostport, semaphore);
 							cd.countDown();
@@ -558,7 +559,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 			log.info("StagePartitionId with Stage Statuses: " + taskstatusconcmapreq
 					+ " WhoIs Response stauses: " + taskstatusconcmapresp);
 			cd.await();
-			completed = true;			
+			completed = true;
 		} catch (InterruptedException e) {
 			log.warn("Interrupted!", e);
 			// Restore interrupted state...
@@ -577,7 +578,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 				log.error("Message Send Failed for Task Failed: ", e);
 			}
 		} finally {
-			if(nonNull(es)) {
+			if (nonNull(es)) {
 				es.shutdown();
 				try {
 					es.awaitTermination(2, TimeUnit.SECONDS);
@@ -589,7 +590,6 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 		log.debug("Exiting MassiveDataStreamJGroupsTaskExecutor.call");
 		return completed;
 	}
-	
-	
+
 
 }

@@ -46,14 +46,14 @@ public class HDFSBlockUtilsTest extends StreamPipelineBaseTestCommon {
 	String[] hdfsdirpaths = {"/airline1989"};
 	String[] hdfsdir_1989_1987 = {"/airline1989", "/1987"};
 	String host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskexecutor.host"));
-	int port =  Integer.parseInt(DataSamudayaProperties.get().getProperty("node.port"));
+	int port = Integer.parseInt(DataSamudayaProperties.get().getProperty("node.port"));
 
 	@Test
 	public void testBlocksDefinedBlocksize128MB() throws Exception {
-		Configuration conf  = new Configuration();
+		Configuration conf = new Configuration();
 		FileSystem hdfs = FileSystem.newInstance(new URI(hdfsurl), conf);
 
-		List<Path> blockpath  = new ArrayList<>();
+		List<Path> blockpath = new ArrayList<>();
 		for (String hdfsdir : hdfsdirpaths) {
 			FileStatus[] fileStatus = hdfs.listStatus(
 					new Path(hdfsurl + hdfsdir));
@@ -89,10 +89,10 @@ public class HDFSBlockUtilsTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testBlocks1987_1989_UserDefinedBlock_128MB() throws Exception {
-		Configuration conf  = new Configuration();
+		Configuration conf = new Configuration();
 		FileSystem hdfs = FileSystem.newInstance(new URI(hdfsurl), conf);
 
-		List<Path> blockpath  = new ArrayList<>();
+		List<Path> blockpath = new ArrayList<>();
 		for (String hdfsdir : hdfsdir_1989_1987) {
 			FileStatus[] fileStatus = hdfs.listStatus(
 					new Path(hdfsurl + hdfsdir));
@@ -112,5 +112,5 @@ public class HDFSBlockUtilsTest extends StreamPipelineBaseTestCommon {
 		assertEquals(TOTAL_1987_1989, totalbytes);
 		hdfs.close();
 	}
-	
+
 }

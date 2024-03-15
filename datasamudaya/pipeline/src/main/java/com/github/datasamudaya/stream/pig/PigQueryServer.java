@@ -39,17 +39,18 @@ import com.github.datasamudaya.common.utils.Utils;
  */
 public class PigQueryServer {
 	static Logger log = LoggerFactory.getLogger(PigQueryServer.class);
-	static ServerSocket serverSocket;		
-	static QueryParserDriver queryParserDriver;		
+	static ServerSocket serverSocket;
+	static QueryParserDriver queryParserDriver;
+
 	/**
 	 * Start the Pig server.
 	 * @throws Exception
 	 */
-	public static void start() throws Exception {		
+	public static void start() throws Exception {
 		ExecutorService executors = Executors.newFixedThreadPool(10);
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.PIGPORT, DataSamudayaConstants.PIGPORT_DEFAULT)));
-		queryParserDriver = PigUtils.getQueryParserDriver("pig");		
+		queryParserDriver = PigUtils.getQueryParserDriver("pig");
 		executors.execute(() -> {
 			while (true) {
 				Socket sock;
@@ -83,7 +84,7 @@ public class PigQueryServer {
 							pipelineconfig.setJobname(DataSamudayaConstants.PIG);
 							user = in.readLine();
 							numberofcontainers = Integer.valueOf(in.readLine());
-							cpupercontainer = Integer.valueOf(in.readLine());							
+							cpupercontainer = Integer.valueOf(in.readLine());
 							memorypercontainer = Integer.valueOf(in.readLine());
 							scheduler = in.readLine();
 							if (!Utils.isUserExists(user)) {
@@ -94,7 +95,7 @@ public class PigQueryServer {
 							}
 							List<LaunchContainers> containers = null;
 							Map<String, Object> cpumemory = null;
-							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT) 
+							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT)
 									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
 								tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 								containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
@@ -126,11 +127,11 @@ public class PigQueryServer {
 								isjgroups = false;
 								isignite = true;
 								isyarn = false;
-							}	
+							}
 							out.println("Welcome to the Pig Server!");
 							out.println("Type 'quit' to exit.");
 							out.println("Done");
-							String inputLine;							
+							String inputLine;
 							outer:
 							while (true) {
 								try {
@@ -257,8 +258,7 @@ public class PigQueryServer {
 										} else if (inputLine.startsWith("getmode")) {
 											if (isignite) {
 												out.println("ignite");
-											}
-											else if (isjgroups) {
+											} else if (isjgroups) {
 												out.println("jgroups");
 											} else if (isyarn) {
 												out.println("yarn");
@@ -268,7 +268,7 @@ public class PigQueryServer {
 										} else if (inputLine.startsWith("dump") || inputLine.startsWith("DUMP")) {
 											if (nonNull(pipelineconfig)) {
 												pipelineconfig.setSqlpigquery(inputLine);
-									    	}
+											}
 											inputLine = inputLine.replace(";", "");
 											String[] dumpwithalias = inputLine.split(" ");
 											long starttime = System.currentTimeMillis();
@@ -278,32 +278,32 @@ public class PigQueryServer {
 											pigQueriesToExecute.add("\n");
 											DataSamudayaMetricsExporter.getNumberOfPigQueriesDumpExecutedCounter().inc();
 											LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-											PigQueryExecutor.executePlan(lp,false, dumpwithalias[1].trim(), user, jobid, tejobid, pipelineconfig);
-											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;											
+											PigQueryExecutor.executePlan(lp, false, dumpwithalias[1].trim(), user, jobid, tejobid, pipelineconfig);
+											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 											out.println("Time taken " + timetaken + " seconds");
 											out.println("");
 										} else {
 											long starttime = System.currentTimeMillis();
 											if (nonNull(pipelineconfig)) {
 												pipelineconfig.setSqlpigquery(inputLine);
-									    	}
+											}
 											pigQueriesToExecute.clear();
 											pigQueriesToExecute.addAll(pigQueries);
 											pigQueriesToExecute.add(inputLine);
 											pigQueriesToExecute.add("\n");
 											LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
-											if(nonNull(lp)) {
+											if (nonNull(lp)) {
 												DataSamudayaMetricsExporter.getNumberOfPigQueriesCounter().inc();
-												if(inputLine.startsWith("store") || inputLine.startsWith("STORE")) {
+												if (inputLine.startsWith("store") || inputLine.startsWith("STORE")) {
 													String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 													PigQueryExecutor.executePlan(lp, true, DataSamudayaConstants.EMPTY, user, jobid, tejobid, pipelineconfig);
 												}
 												pigQueries.add(inputLine);
 												pigQueries.add("\n");
-											}else {
+											} else {
 												out.println(String.format("Error In Pig Query for the current line: %s ", inputLine));
 											}
-											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;											
+											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 											out.println("Time taken " + timetaken + " seconds");
 											out.println("");
 										}
@@ -315,13 +315,13 @@ public class PigQueryServer {
 									out.println("Done");
 									break outer;
 								} catch (Exception exception) {
-					            	out.println(exception.getMessage());
+									out.println(exception.getMessage());
 									out.println("Done");
 									log.error(DataSamudayaConstants.EMPTY, exception);
 								}
-							}							
+							}
 						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);							
+							log.error(DataSamudayaConstants.EMPTY, ex);
 						} finally {
 							if (iscontainerlaunched) {
 								try {

@@ -47,12 +47,12 @@ public class LaunchContainers implements Serializable, Cloneable {
 	private String jobid;
 	private MODE mode;
 	private ContainerLaunchAttributes cla;
-	
-	
+
+
 	@Override
 	public Object clone() throws CloneNotSupportedException {
 		return super.clone();
-		
+
 	}
 
 }

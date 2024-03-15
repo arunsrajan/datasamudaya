@@ -22,7 +22,7 @@ import java.io.Serializable;
  * @author arun
  *
  */
-public class Dummy implements Serializable{
+public class Dummy implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 

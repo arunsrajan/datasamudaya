@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -56,12 +55,12 @@ public class SelectQueryExecutor {
 			PipelineConfig pc = new PipelineConfig();
 			pc.setWriter(writerresult);
 			pc.setLocal("false");
-			if(isjgroups) {
+			if (isjgroups) {
 				pc.setJgroups("true");
 			} else {
 				pc.setJgroups("false");
 			}
-			if(isyarn) {
+			if (isyarn) {
 				pc.setYarn("true");
 			} else {
 				pc.setYarn("false");
@@ -70,7 +69,7 @@ public class SelectQueryExecutor {
 			pc.setMesos("false");
 			pc.setMode(DataSamudayaConstants.MODE_NORMAL);
 			pc.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
-			pc.setUseglobaltaskexecutors(true);		
+			pc.setUseglobaltaskexecutors(true);
 			pc.setUser(user);
 			pc.setJobid(jobid);
 			pc.setTejobid(tejobid);
@@ -83,7 +82,7 @@ public class SelectQueryExecutor {
 			}
 			Statement statement = parserManager.parse(new StringReader(selectquery));
 			var tables = new ArrayList<Table>();
-			var tmpset = new HashSet<String>();			
+			var tmpset = new HashSet<String>();
 			SQLUtils.getAllTables(statement, tables, tmpset);
 			var builder = StreamPipelineCalciteSqlBuilder.newBuilder()
 					.setHdfs(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
@@ -130,7 +129,7 @@ public class SelectQueryExecutor {
 			return errors;
 		}
 	}
-	
+
 	/**
 	 * The function explains the optimized plan for the given select query
 	 * @param dbdefault
@@ -182,10 +181,10 @@ public class SelectQueryExecutor {
 				error.add(stackTrace.toString());
 				errors.add(error);
 			}
-			out.println("Error in Query: "+selectquery);
+			out.println("Error in Query: " + selectquery);
 		}
 	}
-	
+
 	/**
 	 * The method which traverses the optimized plan
 	 * @param relNode
@@ -222,21 +221,21 @@ public class SelectQueryExecutor {
 	private static String getIndent(int depth) {
 		// Create an indentation string based on the depth
 		StringBuilder indent = new StringBuilder();
-		for (int i = 0; i < depth; i++) {
+		for (int i = 0;i < depth;i++) {
 			indent.append("  ");
 		}
 		return indent.toString();
 	}
-	
+
 	/**
 	 * The function returns the description of RelNode
 	 * @param relNode
 	 * @return description of relnode
 	 */
-	private static String getDescription(RelNode relNode) {		
+	private static String getDescription(RelNode relNode) {
 		return relNode.toString();
 	}
-	
+
 	/**
 	 * Executes select sql query ignite mode.
 	 * @param dbdefault
@@ -258,7 +257,7 @@ public class SelectQueryExecutor {
 			pc.setMesos("false");
 			pc.setMode(DataSamudayaConstants.MODE_DEFAULT);
 			pc.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
-			pc.setUseglobaltaskexecutors(true);		
+			pc.setUseglobaltaskexecutors(true);
 			pc.setUser(user);
 			pc.setJobid(jobid);
 			pc.setTejobid(tejobid);
@@ -272,7 +271,7 @@ public class SelectQueryExecutor {
 			Statement statement = parserManager.parse(new StringReader(selectquery));
 			Select select = (Select) statement;
 			var tables = new ArrayList<Table>();
-			var tmpset = new HashSet<String>();			
+			var tmpset = new HashSet<String>();
 			SQLUtils.getAllTables(statement, tables, tmpset);
 			var builder = StreamPipelineCalciteSqlBuilder.newBuilder()
 					.setHdfs(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,

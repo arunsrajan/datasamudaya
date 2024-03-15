@@ -72,7 +72,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 		this.port = port;
 	}
 	ExecutorService es;
-	
+
 	/**
 	 * This method call computes the tasks from stages and return 
 	 * whether the tasks are computed successfully.
@@ -105,7 +105,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 					public Boolean call() {
 						hdfs = hdfscompute;
 						task = tasktocompute;
-						executor = exec;						
+						executor = exec;
 						var stagePartition = task.jobid + task.taskid;
 						try {
 							var taskspredecessor = task.taskspredecessor;
@@ -176,7 +176,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 										}
 									}
 								}
-							} 
+							}
 
 							var timetakenseconds = computeTasks(task, hdfs);
 							log.info("Completed Stage " + stagePartition + " in " + timetakenseconds);
@@ -195,7 +195,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 			log.debug("StagePartitionId with Stage Statuses: " + taskstatusconcmapreq
 					+ " WhoIs Response stauses: " + taskstatusconcmapresp);
 			cd.await();
-			completed = true;			
+			completed = true;
 		} catch (InterruptedException e) {
 			log.warn("Interrupted!", e);
 			// Restore interrupted state...
@@ -214,7 +214,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 				log.error("Message Send Failed for Task Failed: ", e);
 			}
 		} finally {
-			if(nonNull(es)) {
+			if (nonNull(es)) {
 				es.shutdown();
 				try {
 					es.awaitTermination(2, TimeUnit.SECONDS);

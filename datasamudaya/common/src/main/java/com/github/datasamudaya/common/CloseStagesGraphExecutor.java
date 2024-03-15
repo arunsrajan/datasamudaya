@@ -36,7 +36,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 @EqualsAndHashCode
-public class CloseStagesGraphExecutor implements Serializable{
+public class CloseStagesGraphExecutor implements Serializable {
 	private static final long serialVersionUID = 7279362860447826575L;
 	private List<Task> tasks;
 }

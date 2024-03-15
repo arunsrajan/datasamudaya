@@ -61,7 +61,7 @@ public class StreamPipelineTaskScheduler implements Runnable {
 	 */
 	@Override
 	public void run() {
-		
+
 		var message = "";
 		try {
 			//ClassLoader to load the jar file.
@@ -96,7 +96,7 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			classes.add(main);
 			pipelineconfig.setOutput(tss.getOutputStream());
 			var pipeline = (Pipeline) main.getDeclaredConstructor().newInstance();
-			if(isNull(pipelineconfig.getJobname())) {
+			if (isNull(pipelineconfig.getJobname())) {
 				pipelineconfig.setJobname(main.getSimpleName());
 			}
 			pipeline.runPipeline(args, pipelineconfig);

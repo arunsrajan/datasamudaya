@@ -40,6 +40,7 @@ public class Block implements Serializable, Cloneable {
 	public int hashCode() {
 		return Objects.hash(blockOffset, blockend, blockstart, filename);
 	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
@@ -67,5 +68,5 @@ public class Block implements Serializable, Cloneable {
 	public Object clone() throws CloneNotSupportedException {
 		return super.clone();
 	}
-	
+
 }

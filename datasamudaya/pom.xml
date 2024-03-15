@@ -546,7 +546,7 @@
 					<activeRecipes>
 						<recipe>org.openrewrite.staticanalysis.CodeCleanup</recipe>
 						<receipe>org.openrewrite.java.RemoveUnusedImports</receipe>
-						<recipe>org.openrewrite.java.migrate.UpgradeToJava17</recipe>
+						<recipe>org.openrewrite.java.format.AutoFormat</recipe>
 					</activeRecipes>
 					<checkstyleConfigFile>checkstyle.xml</checkstyleConfigFile>
 				</configuration>

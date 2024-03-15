@@ -51,124 +51,124 @@ import static java.util.Objects.nonNull;
  *
  */
 public class NodeLauncher {
-  static Logger log = LoggerFactory.getLogger(NodeLauncher.class);
-  static Registry server;
-  static StreamDataCruncher stub;
-  static StreamDataCruncher sdc;
+	static Logger log = LoggerFactory.getLogger(NodeLauncher.class);
+	static Registry server;
+	static StreamDataCruncher stub;
+	static StreamDataCruncher sdc;
 
-  /**
-   * Main class to start and run the node launcher.
-   * @param args
-   * @throws Exception
-   */
-  public static void main(String[] args) throws Exception {    
-    URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
-    String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-	PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-			+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);		
-	var options = new Options();
-	options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
-	var parser = new DefaultParser();
-	var cmd = parser.parse(options, args);
+	/**
+	* Main class to start and run the node launcher.
+	* @param args
+	* @throws Exception
+	*/
+	public static void main(String[] args) throws Exception {
+		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
+		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
+		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+		var options = new Options();
+		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
+		var parser = new DefaultParser();
+		var cmd = parser.parse(options, args);
 
-	String config = null;
-	if (cmd.hasOption(DataSamudayaConstants.CONF)) {
-		config = cmd.getOptionValue(DataSamudayaConstants.CONF);
-		Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
-	} else {
-		Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-			+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+		String config = null;
+		if (cmd.hasOption(DataSamudayaConstants.CONF)) {
+			config = cmd.getOptionValue(DataSamudayaConstants.CONF);
+			Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
+		} else {
+			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+		}
+		StaticComponentContainer.Modules.exportAllToAll();
+		var port = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
+		try (var zo = new ZookeeperOperations();) {
+			zo.connect();
+			var host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
+			Resources resource = new Resources();
+			resource.setNodeport(host + DataSamudayaConstants.UNDERSCORE + port);
+			resource.setTotalmemory(Runtime.getRuntime().totalMemory());
+			resource.setFreememory(Utils.getTotalAvailablePhysicalMemory());
+			resource.setNumberofprocessors(Utils.getAvailableProcessors());
+			resource.setTotaldisksize(Utils.totaldiskspace());
+			resource.setUsabledisksize(Utils.usablediskspace());
+			resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
+			zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + port, resource, event -> {
+				log.info("{}", event);
+			});
+			var escontainer = Executors.newWorkStealingPool();
+
+			var hdfs =
+					FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+							DataSamudayaConstants.HDFSNAMENODEURL)), new Configuration());
+			var containerprocesses = new ConcurrentHashMap<String, Map<String, Process>>();
+			var containeridthreads = new ConcurrentHashMap<String, Map<String, List<Thread>>>();
+			var containeridports = new ConcurrentHashMap<String, List<Integer>>();
+			var su = new ServerUtils();
+			su.init(port + DataSamudayaConstants.PORT_OFFSET, new NodeWebServlet(containerprocesses),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.ASTERIX,
+					new ResourcesMetricsServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA
+					+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+			su.start();
+
+			sdc = new StreamDataCruncher() {
+				public Object postObject(Object object) {
+					try {
+						var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER, containerprocesses,
+								hdfs, containeridthreads, containeridports, object, zo);
+						Future<Object> containerallocated = escontainer.submit(container);
+						Object obj = containerallocated.get();
+						log.info("Chamber reply: " + obj);
+						return obj;
+					} catch (InterruptedException e) {
+						log.warn("Interrupted!", e);
+						// Restore interrupted state...
+						Thread.currentThread().interrupt();
+					} catch (Exception e) {
+						log.error(DataSamudayaConstants.EMPTY, e);
+					}
+					return null;
+				}
+			};
+			server = Utils.getRPCRegistry(port, sdc, DataSamudayaConstants.EMPTY);
+			log.info("NodeLauncher kickoff at port {}.....",
+					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
+			log.info("Reckoning closedown lock...");
+			var cdl = new CountDownLatch(1);
+			Utils.addShutdownHook(() -> {
+				try {
+					containerprocesses
+							.keySet().stream().map(containerprocesses::get).flatMap(mapproc -> mapproc.keySet()
+							.stream().map(key -> mapproc.get(key)).collect(Collectors.toList()).stream())
+							.forEach(proc -> {
+								log.debug("Destroying the Container Process: " + proc);
+								proc.destroy();
+							});
+					log.debug("Stopping and closes all the connections...");
+					log.debug("Destroying...");
+					hdfs.close();
+					if (Objects.nonNull(server)) {
+						UnicastRemoteObject.unexportObject(server, true);
+					}
+					if (nonNull(zo)) {
+						zo.close();
+					}
+					cdl.countDown();
+					Runtime.getRuntime().halt(0);
+				} catch (Exception e) {
+					log.debug("", e);
+				}
+			});
+			cdl.await();
+		} catch (InterruptedException e) {
+			log.warn("Interrupted!", e);
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
+		} catch (Exception ex) {
+			log.error("Unable to start Node Manager due to ", ex);
+		}
 	}
-	StaticComponentContainer.Modules.exportAllToAll();
-    var port = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
-    try (var zo = new ZookeeperOperations();) {
-    	zo.connect();
-    	var host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
-    	Resources resource = new Resources();
-		resource.setNodeport(host + DataSamudayaConstants.UNDERSCORE + port);
-		resource.setTotalmemory(Runtime.getRuntime().totalMemory());
-		resource.setFreememory(Utils.getTotalAvailablePhysicalMemory());
-		resource.setNumberofprocessors(Utils.getAvailableProcessors());
-		resource.setTotaldisksize(Utils.totaldiskspace());
-		resource.setUsabledisksize(Utils.usablediskspace());
-		resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
-		zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + port, resource, event -> {
-			log.info("{}", event);
-		});
-      var escontainer = Executors.newWorkStealingPool();
-
-      var hdfs =
-          FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
-              DataSamudayaConstants.HDFSNAMENODEURL)), new Configuration());
-      var containerprocesses = new ConcurrentHashMap<String, Map<String, Process>>();
-      var containeridthreads = new ConcurrentHashMap<String, Map<String, List<Thread>>>();
-      var containeridports = new ConcurrentHashMap<String, List<Integer>>();
-      var su = new ServerUtils();
-      su.init(port + DataSamudayaConstants.PORT_OFFSET, new NodeWebServlet(containerprocesses),
-          DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
-          DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
-              + DataSamudayaConstants.ASTERIX,
-          new ResourcesMetricsServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA
-              + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
-				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
-      su.start();
-      
-      sdc = new StreamDataCruncher() {
-        public Object postObject(Object object) {
-          try {
-            var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER, containerprocesses,
-                hdfs, containeridthreads, containeridports, object, zo);
-            Future<Object> containerallocated = escontainer.submit(container);
-            Object obj = containerallocated.get();
-            log.info("Chamber reply: " + obj);
-            return obj;
-          } catch (InterruptedException e) {
-            log.warn("Interrupted!", e);
-            // Restore interrupted state...
-            Thread.currentThread().interrupt();
-          } catch (Exception e) {
-            log.error(DataSamudayaConstants.EMPTY, e);
-          }
-          return null;
-        }
-      };
-      server = Utils.getRPCRegistry(port, sdc, DataSamudayaConstants.EMPTY);
-      log.info("NodeLauncher kickoff at port {}.....",
-          DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
-      log.info("Reckoning closedown lock...");
-      var cdl = new CountDownLatch(1);
-      Utils.addShutdownHook(() -> {
-        try {
-          containerprocesses
-              .keySet().stream().map(containerprocesses::get).flatMap(mapproc -> mapproc.keySet()
-                  .stream().map(key -> mapproc.get(key)).collect(Collectors.toList()).stream())
-              .forEach(proc -> {
-                log.debug("Destroying the Container Process: " + proc);
-                proc.destroy();
-              });
-          log.debug("Stopping and closes all the connections...");
-          log.debug("Destroying...");
-          hdfs.close();
-          if (Objects.nonNull(server)) {
-        	  UnicastRemoteObject.unexportObject(server, true);
-          }
-          if (nonNull(zo)) {
-        	  zo.close();
-          }
-          cdl.countDown();
-          Runtime.getRuntime().halt(0);
-        } catch (Exception e) {
-          log.debug("", e);
-        }
-      });
-      cdl.await();
-    } catch (InterruptedException e) {
-      log.warn("Interrupted!", e);
-      // Restore interrupted state...
-      Thread.currentThread().interrupt();
-    } catch (Exception ex) {
-      log.error("Unable to start Node Manager due to ", ex);
-    }
-  }
 
 }

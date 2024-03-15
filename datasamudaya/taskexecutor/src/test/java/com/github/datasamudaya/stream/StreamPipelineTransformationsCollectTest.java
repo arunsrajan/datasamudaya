@@ -45,7 +45,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		modeLocal = pipelineconfig.getLocal();
 		modeMesos = pipelineconfig.getMesos();
 		modeYarn = pipelineconfig.getYarn();
-		modeJgroups =  pipelineconfig.getJgroups();
+		modeJgroups = pipelineconfig.getJgroups();
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");

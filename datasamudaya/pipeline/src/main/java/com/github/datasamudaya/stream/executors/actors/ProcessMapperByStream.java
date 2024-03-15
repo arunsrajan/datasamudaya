@@ -47,25 +47,31 @@ import akka.cluster.ClusterEvent.MemberEvent;
 import akka.cluster.ClusterEvent.UnreachableMember;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+
+/**
+ * Akka actors for the Mapper operation by streaming operators
+ * @author Arun
+ *
+ */
 public class ProcessMapperByStream extends AbstractActor implements Serializable {
 	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
-	  Cluster cluster = Cluster.get(getContext().getSystem());
+	Cluster cluster = Cluster.get(getContext().getSystem());
 
-	  // subscribe to cluster changes
-	  @Override
-	  public void preStart() {
-	    // #subscribe
-		  cluster.subscribe(
-			        getSelf(), ClusterEvent.initialStateAsEvents(), 
-			        MemberEvent.class, UnreachableMember.class,
-			        MemberUp.class, MemberUp.class);
-	  }
+	// subscribe to cluster changes
+	@Override
+	public void preStart() {
+		// #subscribe
+		cluster.subscribe(
+				getSelf(), ClusterEvent.initialStateAsEvents(),
+				MemberEvent.class, UnreachableMember.class,
+				MemberUp.class, MemberUp.class);
+	}
 
-	  // re-subscribe when restart
-	  @Override
-	  public void postStop() {
-	    cluster.unsubscribe(getSelf());
-	  }
+	// re-subscribe when restart
+	@Override
+	public void postStop() {
+		cluster.unsubscribe(getSelf());
+	}
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -73,16 +79,17 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 	Task tasktoprocess;
 	boolean iscacheable;
 	ExecutorService executor;
-	private boolean topersist = false;
+	private final boolean topersist = false;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	List<ActorSelection> childpipes;
 	int terminatingsize;
-	int initialsize = 0;
+	int initialsize;
 	DiskSpillingList diskspilllistinterm;
 	DiskSpillingList diskspilllist;
 	Map<Integer, FilePartitionId> shufflerectowrite;
 	Map<Integer, ActorSelection> pipeline;
 	Map<Integer, ActorSelection> actorselections;
+
 	protected List getFunctions() {
 		log.debug("Entered ProcessMapperByStream");
 		var tasks = jobstage.getStage().tasks;
@@ -119,28 +126,28 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 		return receiveBuilder()
 				.match(OutputObject.class, this::processMapperByStream)
 				.match(
-			            MemberUp.class,
-			            mUp -> {
-			              log.info("Member is Up: {}", mUp.member());
-			            })
-			        .match(
-			            UnreachableMember.class,
-			            mUnreachable -> {
-			              log.info("Member detected as unreachable: {}", mUnreachable.member());
-			            })
-			        .match(
-			            MemberRemoved.class,
-			            mRemoved -> {
-			              log.info("Member is Removed: {}", mRemoved.member());
-			            })
+						MemberUp.class,
+						mUp -> {
+							log.info("Member is Up: {}", mUp.member());
+						})
+				.match(
+						UnreachableMember.class,
+						mUnreachable -> {
+							log.info("Member detected as unreachable: {}", mUnreachable.member());
+						})
+				.match(
+						MemberRemoved.class,
+						mRemoved -> {
+							log.info("Member is Removed: {}", mRemoved.member());
+						})
 				.build();
 	}
 
 	private void processMapperByStream(OutputObject object) throws PipelineException, Exception {
-		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {			
-			if(object.getValue() instanceof DiskSpillingList dsl) {
+		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
+			if (object.getValue() instanceof DiskSpillingList dsl) {
 				initialsize++;
-				if(dsl.isSpilled()) {
+				if (dsl.isSpilled()) {
 					log.info("In Mapper Stream Spilled {}", dsl.isSpilled());
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
@@ -150,11 +157,11 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 			}
 			if (initialsize == terminatingsize) {
 				diskspilllistinterm.close();
-				if (CollectionUtils.isEmpty(childpipes)) {					
+				if (CollectionUtils.isEmpty(childpipes)) {
 					log.info("processMapStream::Started InitialSize {} , Terminating Size {}", initialsize, terminatingsize);
-					Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
+					Stream<Tuple2> datastream = diskspilllistinterm.isSpilled() ? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
 							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
-							:diskspilllistinterm.readListFromBytes().stream();
+							: diskspilllistinterm.readListFromBytes().stream();
 					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
 							var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);
@@ -173,12 +180,12 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				} else {
 					final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
-							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
+							: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
 					final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
-							: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true : false;
-					Stream datastream = diskspilllistinterm.isSpilled()?(Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false))):diskspilllistinterm.readListFromBytes().stream();
-					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {						
+							: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true : false;
+					Stream datastream = diskspilllistinterm.isSpilled() ? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
+							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false))) : diskspilllistinterm.readListFromBytes().stream();
+					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
 						if (MapUtils.isNotEmpty(shufflerectowrite)) {
 							int numfilepart = shufflerectowrite.size();
 							Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap).collect(
@@ -197,7 +204,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 								}
 								pipeline.get(entry.getKey())
 										.tell(new OutputObject(new ShuffleBlock(null,
-												Utils.convertObjectToBytes(shufflerectowrite.get(entry.getKey())), entry.getValue()), leftvalue, rightvalue),
+														Utils.convertObjectToBytes(shufflerectowrite.get(entry.getKey())), entry.getValue()), leftvalue, rightvalue),
 												ActorRef.noSender());
 							});
 							pipeline.entrySet().stream().forEach(entry -> entry.getValue()
@@ -206,7 +213,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 							streammap.forEach(diskspilllist::add);
 							diskspilllist.close();
 							childpipes.stream().forEach(
-								action -> action.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
+									action -> action.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
 						}
 					} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
@@ -216,7 +223,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 			}
 		}
 
-		
+
 	}
 
 	/**

@@ -45,7 +45,6 @@ import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
-import com.github.datasamudaya.common.TerminatingActorValue;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
@@ -61,9 +60,9 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
+import akka.cluster.ClusterEvent.MemberEvent;
 import akka.cluster.ClusterEvent.MemberRemoved;
 import akka.cluster.ClusterEvent.MemberUp;
-import akka.cluster.ClusterEvent.MemberEvent;
 import akka.cluster.ClusterEvent.UnreachableMember;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -71,30 +70,36 @@ import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvCallbackHandler;
 import de.siegmar.fastcsv.reader.CsvReader;
 import de.siegmar.fastcsv.reader.NamedCsvRecord;
+import de.siegmar.fastcsv.reader.NamedCsvRecordHandler;
 import jp.co.yahoo.yosegi.config.Configuration;
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
+/**
+ * Akka actors for the Mapper operators by blocks location
+ * @author Arun
+ *
+ */
 public class ProcessMapperByBlocksLocation extends AbstractActor implements Serializable {
-	
+
 	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
-	  Cluster cluster = Cluster.get(getContext().getSystem());
+	Cluster cluster = Cluster.get(getContext().getSystem());
 
-	  // subscribe to cluster changes
-	  @Override
-	  public void preStart() {
-	    // #subscribe
-		  cluster.subscribe(
-			        getSelf(), ClusterEvent.initialStateAsEvents(), 
-			        MemberEvent.class, UnreachableMember.class,
-			        MemberUp.class, MemberUp.class);
-	  }
+	// subscribe to cluster changes
+	@Override
+	public void preStart() {
+		// #subscribe
+		cluster.subscribe(
+				getSelf(), ClusterEvent.initialStateAsEvents(),
+				MemberEvent.class, UnreachableMember.class,
+				MemberUp.class, MemberUp.class);
+	}
 
-	  // re-subscribe when restart
-	  @Override
-	  public void postStop() {
-	    cluster.unsubscribe(getSelf());
-	  }
-	
+	// re-subscribe when restart
+	@Override
+	public void postStop() {
+		cluster.unsubscribe(getSelf());
+	}
+
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -102,7 +107,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 	Task tasktoprocess;
 	boolean iscacheable;
 	ExecutorService executor;
-	private boolean topersist = false;
+	private final boolean topersist = false;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 
 	protected List getFunctions() {
@@ -127,7 +132,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 	}
 
 	public static record BlocksLocationRecord(BlocksLocation bl, FileSystem hdfs,
-			Map<Integer, FilePartitionId> filespartitions, List<ActorSelection> childactors, Map<Integer, ActorSelection> pipeline) implements Serializable {
+	Map<Integer, FilePartitionId> filespartitions, List<ActorSelection> childactors, Map<Integer, ActorSelection> pipeline) implements Serializable {
 	}
 
 	@Override
@@ -135,20 +140,20 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 		return receiveBuilder()
 				.match(BlocksLocationRecord.class, this::processBlocksLocationRecord)
 				.match(
-			            MemberUp.class,
-			            mUp -> {
-			              log.info("Member is Up: {}", mUp.member());
-			            })
-			        .match(
-			            UnreachableMember.class,
-			            mUnreachable -> {
-			              log.info("Member detected as unreachable: {}", mUnreachable.member());
-			            })
-			        .match(
-			            MemberRemoved.class,
-			            mRemoved -> {
-			              log.info("Member is Removed: {}", mRemoved.member());
-			            })
+						MemberUp.class,
+						mUp -> {
+							log.info("Member is Up: {}", mUp.member());
+						})
+				.match(
+						UnreachableMember.class,
+						mUnreachable -> {
+							log.info("Member detected as unreachable: {}", mUnreachable.member());
+						})
+				.match(
+						MemberRemoved.class,
+						mRemoved -> {
+							log.info("Member is Removed: {}", mRemoved.member());
+						})
 				.build();
 	}
 
@@ -171,9 +176,9 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 		final String[] headers;
 		boolean iscsv = false;
 		final boolean left = isNull(tasktoprocess.joinpos) ? false
-				: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("left") ? true : false;
+				: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
 		final boolean right = isNull(tasktoprocess.joinpos) ? false
-				: nonNull(tasktoprocess.joinpos) && tasktoprocess.joinpos.equals("right") ? true : false;
+				: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true : false;
 		try (var fsdos = new ByteArrayOutputStream();
 				var sos = new SnappyOutputStream(fsdos);
 				var output = new Output(sos);) {
@@ -198,7 +203,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					} else {
 						headers = null;
 					}
-					byte[] yosegibytes = (new byte[1]);
+					byte[] yosegibytes = new byte[1];
 					final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted()
 							.collect(Collectors.toList());
 					if (CollectionUtils.isNotEmpty(originalcolsorder)) {
@@ -211,7 +216,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 							Map<String, SqlTypeName> sqltypename = SQLUtils.getColumnTypesByColumn(sqltypenamel,
 									Arrays.asList(headers));
 							if (iscsv) {
-								CsvCallbackHandler<NamedCsvRecord> callbackHandler = new de.siegmar.fastcsv.reader.NamedCsvRecordHandler(
+								CsvCallbackHandler<NamedCsvRecord> callbackHandler = new NamedCsvRecordHandler(
 										headers);
 								CsvReader<NamedCsvRecord> csv = CsvReader.builder().fieldSeparator(',')
 										.quoteCharacter('"').commentStrategy(CommentStrategy.SKIP).commentCharacter('#')
@@ -320,12 +325,12 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 									Collectors.mapping(tup2 -> tup2,
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 													DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
-													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline,  blr.pipeline.size())))));
-					results.entrySet().forEach(entry->{
+													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, blr.pipeline.size())))));
+					results.entrySet().forEach(entry -> {
 						try {
 							entry.getValue().close();
 							blr.pipeline.get(entry.getKey()).tell(new OutputObject(new ShuffleBlock(null,
-									Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey())), entry.getValue()), left, right),
+											Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey())), entry.getValue()), left, right),
 									ActorRef.noSender());
 						} catch (Exception e) {
 							log.error(DataSamudayaConstants.EMPTY, e);
@@ -336,16 +341,16 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right),
 								ActorRef.noSender());
 					});
-				} else if(CollectionUtils.isNotEmpty(blr.childactors)){
-					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess, 
+				} else if (CollectionUtils.isNotEmpty(blr.childactors)) {
+					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);
 					diskspilllist.close();
 					blr.childactors().stream().forEach(
-								action -> action.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender()));
+							action -> action.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender()));
 					blr.childactors().stream().forEach(
 							action -> action.tell(new OutputObject(new Dummy(), left, right), ActorRef.noSender()));
-					
+
 				} else {
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, left, right, null, null, 0);
@@ -353,7 +358,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					diskspilllist.close();
 					Stream datastream = diskspilllist.isSpilled()
 							? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
-									Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, false, false, false)))
+							Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, false, false, false)))
 							: diskspilllist.getData().stream();
 					Utils.getKryo().writeClassAndObject(output, datastream.collect(Collectors.toList()));
 					output.flush();

@@ -120,6 +120,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	ExecutorService es;
 	JobMetrics jm = new JobMetrics();
 	Map<String, String> apptaskhp = new ConcurrentHashMap<>();
+
 	public MapReduceApplication(String jobname, JobConfiguration jobconf, List<MapperInput> mappers,
 			List<Object> combiners, List<Object> reducers, String outputfolder) {
 		this.jobname = jobname;
@@ -162,8 +163,8 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		log.debug("Exiting DataSamudayaJob.getContainersBalanced");
 	}
 
-	Map<String,List<ContainerResources>> nodecrsmap = new ConcurrentHashMap<>();
-	
+	Map<String, List<ContainerResources>> nodecrsmap = new ConcurrentHashMap<>();
+
 	public void getTaskExecutors(List<BlocksLocation> bls, String appid, String applicationid) throws PipelineException {
 		try {
 			containers = new ArrayList<>();
@@ -251,7 +252,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		}).collect(Collectors.toMap(xref -> xref, xref -> 0l));
 		if (issa) {
 			List<String> nodes = null;
-			if(nonNull(jobconf.isIsuseglobalte()) && !jobconf.isIsuseglobalte() || isNull(jobconf.isIsuseglobalte())) {
+			if (nonNull(jobconf.isIsuseglobalte()) && !jobconf.isIsuseglobalte() || isNull(jobconf.isIsuseglobalte())) {
 				resources = DataSamudayaNodesResources.get();
 				nodes = resources.keySet().stream().map(node -> node.split(DataSamudayaConstants.UNDERSCORE)[0])
 						.collect(Collectors.toList());
@@ -259,7 +260,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				nodes = nodessorted.stream().map(node -> node.split(DataSamudayaConstants.UNDERSCORE)[0])
 						.collect(Collectors.toList());
 			}
-			final var computingnodes = new ArrayList<>(nodes); 
+			final var computingnodes = new ArrayList<>(nodes);
 			for (var b : bls) {
 				var xrefselected = b.getBlock()[0].getDnxref().keySet().stream()
 						.filter(xrefhost -> computingnodes.contains(xrefhost))
@@ -355,8 +356,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					return -1;
 				} else if (r1.getFreememory() == r2.getFreememory()) {
 					return 0;
-				}
-				else {
+				} else {
 					return 1;
 				}
 			} else {
@@ -493,7 +493,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		return appidtaskids.stream().map(apptaskid -> apptaskhp.get(apptaskid))
 				.collect(Collectors.toList());
 	}
-	
+
 	@SuppressWarnings({"unchecked"})
 	public List<DataCruncherContext> call() {
 		var applicationid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
@@ -507,7 +507,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			cf.start();
 
 			jm.setJobstarttime(System.currentTimeMillis());
-			var isblocksuserdefined = Boolean.parseBoolean(jobconf.getIsblocksuserdefined());			
+			var isblocksuserdefined = Boolean.parseBoolean(jobconf.getIsblocksuserdefined());
 			jm.setJobid(applicationid);
 			DataSamudayaJobMetrics.put(jm);
 			batchsize = Integer.parseInt(jobconf.getBatchsize());
@@ -547,7 +547,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				var paths = FileUtil.stat2Paths(fileStatuses.toArray(new FileStatus[fileStatuses.size()]));
 				blockpath.addAll(Arrays.asList(paths));
 				bls = new ArrayList<>();
-				bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null));				
+				bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null));
 				folderblocks.put(hdfsdir, bls);
 				allfilebls.addAll(bls);
 				allfiles.addAll(Utils.getAllFilePaths(blockpath));
@@ -555,8 +555,8 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				blockpath.clear();
 				fileStatuses.clear();
 			}
-			
-			if(nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
+
+			if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
 				var lcs = GlobalContainerLaunchers.get(jobconf.getUser(), jobconf.getTeappid());
 				containers = lcs.stream().flatMap(lc -> {
 					var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
@@ -572,7 +572,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				getTaskExecutors(allfilebls, applicationid, applicationid);
 				getContainersBalanced(allfilebls);
 				getContainers(applicationid);
-			}			
+			}
 			containerscount = containers.size();
 
 			jm.setTotalfilesize(jm.getTotalfilesize() / DataSamudayaConstants.MB);
@@ -591,7 +591,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				if (obj != null) {
 					reducer.add(obj);
 				}
-			}			
+			}
 			for (var folder : hdfsdirpath) {
 				var mapclznames = mapclz.get(folder);
 				var bls = folderblocks.get(folder);
@@ -617,14 +617,14 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			var numexecute = 0;
 			var taskexeccount = Integer.parseInt(jobconf.getTaskexeccount());
 			List<ExecutionResults<TaskSchedulerMapperCombinerSubmitter, Boolean>> erroredresult = new ArrayList<>();
-			
+
 			var semaphores = new ConcurrentHashMap<String, Semaphore>();
-			if(nonNull(jobconf.isIsuseglobalte()) && !jobconf.isIsuseglobalte() || isNull(jobconf.isIsuseglobalte())) {
-				for(var node:nodessorted) {
+			if (nonNull(jobconf.isIsuseglobalte()) && !jobconf.isIsuseglobalte() || isNull(jobconf.isIsuseglobalte())) {
+				for (var node :nodessorted) {
 					var crs = nodecrsmap.get(node);
 					String[] nodehp = node.split(DataSamudayaConstants.UNDERSCORE);
-					for(ContainerResources cr: crs) {
-						batchsize += cr.getCpu()*2;
+					for (ContainerResources cr : crs) {
+						batchsize += cr.getCpu() * 2;
 						semaphores.put(nodehp[0] + DataSamudayaConstants.UNDERSCORE + cr.getPort(), new Semaphore(cr.getCpu() * 2));
 					}
 				}
@@ -649,12 +649,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					DefaultDexecutor<TaskSchedulerMapperCombinerSubmitter, Boolean> dexecutor = new DefaultDexecutor<>(
 							configexec);
 					tasks.stream().forEach(task -> dexecutor.addIndependent(task));
-					
+
 					erroredresult.add(dexecutor.execute(ExecutionConfig.NON_TERMINATING));
 				}
 				completed = true;
 				for (ExecutionResults<TaskSchedulerMapperCombinerSubmitter, Boolean> execs : erroredresult) {
-					if(execs.getErrored().size()>0) {
+					if (execs.getErrored().size() > 0) {
 						completed = false;
 					}
 					for (ExecutionResult exec : execs.getErrored()) {
@@ -671,7 +671,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				return Arrays.asList(new DataCruncherContext<>());
 			}
 			var dccred = dccmapphases;
-			if(!reducer.isEmpty()) {
+			if (!reducer.isEmpty()) {
 				dccred = new ArrayList<DataCruncherContext>();
 				List<Tuple3Serializable> keyapptasks;
 				var dccmapphase = new DataCruncherContext();
@@ -688,7 +688,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				var partkeys = Iterables
 						.partition(keyapptasks, (keyapptasks.size()) / numreducers).iterator();
 				log.info("Keys For Shuffling:" + keyapptasks.size());
-	
+
 				DexecutorConfig<TaskSchedulerReducerSubmitter, Boolean> redconfig = new DexecutorConfig(newExecutor(), new ReducerTaskExecutor(batchsize, applicationid, dccred));
 				DefaultDexecutor<TaskSchedulerReducerSubmitter, Boolean> executorred = new DefaultDexecutor<>(redconfig);
 				for (;partkeys.hasNext();) {
@@ -705,7 +705,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					}
 					var mdtstr = new TaskSchedulerReducerSubmitter(
 							currentexecutor, rv, applicationid, taskid, redcount, cf, teappid);
-	
+
 					log.debug("Reducer: Submitting " + mrtaskcount + " App And Task:"
 							+ applicationid + taskid + rv.getTuples());
 					if (!Objects.isNull(jobconf.getOutput())) {
@@ -767,9 +767,9 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			log.error("Unable To Execute Job, See Cause Below:", ex);
 		} finally {
 			try {
-				if (isNull(jobconf.isIsuseglobalte()) 
-						|| (nonNull(jobconf.isIsuseglobalte()) 
-								&& !jobconf.isIsuseglobalte())) {
+				if (isNull(jobconf.isIsuseglobalte())
+						|| (nonNull(jobconf.isIsuseglobalte())
+						&& !jobconf.isIsuseglobalte())) {
 					destroyContainers(applicationid);
 				}
 				if (!Objects.isNull(cf)) {
@@ -877,7 +877,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 
 				public Boolean execute() {
 					try {
-						semaphorebatch.acquire();						
+						semaphorebatch.acquire();
 						RetrieveKeys rk = tsmcsl.call();
 						resultmerge.acquire();
 						taskexecuted++;
@@ -915,20 +915,20 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			Utils.getResultObjectByInput(node, dc, DataSamudayaConstants.EMPTY);
 			Resources allocresources = DataSamudayaNodesResources.get().get(node);
 			var crs = nodecrsmap.get(node);
-			for(ContainerResources cr: crs) {
+			for (ContainerResources cr : crs) {
 				long maxmemory = cr.getMaxmemory();
 				long directheap = cr.getDirectheap();
 				allocresources.setFreememory(allocresources.getFreememory() + maxmemory + directheap);
 				allocresources.setNumberofprocessors(allocresources.getNumberofprocessors() + cr.getCpu());
 			}
 		}
-		
+
 	}
 
 	public TaskSchedulerMapperCombinerSubmitter getMassiveDataTaskSchedulerThreadMapperCombiner(
 			Set<Object> mapclz, Set<Object> combiners, BlocksLocation blockslocation, ApplicationTask apptask, String applicationid) throws Exception {
 		log.debug("Block To Read :" + blockslocation);
-		if(nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
+		if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
 			applicationid = jobconf.getTeappid();
 		}
 		var mdtstmc = new TaskSchedulerMapperCombinerSubmitter(

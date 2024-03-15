@@ -111,9 +111,9 @@ public class MassiveDataMRJobBase {
 	private static Registry server;
 
 	private static ZookeeperOperations zo;
-	
+
 	@BeforeClass
-	public static void setServerUp() throws Exception {		
+	public static void setServerUp() throws Exception {
 		try {
 			System.setProperty("HIBCFG", "../config/datasamudayahibernate.cfg.xml");
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
@@ -122,10 +122,10 @@ public class MassiveDataMRJobBase {
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
 			StaticComponentContainer.Modules.exportAllToAll();
 			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
-			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, 
+			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-				            + DataSamudayaConstants.CACHEBLOCKS);
+							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.CACHEBLOCKS);
 			CacheUtils.initBlockMetadataCache(DataSamudayaConstants.BLOCKCACHE);
 			hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
 			testingserver = new TestingServer(zookeeperport);
@@ -162,35 +162,35 @@ public class MassiveDataMRJobBase {
 				zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource, event -> {
 					log.info(event);
 				});
-				while(isNull(DataSamudayaNodesResources.get()) || nonNull(DataSamudayaNodesResources.get()) && DataSamudayaNodesResources.get().size()!=numberofnodes) {
+				while (isNull(DataSamudayaNodesResources.get()) || nonNull(DataSamudayaNodesResources.get()) && DataSamudayaNodesResources.get().size() != numberofnodes) {
 					Thread.sleep(1000);
 				}
 				while (executorsindex < numberofnodes) {
-					
+
 					host = NetworkUtil
 							.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
 					issetupdone = true;
 					server = Utils.getRPCRegistry(port,
 							new StreamDataCruncher() {
-						public Object postObject(Object object)throws RemoteException {
-								try {
-									var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
-											containerprocesses, hdfs, containeridthreads, containeridports,
-											object, zo);
-									Future<Object> containerallocated = es.submit(container);
-									Object returnresultobject = containerallocated.get();
-									log.info("Containers Allocated: " + returnresultobject);
-									return returnresultobject;
-								} catch (InterruptedException e) {
-									log.warn("Interrupted!", e);
-									// Restore interrupted state...
-									Thread.currentThread().interrupt();
-								} catch (Exception e) {
-									log.error(DataSamudayaConstants.EMPTY, e);
+								public Object postObject(Object object) throws RemoteException {
+									try {
+										var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
+												containerprocesses, hdfs, containeridthreads, containeridports,
+												object, zo);
+										Future<Object> containerallocated = es.submit(container);
+										Object returnresultobject = containerallocated.get();
+										log.info("Containers Allocated: " + returnresultobject);
+										return returnresultobject;
+									} catch (InterruptedException e) {
+										log.warn("Interrupted!", e);
+										// Restore interrupted state...
+										Thread.currentThread().interrupt();
+									} catch (Exception e) {
+										log.error(DataSamudayaConstants.EMPTY, e);
+									}
+									return null;
 								}
-								return null;
-							}
-						}, DataSamudayaConstants.EMPTY);
+							}, DataSamudayaConstants.EMPTY);
 					port++;
 					executorsindex++;
 				}
@@ -241,7 +241,7 @@ public class MassiveDataMRJobBase {
 
 	@AfterClass
 	public static void closeResources() throws Exception {
-		if(nonNull(hdfsLocalCluster)) {
+		if (nonNull(hdfsLocalCluster)) {
 			hdfsLocalCluster.close();
 		}
 		Utils.destroyContainers("arun", teappid);

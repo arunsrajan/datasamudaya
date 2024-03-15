@@ -9,11 +9,12 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class GlobalYARNResources {
-	
-	private GlobalYARNResources() {}
+
+	private GlobalYARNResources() {
+	}
 
 	private static final Map<String, Map<String, Object>> yarnresources = new ConcurrentHashMap<>();
-	
+
 
 	/**
 	 * get YARN resources by task executor id
@@ -23,14 +24,14 @@ public class GlobalYARNResources {
 	public static Map<String, Object> getYarnResourcesByTeId(String teid) {
 		return yarnresources.get(teid);
 	}
-	
+
 	/**
 	 * Sets the YARN resources by task executor id
 	 * @param teid
 	 * @param yarnresources
 	 */
-	public static void setYarnResourcesByTeId(String teid, Map<String,Object> yarnresources) {
+	public static void setYarnResourcesByTeId(String teid, Map<String, Object> yarnresources) {
 		GlobalYARNResources.yarnresources.put(teid, yarnresources);
 	}
-	
+
 }

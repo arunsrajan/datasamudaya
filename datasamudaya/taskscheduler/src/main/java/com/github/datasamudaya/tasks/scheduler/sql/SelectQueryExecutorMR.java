@@ -100,9 +100,9 @@ public class SelectQueryExecutorMR {
 							tablecolumnDataType);
 				}
 				Object mraobj = builder.build();
-				if(!isyarn && mraobj instanceof MapReduceApplication mra) {					
+				if (!isyarn && mraobj instanceof MapReduceApplication mra) {
 					return (List) mra.call();
-				} else if(isyarn && mraobj instanceof MapReduceApplicationYarn mray) {
+				} else if (isyarn && mraobj instanceof MapReduceApplicationYarn mray) {
 					return (List) mray.call();
 				}
 			}
@@ -115,8 +115,8 @@ public class SelectQueryExecutorMR {
 		}
 		return new ArrayList<>();
 	}
-	
-	
+
+
 	public static List executeSelectQueryIgnite(String defaultdb, String selectquery, String user, String appid,
 			String teappid) throws Exception {
 		try {

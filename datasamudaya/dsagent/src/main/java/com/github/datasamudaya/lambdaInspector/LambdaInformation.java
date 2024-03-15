@@ -13,33 +13,33 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface LambdaInformation {
 
-    /**
-     * Class defining the implementation method
-     */
-    Class<?> implMethodClass();
+	/**
+	  Class defining the implementation method
+	 */
+	Class<?> implMethodClass();
 
-    /**
-     * Name of the implementation method
-     */
-    String implMethodName();
+	/**
+	  Name of the implementation method
+	 */
+	String implMethodName();
 
-    /**
-     * Descriptor of the implementation method
-     */
-    String implMethodDesc();
+	/**
+	  Descriptor of the implementation method
+	 */
+	String implMethodDesc();
 
-    /**
-     * Class declaring the single abstract method implemented by the lambda
-     */
-    Class<?> samClass();
+	/**
+	  Class declaring the single abstract method implemented by the lambda
+	 */
+	Class<?> samClass();
 
-    /**
-     * Name of the single abstract method in the interface of the lambda
-     */
-    String samMethodName();
+	/**
+	  Name of the single abstract method in the interface of the lambda
+	 */
+	String samMethodName();
 
-    /**
-     * Descriptor of the single abstact method in the interface of the lambda
-     */
-    String samMethodDesc();
+	/**
+	  Descriptor of the single abstact method in the interface of the lambda
+	 */
+	String samMethodDesc();
 }

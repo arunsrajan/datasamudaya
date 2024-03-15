@@ -46,6 +46,7 @@ public class BlocksLocation implements Serializable, Cloneable {
 	private Set<Object> containers;
 	private List<String> columns;
 	private Boolean toreprocess;
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -53,6 +54,7 @@ public class BlocksLocation implements Serializable, Cloneable {
 		result = prime * result + Arrays.hashCode(block);
 		return result;
 	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
@@ -77,6 +79,5 @@ public class BlocksLocation implements Serializable, Cloneable {
 		return "BlocksLocation [block=" + Arrays.toString(block) + "]";
 	}
 
-	
-	
+
 }

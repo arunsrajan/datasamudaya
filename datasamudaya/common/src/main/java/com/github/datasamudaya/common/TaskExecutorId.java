@@ -7,6 +7,6 @@ import java.io.Serializable;
  * @author arun
  *
  */
-public record TaskExecutorId(String id, String host, String port, FilePartitionId[] filePartitionIds) implements Serializable{
+public record TaskExecutorId(String id, String host, String port, FilePartitionId[] filePartitionIds) implements Serializable {
 
 }

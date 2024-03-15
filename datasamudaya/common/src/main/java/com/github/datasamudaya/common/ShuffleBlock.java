@@ -16,9 +16,9 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ShuffleBlock implements Serializable{
+public class ShuffleBlock implements Serializable {
 	private static final long serialVersionUID = 3738460167739240777L;
-	String blockId; 
-	byte[] partitionId; 
+	String blockId;
+	byte[] partitionId;
 	Object data;
 }

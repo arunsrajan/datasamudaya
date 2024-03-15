@@ -93,7 +93,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	public OutputStream getOutput() {
 		return output;
 	}
-	
+
 	public OutputStream getPigoutput() {
 		return pigoutput;
 	}
@@ -103,7 +103,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getBlocksize() {
-		if(nonNull(blocksize)) {
+		if (nonNull(blocksize)) {
 			return blocksize;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_BLOCKSIZE, DataSamudayaConstants.TASKSCHEDULERSTREAM_BLOCKSIZE_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_BLOCKSIZE_DEFAULT;
@@ -114,7 +114,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getPingdelay() {
-		if(nonNull(pingdelay)) {
+		if (nonNull(pingdelay)) {
 			return pingdelay;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_PINGDELAY, DataSamudayaConstants.TASKSCHEDULERSTREAM_PINGDELAY_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_PINGDELAY_DEFAULT;
@@ -125,7 +125,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getRescheduledelay() {
-		if(nonNull(rescheduledelay)){
+		if (nonNull(rescheduledelay)) {
 			return rescheduledelay;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_RESCHEDULEDELAY, DataSamudayaConstants.TASKSCHEDULERSTREAM_RESCHEDULEDELAY_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_RESCHEDULEDELAY_DEFAULT;
@@ -136,7 +136,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getInitialdelay() {
-		if(nonNull(initialdelay)) {
+		if (nonNull(initialdelay)) {
 			return initialdelay;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_INITIALDELAY, DataSamudayaConstants.TASKSCHEDULERSTREAM_INITIALDELAY_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_INITIALDELAY_DEFAULT;
@@ -147,7 +147,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getBatchsize() {
-		if(nonNull(batchsize)) {
+		if (nonNull(batchsize)) {
 			return batchsize;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_BATCHSIZE, DataSamudayaConstants.TASKSCHEDULERSTREAM_BATCHSIZE_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_BATCHSIZE_DEFAULT;
@@ -158,7 +158,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getMesos() {
-		if(nonNull(mesos)) {
+		if (nonNull(mesos)) {
 			return mesos;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_ISMESOS, DataSamudayaConstants.TASKSCHEDULERSTREAM_ISMESOS_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_ISMESOS_DEFAULT;
@@ -169,7 +169,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getMesosmaster() {
-		if(nonNull(mesosmaster)) {
+		if (nonNull(mesosmaster)) {
 			return mesosmaster;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.MESOS_MASTER, DataSamudayaConstants.MESOS_MASTER_DEFAULT) : DataSamudayaConstants.MESOS_MASTER_DEFAULT;
@@ -180,7 +180,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getYarn() {
-		if(nonNull(yarn)) {
+		if (nonNull(yarn)) {
 			return yarn;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_ISYARN, DataSamudayaConstants.TASKSCHEDULERSTREAM_ISYARN_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_ISYARN_DEFAULT;
@@ -191,7 +191,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getLocal() {
-		if(nonNull(local)) {
+		if (nonNull(local)) {
 			return local;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_ISLOCAL, DataSamudayaConstants.TASKSCHEDULERSTREAM_ISLOCAL_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_ISLOCAL_DEFAULT;
@@ -202,7 +202,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getJgroups() {
-		if(nonNull(jgroups)) {
+		if (nonNull(jgroups)) {
 			return jgroups;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_ISJGROUPS, DataSamudayaConstants.TASKSCHEDULERSTREAM_ISJGROUPS_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_ISJGROUPS_DEFAULT;
@@ -213,7 +213,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getRandomte() {
-		if(nonNull(randomte)) {
+		if (nonNull(randomte)) {
 			return randomte;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_RANDTE, DataSamudayaConstants.TASKSCHEDULER_RANDTE_DEFAULT) : DataSamudayaConstants.TASKSCHEDULER_RANDTE_DEFAULT;
@@ -224,7 +224,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getMinmem() {
-		if(nonNull(minmem)) {
+		if (nonNull(minmem)) {
 			return minmem;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.MINMEMORY, DataSamudayaConstants.CONTAINER_MINMEMORY_DEFAULT) : DataSamudayaConstants.CONTAINER_MINMEMORY_DEFAULT;
@@ -235,7 +235,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getMaxmem() {
-		if(nonNull(maxmem)) {
+		if (nonNull(maxmem)) {
 			return maxmem;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.MAXMEMORY, DataSamudayaConstants.CONTAINER_MAXMEMORY_DEFAULT) : DataSamudayaConstants.CONTAINER_MAXMEMORY_DEFAULT;
@@ -246,7 +246,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getGctype() {
-		if(nonNull(gctype)) {
+		if (nonNull(gctype)) {
 			return gctype;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.GCCONFIG, DataSamudayaConstants.GCCONFIG_DEFAULT) : DataSamudayaConstants.GCCONFIG_DEFAULT;
@@ -257,7 +257,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getNumberofcontainers() {
-		if(nonNull(numberofcontainers)) {
+		if (nonNull(numberofcontainers)) {
 			return numberofcontainers;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS, DataSamudayaConstants.NUMBEROFCONTAINERS_DEFAULT) : DataSamudayaConstants.NUMBEROFCONTAINERS_DEFAULT;
@@ -277,7 +277,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 		}
 		this.jar = jar;
 	}
-	
+
 	public void setCustomclasses(Set<Class<?>> customclasses) {
 		if (Objects.isNull(customclasses)) {
 			throw new UnsupportedOperationException();
@@ -290,7 +290,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getIsblocksusedefined() {
-		if(nonNull(isblocksuserdefined)) {
+		if (nonNull(isblocksuserdefined)) {
 			return isblocksuserdefined;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ISUSERDEFINEDBLOCKSIZE, DataSamudayaConstants.ISUSERDEFINEDBLOCKSIZE_DEFAULT) : DataSamudayaConstants.ISUSERDEFINEDBLOCKSIZE_DEFAULT;
@@ -301,7 +301,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getMode() {
-		if(nonNull(mode)) {
+		if (nonNull(mode)) {
 			return mode;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.MODE, DataSamudayaConstants.MODE_DEFAULT) : DataSamudayaConstants.MODE_DEFAULT;
@@ -312,7 +312,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getIgnitehp() {
-		if(nonNull(ignitehp)) {
+		if (nonNull(ignitehp)) {
 			return ignitehp;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IGNITEHOSTPORT, DataSamudayaConstants.IGNITEHOSTPORT_DEFAULT) : DataSamudayaConstants.IGNITEHOSTPORT_DEFAULT;
@@ -323,7 +323,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getIgnitebackup() {
-		if(nonNull(ignitebackup)) {
+		if (nonNull(ignitebackup)) {
 			return ignitebackup;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IGNITEBACKUP, DataSamudayaConstants.IGNITEBACKUP_DEFAULT) : DataSamudayaConstants.IGNITEBACKUP_DEFAULT;
@@ -334,7 +334,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getIgnitemulticastgroup() {
-		if(nonNull(ignitemulticastgroup)) {
+		if (nonNull(ignitemulticastgroup)) {
 			return ignitemulticastgroup;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IGNITEMULTICASTGROUP, DataSamudayaConstants.IGNITEMULTICASTGROUP_DEFAULT) : DataSamudayaConstants.IGNITEMULTICASTGROUP_DEFAULT;
@@ -345,7 +345,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getExecutioncount() {
-		if(nonNull(executioncount)) {
+		if (nonNull(executioncount)) {
 			return executioncount;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.EXECUTIONCOUNT, DataSamudayaConstants.EXECUTIONCOUNT_DEFAULT) : DataSamudayaConstants.EXECUTIONCOUNT_DEFAULT;
@@ -356,7 +356,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getTsshaenabled() {
-		if(nonNull(tsshaenabled)) {
+		if (nonNull(tsshaenabled)) {
 			return tsshaenabled;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HA_ENABLED, DataSamudayaConstants.TASKSCHEDULERSTREAM_HA_ENABLED_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_HA_ENABLED_DEFAULT;
@@ -367,7 +367,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public STORAGE getStorage() {
-		if(nonNull(storage)) {
+		if (nonNull(storage)) {
 			return storage;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.STORAGEPROP, DataSamudayaConstants.STORAGEPROP_DEFAULT).equals(DataSamudayaConstants.STORAGE.INMEMORY.name()) ? STORAGE.INMEMORY : STORAGE.DISK : STORAGE.INMEMORY;
@@ -378,7 +378,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getContaineralloc() {
-		if(nonNull(containeralloc)) {
+		if (nonNull(containeralloc)) {
 			return containeralloc;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CONTAINER_ALLOC, DataSamudayaConstants.CONTAINER_ALLOC_DEFAULT) : DataSamudayaConstants.CONTAINER_ALLOC_DEFAULT;
@@ -389,14 +389,14 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getHeappercent() {
-		if(nonNull(heappercent)) {
+		if (nonNull(heappercent)) {
 			return heappercent;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT) : DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT;
 	}
 
 	public Boolean getUseglobaltaskexecutors() {
-		if(nonNull(useglobaltaskexecutors)) {
+		if (nonNull(useglobaltaskexecutors)) {
 			return useglobaltaskexecutors;
 		}
 		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.USEGLOBALTASKEXECUTORS, DataSamudayaConstants.USEGLOBALTASKEXECUTORS_DEFAULT) : DataSamudayaConstants.USEGLOBALTASKEXECUTORS_DEFAULT);
@@ -404,7 +404,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 
 
 	public String getImplicitcontainerallocanumber() {
-		if(nonNull(implicitcontainerallocanumber)) {
+		if (nonNull(implicitcontainerallocanumber)) {
 			return implicitcontainerallocanumber;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_NUMBER, DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_NUMBER_DEFAULT) : DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_NUMBER_DEFAULT;
@@ -415,7 +415,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getImplicitcontainercpu() {
-		if(nonNull(implicitcontainercpu)) {
+		if (nonNull(implicitcontainercpu)) {
 			return implicitcontainercpu;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_CPU, DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_CPU_DEFAULT) : DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_CPU_DEFAULT;
@@ -426,7 +426,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getImplicitcontainermemory() {
-		if(nonNull(implicitcontainermemory)) {
+		if (nonNull(implicitcontainermemory)) {
 			return implicitcontainermemory;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_MEMORY, DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_MEMORY_DEFAULT) : DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_MEMORY_DEFAULT;
@@ -437,23 +437,22 @@ public class PipelineConfig implements Serializable, Cloneable {
 	}
 
 	public String getImplicitcontainermemorysize() {
-		if(nonNull(implicitcontainermemorysize)) {
+		if (nonNull(implicitcontainermemorysize)) {
 			return implicitcontainermemorysize;
 		}
 		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_MEMORY_SIZE, DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_MEMORY_SIZE_DEFAULT) : DataSamudayaConstants.IMPLICIT_CONTAINER_ALLOC_MEMORY_SIZE_DEFAULT;
 	}
-	
-	
+
 
 	public Boolean getIsremotescheduler() {
-		if(nonNull(isremotescheduler)) {
+		if (nonNull(isremotescheduler)) {
 			return isremotescheduler;
 		}
 		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IS_REMOTE_SCHEDULER, DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT) : DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT);
 	}
 
 	public boolean isTopersistcolumnar() {
-		if(nonNull(topersistcolumnar)) {
+		if (nonNull(topersistcolumnar)) {
 			return topersistcolumnar;
 		}
 		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR, DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT) : DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT);
@@ -494,32 +493,32 @@ public class PipelineConfig implements Serializable, Cloneable {
 	public void setClsloader(ClassLoader clsloader) {
 		this.clsloader = clsloader;
 	}
-	
+
 	public void setClsToJar(Class<?> cls) {
 		var manifest = new Manifest();
-	    manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-		try(var jarBytes = new ByteArrayOutputStream();
-				var jarOutputStream = new JarOutputStream(jarBytes, manifest);){
-			
-	        // Create a new JarEntry for the class file and add it to the jar file
-	        var jarEntry = new JarEntry(cls.getName() + ".class");
-	        jarOutputStream.putNextEntry(jarEntry);
-	        
-	        // Read the class file into a byte array and write it to the jar file
-	        byte[] buffer = new byte[1024];
-	        int bytesRead;
-	        InputStream stream = this.getClass().getResourceAsStream(cls.getName() + ".class");
-	        while ((bytesRead = stream.read(buffer)) != -1) {
-	            jarOutputStream.write(buffer, 0, bytesRead);
-	            jarOutputStream.flush();
-	        }
-	        jarOutputStream.closeEntry();
-	        this.jar = jarBytes.toByteArray();
-		} catch(Exception ex) {
+		manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+		try (var jarBytes = new ByteArrayOutputStream();
+				var jarOutputStream = new JarOutputStream(jarBytes, manifest);) {
+
+			// Create a new JarEntry for the class file and add it to the jar file
+			var jarEntry = new JarEntry(cls.getName() + ".class");
+			jarOutputStream.putNextEntry(jarEntry);
+
+			// Read the class file into a byte array and write it to the jar file
+			byte[] buffer = new byte[1024];
+			int bytesRead;
+			InputStream stream = this.getClass().getResourceAsStream(cls.getName() + ".class");
+			while ((bytesRead = stream.read(buffer)) != -1) {
+				jarOutputStream.write(buffer, 0, bytesRead);
+				jarOutputStream.flush();
+			}
+			jarOutputStream.closeEntry();
+			this.jar = jarBytes.toByteArray();
+		} catch (Exception ex) {
 			log.info(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
-	
+
 	public String getUser() {
 		return Objects.isNull(user)
 				? DataSamudayaConstants.DEFAULT_CONTAINER_USER : user;
@@ -544,7 +543,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	public void setTejobid(String tejobid) {
 		this.tejobid = tejobid;
 	}
-	
+
 	public String getSqlpigquery() {
 		return sqlpigquery;
 	}
@@ -566,5 +565,5 @@ public class PipelineConfig implements Serializable, Cloneable {
 	public void setWriter(PrintWriter writer) {
 		this.writer = writer;
 	}
-	
+
 }

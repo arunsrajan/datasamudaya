@@ -30,7 +30,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.CompletableFuture;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Vector;
@@ -94,7 +93,6 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.PipelineIntStreamCollect;
 import com.github.datasamudaya.stream.PipelineUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
-import com.pivovarit.collectors.ParallelCollectors;
 
 /**
  * This class executes tasks in ignite.
@@ -140,7 +138,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	public void setTask(Task task) {
 		this.task = task;
 	}
-	
+
 	public String getHdfspath() {
 		return hdfspath;
 	}
@@ -239,7 +237,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 		try (var fsdos = createIntermediateDataToFS();
 				var output = new Output(fsdos);
 				var inputfirst = new Input(new BufferedInputStream(fsstreamfirst.iterator().next())
-						);
+				);
 				var bais2 = getIntermediateInputStreamFS(blockssecond.get(0));
 				var buffer2 = new BufferedReader(new InputStreamReader(bais2));
 				var streamsecond = buffer2.lines().parallel();) {
@@ -282,11 +280,11 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 		try (var fsdos = createIntermediateDataToFS();
 				var output = new Output(fsdos);
 				var inputfirst = new Input(new BufferedInputStream(fsstreamfirst.iterator().next())
-						);
+				);
 				var inputsecond = new Input(new BufferedInputStream(fsstreamsecond.iterator().next())
-						);
+				);
 
-		) {
+				) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var datasecond = (List) Utils.getKryo().readClassAndObject(inputsecond);
@@ -418,7 +416,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 		try (var fsdos = createIntermediateDataToFS();
 				var output = new Output(fsdos);
 				var inputfirst = new Input(new BufferedInputStream(fsstreamfirst.iterator().next())
-						);
+				);
 				var bais2 = getIntermediateInputStreamFS(blockssecond.get(0));
 				var buffer2 = new BufferedReader(new InputStreamReader(bais2));
 				var streamsecond = buffer2.lines().parallel();) {
@@ -470,9 +468,9 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 		try (var fsdos = createIntermediateDataToFS();
 				var output = new Output(fsdos);
 				var inputfirst = new Input(new BufferedInputStream(fsstreamfirst.iterator().next())
-						);
+				);
 				var inputsecond = new Input(new BufferedInputStream(fsstreamsecond.iterator().next())
-						);) {
+				);) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var datasecond = (List) Utils.getKryo().readClassAndObject(inputsecond);
@@ -789,7 +787,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				var output = new Output(fsdos);
 				var inputfirst = new Input(
 						new BufferedInputStream(((InputStream) (fsstreams.iterator().next())))
-						);) {
+				);) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var terminalCount = false;
@@ -827,14 +825,14 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 	 */
 	@Override
 	public void run() {
-		log.debug("Entered MassiveDataStreamTaskIgnite.call");		
+		log.debug("Entered MassiveDataStreamTaskIgnite.call");
 		try (var hdfs = FileSystem.newInstance(new URI(hdfspath), new Configuration());) {
 			this.hdfs = hdfs;
 			deserializeJobStage();
 			var stagePartition = jobstage.getStageid();
-			cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);			
+			cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
 			if (task.input != null && task.parentremotedatafetch != null) {
-				if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
+				if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
 					var numinputs = task.parentremotedatafetch.length;
 					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.parentremotedatafetch[inputindex];
@@ -844,7 +842,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 									cache.get(rdf.getJobid() + rdf.getStageid() + rdf.getTaskid()));
 						}
 					}
-				} else if(task.input!=null && task.input[0]!=null) {
+				} else if (task.input != null && task.input[0] != null) {
 					var numinputs = task.input.length;
 					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.input[inputindex];
@@ -855,7 +853,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 					}
 				}
 			}
-			
+
 			computeTasks(task);
 			log.info("Finished step: " + stagePartition);
 			completed = true;
@@ -972,7 +970,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				timetakenseconds = processBlockHDFSIntersection(blfirst, blsecond, hdfs);
 			} else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
 					|| ((task.input[0] instanceof InputStream) && task.input[1] instanceof Blocks
-							|| task.input[1] instanceof BlocksLocation)) {
+					|| task.input[1] instanceof BlocksLocation)) {
 				var streamfirst = new LinkedHashSet<InputStream>();
 				var blockssecond = new ArrayList<BlocksLocation>();
 				for (var input : task.input) {
@@ -995,7 +993,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				timetakenseconds = processBlockHDFSUnion(blfirst, blsecond, hdfs);
 			} else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
 					|| ((task.input[0] instanceof InputStream) && task.input[1] instanceof Blocks
-							|| task.input[1] instanceof BlocksLocation)) {
+					|| task.input[1] instanceof BlocksLocation)) {
 				var streamfirst = new LinkedHashSet<InputStream>();
 				var blockssecond = new ArrayList<BlocksLocation>();
 				for (var input : task.input) {
@@ -1070,7 +1068,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-		) {
+				) {
 
 			List inputs1 = null, inputs2 = null;
 			if (Objects.isNull(buffreader1)) {
@@ -1149,7 +1147,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-		) {
+				) {
 
 			List inputs1 = null, inputs2 = null;
 			;
@@ -1190,24 +1188,24 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 										Object rec2 = csvrec.v2;
 										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
 									}).map((Object rec) -> {
-										try {
-											Tuple2 csvrec = (Tuple2) rec;
-											CSVRecord rec1 = (CSVRecord) csvrec.v1;
-											CSVRecord rec2 = (CSVRecord) csvrec.v2;
-											Map<String, String> keyvalue = rec1.toMap();
-											keyvalue.putAll(rec2.toMap());
-											List<String> keys = new ArrayList<>(keyvalue.keySet());
-											CSVRecord recordmutated = CSVParser
-													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
-															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
-																	.withHeader(keys.toArray(new String[keys.size()])))
-													.getRecords().get(0);
-											return recordmutated;
-										} catch (IOException e) {
+								try {
+									Tuple2 csvrec = (Tuple2) rec;
+									CSVRecord rec1 = (CSVRecord) csvrec.v1;
+									CSVRecord rec2 = (CSVRecord) csvrec.v2;
+									Map<String, String> keyvalue = rec1.toMap();
+									keyvalue.putAll(rec2.toMap());
+									List<String> keys = new ArrayList<>(keyvalue.keySet());
+									CSVRecord recordmutated = CSVParser
+											.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
+													CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
+															.withHeader(keys.toArray(new String[keys.size()])))
+											.getRecords().get(0);
+									return recordmutated;
+								} catch (IOException e) {
 
-										}
-										return null;
-									}).collect(Collectors.toList());
+								}
+								return null;
+							}).collect(Collectors.toList());
 						} else if (tuple2.v1 instanceof Map && (tuple2.v2 == null || tuple2.v2 instanceof Map)) {
 							Map<String, Object> keyvaluemap = (Map<String, Object>) inputs2.get(0);
 							Map<String, Object> nullmap = new HashMap<>();
@@ -1222,24 +1220,24 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 										}
 										return maprec;
 									}).collect(Collectors.toList());
-						} else if(tuple2.v1 instanceof Object[] 
-			            		&& (tuple2.v2 == null || tuple2.v2 instanceof Object[] )) {
-			            	Object[]  origobjarray = (Object[] ) inputs2.get(0);
-			            	Object[][]  nullobjarr = new Object[2][((Object[])origobjarray[0]).length];
-			            	for(int numvalues=0;numvalues<nullobjarr[0].length;numvalues++) {
-			            		nullobjarr[1][numvalues] = true;
-			              	}
-			            	joinpairsout = (List) joinpairsout.stream()
-			                        .filter(val -> val instanceof Tuple2).map(value -> {
-			                          Tuple2 maprec = (Tuple2) value;
-			                          Object[] rec1 = (Object[]) maprec.v1;
-			                          Object[] rec2 = (Object[]) maprec.v2;
-			                          if (rec2 == null) {
-			                        	  return new Tuple2(rec1, nullobjarr); 
-			                          }
-			                          return maprec;
-			                        }).collect(Collectors.toList());			                   
-			            }
+						} else if (tuple2.v1 instanceof Object[]
+								&& (tuple2.v2 == null || tuple2.v2 instanceof Object[])) {
+							Object[]  origobjarray = (Object[]) inputs2.get(0);
+							Object[][]  nullobjarr = new Object[2][((Object[]) origobjarray[0]).length];
+							for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
+								nullobjarr[1][numvalues] = true;
+							}
+							joinpairsout = (List) joinpairsout.stream()
+									.filter(val -> val instanceof Tuple2).map(value -> {
+								Tuple2 maprec = (Tuple2) value;
+								Object[] rec1 = (Object[]) maprec.v1;
+								Object[] rec2 = (Object[]) maprec.v2;
+								if (rec2 == null) {
+									return new Tuple2(rec1, nullobjarr);
+								}
+								return maprec;
+							}).collect(Collectors.toList());
+						}
 					}
 				} catch (Exception ex) {
 					log.error(PipelineConstants.PROCESSLEFTOUTERJOIN, ex);
@@ -1289,7 +1287,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-		) {
+				) {
 
 			List inputs1 = null, inputs2 = null;
 			;
@@ -1321,70 +1319,70 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				try (var seq1 = Seq.of(inputs1.toArray()); var seq2 = Seq.of(inputs2.toArray());) {
 					joinpairsout = seq1.rightOuterJoin(seq2.parallel(), rightouterjoinpredicate).toList();
 					if (!joinpairsout.isEmpty()) {
-			            Tuple2 tuple2 = (Tuple2) joinpairsout.get(0);
-			            if (tuple2.v1 instanceof CSVRecord && tuple2.v2 instanceof CSVRecord) {
-			            	joinpairsout = (List) joinpairsout.stream()
-			                  .filter(val -> val instanceof Tuple2).filter(value -> {
-			                    Tuple2 csvrec = (Tuple2) value;
-			                    Object rec1 = csvrec.v1;
-			                    Object rec2 = csvrec.v2;
-			                    return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
-			                  }).map((Object rec) -> {
-			                    try {
-			                      Tuple2 csvrec = (Tuple2) rec;
-			                      CSVRecord rec1 = (CSVRecord) csvrec.v1;
-			                      CSVRecord rec2 = (CSVRecord) csvrec.v2;
-			                      Map<String, String> keyvalue = rec1.toMap();
-			                      keyvalue.putAll(rec2.toMap());
-			                      List<String> keys = new ArrayList<>(keyvalue.keySet());
-			                      CSVRecord recordmutated =
-			                          CSVParser
-			                              .parse(keyvalue.values().stream().collect(Collectors.joining(",")),
-			                                  CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
-			                                      .withHeader(keys.toArray(new String[keys.size()])))
-			                              .getRecords().get(0);
-			                      return recordmutated;
-			                    } catch (IOException e) {
+						Tuple2 tuple2 = (Tuple2) joinpairsout.get(0);
+						if (tuple2.v1 instanceof CSVRecord && tuple2.v2 instanceof CSVRecord) {
+							joinpairsout = (List) joinpairsout.stream()
+									.filter(val -> val instanceof Tuple2).filter(value -> {
+								Tuple2 csvrec = (Tuple2) value;
+								Object rec1 = csvrec.v1;
+								Object rec2 = csvrec.v2;
+								return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
+							}).map((Object rec) -> {
+								try {
+									Tuple2 csvrec = (Tuple2) rec;
+									CSVRecord rec1 = (CSVRecord) csvrec.v1;
+									CSVRecord rec2 = (CSVRecord) csvrec.v2;
+									Map<String, String> keyvalue = rec1.toMap();
+									keyvalue.putAll(rec2.toMap());
+									List<String> keys = new ArrayList<>(keyvalue.keySet());
+									CSVRecord recordmutated =
+											CSVParser
+													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
+															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
+																	.withHeader(keys.toArray(new String[keys.size()])))
+													.getRecords().get(0);
+									return recordmutated;
+								} catch (IOException e) {
 
-			                    }
-			                    return null;
-			                  })
-			                  .collect(Collectors.toList());
-			            }else if((tuple2.v1 == null || tuple2.v1 instanceof Map) 
-			            		&& tuple2.v2 instanceof Map) {
-			            	Map<String,Object> keyvaluemap = (Map<String, Object>) inputs1.get(0);
-			            	Map<String,Object> nullmap = new HashMap<>();
-			            	keyvaluemap.keySet().forEach(key -> nullmap.put(key, null));
-			            	joinpairsout = (List) joinpairsout.stream()
-			                        .filter(val -> val instanceof Tuple2).map(value -> {
-			                          Tuple2 maprec = (Tuple2) value;
-			                          Map<String, Object> rec1 = (Map<String, Object>) maprec.v1;
-			                          Map<String, Object> rec2 = (Map<String, Object>) maprec.v2;
-			                          if (rec1 == null) {
-			                        	  return new Tuple2(nullmap, rec2); 
-			                          }
-			                          return maprec;
-			                        }).collect(Collectors.toList());
-			            } else if((tuple2.v1 == null || tuple2.v1 instanceof Object[]) 
-			              		&& tuple2.v2 instanceof Object[]) {
+								}
+								return null;
+							})
+									.collect(Collectors.toList());
+						} else if ((tuple2.v1 == null || tuple2.v1 instanceof Map)
+								&& tuple2.v2 instanceof Map) {
+							Map<String, Object> keyvaluemap = (Map<String, Object>) inputs1.get(0);
+							Map<String, Object> nullmap = new HashMap<>();
+							keyvaluemap.keySet().forEach(key -> nullmap.put(key, null));
+							joinpairsout = (List) joinpairsout.stream()
+									.filter(val -> val instanceof Tuple2).map(value -> {
+								Tuple2 maprec = (Tuple2) value;
+								Map<String, Object> rec1 = (Map<String, Object>) maprec.v1;
+								Map<String, Object> rec2 = (Map<String, Object>) maprec.v2;
+								if (rec1 == null) {
+									return new Tuple2(nullmap, rec2);
+								}
+								return maprec;
+							}).collect(Collectors.toList());
+						} else if ((tuple2.v1 == null || tuple2.v1 instanceof Object[])
+								&& tuple2.v2 instanceof Object[]) {
 
-			              	Object[] origvalarr = (Object[]) inputs1.get(0);
-			              	Object[][] nullobjarr = new Object[2][((Object[])origvalarr[0]).length];
-			              	for(int numvalues=0;numvalues<nullobjarr[0].length;numvalues++) {
-			              		nullobjarr[1][numvalues] = true;
-			              	}
-			              	joinpairsout = (List) joinpairsout.stream()
-			                          .filter(val -> val instanceof Tuple2).map(value -> {
-			                            Tuple2 maprec = (Tuple2) value;
-			                            Object[] rec1 = (Object[]) maprec.v1;
-			                            Object[] rec2 = (Object[]) maprec.v2;
-			                            if (rec1 == null) {
-			                          	  return new Tuple2(nullobjarr, rec2); 
-			                            }
-			                            return maprec;
-			                          }).collect(Collectors.toList());
-			              }
-			          }
+							Object[] origvalarr = (Object[]) inputs1.get(0);
+							Object[][] nullobjarr = new Object[2][((Object[]) origvalarr[0]).length];
+							for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
+								nullobjarr[1][numvalues] = true;
+							}
+							joinpairsout = (List) joinpairsout.stream()
+									.filter(val -> val instanceof Tuple2).map(value -> {
+								Tuple2 maprec = (Tuple2) value;
+								Object[] rec1 = (Object[]) maprec.v1;
+								Object[] rec2 = (Object[]) maprec.v2;
+								if (rec1 == null) {
+									return new Tuple2(nullobjarr, rec2);
+								}
+								return maprec;
+							}).collect(Collectors.toList());
+						}
+					}
 				} catch (Exception ex) {
 					log.error(PipelineConstants.PROCESSRIGHTOUTERJOIN, ex);
 					throw new PipelineException(PipelineConstants.PROCESSRIGHTOUTERJOIN, ex);
@@ -1690,7 +1688,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 				if (coalescefunction.get(0).getCoalescefunction() instanceof PipelineCoalesceFunction pcf) {
 					outpairs = Arrays.asList(keyvaluepairs.parallelStream().reduce(pcf).get());
 				} else {
-					Map<Object,Object> cf = keyvaluepairs.parallelStream().collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
+					Map<Object, Object> cf = keyvaluepairs.parallelStream().collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
 							(input1, input2) -> coalescefunction.get(0).getCoalescefunction().apply(input1, input2)));
 					outpairs = (List) cf.entrySet().parallelStream()
 							.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
@@ -1735,8 +1733,8 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			throw new PipelineException(PipelineConstants.PROCESSCOALESCE, ex);
 		}
 	}
-	
-	
+
+
 	/**
 	 * Result of HashPartition by key operation
 	 * 
@@ -1787,69 +1785,68 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			throw new PipelineException(PipelineConstants.PROCESSHASHPARTITION, ex);
 		}
 	}
-	
-	
-	/**
-	   * Result of Group By operation
-	   * @return timetaken in seconds
-	   * @throws PipelineException
-	   */
-	  @SuppressWarnings("unchecked")
-	  public double processGroupBy() throws PipelineException {
-	    var starttime = System.currentTimeMillis();
-	    log.debug("Entered StreamPipelineTaskExecutor.processHashPartition");
-	    var groupbyfunctions = (List<GroupByFunction>) getFunctions();
-	    var fsdos = new ByteArrayOutputStream();
-	    try (var currentoutput = new Output(fsdos);) {
 
-	      var keyvaluepairs = new ArrayList<>();
-	      for (var fs : task.input) {
-	        try (var fsis = (InputStream) fs;
+
+	/**
+		* Result of Group By operation
+		* @return timetaken in seconds
+		* @throws PipelineException
+		*/
+		@SuppressWarnings("unchecked")
+	public double processGroupBy() throws PipelineException {
+		var starttime = System.currentTimeMillis();
+		log.debug("Entered StreamPipelineTaskExecutor.processHashPartition");
+		var groupbyfunctions = (List<GroupByFunction>) getFunctions();
+		var fsdos = new ByteArrayOutputStream();
+		try (var currentoutput = new Output(fsdos);) {
+
+			var keyvaluepairs = new ArrayList<>();
+			for (var fs : task.input) {
+				try (var fsis = (InputStream) fs;
 	            var input = new Input(fsis);) {
-	          keyvaluepairs.addAll((List) Utils.getKryo().readClassAndObject(input));
-	        }
-	      }
-	      log.debug("Data Size:" + keyvaluepairs.size());
-	      // Parallel execution of reduce by key stream execution.
-	      List output = null;
-	      if (Objects.nonNull(groupbyfunctions.get(0))) {
-	    	  GroupByFunction gbf = groupbyfunctions.get(0);
-	          Map<Object, List<Object>> mapgroupby =
-	              keyvaluepairs.parallelStream()
-	                  .collect(Collectors.groupingBy(
-	                		  obj -> gbf.apply(obj), 
-	                		  HashMap::new,
-	                		  Collectors.mapping(obj -> obj, Collectors.toList())));
-	          output = mapgroupby.keySet().stream()
-	          .map(key -> new Tuple2<Object, List<Object>>(key, mapgroupby.get(key)))
-	          .collect(Collectors.toList());
-	          
-	        }     
-	      Utils.getKryo().writeClassAndObject(currentoutput, output);
-	      currentoutput.flush();
-	      cache.put(task.jobid + task.stageid + task.taskid, fsdos.toByteArray());
-	      log.debug("Exiting StreamPipelineTaskExecutor.processHashPartition");
-	      var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-	      log.debug("Time taken to compute the Coalesce Task is " + timetaken + " seconds");
-	      log.debug("GC Status Count By Value task:" + Utils.getGCStats());
-	      return timetaken;
-	    } catch (IOException ioe) {
-	      log.error(PipelineConstants.FILEIOERROR, ioe);
-	      throw new PipelineException(PipelineConstants.FILEIOERROR, ioe);
-	    } catch (Exception ex) {
-	      log.error(PipelineConstants.PROCESSHASHPARTITION, ex);
-	      throw new PipelineException(PipelineConstants.PROCESSHASHPARTITION, ex);
-	    }
-	  }
-	
-	  /**
-	   * Deserialize the byte array to JobStage object 
-	   */
+					keyvaluepairs.addAll((List) Utils.getKryo().readClassAndObject(input));
+				}
+			}
+			log.debug("Data Size:" + keyvaluepairs.size());
+			// Parallel execution of reduce by key stream execution.
+			List output = null;
+			if (Objects.nonNull(groupbyfunctions.get(0))) {
+				GroupByFunction gbf = groupbyfunctions.get(0);
+				Map<Object, List<Object>> mapgroupby =
+						keyvaluepairs.parallelStream()
+								.collect(Collectors.groupingBy(
+										obj -> gbf.apply(obj),
+										HashMap::new,
+										Collectors.mapping(obj -> obj, Collectors.toList())));
+				output = mapgroupby.keySet().stream()
+						.map(key -> new Tuple2<Object, List<Object>>(key, mapgroupby.get(key)))
+						.collect(Collectors.toList());
+			}
+			Utils.getKryo().writeClassAndObject(currentoutput, output);
+			currentoutput.flush();
+			cache.put(task.jobid + task.stageid + task.taskid, fsdos.toByteArray());
+			log.debug("Exiting StreamPipelineTaskExecutor.processHashPartition");
+			var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
+			log.debug("Time taken to compute the Coalesce Task is " + timetaken + " seconds");
+			log.debug("GC Status Count By Value task:" + Utils.getGCStats());
+			return timetaken;
+		} catch (IOException ioe) {
+			log.error(PipelineConstants.FILEIOERROR, ioe);
+			throw new PipelineException(PipelineConstants.FILEIOERROR, ioe);
+		} catch (Exception ex) {
+			log.error(PipelineConstants.PROCESSHASHPARTITION, ex);
+			throw new PipelineException(PipelineConstants.PROCESSHASHPARTITION, ex);
+		}
+	}
+
+	/**
+	 * Deserialize the byte array to JobStage object 
+	 */
 	public void deserializeJobStage() {
-		try(var inputjs = new Input(jobstagebytes);){
+		try (var inputjs = new Input(jobstagebytes);) {
 			Kryo kryo = Utils.getKryoInstance();
 			jobstage = (JobStage) kryo.readClassAndObject(inputjs);
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}

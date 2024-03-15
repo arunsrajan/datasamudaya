@@ -30,7 +30,7 @@ public final class JsonStream<I1> extends StreamPipeline<I1> {
 		this.protocol = root.protocol;
 		this.pipelineconfig = root.pipelineconfig;
 	}
-	
+
 	@SuppressWarnings({"rawtypes"})
 	public JsonStream(StreamPipeline root, JsonSQL jsonsql) {
 		root.json = jsonsql;

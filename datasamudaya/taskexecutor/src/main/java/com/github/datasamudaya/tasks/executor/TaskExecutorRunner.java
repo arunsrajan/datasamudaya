@@ -15,9 +15,7 @@ import java.net.URI;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
@@ -29,7 +27,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
@@ -57,28 +54,15 @@ import com.github.datasamudaya.common.ServerUtils;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskExecutorShutdown;
-import com.github.datasamudaya.common.TaskStatus;
-import com.github.datasamudaya.common.TaskType;
 import com.github.datasamudaya.common.WebResourcesServlet;
-import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
-import com.github.datasamudaya.stream.CsvOptionsSQL;
-import com.github.datasamudaya.stream.executors.actors.ProcessCoalesce;
-import com.github.datasamudaya.stream.executors.actors.ProcessMapperByBlocksLocation;
-import com.github.datasamudaya.stream.executors.actors.ProcessMapperByStream;
 import com.github.datasamudaya.stream.scheduler.StreamJobScheduler;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-
-import akka.actor.Actor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
-import akka.actor.Props;
 import akka.cluster.Cluster;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
@@ -89,7 +73,7 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
 
-import static java.util.Objects.*;
+import static java.util.Objects.isNull;
 
 /**
  * Launches the task executor.
@@ -172,7 +156,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			// Start an HTTP server to expose metrics
 			log.info("TaskExecuterRunner evoked at metrics port.....{}", metricsport);
 			log.info("TaskExecuterRunner evoked at port..... {}"
-					, System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
+			, System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 			log.info("Reckoning stoppage holder...");
 			shutdown.await();
 			log.info("Ceasing the connections...");
@@ -235,19 +219,19 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		cl = TaskExecutorRunner.class.getClassLoader();
 		int akkaport = Utils.getRandomPort();
 		Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.AKKA_HOST
-				, DataSamudayaConstants.AKKA_HOST_DEFAULT)
-				, akkaport,
+		, DataSamudayaConstants.AKKA_HOST_DEFAULT)
+		, akkaport,
 				Runtime.getRuntime().availableProcessors());
 		final ActorSystem system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
-		
+
 		Cluster cluster = Cluster.get(system);
 		cluster.joinSeedNodes(Arrays.asList(cluster.selfAddress()));
-		
-		final String actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME+"://" + DataSamudayaConstants.ACTORUSERNAME + "@"
-				+ system.provider().getDefaultAddress().getHost().get() + ":" + system.provider().getDefaultAddress().getPort().get()+"/user";
-		
-		log.info("Actor System Url {}",actorsystemurl);
-		
+
+		final String actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME + "://" + DataSamudayaConstants.ACTORUSERNAME + "@"
+				+ system.provider().getDefaultAddress().getHost().get() + ":" + system.provider().getDefaultAddress().getPort().get() + "/user";
+
+		log.info("Actor System Url {}", actorsystemurl);
+
 		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 		var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);
@@ -273,14 +257,14 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						cl = DataSamudayaMapReducePhaseClassLoader.newInstance(loadjar.getMrjar(), cl);
 						return DataSamudayaConstants.JARLOADED;
 					} else if (deserobj instanceof GetTaskActor gettaskactor) {
-						return SQLUtils.getAkkaActor(system, gettaskactor, 
-								jobidstageidjobstagemap, hdfs, 
-								inmemorycache, jobidstageidtaskidcompletedmap, 
+						return SQLUtils.getAkkaActor(system, gettaskactor,
+								jobidstageidjobstagemap, hdfs,
+								inmemorycache, jobidstageidtaskidcompletedmap,
 								actorsystemurl, cluster);
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
-						return SQLUtils.getAkkaActor(system, executetaskactor, 
-								jobidstageidjobstagemap, hdfs, 
-								inmemorycache, jobidstageidtaskidcompletedmap, 
+						return SQLUtils.getAkkaActor(system, executetaskactor,
+								jobidstageidjobstagemap, hdfs,
+								inmemorycache, jobidstageidtaskidcompletedmap,
 								actorsystemurl, cluster);
 					} else if (deserobj instanceof Job job) {
 						job.getPipelineconfig().setClsloader(cl);

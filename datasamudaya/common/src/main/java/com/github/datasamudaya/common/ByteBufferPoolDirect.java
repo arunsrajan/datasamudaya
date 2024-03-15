@@ -40,13 +40,14 @@ public class ByteBufferPoolDirect {
 	static long directmemory;
 	static long totalmemoryallocated;
 	static Semaphore lock = new Semaphore(1);
+
 	/**
 	 * Initialize the bytebuffer heapsize and direct memory size
 	 */
-	public static void init(long dm) {		
+	public static void init(long dm) {
 		directmemory = dm;
 		bufferPool = new Vector<>((int) (directmemory / (130 * DataSamudayaConstants.MB)) + 30);
-        log.info("Total Buffer pool size: {}", bufferPool.size());
+		log.info("Total Buffer pool size: {}", bufferPool.size());
 	}
 
 	/**
@@ -57,7 +58,7 @@ public class ByteBufferPoolDirect {
 	 */
 	public static synchronized ByteBuffer get(long memorytoallocate) throws Exception {
 		lock.acquire();
-		if(memorytoallocate+totalmemoryallocated<directmemory) {
+		if (memorytoallocate + totalmemoryallocated < directmemory) {
 			ByteBuffer bb = ByteBuffer.allocateDirect((int) memorytoallocate);
 			totalmemoryallocated += memorytoallocate;
 			lock.release();
@@ -71,10 +72,10 @@ public class ByteBufferPoolDirect {
 			}
 			return 0;
 		});
-		int bbindex=bufferPool.size()-1;
+		int bbindex = bufferPool.size() - 1;
 		for (;bbindex >= 0 && bufferPool.get(bbindex).capacity() >= memorytoallocate;bbindex--) {
 		}
-		if(bbindex == bufferPool.size()-1) {
+		if (bbindex == bufferPool.size() - 1) {
 			ByteBuffer bb = ByteBuffer.allocate((int) memorytoallocate);
 			lock.release();
 			return bb;

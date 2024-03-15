@@ -78,7 +78,7 @@ public class SQLClient {
 		if (cmd.hasOption(DataSamudayaConstants.SQLCONTAINERS)) {
 			String containers = cmd.getOptionValue(DataSamudayaConstants.SQLCONTAINERS);
 			numberofcontainers = Integer.valueOf(containers);
-			
+
 		} else {
 			numberofcontainers = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS));
 		}
@@ -86,13 +86,13 @@ public class SQLClient {
 		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUPERCONTAINER);
 			cpupercontainer = Integer.valueOf(cpu);
-			
+
 		}
 		int memorypercontainer = 1024;
 		if (cmd.hasOption(DataSamudayaConstants.MEMORYPERCONTAINER)) {
 			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYPERCONTAINER);
 			memorypercontainer = Integer.valueOf(memory);
-			
+
 		}
 		String mode = DataSamudayaConstants.SQLWORKERMODE_DEFAULT;
 		if (cmd.hasOption(DataSamudayaConstants.SQLWORKERMODE)) {
@@ -255,7 +255,7 @@ public class SQLClient {
 							reader.flush();
 						} else if (key == 51) {
 							int curPos = reader.getCursorBuffer().cursor;
-							if (curPos >= 0 && curPos<reader.getCursorBuffer().length()) {
+							if (curPos >= 0 && curPos < reader.getCursorBuffer().length()) {
 								reader.setCursorPosition(curPos + 1);
 								reader.backspace();
 								reader.flush();
@@ -295,7 +295,7 @@ public class SQLClient {
 					reader.setConsoleBuffer(sb.toString());
 					reader.setCursorPosition(curPos + 1);
 					reader.flush();
-					
+
 				}
 			}
 			line = sb.toString();

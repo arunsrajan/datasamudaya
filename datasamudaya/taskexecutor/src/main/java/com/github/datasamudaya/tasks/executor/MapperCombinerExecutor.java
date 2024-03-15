@@ -36,7 +36,7 @@ public class MapperCombinerExecutor extends MapperExecutor {
 
 	@SuppressWarnings("rawtypes")
 	public MapperCombinerExecutor(BlocksLocation blockslocation, InputStream datastream, List<Mapper> crunchmappers,
-								  List<Combiner> crunchcombiners) {
+			List<Combiner> crunchcombiners) {
 		super(blockslocation, datastream, crunchmappers);
 		this.crunchcombiners = crunchcombiners;
 	}

@@ -151,8 +151,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 							for (var apptaskids : (Collection<String>) tuple2.v2) {
 								if (apptaskcontextmap.get(apptaskids) != null) {
 									currentctx = apptaskcontextmap.get(apptaskids);
-								}
-								else {
+								} else {
 									currentctx = (Context) RemoteDataFetcher.readIntermediatePhaseOutputFromDFS(red.apptask.getApplicationid(),
 											apptaskids, false);
 									apptaskcontextmap.put(apptaskids, currentctx);

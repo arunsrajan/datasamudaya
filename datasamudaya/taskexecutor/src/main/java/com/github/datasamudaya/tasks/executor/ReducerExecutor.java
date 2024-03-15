@@ -40,6 +40,7 @@ public class ReducerExecutor implements Callable<Context> {
 		this.cr = cr;
 		this.key = key;
 	}
+
 	/**
 	 * Executes the call method and returns context object.
 	 */

@@ -113,7 +113,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 			es.execute(() -> pollQueue());
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);	
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			var containerallocator = (DefaultContainerAllocator) getAllocator();
 			log.debug("Parameters: " + getParameters());
 			log.info("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
@@ -137,63 +137,63 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	protected void pollQueue() {
 		log.debug("Task Id Counter: " + taskidcounter);
 		log.debug("Environment: " + getEnvironment());
-		try(var zo = new ZookeeperOperations();){
-	 	zo.connect();
-	 	String teid = getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
-		SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
-				+ DataSamudayaConstants.YARN_INPUT_QUEUE
-				+ DataSamudayaConstants.FORWARD_SLASH + teid);
-		
-		outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
-				+ DataSamudayaConstants.YARN_OUTPUT_QUEUE
-				+ DataSamudayaConstants.FORWARD_SLASH + teid);
-		
-		ObjectMapper objectMapper = new ObjectMapper();
-		while(!tokillcontainers) {
-			if (inputqueue.peek() != null && !isreadytoexecute) {
-				pendingtasks.clear();
-				pendingsubmittedtasks.clear();
-				containertaskmap.clear();
-				sentjobstages.clear();
-				taskidcounter = 0;
-				tinfo = objectMapper.readValue(inputqueue.poll(), TaskInfoYARN.class);
-				tokillcontainers = tinfo.isTokillcontainer();
-				if(Objects.isNull(tinfo.getJobid())) {
-					continue;
+		try (var zo = new ZookeeperOperations();) {
+			zo.connect();
+			String teid = getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
+			SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.YARN_INPUT_QUEUE
+					+ DataSamudayaConstants.FORWARD_SLASH + teid);
+
+			outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.YARN_OUTPUT_QUEUE
+					+ DataSamudayaConstants.FORWARD_SLASH + teid);
+
+			ObjectMapper objectMapper = new ObjectMapper();
+			while (!tokillcontainers) {
+				if (inputqueue.peek() != null && !isreadytoexecute) {
+					pendingtasks.clear();
+					pendingsubmittedtasks.clear();
+					containertaskmap.clear();
+					sentjobstages.clear();
+					taskidcounter = 0;
+					tinfo = objectMapper.readValue(inputqueue.poll(), TaskInfoYARN.class);
+					tokillcontainers = tinfo.isTokillcontainer();
+					if (Objects.isNull(tinfo.getJobid())) {
+						continue;
+					}
+					var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
+							+ tinfo.getJobid();
+					log.debug("Yarn Input Folder: " + yarninputfolder);
+					log.debug("AppMaster HDFS: " + getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
+					var namenodeurl = getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL);
+					System.setProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+							getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
+					// Thread containing the job stage information.
+					mdststs = (List<StreamPipelineTaskSubmitter>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(
+							namenodeurl, yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE);
+					// Graph containing the nodes and edges.
+					graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) RemoteDataFetcher
+							.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
+									DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE);
+					// task map.
+					taskmdsthread = (Map<String, StreamPipelineTaskSubmitter>) RemoteDataFetcher
+							.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
+									DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE);
+					jsidjsmap = (Map<String, JobStage>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(namenodeurl,
+							yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE);
+					tasks = mdststs.stream().map(StreamPipelineTaskSubmitter::getTask).collect(Collectors.toCollection(Vector::new));
+					isreadytoexecute = true;
+					log.debug("tasks size:" + tasks.size());
+				} else {
+					Thread.sleep(1000);
 				}
-				var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
-						+ tinfo.getJobid();
-				log.debug("Yarn Input Folder: " + yarninputfolder);
-				log.debug("AppMaster HDFS: " + getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
-				var namenodeurl = getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL);				
-				System.setProperty(DataSamudayaConstants.HDFSNAMENODEURL,
-						getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
-				// Thread containing the job stage information.
-				mdststs = (List<StreamPipelineTaskSubmitter>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(
-						namenodeurl, yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE);
-				// Graph containing the nodes and edges.
-				graph = (SimpleDirectedGraph<StreamPipelineTaskSubmitter, DAGEdge>) RemoteDataFetcher
-						.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
-								DataSamudayaConstants.MASSIVEDATA_YARNINPUT_GRAPH_FILE);
-				// task map.
-				taskmdsthread = (Map<String, StreamPipelineTaskSubmitter>) RemoteDataFetcher
-						.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
-								DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE);
-				jsidjsmap = (Map<String, JobStage>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(namenodeurl,
-						yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE);
-				tasks = mdststs.stream().map(StreamPipelineTaskSubmitter::getTask).collect(Collectors.toCollection(Vector::new));
-				isreadytoexecute = true;
-				log.debug("tasks size:" + tasks.size());
-			} else {
-				Thread.sleep(1000);
 			}
-		}
-		} catch(Exception ex) {
-			log.error(DataSamudayaConstants.EMPTY, ex);			
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
-	
-	
+
+
 	/**
 	 * Set App Master service hosts and port running before the container is
 	 * launched.
@@ -303,7 +303,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	 */
 	public Object getTask(String containerid) {
 		synchronized (lock) {
-			if(isreadytoexecute) {
+			if (isreadytoexecute) {
 				if (!sentjobstages.containsKey(containerid)) {
 					sentjobstages.put(containerid, true);
 					return jsidjsmap;
@@ -322,7 +322,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 							return task;
 						}
 					}
-	
+
 				}
 				// If the jobs stage submitted is less than the total jobs size
 				// return the job to be executed.
@@ -348,7 +348,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 							toexecute = false;
 							break;
 						}
-	
+
 					}
 					if (toexecute) {
 						if (!containertaskmap.containsKey(containerid)) {
@@ -393,7 +393,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 			log.debug("Has Jobs: " + (taskidcounter < tasks.size()) + ", Task Counter:" + taskidcounter);
 			boolean hasJobs = isreadytoexecute
 					&& (taskidcounter < tasks.size() || pendingtasks.size() > 0 || taskcompleted < tasks.size());
-			try {			
+			try {
 				if (tasks.size() > 0 && taskcompleted >= tasks.size()) {
 					tasks.clear();
 					ObjectMapper objMapper = new ObjectMapper();
@@ -402,7 +402,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 					taskcompleted = 0;
 					isreadytoexecute = false;
 				}
-			} catch(Exception ex) {
+			} catch (Exception ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 			return hasJobs || !tokillcontainers;

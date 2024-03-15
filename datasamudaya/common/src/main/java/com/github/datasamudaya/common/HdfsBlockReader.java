@@ -123,7 +123,7 @@ public class HdfsBlockReader {
 			String containerhost) {
 		log.debug("Entered HdfsBlockReader.getDataBlock");
 		int totalbytestoread = (int) (block.getBlockend() - block.getBlockstart());
-		try (var breader = getBlockReader((DistributedFileSystem) hdfs, lb, lb.getStartOffset() + block.getBlockstart(), containerhost);) {			
+		try (var breader = getBlockReader((DistributedFileSystem) hdfs, lb, lb.getStartOffset() + block.getBlockstart(), containerhost);) {
 			log.debug("In getDataBlock Read Bytes: " + totalbytestoread);
 			var readsize = 4096;
 			var byt = new byte[readsize];
@@ -142,10 +142,7 @@ public class HdfsBlockReader {
 					if (sum + read < totalbytestoread) {
 						baos.write(byt, 0, read);
 						baos.flush();
-					}
-					// If total chunk bytes read exceeds total bytes to
-					// process, write to stream only required bytes.
-					else {
+					} else {
 						baos.write(byt, 0, (totalbytestoread - sum));
 						baos.flush();
 						break;
@@ -222,7 +219,7 @@ public class HdfsBlockReader {
 		return null;
 
 	}
-	
+
 	/**
 	 * To calculate the total amount of bytes required;
 	 * @param block
@@ -231,7 +228,7 @@ public class HdfsBlockReader {
 	public static long calculateBytesRequired(Block[] block) {
 		long totalmemoryrequired = (long) (block[0].getBlockend() - block[0].getBlockstart());
 		if (block.length > 1 && nonNull(block[1])) {
-			totalmemoryrequired += (block[1].getBlockend() - block[1].getBlockstart());
+			totalmemoryrequired += block[1].getBlockend() - block[1].getBlockstart();
 		}
 		return totalmemoryrequired;
 	}

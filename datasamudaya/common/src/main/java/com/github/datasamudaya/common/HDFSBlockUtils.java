@@ -71,7 +71,7 @@ public class HDFSBlockUtils {
 				try (var hdis = (HdfsDataInputStream) hdfs.open(filepath);) {
 					var locatedblocks = hdis.getAllBlocks();
 					int lbindex = 0;
-					var lb = locatedblocks.get(lbindex);					
+					var lb = locatedblocks.get(lbindex);
 					var dinfoa = lb.getLocations();
 					var dninfos = Arrays.asList(dinfoa);
 					log.info("In getBlocksLocationByFixedBlockSizeAuto dninfos TimeTaken {}",
@@ -101,28 +101,28 @@ public class HDFSBlockUtils {
 						log.info("In getBlocksLocationByFixedBlockSizeAuto isnewline TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
 						if (!isnewline && lbindex < locatedblocks.size() - 1) {
-								log.info(
-										"In getBlocksLocationByFixedBlockSizeAuto lbindex < locatedblocks.size TimeTaken {}",
-										(System.currentTimeMillis() - starttime) / 1000.0);
-								lbindex++;
-								lb = locatedblocks.get(lbindex);
-								dinfoa = lb.getLocations();
-								dninfos = Arrays.asList(dinfoa);
-								skipbytes = skipBlockToNewLine(hdfs, lb, lb.getStartOffset(),
-										dninfos.get(0).getXferAddr());
-								if (skipbytes > 0) {
-									bls = blocklocationsl.get(blocklocationsl.size() - 1);
-									bls.getBlock()[1] = new Block();
-									bls.getBlock()[1].setBlockstart(0);
-									bls.getBlock()[1].setBlockend(skipbytes);
-									bls.getBlock()[1].setBlockOffset(lb.getStartOffset());
-									bls.getBlock()[1].setFilename(filepath.toUri().toString());
-									bls.getBlock()[1].setDnxref(dninfos.stream().map(dninfo -> dninfo.getXferAddr())
-											.collect(Collectors.groupingBy(
-													xrefaddr -> xrefaddr.split(DataSamudayaConstants.COLON)[0],
-													Collectors.mapping(xrefaddr -> xrefaddr,
-															Collectors.toCollection(HashSet::new)))));
-								}
+							log.info(
+									"In getBlocksLocationByFixedBlockSizeAuto lbindex < locatedblocks.size TimeTaken {}",
+									(System.currentTimeMillis() - starttime) / 1000.0);
+							lbindex++;
+							lb = locatedblocks.get(lbindex);
+							dinfoa = lb.getLocations();
+							dninfos = Arrays.asList(dinfoa);
+							skipbytes = skipBlockToNewLine(hdfs, lb, lb.getStartOffset(),
+									dninfos.get(0).getXferAddr());
+							if (skipbytes > 0) {
+								bls = blocklocationsl.get(blocklocationsl.size() - 1);
+								bls.getBlock()[1] = new Block();
+								bls.getBlock()[1].setBlockstart(0);
+								bls.getBlock()[1].setBlockend(skipbytes);
+								bls.getBlock()[1].setBlockOffset(lb.getStartOffset());
+								bls.getBlock()[1].setFilename(filepath.toUri().toString());
+								bls.getBlock()[1].setDnxref(dninfos.stream().map(dninfo -> dninfo.getXferAddr())
+										.collect(Collectors.groupingBy(
+												xrefaddr -> xrefaddr.split(DataSamudayaConstants.COLON)[0],
+												Collectors.mapping(xrefaddr -> xrefaddr,
+														Collectors.toCollection(HashSet::new)))));
+							}
 						} else if (lbindex < locatedblocks.size() - 1) {
 							offset = 0;
 							lbindex++;
@@ -195,27 +195,26 @@ public class HDFSBlockUtils {
 		log.debug("Entered HDFSBlockUtils.skipBlockToNewLine");
 		var read1byt = new byte[1];
 		var blockReader = HdfsBlockReader.getBlockReader((DistributedFileSystem) hdfs, lblock, l, xrefaddress);
-		
+
 		boolean isnewlineatend = false;
 		//if (blockReader.available() > 0) {
 		
 				var bytesread = blockReader.read(read1byt, 0, 1);
-				
-				if (bytesread == 0 || bytesread == -1) {
-					isnewlineatend = false;
-				}
-				//return true if newline character else false if not
-				if (read1byt[0] == '\n') {
-					isnewlineatend = true;
-				}
-				else {
-					isnewlineatend = false;
-				}
-			
+
+		if (bytesread == 0 || bytesread == -1) {
+			isnewlineatend = false;
+		}
+		//return true if newline character else false if not
+		if (read1byt[0] == '\n') {
+			isnewlineatend = true;
+		} else {
+			isnewlineatend = false;
+		}
+
 		//}
 		//blockReader.close();
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-				log.info("In isNewLineAtEnd TimeTaken {}", timetaken);
+		log.info("In isNewLineAtEnd TimeTaken {}", timetaken);
 		return isnewlineatend;
 	}
 }

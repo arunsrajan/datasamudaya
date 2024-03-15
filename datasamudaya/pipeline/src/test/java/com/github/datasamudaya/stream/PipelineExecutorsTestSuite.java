@@ -29,6 +29,6 @@ import com.github.datasamudaya.stream.utils.PipelineConfigValidatorTest;
 		StreamPipelineTaskExecutorJGroupsTest.class,
 		PipelineConfigValidatorTest.class,
 		StreamPipelineTaskExecutorIgniteTest.class})
-public class PipelineExecutorsTestSuite{
+public class PipelineExecutorsTestSuite {
 
 }

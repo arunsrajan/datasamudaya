@@ -307,7 +307,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var inputfirst = new Input(fsstreamfirst.iterator().next());
 				var inputsecond = new Input(fsstreamsecond.iterator().next());
 
-		) {
+				) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var datasecond = (List) Utils.getKryo().readClassAndObject(inputsecond);
@@ -1132,7 +1132,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-		) {
+				) {
 
 			final List<Tuple2> inputs1, inputs2;
 			;
@@ -1238,7 +1238,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-		) {
+				) {
 
 			final List<Tuple2> inputs1, inputs2;
 			;
@@ -1347,7 +1347,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-		) {
+				) {
 
 			final List<Tuple2> inputs1, inputs2;
 			;
@@ -1457,7 +1457,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-		) {
+				) {
 
 			List inputs1 = null, inputs2 = null;
 			;
@@ -1529,24 +1529,24 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 										Object rec2 = csvrec.v2;
 										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
 									}).map((Object rec) -> {
-										try {
-											Tuple2 csvrec = (Tuple2) rec;
-											CSVRecord rec1 = (CSVRecord) csvrec.v1;
-											CSVRecord rec2 = (CSVRecord) csvrec.v2;
-											Map<String, String> keyvalue = rec1.toMap();
-											keyvalue.putAll(rec2.toMap());
-											List<String> keys = new ArrayList<>(keyvalue.keySet());
-											CSVRecord recordmutated = CSVParser
-													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
-															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
-																	.withHeader(keys.toArray(new String[keys.size()])))
-													.getRecords().get(0);
-											return recordmutated;
-										} catch (IOException e) {
+								try {
+									Tuple2 csvrec = (Tuple2) rec;
+									CSVRecord rec1 = (CSVRecord) csvrec.v1;
+									CSVRecord rec2 = (CSVRecord) csvrec.v2;
+									Map<String, String> keyvalue = rec1.toMap();
+									keyvalue.putAll(rec2.toMap());
+									List<String> keys = new ArrayList<>(keyvalue.keySet());
+									CSVRecord recordmutated = CSVParser
+											.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
+													CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
+															.withHeader(keys.toArray(new String[keys.size()])))
+											.getRecords().get(0);
+									return recordmutated;
+								} catch (IOException e) {
 
-										}
-										return null;
-									})
+								}
+								return null;
+							})
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
@@ -1605,7 +1605,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-		) {
+				) {
 
 			List inputs1 = null, inputs2 = null;
 			;
@@ -1677,24 +1677,24 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 										Object rec2 = csvrec.v2;
 										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
 									}).map((Object rec) -> {
-										try {
-											Tuple2 csvrec = (Tuple2) rec;
-											CSVRecord rec1 = (CSVRecord) csvrec.v1;
-											CSVRecord rec2 = (CSVRecord) csvrec.v2;
-											Map<String, String> keyvalue = rec1.toMap();
-											keyvalue.putAll(rec2.toMap());
-											List<String> keys = new ArrayList<>(keyvalue.keySet());
-											CSVRecord recordmutated = CSVParser
-													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
-															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
-																	.withHeader(keys.toArray(new String[keys.size()])))
-													.getRecords().get(0);
-											return recordmutated;
-										} catch (IOException e) {
+								try {
+									Tuple2 csvrec = (Tuple2) rec;
+									CSVRecord rec1 = (CSVRecord) csvrec.v1;
+									CSVRecord rec2 = (CSVRecord) csvrec.v2;
+									Map<String, String> keyvalue = rec1.toMap();
+									keyvalue.putAll(rec2.toMap());
+									List<String> keys = new ArrayList<>(keyvalue.keySet());
+									CSVRecord recordmutated = CSVParser
+											.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
+													CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
+															.withHeader(keys.toArray(new String[keys.size()])))
+											.getRecords().get(0);
+									return recordmutated;
+								} catch (IOException e) {
 
-										}
-										return null;
-									})
+								}
+								return null;
+							})
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
@@ -1770,7 +1770,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-		) {
+				) {
 
 			List inputs1 = null, inputs2 = null;
 			;
@@ -1842,24 +1842,24 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 										Object rec2 = csvrec.v2;
 										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
 									}).map((Object rec) -> {
-										try {
-											Tuple2 csvrec = (Tuple2) rec;
-											CSVRecord rec1 = (CSVRecord) csvrec.v1;
-											CSVRecord rec2 = (CSVRecord) csvrec.v2;
-											Map<String, String> keyvalue = rec1.toMap();
-											keyvalue.putAll(rec2.toMap());
-											List<String> keys = new ArrayList<>(keyvalue.keySet());
-											CSVRecord recordmutated = CSVParser
-													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
-															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
-																	.withHeader(keys.toArray(new String[keys.size()])))
-													.getRecords().get(0);
-											return recordmutated;
-										} catch (IOException e) {
+								try {
+									Tuple2 csvrec = (Tuple2) rec;
+									CSVRecord rec1 = (CSVRecord) csvrec.v1;
+									CSVRecord rec2 = (CSVRecord) csvrec.v2;
+									Map<String, String> keyvalue = rec1.toMap();
+									keyvalue.putAll(rec2.toMap());
+									List<String> keys = new ArrayList<>(keyvalue.keySet());
+									CSVRecord recordmutated = CSVParser
+											.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
+													CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
+															.withHeader(keys.toArray(new String[keys.size()])))
+											.getRecords().get(0);
+									return recordmutated;
+								} catch (IOException e) {
 
-										}
-										return null;
-									})
+								}
+								return null;
+							})
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));

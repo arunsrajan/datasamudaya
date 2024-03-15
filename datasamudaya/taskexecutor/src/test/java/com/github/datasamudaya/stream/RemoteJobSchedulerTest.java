@@ -30,12 +30,12 @@ import com.github.datasamudaya.common.functions.PredicateSerializable;
 
 @SuppressWarnings({"unchecked", "serial", "rawtypes"})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class RemoteJobSchedulerTest extends StreamPipelineBaseTestCommon implements Serializable{
+public class RemoteJobSchedulerTest extends StreamPipelineBaseTestCommon implements Serializable {
 	boolean toexecute = true;
 	int sum;
 
 	@Test
-	public void testFilterFilterCollect() throws Throwable {		
+	public void testFilterFilterCollect() throws Throwable {
 		log.info("testFilterFilter Before---------------------------------------");
 		PipelineConfig pc = new PipelineConfig();
 		pc.setMode(DataSamudayaConstants.MODE_NORMAL);

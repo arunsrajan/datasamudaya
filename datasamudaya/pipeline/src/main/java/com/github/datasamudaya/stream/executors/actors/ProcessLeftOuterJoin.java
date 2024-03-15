@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.fs.FileSystem;
+import org.ehcache.Cache;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple2;
 import org.xerial.snappy.SnappyOutputStream;
@@ -38,25 +39,30 @@ import akka.cluster.ClusterEvent.MemberUp;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
+/**
+ * Akka actors for the left outer join operators
+ * @author arun
+ *
+ */
 public class ProcessLeftOuterJoin extends AbstractActor implements Serializable {
 	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
-	  Cluster cluster = Cluster.get(getContext().getSystem());
+	Cluster cluster = Cluster.get(getContext().getSystem());
 
-	  // subscribe to cluster changes
-	  @Override
-	  public void preStart() {
-	    // #subscribe
-		  cluster.subscribe(
-			        getSelf(), ClusterEvent.initialStateAsEvents(), 
-			        MemberEvent.class, UnreachableMember.class,
-			        MemberUp.class, MemberUp.class);
-	  }
+	// subscribe to cluster changes
+	@Override
+	public void preStart() {
+		// #subscribe
+		cluster.subscribe(
+				getSelf(), ClusterEvent.initialStateAsEvents(),
+				MemberEvent.class, UnreachableMember.class,
+				MemberUp.class, MemberUp.class);
+	}
 
-	  // re-subscribe when restart
-	  @Override
-	  public void postStop() {
-	    cluster.unsubscribe(getSelf());
-	  }
+	// re-subscribe when restart
+	@Override
+	public void postStop() {
+		cluster.unsubscribe(getSelf());
+	}
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -65,9 +71,9 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 	ExecutorService executor;
 	LeftOuterJoinPredicate lojp;
 	int terminatingsize;
-	int initialsize = 0;
+	int initialsize;
 	List<ActorSelection> pipelines;
-	org.ehcache.Cache cache;
+	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	OutputObject left;
 	OutputObject right;
@@ -77,7 +83,7 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 	DiskSpillingList diskspilllistintermright;
 
 	private ProcessLeftOuterJoin(LeftOuterJoinPredicate lojp, List<ActorSelection> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, org.ehcache.Cache cache, Task task) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
 		this.lojp = lojp;
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
@@ -93,20 +99,20 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 		return receiveBuilder()
 				.match(OutputObject.class, this::processLeftOuterJoin)
 				.match(
-			            MemberUp.class,
-			            mUp -> {
-			              log.info("Member is Up: {}", mUp.member());
-			            })
-			        .match(
-			            UnreachableMember.class,
-			            mUnreachable -> {
-			              log.info("Member detected as unreachable: {}", mUnreachable.member());
-			            })
-			        .match(
-			            MemberRemoved.class,
-			            mRemoved -> {
-			              log.info("Member is Removed: {}", mRemoved.member());
-			            })
+						MemberUp.class,
+						mUp -> {
+							log.info("Member is Up: {}", mUp.member());
+						})
+				.match(
+						UnreachableMember.class,
+						mUnreachable -> {
+							log.info("Member detected as unreachable: {}", mUnreachable.member());
+						})
+				.match(
+						MemberRemoved.class,
+						mRemoved -> {
+							log.info("Member is Removed: {}", mRemoved.member());
+						})
 				.build();
 	}
 
@@ -132,22 +138,22 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 		}
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
 				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
-						+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
+				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
 			diskspilllistintermleft.close();
 			diskspilllistintermright.close();
 			final boolean leftvalue = isNull(task.joinpos) ? false
-					: nonNull(task.joinpos) && task.joinpos.equals("left") ? true : false;
+					: nonNull(task.joinpos) && "left".equals(task.joinpos) ? true : false;
 			final boolean rightvalue = isNull(task.joinpos) ? false
-					: nonNull(task.joinpos) && task.joinpos.equals("right") ? true : false;
+					: nonNull(task.joinpos) && "right".equals(task.joinpos) ? true : false;
 			Stream<Tuple2> datastreamleft = diskspilllistintermleft.isSpilled()
 					? (Stream<Tuple2>) Utils.getStreamData(
-							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), null, true,
-									diskspilllistintermleft.getLeft(), diskspilllistintermleft.getRight())))
+					new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), null, true,
+							diskspilllistintermleft.getLeft(), diskspilllistintermleft.getRight())))
 					: diskspilllistintermleft.readListFromBytes().stream();
 			Stream<Tuple2> datastreamright = diskspilllistintermright.isSpilled()
 					? (Stream<Tuple2>) Utils.getStreamData(
-							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
-									diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
+					new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
+							diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
 					: diskspilllistintermright.readListFromBytes().stream();
 			try (var seq1 = Seq.seq(datastreamleft);
 					var seq2 = Seq.seq(datastreamright);
@@ -155,18 +161,18 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 				join.forEach(diskspilllistinterm::add);
 				Stream datastreamrightfirstelem = diskspilllistintermright.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
-								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
-										diskspilllistintermright.getLeft(), diskspilllistintermright.getRight()))): diskspilllistintermright.readListFromBytes().stream();
+						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
+								diskspilllistintermright.getLeft(), diskspilllistintermright.getRight()))) : diskspilllistintermright.readListFromBytes().stream();
 				Object[] origobjarray = (Object[]) datastreamrightfirstelem.findFirst().get();
 				Object[][] nullobjarr = new Object[2][((Object[]) origobjarray[0]).length];
-				for (int numvalues = 0; numvalues < nullobjarr[0].length; numvalues++) {
+				for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
 					nullobjarr[1][numvalues] = true;
 				}
 				diskspilllistinterm.close();
 				Stream diskspilllistintermstream = diskspilllistinterm.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
-								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-										diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))): diskspilllistinterm.readListFromBytes().stream();
+						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
+								diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))) : diskspilllistinterm.readListFromBytes().stream();
 				diskspilllistintermstream.filter(val -> val instanceof Tuple2).map(value -> {
 					Tuple2 maprec = (Tuple2) value;
 					Object[] rec1 = (Object[]) maprec.v1;
@@ -187,8 +193,8 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 					} else {
 						Stream<Tuple2> datastream = diskspilllist.isSpilled()
 								? (Stream<Tuple2>) Utils.getStreamData(
-										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, true,
-												diskspilllist.getLeft(), diskspilllist.getRight())))
+								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, true,
+										diskspilllist.getLeft(), diskspilllist.getRight())))
 								: diskspilllist.readListFromBytes().stream();
 						try (var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);

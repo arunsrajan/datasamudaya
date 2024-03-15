@@ -8,24 +8,24 @@ import java.util.function.Predicate;
  *
  */
 public class AndPredicate implements Predicate {
-    private final Predicate leftPredicate;
-    private final Predicate rightPredicate;
+	private final Predicate leftPredicate;
+	private final Predicate rightPredicate;
 
-    public AndPredicate(Predicate leftPredicate, Predicate rightPredicate) {
-        this.leftPredicate = leftPredicate;
-        this.rightPredicate = rightPredicate;
-    }
+	public AndPredicate(Predicate leftPredicate, Predicate rightPredicate) {
+		this.leftPredicate = leftPredicate;
+		this.rightPredicate = rightPredicate;
+	}
 
-    public Predicate getLeftPredicate() {
-        return leftPredicate;
-    }
+	public Predicate getLeftPredicate() {
+		return leftPredicate;
+	}
 
-    public Predicate getRightPredicate() {
-        return rightPredicate;
-    }
+	public Predicate getRightPredicate() {
+		return rightPredicate;
+	}
 
-    @Override
-    public boolean test(Object myData) {
-        return leftPredicate.test(myData) && rightPredicate.test(myData);
-    }
+	@Override
+	public boolean test(Object myData) {
+		return leftPredicate.test(myData) && rightPredicate.test(myData);
+	}
 }

@@ -19,6 +19,6 @@ import lombok.ToString;
 public class SortOrderColumns {
 
 	private boolean isasc;
-	
+
 	private String column;
 }

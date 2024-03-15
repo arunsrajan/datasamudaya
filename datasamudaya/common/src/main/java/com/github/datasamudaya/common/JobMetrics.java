@@ -41,7 +41,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobMetrics implements Serializable{
+public class JobMetrics implements Serializable {
 	private static final long serialVersionUID = 2885388424297557849L;
 	private String jobname;
 	private String jobid;

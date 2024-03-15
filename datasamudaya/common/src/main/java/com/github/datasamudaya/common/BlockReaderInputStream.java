@@ -9,54 +9,55 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import parquet.org.slf4j.Logger;
 import parquet.org.slf4j.LoggerFactory;
 
-public class BlockReaderInputStream extends InputStream implements Serializable{
-	private static Logger log = LoggerFactory.getLogger(BlockReaderInputStream.class); 
+public class BlockReaderInputStream extends InputStream implements Serializable {
+	private static final Logger log = LoggerFactory.getLogger(BlockReaderInputStream.class);
 	private static final long serialVersionUID = 7812408972554339334L;
 	private final long limit;
-    private long bytesRead;
-    private transient FSDataInputStream br;
-    byte[] onebyt = new byte[1];
-    long startoffset = 0;
-    public BlockReaderInputStream(FSDataInputStream br,long startoffset, long limit) throws IOException {
-    	this.br = br;
-    	this.startoffset = startoffset;
-    	br.seek(startoffset);
-        this.limit = limit;
-        this.bytesRead = 0;
-    }
+	private long bytesRead;
+	private transient final FSDataInputStream br;
+	byte[] onebyt = new byte[1];
+	long startoffset;
 
-    @Override
-    public int read() throws IOException {
-        if (bytesRead >= limit) {
-            return -1;
-        }
-        int result = br.read(onebyt, 0, 1);
-        if (result != -1) {
-            bytesRead++;
-        }
-        return result;
-    }
+	public BlockReaderInputStream(FSDataInputStream br, long startoffset, long limit) throws IOException {
+		this.br = br;
+		this.startoffset = startoffset;
+		br.seek(startoffset);
+		this.limit = limit;
+		this.bytesRead = 0;
+	}
 
-    @Override
-    public int read(byte[] b, int off, int len) throws IOException {
-        if (bytesRead >= limit) {
-            return -1;
-        }        
-        int bytesToRead = (int) Math.min(len, limit - bytesRead);
-        int bytesReadNow = br.read(b, off, bytesToRead);
-        if (bytesReadNow != -1) {
-            bytesRead += bytesReadNow;
-        }
-        return bytesReadNow;
-    }
+	@Override
+	public int read() throws IOException {
+		if (bytesRead >= limit) {
+			return -1;
+		}
+		int result = br.read(onebyt, 0, 1);
+		if (result != -1) {
+			bytesRead++;
+		}
+		return result;
+	}
 
-    @Override
-    public void close() {
-    	try {
+	@Override
+	public int read(byte[] b, int off, int len) throws IOException {
+		if (bytesRead >= limit) {
+			return -1;
+		}
+		int bytesToRead = (int) Math.min(len, limit - bytesRead);
+		int bytesReadNow = br.read(b, off, bytesToRead);
+		if (bytesReadNow != -1) {
+			bytesRead += bytesReadNow;
+		}
+		return bytesReadNow;
+	}
+
+	@Override
+	public void close() {
+		try {
 			br.close();
 		} catch (IOException e) {
 			log.warn("Error While closing BlockReader {}", br);
 		}
-    }
-    
+	}
+
 }

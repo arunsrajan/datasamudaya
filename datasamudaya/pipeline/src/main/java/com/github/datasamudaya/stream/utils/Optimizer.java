@@ -34,14 +34,10 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlFunction;
-import org.apache.calcite.sql.SqlFunctionCategory;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.type.ReturnTypes;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
@@ -52,7 +48,6 @@ import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -69,7 +64,7 @@ public class Optimizer {
 			SqlValidator validator,
 			SqlToRelConverter converter,
 			VolcanoPlanner planner
-		) {
+	) {
 		this.config = config;
 		this.validator = validator;
 		this.converter = converter;
@@ -94,18 +89,16 @@ public class Optimizer {
 				config
 		);
 
-		
+
 		SqlStdOperatorTable sqlStdOperatorTable = SqlStdOperatorTable.instance();
 		List<SqlFunction> sqlFunctions = SQLUtils.getAllSqlFunctions();
-		
+
 		sqlFunctions.stream().forEach(sqlFunction -> sqlStdOperatorTable.register(sqlFunction));
-		
-		
+
+
 		SqlOperatorTable operatorTable = ChainedSqlOperatorTable.of(sqlStdOperatorTable);
 
-		
-		
-		
+
 		SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
 				.withLenientOperatorLookup(config.lenientOperatorLookup())
 				.withSqlConformance(config.conformance())
@@ -169,5 +162,5 @@ public class Optimizer {
 				Collections.emptyList()
 		);
 	}
-	
+
 }

@@ -122,7 +122,7 @@ public class MassiveDataCruncherMRApiTest extends StreamPipelineBaseTestCommon {
 		String app = DataSamudayaConstants.DATASAMUDAYAAPPLICATION;
 		String task = DataSamudayaConstants.TASK;
 		TaskExecutorMapperCombiner mdtemc = new
-				TaskExecutorMapperCombiner(bls, lzis, app, task, Thread.currentThread().getContextClassLoader(), 12121);		
+				TaskExecutorMapperCombiner(bls, lzis, app, task, Thread.currentThread().getContextClassLoader(), 12121);
 		Context ctx = (Context) mdtemc.call();
 		es.shutdown();
 		assertEquals(-63278, (long) (ctx.get("AQ").iterator().next()));
@@ -145,7 +145,7 @@ public class MassiveDataCruncherMRApiTest extends StreamPipelineBaseTestCommon {
 		TaskExecutorMapperCombiner mdtemc = new
 				TaskExecutorMapperCombiner(bls, lzis, app, task, Thread.currentThread().getContextClassLoader(), 12121);
 		mdtemc.call();
-		Map<String,Object> apptaskexecutormap = new ConcurrentHashMap<>();
+		Map<String, Object> apptaskexecutormap = new ConcurrentHashMap<>();
 		apptaskexecutormap.put(app + task, mdtemc);
 		ReducerValues reducervalues = new ReducerValues();
 		reducervalues.setTuples(Arrays.asList(new Tuple3<>("AQ", Arrays.asList(app + task), Arrays.asList("127.0.0.1_1000"))));

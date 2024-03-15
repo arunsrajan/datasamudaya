@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +58,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 	private static final Log log = LogFactory.getLog(StreamPipelineYarnContainer.class);
 	private Map<String, JobStage> jsidjsmap;
 	private MindAppmasterServiceClient client;
+
 	/**
 	 * Pull the Job to perform MR operation execution requesting 
 	 * the Yarn App Master Service. The various Yarn operation What operation
@@ -71,7 +71,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 		Task task;
 		JobRequest request;
 		byte[] job = null;
-		var containerid = getEnvironment().get(DataSamudayaConstants.SHDP_CONTAINERID);		
+		var containerid = getEnvironment().get(DataSamudayaConstants.SHDP_CONTAINERID);
 		executor = Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
 		Semaphore lock = new Semaphore(2);
 		try {
@@ -84,8 +84,8 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 			log.info("Initializing Cache");
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-				            + DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
+							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			var inmemorycache = DataSamudayaCache.get();
 			log.info("Initializing Cache Completed");
 			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
@@ -115,16 +115,14 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 				if (response.getState().equals(JobResponse.State.STANDBY)) {
 					sleep(1);
 					continue;
-				}
-				else if (response.getState().equals(JobResponse.State.STOREJOBSTAGE)) {
+				} else if (response.getState().equals(JobResponse.State.STOREJOBSTAGE)) {
 					job = response.getJob();
-					
+
 					var input = new Input(new ByteArrayInputStream(job));
 					var object = Utils.getKryo().readClassAndObject(input);
 					this.jsidjsmap = (Map<String, JobStage>) object;
 					sleep(1);
-				}
-				else if (response.getState().equals(JobResponse.State.RUNJOB)) {
+				} else if (response.getState().equals(JobResponse.State.RUNJOB)) {
 					log.debug(containerid + ": Environment " + getEnvironment());
 					executor.execute(() -> {
 						try {
@@ -135,7 +133,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 						byte[] jobtoprocess = response.getJob();
 						var input = new Input(new ByteArrayInputStream(jobtoprocess));
 						var object = Utils.getKryo().readClassAndObject(input);
-						Task tasktoprocess = (Task) object;						
+						Task tasktoprocess = (Task) object;
 						StreamPipelineTaskExecutorYarn yarnexecutor = null;
 						if (nonNull(tasktoprocess.getStorage()) && tasktoprocess.getStorage() == STORAGE.COLUMNARSQL) {
 							yarnexecutor = new StreamPipelineTaskExecutorYarnSQL(
@@ -160,8 +158,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 						log.debug(containerid + ": Task Completed=" + tasktoprocess);
 						lock.release();
 					});
-				}
-				else if (response.getState().equals(JobResponse.State.DIE)) {
+				} else if (response.getState().equals(JobResponse.State.DIE)) {
 					log.debug(containerid + ": Container dies: " + response.getState());
 					break;
 				}

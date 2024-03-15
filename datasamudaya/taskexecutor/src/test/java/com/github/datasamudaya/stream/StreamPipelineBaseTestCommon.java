@@ -64,19 +64,19 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 	static Logger log = Logger.getLogger(StreamPipelineBaseTestCommon.class);
 	protected static ZookeeperOperations zo;
 	protected static String tejobid;
-	
+
 	@SuppressWarnings({"unused"})
 	@BeforeClass
 	public static void setServerUp() throws Exception {
 		try {
-			if(!setupdone) {
+			if (!setupdone) {
 				URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
-			}			
+			}
 			Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 			StaticComponentContainer.Modules.exportAllToAll();
 			PropertyConfigurator.configure(System.getProperty(DataSamudayaConstants.USERDIR) + DataSamudayaConstants.FORWARD_SLASH
-					+ DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);		
+					+ DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 			var out = System.out;
 			pipelineconfig.setOutput(out);
 			pipelineconfig.setMaxmem("1024");
@@ -85,13 +85,13 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			pipelineconfig.setNumberofcontainers("1");
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 			pipelineconfig.setBatchsize("4");
-			tejobid = DataSamudayaConstants.JOB+DataSamudayaConstants.HYPHEN+System.currentTimeMillis()+DataSamudayaConstants.HYPHEN+Utils.getUniqueJobID();
+			tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
 			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
-			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, 
+			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-				            + DataSamudayaConstants.CACHEBLOCKS);
+							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.CACHEBLOCKS);
 			CacheUtils.initBlockMetadataCache(DataSamudayaConstants.BLOCKCACHE);
 			hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 1);
 			pipelineconfig.setBlocksize("20");
@@ -131,7 +131,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 				zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource, event -> {
 					log.info(event);
 				});
-				while(isNull(DataSamudayaNodesResources.get()) || nonNull(DataSamudayaNodesResources.get()) && DataSamudayaNodesResources.get().size()!=numberofnodes) {
+				while (isNull(DataSamudayaNodesResources.get()) || nonNull(DataSamudayaNodesResources.get()) && DataSamudayaNodesResources.get().size() != numberofnodes) {
 					Thread.sleep(1000);
 				}
 				CountDownLatch cdl = new CountDownLatch(numberofnodes);
@@ -141,7 +141,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 						configuration);
 				var containeridports = new ConcurrentHashMap<String, List<Integer>>();
 				while (executorsindex < numberofnodes) {
-					
+
 					host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskexecutor.host"));
 					if (isNull(server)) {
 						server = Utils.getRPCRegistry(nodeport, new StreamDataCruncher() {
@@ -211,7 +211,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 
 	@AfterClass
 	public static void closeResources() throws Exception {
-		if(nonNull(DataSamudayaCacheManager.get())){
+		if (nonNull(DataSamudayaCacheManager.get())) {
 			DataSamudayaCacheManager.get().close();
 			DataSamudayaCacheManager.put(null);
 		}
@@ -233,7 +233,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 		if (threadpool != null) {
 			threadpool.shutdown();
 		}
-		if(testingserver != null) {
+		if (testingserver != null) {
 			testingserver.close();
 		}
 		containerprocesses.keySet().stream().forEach(key -> {

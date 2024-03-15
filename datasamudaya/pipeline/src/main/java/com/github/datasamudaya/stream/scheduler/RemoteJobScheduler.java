@@ -33,6 +33,7 @@ public class RemoteJobScheduler {
 
 	private static final Logger log = LoggerFactory.getLogger(RemoteJobScheduler.class);
 	Set<String> taskexecutors;
+
 	/**
 	 * 
 	 * @param job
@@ -99,7 +100,7 @@ public class RemoteJobScheduler {
 			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		}
 	}
-	
+
 	/**
 	 * Scheduler Job Remotely
 	 * @param job
@@ -109,22 +110,22 @@ public class RemoteJobScheduler {
 	public Object scheduleJob(Job job) throws Exception {
 		try (var zo = new ZookeeperOperations();
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                var fstout = new Output(baos);) {	    	
-	    	zo.connect();
-	    	getTaskExecutorsHostPort(job, job.getPipelineconfig(), zo);
-	    	String choosente = taskexecutors.iterator().next();
-           	Kryo kryo = Utils.getKryoInstance();
-           	if (nonNull(job.getPipelineconfig().getClsloader())) {
-    			kryo.setClassLoader(job.getPipelineconfig().getClsloader());
-    		}
-	        kryo.writeClassAndObject(fstout, job);
-	        fstout.flush();
-	        String jobid = job.getId();
-	        if (job.getPipelineconfig().getUseglobaltaskexecutors()) {
+                var fstout = new Output(baos);) {
+			zo.connect();
+			getTaskExecutorsHostPort(job, job.getPipelineconfig(), zo);
+			String choosente = taskexecutors.iterator().next();
+			Kryo kryo = Utils.getKryoInstance();
+			if (nonNull(job.getPipelineconfig().getClsloader())) {
+				kryo.setClassLoader(job.getPipelineconfig().getClsloader());
+			}
+			kryo.writeClassAndObject(fstout, job);
+			fstout.flush();
+			String jobid = job.getId();
+			if (job.getPipelineconfig().getUseglobaltaskexecutors()) {
 				jobid = job.getPipelineconfig().getTejobid();
 			}
-	    	Object output = Utils.getResultObjectByInput(choosente, baos.toByteArray(), jobid);
-	    	job.getJm().setJobcompletiontime(System.currentTimeMillis());
+			Object output = Utils.getResultObjectByInput(choosente, baos.toByteArray(), jobid);
+			job.getJm().setJobcompletiontime(System.currentTimeMillis());
 			Utils.writeToOstream(job.getPipelineconfig().getOutput(), "Concluded job in "
 					+ ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0) + " seconds");
 			log.info("Concluded job in "
@@ -132,16 +133,16 @@ public class RemoteJobScheduler {
 			job.getJm()
 					.setTotaltimetaken((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0);
 			Utils.writeToOstream(job.getPipelineconfig().getOutput(), "Job stats " + job.getJm());
-	    	return output;
-		} catch(Exception ex) {
+			return output;
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		} finally {
-			 if (!job.getPipelineconfig().getUseglobaltaskexecutors()) {
-				 Utils.destroyTaskExecutors(job);
-			 }
+			if (!job.getPipelineconfig().getUseglobaltaskexecutors()) {
+				Utils.destroyTaskExecutors(job);
+			}
 		}
 		return null;
 	}
-	
-	
+
+
 }

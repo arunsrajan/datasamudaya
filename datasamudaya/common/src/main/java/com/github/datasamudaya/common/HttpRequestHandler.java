@@ -32,52 +32,52 @@ public class HttpRequestHandler extends AbstractHandler {
 
 	private final String dir;
 
-  HttpRequestHandler(String dir) {
-    this.dir = dir;
-  }
+	HttpRequestHandler(String dir) {
+		this.dir = dir;
+	}
 
-  public void handle(String target, Request baseRequest, HttpServletRequest request,
-      HttpServletResponse response) throws IOException {
-    var relativePath = request.getPathInfo();
-    var filePath = dir + relativePath;
-    var downloadFile = new File(filePath);
-    try (var inStream = new FileInputStream(downloadFile);
+	public void handle(String target, Request baseRequest, HttpServletRequest request,
+			HttpServletResponse response) throws IOException {
+		var relativePath = request.getPathInfo();
+		var filePath = dir + relativePath;
+		var downloadFile = new File(filePath);
+		try (var inStream = new FileInputStream(downloadFile);
         var outStream = response.getOutputStream();) {
 
 
-      // if you want to use a relative path to context root:
+			// if you want to use a relative path to context root:
 
-      log.debug("relativePath = " + relativePath);
+			log.debug("relativePath = " + relativePath);
 
-      var mimeType = "application/octet-stream";
+			var mimeType = "application/octet-stream";
 
-      log.debug("MIME type: " + mimeType);
+			log.debug("MIME type: " + mimeType);
 
-      // modifies response
-      response.setContentType(mimeType);
-      response.setContentLength((int) downloadFile.length());
+			// modifies response
+			response.setContentType(mimeType);
+			response.setContentLength((int) downloadFile.length());
 
-      // forces download
-      var headerKey = "Content-Disposition";
-      var headerValue = "attachment; filename=\"%s\"".formatted(downloadFile.getName());
-      response.setHeader(headerKey, headerValue);
+			// forces download
+			var headerKey = "Content-Disposition";
+			var headerValue = "attachment; filename=\"%s\"".formatted(downloadFile.getName());
+			response.setHeader(headerKey, headerValue);
 
-      // obtains response's output stream
+			// obtains response's output stream
 
 
-      var buffer = new byte[4096];
-      var bytesRead = -1;
+			var buffer = new byte[4096];
+			var bytesRead = -1;
 
-      while ((bytesRead = inStream.read(buffer)) != -1) {
-        outStream.write(buffer, 0, bytesRead);
-      }
+			while ((bytesRead = inStream.read(buffer)) != -1) {
+				outStream.write(buffer, 0, bytesRead);
+			}
 
-      inStream.close();
-      outStream.close();
+			inStream.close();
+			outStream.close();
 
-      baseRequest.setHandled(true);
-    } catch (Exception ex) {
-      log.error("Not able to upload file: ", ex);
-    }
-  }
+			baseRequest.setHandled(true);
+		} catch (Exception ex) {
+			log.error("Not able to upload file: ", ex);
+		}
+	}
 }

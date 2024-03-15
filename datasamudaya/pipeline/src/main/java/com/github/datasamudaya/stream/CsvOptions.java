@@ -57,5 +57,5 @@ public class CsvOptions implements Serializable {
 	public ConcurrentMap<String, Integer> getHeaderindexmap() {
 		return headerindexmap;
 	}
-	
+
 }

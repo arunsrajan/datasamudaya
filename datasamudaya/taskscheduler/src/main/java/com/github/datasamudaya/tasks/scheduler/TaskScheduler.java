@@ -54,7 +54,7 @@ public class TaskScheduler implements Runnable {
 			fos.write(mrjar);
 			var clsloader = DataSamudayaMapReducePhaseClassLoader.newInstance(mrjar, loader);
 			Thread.currentThread().setContextClassLoader(clsloader);
-			
+
 			String[] argscopy;
 			//Get the main class to execute.
 			String mainclass;
@@ -69,8 +69,8 @@ public class TaskScheduler implements Runnable {
 			var main = Class.forName(mainclass, true, clsloader);
 			var jc = JobConfigurationBuilder.newBuilder().build();
 			jc.setMrjar(mrjar);
-			
-			try(var tssos = tss.getOutputStream();){
+
+			try (var tssos = tss.getOutputStream();) {
 				jc.setOutput(tssos);
 				var mrjob = (Application) main.getDeclaredConstructor().newInstance();
 				mrjob.runMRJob(argscopy, jc);

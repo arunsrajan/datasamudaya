@@ -91,8 +91,8 @@ public class StreamPipelineTestCommon {
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
 		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-	            + DataSamudayaConstants.CACHEBLOCKS);
+				DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.CACHEBLOCKS);
 		CacheUtils.initBlockMetadataCache(DataSamudayaConstants.BLOCKCACHE);
 		hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
 		cache = (Cache<String, byte[]>) DataSamudayaCache.get();
@@ -130,7 +130,7 @@ public class StreamPipelineTestCommon {
 			hdfs.close();
 		}
 		ByteBufferPoolDirect.destroy();
-		if(nonNull(DataSamudayaCacheManager.get())){
+		if (nonNull(DataSamudayaCacheManager.get())) {
 			DataSamudayaCacheManager.get().close();
 			DataSamudayaCacheManager.put(null);
 		}

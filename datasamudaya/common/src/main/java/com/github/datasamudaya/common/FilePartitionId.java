@@ -28,6 +28,7 @@ public class FilePartitionId implements Serializable,Cloneable {
 	int startRange;
 	int endRange;
 	int partitionNumber;
+
 	@Override
 	public Object clone() {
 		try {

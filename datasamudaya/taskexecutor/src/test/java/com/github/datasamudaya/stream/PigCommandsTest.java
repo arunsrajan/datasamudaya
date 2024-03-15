@@ -24,12 +24,12 @@ import com.github.datasamudaya.stream.pig.PigUtils;
 
 public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 
-	String[] airlinehead = { "AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime",
+	String[] airlinehead = {"AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime",
 			"ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime",
 			"AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut", "Cancelled",
 			"CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
-			"LateAircraftDelay" };
-	String[] carrierhead = { "Code", "Description" };
+			"LateAircraftDelay"};
+	String[] carrierhead = {"Code", "Description"};
 	List<String> pigQueriesToExecute = new ArrayList<>();
 	static String containeralloc;
 	static boolean isuseglobaltaskexecutors;
@@ -52,8 +52,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
-		if(pipelineconfig.getLocal().equals("false")) {
-			Utils.launchContainersUserSpec("arun", tejobid, 4, 500*DataSamudayaConstants.MB, 1);
+		if ("false".equals(pipelineconfig.getLocal())) {
+			Utils.launchContainersUserSpec("arun", tejobid, 4, 500 * DataSamudayaConstants.MB, 1);
 		}
 	}
 
@@ -84,7 +84,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.clear();
 		pigQueriesToExecute.add(
 				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
-		
+
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE UniqueCarrier, DayofMonth, MonthOfYear;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
@@ -134,7 +134,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.add(
 				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE UniqueCarrier, DayofMonth, MonthOfYear;");
-		
+
 		pigQueriesToExecute.add("data2 = ORDER data1 BY UniqueCarrier ASC, MonthOfYear ASC, DayofMonth ASC;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
@@ -145,12 +145,12 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertEquals(3, obj.length);			
+				assertEquals(3, obj.length);
 			}
 		}
 		assertEquals(46360, totalrecords);
 	}
-	
+
 	@Test
 	public void testPigLoadFilter() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -169,12 +169,12 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(29, obj.length);
-				assertTrue((Long)obj[1]>11 && (Long)obj[2]>=6);
+				assertTrue((Long) obj[1] > 11 && (Long) obj[2] >= 6);
 			}
 		}
 		assertEquals(3389, totalrecords);
 	}
-	
+
 	@Test
 	public void testPigLoadFilterStore() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -188,8 +188,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		assertTrue(nonNull(lp));
 		PigUtils.executeStore(lp, DataSamudayaConstants.EMPTY, pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
 	}
-	
-	
+
+
 	@Test
 	public void testPigLoadFilterFilter() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -208,13 +208,13 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertTrue((Long)obj[1]>11 && (Long)obj[2]>=6 && (Long)obj[3]>1);
+				assertTrue((Long) obj[1] > 11 && (Long) obj[2] >= 6 && (Long) obj[3] > 1);
 				assertEquals(29, obj.length);
 			}
 		}
-		assertTrue(totalrecords<3389);
+		assertTrue(totalrecords < 3389);
 	}
-	
+
 	@Test
 	public void testPigLoadFilterExecCollectFilterExecCollectForEach() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -238,7 +238,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		assertEquals(3389, totalrecords);
-		
+
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "filtered_data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -250,8 +250,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertEquals(29, obj.length);
 			}
 		}
-		assertTrue(totalrecords<3389);
-		
+		assertTrue(totalrecords < 3389);
+
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -266,8 +266,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		}
 		assertEquals(1, totalrecords);
 	}
-	
-	
+
+
 	@Test
 	public void testPigLoadFilterExecCollectFilterExecCollectForEachForEach() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -288,12 +288,12 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertTrue((Long)obj[1]>11 && (Long)obj[2]>=6);
+				assertTrue((Long) obj[1] > 11 && (Long) obj[2] >= 6);
 				assertEquals(29, obj.length);
 			}
 		}
 		assertEquals(3389, totalrecords);
-		
+
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "filtered_data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -302,12 +302,12 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertTrue((Long)obj[1]>11 && (Long)obj[2]>=6 && (Long)obj[3]>1);
+				assertTrue((Long) obj[1] > 11 && (Long) obj[2] >= 6 && (Long) obj[3] > 1);
 				assertEquals(29, obj.length);
 			}
 		}
-		assertTrue(totalrecords<3389);
-		
+		assertTrue(totalrecords < 3389);
+
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -320,7 +320,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		assertEquals(1, totalrecords);
-		
+
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data2",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -355,13 +355,13 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(1, obj.length);
-				assertTrue(((long)obj[0]<1000));
+				assertTrue(((long) obj[0] < 1000));
 			}
 		}
 		assertEquals(1, totalrecords);
 	}
-	
-	
+
+
 	@Test
 	public void testPigLoadFilterForEachStore() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -376,8 +376,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		assertTrue(nonNull(lp));
 		PigUtils.executeStore(lp, DataSamudayaConstants.EMPTY, pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
 	}
-	
-	
+
+
 	@Test
 	public void testPigLoadFilterForEachColumnsChangeStore() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -392,8 +392,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		assertTrue(nonNull(lp));
 		PigUtils.executeStore(lp, DataSamudayaConstants.EMPTY, pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
 	}
-	
-	
+
+
 	@Test
 	public void testPigLoadFilterForEachMultipleStores() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -409,7 +409,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		assertTrue(nonNull(lp));
 		PigUtils.executeStore(lp, DataSamudayaConstants.EMPTY, pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
 	}
-	
+
 	@Test
 	public void testPigLoadFilterForEachFilterForEachGroup() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -430,13 +430,13 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(2, obj.length);
-				assertTrue(((Long)obj[1])<1000);
+				assertTrue(((Long) obj[1]) < 1000);
 			}
 		}
 		assertEquals(1, totalrecords);
 	}
-	
-	
+
+
 	@Test
 	public void testPigLoadForEachOrderFilter() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -469,11 +469,11 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.clear();
 		pigQueriesToExecute.add(
 				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
-		
+
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE UniqueCarrier, DayofMonth, MonthOfYear;");
-		
+
 		pigQueriesToExecute.add("data2 = ORDER data1 BY UniqueCarrier ASC, MonthOfYear ASC, DayofMonth ASC;");
-		
+
 		pigQueriesToExecute.add("filtered_data = FILTER data2 BY MonthOfYear > 11 AND DayofMonth >= 6;");
 		pigQueriesToExecute.add("distinct_data = Distinct filtered_data;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
@@ -498,11 +498,11 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.clear();
 		pigQueriesToExecute.add(
 				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
-		
+
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE UniqueCarrier, ArrDelay, DepDelay;");
-		
+
 		pigQueriesToExecute.add("distinct_data = DISTINCT data1;");
-		
+
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "distinct_data",
@@ -517,7 +517,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		}
 		log.info(totalrecords);
 	}
-	
+
 	@Test
 	public void testPigLoadCount() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -611,7 +611,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.clear();
 		pigQueriesToExecute.add(
 				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
-		
+
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE UniqueCarrier, SUM(ArrDelay) as sumarrdelay;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
@@ -683,7 +683,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pigQueriesToExecute.clear();
 		pigQueriesToExecute.add(
 				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
-		
+
 		pigQueriesToExecute.add("data1 = FOREACH data GENERATE ArrDelay, abs(ArrDelay) as absarrdelay;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
 		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
@@ -713,7 +713,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertEquals(2, obj.length);			
+				assertEquals(2, obj.length);
 				assertEquals(Long.valueOf(((String) obj[0]).length()), obj[1]);
 			}
 		}
@@ -779,7 +779,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertEquals(3, obj.length);				
+				assertEquals(3, obj.length);
 				assertEquals(((long) obj[0]) + ((long) obj[1]), obj[2]);
 			}
 		}
@@ -801,7 +801,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertEquals(3, obj.length);				
+				assertEquals(3, obj.length);
 				assertEquals(((int) obj[0]) - ((int) obj[1]), obj[2]);
 			}
 		}
@@ -823,8 +823,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertEquals(3, obj.length);				
-				assertEquals(((long) obj[0]) * ((long) obj[1]),obj[2]);
+				assertEquals(3, obj.length);
+				assertEquals(((long) obj[0]) * ((long) obj[1]), obj[2]);
 			}
 		}
 	}
@@ -848,8 +848,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				assertEquals(3, obj.length);
 				assertEquals(
 						((int) obj[0])
-								/ (Double.valueOf(obj[1]+DataSamudayaConstants.EMPTY)),
-								obj[2]);
+								/ (Double.valueOf(obj[1] + DataSamudayaConstants.EMPTY)),
+						obj[2]);
 			}
 		}
 	}
@@ -870,7 +870,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertEquals(4, obj.length);				
+				assertEquals(4, obj.length);
 				assertEquals(((int) obj[0])
 						/ (Double.valueOf(obj[1] + DataSamudayaConstants.EMPTY))
 						* ((int) obj[2]), obj[3]);
@@ -895,7 +895,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertEquals(2, obj.length);				
+				assertEquals(2, obj.length);
 				assertEquals(((String) obj[0]).toUpperCase(), obj[1]);
 			}
 		}
@@ -941,7 +941,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertEquals(2, obj.length);				
+				assertEquals(2, obj.length);
 				assertEquals(Base64.getEncoder().encodeToString(((String) obj[0]).getBytes()), obj[1]);
 			}
 		}
@@ -956,7 +956,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
 		pigQueriesToExecute
 				.add("data1 = FOREACH data GENERATE UniqueCarrier, base64encode(UniqueCarrier) as base64uc;");
-		
+
 		pigQueriesToExecute
 				.add("data2 = FOREACH data1 GENERATE UniqueCarrier, base64decode(base64uc) as base64decode;");
 		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
@@ -1102,7 +1102,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testPigLoadMultipleAssignment() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()

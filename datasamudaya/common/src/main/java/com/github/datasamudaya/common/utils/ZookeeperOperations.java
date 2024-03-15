@@ -41,11 +41,12 @@ import static java.util.Objects.*;
  * @author arun
  * Zookeeper Operations required for creating tasks, nodes, SCHEDULERSZK and TASKEXECUTORSZK
  */
-public class ZookeeperOperations implements AutoCloseable{
-    private CuratorFramework curator;
-    private ObjectMapper objectMapper;
+public class ZookeeperOperations implements AutoCloseable {
+	private CuratorFramework curator;
+	private ObjectMapper objectMapper;
 	private static final Logger log = LoggerFactory.getLogger(ZookeeperOperations.class);
-    public void connect() throws ZookeeperException {
+
+	public void connect() throws ZookeeperException {
 		try {
 			curator = CuratorFrameworkFactory.newClient(
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_HOSTPORT,
@@ -62,35 +63,35 @@ public class ZookeeperOperations implements AutoCloseable{
 			log.warn(DataSamudayaConstants.INTERRUPTED, e);
 			// Restore interrupted state...
 			Thread.currentThread().interrupt();
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
 
-    /**
-     * Creates root node by path and set the data for the root node
-     * @param path
-     * @param data
-     * @throws Exception
-     */
-    public void createRootNode(String path, byte[] data) throws ZookeeperException {
-    	try {
-	        curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(path, data);
-	        Watcher watcher = (WatchedEvent event) -> log.info("Root node changed: {}", event);
-	        curator.getData().usingWatcher(watcher).forPath(path);
-    	} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
+	/**
+	  Creates root node by path and set the data for the root node
+	  @param path
+		 @param data
+		 @throws Exception
+		*/
+	public void createRootNode(String path, byte[] data) throws ZookeeperException {
+		try {
+			curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(path, data);
+			Watcher watcher = (WatchedEvent event) -> log.info("Root node changed: {}", event);
+			curator.getData().usingWatcher(watcher).forPath(path);
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
 
-    /**
-     * This method creates nodes in zookeeper with the node path, setting the data and watcher.
-     * @param node
-     * @param data
-     * @param watcher
-     * @throws Exception
-     */
-    public void createNodesNode(String node, Resources data, Watcher watcher) throws ZookeeperException {
+	/**
+	  This method creates nodes in zookeeper with the node path, setting the data and watcher.
+	  @param node
+		 @param data
+		 @param watcher
+		 @throws Exception
+		*/
+	public void createNodesNode(String node, Resources data, Watcher watcher) throws ZookeeperException {
 		try {
 			if (curator.checkExists().forPath(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.NODESZK + DataSamudayaConstants.FORWARD_SLASH + node) != null) {
@@ -98,29 +99,29 @@ public class ZookeeperOperations implements AutoCloseable{
 						+ DataSamudayaConstants.NODESZK + DataSamudayaConstants.FORWARD_SLASH + node);
 			}
 			curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
-			.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
+					.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.NODESZK + DataSamudayaConstants.FORWARD_SLASH + node,
 					objectMapper.writeValueAsBytes(data));
 			curator.getChildren().usingWatcher(watcher)
 					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.NODESZK);
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
 
-    /**
-     * This method creates schedulers with leader election with setting the data and watcher.
-     * @param data
-     * @param watcher
-     * @throws Exception
-     */
-    public void createSchedulersLeaderNode(byte[] data, Watcher watcher) throws ZookeeperException {
+	/**
+	  This method creates schedulers with leader election with setting the data and watcher.
+	  @param data
+		 @param watcher
+		 @throws Exception
+		*/
+	public void createSchedulersLeaderNode(byte[] data, Watcher watcher) throws ZookeeperException {
 		try {
 			if (curator.checkExists().forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
 					+ DataSamudayaConstants.LEADERSCHEDULERZK) == null) {
 				curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
 						.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
-								+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK, data);
+						+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK, data);
 				curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
 						+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERZK);
 			}
@@ -128,33 +129,33 @@ public class ZookeeperOperations implements AutoCloseable{
 					+ DataSamudayaConstants.LEADERSCHEDULERSTREAMZK) == null) {
 				curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
 						.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(DataSamudayaConstants.ROOTZNODEZK
-								+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK, data);
+						+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK, data);
 				curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
 						+ DataSamudayaConstants.LEADERZK + DataSamudayaConstants.LEADERSCHEDULERSTREAMZK);
 			}
-		} catch(Exception ex) {
-		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
 	}
-    }
-    
-    /**
-     * Creates distributed queue
-     * @param path
-     * @return Distributed queue object
-     */
-    public SimpleDistributedQueue createDistributedQueue(String path) {
-    	return new SimpleDistributedQueue(curator, path);
-    }
 
-    /**
-     * This method creates the task executor znode in zookeeper with the jobid and taskexecutor, data and watcher.
-     * @param jobid
-     * @param taskexecutor
-     * @param data
-     * @param watcher
-     * @throws Exception
-     */
-    public void createTaskExecutorNode(String jobid, String taskexecutor, byte[] data, Watcher watcher) throws ZookeeperException {
+	/**
+	  Creates distributed queue
+	  @param path
+		 @return Distributed queue object
+	 */
+	public SimpleDistributedQueue createDistributedQueue(String path) {
+		return new SimpleDistributedQueue(curator, path);
+	}
+
+	/**
+	  This method creates the task executor znode in zookeeper with the jobid and taskexecutor, data and watcher.
+	  @param jobid
+		 @param taskexecutor
+		 @param data
+		 @param watcher
+		 @throws Exception
+		*/
+	public void createTaskExecutorNode(String jobid, String taskexecutor, byte[] data, Watcher watcher) throws ZookeeperException {
 		try {
 			if (curator.checkExists()
 					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKEXECUTORSZK
@@ -168,19 +169,19 @@ public class ZookeeperOperations implements AutoCloseable{
 				curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
 						+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
 			}
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * This method creates the znodes for tasks given jobid, task and watcher. 
-     * @param jobid
-     * @param task
-     * @param watcher
-     * @throws Exception
-     */
-    public void createTasksForJobNode(String jobid, Task task, Watcher watcher) throws ZookeeperException {
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  This method creates the znodes for tasks given jobid, task and watcher. 
+	  @param jobid
+		 @param task
+		 @param watcher
+		 @throws Exception
+		*/
+	public void createTasksForJobNode(String jobid, Task task, Watcher watcher) throws ZookeeperException {
 		try {
 			byte[] taskbytes = objectMapper.writeValueAsBytes(task);
 			curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
@@ -193,9 +194,9 @@ public class ZookeeperOperations implements AutoCloseable{
 		} catch (Exception ex) {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}
-    }
+	}
 
-    public void watchTaskNode(String jobid, String path) throws ZookeeperException {
+	public void watchTaskNode(String jobid, String path) throws ZookeeperException {
 		try {
 			NodeCache cache = new NodeCache(curator, DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
 					+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + path);
@@ -214,13 +215,13 @@ public class ZookeeperOperations implements AutoCloseable{
 		} catch (Exception ex) {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}
-    }
+	}
 
-    /**
-     * This method creates the watcher for the nodes added and updates the global resources.
-     * @throws Exception
-     */
-    public void watchNodes() throws ZookeeperException {
+	/**
+	  This method creates the watcher for the nodes added and updates the global resources.
+	  @throws Exception
+		*/
+	public void watchNodes() throws ZookeeperException {
 		try {
 			PathChildrenCache cache = new PathChildrenCache(curator,
 					DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.NODESZK, true);
@@ -230,220 +231,221 @@ public class ZookeeperOperations implements AutoCloseable{
 				public void childEvent(CuratorFramework curator, PathChildrenCacheEvent event) throws Exception {
 					Type type = event.getType();
 					switch (type) {
-					case CHILD_ADDED:
-						String[] nodeadded = event.getData().getPath().split("/");
-						if (isNull(DataSamudayaNodesResources.get())) {
-							DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
-						}
-						if (isNull(DataSamudayaNodesResources.getAllocatedResources())) {
-							DataSamudayaNodesResources.putAllocatedResources(new ConcurrentHashMap<>());
-						}
-						String currentnode = nodeadded[nodeadded.length - 1];
-						Resources resources = objectMapper.readValue(event.getData().getData(), Resources.class);
-						DataSamudayaNodesResources.get().put(currentnode, resources);
-						if (isNull(DataSamudayaNodesResources.getAllocatedResources().get(currentnode))) {
-							DataSamudayaNodesResources.getAllocatedResources().put(currentnode,
-									new ConcurrentHashMap<>());
-						}
-						Utils.allocateResourcesByUser(resources,
-								DataSamudayaNodesResources.getAllocatedResources().get(currentnode));
-						log.info("Master node added: {}", event.getData().getPath());
-						break;
-					case CHILD_REMOVED:
-						String[] nodetoberemoved = event.getData().getPath().split("/");
-						if (isNull(DataSamudayaNodesResources.get())) {
-							DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
-						}
-						String nodetoremove = nodetoberemoved[nodetoberemoved.length - 1];
-						DataSamudayaNodesResources.get().remove(nodetoremove);
-						DataSamudayaNodesResources.getAllocatedResources().remove(nodetoremove);
+						case CHILD_ADDED:
+							String[] nodeadded = event.getData().getPath().split("/");
+							if (isNull(DataSamudayaNodesResources.get())) {
+								DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
+							}
+							if (isNull(DataSamudayaNodesResources.getAllocatedResources())) {
+								DataSamudayaNodesResources.putAllocatedResources(new ConcurrentHashMap<>());
+							}
+							String currentnode = nodeadded[nodeadded.length - 1];
+							Resources resources = objectMapper.readValue(event.getData().getData(), Resources.class);
+							DataSamudayaNodesResources.get().put(currentnode, resources);
+							if (isNull(DataSamudayaNodesResources.getAllocatedResources().get(currentnode))) {
+								DataSamudayaNodesResources.getAllocatedResources().put(currentnode,
+										new ConcurrentHashMap<>());
+							}
+							Utils.allocateResourcesByUser(resources,
+									DataSamudayaNodesResources.getAllocatedResources().get(currentnode));
+							log.info("Master node added: {}", event.getData().getPath());
+							break;
+						case CHILD_REMOVED:
+							String[] nodetoberemoved = event.getData().getPath().split("/");
+							if (isNull(DataSamudayaNodesResources.get())) {
+								DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
+							}
+							String nodetoremove = nodetoberemoved[nodetoberemoved.length - 1];
+							DataSamudayaNodesResources.get().remove(nodetoremove);
+							DataSamudayaNodesResources.getAllocatedResources().remove(nodetoremove);
 
-						log.info("Master node removed: {}", event.getData().getPath());
-						break;
-					default:
-						break;
+							log.info("Master node removed: {}", event.getData().getPath());
+							break;
+						default:
+							break;
 					}
 				}
 			});
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * This method creates the leader nodes for the map reduce scheduler
-     * @param scheduler
-     * @param listener
-     * @return leaderlatch object.
-     * @throws Exception
-     */
-    public LeaderLatch leaderElectionScheduler(String scheduler, LeaderLatchListener listener) throws ZookeeperException {
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  This method creates the leader nodes for the map reduce scheduler
+	  @param scheduler
+		 @param listener
+		 @return leaderlatch object.
+	  @throws Exception
+		*/
+	public LeaderLatch leaderElectionScheduler(String scheduler, LeaderLatchListener listener) throws ZookeeperException {
 		try {
 			LeaderLatch leaderLatch = new LeaderLatch(curator,
 					DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.SCHEDULERSZK, scheduler);
 			leaderLatch.addListener(listener);
 			leaderLatch.start();
 			return leaderLatch;
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * This method creates the leader nodes for the stream scheduler
-     * @param scheduler
-     * @param listener
-     * @return leaderlatch object.
-     * @throws Exception
-     */
-    public LeaderLatch leaderElectionSchedulerStream(String scheduler, LeaderLatchListener listener) throws ZookeeperException {
-    	try {
-	        LeaderLatch leaderLatch = new LeaderLatch(curator, DataSamudayaConstants.ROOTZNODEZK
-	    			+ DataSamudayaConstants.SCHEDULERSSTREAMZK, scheduler);
-	        leaderLatch.addListener(listener);
-	        leaderLatch.start();
-	        return leaderLatch;
-    	} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
 
-    /**
-     * This method returns the data for the given path.
-     * @param path
-     * @return byte data
-     * @throws Exception
-     */
-    public byte[] getData(String path) throws ZookeeperException {
-    	try {
-    		return curator.getData().forPath(path);
-    	} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
+	/**
+	  This method creates the leader nodes for the stream scheduler
+	  @param scheduler
+		 @param listener
+		 @return leaderlatch object.
+	  @throws Exception
+		*/
+	public LeaderLatch leaderElectionSchedulerStream(String scheduler, LeaderLatchListener listener) throws ZookeeperException {
+		try {
+			LeaderLatch leaderLatch = new LeaderLatch(curator, DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.SCHEDULERSSTREAMZK, scheduler);
+			leaderLatch.addListener(listener);
+			leaderLatch.start();
+			return leaderLatch;
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
 
-    /**
-     * This method sets the data for the given znode path.
-     * @param path
-     * @param data
-     * @throws Exception
-     */
-    public void setData(String path, byte[] data) throws ZookeeperException {
-    	try {
-	        // Set the data for the specified path
-	        curator.setData().forPath(path, data);
-    	} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * This method set the leader for the mr scheduler
-     * @param data
-     * @throws Exception
-     */
-    public void setLeader(byte[] data) throws ZookeeperException {
+	/**
+	  This method returns the data for the given path.
+	  @param path
+		 @return byte data
+	  @throws Exception
+		*/
+	public byte[] getData(String path) throws ZookeeperException {
+		try {
+			return curator.getData().forPath(path);
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  This method sets the data for the given znode path.
+	  @param path
+		 @param data
+		 @throws Exception
+		*/
+	public void setData(String path, byte[] data) throws ZookeeperException {
+		try {
+			// Set the data for the specified path
+			curator.setData().forPath(path, data);
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  This method set the leader for the mr scheduler
+	  @param data
+		 @throws Exception
+		*/
+	public void setLeader(byte[] data) throws ZookeeperException {
 		try {
 			curator.setData().forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
 					+ DataSamudayaConstants.LEADERSCHEDULERZK, data);
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * This method set the leader for the streaming scheduler
-     * @param data
-     * @throws Exception
-     */
-    public void setLeaderStream(byte[] data) throws ZookeeperException {
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  This method set the leader for the streaming scheduler
+	  @param data
+		 @throws Exception
+		*/
+	public void setLeaderStream(byte[] data) throws ZookeeperException {
 		try {
 			curator.setData().forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
 					+ DataSamudayaConstants.LEADERSCHEDULERSTREAMZK, data);
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * This method set the task information for the given task and jobid.
-     * @param jobid
-     * @param task
-     * @throws Exception
-     */
-    public void setDataForTask(String jobid, Task task) throws ZookeeperException {
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  This method set the task information for the given task and jobid.
+	  @param jobid
+		 @param task
+		 @throws Exception
+		*/
+	public void setDataForTask(String jobid, Task task) throws ZookeeperException {
 		try {
 			byte[] taskbytes = objectMapper.writeValueAsBytes(task);
 			curator.setData()
 					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
 							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
 							+ task.getTaskid(), taskbytes);
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
 
-    public void deleteNode(String path) throws ZookeeperException {
+	public void deleteNode(String path) throws ZookeeperException {
 		try {
 			// Delete the node for the specified path
 			curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(path);
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * This method deletes the job entries for the given job id.
-     * @param jobid
-     * @throws Exception
-     */
-    public void deleteJob(String jobid) throws ZookeeperException {
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  This method deletes the job entries for the given job id.
+	  @param jobid
+		 @throws Exception
+		*/
+	public void deleteJob(String jobid) throws ZookeeperException {
 		try {
 			// Delete the node for the specified path
 			curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
 			curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
 
-    /**
-     * This function returns all the nodes created in zookeeper.
-     * @return list of nodes in string format.
-     * @throws Exception
-     */
-    public List<String> getNodes() throws ZookeeperException {
+	/**
+	  This function returns all the nodes created in zookeeper.
+	  @return list of nodes in string format.
+	  @throws Exception
+		*/
+	public List<String> getNodes() throws ZookeeperException {
 		try {
 			return curator.getChildren()
 					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.NODESZK);
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    /**
-     * This function returns list of task executors.
-     * @param jobid
-     * @return list of te's
-     * @throws Exception
-     */
-    public List<String> getTaskExectorsByJobId(String jobid) throws ZookeeperException {
-    	try {
-       return curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
-    			+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
-    	} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * This function returns the list of tasks by jobid.
-     * @param jobid
-     * @return list of tasks
-     * @throws Exception
-     */
-    public List<Task> getTasksByJobId(String jobid) throws ZookeeperException {
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  This function returns list of task executors.
+	  @param jobid
+		 @return list of te's
+	  @throws Exception
+		*/
+	public List<String> getTaskExectorsByJobId(String jobid) throws ZookeeperException {
+		try {
+			return curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  This function returns the list of tasks by jobid.
+	  @param jobid
+		 @return list of tasks
+	  @throws Exception
+		*/
+	public List<Task> getTasksByJobId(String jobid) throws ZookeeperException {
 		try {
 			List<String> tasks = curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
@@ -454,44 +456,44 @@ public class ZookeeperOperations implements AutoCloseable{
 				taskdeserialized.add(objectMapper.readValue(taskbytes, Task.class));
 			}
 			return taskdeserialized;
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * Gets the master of the stream scheduler.
-     * @return master of stream scheduler
-     * @throws Exception
-     */
-    public String getStreamSchedulerMaster() throws ZookeeperException {
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  Gets the master of the stream scheduler.
+	  @return master of stream scheduler
+	  @throws Exception
+		*/
+	public String getStreamSchedulerMaster() throws ZookeeperException {
 		try {
 			return new String(getData(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
 					+ DataSamudayaConstants.LEADERSCHEDULERSTREAMZK));
-		} catch(Exception ex) {
-    		throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-    	}
-    }
-    
-    /**
-     * Gets the master of the map reduce scheduler.
-     * @return master of mr's
-     * @throws Exception
-     */
-    public String getMRSchedulerMaster() throws ZookeeperException {
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+
+	/**
+	  Gets the master of the map reduce scheduler.
+	  @return master of mr's
+	  @throws Exception
+		*/
+	public String getMRSchedulerMaster() throws ZookeeperException {
 		try {
 			return new String(getData(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.LEADERZK
 					+ DataSamudayaConstants.LEADERSCHEDULERZK));
 		} catch (Exception ex) {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}
-    }
+	}
 
-    /**
-     * Close the curator object for closing the zookeeper connection.
-     */
-    @Override
-    public void close() {
-        curator.close();
-    }
+	/**
+	  Close the curator object for closing the zookeeper connection.
+	 */
+	@Override
+	public void close() {
+		curator.close();
+	}
 }

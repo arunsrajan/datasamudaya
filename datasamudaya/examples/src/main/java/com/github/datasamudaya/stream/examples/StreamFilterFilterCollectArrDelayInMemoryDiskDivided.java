@@ -49,8 +49,8 @@ public class StreamFilterFilterCollectArrDelayInMemoryDiskDivided implements Ser
 		log.info("testMapValuesReduceByValues Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(args[0], args[1], pipelineconfig);
 		datastream
-		.filter(value -> !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
-		.filter(value -> !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
+				.filter(value -> !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
+				.filter(value -> !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
 				.saveAsTextFile(new URI(args[0]), args[2] + "/FilterFilter-" + System.currentTimeMillis());
 		log.info("testMapValuesReduceByValues After---------------------------------------");
 	}

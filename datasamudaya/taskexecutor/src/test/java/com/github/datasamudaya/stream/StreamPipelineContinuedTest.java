@@ -1130,7 +1130,7 @@ public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 		log.info("testMappairCoalesce Before---------------------------------------");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
-		List<List<Tuple2<String, Integer>>> tuplelist =  datastream1.map(str -> str.split(","))
+		List<List<Tuple2<String, Integer>>> tuplelist = datastream1.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14]))
 				.mapToPair(val -> Tuple.tuple(val[8], Integer.parseInt(val[14])))
 				.coalesce(1, (a, b) -> a + b).collect(toexecute, new NumPartitions(4));

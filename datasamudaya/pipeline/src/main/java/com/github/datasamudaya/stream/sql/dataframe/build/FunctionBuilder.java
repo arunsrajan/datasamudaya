@@ -51,7 +51,7 @@ public class FunctionBuilder {
 		functioncalls.add(new Function(null, alias, param[0]));
 		return this;
 	}
-	
+
 	/**
 	 * Builds the functions to Aggregate Call
 	 * 
@@ -64,68 +64,67 @@ public class FunctionBuilder {
 		for (Function function : functioncalls) {
 			if (nonNull(function.getName())) {
 				switch (function.getName()) {
-				case "abs":
-					functiontocall.add(builder.call(sqlfunctions.get(14), builder.field(function.getExpression())));
-					break;
-				case "length":
-					functiontocall.add(builder.call(sqlfunctions.get(1), builder.field(function.getExpression())));
-					break;
-				case "round":
-					functiontocall.add(builder.call(sqlfunctions.get(13), builder.field(function.getExpression())));
-					break;
-				case "ceil":
-					functiontocall.add(builder.call(sqlfunctions.get(11), builder.field(function.getExpression())));
-					break;
-				case "floor":
-					functiontocall.add(builder.call(sqlfunctions.get(12), builder.field(function.getExpression())));
-					break;
-				case "pow":
-					functiontocall.add(builder.call(sqlfunctions.get(9), builder.field(function.getExpression())));
-					break;
-				case "sqrt":
-					functiontocall.add(builder.call(sqlfunctions.get(0), builder.field(function.getExpression())));
-					break;
-				case "exp":
-					functiontocall.add(builder.call(sqlfunctions.get(10), builder.field(function.getExpression())));
-					break;
-				case "loge":
-					functiontocall.add(builder.call(sqlfunctions.get(8), builder.field(function.getExpression())));
-					break;
-				case "lowercase":
-					functiontocall.add(builder.call(sqlfunctions.get(7), builder.field(function.getExpression())));
-					break;
-				case "uppercase":
-					functiontocall.add(builder.call(sqlfunctions.get(6), builder.field(function.getExpression())));
-					break;
-				case "base64encode":
-					functiontocall.add(builder.call(sqlfunctions.get(4), builder.field(function.getExpression())));
-					break;
-				case "base64decode":
-					functiontocall.add(builder.call(sqlfunctions.get(5), builder.field(function.getExpression())));
-					break;
-				case "normalizespaces":
-					functiontocall.add(builder.call(sqlfunctions.get(2), builder.field(function.getExpression())));
-					break;
-				case "currentisodate":
-					functiontocall.add(builder.call(sqlfunctions.get(15), builder.field(function.getExpression())));
-					break;
-				case "trimstr":
-					functiontocall.add(builder.call(sqlfunctions.get(17), builder.field(function.getExpression())));
-					break;
-				case "substring":
-					functiontocall.add(builder.call(sqlfunctions.get(3), builder.field(function.getExpression())));
-					break;
-				case "grpconcat":
-					functiontocall.add(builder.call(sqlfunctions.get(16), builder.field(function.getExpression())));
-					break;
-				default:
-					throw new UnsupportedOperationException("SQL Function Not Supported");
+					case "abs":
+						functiontocall.add(builder.call(sqlfunctions.get(14), builder.field(function.getExpression())));
+						break;
+					case "length":
+						functiontocall.add(builder.call(sqlfunctions.get(1), builder.field(function.getExpression())));
+						break;
+					case "round":
+						functiontocall.add(builder.call(sqlfunctions.get(13), builder.field(function.getExpression())));
+						break;
+					case "ceil":
+						functiontocall.add(builder.call(sqlfunctions.get(11), builder.field(function.getExpression())));
+						break;
+					case "floor":
+						functiontocall.add(builder.call(sqlfunctions.get(12), builder.field(function.getExpression())));
+						break;
+					case "pow":
+						functiontocall.add(builder.call(sqlfunctions.get(9), builder.field(function.getExpression())));
+						break;
+					case "sqrt":
+						functiontocall.add(builder.call(sqlfunctions.get(0), builder.field(function.getExpression())));
+						break;
+					case "exp":
+						functiontocall.add(builder.call(sqlfunctions.get(10), builder.field(function.getExpression())));
+						break;
+					case "loge":
+						functiontocall.add(builder.call(sqlfunctions.get(8), builder.field(function.getExpression())));
+						break;
+					case "lowercase":
+						functiontocall.add(builder.call(sqlfunctions.get(7), builder.field(function.getExpression())));
+						break;
+					case "uppercase":
+						functiontocall.add(builder.call(sqlfunctions.get(6), builder.field(function.getExpression())));
+						break;
+					case "base64encode":
+						functiontocall.add(builder.call(sqlfunctions.get(4), builder.field(function.getExpression())));
+						break;
+					case "base64decode":
+						functiontocall.add(builder.call(sqlfunctions.get(5), builder.field(function.getExpression())));
+						break;
+					case "normalizespaces":
+						functiontocall.add(builder.call(sqlfunctions.get(2), builder.field(function.getExpression())));
+						break;
+					case "currentisodate":
+						functiontocall.add(builder.call(sqlfunctions.get(15), builder.field(function.getExpression())));
+						break;
+					case "trimstr":
+						functiontocall.add(builder.call(sqlfunctions.get(17), builder.field(function.getExpression())));
+						break;
+					case "substring":
+						functiontocall.add(builder.call(sqlfunctions.get(3), builder.field(function.getExpression())));
+						break;
+					case "grpconcat":
+						functiontocall.add(builder.call(sqlfunctions.get(16), builder.field(function.getExpression())));
+						break;
+					default:
+						throw new UnsupportedOperationException("SQL Function Not Supported");
 				}
 			} else {
-				if(nonNull(function.getAlias())) {
-					functiontocall.add(builder.field(function.getAlias(),function.getExpression()));
-				}
-				else {
+				if (nonNull(function.getAlias())) {
+					functiontocall.add(builder.field(function.getAlias(), function.getExpression()));
+				} else {
 					functiontocall.add(builder.field(function.getExpression()));
 				}
 			}

@@ -174,25 +174,25 @@ public class FileBlocksPartitionerHDFS {
 			List<String> folderstolbcontainers = new ArrayList<>();
 			for (var rootstage : rootstages) {
 				var obj = roots.next();
-				if(!CollectionUtils.isEmpty(rootstage.tasks) && rootstage.tasks.get(0) instanceof CsvOptionsSQL csvOptionsSQL) {
+				if (!CollectionUtils.isEmpty(rootstage.tasks) && rootstage.tasks.get(0) instanceof CsvOptionsSQL csvOptionsSQL) {
 					columns = csvOptionsSQL.getRequiredcolumns();
-				} else if(!CollectionUtils.isEmpty(rootstage.tasks) && rootstage.tasks.get(0) instanceof JsonSQL jsonSQL) {
+				} else if (!CollectionUtils.isEmpty(rootstage.tasks) && rootstage.tasks.get(0) instanceof JsonSQL jsonSQL) {
 					columns = jsonSQL.getRequiredcolumns();
 				}
 				if (obj instanceof StreamPipeline mdp) {
 					hdfspath = mdp.getHdfspath();
-					folder = mdp.getFolder();					
+					folder = mdp.getFolder();
 				}
-				if(isNull(folder)) {
+				if (isNull(folder)) {
 					continue;
 				}
-				if(isNull(hdfspath)) {
+				if (isNull(hdfspath)) {
 					hdfspath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 				}
 				try (var hdfs = FileSystem.newInstance(new URI(hdfspath), new Configuration());) {
 					this.hdfs = hdfs;
 					this.filepaths.clear();
-					List<Path> newpaths = getFilePaths(hdfspath, folder);					
+					List<Path> newpaths = getFilePaths(hdfspath, folder);
 					this.filepaths.addAll(newpaths);
 					job.getJm().setTotalfilesize(
 							job.getJm().getTotalfilesize() + Utils.getTotalLengthByFiles(hdfs, filepaths));
@@ -200,34 +200,34 @@ public class FileBlocksPartitionerHDFS {
 							&& nonNull(GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder))) {
 						Set<Path> pathtoprocess = GlobalJobFolderBlockLocations.compareCurrentPathsNewPathsAndStore(pc.getTejobid(), folder, newpaths, hdfs);
 						List<BlocksLocation> bls = GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder);
-						if(CollectionUtils.isNotEmpty(pathtoprocess)) {
+						if (CollectionUtils.isNotEmpty(pathtoprocess)) {
 							this.filepaths.clear();
 							this.filepaths.addAll(pathtoprocess);
 							List<BlocksLocation> blsnew = getBlocks(columns);
 							if (isjgroups || !islocal && !isyarn && !ismesos && !isignite) {
 								getDnXref(blsnew, true);
-								getContainersGlobal();							
+								getContainersGlobal();
 								allocateContainersLoadBalanced(blsnew);
-							}							
-							List<String> files = newpaths.parallelStream().map(path->path.toUri().toString()).toList();
-							List<String> filestoprocess = pathtoprocess.parallelStream().map(path->path.toUri().toString()).toList();
+							}
+							List<String> files = newpaths.parallelStream().map(path -> path.toUri().toString()).toList();
+							List<String> filestoprocess = pathtoprocess.parallelStream().map(path -> path.toUri().toString()).toList();
 							List<BlocksLocation> currentbls = new ArrayList<>(bls);
-							for(BlocksLocation bltoremove:currentbls) {
+							for (BlocksLocation bltoremove :currentbls) {
 								Block[] block = bltoremove.getBlock();
-								if(!files.contains(block[0].getFilename()) || 
-										filestoprocess.contains(block[0].getFilename())) {
+								if (!files.contains(block[0].getFilename())
+										|| filestoprocess.contains(block[0].getFilename())) {
 									bls.remove(bltoremove);
 								}
 							}
-							blsnew.stream().forEach(blocks->blocks.setToreprocess(true));
+							blsnew.stream().forEach(blocks -> blocks.setToreprocess(true));
 							bls.addAll(blsnew);
 						} else {
-							List<String> files = newpaths.parallelStream().map(path->path.toUri().toString()).toList();
+							List<String> files = newpaths.parallelStream().map(path -> path.toUri().toString()).toList();
 							List<BlocksLocation> currentbls = new ArrayList<>(bls);
-							for(BlocksLocation bltoremove:currentbls) {
+							for (BlocksLocation bltoremove :currentbls) {
 								Block[] block = bltoremove.getBlock();
 								bltoremove.setToreprocess(false);
-								if(!files.contains(block[0].getFilename())) {
+								if (!files.contains(block[0].getFilename())) {
 									bls.remove(bltoremove);
 								}
 							}
@@ -241,7 +241,7 @@ public class FileBlocksPartitionerHDFS {
 						noofpartition += bls.size();
 						GlobalJobFolderBlockLocations.putPaths(hdfspath, folder, newpaths, hdfs);
 					} else {
-						folderstolbcontainers.add(folder);						
+						folderstolbcontainers.add(folder);
 						if (!stageoutputmap.containsKey(rootstage)) {
 							List blocks = null;
 							if (supplier instanceof IntSupplier) {
@@ -269,16 +269,16 @@ public class FileBlocksPartitionerHDFS {
 						}
 					}
 				}
-				metricsfilepath.addAll(filepaths);				
+				metricsfilepath.addAll(filepaths);
 			}
-			job.getJm().setFiles(Utils.getAllFilePaths(metricsfilepath));			
+			job.getJm().setFiles(Utils.getAllFilePaths(metricsfilepath));
 			job.getJm().setTotalfilesize(job.getJm().getTotalfilesize() / DataSamudayaConstants.MB);
 			job.getJm().setTotalblocks(totalblockslocation.size());
-			if (isignite) {				
+			if (isignite) {
 				getDnXref(totalblockslocation, false);
-				if(pipelineconfig.getStorage() != STORAGE.COLUMNARSQL) {
+				if (pipelineconfig.getStorage() != STORAGE.COLUMNARSQL) {
 					sendDataToIgniteServer(totalblockslocation,
-						((StreamPipeline) mdsroots.iterator().next()).getHdfspath());
+							((StreamPipeline) mdsroots.iterator().next()).getHdfspath());
 				} else {
 					initializeIgniteServer();
 				}
@@ -289,10 +289,10 @@ public class FileBlocksPartitionerHDFS {
 					allocateContainersLoadBalanced(totalblockslocation);
 				} else {
 					getContainersGlobal();
-					for(String foldertolb:folderstolbcontainers) {
+					for (String foldertolb :folderstolbcontainers) {
 						allocateContainersLoadBalanced(GlobalJobFolderBlockLocations.get(pc.getTejobid(), foldertolb));
 					}
-				}				
+				}
 				job.getJm().setNodes(nodeschoosen);
 				job.getJm().setContainersallocated(new ConcurrentHashMap<>());
 			} else if (islocal || isyarn || ismesos) {
@@ -313,7 +313,7 @@ public class FileBlocksPartitionerHDFS {
 		}
 	}
 
-	
+
 	/**
 	 * The blocks data is fetched from hdfs and caches in Ignite Server
 	 * 
@@ -344,7 +344,7 @@ public class FileBlocksPartitionerHDFS {
 		job.getJm().setContainersallocated(
 				computeservers.hostNames().stream().collect(Collectors.toMap(key -> key, value -> 0d)));
 	}
-	
+
 	/**
 	 * The blocks data is fetched from hdfs and caches in Ignite Server
 	 * 
@@ -355,7 +355,7 @@ public class FileBlocksPartitionerHDFS {
 	protected void initializeIgniteServer() throws Exception {
 		// Starting the node
 		var ignite = DataSamudayaIgniteClient.instance(pipelineconfig);
-		IgniteCache<Object, byte[]> ignitecache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);		
+		IgniteCache<Object, byte[]> ignitecache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
 		job.setIgcache(ignitecache);
 		job.setIgnite(ignite);
 		var computeservers = job.getIgnite().cluster().forServers();
@@ -470,7 +470,7 @@ public class FileBlocksPartitionerHDFS {
 			throw new PipelineException(PipelineConstants.FILEBLOCKSERROR, ex);
 		}
 	}
-	
+
 	/**
 	 * Containers with balanced allocation.
 	 * 
@@ -585,10 +585,7 @@ public class FileBlocksPartitionerHDFS {
 					b.getBlock()[1].setHp(xref1);
 				}
 			}
-		}
-		// Perform the allocation of datanode to blocks all other schedulers where
-		// where allocation about the containers are not known
-		else {
+		} else {
 			for (var b : bls) {
 				var xrefselected = b.getBlock()[0].getDnxref().keySet().stream()
 						.flatMap(xrefhost -> b.getBlock()[0].getDnxref().get(xrefhost).stream())
@@ -740,8 +737,8 @@ public class FileBlocksPartitionerHDFS {
 			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		}
 	}
-	
-	
+
+
 	private void setContainerResources() {
 		job.getJm().setContainerresources(job.getLcs().stream().flatMap(lc -> {
 			var crs = lc.getCla().getCr();

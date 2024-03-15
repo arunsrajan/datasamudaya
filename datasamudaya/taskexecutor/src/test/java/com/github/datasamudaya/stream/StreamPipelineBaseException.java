@@ -105,7 +105,7 @@ public class StreamPipelineBaseException {
 	protected static PipelineConfig pipelineconfig = new PipelineConfig();
 	private static Registry server;
 	private static ZookeeperOperations zo;
-	
+
 	@SuppressWarnings({"unused"})
 	@BeforeClass
 	public static void setServerUp() throws Exception {
@@ -116,14 +116,14 @@ public class StreamPipelineBaseException {
 			pipelineconfig.setMinmem("512");
 			pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 			pipelineconfig.setNumberofcontainers("3");
-			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);			
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
 			Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatestexception.properties");
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-				            + DataSamudayaConstants.CACHEBLOCKS);
+							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.CACHEBLOCKS);
 			pipelineconfig.setBlocksize("20");
 			testingserver = new TestingServer(zookeeperport);
 			testingserver.start();
@@ -140,7 +140,7 @@ public class StreamPipelineBaseException {
 				int initialdelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.initialdelay"));
 				int pingdelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.pingdelay"));
 				host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskschedulerstream.host"));
-				port =  Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.port"));
+				port = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.port"));
 				int nodeport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
 				threadpool = Executors.newWorkStealingPool();
 				executorpool = Executors.newWorkStealingPool();
@@ -157,25 +157,25 @@ public class StreamPipelineBaseException {
 					host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskexecutor.host"));
 					server = Utils.getRPCRegistry(nodeport,
 							new StreamDataCruncher() {
-				            public Object postObject(Object object) {
-								try {
-									var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
-											containerprocesses, hdfs, containeridthreads, containeridports,
-											object, zo);
-									Future<Object> containerallocated = threadpool.submit(container);
-									Object returnobject = containerallocated.get();
-									log.info("Containers Allocated: " + returnobject);
-									return returnobject;
-								} catch (InterruptedException e) {
-									log.warn("Interrupted!", e);
-									// Restore interrupted state...
-									Thread.currentThread().interrupt();
-								} catch (Exception e) {
-									log.error(DataSamudayaConstants.EMPTY, e);
+								public Object postObject(Object object) {
+									try {
+										var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
+												containerprocesses, hdfs, containeridthreads, containeridports,
+												object, zo);
+										Future<Object> containerallocated = threadpool.submit(container);
+										Object returnobject = containerallocated.get();
+										log.info("Containers Allocated: " + returnobject);
+										return returnobject;
+									} catch (InterruptedException e) {
+										log.warn("Interrupted!", e);
+										// Restore interrupted state...
+										Thread.currentThread().interrupt();
+									} catch (Exception e) {
+										log.error(DataSamudayaConstants.EMPTY, e);
+									}
+									return null;
 								}
-								return null;
-							}
-						}, DataSamudayaConstants.EMPTY);
+							}, DataSamudayaConstants.EMPTY);
 					sss.add(server);
 					port += 100;
 					executorsindex++;

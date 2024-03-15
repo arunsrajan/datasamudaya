@@ -16,46 +16,46 @@ import com.github.datasamudaya.stream.pig.PigUtils;
 
 import junit.framework.TestCase;
 
-public class PigUtilsTest extends TestCase{
+public class PigUtilsTest extends TestCase {
 
 	@Test
 	public void testGetParserDriver() throws Exception {
 		assertNotNull(PigUtils.getQueryParserDriver("main"));
 	}
-	
-	
+
+
 	@Test
 	public void testGetOperatorsLOLoad() throws Exception {
 		QueryParserDriver queryparserdriver = PigUtils.getQueryParserDriver("main");
 		assertNotNull(queryparserdriver);
-		Iterator<Operator> loloadoperator =  PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);", queryparserdriver);
+		Iterator<Operator> loloadoperator = PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);", queryparserdriver);
 		assertNotNull(loloadoperator);
 		assertTrue(loloadoperator.next() instanceof LOLoad);
 	}
-	
+
 	@Test
 	public void testGetOperatorsLOFilter() throws Exception {
 		QueryParserDriver queryparserdriver = PigUtils.getQueryParserDriver("main");
 		PigServer pigserver = GlobalPigServer.getPigServer();
 		assertNotNull(queryparserdriver);
 		pigserver.registerQuery("data = LOAD 'data.txt' AS (name:chararray, age:int);", 0);
-		Iterator<Operator> loloadoperator =  PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);", queryparserdriver);
+		Iterator<Operator> loloadoperator = PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);", queryparserdriver);
 		assertNotNull(loloadoperator);
 		assertTrue(loloadoperator.next() instanceof LOLoad);
 		pigserver.registerQuery("filtered_data = FILTER data BY age >= 18 AND age <= 30;", 1);
-		Iterator<Operator> lofilteroperator =  PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);filtered_data = FILTER data BY age >= 18 AND age <= 30;", queryparserdriver);
+		Iterator<Operator> lofilteroperator = PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);filtered_data = FILTER data BY age >= 18 AND age <= 30;", queryparserdriver);
 		assertNotNull(lofilteroperator);
 		lofilteroperator.next();
 		assertTrue(lofilteroperator.next() instanceof LOFilter);
 	}
-	
+
 	@Test
 	public void testGetLogicalSchemaForHeader() throws Exception {
 		QueryParserDriver queryparserdriver = PigUtils.getQueryParserDriver("main");
 		PigServer pigserver = GlobalPigServer.getPigServer();
 		assertNotNull(queryparserdriver);
 		pigserver.registerQuery("data = LOAD 'data.txt' AS (name:chararray, age:int);", 0);
-		Iterator<Operator> loloadoperator =  PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);", queryparserdriver);
+		Iterator<Operator> loloadoperator = PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);", queryparserdriver);
 		assertNotNull(loloadoperator);
 		LOLoad loload = (LOLoad) loloadoperator.next();
 		assertTrue(loload instanceof LOLoad);
@@ -64,14 +64,14 @@ public class PigUtilsTest extends TestCase{
 		assertEquals("name", fields[0]);
 		assertEquals("age", fields[1]);
 	}
-	
+
 	@Test
 	public void testGetLogicalSchemaForFieldTypes() throws Exception {
 		QueryParserDriver queryparserdriver = PigUtils.getQueryParserDriver("main");
 		PigServer pigserver = GlobalPigServer.getPigServer();
 		assertNotNull(queryparserdriver);
 		pigserver.registerQuery("data = LOAD 'data.txt' AS (name:chararray, age:int);", 0);
-		Iterator<Operator> loloadoperator =  PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);", queryparserdriver);
+		Iterator<Operator> loloadoperator = PigUtils.getOperator("data = LOAD 'data.txt' AS (name:chararray, age:int);", queryparserdriver);
 		assertNotNull(loloadoperator);
 		LOLoad loload = (LOLoad) loloadoperator.next();
 		assertTrue(loload instanceof LOLoad);

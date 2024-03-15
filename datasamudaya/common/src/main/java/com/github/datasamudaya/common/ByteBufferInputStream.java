@@ -29,14 +29,14 @@ import org.slf4j.LoggerFactory;
  * @author arun
  *
  */
-public class ByteBufferInputStream extends InputStream implements Serializable{
-	private static final long serialVersionUID = -296327349247183144L;	
+public class ByteBufferInputStream extends InputStream implements Serializable {
+	private static final long serialVersionUID = -296327349247183144L;
 	static Logger log = LoggerFactory.getLogger(ByteBufferInputStream.class);
 	private transient ByteBuffer bb;
 
 	public ByteBufferInputStream(ByteBuffer bb) {
 		try {
-			this.bb = bb;			
+			this.bb = bb;
 		}
 		catch (Exception e) {
 			log.error(DataSamudayaConstants.EMPTY, e);
@@ -68,11 +68,11 @@ public class ByteBufferInputStream extends InputStream implements Serializable{
 	@Override
 	public void close() {
 		if (Objects.nonNull(bb) && bb.isDirect()) {
-			try {				
+			try {
 				ByteBufferPoolDirect.destroy(bb);
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
-			}			
+			}
 		}
 		bb = null;
 	}

@@ -10,12 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileSystem;
+import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.xerial.snappy.SnappyOutputStream;
@@ -41,43 +43,49 @@ import akka.cluster.ClusterEvent.MemberUp;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
+/**
+ * The Akka Actors for the coalesce operators
+ * @author arun
+ *
+ */
 public class ProcessCoalesce extends AbstractActor implements Serializable {
 	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
-	  Cluster cluster = Cluster.get(getContext().getSystem());
+	Cluster cluster = Cluster.get(getContext().getSystem());
 
-	  // subscribe to cluster changes
-	  @Override
-	  public void preStart() {
-	    // #subscribe
-		  cluster.subscribe(
-			        getSelf(), ClusterEvent.initialStateAsEvents(), 
-			        MemberEvent.class, UnreachableMember.class,
-			        MemberUp.class, MemberUp.class);
-	  }
+	// subscribe to cluster changes
+	@Override
+	public void preStart() {
+		// #subscribe
+		cluster.subscribe(
+				getSelf(), ClusterEvent.initialStateAsEvents(),
+				MemberEvent.class, UnreachableMember.class,
+				MemberUp.class, MemberUp.class);
+	}
 
-	  // re-subscribe when restart
-	  @Override
-	  public void postStop() {
-	    cluster.unsubscribe(getSelf());
-	  }
+	// re-subscribe when restart
+	@Override
+	public void postStop() {
+		cluster.unsubscribe(getSelf());
+	}
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
 	Task task;
 	boolean iscacheable;
 	ExecutorService executor;
-	java.util.List<Tuple2> result = new java.util.Vector<>();
-	java.util.List<Tuple2> resultcollector = new java.util.Vector<>();
+	List<Tuple2> result = new Vector<>();
+	List<Tuple2> resultcollector = new Vector<>();
 	Coalesce coalesce;
 	int terminatingsize;
-	int initialsize = 0;
+	int initialsize;
 	List<ActorSelection> pipelines;
-	org.ehcache.Cache cache;
+	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
 	DiskSpillingList<Tuple2> diskspilllistinterm;
+
 	private ProcessCoalesce(Coalesce coalesce, List<ActorSelection> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, org.ehcache.Cache cache, Task task) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
 		this.coalesce = coalesce;
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
@@ -93,20 +101,20 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 		return receiveBuilder()
 				.match(OutputObject.class, this::processCoalesce)
 				.match(
-			            MemberUp.class,
-			            mUp -> {
-			              log.info("Member is Up: {}", mUp.member());
-			            })
-			        .match(
-			            UnreachableMember.class,
-			            mUnreachable -> {
-			              log.info("Member detected as unreachable: {}", mUnreachable.member());
-			            })
-			        .match(
-			            MemberRemoved.class,
-			            mRemoved -> {
-			              log.info("Member is Removed: {}", mRemoved.member());
-			            })
+						MemberUp.class,
+						mUp -> {
+							log.info("Member is Up: {}", mUp.member());
+						})
+				.match(
+						UnreachableMember.class,
+						mUnreachable -> {
+							log.info("Member detected as unreachable: {}", mUnreachable.member());
+						})
+				.match(
+						MemberRemoved.class,
+						mRemoved -> {
+							log.info("Member is Removed: {}", mRemoved.member());
+						})
 				.build();
 	}
 
@@ -114,8 +122,8 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 		log.info("In Process Coalesce {}", object.getValue());
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			initialsize++;
-			if(object.getValue() instanceof DiskSpillingList dsl) {
-				if(dsl.isSpilled()) {
+			if (object.getValue() instanceof DiskSpillingList dsl) {
+				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
 					diskspilllistinterm.addAll(dsl.readListFromBytes());
@@ -127,32 +135,32 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 				diskspilllistinterm.close();
 				Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
-								Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
+						Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
 						: diskspilllistinterm.readListFromBytes().stream();
 				datastream
 						.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
-								(input1, input2) -> 
-						coalesce.getCoalescefunction().apply(input1, input2)))
+								(input1, input2) ->
+										coalesce.getCoalescefunction().apply(input1, input2)))
 						.entrySet().stream()
 						.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
 						.forEach(diskspilllist::add);
 				diskspilllist.close();
 				final boolean left = isNull(task.joinpos) ? false
-						: nonNull(task.joinpos) && task.joinpos.equals("left") ? true : false;
+						: nonNull(task.joinpos) && "left".equals(task.joinpos) ? true : false;
 				final boolean right = isNull(task.joinpos) ? false
-						: nonNull(task.joinpos) && task.joinpos.equals("right") ? true : false;
+						: nonNull(task.joinpos) && "right".equals(task.joinpos) ? true : false;
 				if (CollectionUtils.isNotEmpty(pipelines)) {
-					log.info("Process Coalesce To Pipeline Started {} IsSpilled {} {}",pipelines, diskspilllist.isSpilled(), diskspilllist.getBytes());
+					log.info("Process Coalesce To Pipeline Started {} IsSpilled {} {}", pipelines, diskspilllist.isSpilled(), diskspilllist.getBytes());
 					pipelines.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender());
 					});
-					log.info("Process Coalesce To Pipeline Ended {}",pipelines);
+					log.info("Process Coalesce To Pipeline Ended {}", pipelines);
 				} else {
 					log.info("Process Coalesce To Cache Started");
 					Stream<Tuple2> datastreamsplilled = diskspilllist.isSpilled()
 							? (Stream<Tuple2>) Utils.getStreamData(
-									new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null,
-											true, diskspilllist.getLeft(), diskspilllist.getRight())))
+							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null,
+									true, diskspilllist.getLeft(), diskspilllist.getRight())))
 							: diskspilllist.readListFromBytes().stream();
 					try (var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);
@@ -172,8 +180,8 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
 				return this;
 			}
-		}		
-		
+		}
+
 		return this;
 	}
 

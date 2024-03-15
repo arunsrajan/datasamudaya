@@ -34,15 +34,15 @@ import com.github.datasamudaya.common.utils.Utils;
 public class SQLServer {
 	static Logger log = LoggerFactory.getLogger(SQLServer.class);
 	static ServerSocket serverSocket;
-	
+
 	/**
 	 * Start the SQL server.
 	 * @throws Exception
 	 */
-	public static void start() throws Exception {		
+	public static void start() throws Exception {
 		ExecutorService executors = Executors.newFixedThreadPool(10);
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.SQLPORT, DataSamudayaConstants.SQLPORT_DEFAULT)));		
+				.getProperty(DataSamudayaConstants.SQLPORT, DataSamudayaConstants.SQLPORT_DEFAULT)));
 		executors.execute(() -> {
 			while (true) {
 				Socket sock;
@@ -63,7 +63,7 @@ public class SQLServer {
 										new InputStreamReader(clientSocket.getInputStream()));) {
 							user = in.readLine();
 							numberofcontainers = Integer.valueOf(in.readLine());
-							cpupercontainer = Integer.valueOf(in.readLine());							
+							cpupercontainer = Integer.valueOf(in.readLine());
 							memorypercontainer = Integer.valueOf(in.readLine());
 							scheduler = in.readLine();
 							if (!Utils.isUserExists(user)) {
@@ -74,7 +74,7 @@ public class SQLServer {
 							}
 							List<LaunchContainers> containers = null;
 							Map<String, Object> cpumemory = null;
-							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT) 
+							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT)
 									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
 								containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
 								cpumemory = Utils.getAllocatedContainersResources(containers);
@@ -103,11 +103,11 @@ public class SQLServer {
 								isjgroups = false;
 								isignite = true;
 								isyarn = false;
-							}						
+							}
 							out.println("Welcome to the SQL Server!");
 							out.println("Type 'quit' to exit.");
-							out.println("Done");							
-							String inputLine;							
+							out.println("Done");
+							String inputLine;
 							String dbdefault = DataSamudayaProperties.get()
 									.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
 							outer:
@@ -215,8 +215,7 @@ public class SQLServer {
 										} else if (inputLine.startsWith("getmode")) {
 											if (isignite) {
 												out.println("ignite");
-											}
-											else if (isjgroups) {
+											} else if (isjgroups) {
 												out.println("jgroups");
 											} else if (isyarn) {
 												out.println("yarn");
@@ -227,7 +226,7 @@ public class SQLServer {
 											dbdefault = StringUtils.normalizeSpace(inputLine.trim()).split(" ")[1];
 										} else if (inputLine.startsWith("getdb")) {
 											out.println(dbdefault);
-										} else if (inputLine.startsWith("create") 
+										} else if (inputLine.startsWith("create")
 												|| inputLine.startsWith("alter")) {
 											out.println(TableCreator.createAlterTable(dbdefault, inputLine));
 										} else if (inputLine.startsWith("drop")) {
@@ -245,7 +244,7 @@ public class SQLServer {
 										} else if (inputLine.startsWith("select")) {
 											long starttime = System.currentTimeMillis();
 											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-											List<List> results = null; 
+											List<List> results = null;
 											if (isignite) {
 												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
 												results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid);
@@ -276,9 +275,9 @@ public class SQLServer {
 								} catch (Exception exception) {
 									log.error(DataSamudayaConstants.EMPTY, exception);
 								}
-							}							
+							}
 						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);							
+							log.error(DataSamudayaConstants.EMPTY, ex);
 						} finally {
 							if (iscontainerlaunched) {
 								try {

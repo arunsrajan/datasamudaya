@@ -7,5 +7,6 @@ package com.github.datasamudaya.common;
  */
 public interface BlockManager {
 	public abstract boolean storeBlocks(ShuffleBlock shuffleBlock);
+
 	public abstract ShuffleBlock retrieveBlockData(String blockId);
 }

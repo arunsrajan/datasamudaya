@@ -52,7 +52,7 @@ public class TaskExecutorMapperCombiner implements Callable {
 
 	@SuppressWarnings({"rawtypes"})
 	public TaskExecutorMapperCombiner(BlocksLocation blockslocation, InputStream datastream, String applicationid, String taskid,
-									  ClassLoader cl, int port) throws Exception {
+			ClassLoader cl, int port) throws Exception {
 		this.blockslocation = blockslocation;
 		this.datastream = datastream;
 		this.port = port;
@@ -64,7 +64,7 @@ public class TaskExecutorMapperCombiner implements Callable {
 				}
 			}
 			if (blockslocation.getCombinerclasses() != null) {
-				for (var combinerInstance :blockslocation.getCombinerclasses()) {					
+				for (var combinerInstance :blockslocation.getCombinerclasses()) {
 					cc.add((Combiner) combinerInstance);
 				}
 			}
@@ -75,6 +75,7 @@ public class TaskExecutorMapperCombiner implements Callable {
 		this.applicationid = applicationid;
 		this.taskid = taskid;
 	}
+
 	/**
 	 * Executes the call method and returns context object.
 	 */

@@ -47,7 +47,7 @@ public class ApplicationSubmitter {
 
 	static Logger log = Logger.getLogger(ApplicationSubmitter.class);
 
-	public static void main(String[] args) throws Exception {		
+	public static void main(String[] args) throws Exception {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 		var options = new Options();
@@ -61,8 +61,7 @@ public class ApplicationSubmitter {
 		String[] argue = null;
 		if (cmd.hasOption(DataSamudayaConstants.JAR)) {
 			jarpath = cmd.getOptionValue(DataSamudayaConstants.JAR);
-		}
-		else {
+		} else {
 			var formatter = new HelpFormatter();
 			formatter.printHelp(DataSamudayaConstants.ANTFORMATTER, options);
 			return;
@@ -77,56 +76,55 @@ public class ApplicationSubmitter {
 			Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
 		} else {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
 		StaticComponentContainer.Modules.exportAllToAll();
 		try (var zo = new ZookeeperOperations()) {
 			zo.connect();
-		var hostport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOSTPORT);
-		var taskscheduler = zo.getMRSchedulerMaster();
-		if (hostport != null || nonNull(taskscheduler) && !taskscheduler.isEmpty()) {
-			String currenttaskscheduler;
-			if (hostport != null) {
-				currenttaskscheduler = hostport;
-			}
-			else {
-				currenttaskscheduler = taskscheduler;
-			}
-			var ts = currenttaskscheduler.split(DataSamudayaConstants.UNDERSCORE);
-			try (var s = new Socket(ts[0], Integer.parseInt(ts[1]));
+			var hostport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOSTPORT);
+			var taskscheduler = zo.getMRSchedulerMaster();
+			if (hostport != null || nonNull(taskscheduler) && !taskscheduler.isEmpty()) {
+				String currenttaskscheduler;
+				if (hostport != null) {
+					currenttaskscheduler = hostport;
+				} else {
+					currenttaskscheduler = taskscheduler;
+				}
+				var ts = currenttaskscheduler.split(DataSamudayaConstants.UNDERSCORE);
+				try (var s = new Socket(ts[0], Integer.parseInt(ts[1]));
 					var is = s.getInputStream();
 					var os = s.getOutputStream();
 					var fis = new FileInputStream(jarpath);
 					var baos = new ByteArrayOutputStream();) {
-				int ch;
-				while ((ch = fis.read()) != -1) {
-					baos.write(ch);
-				}
-				baos.flush();
-				
-				Utils.writeDataStream(os, baos.toByteArray());
-				Utils.writeDataStream(os, new File(jarpath).getName().getBytes());
-				if (!Objects.isNull(argue)) {
-					for (var arg :argue) {
-						Utils.writeDataStream(os, arg.getBytes());
+					int ch;
+					while ((ch = fis.read()) != -1) {
+						baos.write(ch);
 					}
-				}
-				Utils.writeInt(os, -1);
-				try (var br = new BufferedReader(new InputStreamReader(is));) {
-					while (true) {					
-						var messagetasksscheduler = (String) br.readLine();
-						if ("quit".equals(messagetasksscheduler.trim())) {
-							break;
+					baos.flush();
+
+					Utils.writeDataStream(os, baos.toByteArray());
+					Utils.writeDataStream(os, new File(jarpath).getName().getBytes());
+					if (!Objects.isNull(argue)) {
+						for (var arg :argue) {
+							Utils.writeDataStream(os, arg.getBytes());
 						}
-						log.info(messagetasksscheduler);
 					}
+					Utils.writeInt(os, -1);
+					try (var br = new BufferedReader(new InputStreamReader(is));) {
+						while (true) {
+							var messagetasksscheduler = (String) br.readLine();
+							if ("quit".equals(messagetasksscheduler.trim())) {
+								break;
+							}
+							log.info(messagetasksscheduler);
+						}
+					}
+				} catch (Exception ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
-			} catch (Exception ex) {
-				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 		}
-		}
-		catch(Exception ex) {
+		catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}

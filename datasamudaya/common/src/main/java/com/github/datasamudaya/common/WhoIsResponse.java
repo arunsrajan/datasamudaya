@@ -28,7 +28,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class WhoIsResponse implements Serializable{
+public class WhoIsResponse implements Serializable {
 	private static final long serialVersionUID = -9121734276018568796L;
 
 	public static enum STATUS {

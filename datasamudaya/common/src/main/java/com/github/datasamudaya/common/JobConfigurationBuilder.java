@@ -287,7 +287,7 @@ public class JobConfigurationBuilder {
 		this.isuseglobalte = isuseglobalte;
 		return this;
 	}
-	
+
 	public JobConfigurationBuilder setTeappid(String teappid) {
 		this.teappid = teappid;
 		return this;
@@ -297,7 +297,6 @@ public class JobConfigurationBuilder {
 		this.ignitehp = ignitehp;
 		return this;
 	}
-	
-	
-	
+
+
 }

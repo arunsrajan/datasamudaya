@@ -7,6 +7,6 @@ import java.io.Serializable;
  * @author arun
  *
  */
-public interface TransferManager extends Serializable{
+public interface TransferManager extends Serializable {
 	public abstract boolean transferBlocks(ShuffleBlock[] shuffleBlocks);
 }

@@ -74,7 +74,7 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 	static List<BlocksLocation> bls;
 	static Registry server;
 	private static ZookeeperOperations zo;
-	
+
 	@BeforeClass
 	public static void launchNodes() throws Exception {
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
@@ -103,25 +103,25 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 			noderesourcesmap.put("127.0.0.1_" + (20000 + nodeindex), resource);
 			server = Utils.getRPCRegistry(20000 + nodeindex,
 					new StreamDataCruncher() {
-				public Object postObject(Object object)throws RemoteException {
-						try {
-							var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
-									containerprocesses, hdfs, containeridthreads, containeridports,
-									object, zo);
-							Future<Object> containerallocated = escontainer.submit(container);
-							Object returnresultobject = containerallocated.get();
-							log.info("Containers Allocated: " + returnresultobject);
-							return returnresultobject;
-						} catch (InterruptedException e) {
-							log.warn("Interrupted!", e);
-							// Restore interrupted state...
-							Thread.currentThread().interrupt();
-						} catch (Exception e) {
-							log.error(DataSamudayaConstants.EMPTY, e);
+						public Object postObject(Object object) throws RemoteException {
+							try {
+								var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
+										containerprocesses, hdfs, containeridthreads, containeridports,
+										object, zo);
+								Future<Object> containerallocated = escontainer.submit(container);
+								Object returnresultobject = containerallocated.get();
+								log.info("Containers Allocated: " + returnresultobject);
+								return returnresultobject;
+							} catch (InterruptedException e) {
+								log.warn("Interrupted!", e);
+								// Restore interrupted state...
+								Thread.currentThread().interrupt();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+							return null;
 						}
-						return null;
-					}
-				}, DataSamudayaConstants.EMPTY);
+					}, DataSamudayaConstants.EMPTY);
 			containerlauncher.add(server);
 		}
 	}

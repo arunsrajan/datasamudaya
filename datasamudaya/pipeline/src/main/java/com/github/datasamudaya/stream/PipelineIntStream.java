@@ -37,7 +37,7 @@ import com.github.datasamudaya.common.functions.SummaryStatistics;
  * @param <I1>
  */
 public final class PipelineIntStream<I1> extends StreamPipeline {
-	private static Logger log = Logger.getLogger(PipelineIntStream.class);
+	private static final Logger log = Logger.getLogger(PipelineIntStream.class);
 
 	/**
 	 * Constructor for integer function.
@@ -59,11 +59,11 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public PipelineIntStream<I1> map(IntUnaryOperator intunaryoperator) {
-		var map = new PipelineIntStream(this, intunaryoperator);		
+		var map = new PipelineIntStream(this, intunaryoperator);
 		return map;
 	}
 
-	
+
 	/**
 	 * The public constructor for distinct function. 
 	 * @return integer stream pipeline object
@@ -97,7 +97,7 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 		log.debug("Collect task ended.");
 		return result;
 	}
-	
+
 	/**
 	 * The statistical summary for the integer pipeline.
 	 * @return statistics
@@ -125,7 +125,7 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 		log.debug("Sum task ended.");
 		return result;
 	}
-	
+
 	/**
 	 * The max function for integer pipeline.
 	 * @return results in list
@@ -139,6 +139,7 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 		log.debug("Max task ended.");
 		return result;
 	}
+
 	/**
 	 * The min function for integer pipeline.
 	 * @return results in list

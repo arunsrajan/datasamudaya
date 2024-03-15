@@ -31,44 +31,44 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Task implements Serializable, Cloneable {
-  private static final long serialVersionUID = 4608751332110497234L;
-  public Object[] input;
-  public RemoteDataFetch[] parentremotedatafetch;
-  public TaskType tasktype;
-  public TaskStatus taskstatus;
-  public boolean visited;
-  public String jobid;
-  public String stageid;
-  public String taskid;
-  public String hostport;
-  public String stagefailuremessage;
-  public double timetakenseconds;
-  private String taskname;
-  public STORAGE storage;
-  public List<Task> taskspredecessor;
-  public boolean finalphase;
-  public String hdfsurl;
-  public String filepath;
-  public boolean saveresulttohdfs;
-  public Long taskexecutionstartime;
-  public Long taskexecutionendtime;
-  public String hbphysicaladdress;
-  public String piguuid;
-  public long numbytesprocessed;
-  public long numbytesgenerated;
-  public long numbytesconverted;
-  public boolean topersist;
-  public String actorselection;
-  public String joinpos;
-  public Map<Integer,FilePartitionId> filepartitionsid;
-  public int parentterminatingsize;
-  public List<Task> shufflechildactors;
-  
-  @Override
-  public Object clone() throws CloneNotSupportedException {
-    return super.clone();
+	private static final long serialVersionUID = 4608751332110497234L;
+	public Object[] input;
+	public RemoteDataFetch[] parentremotedatafetch;
+	public TaskType tasktype;
+	public TaskStatus taskstatus;
+	public boolean visited;
+	public String jobid;
+	public String stageid;
+	public String taskid;
+	public String hostport;
+	public String stagefailuremessage;
+	public double timetakenseconds;
+	private String taskname;
+	public STORAGE storage;
+	public List<Task> taskspredecessor;
+	public boolean finalphase;
+	public String hdfsurl;
+	public String filepath;
+	public boolean saveresulttohdfs;
+	public Long taskexecutionstartime;
+	public Long taskexecutionendtime;
+	public String hbphysicaladdress;
+	public String piguuid;
+	public long numbytesprocessed;
+	public long numbytesgenerated;
+	public long numbytesconverted;
+	public boolean topersist;
+	public String actorselection;
+	public String joinpos;
+	public Map<Integer, FilePartitionId> filepartitionsid;
+	public int parentterminatingsize;
+	public List<Task> shufflechildactors;
 
-  }
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
+
+	}
 
 	@Override
 	public String toString() {

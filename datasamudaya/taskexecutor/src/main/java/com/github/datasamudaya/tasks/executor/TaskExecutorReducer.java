@@ -35,93 +35,94 @@ import com.github.datasamudaya.common.utils.Utils;
  *
  */
 public class TaskExecutorReducer implements Callable<Context> {
-  static Logger log = Logger.getLogger(TaskExecutorReducer.class);
-  @SuppressWarnings("rawtypes")
-  Reducer cr;
-  ReducerValues rv;
-  File file;
-  @SuppressWarnings("rawtypes")
-  Context ctx;
-  String applicationid;
-  String executorid;
-  String taskid;
-  int port;
-  Map<String, Object> apptaskexecutormap;
+	static Logger log = Logger.getLogger(TaskExecutorReducer.class);
+	@SuppressWarnings("rawtypes")
+	Reducer cr;
+	ReducerValues rv;
+	File file;
+	@SuppressWarnings("rawtypes")
+	Context ctx;
+	String applicationid;
+	String executorid;
+	String taskid;
+	int port;
+	Map<String, Object> apptaskexecutormap;
 
-  @SuppressWarnings({"rawtypes"})
-  public TaskExecutorReducer(ReducerValues rv, String applicationid, String taskid, ClassLoader cl,
-      int port, Map<String, Object> apptaskexecutormap, String executorid) throws Exception {
-    this.rv = rv;
-    Class<?> clz = null;
-    this.port = port;
-    try {      
-      cr = (Reducer) rv.getReducer();
-      this.applicationid = applicationid;
-      this.executorid = executorid;
-      this.taskid = taskid;
-    } catch (Exception ex) {
-      log.debug("Exception in loading class:", ex);
-    }
-    this.apptaskexecutormap = apptaskexecutormap;
-  }
-  /**
-   * Executes the reducer tasks and returns the context object. 
-   */
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  @Override
-  public Context call() {
-    var es = Executors.newSingleThreadExecutor();
-    try {
-      log.debug("Submitted Reducer:" + applicationid + taskid);
-      var complete = new DataCruncherContext();
-      var apptaskcontextmap = new ConcurrentHashMap<String, Context>();
-      Context currentctx;
-      for (var tuple3 : (List<Tuple3>) rv.getTuples()) {
-        var ctx = new DataCruncherContext();
-        int hpcount = 0;
-        for (var apptaskids : (Collection<String>) tuple3.v2) {
-          if (apptaskcontextmap.get(apptaskids) != null) {
-            currentctx = apptaskcontextmap.get(apptaskids);
-          } else {
-            TaskExecutorMapperCombiner temc =
-                (TaskExecutorMapperCombiner) apptaskexecutormap.get(apptaskids);
-            if (temc == null) {
-              var objects = new ArrayList<>();
-              objects.add(new RetrieveData());
-              objects.add(applicationid);
-              objects.add(apptaskids.replace(applicationid, DataSamudayaConstants.EMPTY));
-              currentctx = (Context) Utils
-                  .getResultObjectByInput((String) ((List) tuple3.v3).get(hpcount), objects, executorid);
-            } else {
-              currentctx = (Context) temc.ctx;
-            }
-            apptaskcontextmap.put(apptaskids, currentctx);
-          }
-          ctx.addAll(tuple3.v1, currentctx.get(tuple3.v1));
-          hpcount++;
-        }
-        var datasamudayar = new ReducerExecutor((DataCruncherContext) ctx, cr, tuple3.v1);
-        var fc = es.submit(datasamudayar);
-        var results = fc.get();
-        complete.add(results);
-      }
-      ctx = complete;
-      log.debug("Submitted Reducer Completed:" + applicationid + taskid);
-    } catch (Throwable ex) {
-      try {
-        var baos = new ByteArrayOutputStream();
-        var failuremessage = new PrintWriter(baos, true, StandardCharsets.UTF_8);
-        ex.printStackTrace(failuremessage);
-      } catch (Exception e) {
-        log.error("Send Message Error For Task Failed: ", e);
-      }
-      log.error("Submitted Reducer Failed:", ex);
-    } finally {
-      if (es != null) {
-        es.shutdown();
-      }
-    }
-    return ctx;
-  }
+	@SuppressWarnings({"rawtypes"})
+	public TaskExecutorReducer(ReducerValues rv, String applicationid, String taskid, ClassLoader cl,
+			int port, Map<String, Object> apptaskexecutormap, String executorid) throws Exception {
+		this.rv = rv;
+		Class<?> clz = null;
+		this.port = port;
+		try {
+			cr = (Reducer) rv.getReducer();
+			this.applicationid = applicationid;
+			this.executorid = executorid;
+			this.taskid = taskid;
+		} catch (Exception ex) {
+			log.debug("Exception in loading class:", ex);
+		}
+		this.apptaskexecutormap = apptaskexecutormap;
+	}
+
+	/**
+	* Executes the reducer tasks and returns the context object. 
+	*/
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	@Override
+	public Context call() {
+		var es = Executors.newSingleThreadExecutor();
+		try {
+			log.debug("Submitted Reducer:" + applicationid + taskid);
+			var complete = new DataCruncherContext();
+			var apptaskcontextmap = new ConcurrentHashMap<String, Context>();
+			Context currentctx;
+			for (var tuple3 : (List<Tuple3>) rv.getTuples()) {
+				var ctx = new DataCruncherContext();
+				int hpcount = 0;
+				for (var apptaskids : (Collection<String>) tuple3.v2) {
+					if (apptaskcontextmap.get(apptaskids) != null) {
+						currentctx = apptaskcontextmap.get(apptaskids);
+					} else {
+						TaskExecutorMapperCombiner temc =
+								(TaskExecutorMapperCombiner) apptaskexecutormap.get(apptaskids);
+						if (temc == null) {
+							var objects = new ArrayList<>();
+							objects.add(new RetrieveData());
+							objects.add(applicationid);
+							objects.add(apptaskids.replace(applicationid, DataSamudayaConstants.EMPTY));
+							currentctx = (Context) Utils
+									.getResultObjectByInput((String) ((List) tuple3.v3).get(hpcount), objects, executorid);
+						} else {
+							currentctx = (Context) temc.ctx;
+						}
+						apptaskcontextmap.put(apptaskids, currentctx);
+					}
+					ctx.addAll(tuple3.v1, currentctx.get(tuple3.v1));
+					hpcount++;
+				}
+				var datasamudayar = new ReducerExecutor((DataCruncherContext) ctx, cr, tuple3.v1);
+				var fc = es.submit(datasamudayar);
+				var results = fc.get();
+				complete.add(results);
+			}
+			ctx = complete;
+			log.debug("Submitted Reducer Completed:" + applicationid + taskid);
+		} catch (Throwable ex) {
+			try {
+				var baos = new ByteArrayOutputStream();
+				var failuremessage = new PrintWriter(baos, true, StandardCharsets.UTF_8);
+				ex.printStackTrace(failuremessage);
+			} catch (Exception e) {
+				log.error("Send Message Error For Task Failed: ", e);
+			}
+			log.error("Submitted Reducer Failed:", ex);
+		} finally {
+			if (es != null) {
+				es.shutdown();
+			}
+		}
+		return ctx;
+	}
 
 }
