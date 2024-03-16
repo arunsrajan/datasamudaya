@@ -2618,13 +2618,13 @@ public class Utils {
 	 * @param port
 	 * @throws Exception
 	 */
-	public static Tuple2<ServerSocket, ExecutorService> startShuffleRecordsServer(int port) throws Exception {
+	public static Tuple2<ServerSocket, ExecutorService> startShuffleRecordsServer() throws Exception {
 		final ExecutorService executors;
 		final ServerSocket serverSocket;
 		try  {
 			executors = Executors.newFixedThreadPool(10);
-			serverSocket = new ServerSocket(port);
-			log.info("Shuffle Server started at port. {}", port);
+			serverSocket = new ServerSocket(0);
+			log.info("Shuffle Server started at port. {}", serverSocket.getLocalPort());
 			executors.execute(() -> {
 				while (true) {
 					if(nonNull(serverSocket) && serverSocket.isClosed()) {

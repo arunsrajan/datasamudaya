@@ -100,8 +100,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	static ExecutorService escompute;
 	static CountDownLatch shutdown = new CountDownLatch(1);
 	static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
-	static final int shuffleserverport = Utils.getRandomPort();
-	
+	static Tuple2<ServerSocket, ExecutorService> shuffleFileServer;
 	
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {
@@ -123,7 +122,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				}
 			}
 			String jobid = args[2];			
-			Tuple2<ServerSocket, ExecutorService> shuffleFileServer = Utils.startShuffleRecordsServer(shuffleserverport);
+			shuffleFileServer = Utils.startShuffleRecordsServer();
 			String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 			PropertyConfigurator.configure(
 					datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
@@ -211,7 +210,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	@Override
 	public void start(ZookeeperOperations zo, String jobid) throws Exception {
 		var port = Integer.parseInt(System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
-		log.info("TaskExecutor Port: " + port);
+		log.info("TaskExecutor Port: {}", port);
 		var su = new ServerUtils();
 		log.info("Initializing Server at: {}", port);
 		su.init(port + DataSamudayaConstants.PORT_OFFSET,
@@ -230,13 +229,20 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 
 		var inmemorycache = DataSamudayaCache.get();
 		cl = TaskExecutorRunner.class.getClassLoader();
-		int akkaport = Utils.getRandomPort();
-		Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.AKKA_HOST
-		, DataSamudayaConstants.AKKA_HOST_DEFAULT)
-		, akkaport,
-				Runtime.getRuntime().availableProcessors());
-		final ActorSystem system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
-
+		ActorSystem system = null;
+		while(true) {
+			try {
+				Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.AKKA_HOST
+				, DataSamudayaConstants.AKKA_HOST_DEFAULT)
+				, Utils.getRandomPort(),
+						Runtime.getRuntime().availableProcessors());
+				system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
+				break;
+			} catch(Exception ex) {
+				log.error("Unable To Create Akka Actors System...",ex);
+				log.info("Trying to create Akka actor system again...");
+			}
+		}
 		Cluster cluster = Cluster.get(system);
 		cluster.joinSeedNodes(Arrays.asList(cluster.selfAddress()));
 
@@ -250,7 +256,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);
 		var host = NetworkUtil
 				.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
-
+		final ActorSystem actsystem = system;
 		dataCruncher = new StreamDataCruncher() {
 			public Object postObject(Object deserobj) throws RemoteException {
 				Task task = new Task();
@@ -270,12 +276,12 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						cl = DataSamudayaMapReducePhaseClassLoader.newInstance(loadjar.getMrjar(), cl);
 						return DataSamudayaConstants.JARLOADED;
 					} else if (deserobj instanceof GetTaskActor gettaskactor) {
-						return SQLUtils.getAkkaActor(system, gettaskactor,
+						return SQLUtils.getAkkaActor(actsystem, gettaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
 								actorsystemurl, cluster, jobid);
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
-						return SQLUtils.getAkkaActor(system, executetaskactor,
+						return SQLUtils.getAkkaActor(actsystem, executetaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
 								actorsystemurl, cluster, jobid);
@@ -284,7 +290,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						StreamJobScheduler js = new StreamJobScheduler();
 						return js.schedule(job);
 					} else if (deserobj instanceof ShufflePort) {						
-						return shuffleserverport;
+						return shuffleFileServer.v1.getLocalPort();
 					} else if (!Objects.isNull(deserobj)) {
 						log.info("Deserialized object:{} ", deserobj);
 						TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,
