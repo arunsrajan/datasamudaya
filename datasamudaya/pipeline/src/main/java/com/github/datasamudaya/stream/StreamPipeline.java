@@ -701,7 +701,12 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			jobCreated.getJm().setJobstarttime(System.currentTimeMillis());
 			jobCreated.setPipelineconfig(pipelineconfig);
 			if (pipelineconfig.getUseglobaltaskexecutors()) {
-				jobCreated.setId(pipelineconfig.getJobid());
+				if(nonNull(pipelineconfig.getJobid())) {
+					jobCreated.setId(pipelineconfig.getJobid());
+				} else {
+					pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
+					jobCreated.setId(pipelineconfig.getJobid());
+				}
 			} else {
 				jobCreated.setId(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			}

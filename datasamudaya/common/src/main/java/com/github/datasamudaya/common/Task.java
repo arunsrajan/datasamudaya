@@ -22,9 +22,8 @@ import lombok.Setter;
 
 /**
  * 
- * @author Arun 
- * Holds the task information such as execution function, parent and child tasks in the
- * form graph for the streaming API.
+ * @author Arun Holds the task information such as execution function, parent
+ *         and child tasks in the form graph for the streaming API.
  */
 @Getter
 @Setter
@@ -41,6 +40,7 @@ public class Task implements Serializable, Cloneable {
 	public String stageid;
 	public String taskid;
 	public String hostport;
+	public String teid;
 	public String stagefailuremessage;
 	public double timetakenseconds;
 	private String taskname;

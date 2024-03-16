@@ -51,6 +51,7 @@ import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.ServerUtils;
+import com.github.datasamudaya.common.ShufflePort;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskExecutorShutdown;
@@ -96,7 +97,9 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	static ExecutorService escompute;
 	static CountDownLatch shutdown = new CountDownLatch(1);
 	static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
-
+	static final int shuffleserverport = Utils.getRandomPort();
+	
+	
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {
 			URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
@@ -116,7 +119,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					log.debug(arg);
 				}
 			}
-			String jobid = args[2];
+			String jobid = args[2];			
+			Utils.startShuffleRecordsServer(0);
 			String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 			PropertyConfigurator.configure(
 					datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
@@ -260,16 +264,18 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						return SQLUtils.getAkkaActor(system, gettaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
-								actorsystemurl, cluster);
+								actorsystemurl, cluster, jobid);
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
 						return SQLUtils.getAkkaActor(system, executetaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
-								actorsystemurl, cluster);
+								actorsystemurl, cluster, jobid);
 					} else if (deserobj instanceof Job job) {
 						job.getPipelineconfig().setClsloader(cl);
 						StreamJobScheduler js = new StreamJobScheduler();
 						return js.schedule(job);
+					} else if (deserobj instanceof ShufflePort) {						
+						return shuffleserverport;
 					} else if (!Objects.isNull(deserobj)) {
 						log.info("Deserialized object:{} ", deserobj);
 						TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,

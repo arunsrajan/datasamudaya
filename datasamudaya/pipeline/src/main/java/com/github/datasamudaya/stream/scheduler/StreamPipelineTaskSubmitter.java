@@ -108,6 +108,7 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 				childactors = task.getShufflechildactors().stream().map(task -> task.actorselection).collect(Collectors.toList());
 			}
 			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors, taskexecutors.indexOf(hostport) * 3);
+			task.setTeid(jobid);
 			byte[] objbytes = Utils.convertObjectToBytes(eta);
 			return sdc.postObject(objbytes);
 		} catch (Exception ex) {
