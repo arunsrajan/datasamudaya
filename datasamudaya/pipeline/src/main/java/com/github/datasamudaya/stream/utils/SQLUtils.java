@@ -3595,13 +3595,14 @@ public class SQLUtils {
 		if (obj instanceof GetTaskActor taskactor) {
 			String jobstageid = taskactor.getTask().getJobid() + taskactor.getTask().getStageid();
 			JobStage js = jobidstageidjobstagemap.get(jobstageid);
-			if (js.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {
+			taskactor.getTask().setTeid(teid);
+			if (js.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {				
 				cluster.registerOnMemberUp(() -> {
 					system.actorOf(
 							Props.create(ProcessMapperByBlocksLocation.class, jobidstageidjobstagemap.get(jobstageid),
 									hdfs, inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask()),
 							jobstageid + taskactor.getTask().getTaskid());
-				});
+				});				
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
 						+ taskactor.getTask().getTaskid());
 				return taskactor.getTask();
@@ -3774,6 +3775,7 @@ public class SQLUtils {
 				return taskactor.getTask();
 			}
 		} else if (obj instanceof ExecuteTaskActor exectaskactor) {
+			exectaskactor.getTask().setTeid(teid);
 			log.info("Processing Blocks {} actors {}", exectaskactor.getTask().getInput(),
 					exectaskactor.getTask().getActorselection());
 			int totalfilepartspernode = 3;
@@ -3799,8 +3801,7 @@ public class SQLUtils {
 					log.info("FilePartitions Selected {}", exectaskactor.getTask().getFilepartitionsid());
 					indexfilepartpernode += totalfilepartspernode;
 				}
-			}
-			exectaskactor.getTask().setTeid(teid);
+			}			
 			ProcessMapperByBlocksLocation.BlocksLocationRecord blr = new ProcessMapperByBlocksLocation.BlocksLocationRecord(
 					(BlocksLocation) exectaskactor.getTask().getInput()[0], hdfs,
 					exectaskactor.getTask().getFilepartitionsid(), childactors, actorselections);

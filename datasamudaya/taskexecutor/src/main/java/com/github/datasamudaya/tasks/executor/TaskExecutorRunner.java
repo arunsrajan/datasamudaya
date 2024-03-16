@@ -8,9 +8,12 @@
  */
 package com.github.datasamudaya.tasks.executor;
 
+import static java.util.Objects.nonNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -32,6 +35,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
+import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +67,7 @@ import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 import com.typesafe.config.Config;
+
 import akka.actor.ActorSystem;
 import akka.cluster.Cluster;
 import io.micrometer.core.instrument.Clock;
@@ -73,8 +78,6 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
-
-import static java.util.Objects.isNull;
 
 /**
  * Launches the task executor.
@@ -120,7 +123,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				}
 			}
 			String jobid = args[2];			
-			Utils.startShuffleRecordsServer(0);
+			Tuple2<ServerSocket, ExecutorService> shuffleFileServer = Utils.startShuffleRecordsServer(shuffleserverport);
 			String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 			PropertyConfigurator.configure(
 					datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
@@ -167,6 +170,12 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			server.close();
 			ter.destroy();
 			ByteBufferPoolDirect.destroy();
+			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v1)) {
+				shuffleFileServer.v1.close();
+			}
+			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v2)) {
+				shuffleFileServer.v2.shutdown();
+			}
 			log.info("Freed the assets...");
 			System.exit(0);
 		} catch (Throwable e) {

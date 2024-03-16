@@ -106,7 +106,22 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.jooq.lambda.tuple.Tuple;
+import org.jooq.lambda.tuple.Tuple1;
 import org.jooq.lambda.tuple.Tuple2;
+import org.jooq.lambda.tuple.Tuple3;
+import org.jooq.lambda.tuple.Tuple4;
+import org.jooq.lambda.tuple.Tuple5;
+import org.jooq.lambda.tuple.Tuple6;
+import org.jooq.lambda.tuple.Tuple7;
+import org.jooq.lambda.tuple.Tuple8;
+import org.jooq.lambda.tuple.Tuple9;
+import org.jooq.lambda.tuple.Tuple10;
+import org.jooq.lambda.tuple.Tuple11;
+import org.jooq.lambda.tuple.Tuple12;
+import org.jooq.lambda.tuple.Tuple13;
+import org.jooq.lambda.tuple.Tuple14;
+import org.jooq.lambda.tuple.Tuple15;
+import org.jooq.lambda.tuple.Tuple16;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,6 +155,7 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.DataSamudayaUsers;
 import com.github.datasamudaya.common.DestroyContainer;
 import com.github.datasamudaya.common.DestroyContainers;
+import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
 import com.github.datasamudaya.common.GlobalJobFolderBlockLocations;
@@ -428,22 +444,25 @@ public class Utils {
 		kryo.register(Table.class, new CompatibleFieldSerializer<Table>(kryo, Table.class));
 		kryo.register(SimpleNode.class, new CompatibleFieldSerializer<SimpleNode>(kryo, SimpleNode.class));
 		kryo.register(SerializedLambda.class);
-		kryo.register(Tuple2.class, new Serializer<Tuple2<?, ?>>() {
-			@Override
-			public void write(Kryo kryo, Output output, Tuple2<?, ?> tuple) {
-				kryo.writeClassAndObject(output, tuple.v1());
-				kryo.writeClassAndObject(output, tuple.v2());
-			}
-
-			@Override
-			public Tuple2<?, ?> read(Kryo kryo, Input input, Class<? extends Tuple2<?, ?>> type) {
-				Object v1 = kryo.readClassAndObject(input);
-				Object v2 = kryo.readClassAndObject(input);
-				return Tuple.tuple(v1, v2);
-			}
-		});
+		kryo.register(Tuple1.class, new TupleSerializer());
+		kryo.register(Tuple2.class, new TupleSerializer());
+		kryo.register(Tuple3.class, new TupleSerializer());
+		kryo.register(Tuple4.class, new TupleSerializer());
+		kryo.register(Tuple5.class, new TupleSerializer());
+		kryo.register(Tuple6.class, new TupleSerializer());
+		kryo.register(Tuple7.class, new TupleSerializer());
+		kryo.register(Tuple8.class, new TupleSerializer());
+		kryo.register(Tuple9.class, new TupleSerializer());
+		kryo.register(Tuple10.class, new TupleSerializer());
+		kryo.register(Tuple11.class, new TupleSerializer());
+		kryo.register(Tuple12.class, new TupleSerializer());
+		kryo.register(Tuple13.class, new TupleSerializer());
+		kryo.register(Tuple14.class, new TupleSerializer());
+		kryo.register(Tuple15.class, new TupleSerializer());
+		kryo.register(Tuple16.class, new TupleSerializer());
 		kryo.register(Closure.class, new ClosureSerializer());
 		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));
+		kryo.register(RemoteDataFetch.class, new CompatibleFieldSerializer<>(kryo, RemoteDataFetch.class));
 	}
 
 	/**
@@ -527,22 +546,25 @@ public class Utils {
 		kryo.register(Table.class, new CompatibleFieldSerializer<Table>(kryo, Table.class));
 		kryo.register(SimpleNode.class, new CompatibleFieldSerializer<SimpleNode>(kryo, SimpleNode.class));
 		kryo.register(SerializedLambda.class);
-		kryo.register(Tuple2.class, new Serializer<Tuple2<?, ?>>() {
-			@Override
-			public void write(Kryo kryo, Output output, Tuple2<?, ?> tuple) {
-				kryo.writeClassAndObject(output, tuple.v1());
-				kryo.writeClassAndObject(output, tuple.v2());
-			}
-
-			@Override
-			public Tuple2<?, ?> read(Kryo kryo, Input input, Class<? extends Tuple2<?, ?>> type) {
-				Object v1 = kryo.readClassAndObject(input);
-				Object v2 = kryo.readClassAndObject(input);
-				return Tuple.tuple(v1, v2);
-			}
-		});
+		kryo.register(Tuple1.class, new TupleSerializer());
+		kryo.register(Tuple2.class, new TupleSerializer());
+		kryo.register(Tuple3.class, new TupleSerializer());
+		kryo.register(Tuple4.class, new TupleSerializer());
+		kryo.register(Tuple5.class, new TupleSerializer());
+		kryo.register(Tuple6.class, new TupleSerializer());
+		kryo.register(Tuple7.class, new TupleSerializer());
+		kryo.register(Tuple8.class, new TupleSerializer());
+		kryo.register(Tuple9.class, new TupleSerializer());
+		kryo.register(Tuple10.class, new TupleSerializer());
+		kryo.register(Tuple11.class, new TupleSerializer());
+		kryo.register(Tuple12.class, new TupleSerializer());
+		kryo.register(Tuple13.class, new TupleSerializer());
+		kryo.register(Tuple14.class, new TupleSerializer());
+		kryo.register(Tuple15.class, new TupleSerializer());
+		kryo.register(Tuple16.class, new TupleSerializer());
 		kryo.register(Closure.class, new ClosureSerializer());
 		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));
+		kryo.register(RemoteDataFetch.class, new CompatibleFieldSerializer<>(kryo, RemoteDataFetch.class));
 		return kryo;
 	}
 
@@ -2385,11 +2407,12 @@ public class Utils {
 	public static void copySpilledDataSourceToFileShuffle(DiskSpillingList dslinput, Output output) throws Exception {
 		Kryo kryo = Utils.getKryo();
 		InputStream istream = null;
-		if (nonNull(dslinput) && nonNull(dslinput.getTask().getHostport())) {
-			if (dslinput.getTask().getHostport()
+		if (nonNull(dslinput)) {
+			if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport()
 					.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
 							+ DataSamudayaConstants.UNDERSCORE
 							+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT))) {
+				log.info("Copying from File from Local Executors {} Spilled File", dslinput.getTask().getHostport());
 				istream = new FileInputStream(
 						Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
 								dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
@@ -2405,25 +2428,35 @@ public class Utils {
 					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
 			} else {
+				log.info("Copying from File from Remote Executors {} Spilled File", dslinput.getTask().getHostport());
 				String[] hostport = dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE);
 				RemoteDataFetch rdf = new RemoteDataFetch();
 				rdf.setHp(dslinput.getTask().getHostport());
 				rdf.setShufflefilepath(
 						Utils.getFilePathRemoteDataFetch(dslinput.getTask(), dslinput.getAppendwithpath(),
 								dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				log.info("Path Of Remote Data File {}", rdf.getShufflefilepath());
 				rdf.setTejobid(dslinput.getTask().getTeid());
 				int port = Utils.getRemoteShufflePort(dslinput.getTask().getHostport(), dslinput.getTask().getTeid());
-				try (Socket sock = new Socket(hostport[0], port);
+				log.info("Obtaining ShufflePort {} of Task Executor {}", port ,dslinput.getTask().getHostport());
+				Socket sock = new Socket(hostport[0], port);
+				try (OutputStream outputstream = sock.getOutputStream();
+						Output outputrdf = new Output(outputstream);) {
+					kryo.writeClassAndObject(outputrdf, rdf);
+					outputrdf.flush();
+					log.info("Written Remote Data Fetch to host {} and port {}", hostport[0], port);
+					try(Socket socket = sock;
 						InputStream inputstream = sock.getInputStream();
-						var sis = new SnappyInputStream(istream);
-						Input input = new Input(sis);) {
-					while (input.available() > 0) {
-						List records = (List) kryo.readClassAndObject(input);
-						if (isNull(records)) {
-							break;
+						Input input = new Input(inputstream);){
+						log.info("Reading Data From Remote Data Fetch from host {} and port {}", hostport[0], port);
+						while (true) {
+							Object records = kryo.readClassAndObject(input);
+							if (isNull(records) || records instanceof Dummy) {
+								break;
+							}
+							kryo.writeClassAndObject(output, records);
+							output.flush();
 						}
-						kryo.writeClassAndObject(output, records);
-						output.flush();
 					}
 				} catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);
@@ -2585,38 +2618,61 @@ public class Utils {
 	 * @param port
 	 * @throws Exception
 	 */
-	public static void startShuffleRecordsServer(int port) throws Exception {
-		ExecutorService executors = Executors.newFixedThreadPool(10);
-		try (ServerSocket serverSocket = new ServerSocket(port)) {
-			log.info("Shuffle Server started.");
+	public static Tuple2<ServerSocket, ExecutorService> startShuffleRecordsServer(int port) throws Exception {
+		final ExecutorService executors;
+		final ServerSocket serverSocket;
+		try  {
+			executors = Executors.newFixedThreadPool(10);
+			serverSocket = new ServerSocket(port);
+			log.info("Shuffle Server started at port. {}", port);
 			executors.execute(() -> {
 				while (true) {
-					try (Socket socket = serverSocket.accept();) {
-						executors.execute(() -> {
-							Kryo kryo = Utils.getKryo();
-							try (Input input = new Input(new SnappyInputStream(socket.getInputStream()));
-									Output output = new Output(new SnappyOutputStream(socket.getOutputStream()));) {
-								RemoteDataFetch rdf = (RemoteDataFetch) kryo.readClassAndObject(input);
+					if(nonNull(serverSocket) && serverSocket.isClosed()) {
+						break;
+					}
+					final Socket sock;
+					try {
+						sock = serverSocket.accept();
+						log.error("Accepting Connections from client {}", sock.getPort());
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+						continue;
+					}
+					executors.execute(() -> {
+					try (Socket socket = sock;) {
+							Kryo readkryo = Utils.getKryo();
+							Kryo writekryo = Utils.getKryo();
+							try (Input input = new Input(socket.getInputStream());
+									Output output = new Output(socket.getOutputStream());) {
+								log.info("File Started To be Processed for remote shuffle from path {}", System.getProperty(DataSamudayaConstants.TMPDIR));
+								RemoteDataFetch rdf = (RemoteDataFetch) readkryo.readClassAndObject(input);
+								log.info("File To be Processed for remote shuffle with path {} and subpath rdf {}", 
+										System.getProperty(DataSamudayaConstants.TMPDIR),  rdf);
 								try (FileInputStream fstream = new FileInputStream(
 										System.getProperty(DataSamudayaConstants.TMPDIR) + rdf.getShufflefilepath());
 										InputStream sis = new SnappyInputStream(fstream);
 										Input fsinput = new Input(sis)) {
 									// Provide iterator functionality
-									while (fstream.available() > 0) {
-										kryo.writeClassAndObject(output, kryo.readClassAndObject(fsinput));
+									while (fsinput.available() > 0) {
+										writekryo.writeClassAndObject(output, readkryo.readClassAndObject(fsinput));
+										output.flush();
 									}
-									kryo.writeClassAndObject(output, null);
+									writekryo.writeClassAndObject(output, new Dummy());
+									output.flush();
 								}
 							} catch (Exception ex) {
 								log.error(DataSamudayaConstants.EMPTY, ex);
-							}
-						});
+							}						
 					} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
-					}
+					}});
 				}
 			});
+			return new Tuple2<>(serverSocket, executors);
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
+		return null;
 	}
 
 	/**
