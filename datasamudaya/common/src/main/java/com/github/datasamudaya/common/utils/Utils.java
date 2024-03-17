@@ -2408,14 +2408,10 @@ public class Utils {
 		Kryo kryo = Utils.getKryo();
 		InputStream istream = null;
 		if (nonNull(dslinput)) {
-			if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport()
-					.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
-							+ DataSamudayaConstants.UNDERSCORE
-							+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT))) {
+			if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+					.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
 				log.info("Copying from File from Local Executors {} Spilled File", dslinput.getTask().getHostport());
-				istream = new FileInputStream(
-						Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
-								dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				istream = new FileInputStream(dslinput.getDiskfilepath());
 				try (InputStream inputstream = istream;
 						var sis = new SnappyInputStream(istream);
 						Input input = new Input(sis);) {

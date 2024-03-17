@@ -188,6 +188,14 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		return new ArrayList<>();
 	}
 
+	/**
+	 * The function returns local disk file path when list is spilled to disk 
+	 * @return
+	 */
+	public String getDiskfilepath() {
+		return this.diskfilepath;
+	}
+	
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
 			if (isNull(lock)) {
