@@ -32,11 +32,6 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.cluster.Cluster;
-import akka.cluster.ClusterEvent;
-import akka.cluster.ClusterEvent.MemberEvent;
-import akka.cluster.ClusterEvent.UnreachableMember;
-import akka.cluster.ClusterEvent.MemberRemoved;
-import akka.cluster.ClusterEvent.MemberUp;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
@@ -49,21 +44,6 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 
-	// subscribe to cluster changes
-	@Override
-	public void preStart() {
-		// #subscribe
-		cluster.subscribe(
-				getSelf(), ClusterEvent.initialStateAsEvents(),
-				MemberEvent.class, UnreachableMember.class,
-				MemberUp.class, MemberUp.class);
-	}
-
-	// re-subscribe when restart
-	@Override
-	public void postStop() {
-		cluster.unsubscribe(getSelf());
-	}
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -99,21 +79,6 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 	public Receive createReceive() {
 		return receiveBuilder()
 				.match(OutputObject.class, this::processLeftOuterJoin)
-				.match(
-						MemberUp.class,
-						mUp -> {
-							log.info("Member is Up: {}", mUp.member());
-						})
-				.match(
-						UnreachableMember.class,
-						mUnreachable -> {
-							log.info("Member detected as unreachable: {}", mUnreachable.member());
-						})
-				.match(
-						MemberRemoved.class,
-						mRemoved -> {
-							log.info("Member is Removed: {}", mRemoved.member());
-						})
 				.build();
 	}
 

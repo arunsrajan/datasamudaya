@@ -47,6 +47,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -94,6 +95,7 @@ import com.github.datasamudaya.common.Job.TRIGGER;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.NetworkUtil;
+import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
@@ -116,6 +118,7 @@ import com.github.datasamudaya.common.functions.Join;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.LeftJoin;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.MapFunction;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunctionValues;
 import com.github.datasamudaya.common.functions.ReduceFunction;
@@ -2161,8 +2164,21 @@ public class StreamJobScheduler {
 									var sis = new SnappyInputStream(bais);
 									var input = new Input(sis);) {
 								var obj = Utils.getKryo().readClassAndObject(input);
-								resultstream.remove(key);
-								stageoutput.add(obj);
+								if(obj instanceof NodeIndexKey nik) {
+									List larrayobj = new ArrayList<>();
+									Stream stream = Utils.getStreamData(nik, cache);
+									stream.map(new MapFunction<Object[], Object[]>(){
+										private static final long serialVersionUID = 4827381029527934511L;
+
+										public Object[] apply(Object[] values) {
+											return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+										}
+									}).forEach(larrayobj::add);
+									stageoutput.add(larrayobj);
+								} else {
+									resultstream.remove(key);
+									stageoutput.add(obj);
+								}
 							} catch (Exception ex) {
 								log.error(PipelineConstants.JOBSCHEDULERFINALSTAGERESULTSERROR, ex);
 								throw ex;

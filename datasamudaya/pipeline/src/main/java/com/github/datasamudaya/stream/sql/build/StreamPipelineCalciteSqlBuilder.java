@@ -245,16 +245,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 			}
 			return spfilter;
 		} else if (relNode instanceof EnumerableSort es) {
-			StreamPipeline<Object[]>  sporder = orderBy(sp.get(0), es);
-			if (!SQLUtils.hasDescendants(relNode, descendants)) {
-				return sporder.map(new MapFunction<Object[], Object[]>(){
-					private static final long serialVersionUID = 8864004294228662519L;
-
-					public Object[] apply(Object[] values) {
-						return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
-					}
-				});
-			}
+			StreamPipeline<Object[]>  sporder = orderBy(sp.get(0), es);			
 			return sporder;
 		} else if (relNode instanceof EnumerableHashJoin ehj) {
 			StreamPipeline<Object[]> spjoin = (StreamPipeline<Object[]>) buildJoinPredicate((StreamPipeline<Object[]>) sp.get(0)

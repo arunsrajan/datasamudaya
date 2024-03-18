@@ -41,11 +41,6 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.cluster.Cluster;
-import akka.cluster.ClusterEvent;
-import akka.cluster.ClusterEvent.MemberRemoved;
-import akka.cluster.ClusterEvent.MemberUp;
-import akka.cluster.ClusterEvent.MemberEvent;
-import akka.cluster.ClusterEvent.UnreachableMember;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
@@ -58,21 +53,6 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 
-	// subscribe to cluster changes
-	@Override
-	public void preStart() {
-		// #subscribe
-		cluster.subscribe(
-				getSelf(), ClusterEvent.initialStateAsEvents(),
-				MemberEvent.class, UnreachableMember.class,
-				MemberUp.class, MemberUp.class);
-	}
-
-	// re-subscribe when restart
-	@Override
-	public void postStop() {
-		cluster.unsubscribe(getSelf());
-	}
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -126,21 +106,6 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 	public Receive createReceive() {
 		return receiveBuilder()
 				.match(OutputObject.class, this::processMapperByStream)
-				.match(
-						MemberUp.class,
-						mUp -> {
-							log.info("Member is Up: {}", mUp.member());
-						})
-				.match(
-						UnreachableMember.class,
-						mUnreachable -> {
-							log.info("Member detected as unreachable: {}", mUnreachable.member());
-						})
-				.match(
-						MemberRemoved.class,
-						mRemoved -> {
-							log.info("Member is Removed: {}", mRemoved.member());
-						})
 				.build();
 	}
 
@@ -150,8 +115,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 				if (dsl.isSpilled()) {
 					log.info("In Mapper Stream Spilled {}", dsl.isSpilled());
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
-				} else {
-					log.info("In Mapper Stream list bytes {}", dsl.readListFromBytes());
+				} else {					
 					diskspilllistinterm.addAll(dsl.readListFromBytes());
 				}
 			}
@@ -189,7 +153,6 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 							var output = new Output(sos);) {
 						log.info("Map assembly deriving");
 						List result = (List) streammap.collect(Collectors.toList());
-						log.info("Results Mapper Stream {}", result);
 						Utils.getKryo().writeClassAndObject(output, result);
 						output.flush();
 						tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);

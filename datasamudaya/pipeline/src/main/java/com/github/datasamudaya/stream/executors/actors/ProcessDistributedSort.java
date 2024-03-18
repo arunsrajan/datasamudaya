@@ -30,11 +30,6 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.cluster.Cluster;
-import akka.cluster.ClusterEvent;
-import akka.cluster.ClusterEvent.MemberEvent;
-import akka.cluster.ClusterEvent.MemberRemoved;
-import akka.cluster.ClusterEvent.MemberUp;
-import akka.cluster.ClusterEvent.UnreachableMember;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
@@ -60,29 +55,9 @@ public class ProcessDistributedSort extends AbstractActor {
 		this.js = js;
 	}
 
-	// subscribe to cluster changes
-	@Override
-	public void preStart() {
-		// #subscribe
-		cluster.subscribe(getSelf(), ClusterEvent.initialStateAsEvents(), MemberEvent.class, UnreachableMember.class,
-				MemberUp.class, MemberUp.class);
-	}
-
-	// re-subscribe when restart
-	@Override
-	public void postStop() {
-		cluster.unsubscribe(getSelf());
-	}
-
 	@Override
 	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processDistributedSort).match(MemberUp.class, mUp -> {
-			log.info("Member is Up: {}", mUp.member());
-		}).match(UnreachableMember.class, mUnreachable -> {
-			log.info("Member detected as unreachable: {}", mUnreachable.member());
-		}).match(MemberRemoved.class, mRemoved -> {
-			log.info("Member is Removed: {}", mRemoved.member());
-		}).build();
+		return receiveBuilder().match(OutputObject.class, this::processDistributedSort).build();
 	}
 
 	private void processDistributedSort(OutputObject object) throws PipelineException, Exception {
@@ -100,8 +75,9 @@ public class ProcessDistributedSort extends AbstractActor {
 				NodeIndexKey root = null;
 				for (Task predecessor : predecessors) {
 					if (isNull(predecessor.getHostport())) {
+						String key = Utils.getIntermediateResultFS(predecessor);
 						try (var bais = new ByteArrayInputStream(
-								(byte[]) cache.get(Utils.getIntermediateResultFS(predecessor)));
+								(byte[]) cache.get(key));
 								var sis = new SnappyInputStream(bais);
 								var input = new Input(sis);) {
 							List<Object[]> out = (List) kryo.readClassAndObject(input);
@@ -110,13 +86,13 @@ public class ProcessDistributedSort extends AbstractActor {
 								if (isNull(root)) {
 									root = new NodeIndexKey(predecessor.getHostport(), index,
 											Utils.getKeyFromNodeIndexKey(fcsc.getRfcs(), out.get(0)), out.get(0), null,
-											null);
+											null, key);
 								}
 								out.remove(0);
 								for (Object[] obj : out) {
 									NodeIndexKey child = new NodeIndexKey(predecessor.getHostport(), index,
-											Utils.getKeyFromNodeIndexKey(fcsc.getRfcs(), obj), obj, null, null);
-									Utils.formSortedBinaryTree(root, child);
+											Utils.getKeyFromNodeIndexKey(fcsc.getRfcs(), obj), obj, null, null, key);
+									Utils.formSortedBinaryTree(root, child, fcsc.getRfcs());
 									index++;
 								}
 							}
@@ -128,7 +104,7 @@ public class ProcessDistributedSort extends AbstractActor {
 								if (isNull(root)) {
 									root = nik;
 								} else {
-									Utils.formSortedBinaryTree(root, nik);
+									Utils.formSortedBinaryTree(root, nik, fcsc.getRfcs());
 								}
 							}
 						}
@@ -141,7 +117,7 @@ public class ProcessDistributedSort extends AbstractActor {
 					});
 				} else {
 					cache.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
-						+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), root);
+						+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), Utils.convertObjectToBytesCompressed(root));
 				}
 				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
 				+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);

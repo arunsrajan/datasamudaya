@@ -99,21 +99,6 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 	public Receive createReceive() {
 		return receiveBuilder()
 				.match(OutputObject.class, this::processRightOuterJoin)
-				.match(
-						MemberUp.class,
-						mUp -> {
-							log.info("Member is Up: {}", mUp.member());
-						})
-				.match(
-						UnreachableMember.class,
-						mUnreachable -> {
-							log.info("Member detected as unreachable: {}", mUnreachable.member());
-						})
-				.match(
-						MemberRemoved.class,
-						mRemoved -> {
-							log.info("Member is Removed: {}", mRemoved.member());
-						})
 				.build();
 	}
 

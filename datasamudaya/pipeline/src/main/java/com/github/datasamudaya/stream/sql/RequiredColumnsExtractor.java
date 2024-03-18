@@ -16,6 +16,7 @@ import org.apache.calcite.adapter.enumerable.EnumerableAggregateBase;
 import org.apache.calcite.adapter.enumerable.EnumerableFilter;
 import org.apache.calcite.adapter.enumerable.EnumerableHashJoin;
 import org.apache.calcite.adapter.enumerable.EnumerableProject;
+import org.apache.calcite.adapter.enumerable.EnumerableSort;
 import org.apache.calcite.adapter.enumerable.EnumerableTableScan;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
@@ -100,6 +101,16 @@ public class RequiredColumnsExtractor extends RelShuttleImpl {
 				}
 			}
 			analyzeCondition(ef.getCondition());
+		} else if (parent instanceof EnumerableSort es) {
+			RelNode relnode = es.getInput(0);
+			while(true) {
+				relnode = relnode.getInput(0);
+				if(relnode instanceof EnumerableTableScan ets) {
+					String tablename = ets.getTable().getQualifiedName().get(1);
+					es.getCollation().getFieldCollations().forEach(fc->addColumnsToRequiredColumnsMap(tablename, DataSamudayaConstants.EMPTY + fc.getFieldIndex()));
+					break;
+				}
+			}			
 		} else if (parent instanceof EnumerableHashJoin ehj) {
 			RelNode left = ehj.getLeft();
 			RelNode right = ehj.getRight();

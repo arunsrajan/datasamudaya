@@ -93,6 +93,7 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.burningwave.core.assembler.StaticComponentContainer;
+import org.ehcache.Cache;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.io.ComponentNameProvider;
@@ -2524,6 +2525,63 @@ public class Utils {
 		}
 		return null;
 	}
+	
+	/**
+	 * The function converts ordered tree to lists inorder traversal
+	 * @param nik
+	 * @param orderedlist
+	 */
+	public static void traverseBinaryTree(NodeIndexKey nik, List<NodeIndexKey> orderedlist) {
+		if(isNull(nik)) {
+			return;
+		}		
+		traverseBinaryTree(nik.getLeft(), orderedlist);
+		orderedlist.add(nik);
+		traverseBinaryTree(nik.getRight(), orderedlist);
+	}
+	
+	public static Stream<?> getStreamData(NodeIndexKey nik, Cache<String, byte[]> cache) {
+		List<NodeIndexKey> orderednodes = new ArrayList<>();
+		Utils.traverseBinaryTree(nik, orderednodes);
+		boolean iscachenonempty = nonNull(cache);
+		try {
+			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
+					Spliterator.IMMUTABLE | Spliterator.ORDERED | Spliterator.NONNULL) {				
+				Kryo kryo = Utils.getKryo();	
+				List<NodeIndexKey> orderednodesinternal = orderednodes;
+				Map<String, Input> keyinputmap = new ConcurrentHashMap<>();
+				Map<String, SnappyInputStream> keysismap = new ConcurrentHashMap<>();
+				Map<String, List> cachekeylistmap = new ConcurrentHashMap<>();
+				Map<String, Integer> cachekeyindexmap = new ConcurrentHashMap<>();
+				public boolean tryAdvance(Consumer<? super Object> action) {
+					try {
+						for(var node:orderednodesinternal) {
+							if(iscachenonempty) {
+								if(isNull(keyinputmap.get(node.getCachekey()))) {
+									ByteArrayInputStream bais = new ByteArrayInputStream(cache.get(node.getCachekey()));
+									keysismap.put(node.getCachekey(), new SnappyInputStream(bais));									
+									keyinputmap.put(node.getCachekey(), new Input(keysismap.get(node.getCachekey())));
+									cachekeylistmap.put(node.getCachekey(), (List) kryo.readClassAndObject(keyinputmap.get(node.getCachekey())));
+									cachekeyindexmap.put(node.getCachekey(), 0);
+								}
+								action.accept(cachekeylistmap.get(node.getCachekey()).get(cachekeyindexmap.get(node.getCachekey())));
+								cachekeyindexmap.put(node.getCachekey(), cachekeyindexmap.get(node.getCachekey())+1);
+							} else {
+								
+							}
+						}
+						
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+					}
+					return false;
+				}
+			}, false);
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	}
 
 	/**
 	 * The function returns config of akka system
@@ -2711,26 +2769,27 @@ public class Utils {
 	 * The function forms binary tree for sorting
 	 * @param root
 	 * @param child
+	 * @param rfcs
 	 * @return rootnode
 	 */
-	public static NodeIndexKey formSortedBinaryTree(NodeIndexKey root, NodeIndexKey child) {
+	public static NodeIndexKey formSortedBinaryTree(NodeIndexKey root, NodeIndexKey child, List<RelFieldCollation> rfcs) {
 		if(child==null) {
 			return root;
 		} else {
-			if(compare(root.getKey(), child.getKey())>=0){
+			if(compare(root.getKey(), child.getKey(), rfcs)>=0){
 				if(isNull(root.getLeft())) {
 					root.setLeft(child);
 				} else {
-					formSortedBinaryTree(root.getLeft(),child);
+					formSortedBinaryTree(root.getLeft(),child, rfcs);
 				}
-			} else if(compare(root.getKey(), child.getKey())<0){
+			} else if(compare(root.getKey(), child.getKey(), rfcs)<0){
 				if(isNull(root.getRight())) {
 					root.setRight(child);
 				} else { 
-					formSortedBinaryTree(root.getRight(),child);
+					formSortedBinaryTree(root.getRight(),child, rfcs);
 				}
 			} else {
-				formSortedBinaryTree(root.getLeft(),child);
+				formSortedBinaryTree(root.getLeft(),child, rfcs);
 			}
 		}
 		return root;
@@ -2740,14 +2799,48 @@ public class Utils {
 	 * Compare two object array
 	 * @param obj1
 	 * @param obj2
+	 * @param rfcs
 	 * @return 0 if equals , 1 if object1 is greater than object2 or -1 if object1 is less than object2
 	 */
-	public static int compare(Object[] obj1, Object[] obj2) {
-		CompareToBuilder compareToBuilder = new CompareToBuilder();
-		for(int index=0;index<obj1.length; index++) {
-			compareToBuilder.append(obj1[index], obj2[index]);
+	public static int compare(Object[] obj1, Object[] obj2, List<RelFieldCollation> rfcs) {
+		int numofelem = obj1[0].getClass() == Object[].class ? ((Object[]) obj1[0]).length:obj1.length;
+		for (int index = 0; index < numofelem; index++) {
+			RelFieldCollation fc = rfcs.get(index);
+			String sortOrder = fc.getDirection().name();
+			Object value1 = obj1[0].getClass() == Object[].class ? ((Object[]) obj1[0])[index]
+					: obj1[index];
+			Object value2 = obj2[0].getClass() == Object[].class ? ((Object[]) obj2[0])[index]
+					: obj2[index];
+			int result = compareTo(value1, value2);
+			if ("DESCENDING".equals(sortOrder)) {
+				result = -result;
+			}
+			if (result != 0) {
+				return result;
+			}
 		}
-		return compareToBuilder.build();
+		return 0;
+	}
+	
+	/**
+	 * Compare two objects and returns comparison value
+	 * @param obj1
+	 * @param obj2
+	 * @return comparison value of Wrapper class
+	 */
+	public static int compareTo(Object obj1, Object obj2) {
+		if (obj1 instanceof Double val1 && obj2 instanceof Double val2) {
+			return val1.compareTo(val2);
+		} else if (obj1 instanceof Long val1 && obj2 instanceof Long val2) {
+			return val1.compareTo(val2);
+		} else if (obj1 instanceof Integer val1 && obj2 instanceof Integer val2) {
+			return val1.compareTo(val2);
+		} else if (obj1 instanceof Float val1 && obj2 instanceof Float val2) {
+			return val1.compareTo(val2);
+		} else if (obj1 instanceof String val1 && obj2 instanceof String val2) {
+			return val1.compareTo(val2);
+		}
+		return 0;
 	}
 	
 	/**
