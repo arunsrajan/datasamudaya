@@ -23,6 +23,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.ShuffleBlock;
@@ -274,7 +275,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		}
 		ActorSelection actorselection = downstreampipelines.get(filetransferindex);
 		actorselection.tell(new OutputObject(new ShuffleBlock(null,
-						Utils.convertObjectToBytes(filepartids.get(filetransferindex)), Utils.convertObjectToBytes(dataList)), left, right),
+						Utils.convertObjectToBytes(filepartids.get(filetransferindex)), Utils.convertObjectToBytes(dataList)), left, right, Dummy.class),
 				ActorRef.noSender());
 		dataList.clear();
 	}

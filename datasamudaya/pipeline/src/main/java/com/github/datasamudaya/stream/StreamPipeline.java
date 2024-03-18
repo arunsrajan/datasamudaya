@@ -75,6 +75,7 @@ import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.CountByKeyFunction;
 import com.github.datasamudaya.common.functions.CountByValueFunction;
 import com.github.datasamudaya.common.functions.Distinct;
+import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.DoubleFlatMapFunction;
 import com.github.datasamudaya.common.functions.FlatMapFunction;
 import com.github.datasamudaya.common.functions.FoldByKey;
@@ -862,6 +863,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 							|| ((af.tasks.get(0) instanceof ReduceByKeyFunction
 							|| af.tasks.get(0) instanceof ReduceByKeyFunctionValues
 							|| af.tasks.get(0) instanceof ReduceFunction
+							|| af.tasks.get(0) instanceof SortedComparator
 					) && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
 							&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)
 					))
@@ -890,6 +892,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 							|| ((af.parents.get(0).tasks.get(0) instanceof ReduceByKeyFunction
 							|| af.parents.get(0).tasks.get(0) instanceof ReduceByKeyFunctionValues
 							|| af.parents.get(0).tasks.get(0) instanceof ReduceFunction
+							|| af.parents.get(0).tasks.get(0) instanceof SortedComparator
 					) && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
 							&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)
 					))) {
@@ -1047,16 +1050,45 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			parentstage.child.add(childstage);
 			taskstagemap.put(shuffleStage, childstage);
 			parentstage = childstage;
+		}		
+		if (af.tasks.get(0) instanceof SortedComparator && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+				&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)) {
+
+			var childstage = new Stage();
+			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+			childstage.tasks.add(af.tasks.get(0));
+			graphstages.addVertex(parentstage);
+			graphstages.addVertex(childstage);
+			graphstages.addEdge(parentstage, childstage);
+			childstage.parent.add(parentstage);
+			parentstage.child.add(childstage);
+			taskstagemap.put(childstage.tasks.get(0), childstage);
+			taskstagemap.put(af.tasks.get(0), childstage);
+			
+			parentstage = childstage;
+			childstage = new Stage();
+			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+			childstage.tasks.add(new DistributedSort());
+			graphstages.addVertex(parentstage);
+			graphstages.addVertex(childstage);
+			graphstages.addEdge(parentstage, childstage);
+			childstage.parent.add(parentstage);
+			parentstage.child.add(childstage);
+			taskstagemap.put(childstage.tasks.get(0), childstage);
+			taskstagemap.put(af.tasks.get(0), childstage);
+			return;
 		}
-		var childstage = new Stage();
-		childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
-		childstage.tasks.add(af.tasks.get(0));
-		graphstages.addVertex(parentstage);
-		graphstages.addVertex(childstage);
-		graphstages.addEdge(parentstage, childstage);
-		childstage.parent.add(parentstage);
-		parentstage.child.add(childstage);
-		taskstagemap.put(af.tasks.get(0), childstage);
+		if(nonNull(parentstage)) {
+			var childstage = new Stage();
+			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+			childstage.tasks.add(af.tasks.get(0));
+			graphstages.addVertex(parentstage);
+			graphstages.addVertex(childstage);
+			graphstages.addEdge(parentstage, childstage);
+			childstage.parent.add(parentstage);
+			parentstage.child.add(childstage);
+			taskstagemap.put(af.tasks.get(0), childstage);
+		}
 	}
 
 

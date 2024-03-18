@@ -20,6 +20,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
@@ -187,9 +188,9 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 				try (DiskSpillingList diskspill = diskspilllist) {
 					if (Objects.nonNull(pipelines)) {
 						pipelines.parallelStream().forEach(downstreampipe -> {
-							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue),
+							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class),
 									ActorRef.noSender());
-							downstreampipe.tell(new OutputObject(null, leftvalue, rightvalue), ActorRef.noSender());
+							downstreampipe.tell(new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class), ActorRef.noSender());
 						});
 					} else {
 						Stream<Tuple2> datastream = diskspilllist.isSpilled()

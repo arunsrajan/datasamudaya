@@ -108,6 +108,7 @@ import com.github.datasamudaya.common.TssHAHostPorts;
 import com.github.datasamudaya.common.WhoIsResponse;
 import com.github.datasamudaya.common.functions.AggregateReduceFunction;
 import com.github.datasamudaya.common.functions.Coalesce;
+import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.GroupByFunction;
 import com.github.datasamudaya.common.functions.HashPartitioner;
 import com.github.datasamudaya.common.functions.IntersectionFunction;
@@ -123,6 +124,7 @@ import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.UnionFunction;
 import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
+import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.PipelineException;
@@ -2020,6 +2022,30 @@ public class StreamJobScheduler {
 						taskgraph.addEdge(parentthread.getTask(), spts.getTask());
 					}
 
+				}
+			} else if (function instanceof DistributedSort){
+				var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+						outputparent1);
+				tasks.add(spts);
+				graph.addVertex(spts);
+				spts.getTask().setTaskspredecessor(new ArrayList<>());
+				spts.getTask().setTosort(true);
+				tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
+				StreamPipelineTaskSubmitter parentspts = (StreamPipelineTaskSubmitter) outputparent1.get(0);
+				JobStage js = jsidjsmap.get(parentspts.getTask().getJobid() + parentspts.getTask().getStageid());
+				FieldCollatedSortedComparator fcsc = (FieldCollatedSortedComparator) js.getStage().getTasks().get(js.getStage().getTasks().size()-1);
+				spts.getTask().setFcsc(fcsc);
+				for(var parentthread: (List<StreamPipelineTaskSubmitter>)outputparent1) {
+					spts.getTask().getTaskspredecessor().add(parentthread.getTask());
+					taskgraph.addVertex(spts.getTask());
+					if (!graph.containsVertex(parentthread)) {
+						graph.addVertex(parentthread);
+					}
+					if (!taskgraph.containsVertex(parentthread.getTask())) {
+						taskgraph.addVertex(parentthread.getTask());
+					}
+					graph.addEdge(parentthread, spts);
+					taskgraph.addEdge(parentthread.getTask(), spts.getTask());
 				}
 			} else {
 				// Form the nodes and edges for map stage.

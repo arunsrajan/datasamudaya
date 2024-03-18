@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -63,6 +64,8 @@ public class Task implements Serializable, Cloneable {
 	public Map<Integer, FilePartitionId> filepartitionsid;
 	public int parentterminatingsize;
 	public List<Task> shufflechildactors;
+	public boolean tosort;
+	public FieldCollatedSortedComparator fcsc;
 
 	@Override
 	public Object clone() throws CloneNotSupportedException {

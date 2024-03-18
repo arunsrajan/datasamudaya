@@ -56,10 +56,12 @@ import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.ServerUtils;
 import com.github.datasamudaya.common.ShufflePort;
+import com.github.datasamudaya.common.SorterPort;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskExecutorShutdown;
 import com.github.datasamudaya.common.WebResourcesServlet;
+import com.github.datasamudaya.common.utils.RemoteListIteratorServer;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.scheduler.StreamJobScheduler;
@@ -101,6 +103,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	static CountDownLatch shutdown = new CountDownLatch(1);
 	static ConcurrentMap<BlocksLocation, String> blorcmap = new ConcurrentHashMap<>();
 	static Tuple2<ServerSocket, ExecutorService> shuffleFileServer;
+	static Tuple2<ServerSocket, ExecutorService> sortServer;
 	
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {
@@ -122,7 +125,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				}
 			}
 			String jobid = args[2];			
-			shuffleFileServer = Utils.startShuffleRecordsServer();
+			shuffleFileServer = Utils.startShuffleRecordsServer();			
 			String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 			PropertyConfigurator.configure(
 					datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
@@ -174,6 +177,10 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			}
 			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v2)) {
 				shuffleFileServer.v2.shutdown();
+			}
+			if(nonNull(sortServer)) {
+				sortServer.v1.close();
+				sortServer.v2.shutdown();
 			}
 			log.info("Freed the assets...");
 			System.exit(0);
@@ -228,6 +235,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		var configuration = new Configuration();
 
 		var inmemorycache = DataSamudayaCache.get();
+		sortServer = new RemoteListIteratorServer(inmemorycache).start();
 		cl = TaskExecutorRunner.class.getClassLoader();
 		ActorSystem system = null;
 		while(true) {
@@ -254,8 +262,6 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 		var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);
-		var host = NetworkUtil
-				.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
 		final ActorSystem actsystem = system;
 		dataCruncher = new StreamDataCruncher() {
 			public Object postObject(Object deserobj) throws RemoteException {
@@ -291,6 +297,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						return js.schedule(job);
 					} else if (deserobj instanceof ShufflePort) {						
 						return shuffleFileServer.v1.getLocalPort();
+					} else if (deserobj instanceof SorterPort) {						
+						return sortServer.v1().getLocalPort();
 					} else if (!Objects.isNull(deserobj)) {
 						log.info("Deserialized object:{} ", deserobj);
 						TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,

@@ -330,7 +330,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 						try {
 							entry.getValue().close();
 							blr.pipeline.get(entry.getKey()).tell(new OutputObject(new ShuffleBlock(null,
-											Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey())), entry.getValue()), left, right),
+											Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey())), entry.getValue()), left, right, Dummy.class),
 									ActorRef.noSender());
 						} catch (Exception e) {
 							log.error(DataSamudayaConstants.EMPTY, e);
@@ -338,7 +338,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					});
 					IntStream.range(0, numfilepart).filter(val -> val % numfileperexec == 0).forEach(val -> {
 						log.info("Sending Dummy To Actor: {}", blr.pipeline.get(val));
-						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right),
+						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right, Dummy.class),
 								ActorRef.noSender());
 					});
 				} else if (CollectionUtils.isNotEmpty(blr.childactors)) {
@@ -347,9 +347,9 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					((Stream) streammap).forEach(diskspilllist::add);
 					diskspilllist.close();
 					blr.childactors().stream().forEach(
-							action -> action.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender()));
+							action -> action.tell(new OutputObject(diskspilllist, left, right, Dummy.class), ActorRef.noSender()));
 					blr.childactors().stream().forEach(
-							action -> action.tell(new OutputObject(new Dummy(), left, right), ActorRef.noSender()));
+							action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class), ActorRef.noSender()));
 
 				} else {
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,

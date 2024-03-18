@@ -74,6 +74,10 @@ import java.util.jar.Manifest;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import net.jpountz.lz4.LZ4BlockInputStream;
+import net.jpountz.lz4.LZ4BlockOutputStream;
+
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.commons.csv.CSVFormat;
@@ -105,8 +109,14 @@ import org.jgroups.util.UUID;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
-import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple1;
+import org.jooq.lambda.tuple.Tuple10;
+import org.jooq.lambda.tuple.Tuple11;
+import org.jooq.lambda.tuple.Tuple12;
+import org.jooq.lambda.tuple.Tuple13;
+import org.jooq.lambda.tuple.Tuple14;
+import org.jooq.lambda.tuple.Tuple15;
+import org.jooq.lambda.tuple.Tuple16;
 import org.jooq.lambda.tuple.Tuple2;
 import org.jooq.lambda.tuple.Tuple3;
 import org.jooq.lambda.tuple.Tuple4;
@@ -115,13 +125,6 @@ import org.jooq.lambda.tuple.Tuple6;
 import org.jooq.lambda.tuple.Tuple7;
 import org.jooq.lambda.tuple.Tuple8;
 import org.jooq.lambda.tuple.Tuple9;
-import org.jooq.lambda.tuple.Tuple10;
-import org.jooq.lambda.tuple.Tuple11;
-import org.jooq.lambda.tuple.Tuple12;
-import org.jooq.lambda.tuple.Tuple13;
-import org.jooq.lambda.tuple.Tuple14;
-import org.jooq.lambda.tuple.Tuple15;
-import org.jooq.lambda.tuple.Tuple16;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,7 +135,6 @@ import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.ClosureSerializer.Closure;
@@ -165,6 +167,7 @@ import com.github.datasamudaya.common.Job.JOBTYPE;
 import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.LaunchContainers;
+import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
@@ -231,6 +234,8 @@ import de.javakaffee.kryoserializers.jodatime.JodaLocalTimeSerializer;
 import io.altoo.akka.serialization.kryo.serializer.scala.ScalaKryo;
 import net.sf.jsqlparser.parser.SimpleNode;
 import net.sf.jsqlparser.schema.Table;
+
+import org.apache.commons.lang3.builder.*;
 
 /**
  * 
@@ -462,7 +467,7 @@ public class Utils {
 		kryo.register(Tuple16.class, new TupleSerializer());
 		kryo.register(Closure.class, new ClosureSerializer());
 		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));
-		kryo.register(RemoteDataFetch.class, new CompatibleFieldSerializer<>(kryo, RemoteDataFetch.class));
+		kryo.register(RemoteDataFetch.class, new CompatibleFieldSerializer<RemoteDataFetch>(kryo, RemoteDataFetch.class));
 	}
 
 	/**
@@ -564,7 +569,7 @@ public class Utils {
 		kryo.register(Tuple16.class, new TupleSerializer());
 		kryo.register(Closure.class, new ClosureSerializer());
 		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));
-		kryo.register(RemoteDataFetch.class, new CompatibleFieldSerializer<>(kryo, RemoteDataFetch.class));
+		kryo.register(RemoteDataFetch.class, new CompatibleFieldSerializer<RemoteDataFetch>(kryo, RemoteDataFetch.class));
 		return kryo;
 	}
 
@@ -2443,7 +2448,8 @@ public class Utils {
 					log.info("Written Remote Data Fetch to host {} and port {}", hostport[0], port);
 					try(Socket socket = sock;
 						InputStream inputstream = sock.getInputStream();
-						Input input = new Input(inputstream);){
+							LZ4BlockInputStream sis = new LZ4BlockInputStream(inputstream);
+						Input input = new Input(sis);){
 						log.info("Reading Data From Remote Data Fetch from host {} and port {}", hostport[0], port);
 						while (true) {
 							Object records = kryo.readClassAndObject(input);
@@ -2638,8 +2644,11 @@ public class Utils {
 					try (Socket socket = sock;) {
 							Kryo readkryo = Utils.getKryo();
 							Kryo writekryo = Utils.getKryo();
-							try (Input input = new Input(socket.getInputStream());
-									Output output = new Output(socket.getOutputStream());) {
+							try (InputStream istream = socket.getInputStream();
+									Input input = new Input(istream);
+									OutputStream soutput = socket.getOutputStream();
+									LZ4BlockOutputStream socketsos = new LZ4BlockOutputStream(soutput);
+									Output output = new Output(socketsos);) {
 								log.info("File Started To be Processed for remote shuffle from path {}", System.getProperty(DataSamudayaConstants.TMPDIR));
 								RemoteDataFetch rdf = (RemoteDataFetch) readkryo.readClassAndObject(input);
 								log.info("File To be Processed for remote shuffle with path {} and subpath rdf {}", 
@@ -2696,4 +2705,66 @@ public class Utils {
 						: DataSamudayaConstants.EMPTY)
 				+ DataSamudayaConstants.DOT + DataSamudayaConstants.DATA;
 	}
+	
+	
+	/**
+	 * The function forms binary tree for sorting
+	 * @param root
+	 * @param child
+	 * @return rootnode
+	 */
+	public static NodeIndexKey formSortedBinaryTree(NodeIndexKey root, NodeIndexKey child) {
+		if(child==null) {
+			return root;
+		} else {
+			if(compare(root.getKey(), child.getKey())>=0){
+				if(isNull(root.getLeft())) {
+					root.setLeft(child);
+				} else {
+					formSortedBinaryTree(root.getLeft(),child);
+				}
+			} else if(compare(root.getKey(), child.getKey())<0){
+				if(isNull(root.getRight())) {
+					root.setRight(child);
+				} else { 
+					formSortedBinaryTree(root.getRight(),child);
+				}
+			} else {
+				formSortedBinaryTree(root.getLeft(),child);
+			}
+		}
+		return root;
+	}
+	
+	/**
+	 * Compare two object array
+	 * @param obj1
+	 * @param obj2
+	 * @return 0 if equals , 1 if object1 is greater than object2 or -1 if object1 is less than object2
+	 */
+	public static int compare(Object[] obj1, Object[] obj2) {
+		CompareToBuilder compareToBuilder = new CompareToBuilder();
+		for(int index=0;index<obj1.length; index++) {
+			compareToBuilder.append(obj1[index], obj2[index]);
+		}
+		return compareToBuilder.build();
+	}
+	
+	/**
+	 * The function returns key from object for forming binary tree sort
+	 * @param rfcs
+	 * @param obj
+	 * @return Key object from obj
+	 */
+	public static Object[] getKeyFromNodeIndexKey(List<RelFieldCollation> rfcs, Object[] obj) {
+		List<Object> keys = new ArrayList<>();
+		for (int i = 0; i < rfcs.size(); i++) {
+			RelFieldCollation fc = rfcs.get(i);
+			Object value = obj[0].getClass() == Object[].class ? ((Object[]) obj[0])[fc.getFieldIndex()]
+					: obj[fc.getFieldIndex()];			
+			keys.add(value);
+		}
+		return keys.toArray();
+	}
+	
 }

@@ -166,7 +166,7 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 							: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
 					final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true : false;
-					childpipes.parallelStream().forEach(childactorsel -> childactorsel.tell(new OutputObject(fileblockpath, leftvalue, rightvalue), Actor.noSender()));
+					childpipes.parallelStream().forEach(childactorsel -> childactorsel.tell(new OutputObject(fileblockpath, leftvalue, rightvalue, Map.class), Actor.noSender()));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 					log.info("Shuffle Completed");
 					shufflecompleted = true;

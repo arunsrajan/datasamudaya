@@ -24,6 +24,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
@@ -120,14 +121,18 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 
 	private ProcessCoalesce processCoalesce(OutputObject object) throws Exception {
 		log.info("In Process Coalesce {}", object.getValue());
-		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			initialsize++;
+		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {			
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
 					diskspilllistinterm.addAll(dsl.readListFromBytes());
 				}
+			}
+			if(object.getTerminiatingclass() == Dummy.class) {
+				initialsize++;
+			} else if(object.getTerminiatingclass() == DiskSpillingList.class) {
+				initialsize++;
 			}
 			log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
 			if (initialsize == terminatingsize) {
@@ -152,7 +157,7 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 				if (CollectionUtils.isNotEmpty(pipelines)) {
 					log.info("Process Coalesce To Pipeline Started {} IsSpilled {} {}", pipelines, diskspilllist.isSpilled(), diskspilllist.getBytes());
 					pipelines.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspilllist, left, right), ActorRef.noSender());
+						downstreampipe.tell(new OutputObject(diskspilllist, left, right, DiskSpillingList.class), ActorRef.noSender());
 					});
 					log.info("Process Coalesce To Pipeline Ended {}", pipelines);
 				} else {

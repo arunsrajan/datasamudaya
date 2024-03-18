@@ -115,6 +115,7 @@ import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskStatus;
 import com.github.datasamudaya.common.TaskType;
 import com.github.datasamudaya.common.functions.Coalesce;
+import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
@@ -123,6 +124,7 @@ import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.executors.actors.ProcessCoalesce;
+import com.github.datasamudaya.stream.executors.actors.ProcessDistributedSort;
 import com.github.datasamudaya.stream.executors.actors.ProcessInnerJoin;
 import com.github.datasamudaya.stream.executors.actors.ProcessLeftOuterJoin;
 import com.github.datasamudaya.stream.executors.actors.ProcessMapperByBlocksLocation;
@@ -3659,6 +3661,32 @@ public class SQLUtils {
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
 						+ taskactor.getTask().getTaskid());
 				return taskactor.getTask();
+			} else if (js.getStage().getTasks().get(0) instanceof DistributedSort ds) {
+				ActorRef actor = null;
+				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+					List<ActorSelection> childactors = new ArrayList<>();
+					for (String actorselectionurl : taskactor.getChildtaskactors()) {
+						childactors.add(system.actorSelection(actorselectionurl));
+					}
+					cluster.registerOnMemberUp(() -> {
+						system.actorOf(
+								Props.create(ProcessDistributedSort.class, jobidstageidjobstagemap.get(jobstageid), inmemorycache,
+										jobidstageidtaskidcompletedmap,
+										taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()),
+								jobstageid + taskactor.getTask().getTaskid());
+					});
+				} else {
+					cluster.registerOnMemberUp(() -> {
+						system.actorOf(
+								Props.create(ProcessDistributedSort.class, jobidstageidjobstagemap.get(jobstageid), inmemorycache,
+										jobidstageidtaskidcompletedmap,
+										taskactor.getTask(), null, taskactor.getTerminatingparentcount()),
+								jobstageid + taskactor.getTask().getTaskid());
+					});
+				}
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
 			} else if (js.getStage().getTasks().get(0) instanceof JoinPredicate joinpred) {
 				ActorRef actor = null;
 				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
@@ -3801,7 +3829,7 @@ public class SQLUtils {
 					log.info("FilePartitions Selected {}", exectaskactor.getTask().getFilepartitionsid());
 					indexfilepartpernode += totalfilepartspernode;
 				}
-			}			
+			}
 			ProcessMapperByBlocksLocation.BlocksLocationRecord blr = new ProcessMapperByBlocksLocation.BlocksLocationRecord(
 					(BlocksLocation) exectaskactor.getTask().getInput()[0], hdfs,
 					exectaskactor.getTask().getFilepartitionsid(), childactors, actorselections);

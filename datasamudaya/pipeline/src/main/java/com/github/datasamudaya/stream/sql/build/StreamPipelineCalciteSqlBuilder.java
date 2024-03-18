@@ -22,7 +22,6 @@ import org.apache.calcite.adapter.enumerable.EnumerableProject;
 import org.apache.calcite.adapter.enumerable.EnumerableSort;
 import org.apache.calcite.adapter.enumerable.EnumerableSortedAggregate;
 import org.apache.calcite.adapter.enumerable.EnumerableTableScan;
-import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.JoinRelType;
@@ -45,7 +44,7 @@ import com.github.datasamudaya.common.functions.MapToPairFunction;
 import com.github.datasamudaya.common.functions.PredicateSerializable;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
-import com.github.datasamudaya.common.functions.SortedComparator;
+import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.sql.RequiredColumnsExtractor;
@@ -618,26 +617,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	public StreamPipeline<Object[]> orderBy(StreamPipeline<Object[]> pipelinefunction,
 			EnumerableSort es) throws Exception {
 		var fcs = es.getCollation().getFieldCollations();
-		pipelinefunction = pipelinefunction.sorted(new SortedComparator<Object[]>(){
-			private static final long serialVersionUID = -6990320537324377720L;
-			List<RelFieldCollation> rfcs = new ArrayList<>(fcs);
-			public int compare(Object[] obj1, Object[] obj2) {
-				for (int i = 0;i < rfcs.size();i++) {
-					RelFieldCollation fc = rfcs.get(i);
-					String sortOrder = fc.getDirection().name();
-					Object value1 = obj1[0].getClass() == Object[].class ? ((Object[]) obj1[0])[fc.getFieldIndex()] : obj1[fc.getFieldIndex()];
-					Object value2 = obj2[0].getClass() == Object[].class ? ((Object[]) obj2[0])[fc.getFieldIndex()] : obj2[fc.getFieldIndex()];
-					int result = SQLUtils.compareTo(value1, value2);
-					if ("DESCENDING".equals(sortOrder)) {
-						result = -result;
-					}
-					if (result != 0) {
-						return result;
-					}
-				}
-				return 0;
-			}
-		});
+		pipelinefunction = pipelinefunction.sorted(new FieldCollatedSortedComparator(fcs));
 		return pipelinefunction;
 	}
 

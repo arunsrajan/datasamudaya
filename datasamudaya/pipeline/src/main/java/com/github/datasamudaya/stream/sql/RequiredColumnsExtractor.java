@@ -175,6 +175,10 @@ public class RequiredColumnsExtractor extends RelShuttleImpl {
 				|| condition.isA(SqlKind.LESS_THAN)
 				|| condition.isA(SqlKind.LESS_THAN_OR_EQUAL)
 				|| condition.isA(SqlKind.LIKE)
+				|| condition.isA(SqlKind.PLUS) 
+				|| condition.isA(SqlKind.MINUS) 
+				|| condition.isA(SqlKind.TIMES)
+				|| condition.isA(SqlKind.DIVIDE)
 		) {
 			// For AND nodes, recursively evaluate left and right children
 			RexCall rexcall = (RexCall) condition;

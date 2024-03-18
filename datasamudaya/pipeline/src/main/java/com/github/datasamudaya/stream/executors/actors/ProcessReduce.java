@@ -129,7 +129,9 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 
 	private void processReduce(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			initialsize++;
+			if(object.getTerminiatingclass() == Map.class) {
+				initialsize++;
+			}
 			if (initialsize == terminatingsize) {
 				if (CollectionUtils.isEmpty(childpipes) && object.getValue() instanceof Map filemap) {
 					((Map<Integer, String>) filemap).entrySet().stream().forEach(entry -> {
@@ -179,7 +181,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 					});
 					diskspilllist.close();
 					childpipes.stream().forEach(action -> action
-							.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
+							.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class), ActorRef.noSender()));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 					log.info("Reduce Completed");
 				}

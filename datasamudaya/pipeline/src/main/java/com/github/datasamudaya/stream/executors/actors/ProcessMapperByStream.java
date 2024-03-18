@@ -27,6 +27,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
@@ -146,7 +147,6 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 	private void processMapperByStream(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
-				initialsize++;
 				if (dsl.isSpilled()) {
 					log.info("In Mapper Stream Spilled {}", dsl.isSpilled());
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
@@ -155,12 +155,33 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 					diskspilllistinterm.addAll(dsl.readListFromBytes());
 				}
 			}
+			if(object.getTerminiatingclass() == DiskSpillingList.class) {
+				initialsize++;
+			} else if(object.getTerminiatingclass() == Dummy.class) {
+				initialsize++;
+			} else if(object.getTerminiatingclass() == NodeIndexKey.class) {
+				initialsize++;
+			}
 			if (initialsize == terminatingsize) {
 				diskspilllistinterm.close();
-				if (CollectionUtils.isEmpty(childpipes)) {
-					log.info("processMapStream::Started InitialSize {} , Terminating Size {}", initialsize, terminatingsize);
-					Stream<Tuple2> datastream = diskspilllistinterm.isSpilled() ? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+				log.info("processMapStream::Started InitialSize {} , Terminating Size {}", initialsize,
+						terminatingsize);
+				if (object.getTerminiatingclass() == NodeIndexKey.class) {
+					try (var baos = new ByteArrayOutputStream();
+							var sos = new SnappyOutputStream(baos);
+							var output = new Output(sos);) {
+						Utils.getKryo().writeClassAndObject(output, object.getValue());
+						output.flush();
+						cache.put(getIntermediateDataFSFilePath(tasktoprocess), baos.toByteArray());
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+					}
+				}
+				else {
+					Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
+							? (Stream<Tuple2>) Utils.getStreamData(
+									new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null,
+											true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
 							: diskspilllistinterm.readListFromBytes().stream();
 					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
 							var fsdos = new ByteArrayOutputStream();
@@ -177,49 +198,54 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 					} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
-					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
-				} else {
-					final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
-							: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
-					final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
-							: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true : false;
-					Stream datastream = diskspilllistinterm.isSpilled() ? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.
-							getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false))) : diskspilllistinterm.readListFromBytes().stream();
-					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
-						if (MapUtils.isNotEmpty(shufflerectowrite)) {
-							int numfilepart = shufflerectowrite.size();
-							Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap).collect(
-									Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
-											Collectors.mapping(tup2 -> tup2,
-													Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
-															DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
-															Utils.getUUID().toString(), false, leftvalue, rightvalue, null, null, 0)))));
-							pipeline.entrySet().stream().forEach(entry -> entry.getValue()
-									.tell(new OutputObject(new TerminatingActorValue(results.size()), leftvalue, rightvalue), ActorRef.noSender()));
-							results.entrySet().forEach(entry -> {
-								try {
-									entry.getValue().close();
-								} catch (Exception ex) {
-									log.error(DataSamudayaConstants.EMPTY, ex);
-								}
-								pipeline.get(entry.getKey())
-										.tell(new OutputObject(new ShuffleBlock(null,
-														Utils.convertObjectToBytes(shufflerectowrite.get(entry.getKey())), entry.getValue()), leftvalue, rightvalue),
-												ActorRef.noSender());
-							});
-							pipeline.entrySet().stream().forEach(entry -> entry.getValue()
-									.tell(new OutputObject(new Dummy(), leftvalue, rightvalue), ActorRef.noSender()));
-						} else {
-							streammap.forEach(diskspilllist::add);
-							diskspilllist.close();
-							childpipes.stream().forEach(
-									action -> action.tell(new OutputObject(diskspilllist, leftvalue, rightvalue), ActorRef.noSender()));
-						}
-					} catch (Exception ex) {
-						log.error(DataSamudayaConstants.EMPTY, ex);
+					if (CollectionUtils.isNotEmpty(childpipes)) {
+						final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
+								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
+						final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
+								: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true : false;
+						datastream = diskspilllistinterm.isSpilled()
+								? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils
+										.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
+								: diskspilllistinterm.readListFromBytes().stream();
+						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
+							if (MapUtils.isNotEmpty(shufflerectowrite)) {
+								int numfilepart = shufflerectowrite.size();
+								Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap)
+										.collect(Collectors.groupingByConcurrent(
+												(Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
+												Collectors.mapping(tup2 -> tup2,
+														Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
+																DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
+																Utils.getUUID().toString(), false, leftvalue, rightvalue,
+																null, null, 0)))));
+								pipeline.entrySet().stream().forEach(entry -> entry.getValue().tell(
+										new OutputObject(new TerminatingActorValue(results.size()), leftvalue, rightvalue, Dummy.class),
+										ActorRef.noSender()));
+								results.entrySet().forEach(entry -> {
+									try {
+										entry.getValue().close();
+									} catch (Exception ex) {
+										log.error(DataSamudayaConstants.EMPTY, ex);
+									}
+									pipeline.get(entry.getKey())
+											.tell(new OutputObject(new ShuffleBlock(null,
+													Utils.convertObjectToBytes(shufflerectowrite.get(entry.getKey())),
+													entry.getValue()), leftvalue, rightvalue, Dummy.class), ActorRef.noSender());
+								});
+								pipeline.entrySet().stream().forEach(entry -> entry.getValue()
+										.tell(new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class), ActorRef.noSender()));
+							} else {
+								streammap.forEach(diskspilllist::add);
+								diskspilllist.close();
+								childpipes.stream().forEach(action -> action
+										.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class), ActorRef.noSender()));
+							}
+						} catch (Exception ex) {
+							log.error(DataSamudayaConstants.EMPTY, ex);
+						}					
 					}
-					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				}
+				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 			}
 		}
 

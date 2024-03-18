@@ -21,5 +21,5 @@ public class OutputObject implements Serializable {
 	Object value;
 	boolean left;
 	boolean right;
-
+	Class<?> terminiatingclass;
 }
