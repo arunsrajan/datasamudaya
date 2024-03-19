@@ -207,6 +207,9 @@ public class EmbeddedSchedulersNodeLauncher {
 			datacruncher = new StreamDataCruncher() {
 				public Object postObject(Object object) {
 					try {
+						if (object instanceof byte[] bytes) {
+							object = Utils.convertBytesToObjectCompressed(bytes, null);
+						}
 						var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER, containerprocesses, hdfs,
 								containeridthreads, containeridports, object, zo);
 						Future<Object> containerallocated = escontainer.submit(container);
