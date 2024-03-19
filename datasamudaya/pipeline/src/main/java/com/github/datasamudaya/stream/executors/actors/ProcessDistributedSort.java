@@ -16,6 +16,7 @@ import org.xerial.snappy.SnappyInputStream;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
@@ -70,7 +71,7 @@ public class ProcessDistributedSort extends AbstractActor {
 						terminatingsize);
 
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
-				FieldCollatedSortedComparator fcsc = (FieldCollatedSortedComparator) tasktoprocess.getFcsc();
+				List<FieldCollationDirection> fcsc = (List<FieldCollationDirection>) tasktoprocess.getFcsc();
 				Kryo kryo = Utils.getKryo();
 				NodeIndexKey root = null;
 				for (Task predecessor : predecessors) {
@@ -85,26 +86,27 @@ public class ProcessDistributedSort extends AbstractActor {
 							if (CollectionUtils.isNotEmpty(out)) {
 								if (isNull(root)) {
 									root = new NodeIndexKey(predecessor.getHostport(), index,
-											Utils.getKeyFromNodeIndexKey(fcsc.getRfcs(), out.get(0)), out.get(0), null,
-											null, key);
+											Utils.getKeyFromNodeIndexKey(fcsc, out.get(0)), out.get(0), null,
+											null, key, predecessor);
 								}
 								out.remove(0);
 								for (Object[] obj : out) {
 									NodeIndexKey child = new NodeIndexKey(predecessor.getHostport(), index,
-											Utils.getKeyFromNodeIndexKey(fcsc.getRfcs(), obj), obj, null, null, key);
-									Utils.formSortedBinaryTree(root, child, fcsc.getRfcs());
+											Utils.getKeyFromNodeIndexKey(fcsc, obj), obj, null, null, key, predecessor);
+									Utils.formSortedBinaryTree(root, child, fcsc);
 									index++;
 								}
 							}
 						}
 					} else {
-						try (RemoteListIteratorClient client = new RemoteListIteratorClient(predecessor)) {
+						try (RemoteListIteratorClient client = new RemoteListIteratorClient(predecessor, fcsc)) {
 							while (client.hasNext()) {
 								NodeIndexKey nik = (NodeIndexKey) client.next();
+								nik.setTask(predecessor);
 								if (isNull(root)) {
 									root = nik;
 								} else {
-									Utils.formSortedBinaryTree(root, nik, fcsc.getRfcs());
+									Utils.formSortedBinaryTree(root, nik, fcsc);
 								}
 							}
 						}
@@ -117,7 +119,7 @@ public class ProcessDistributedSort extends AbstractActor {
 					});
 				} else {
 					cache.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
-						+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), Utils.convertObjectToBytesCompressed(root));
+						+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), Utils.convertObjectToBytesCompressed(root, null));
 				}
 				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
 				+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);

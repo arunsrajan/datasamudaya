@@ -21,8 +21,9 @@ public class NodeIndexKey implements Serializable {
 	private String node;
 	private Integer index;
 	private Object[] key;
-	private Object[] value;
+	private Object value;
 	private NodeIndexKey left;
 	private NodeIndexKey right;
-	private String cachekey;
+	private String cachekey;	
+	private Task task;
 }

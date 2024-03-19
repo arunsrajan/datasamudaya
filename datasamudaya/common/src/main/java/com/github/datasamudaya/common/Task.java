@@ -65,7 +65,7 @@ public class Task implements Serializable, Cloneable {
 	public int parentterminatingsize;
 	public List<Task> shufflechildactors;
 	public boolean tosort;
-	public FieldCollatedSortedComparator fcsc;
+	public List<FieldCollationDirection> fcsc;
 
 	@Override
 	public Object clone() throws CloneNotSupportedException {

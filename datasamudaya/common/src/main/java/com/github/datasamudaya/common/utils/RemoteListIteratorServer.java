@@ -1,6 +1,7 @@
 package com.github.datasamudaya.common.utils;
 
 import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -22,6 +23,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.Task;
 
@@ -62,51 +64,60 @@ public class RemoteListIteratorServer<T> {
 					Input inputfile = null;
 					List currentList = null;
 					Task task = null;
+					List<FieldCollationDirection> lfcds = null;
 					try (Socket socket = clientSocket;
 							InputStream istream = socket.getInputStream();
 							Input input = new Input(istream);
 							OutputStream ostream = socket.getOutputStream();
-							LZ4BlockOutputStream outputStream = new LZ4BlockOutputStream(ostream);
-							Output output = new Output(outputStream);) {						
+							Output output = new Output(ostream);) {						
 						int indexperlist = 0;
 						int totindex = 0;
+						log.info("Input Stream and Output Stream Obtained");
 						while (true) {
 							Object deserobj = kryo.readClassAndObject(input);
 							if (deserobj instanceof RemoteListIteratorTask rlit) {
 								task = rlit.getTask();
+								lfcds = rlit.getFcsc();
+								log.info("Obtaining Cache for File {}",task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid);
 								baistream = new ByteArrayInputStream(cache.get(task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid));
 								sis = new SnappyInputStream(baistream);
 								inputfile = new Input(sis);
+								log.info("Obtaining Cache {}", inputfile);
 							} else if (deserobj instanceof RemoteListIteratorHasNext rlit) {
-								boolean isavailable = inputfile.available() > 0;
+								boolean isavailable = inputfile.available() > 0 || nonNull(currentList) && indexperlist<currentList.size();
 								kryo.writeClassAndObject(output, isavailable);
 								output.flush();
 								if (!isavailable) {
 									break;
 								}
 							} else if (deserobj instanceof RemoteListIteratorNext rlin) {
-								if(nonNull(currentList) && indexperlist<currentList.size()) {
-									kryo.writeClassAndObject(output, currentList.get(indexperlist));
-									output.flush();
-									indexperlist++;
-								} else {
+								if(isNull(currentList) || indexperlist>currentList.size()) {
 									currentList = (List) kryo.readClassAndObject(inputfile);
-									indexperlist = 0;
-									Object objfromfile = currentList.get(indexperlist);
-									NodeIndexKey nik = new NodeIndexKey();
-									if(objfromfile instanceof Tuple2 tup2) {
-										nik.setIndex(totindex);
-										nik.setNode(task.getHostport());
-										nik.setKey((Object[]) tup2.v1());
-									} else {
-										nik.setIndex(totindex);
-										nik.setNode(task.getHostport());
-										nik.setKey((Object[]) objfromfile);
-									}
-									kryo.writeClassAndObject(output, nik);
-									output.flush();
-									indexperlist++;
+									indexperlist = 0;									
 								}
+								Object objfromfile = currentList.get(indexperlist);
+								NodeIndexKey nik = new NodeIndexKey();
+								if(objfromfile instanceof Tuple2 tup2) {
+									nik.setIndex(totindex);
+									nik.setNode(task.getHostport());
+									if(nonNull(lfcds)) {
+										nik.setKey(Utils.getKeyFromNodeIndexKey(lfcds, (Object[]) tup2.v1()));
+									} else {
+										nik.setValue(objfromfile);
+									}
+								} else {
+									nik.setIndex(totindex);
+									nik.setNode(task.getHostport());
+									if(nonNull(lfcds)) {
+										nik.setKey(Utils.getKeyFromNodeIndexKey(lfcds, (Object[]) objfromfile));
+									}
+									else {
+										nik.setValue(objfromfile);
+									}
+								}
+								kryo.writeClassAndObject(output, nik);
+								output.flush();
+								indexperlist++;
 								totindex++;
 							}
 						}

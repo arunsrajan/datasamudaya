@@ -8,12 +8,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Iterator;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.FieldCollationDirection;
+import com.github.datasamudaya.common.SorterPort;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.exceptions.RpcRegistryException;
 
 import net.jpountz.lz4.LZ4BlockInputStream;
 
@@ -24,30 +31,37 @@ import net.jpountz.lz4.LZ4BlockInputStream;
  * @param <T>
  */
 public class RemoteListIteratorClient<T> implements Iterator<T>, Closeable {
+	
+	private static final Logger log = LoggerFactory.getLogger(RemoteListIteratorClient.class);
+	
 	private InputStream inputStream;
 	private LZ4BlockInputStream lbis;
 	private Input input;
 	
 	private OutputStream outputStream;
 	private Output output;
-	
+	private int sorterport;
 	private Task task;
 	
 	Socket socket;
 	Kryo kryo = Utils.getKryo();
 	RemoteListIteratorHasNext hasnext = new RemoteListIteratorHasNext();
 	RemoteListIteratorNext nextelem = new RemoteListIteratorNext();
-	public RemoteListIteratorClient(Task task) {
-		try {
-			String[] hostport = task.getHostport().split(DataSamudayaConstants.EMPTY);
-			socket = new Socket(hostport[0], Integer.parseInt(hostport[1]));
+	public RemoteListIteratorClient(Task task, List<FieldCollationDirection> fcsc) throws Exception {
+		try {			
+			log.info("Trying to split host and port {}", task.getHostport());
+			String[] hostport = task.getHostport().split(DataSamudayaConstants.UNDERSCORE);
+			log.info("Connecting To Host {} And Port {} For Fetching And Sorting with task executor id {}", hostport[0], hostport[1], task.teid);
+			sorterport = (int) Utils.getResultObjectByInput(task.getHostport(), new SorterPort(), task.teid);
+			log.info("Connecting To Host {} And Port {} For Fetching And Sorting", hostport[0], sorterport);
+			socket = new Socket(hostport[0], sorterport);
 			inputStream = socket.getInputStream();
-			lbis = new LZ4BlockInputStream(inputStream);
-			input = new Input(lbis);
+			input = new Input(inputStream);
 			outputStream = socket.getOutputStream();
 			output = new Output(outputStream);
 			this.task = task;
-			kryo.writeClassAndObject(output, new RemoteListIteratorTask(task));
+			kryo.writeClassAndObject(output, new RemoteListIteratorTask(task, fcsc));
+			output.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -56,18 +70,23 @@ public class RemoteListIteratorClient<T> implements Iterator<T>, Closeable {
 	@Override
 	public boolean hasNext() {
 		kryo.writeClassAndObject(output, hasnext);
+		output.flush();
 		return (boolean) kryo.readClassAndObject(input);
 	}
 
 	@Override
 	public T next() {
 		kryo.writeClassAndObject(output, nextelem);
+		output.flush();
 		return (T) kryo.readClassAndObject(input);
 	}
 
-	@Override
-	public void close() throws IOException {
+	public int getSorterport() {
+		return sorterport;
+	}
 
+	@Override
+	public void close() throws IOException {		
 		if(nonNull(input)) {
 			input.close();
 		}
@@ -85,6 +104,7 @@ public class RemoteListIteratorClient<T> implements Iterator<T>, Closeable {
 		}
 
 		if (nonNull(socket)) {
+			log.info("Closing Connection At Client");
 			socket.close();
 		}
 

@@ -184,7 +184,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	 */
 	public List readListFromBytes() {
 		if (nonNull(bytes)) {
-			return (List) Utils.convertBytesToObjectCompressed(bytes);
+			return (List) Utils.convertBytesToObjectCompressed(bytes, null);
 		}
 		return new ArrayList<>();
 	}
@@ -253,7 +253,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 				transferDataToDownStreamPipelines();
 			} else {
 				if (isNull(bytes)) {
-					bytes = Utils.convertObjectToBytesCompressed(dataList);
+					bytes = Utils.convertObjectToBytesCompressed(dataList, null);
 					dataList.clear();
 				}
 			}
@@ -283,7 +283,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	@Override
 	public int size() {
 		if (nonNull(bytes)) {
-			dataList = (List) Utils.convertBytesToObjectCompressed(bytes);
+			dataList = (List) Utils.convertBytesToObjectCompressed(bytes, null);
 		}
 		return isNull(dataList) ? 0 : dataList.size();
 	}

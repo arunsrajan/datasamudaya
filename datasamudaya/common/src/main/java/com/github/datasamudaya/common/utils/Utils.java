@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -159,6 +160,7 @@ import com.github.datasamudaya.common.DataSamudayaUsers;
 import com.github.datasamudaya.common.DestroyContainer;
 import com.github.datasamudaya.common.DestroyContainers;
 import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
 import com.github.datasamudaya.common.GlobalJobFolderBlockLocations;
@@ -875,7 +877,7 @@ public class Utils {
 			final Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
 			StreamDataCruncher cruncher = (StreamDataCruncher) registry
 					.lookup(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + jobid);
-			return cruncher.postObject(inputobj);
+			return cruncher.postObject(Utils.convertObjectToBytesCompressed(inputobj, null));
 		} catch (Exception ex) {
 			throw new RpcRegistryException(String.format(
 					"Unable to read result Object for the input object %s from host port %s", inputobj, hp), ex);
@@ -2547,13 +2549,14 @@ public class Utils {
 		try {
 			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
 					Spliterator.IMMUTABLE | Spliterator.ORDERED | Spliterator.NONNULL) {				
-				Kryo kryo = Utils.getKryo();	
-				List<NodeIndexKey> orderednodesinternal = orderednodes;
-				Map<String, Input> keyinputmap = new ConcurrentHashMap<>();
-				Map<String, SnappyInputStream> keysismap = new ConcurrentHashMap<>();
-				Map<String, List> cachekeylistmap = new ConcurrentHashMap<>();
-				Map<String, Integer> cachekeyindexmap = new ConcurrentHashMap<>();
+				Kryo kryo = Utils.getKryo();					
 				public boolean tryAdvance(Consumer<? super Object> action) {
+					List<NodeIndexKey> orderednodesinternal = orderednodes;
+					Map<String, Input> keyinputmap = new ConcurrentHashMap<>();
+					Map<String, SnappyInputStream> keysismap = new ConcurrentHashMap<>();
+					Map<String, List> cachekeylistmap = new ConcurrentHashMap<>();
+					Map<String, Integer> cachekeyindexmap = new ConcurrentHashMap<>();
+					Map<Task,RemoteListIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>(); 
 					try {
 						for(var node:orderednodesinternal) {
 							if(iscachenonempty) {
@@ -2567,10 +2570,28 @@ public class Utils {
 								action.accept(cachekeylistmap.get(node.getCachekey()).get(cachekeyindexmap.get(node.getCachekey())));
 								cachekeyindexmap.put(node.getCachekey(), cachekeyindexmap.get(node.getCachekey())+1);
 							} else {
-								
+								if(isNull(taskrlistiterclientmap.get(node.getTask()))) {
+									taskrlistiterclientmap.put(node.getTask(), new RemoteListIteratorClient<>(node.getTask(), null));
+								}
+								action.accept(taskrlistiterclientmap.get(node.getTask()).next().getValue());
 							}
 						}
-						
+						keyinputmap.entrySet().stream().forEach(entry->entry.getValue().close());
+						keysismap.entrySet().stream().forEach(entry->{
+							try {
+								entry.getValue().close();
+							} catch (IOException e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						});
+						taskrlistiterclientmap.entrySet().stream().forEach(entry->{
+							try {
+								entry.getValue().close();
+							} catch (IOException e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						});
+						return false;
 					} catch (Exception ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
@@ -2624,11 +2645,14 @@ public class Utils {
 	 * @param obj
 	 * @return bytes to object
 	 */
-	public static Object convertBytesToObjectCompressed(byte[] obj) {
+	public static Object convertBytesToObjectCompressed(byte[] obj, ClassLoader cl) {
 		try (var istream = new ByteArrayInputStream(obj);
 				var sis = new SnappyInputStream(istream);
 				var ip = new Input(sis);) {
 			Kryo kryo = Utils.getKryo();
+			if(nonNull(cl)) {
+				kryo.setClassLoader(cl);
+			}
 			return kryo.readClassAndObject(ip);
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
@@ -2642,11 +2666,14 @@ public class Utils {
 	 * @param obj
 	 * @return
 	 */
-	public static byte[] convertObjectToBytesCompressed(Object obj) {
+	public static byte[] convertObjectToBytesCompressed(Object obj, ClassLoader cl) {
 		try (var ostream = new ByteArrayOutputStream();
 				var sos = new SnappyOutputStream(ostream);
 				var op = new Output(sos);) {
 			Kryo kryo = Utils.getKryo();
+			if(nonNull(cl)) {
+				kryo.setClassLoader(cl);
+			}
 			kryo.writeClassAndObject(op, obj);
 			op.flush();
 			return ostream.toByteArray();
@@ -2764,7 +2791,7 @@ public class Utils {
 				+ DataSamudayaConstants.DOT + DataSamudayaConstants.DATA;
 	}
 	
-	
+	static final Random rand = new Random(System.currentTimeMillis());
 	/**
 	 * The function forms binary tree for sorting
 	 * @param root
@@ -2772,27 +2799,34 @@ public class Utils {
 	 * @param rfcs
 	 * @return rootnode
 	 */
-	public static NodeIndexKey formSortedBinaryTree(NodeIndexKey root, NodeIndexKey child, List<RelFieldCollation> rfcs) {
-		if(child==null) {
-			return root;
-		} else {
-			if(compare(root.getKey(), child.getKey(), rfcs)>=0){
-				if(isNull(root.getLeft())) {
-					root.setLeft(child);
-				} else {
-					formSortedBinaryTree(root.getLeft(),child, rfcs);
-				}
-			} else if(compare(root.getKey(), child.getKey(), rfcs)<0){
-				if(isNull(root.getRight())) {
-					root.setRight(child);
-				} else { 
-					formSortedBinaryTree(root.getRight(),child, rfcs);
-				}
+	public static void formSortedBinaryTree(NodeIndexKey root, NodeIndexKey child, List<FieldCollationDirection> rfcs) {
+		try {
+			if(root==null||child==null) {
+				return;
 			} else {
-				formSortedBinaryTree(root.getLeft(),child, rfcs);
+				if(compare(root.getKey(), child.getKey(), rfcs)>0){
+					if(isNull(root.getLeft())) {
+						root.setLeft(child);
+					} else {
+						formSortedBinaryTree(root.getLeft(),child, rfcs);
+					}
+				} else if(compare(root.getKey(), child.getKey(), rfcs)<0){
+					if(isNull(root.getRight())) {
+						root.setRight(child);
+					} else { 
+						formSortedBinaryTree(root.getRight(),child, rfcs);
+					}
+				} else {
+					if(rand.nextBoolean()) {
+						formSortedBinaryTree(root.getLeft(),child, rfcs);
+					} else {
+						formSortedBinaryTree(root.getRight(),child, rfcs);
+					}
+				}
 			}
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
-		return root;
 	}
 	
 	/**
@@ -2802,10 +2836,10 @@ public class Utils {
 	 * @param rfcs
 	 * @return 0 if equals , 1 if object1 is greater than object2 or -1 if object1 is less than object2
 	 */
-	public static int compare(Object[] obj1, Object[] obj2, List<RelFieldCollation> rfcs) {
-		int numofelem = obj1[0].getClass() == Object[].class ? ((Object[]) obj1[0]).length:obj1.length;
+	public static int compare(Object[] obj1, Object[] obj2, List<FieldCollationDirection> rfcs) {
+		int numofelem = rfcs.size();
 		for (int index = 0; index < numofelem; index++) {
-			RelFieldCollation fc = rfcs.get(index);
+			FieldCollationDirection fc = rfcs.get(index);
 			String sortOrder = fc.getDirection().name();
 			Object value1 = obj1[0].getClass() == Object[].class ? ((Object[]) obj1[0])[index]
 					: obj1[index];
@@ -2849,12 +2883,12 @@ public class Utils {
 	 * @param obj
 	 * @return Key object from obj
 	 */
-	public static Object[] getKeyFromNodeIndexKey(List<RelFieldCollation> rfcs, Object[] obj) {
+	public static Object[] getKeyFromNodeIndexKey(List<FieldCollationDirection> rfcs, Object[] obj) {
 		List<Object> keys = new ArrayList<>();
 		for (int i = 0; i < rfcs.size(); i++) {
-			RelFieldCollation fc = rfcs.get(i);
-			Object value = obj[0].getClass() == Object[].class ? ((Object[]) obj[0])[fc.getFieldIndex()]
-					: obj[fc.getFieldIndex()];			
+			FieldCollationDirection fc = rfcs.get(i);
+			Object value = obj[0].getClass() == Object[].class ? ((Object[]) obj[0])[fc.getFieldindex()]
+					: obj[fc.getFieldindex()];			
 			keys.add(value);
 		}
 		return keys.toArray();

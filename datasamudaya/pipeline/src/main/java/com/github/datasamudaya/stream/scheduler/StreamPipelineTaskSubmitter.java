@@ -109,7 +109,7 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 			}
 			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors, taskexecutors.indexOf(hostport) * 3);
 			task.setTeid(jobid);
-			byte[] objbytes = Utils.convertObjectToBytes(eta);
+			byte[] objbytes = Utils.convertObjectToBytesCompressed(eta, null);
 			return sdc.postObject(objbytes);
 		} catch (Exception ex) {
 			log.error("Unable to connect and submit tasks to executor with host and port: " + hp, ex);

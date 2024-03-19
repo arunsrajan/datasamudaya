@@ -64,7 +64,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		if ("false".equals(pipelineconfig.getLocal())) {
 			pipelineconfig.setUseglobaltaskexecutors(true);
 			String teid = Utils.getUUID();
-			Utils.launchContainersUserSpec("arun", teid, 6, 512 * DataSamudayaConstants.MB, 2);
+			Utils.launchContainersUserSpec("arun", teid, 6, 1024 * DataSamudayaConstants.MB, 2);
 			pipelineconfig.setTejobid(teid);
 			pipelineconfig.setUser("arun");
 		}
@@ -1596,7 +1596,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 				 FROM airline group by airline.UniqueCarrier,airline.DayofMonth,airline.MonthOfYear order by airline.UniqueCarrier, avgarrdelay\
 				""";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
-				.add("/airline1989", "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);

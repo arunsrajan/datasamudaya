@@ -268,12 +268,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				Task task = new Task();
 				try {
 					if (deserobj instanceof byte[] bytes) {
-						try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-								var fstin = new Input(bais);) {
-							Kryo kryo = Utils.getKryoInstance();
-							kryo.setClassLoader(cl);
-							deserobj = kryo.readClassAndObject(fstin);
-						}
+						deserobj = Utils.convertBytesToObjectCompressed(bytes, cl);
 					}
 					if (deserobj instanceof TaskExecutorShutdown) {
 						shutdown.countDown();

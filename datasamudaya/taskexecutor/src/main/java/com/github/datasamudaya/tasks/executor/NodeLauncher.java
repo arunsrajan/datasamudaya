@@ -31,6 +31,8 @@ import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.NetworkUtil;
@@ -44,6 +46,8 @@ import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 
 import static java.util.Objects.nonNull;
+
+import java.io.ByteArrayInputStream;
 
 /**
  * The node launcher class.
@@ -116,6 +120,9 @@ public class NodeLauncher {
 			sdc = new StreamDataCruncher() {
 				public Object postObject(Object object) {
 					try {
+						if (object instanceof byte[] bytes) {
+							object = Utils.convertBytesToObject(bytes);
+						}
 						var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER, containerprocesses,
 								hdfs, containeridthreads, containeridports, object, zo);
 						Future<Object> containerallocated = escontainer.submit(container);

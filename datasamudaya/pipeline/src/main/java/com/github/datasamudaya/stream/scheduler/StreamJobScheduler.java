@@ -84,6 +84,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.ExecuteTaskActor;
+import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.FreeResourcesCompletedJob;
@@ -619,15 +620,13 @@ public class StreamJobScheduler {
 				.collect(Collectors.groupingBy(task -> task.jobid + task.stageid, HashMap::new,
 						Collectors.mapping(task -> task.hostport, Collectors.toSet())));
 		jobexecutorsmap.keySet().stream().forEach(key -> {
-			try (var baos = new ByteArrayOutputStream(); var output = new Output(baos)) {
+			try {
 				JobStage js = (JobStage) jsidjsmap.get(key);
 				if (nonNull(js)) {
 					js.setTejobid(finaljobid);
 				}
-				kryo.writeClassAndObject(output, js);
-				output.flush();
 				for (String te : jobexecutorsmap.get(key)) {
-					Utils.getResultObjectByInput(te, baos.toByteArray(), finaljobid);
+					Utils.getResultObjectByInput(te, js, finaljobid);
 				}
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
@@ -1250,7 +1249,7 @@ public class StreamJobScheduler {
 							counttaskscomp++;
 							double percentagecompleted = Math.floor((counttaskscomp / totaltasks) * 100.0);
 							Utils.writeToOstream(pipelineconfig.getOutput(),
-									"\nPercentage Completed" + percentagecompleted + "% \n");
+									"\nPercentage Completed " + percentagecompleted + "% \n");
 							job.getJm().getContainersallocated().put(spts.getHostPort(), percentagecompleted);
 							if (Objects.isNull(job.getJm().getTaskexcutortasks().get(spts.getTask().getHostport()))) {
 								job.getJm().getTaskexcutortasks().put(spts.getTask().getHostport(), new ArrayList<>());
@@ -2036,8 +2035,9 @@ public class StreamJobScheduler {
 				tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
 				StreamPipelineTaskSubmitter parentspts = (StreamPipelineTaskSubmitter) outputparent1.get(0);
 				JobStage js = jsidjsmap.get(parentspts.getTask().getJobid() + parentspts.getTask().getStageid());
-				FieldCollatedSortedComparator fcsc = (FieldCollatedSortedComparator) js.getStage().getTasks().get(js.getStage().getTasks().size()-1);
-				spts.getTask().setFcsc(fcsc);
+				FieldCollatedSortedComparator fcsc = (FieldCollatedSortedComparator) js.getStage().getTasks().get(js.getStage().getTasks().size()-1);				
+				spts.getTask().setFcsc(fcsc.getRfcs().stream().map(fc->new FieldCollationDirection(fc.getFieldIndex(), fc.getDirection())).toList());
+				spts.getTask().setTeid(pipelineconfig.getTejobid());
 				for(var parentthread: (List<StreamPipelineTaskSubmitter>)outputparent1) {
 					spts.getTask().getTaskspredecessor().add(parentthread.getTask());
 					taskgraph.addVertex(spts.getTask());
@@ -2257,10 +2257,28 @@ public class StreamJobScheduler {
 								? new ByteArrayInputStream(rdf.getData())
 								: new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
 							var result = Utils.getKryo().readClassAndObject(input);
-							if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL
-									&& nonNull(pipelineconfig.getWriter())) {
+							if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL) {
 								PrintWriter out = pipelineconfig.getWriter();
-								totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
+								if(result instanceof NodeIndexKey nik) {
+									List larrayobj = new ArrayList<>();
+									Stream stream = Utils.getStreamData(nik, null);
+									stream.map(new MapFunction<Object[], Object[]>(){
+										private static final long serialVersionUID = -6478016520828716284L;
+
+										public Object[] apply(Object[] values) {
+											return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+										}
+									}).forEach(larrayobj::add);
+									stageoutput.add(larrayobj);
+									if(nonNull(out)) {
+										totalrecords += Utils.printTableOrError((List) larrayobj, out, JOBTYPE.PIG);
+									}
+								} else {
+									stageoutput.add(result);
+									if(nonNull(out)) {
+										totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
+									}
+								}								
 							} else if (job.getJobtype() == JOBTYPE.PIG) {
 								PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
 								totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
@@ -2511,6 +2529,7 @@ public class StreamJobScheduler {
 			task.jobid = jobid;
 			task.stageid = stage.id;
 			task.storage = pipelineconfig.getStorage();
+			task.teid = pipelineconfig.getTejobid();
 			String hp = null;
 			task.hbphysicaladdress = hbphysicaladdress;
 			if (currentstage == 0 || parentthreads == null) {

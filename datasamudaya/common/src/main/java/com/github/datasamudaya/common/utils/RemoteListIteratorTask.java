@@ -1,7 +1,9 @@
 package com.github.datasamudaya.common.utils;
 
 import java.io.Serializable;
+import java.util.List;
 
+import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.Task;
 
 import lombok.AllArgsConstructor;
@@ -23,5 +25,6 @@ public class RemoteListIteratorTask implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Task task;
+	private List<FieldCollationDirection> fcsc;
 	
 }
