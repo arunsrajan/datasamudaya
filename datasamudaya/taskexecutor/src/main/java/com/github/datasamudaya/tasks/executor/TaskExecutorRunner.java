@@ -8,9 +8,11 @@
  */
 package com.github.datasamudaya.tasks.executor;
 
-import static java.util.Objects.nonNull;
+import akka.actor.ActorRef;
 
-import java.io.ByteArrayInputStream;
+import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
+
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -18,7 +20,9 @@ import java.net.URI;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
@@ -39,11 +43,10 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.CacheUtils;
+import com.github.datasamudaya.common.CleanupTaskActors;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
@@ -98,6 +101,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	Map<String, Boolean> jobidstageidtaskidcompletedmap = new ConcurrentHashMap<>();
 	Map<String, JobStage> jobidstageidjobstagemap = new ConcurrentHashMap<>();
 	Queue<Object> taskqueue = new LinkedBlockingQueue<Object>();
+	Map<String, List<ActorRef>> jobidactorrefmap = new ConcurrentHashMap<>();
 	static ExecutorService estask;
 	static ExecutorService escompute;
 	static CountDownLatch shutdown = new CountDownLatch(1);
@@ -277,15 +281,26 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						cl = DataSamudayaMapReducePhaseClassLoader.newInstance(loadjar.getMrjar(), cl);
 						return DataSamudayaConstants.JARLOADED;
 					} else if (deserobj instanceof GetTaskActor gettaskactor) {
+						if(isNull(jobidactorrefmap.get(gettaskactor.getTask().getJobid()))) {
+							jobidactorrefmap.put(gettaskactor.getTask().getJobid(),new ArrayList<>());
+						}
 						return SQLUtils.getAkkaActor(actsystem, gettaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
-								actorsystemurl, cluster, jobid);
+								actorsystemurl, cluster, jobid, jobidactorrefmap.get(gettaskactor.getTask().getJobid()));
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
+						if(isNull(jobidactorrefmap.get(executetaskactor.getTask().getJobid()))) {
+							jobidactorrefmap.put(executetaskactor.getTask().getJobid(),new ArrayList<>());
+						}
 						return SQLUtils.getAkkaActor(actsystem, executetaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
-								actorsystemurl, cluster, jobid);
+								actorsystemurl, cluster, jobid, jobidactorrefmap.get(executetaskactor.getTask().getJobid()));
+					} else if (deserobj instanceof CleanupTaskActors cleanupactors) {
+						if(jobidactorrefmap.containsKey(cleanupactors.getJobid())) {
+							Utils.cleanupTaskActorFromSystem(actsystem, jobidactorrefmap.remove(cleanupactors.getJobid()), cleanupactors.getJobid());
+						}
+						return true;
 					} else if (deserobj instanceof Job job) {
 						job.getPipelineconfig().setClsloader(cl);
 						StreamJobScheduler js = new StreamJobScheduler();

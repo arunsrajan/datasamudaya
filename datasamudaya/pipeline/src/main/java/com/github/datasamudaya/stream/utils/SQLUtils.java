@@ -3593,17 +3593,17 @@ public class SQLUtils {
 	 */
 	public static Task getAkkaActor(ActorSystem system, Object obj, Map<String, JobStage> jobidstageidjobstagemap,
 			FileSystem hdfs, Cache inmemorycache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			String actorsystemurl, Cluster cluster, String teid) {
+			String actorsystemurl, Cluster cluster, String teid, List<ActorRef> actors) {
 		if (obj instanceof GetTaskActor taskactor) {
 			String jobstageid = taskactor.getTask().getJobid() + taskactor.getTask().getStageid();
 			JobStage js = jobidstageidjobstagemap.get(jobstageid);
 			taskactor.getTask().setTeid(teid);
 			if (js.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {				
 				cluster.registerOnMemberUp(() -> {
-					system.actorOf(
+					actors.add(system.actorOf(
 							Props.create(ProcessMapperByBlocksLocation.class, jobidstageidjobstagemap.get(jobstageid),
 									hdfs, inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask()),
-							jobstageid + taskactor.getTask().getTaskid());
+							jobstageid + taskactor.getTask().getTaskid()));
 				});				
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
 						+ taskactor.getTask().getTaskid());
@@ -3614,8 +3614,8 @@ public class SQLUtils {
 					childactors.add(system.actorSelection(actorselectionurl));
 				}
 				cluster.registerOnMemberUp(() -> {
-					system.actorOf(Props.create(ProcessShuffle.class, jobidstageidtaskidcompletedmap,
-							taskactor.getTask(), childactors), jobstageid + taskactor.getTask().getTaskid());
+					actors.add(system.actorOf(Props.create(ProcessShuffle.class, jobidstageidtaskidcompletedmap,
+							taskactor.getTask(), childactors), jobstageid + taskactor.getTask().getTaskid()));
 				});
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
 						+ taskactor.getTask().getTaskid());
@@ -3626,11 +3626,11 @@ public class SQLUtils {
 					childactors.add(system.actorSelection(actorselectionurl));
 				}
 				cluster.registerOnMemberUp(() -> {
-					system.actorOf(
+					actors.add(system.actorOf(
 							Props.create(ProcessReduce.class, jobidstageidjobstagemap.get(jobstageid), hdfs,
 									inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
 									taskactor.getTerminatingparentcount()),
-							jobstageid + taskactor.getTask().getTaskid());
+							jobstageid + taskactor.getTask().getTaskid()));
 				});
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
 						+ taskactor.getTask().getTaskid());
@@ -3643,19 +3643,19 @@ public class SQLUtils {
 						childactors.add(system.actorSelection(actorselectionurl));
 					}
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessCoalesce.class, coalesce, childactors,
 										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 										inmemorycache, taskactor.getTask()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				} else {
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessCoalesce.class, coalesce, null,
 										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 										inmemorycache, taskactor.getTask()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				}
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
@@ -3669,19 +3669,19 @@ public class SQLUtils {
 						childactors.add(system.actorSelection(actorselectionurl));
 					}
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessDistributedSort.class, jobidstageidjobstagemap.get(jobstageid), inmemorycache,
 										jobidstageidtaskidcompletedmap,
 										taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				} else {
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessDistributedSort.class, jobidstageidjobstagemap.get(jobstageid), inmemorycache,
 										jobidstageidtaskidcompletedmap,
 										taskactor.getTask(), null, taskactor.getTerminatingparentcount()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				}
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
@@ -3695,19 +3695,19 @@ public class SQLUtils {
 						childactors.add(system.actorSelection(actorselectionurl));
 					}
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessInnerJoin.class, joinpred, childactors,
 										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 										inmemorycache, taskactor.getTask()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				} else {
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessInnerJoin.class, joinpred, null,
 										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 										inmemorycache, taskactor.getTask()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				}
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
@@ -3721,19 +3721,19 @@ public class SQLUtils {
 						childactors.add(system.actorSelection(actorselectionurl));
 					}
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessRightOuterJoin.class, rojoinpred, childactors,
 										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 										inmemorycache, taskactor.getTask()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				} else {
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessRightOuterJoin.class, rojoinpred, null,
 										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 										inmemorycache, taskactor.getTask()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				}
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
@@ -3747,19 +3747,19 @@ public class SQLUtils {
 						childactors.add(system.actorSelection(actorselectionurl));
 					}
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessLeftOuterJoin.class, lojoinpred, childactors,
 										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 										inmemorycache, taskactor.getTask()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				} else {
 					cluster.registerOnMemberUp(() -> {
-						system.actorOf(
+						actors.add(system.actorOf(
 								Props.create(ProcessLeftOuterJoin.class, lojoinpred, null,
 										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 										inmemorycache, taskactor.getTask()),
-								jobstageid + taskactor.getTask().getTaskid());
+								jobstageid + taskactor.getTask().getTaskid()));
 					});
 				}
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
@@ -3791,12 +3791,12 @@ public class SQLUtils {
 					}
 				}
 				cluster.registerOnMemberUp(() -> {
-					system.actorOf(
+					actors.add(system.actorOf(
 							Props.create(ProcessMapperByStream.class, jobidstageidjobstagemap.get(jobstageid), hdfs,
 									inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
 									taskactor.getTask().getFilepartitionsid(), actorselections,
 									taskactor.getTerminatingparentcount()),
-							jobstageid + taskactor.getTask().getTaskid());
+							jobstageid + taskactor.getTask().getTaskid()));
 				});
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
 						+ taskactor.getTask().getTaskid());

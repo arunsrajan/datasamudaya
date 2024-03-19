@@ -78,6 +78,7 @@ import com.github.datasamudaya.common.Block;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
+import com.github.datasamudaya.common.CleanupTaskActors;
 import com.github.datasamudaya.common.CloseStagesGraphExecutor;
 import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataSamudayaCache;
@@ -149,6 +150,7 @@ import com.github.dexecutor.core.task.TaskProvider;
 import com.google.common.collect.Iterables;
 import com.typesafe.config.Config;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.cluster.Cluster;
 
@@ -176,6 +178,7 @@ public class StreamJobScheduler {
 	Map<String, Boolean> jobidstageidtaskidcompletedmap = new ConcurrentHashMap<>();
 	Map<String, Object> actornameactorrefmap = new ConcurrentHashMap<>();
 	public List<Object> stageoutput = new ArrayList<>();
+	List<ActorRef> actorrefs = new ArrayList<>();
 	String hdfsfilepath;
 	FileSystem hdfs;
 	String hbphysicaladdress;
@@ -570,6 +573,12 @@ public class StreamJobScheduler {
 			jobping.shutdownNow();
 			if (nonNull(system)) {
 				system.terminate();
+				Utils.cleanupTaskActorFromSystem(system, actorrefs, job.getId());
+			}
+			if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && CollectionUtils.isNotEmpty(taskexecutors)) {
+				for(String tehost:taskexecutors) {
+					Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId()), pipelineconfig.getTejobid());
+				}
 			}
 		}
 
@@ -966,7 +975,7 @@ public class StreamJobScheduler {
 					if (CollectionUtils.isEmpty(predecessors)) {
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, successors.size());
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor, jsidjsmap, hdfs, cache,
-								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null);
+								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null, actorrefs);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 					} else {
 						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
@@ -974,7 +983,7 @@ public class StreamJobScheduler {
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
 								successors.size());
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor, jsidjsmap, hdfs, cache,
-								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null);
+								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null, actorrefs);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 						sptsreverse.setChildactors(childactorsoriggraph);
 					}
@@ -1067,7 +1076,7 @@ public class StreamJobScheduler {
 						}
 						ExecuteTaskActor eta = new ExecuteTaskActor(task, actorsselection, filepartitionstartindex);
 						Task task = SQLUtils.getAkkaActor(system, eta, jsidjsmap, hdfs, cache,
-								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null);
+								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null, actorrefs);
 						Utils.writeToOstream(pipelineconfig.getOutput(),
 								"Completed Job And Stages: " + spts.getTask().jobid + DataSamudayaConstants.HYPHEN
 										+ spts.getTask().stageid + DataSamudayaConstants.HYPHEN + spts.getTask().taskid
@@ -2275,10 +2284,11 @@ public class StreamJobScheduler {
 										public Object[] apply(Object[] values) {
 											return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
 										}
-									}).forEach(larrayobj::add);
-									stageoutput.add(larrayobj);
+									}).forEach(larrayobj::add);									
 									if(nonNull(out)) {
 										totalrecords += Utils.printTableOrError((List) larrayobj, out, JOBTYPE.PIG);
+									} else {
+										stageoutput.add(larrayobj);
 									}
 								} else {
 									stageoutput.add(result);

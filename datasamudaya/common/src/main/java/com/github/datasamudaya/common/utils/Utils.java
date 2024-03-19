@@ -83,6 +83,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.conf.Configuration;
@@ -203,6 +204,8 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.univocity.parsers.csv.CsvWriter;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import de.javakaffee.kryoserializers.ArraysAsListSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyMapSerializer;
@@ -2892,6 +2895,27 @@ public class Utils {
 			keys.add(value);
 		}
 		return keys.toArray();
+	}
+	
+	/**
+	 * Cleanup function to deregister actors from actors system
+	 * @param actorsystem
+	 * @param actors
+	 * @param jobid
+	 * @return successful cleanup of tmp folder for job
+	 * @throws Exception 
+	 */
+	public static boolean cleanupTaskActorFromSystem(ActorSystem actorsystem, List<ActorRef> actors, String jobid) throws Exception {
+		for(ActorRef actor:actors) {
+			actorsystem.stop(actor);
+		}
+		File deletefolder = new File(System.getProperty(DataSamudayaConstants.TMPDIR)+
+				DataSamudayaConstants.FORWARD_SLASH+jobid);
+		if(deletefolder.exists()) {
+			FileUtils.deleteDirectory(deletefolder);
+		}
+		actors.clear();
+		return true;
 	}
 	
 }
