@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.calcite.rel.RelFieldCollation.Direction;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -137,6 +138,7 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgnite
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgniteSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocal;
 import com.github.datasamudaya.stream.mesos.scheduler.MesosScheduler;
+import com.github.datasamudaya.stream.pig.PigSortedComparator;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.dexecutor.core.DefaultDexecutor;
 import com.github.dexecutor.core.DexecutorConfig;
@@ -2035,8 +2037,12 @@ public class StreamJobScheduler {
 				tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
 				StreamPipelineTaskSubmitter parentspts = (StreamPipelineTaskSubmitter) outputparent1.get(0);
 				JobStage js = jsidjsmap.get(parentspts.getTask().getJobid() + parentspts.getTask().getStageid());
-				FieldCollatedSortedComparator fcsc = (FieldCollatedSortedComparator) js.getStage().getTasks().get(js.getStage().getTasks().size()-1);				
-				spts.getTask().setFcsc(fcsc.getRfcs().stream().map(fc->new FieldCollationDirection(fc.getFieldIndex(), fc.getDirection())).toList());
+				Object sortedcomparator = js.getStage().getTasks().get(js.getStage().getTasks().size()-1);
+				if(sortedcomparator instanceof FieldCollatedSortedComparator fcsc) {
+					spts.getTask().setFcsc(fcsc.getRfcs().stream().map(fc->new FieldCollationDirection(fc.getFieldIndex(), fc.getDirection())).toList());
+				} else if(sortedcomparator instanceof PigSortedComparator psc) {
+					spts.getTask().setFcsc(psc.getCso().stream().map(cso->new FieldCollationDirection(cso.getColumn(), cso.isIsasc()?Direction.ASCENDING:Direction.DESCENDING)).toList());
+				}
 				spts.getTask().setTeid(pipelineconfig.getTejobid());
 				for(var parentthread: (List<StreamPipelineTaskSubmitter>)outputparent1) {
 					spts.getTask().getTaskspredecessor().add(parentthread.getTask());
@@ -2257,7 +2263,8 @@ public class StreamJobScheduler {
 								? new ByteArrayInputStream(rdf.getData())
 								: new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
 							var result = Utils.getKryo().readClassAndObject(input);
-							if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL) {
+							if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && (job.getJobtype() == JOBTYPE.NORMAL 
+									|| job.getJobtype() == JOBTYPE.PIG)) {
 								PrintWriter out = pipelineconfig.getWriter();
 								if(result instanceof NodeIndexKey nik) {
 									List larrayobj = new ArrayList<>();
@@ -2279,13 +2286,6 @@ public class StreamJobScheduler {
 										totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
 									}
 								}								
-							} else if (job.getJobtype() == JOBTYPE.PIG) {
-								PrintWriter out = new PrintWriter(pipelineconfig.getPigoutput());
-								totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
-								out.println();
-								out.printf("Total records processed %d", totalrecords);
-								out.println();
-								out.flush();
 							} else {
 								writeOutputToFile(stageoutput.size(), result);
 								stageoutput.add(result);
@@ -2296,7 +2296,8 @@ public class StreamJobScheduler {
 						}
 					}
 				}
-				if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && job.getJobtype() == JOBTYPE.NORMAL
+				if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && (job.getJobtype() == JOBTYPE.NORMAL 
+						|| job.getJobtype() == JOBTYPE.PIG)
 						&& nonNull(pipelineconfig.getWriter())) {
 					PrintWriter out = pipelineconfig.getWriter();
 					out.println();

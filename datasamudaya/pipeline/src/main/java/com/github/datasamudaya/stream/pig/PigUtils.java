@@ -270,28 +270,11 @@ public class PigUtils {
 		for (LogicalExpressionPlan lep :leps) {
 			ProjectExpression projectexpression = (ProjectExpression) lep.getOperators().next();
 			SortOrderColumns soc = new SortOrderColumns();
-			soc.setColumn(projectexpression.getColAlias());
+			soc.setColumn(aliasorcolumns.indexOf(projectexpression.getColAlias()));
 			soc.setIsasc(asccolumns.next());
 			sortordercolumns.add(soc);
 		}
-		sp = sp.sorted((map1, map2) -> {
-			List<SortOrderColumns> columnssortorder = sortordercolumns;
-
-			for (int i = 0;i < columnssortorder.size();i++) {
-				String columnName = columnssortorder.get(i).getColumn();
-				Boolean isAsc = columnssortorder.get(i).isIsasc();
-				Object value1 = ((Object[]) map1[0])[aliasorcolumns.indexOf(columnName)];
-				Object value2 = ((Object[]) map2[0])[aliasorcolumns.indexOf(columnName)];
-				int result = SQLUtils.compareTo(value1, value2);
-				if (!isAsc) {
-					result = -result;
-				}
-				if (result != 0) {
-					return result;
-				}
-			}
-			return 0;
-		});
+		sp = sp.sorted(new PigSortedComparator(sortordercolumns));
 		if (!hasdescendants) {
 			return sp.map(obj -> ((Object[]) obj[0]));
 		}

@@ -20,5 +20,5 @@ public class SortOrderColumns {
 
 	private boolean isasc;
 
-	private String column;
+	private Integer column;
 }
