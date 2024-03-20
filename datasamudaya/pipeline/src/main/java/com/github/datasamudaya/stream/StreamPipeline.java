@@ -1039,6 +1039,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		if (af.tasks.get(0) instanceof ReduceByKeyFunction || af.tasks.get(0) instanceof ReduceByKeyFunctionValues
 				|| af.tasks.get(0) instanceof ReduceFunction && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
 				&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)) {
+			parentstage.tasks.add(af.tasks.get(0));
 			var childstage = new Stage();
 			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
 			var shuffleStage = new ShuffleStage();
