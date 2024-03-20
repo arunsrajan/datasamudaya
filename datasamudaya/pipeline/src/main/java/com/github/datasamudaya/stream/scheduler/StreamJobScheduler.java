@@ -2179,9 +2179,9 @@ public class StreamJobScheduler {
 									var sis = new SnappyInputStream(bais);
 									var input = new Input(sis);) {
 								var obj = Utils.getKryo().readClassAndObject(input);
-								if(obj instanceof NodeIndexKey nik) {
+								if(obj instanceof List lst && CollectionUtils.isNotEmpty(lst) && lst.get(0) instanceof NodeIndexKey) {
 									List larrayobj = new ArrayList<>();
-									Stream stream = Utils.getStreamData(nik, cache);
+									Stream stream = Utils.getStreamData(lst, cache);
 									stream.map(new MapFunction<Object[], Object[]>(){
 										private static final long serialVersionUID = 4827381029527934511L;
 
@@ -2275,9 +2275,9 @@ public class StreamJobScheduler {
 							if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && (job.getJobtype() == JOBTYPE.NORMAL 
 									|| job.getJobtype() == JOBTYPE.PIG)) {
 								PrintWriter out = pipelineconfig.getWriter();
-								if(result instanceof NodeIndexKey nik) {
+								if(result instanceof List lst && CollectionUtils.isNotEmpty(lst) && lst.get(0) instanceof NodeIndexKey) {
 									List larrayobj = new ArrayList<>();
-									Stream stream = Utils.getStreamData(nik, null);
+									Stream stream = Utils.getStreamData(lst, null);
 									stream.map(new MapFunction<Object[], Object[]>(){
 										private static final long serialVersionUID = -6478016520828716284L;
 

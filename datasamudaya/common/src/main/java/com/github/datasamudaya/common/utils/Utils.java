@@ -75,10 +75,6 @@ import java.util.jar.Manifest;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import net.jpountz.lz4.LZ4BlockInputStream;
-import net.jpountz.lz4.LZ4BlockOutputStream;
-
-import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.commons.csv.CSVFormat;
@@ -238,10 +234,10 @@ import de.javakaffee.kryoserializers.jodatime.JodaLocalDateSerializer;
 import de.javakaffee.kryoserializers.jodatime.JodaLocalDateTimeSerializer;
 import de.javakaffee.kryoserializers.jodatime.JodaLocalTimeSerializer;
 import io.altoo.akka.serialization.kryo.serializer.scala.ScalaKryo;
+import net.jpountz.lz4.LZ4BlockInputStream;
+import net.jpountz.lz4.LZ4BlockOutputStream;
 import net.sf.jsqlparser.parser.SimpleNode;
 import net.sf.jsqlparser.schema.Table;
-
-import org.apache.commons.lang3.builder.*;
 
 /**
  * 
@@ -2545,16 +2541,20 @@ public class Utils {
 		traverseBinaryTree(nik.getRight(), orderedlist);
 	}
 	
-	public static Stream<?> getStreamData(NodeIndexKey nik, Cache<String, byte[]> cache) {
-		List<NodeIndexKey> orderednodes = new ArrayList<>();
-		Utils.traverseBinaryTree(nik, orderednodes);
+	/**
+	 * The function converts the list of objects to stream fetching the data from iterator
+	 * @param niks
+	 * @param cache
+	 * @return list of object to stream
+	 */
+	public static Stream<?> getStreamData(List<NodeIndexKey> niks, Cache<String, byte[]> cache) {
 		boolean iscachenonempty = nonNull(cache);
 		try {
 			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
 					Spliterator.IMMUTABLE | Spliterator.ORDERED | Spliterator.NONNULL) {				
 				Kryo kryo = Utils.getKryo();					
 				public boolean tryAdvance(Consumer<? super Object> action) {
-					List<NodeIndexKey> orderednodesinternal = orderednodes;
+					List<NodeIndexKey> orderednodesinternal = niks;
 					Map<String, Input> keyinputmap = new ConcurrentHashMap<>();
 					Map<String, SnappyInputStream> keysismap = new ConcurrentHashMap<>();
 					Map<String, List> cachekeylistmap = new ConcurrentHashMap<>();
@@ -2813,17 +2813,27 @@ public class Utils {
 					} else {
 						formSortedBinaryTree(root.getLeft(),child, rfcs);
 					}
-				} else if(compare(root.getKey(), child.getKey(), rfcs)<0){
+				} 
+				if(compare(root.getKey(), child.getKey(), rfcs)<0){
 					if(isNull(root.getRight())) {
 						root.setRight(child);
 					} else { 
 						formSortedBinaryTree(root.getRight(),child, rfcs);
 					}
-				} else {
+				} 
+				if(compare(root.getKey(), child.getKey(), rfcs)==0) {
 					if(rand.nextBoolean()) {
-						formSortedBinaryTree(root.getLeft(),child, rfcs);
+						if(isNull(root.getLeft())) {
+							root.setLeft(child);
+						} else {
+							formSortedBinaryTree(root.getLeft(),child, rfcs);
+						}
 					} else {
-						formSortedBinaryTree(root.getRight(),child, rfcs);
+						if(isNull(root.getRight())) {
+							root.setRight(child);
+						} else { 
+							formSortedBinaryTree(root.getRight(),child, rfcs);
+						}
 					}
 				}
 			}
@@ -2916,6 +2926,17 @@ public class Utils {
 		}
 		actors.clear();
 		return true;
+	}
+	
+	/**
+	 * The function nullify the left and right nodes to serialize object without stackoverflow error.
+	 * @param niks
+	 */
+	public static void NullifyLeftAndRightNikTree(List<NodeIndexKey> niks) {
+		niks.stream().forEach(nik->{
+			nik.setLeft(null);
+			nik.setRight(null);
+		});
 	}
 	
 }

@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -112,6 +113,9 @@ public class ProcessDistributedSort extends AbstractActor {
 						}
 					}
 				}
+				List<NodeIndexKey> rootniks = new ArrayList<>();
+				Utils.traverseBinaryTree(root, rootniks);
+				Utils.NullifyLeftAndRightNikTree(rootniks);
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					NodeIndexKey rootnik = root;
 					childpipes.stream().forEach(downstreampipe -> {
@@ -119,7 +123,7 @@ public class ProcessDistributedSort extends AbstractActor {
 					});
 				} else {
 					cache.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
-						+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), Utils.convertObjectToBytesCompressed(root, null));
+						+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), Utils.convertObjectToBytesCompressed(rootniks, null));
 				}
 				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
 				+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);

@@ -85,7 +85,6 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 	}
 
 	private ProcessCoalesce processCoalesce(OutputObject object) throws Exception {
-		log.info("In Process Coalesce {}", object.getValue());
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {			
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				if (dsl.isSpilled()) {
