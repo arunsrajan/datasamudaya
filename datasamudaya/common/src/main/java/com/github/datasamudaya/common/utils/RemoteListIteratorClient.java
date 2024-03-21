@@ -42,12 +42,12 @@ public class RemoteListIteratorClient<T> implements Iterator<T>, Closeable {
 	private Output output;
 	private int sorterport;
 	private Task task;
-	
+	private RequestType requesttype;
 	Socket socket;
 	Kryo kryo = Utils.getKryo();
 	RemoteListIteratorHasNext hasnext = new RemoteListIteratorHasNext();
 	RemoteListIteratorNext nextelem = new RemoteListIteratorNext();
-	public RemoteListIteratorClient(Task task, List<FieldCollationDirection> fcsc) throws Exception {
+	public RemoteListIteratorClient(Task task, List<FieldCollationDirection> fcsc, RequestType requesttype) throws Exception {
 		try {			
 			log.info("Trying to split host and port {}", task.getHostport());
 			String[] hostport = task.getHostport().split(DataSamudayaConstants.UNDERSCORE);
@@ -62,6 +62,8 @@ public class RemoteListIteratorClient<T> implements Iterator<T>, Closeable {
 			this.task = task;
 			kryo.writeClassAndObject(output, new RemoteListIteratorTask(task, fcsc));
 			output.flush();
+			this.requesttype = requesttype;
+			nextelem.setRequestType(requesttype);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -2574,7 +2574,7 @@ public class Utils {
 								cachekeyindexmap.put(node.getCachekey(), cachekeyindexmap.get(node.getCachekey())+1);
 							} else {
 								if(isNull(taskrlistiterclientmap.get(node.getTask()))) {
-									taskrlistiterclientmap.put(node.getTask(), new RemoteListIteratorClient<>(node.getTask(), null));
+									taskrlistiterclientmap.put(node.getTask(), new RemoteListIteratorClient<>(node.getTask(), null, RequestType.ELEMENT));
 								}
 								action.accept(taskrlistiterclientmap.get(node.getTask()).next().getValue());
 							}

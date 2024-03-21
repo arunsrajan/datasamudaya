@@ -23,8 +23,8 @@ import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
-import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
 import com.github.datasamudaya.common.utils.RemoteListIteratorClient;
+import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
@@ -100,14 +100,18 @@ public class ProcessDistributedSort extends AbstractActor {
 							}
 						}
 					} else {
-						try (RemoteListIteratorClient client = new RemoteListIteratorClient(predecessor, fcsc)) {
+						try (RemoteListIteratorClient client = new RemoteListIteratorClient(predecessor, fcsc, RequestType.LIST)) {
 							while (client.hasNext()) {
-								NodeIndexKey nik = (NodeIndexKey) client.next();
-								nik.setTask(predecessor);
-								if (isNull(root)) {
-									root = nik;
-								} else {
-									Utils.formSortedBinaryTree(root, nik, fcsc);
+								log.info("Getting Next List From Remote Server");
+								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils.convertBytesToObjectCompressed((byte[]) client.next(), null);
+								log.info("Next List From Remote Server with size {}", niks.size());
+								for(NodeIndexKey nik:niks) {
+									nik.setTask(predecessor);
+									if (isNull(root)) {
+										root = nik;
+									} else {
+										Utils.formSortedBinaryTree(root, nik, fcsc);
+									}
 								}
 							}
 						}

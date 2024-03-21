@@ -1,7 +1,7 @@
 package com.github.datasamudaya.common.utils;
 
-import static java.util.Objects.nonNull;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,8 +27,6 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.Task;
-
-import net.jpountz.lz4.LZ4BlockOutputStream;
 
 /**
  * The class iterates the list from cache which is a remote server.
@@ -95,30 +94,23 @@ public class RemoteListIteratorServer<T> {
 									currentList = (List) kryo.readClassAndObject(inputfile);
 									indexperlist = 0;									
 								}
-								Object objfromfile = currentList.get(indexperlist);
-								NodeIndexKey nik = new NodeIndexKey();
-								if(objfromfile instanceof Tuple2 tup2) {
-									nik.setIndex(totindex);
-									nik.setNode(task.getHostport());
-									if(nonNull(lfcds)) {
-										nik.setKey(Utils.getKeyFromNodeIndexKey(lfcds, (Object[]) tup2.v1()));
-									} else {
-										nik.setValue(objfromfile);
+								if (rlin.getRequestType() == RequestType.ELEMENT) {
+									Object objfromfile = currentList.get(indexperlist);
+									kryo.writeClassAndObject(output, getObjectToNik(lfcds, totindex, task, objfromfile));
+									output.flush();
+									indexperlist++;
+									totindex++;
+								} else if (rlin.getRequestType() == RequestType.LIST) {
+							        // Send the entire list
+									List<NodeIndexKey> niks = new ArrayList<>();
+									for(Object obj:currentList) {
+										niks.add(getObjectToNik(lfcds, totindex, task, obj));
+										totindex++;
 									}
-								} else {
-									nik.setIndex(totindex);
-									nik.setNode(task.getHostport());
-									if(nonNull(lfcds)) {
-										nik.setKey(Utils.getKeyFromNodeIndexKey(lfcds, (Object[]) objfromfile));
-									}
-									else {
-										nik.setValue(objfromfile);
-									}
-								}
-								kryo.writeClassAndObject(output, nik);
-								output.flush();
-								indexperlist++;
-								totindex++;
+							        kryo.writeClassAndObject(output, Utils.convertObjectToBytesCompressed(niks, null));
+							        output.flush();
+							        indexperlist = currentList.size(); // Ensure we mark as done
+							    }
 							}
 						}
 					} catch (Exception e) {
@@ -151,4 +143,28 @@ public class RemoteListIteratorServer<T> {
 		}
 		return null;
 	}
+	
+	protected NodeIndexKey getObjectToNik(List<FieldCollationDirection> lfcds, int totindex, Task task, Object objfromfile) {
+		NodeIndexKey nik = new NodeIndexKey();
+		if(objfromfile instanceof Tuple2 tup2) {
+			nik.setIndex(totindex);
+			nik.setNode(task.getHostport());
+			if(nonNull(lfcds)) {
+				nik.setKey(Utils.getKeyFromNodeIndexKey(lfcds, (Object[]) tup2.v1()));
+			} else {
+				nik.setValue(objfromfile);
+			}
+		} else {
+			nik.setIndex(totindex);
+			nik.setNode(task.getHostport());
+			if(nonNull(lfcds)) {
+				nik.setKey(Utils.getKeyFromNodeIndexKey(lfcds, (Object[]) objfromfile));
+			}
+			else {
+				nik.setValue(objfromfile);
+			}
+		}
+		return nik;
+	}
+	
 }
