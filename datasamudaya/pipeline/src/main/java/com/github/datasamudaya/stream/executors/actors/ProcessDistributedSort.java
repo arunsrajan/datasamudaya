@@ -22,6 +22,7 @@ import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.utils.BTree;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.RemoteListIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
@@ -75,6 +76,7 @@ public class ProcessDistributedSort extends AbstractActor {
 				List<FieldCollationDirection> fcsc = (List<FieldCollationDirection>) tasktoprocess.getFcsc();
 				Kryo kryo = Utils.getKryo();
 				NodeIndexKey root = null;
+				BTree btree = new BTree(1000);
 				for (Task predecessor : predecessors) {
 					if (isNull(predecessor.getHostport())) {
 						String key = Utils.getIntermediateResultFS(predecessor);
@@ -107,18 +109,14 @@ public class ProcessDistributedSort extends AbstractActor {
 								log.info("Next List From Remote Server with size {}", niks.size());
 								for(NodeIndexKey nik:niks) {
 									nik.setTask(predecessor);
-									if (isNull(root)) {
-										root = nik;
-									} else {
-										Utils.formSortedBinaryTree(root, nik, fcsc);
-									}
+									btree.insert(nik, fcsc);
 								}
 							}
 						}
 					}
 				}
 				List<NodeIndexKey> rootniks = new ArrayList<>();
-				Utils.traverseBinaryTree(root, rootniks);
+				btree.traverse(rootniks);
 				Utils.NullifyLeftAndRightNikTree(rootniks);
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					NodeIndexKey rootnik = root;

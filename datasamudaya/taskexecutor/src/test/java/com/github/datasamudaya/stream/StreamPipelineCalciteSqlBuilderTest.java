@@ -1453,6 +1453,30 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 	@SuppressWarnings({"unchecked"})
 	@Test
+	public void testFlightsDistinctUniqueCarrierFlightnumOriginDest() throws Exception {
+		log.info("In testFlightsDistinctUniqueCarrierFlightnumOriginDest() method Entry");
+		String statement = "select distinct uniquecarrier,flightnum,origin,dest from airlines order by uniquecarrier,flightnum,origin,dest";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		int sum = 0;
+
+		for (List<Object[]> recs : records) {
+			sum += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+			}
+		}
+		log.info(sum);
+		assertNotEquals(0, sum);
+		log.info("In testFlightsDistinctUniqueCarrierFlightnumOriginDest() method Exit");
+	}
+	
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
 	public void testFlightsDistinctUniqueCarrierWithWhere() throws Exception {
 		log.info("In testFlightsDistinctUniqueCarrierWithWhere() method Entry");
 		String statement = "SELECT distinct airlines.UniqueCarrier from airlines where airlines.UniqueCarrier <> 'UniqueCarrier'";
