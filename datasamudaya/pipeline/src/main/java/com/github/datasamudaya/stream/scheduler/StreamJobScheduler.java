@@ -2291,9 +2291,10 @@ public class StreamJobScheduler {
 										stageoutput.add(larrayobj);
 									}
 								} else {
-									stageoutput.add(result);
 									if(nonNull(out)) {
 										totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
+									} else {
+										stageoutput.add(result);
 									}
 								}								
 							} else {
