@@ -23,6 +23,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.OutputObject;
@@ -49,7 +50,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	private transient Runtime rt;
 	private String diskfilepath;
 	private boolean isspilled;
-	private int batchsize = 2000;
+	private int batchsize;
 	private Task task;
 	private boolean left;
 	private boolean right;
@@ -73,7 +74,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataList = new ArrayList<>();
 		rt = Runtime.getRuntime();
-		totalmemoryavailable = rt.maxMemory() * spillexceedpercentage / 100;
+		totalmemoryavailable = (long) (rt.maxMemory() * ((100 - spillexceedpercentage) / 100.0));
 		this.left = left;
 		this.right = right;
 		this.appendintermediate = appendintermediate;
@@ -82,6 +83,8 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		this.filepartids = filepartids;
 		this.numfileperexec = numfileperexec;
 		this.lock = new Semaphore(1);
+		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE, 
+				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
 	}
 
 	/**
@@ -280,6 +283,16 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		dataList.clear();
 	}
 
+	@Override
+	public void clear() {
+		if (nonNull(bytes)) {
+			bytes = null;
+		} else if (isspilled && CollectionUtils.isNotEmpty(dataList)) {
+			dataList.clear();
+			dataList = null;
+		}
+	}
+	
 	@Override
 	public int size() {
 		if (nonNull(bytes)) {

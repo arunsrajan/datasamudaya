@@ -37,6 +37,7 @@ import org.xerial.snappy.SnappyOutputStream;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.HdfsBlockReader;
@@ -88,7 +89,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 	ExecutorService executor;
 	private final boolean topersist = false;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-
+	int diskspillpercentage;
 	protected List getFunctions() {
 		log.debug("Entered ProcessMapperByBlocksLocation.getFunctions");
 		var tasks = jobstage.getStage().tasks;
@@ -108,6 +109,8 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.iscacheable = true;
 		this.tasktoprocess = tasktoprocess;
+		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 	}
 
 	public static record BlocksLocationRecord(BlocksLocation bl, FileSystem hdfs,
@@ -283,12 +286,13 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 
 				if (MapUtils.isNotEmpty(blr.pipeline)) {
 					int numfilepart = blr.pipeline.keySet().size();
-					int numfileperexec = 3;
+					int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+							DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
 					Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap).collect(
 							Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 									Collectors.mapping(tup2 -> tup2,
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
-													DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
+													diskspillpercentage,
 													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, blr.pipeline.size())))));
 					results.entrySet().forEach(entry -> {
 						try {
@@ -307,7 +311,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					});
 				} else if (CollectionUtils.isNotEmpty(blr.childactors)) {
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
-							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
+							diskspillpercentage, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);
 					diskspilllist.close();
 					blr.childactors().stream().forEach(
@@ -317,7 +321,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 
 				} else {
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
-							DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, left, right, null, null, 0);
+							diskspillpercentage, null, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);
 					diskspilllist.close();
 					Stream datastream = diskspilllist.isSpilled()

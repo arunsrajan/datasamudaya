@@ -3806,7 +3806,8 @@ public class SQLUtils {
 			exectaskactor.getTask().setTeid(teid);
 			log.info("Processing Blocks {} actors {}", exectaskactor.getTask().getInput(),
 					exectaskactor.getTask().getActorselection());
-			int totalfilepartspernode = 3;
+			int totalfilepartspernode = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+					DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
 			int indexfilepartpernode = 0;
 			List<ActorSelection> childactors = new ArrayList<>();
 			if (CollectionUtils.isNotEmpty(exectaskactor.getChildtaskactors())) {

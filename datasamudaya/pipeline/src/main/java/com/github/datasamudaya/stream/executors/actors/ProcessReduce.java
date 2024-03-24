@@ -23,6 +23,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
@@ -60,6 +61,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 	int terminatingsize;
 	int initialsize;
 	DiskSpillingList diskspilllist;
+	int diskspillpercentage;
 
 	protected List getFunctions() {
 		log.debug("Entered ProcessReduce");
@@ -83,6 +85,8 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 		this.tasktoprocess = tasktoprocess;
 		this.childpipes = childpipes;
 		this.terminatingsize = terminatingsize;
+		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 	}
 
 	@Override
@@ -122,7 +126,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				} else {
 					log.info("Reduce Started");
-					diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
+					diskspilllist = new DiskSpillingList(tasktoprocess, diskspillpercentage,
 							DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
 					Map<Integer, String> filemap = (Map<Integer, String>) object.getValue();
 					final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false

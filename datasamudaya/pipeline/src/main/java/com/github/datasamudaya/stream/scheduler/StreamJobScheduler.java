@@ -1920,7 +1920,8 @@ public class StreamJobScheduler {
 				partitionindex++;
 				Map<Integer, FilePartitionId> filepartitionsid = new ConcurrentHashMap<>();
 				Map<String, StreamPipelineTaskSubmitter> taskexecshuffleblockmap = new ConcurrentHashMap<>();
-				int nooffilepartitions = 3;
+				int nooffilepartitions = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+						DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
 				int startrange = 0;
 				int endrange = nooffilepartitions;
 				List<StreamPipelineTaskSubmitter> parents = outputparent1;

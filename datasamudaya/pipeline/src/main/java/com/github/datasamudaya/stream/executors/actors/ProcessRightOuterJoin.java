@@ -20,6 +20,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
@@ -82,6 +83,7 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 	DiskSpillingList diskspilllistinterm;
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
+	int diskspillpercentage;
 
 	private ProcessRightOuterJoin(RightOuterJoinPredicate rojp, List<ActorSelection> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
@@ -91,8 +93,10 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false, null, null, 0);
-		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false, null, null, 0);
+		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
+		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
+		diskspilllistinterm = new DiskSpillingList(task, diskspillpercentage, null, true, false, false, null, null, 0);
 	}
 
 	@Override
@@ -105,7 +109,7 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 	private ProcessRightOuterJoin processRightOuterJoin(OutputObject oo) throws Exception {
 		if (oo.isLeft()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
-				diskspilllistintermleft = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, true, false, null, null, 0);
+				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
 				} else {
@@ -114,7 +118,7 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 			}
 		} else if (oo.isRight()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
-				diskspilllistintermright = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, true, null, null, 0);
+				diskspilllistintermright = new DiskSpillingList(task, diskspillpercentage, null, true, false, true, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
 				} else {

@@ -587,8 +587,16 @@ public class DataSamudayaConstants {
 	public static final String INTERMEDIATE = "intermediate";
 	public static final String INTERMEDIATEJOINLEFT = "intermediateleft";
 	public static final String INTERMEDIATEJOINRIGHT = "intermediateright";
-	public static final int SPILLTODISK_PERCENTAGE = 60;
+	public static final String SPILLTODISK_PERCENTAGE = "disk.spill.percentage";
+	public static final String SPILLTODISK_PERCENTAGE_DEFAULT = "80";
 	public static final String AKKA_HOST = "akka.host";
 	public static final String AKKA_HOST_DEFAULT = "127.0.0.1";
 	public static final String AKKA_URL_SCHEME = "akka";
+	
+	public static final String TOTALFILEPARTSPEREXEC = "disk.spill.file.parts.per.exec";
+	public static final String TOTALFILEPARTSPEREXEC_DEFAULT = "4";
+	public static final String DISKSPILLDOWNSTREAMBATCHSIZE = "disk.spill.downstream.batch.size";
+	public static final String DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT = "10000";
+	public static final String BTREEELEMENTSNUMBER = "btree.elements.number";
+	public static final String BTREEELEMENTSNUMBER_DEFAULT = "10000";
 }

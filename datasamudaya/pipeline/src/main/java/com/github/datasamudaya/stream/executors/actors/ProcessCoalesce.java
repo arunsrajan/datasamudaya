@@ -24,6 +24,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
@@ -73,8 +74,10 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspilllistinterm = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false, null, null, 0);
-		diskspilllist = new DiskSpillingList(task, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false, null, null, 0);
+		int diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
+		diskspilllistinterm = new DiskSpillingList(task, diskspillpercentage, null, true, false, false, null, null, 0);
+		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
 	}
 
 	@Override
@@ -92,6 +95,7 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 				} else {
 					diskspilllistinterm.addAll(dsl.readListFromBytes());
 				}
+				dsl.clear();
 			}
 			if(object.getTerminiatingclass() == Dummy.class) {
 				initialsize++;

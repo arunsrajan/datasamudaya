@@ -99,6 +99,8 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 				try {
 					Object obj = sb.getData();
 					Output output = outputstream.get(fpid.getPartitionNumber());
+					sb.setData(null);
+					sb.setPartitionId(null);
 					if (obj instanceof DiskSpillingList dsl) {
 						if (dsl.isSpilled()) {
 							Utils.copySpilledDataSourceToFileShuffle(dsl, output);
@@ -106,6 +108,7 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 							Utils.getKryo().writeClassAndObject(output, dsl.readListFromBytes());
 							output.flush();
 						}
+						dsl.clear();
 					} else {
 						Utils.getKryo().writeClassAndObject(output, Utils.convertBytesToObject((byte[]) obj));
 						output.flush();

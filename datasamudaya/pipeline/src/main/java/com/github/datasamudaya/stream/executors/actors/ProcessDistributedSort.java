@@ -17,6 +17,7 @@ import org.xerial.snappy.SnappyInputStream;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
@@ -47,7 +48,7 @@ public class ProcessDistributedSort extends AbstractActor {
 	Cache cache;
 	JobStage js;
 	private boolean iscacheable = true;
-
+	int btreesize;
 	public ProcessDistributedSort(JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<ActorSelection> childpipes, int terminatingsize) {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -56,6 +57,8 @@ public class ProcessDistributedSort extends AbstractActor {
 		this.childpipes = childpipes;
 		this.cache = cache;
 		this.js = js;
+		this.btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.BTREEELEMENTSNUMBER, 
+				DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 	}
 
 	@Override
@@ -67,6 +70,7 @@ public class ProcessDistributedSort extends AbstractActor {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				initialsize++;
+				dsl.clear();
 			}
 			if (initialsize == terminatingsize) {
 				log.info("processDistributedSort::Started InitialSize {} , Terminating Size {}", initialsize,
@@ -76,7 +80,7 @@ public class ProcessDistributedSort extends AbstractActor {
 				List<FieldCollationDirection> fcsc = (List<FieldCollationDirection>) tasktoprocess.getFcsc();
 				Kryo kryo = Utils.getKryo();
 				NodeIndexKey root = null;
-				BTree btree = new BTree(1000);
+				BTree btree = new BTree(btreesize);
 				for (Task predecessor : predecessors) {
 					if (isNull(predecessor.getHostport())) {
 						String key = Utils.getIntermediateResultFS(predecessor);

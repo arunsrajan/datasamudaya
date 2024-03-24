@@ -24,6 +24,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.JobStage;
@@ -70,7 +71,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 	Map<Integer, FilePartitionId> shufflerectowrite;
 	Map<Integer, ActorSelection> pipeline;
 	Map<Integer, ActorSelection> actorselections;
-
+	int diskspillpercentage;
 	protected List getFunctions() {
 		log.debug("Entered ProcessMapperByStream");
 		var tasks = jobstage.getStage().tasks;
@@ -96,8 +97,10 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 		this.childpipes = childpipes;
 		this.shufflerectowrite = shufflerectowrite;
 		this.terminatingsize = terminatingsize;
-		diskspilllistinterm = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, true, false, false, null, null, 0);
-		diskspilllist = new DiskSpillingList(tasktoprocess, DataSamudayaConstants.SPILLTODISK_PERCENTAGE, null, false, false, false, null, null, 0);
+		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
+		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, true, false, false, null, null, 0);
+		diskspilllist = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, false, false, false, null, null, 0);
 		this.pipeline = pipeline;
 		this.actorselections = actorselections;
 	}
@@ -118,6 +121,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 				} else {					
 					diskspilllistinterm.addAll(dsl.readListFromBytes());
 				}
+				dsl.clear();
 			}
 			if(object.getTerminiatingclass() == DiskSpillingList.class) {
 				initialsize++;
@@ -178,7 +182,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 												(Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 												Collectors.mapping(tup2 -> tup2,
 														Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
-																DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
+																diskspillpercentage,
 																Utils.getUUID().toString(), false, leftvalue, rightvalue,
 																null, null, 0)))));
 								pipeline.entrySet().stream().forEach(entry -> entry.getValue().tell(
