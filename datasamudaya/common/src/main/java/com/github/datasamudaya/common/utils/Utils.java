@@ -255,7 +255,7 @@ public class Utils {
 
 	static {
 		for (MemoryPoolMXBean mpBean : ManagementFactory.getMemoryPoolMXBeans()) {
-			if (mpBean.getType() == MemoryType.HEAP) {
+			if (mpBean.getType() == MemoryType.HEAP && mpBean.isUsageThresholdSupported()) {
 				mpBeanLocalToJVM = mpBean;
 				break;
 			}

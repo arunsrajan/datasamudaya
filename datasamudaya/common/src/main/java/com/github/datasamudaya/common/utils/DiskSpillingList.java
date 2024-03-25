@@ -73,7 +73,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataList = new ArrayList<>();
 		rt = Runtime.getRuntime();
-		Utils.mpBeanLocalToJVM.setUsageThreshold((long) (rt.maxMemory() * ((spillexceedpercentage) / 100.0)));
+		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((spillexceedpercentage) / 100.0)));
 		this.left = left;
 		this.right = right;
 		this.appendintermediate = appendintermediate;
