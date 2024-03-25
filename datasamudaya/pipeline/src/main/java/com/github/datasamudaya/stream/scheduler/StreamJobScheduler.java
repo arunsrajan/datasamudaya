@@ -634,10 +634,10 @@ public class StreamJobScheduler {
 			try {
 				JobStage js = (JobStage) jsidjsmap.get(key);
 				if (nonNull(js)) {
-					js.setTejobid(finaljobid);
-				}
-				for (String te : jobexecutorsmap.get(key)) {
-					Utils.getResultObjectByInput(te, js, finaljobid);
+					js.setTejobid(finaljobid);				
+					for (String te : jobexecutorsmap.get(key)) {
+						Utils.getResultObjectByInput(te, js, finaljobid);
+					}
 				}
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);

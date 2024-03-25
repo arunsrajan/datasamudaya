@@ -618,6 +618,30 @@ public class SQLUtils {
 				return Math.pow(pfv, powval);
 			} else if (value instanceof Integer piv && powerval instanceof Integer powval) {
 				return Math.pow(piv, powval);
+			} else if (value instanceof Double pdv && powerval instanceof Double powval) {
+				return Math.pow(pdv, powval);
+			} else if (value instanceof Long plv && powerval instanceof Double powval) {
+				return Math.pow(plv, powval);
+			} else if (value instanceof Float pfv && powerval instanceof Double powval) {
+				return Math.pow(pfv, powval);
+			} else if (value instanceof Integer piv && powerval instanceof Double powval) {
+				return Math.pow(piv, powval);
+			} else if (value instanceof Double pdv && powerval instanceof Float powval) {
+				return Math.pow(pdv, powval);
+			} else if (value instanceof Long plv && powerval instanceof Float powval) {
+				return Math.pow(plv, powval);
+			} else if (value instanceof Float pfv && powerval instanceof Float powval) {
+				return Math.pow(pfv, powval);
+			} else if (value instanceof Integer piv && powerval instanceof Float powval) {
+				return Math.pow(piv, powval);
+			} else if (value instanceof Double pdv && powerval instanceof Long powval) {
+				return Math.pow(pdv, powval);
+			} else if (value instanceof Long plv && powerval instanceof Long powval) {
+				return Math.pow(plv, powval);
+			} else if (value instanceof Float pfv && powerval instanceof Long powval) {
+				return Math.pow(pfv, powval);
+			} else if (value instanceof Integer piv && powerval instanceof Long powval) {
+				return Math.pow(piv, powval);
 			} else {
 				return 0;
 			}
@@ -2275,7 +2299,7 @@ public class SQLUtils {
 			isDistinct.set(selectNode.isDistinct());
 		}
 		RelNode relTree = optimizer.convert(sqlTree);
-		RuleSet rules = RuleSets.ofList(CoreRules.FILTER_TO_CALC, CoreRules.PROJECT_TO_CALC,
+		RuleSet rules = RuleSets.ofList(CoreRules.FILTER_TO_CALC, CoreRules.PROJECT_TO_CALC, CoreRules.FILTER_MERGE,
 				CoreRules.FILTER_CALC_MERGE, CoreRules.PROJECT_CALC_MERGE, CoreRules.AGGREGATE_PROJECT_MERGE,
 				CoreRules.PROJECT_FILTER_VALUES_MERGE, EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
 				EnumerableRules.ENUMERABLE_PROJECT_RULE, EnumerableRules.ENUMERABLE_FILTER_RULE,
@@ -3380,6 +3404,9 @@ public class SQLUtils {
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "ceil");
 			case "floor":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "floor");
+			case "power":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values),
+						evaluateRexNode(call.getOperands().get(1), values), "pow");
 			case "pow":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values),
 						evaluateRexNode(call.getOperands().get(1), values), "pow");
@@ -3461,6 +3488,13 @@ public class SQLUtils {
 			// Add more cases for other node types as needed
 
 		default:
+			if(CollectionUtils.isEmpty(((RexCall) rexNode).getOperands())) {
+				if(((RexCall) rexNode).getOperator() instanceof SqlFunction sqlfunc) {
+					if(sqlfunc.getName().startsWith("currentisodate")) {
+						return SqlTypeName.CHAR;
+					}
+				}
+			}
 			// Traverse the children
 			for (RexNode operand : ((RexCall) rexNode).getOperands()) {
 				SqlTypeName operandType = findGreatestType(operand);
@@ -3845,7 +3879,7 @@ public class SQLUtils {
 				}
 			}
 			Task tasktoexecute = exectaskactor.getTask();
-			log.info("Task Executed {}", tasktoexecute);
+			log.info("Task Executed {} with status {}", tasktoexecute, jobidstageidtaskidcompletedmap);
 			tasktoexecute.taskstatus = TaskStatus.COMPLETED;
 			tasktoexecute.tasktype = TaskType.EXECUTEUSERTASK;
 			return tasktoexecute;

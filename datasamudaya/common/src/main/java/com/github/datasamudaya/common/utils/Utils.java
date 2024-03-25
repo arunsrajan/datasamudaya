@@ -251,7 +251,7 @@ public class Utils {
 	private Utils() {
 	}
 
-	static MemoryPoolMXBean mpBeanLocalToJVM;
+	public static MemoryPoolMXBean mpBeanLocalToJVM;
 
 	static {
 		for (MemoryPoolMXBean mpBean : ManagementFactory.getMemoryPoolMXBeans()) {

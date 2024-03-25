@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,16 +58,23 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 	@BeforeClass
 	public static void pipelineSetup() throws Exception, Throwable {
-		pipelineconfig.setLocal("true");
+		pipelineconfig.setLocal("false");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
 		if ("false".equals(pipelineconfig.getLocal())) {
 			pipelineconfig.setUseglobaltaskexecutors(true);
 			String teid = Utils.getUUID();
-			Utils.launchContainersUserSpec("arun", teid, 6, 4096, 2);
+			Utils.launchContainersUserSpec("arun", teid, 6, 1000, 1);
 			pipelineconfig.setTejobid(teid);
 			pipelineconfig.setUser("arun");
+		}
+	}
+	
+	@After
+	public void resetJobId() {
+		if ("false".equals(pipelineconfig.getLocal())) {
+			pipelineconfig.setJobid(null);
 		}
 	}
 

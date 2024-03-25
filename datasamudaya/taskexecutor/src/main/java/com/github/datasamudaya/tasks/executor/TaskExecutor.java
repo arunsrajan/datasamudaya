@@ -267,7 +267,7 @@ public class TaskExecutor implements Callable<Object> {
 				var taskexecutor =
 						jobstageexecutormap.get(rdf.getJobid() + rdf.getStageid() + rdf.getTaskid());
 				var mdstde = (StreamPipelineTaskExecutor) taskexecutor;
-				log.info("Task Executor Remote Data Fetch {}", taskexecutor);
+				log.info("Task Executor Remote Data Fetch {} Mode {} Storage {}", taskexecutor, rdf.getMode(), rdf.getStorage());
 				if (rdf.getMode().equals(DataSamudayaConstants.STANDALONE)) {
 					if (rdf.getStorage() == STORAGE.COLUMNARSQL) {
 						var path = Utils.getIntermediateInputStreamRDF(rdf);

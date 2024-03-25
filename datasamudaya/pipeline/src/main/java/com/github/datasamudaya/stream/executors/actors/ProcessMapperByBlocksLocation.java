@@ -283,11 +283,12 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 			try (var streammap = (BaseStream) StreamUtils.getFunctionsToStream(getFunctions(),
 					intermediatestreamobject);) {
 				List out;
-
+				
+				int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+						DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+				log.info("Number Of Shuffle Files PerExecutor {}", numfileperexec);
 				if (MapUtils.isNotEmpty(blr.pipeline)) {
 					int numfilepart = blr.pipeline.keySet().size();
-					int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
-							DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
 					Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap).collect(
 							Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 									Collectors.mapping(tup2 -> tup2,
@@ -320,23 +321,26 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 							action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class), ActorRef.noSender()));
 
 				} else {
+					log.info("Processing Mapper Task In Writing To Cache Started ...");
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
-							diskspillpercentage, null, false, left, right, null, null, 0);
+							diskspillpercentage, null, false, left, right, null, null, numfileperexec);
 					((Stream) streammap).forEach(diskspilllist::add);
+					log.info("Processing Mapper Disk Spill Close ...");
 					diskspilllist.close();
+					log.info("Writing To Cache Started with spilled? {}...",diskspilllist.isSpilled());
 					Stream datastream = diskspilllist.isSpilled()
 							? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
 							Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, false, false, false)))
-							: diskspilllist.getData().stream();
+							: diskspilllist.readListFromBytes().stream();
 					Utils.getKryo().writeClassAndObject(output, datastream.collect(Collectors.toList()));
 					output.flush();
 					tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 					cacheAble(fsdos);
-					diskspilllist.getData().clear();
+					diskspilllist.clear();
+					log.info("Writing To Cache Ended with total bytes {}...", fsdos.toByteArray().length);
 				}
-				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				log.info("Map assembly concluded");
-				tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
+				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);				
 				log.debug("Exiting ProcessMapperByBlocksLocation.processBlocksLocationRecord");
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 				log.debug("Time taken to compute the Map Task is " + timetaken + " seconds");

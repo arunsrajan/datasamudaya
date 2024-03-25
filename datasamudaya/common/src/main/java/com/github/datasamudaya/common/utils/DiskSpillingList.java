@@ -46,7 +46,6 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 
 	private List dataList;
 	private byte[] bytes;
-	private long totalmemoryavailable;
 	private transient Runtime rt;
 	private String diskfilepath;
 	private boolean isspilled;
@@ -74,7 +73,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataList = new ArrayList<>();
 		rt = Runtime.getRuntime();
-		totalmemoryavailable = (long) (rt.maxMemory() * ((100 - spillexceedpercentage) / 100.0));
+		Utils.mpBeanLocalToJVM.setUsageThreshold((long) (rt.maxMemory() * ((spillexceedpercentage) / 100.0)));
 		this.left = left;
 		this.right = right;
 		this.appendintermediate = appendintermediate;
@@ -209,7 +208,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 			if (isNull(rt)) {
 				rt = Runtime.getRuntime();
 			}
-			if ((rt.freeMemory() < totalmemoryavailable
+			if ((Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()
 					|| isspilled) && CollectionUtils.isNotEmpty(dataList)) {
 				if (isNull(ostream)) {
 					isspilled = true;
@@ -218,7 +217,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 					op = new Output(sos);
 					kryo = Utils.getKryo();
 				}
-				if (rt.freeMemory() < totalmemoryavailable && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {
+				if (Utils.mpBeanLocalToJVM.isUsageThresholdExceeded() && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {
 					kryo.writeClassAndObject(op, dataList);
 					op.flush();
 					dataList.clear();
