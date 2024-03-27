@@ -3,6 +3,8 @@ package com.github.datasamudaya.common.utils;
 import java.io.Serializable;
 import java.util.List;
 
+import org.apache.commons.lang3.SerializationUtils;
+
 import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.NodeIndexKey;
 
@@ -107,7 +109,10 @@ public class BTreeNode implements Serializable{
             if (!leaf) {
                 C[i].traverse(niks);
             }
-            niks.add(keys[i]);
+            NodeIndexKey nik = SerializationUtils.clone(keys[i]);
+            nik.setLeft(null);
+            nik.setRight(null);
+            niks.add(nik);
         }
         if (!leaf) {
             C[n].traverse(niks);

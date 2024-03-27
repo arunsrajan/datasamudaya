@@ -568,7 +568,7 @@ public class PigUtils {
 					private static final long serialVersionUID = 6329566708048046421L;
 					List<FunctionParams> nonagg = new ArrayList<>(nonaggfunctions);
 					LogicalExpression[] grpby = headers;
-
+					List<String> aliasorcols = aliasorcolumns;
 					@Override
 					public Object[] apply(Object[] mapvalues) {
 						Object[] nonaggfnvalues = new Object[2];
@@ -578,7 +578,7 @@ public class PigUtils {
 						if (nonNull(grpby) && grpby.length > 0) {
 							for (LogicalExpression grpobj : grpby) {
 								try {
-									grpbyfnvalues[index] = evaluateBinaryExpression(grpobj, mapvalues, null, aliasorcolumns);
+									grpbyfnvalues[index] = evaluateBinaryExpression(grpobj, mapvalues, null, aliasorcols);
 									valuestoconsider[index] = true;
 								} catch (Exception e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
@@ -589,7 +589,7 @@ public class PigUtils {
 						for (FunctionParams fn : nonagg) {
 							Object value = null;
 							try {
-								value = evaluateBinaryExpression(fn.getParams(), mapvalues, fn.getFunctionName(), aliasorcolumns);
+								value = evaluateBinaryExpression(fn.getParams(), mapvalues, fn.getFunctionName(), aliasorcols);
 								valuestoconsider[index] = true;
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);

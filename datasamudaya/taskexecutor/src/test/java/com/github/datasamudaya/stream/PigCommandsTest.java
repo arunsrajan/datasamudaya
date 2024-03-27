@@ -53,7 +53,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 		if ("false".equals(pipelineconfig.getLocal())) {
-			Utils.launchContainersUserSpec("arun", tejobid, 4, 500 * DataSamudayaConstants.MB, 1);
+			Utils.launchContainersUserSpec("arun", tejobid, 4, 1000 , 1);
 		}
 	}
 
@@ -169,7 +169,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(29, obj.length);
-				assertTrue((Long) obj[1] > 11 && (Long) obj[2] >= 6);
+				assertTrue((int) obj[1] > 11 && (int) obj[2] >= 6);
 			}
 		}
 		assertEquals(3389, totalrecords);
@@ -208,7 +208,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertTrue((Long) obj[1] > 11 && (Long) obj[2] >= 6 && (Long) obj[3] > 1);
+				assertTrue((int) obj[1] > 11 && (int) obj[2] >= 6 && (int) obj[3] > 1);
 				assertEquals(29, obj.length);
 			}
 		}
@@ -288,7 +288,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertTrue((Long) obj[1] > 11 && (Long) obj[2] >= 6);
+				assertTrue((int) obj[1] > 11 && (int) obj[2] >= 6);
 				assertEquals(29, obj.length);
 			}
 		}
@@ -302,7 +302,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
-				assertTrue((Long) obj[1] > 11 && (Long) obj[2] >= 6 && (Long) obj[3] > 1);
+				assertTrue((int) obj[1] > 11 && (int) obj[2] >= 6 && (int) obj[3] > 1);
 				assertEquals(29, obj.length);
 			}
 		}
@@ -355,7 +355,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(1, obj.length);
-				assertTrue(((long) obj[0] < 1000));
+				assertTrue(((int) obj[0] < 1000));
 			}
 		}
 		assertEquals(1, totalrecords);
@@ -430,7 +430,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(2, obj.length);
-				assertTrue(((Long) obj[1]) < 1000);
+				assertTrue(((int) obj[1]) < 1000);
 			}
 		}
 		assertEquals(1, totalrecords);
@@ -780,7 +780,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(3, obj.length);
-				assertEquals(((long) obj[0]) + ((long) obj[1]), obj[2]);
+				assertEquals(((int) obj[0]) + ((int) obj[1]), obj[2]);
 			}
 		}
 	}
@@ -824,7 +824,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(3, obj.length);
-				assertEquals(((long) obj[0]) * ((long) obj[1]), obj[2]);
+				assertEquals(((int) obj[0]) * ((int) obj[1]), obj[2]);
 			}
 		}
 	}
@@ -988,7 +988,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(2, obj.length);
-				assertEquals(Math.pow(((long) obj[0]), 2), obj[1]);
+				assertEquals(Math.pow(((int) obj[0]), 2), obj[1]);
 			}
 		}
 	}
@@ -1011,7 +1011,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(2, obj.length);
-				assertEquals(Math.ceil(((long) obj[0])), obj[1]);
+				assertEquals(Math.ceil(((int) obj[0])), obj[1]);
 			}
 		}
 	}
@@ -1054,7 +1054,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(2, obj.length);
-				assertEquals(Math.sqrt(((long) obj[0])), obj[1]);
+				assertEquals(Math.sqrt(((int) obj[0])), obj[1]);
 			}
 		}
 	}
@@ -1076,7 +1076,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(2, obj.length);
-				assertEquals(Math.exp(((long) obj[0])), obj[1]);
+				assertEquals(Math.exp(((int) obj[0])), obj[1]);
 			}
 		}
 	}
@@ -1098,7 +1098,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(2, obj.length);
-				assertEquals(Math.log(((long) obj[0])), obj[1]);
+				assertEquals(Math.log(((int) obj[0])), obj[1]);
 			}
 		}
 	}
@@ -1121,7 +1121,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				log.info(Arrays.toString(obj));
 				assertEquals(2, obj.length);
-				assertEquals(Math.exp(((long) obj[0])), obj[1]);
+				assertEquals(Math.exp(((int) obj[0])), obj[1]);
 			}
 		}
 	}

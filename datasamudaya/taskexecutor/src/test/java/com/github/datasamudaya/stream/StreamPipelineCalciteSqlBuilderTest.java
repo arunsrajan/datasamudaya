@@ -58,7 +58,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 	@BeforeClass
 	public static void pipelineSetup() throws Exception, Throwable {
-		pipelineconfig.setLocal("false");
+		pipelineconfig.setLocal("true");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());

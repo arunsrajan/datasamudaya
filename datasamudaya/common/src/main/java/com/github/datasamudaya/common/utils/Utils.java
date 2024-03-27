@@ -2932,8 +2932,8 @@ public class Utils {
 	 * The function nullify the left and right nodes to serialize object without stackoverflow error.
 	 * @param niks
 	 */
-	public static void NullifyLeftAndRightNikTree(List<NodeIndexKey> niks) {
-		niks.stream().forEach(nik->{
+	public static void NullifyLeftAndRightNikTree(DiskSpillingList<NodeIndexKey> niks) {
+		niks.getData().stream().forEach(nik->{
 			nik.setLeft(null);
 			nik.setRight(null);
 		});
