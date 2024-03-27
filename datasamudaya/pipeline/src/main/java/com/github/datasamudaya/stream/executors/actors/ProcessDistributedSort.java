@@ -96,9 +96,9 @@ public class ProcessDistributedSort extends AbstractActor {
 				Kryo kryo = Utils.getKryo();
 				NodeIndexKey root = null;
 				BTree btree = new BTree(btreesize);
-				for (Task predecessor : predecessors) {
-					if (isNull(predecessor.getHostport())) {
-						String key = Utils.getIntermediateResultFS(predecessor);
+				
+					if (isNull(tasktoprocess.getHostport()) || predecessors.size() == 1 || !diskspilllistinterm.isSpilled()) {
+						String key = Utils.getIntermediateResultFS(tasktoprocess);
 						try (Stream<Object[]> datastream = diskspilllistinterm.isSpilled()
 								? (Stream<Object[]>) Utils.getStreamData(new FileInputStream(Utils
 										.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
@@ -106,13 +106,14 @@ public class ProcessDistributedSort extends AbstractActor {
 							AtomicInteger index = new AtomicInteger(0);
 														
 							datastream.forEach(obj-> {
-									NodeIndexKey nik = new NodeIndexKey(predecessor.getHostport(), index.getAndIncrement(),
-											Utils.getKeyFromNodeIndexKey(fcsc, obj), obj, null, null, key, predecessor);
+									NodeIndexKey nik = new NodeIndexKey(tasktoprocess.getHostport(), index.getAndIncrement(),
+											Utils.getKeyFromNodeIndexKey(fcsc, obj), obj, null, null, key, tasktoprocess);
 									btree.insert(nik, fcsc);
 								});
 							
 						}
 					} else {
+						for (Task predecessor : predecessors) {
 						try (RemoteListIteratorClient client = new RemoteListIteratorClient(predecessor, fcsc, RequestType.LIST)) {
 							while (client.hasNext()) {
 								log.info("Getting Next List From Remote Server");

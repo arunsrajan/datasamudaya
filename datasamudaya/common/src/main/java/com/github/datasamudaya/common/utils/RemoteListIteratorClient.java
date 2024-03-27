@@ -37,7 +37,7 @@ public class RemoteListIteratorClient<T> implements Iterator<T>, Closeable {
 	private InputStream inputStream;
 	private LZ4BlockInputStream lbis;
 	private Input input;
-	
+	private boolean isclosed=false;
 	private OutputStream outputStream;
 	private Output output;
 	private int sorterport;
@@ -109,6 +109,11 @@ public class RemoteListIteratorClient<T> implements Iterator<T>, Closeable {
 			log.info("Closing Connection At Client");
 			socket.close();
 		}
-
+		isclosed = true;
 	}
+	
+	public boolean isclosed() {
+		return isclosed;
+	}
+	
 }

@@ -3,7 +3,6 @@ package com.github.datasamudaya.stream.executors.actors;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -23,11 +22,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
-import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -155,24 +151,27 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
 												null, true, false, false)))
 								: diskspilllistinterm.readListFromBytes().stream();
-						Map<Task, RemoteListIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>();
+						Map<String, RemoteListIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>();
 						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
 								datastream.map(nik -> {
 									try {
+										String jstid = Utils.getIntermediateInputStreamTask(nik.getTask());
 										if(isNull(nik.getTask().getHostport())) {
 											return nik.getValue();
 										}
-										if (isNull(taskrlistiterclientmap.get(nik.getTask()))) {
-											taskrlistiterclientmap.put(nik.getTask(), new RemoteListIteratorClient<>(
+										if (isNull(taskrlistiterclientmap.get(jstid))) {
+											taskrlistiterclientmap.put(jstid, new RemoteListIteratorClient<>(
 													nik.getTask(), null, RequestType.ELEMENT));
 										}
-										return new Tuple2<>(nik.getKey(),
-												taskrlistiterclientmap.get(nik.getTask()).next().getValue());
+										if(!taskrlistiterclientmap.get(jstid).isclosed() && taskrlistiterclientmap.get(jstid).hasNext()) {
+											NodeIndexKey nikwithvalue = (NodeIndexKey) taskrlistiterclientmap.get(jstid).next().getValue();
+											return nikwithvalue.getValue();
+										}
 									} catch (Exception ex) {
-										log.error(DataSamudayaConstants.EMPTY, ex);
+										log.error("{}", ex);
 									}
 									return null;
-								}));) {
+								}).filter(Objects::nonNull));) {
 							if (MapUtils.isNotEmpty(shufflerectowrite)) {
 								int numfilepart = shufflerectowrite.size();
 								Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap)
@@ -217,8 +216,15 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 										new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class),
 										ActorRef.noSender()));
 							}
+							taskrlistiterclientmap.values().forEach(client->{
+								try {
+									client.close();
+								} catch (IOException e) {
+									log.error("{}", e);
+								}
+							});
 						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);
+							log.error("{}", ex);
 						}
 					} else {
 						Stream<NodeIndexKey> datastream = diskspilllistinterm.isSpilled()

@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -50,6 +51,9 @@ public class RemoteListIteratorServer<T> {
 				while(true) {
 				final Socket clientSocket;
 				try {
+					if(serverSocket.isClosed()) {
+						break;
+					}
 					clientSocket = serverSocket.accept();
 				} catch (Exception e) {
 					log.error(DataSamudayaConstants.EMPTY, e);
@@ -73,15 +77,21 @@ public class RemoteListIteratorServer<T> {
 						int totindex = 0;
 						log.info("Input Stream and Output Stream Obtained");
 						while (true) {
-							Object deserobj = kryo.readClassAndObject(input);
+							if(socket.isClosed()) {
+								break;
+							}
+							Object deserobj = Utils.getKryo().readClassAndObject(input);
 							if (deserobj instanceof RemoteListIteratorTask rlit) {
 								task = rlit.getTask();
 								lfcds = rlit.getFcsc();
 								log.info("Obtaining Cache for File {}",task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid);
-								baistream = new ByteArrayInputStream(cache.get(task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid));
+								byte[] bt = cache.get(task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid);
+								baistream = nonNull(bt)?new ByteArrayInputStream(bt):new FileInputStream(Utils.getLocalFilePathForTask(task, null, false, false, false));
 								sis = new SnappyInputStream(baistream);
 								inputfile = new Input(sis);
-								log.info("Obtaining Cache {}", inputfile);
+								log.info("Obtaining Input {}", baistream);
+								indexperlist = 0;
+								totindex = 0;
 							} else if (deserobj instanceof RemoteListIteratorHasNext rlit) {
 								boolean isavailable = inputfile.available() > 0 || nonNull(currentList) && indexperlist<currentList.size();
 								kryo.writeClassAndObject(output, isavailable);
@@ -90,7 +100,7 @@ public class RemoteListIteratorServer<T> {
 									break;
 								}
 							} else if (deserobj instanceof RemoteListIteratorNext rlin) {
-								if(isNull(currentList) || indexperlist>currentList.size()) {
+								if(isNull(currentList) || indexperlist>=currentList.size()) {
 									currentList = (List) kryo.readClassAndObject(inputfile);
 									indexperlist = 0;									
 								}

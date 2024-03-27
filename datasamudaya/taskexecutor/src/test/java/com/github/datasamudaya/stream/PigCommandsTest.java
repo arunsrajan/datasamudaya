@@ -47,13 +47,13 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		queryParserDriver = PigUtils.getQueryParserDriver("pig");
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
 		pipelineconfig.setUseglobaltaskexecutors(true);
-		pipelineconfig.setLocal("true");
+		pipelineconfig.setLocal("false");
 		pipelineconfig.setUser("arun");
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 		if ("false".equals(pipelineconfig.getLocal())) {
-			Utils.launchContainersUserSpec("arun", tejobid, 4, 1000 , 1);
+			Utils.launchContainersUserSpec("arun", tejobid, 5, 1000 , 2);
 		}
 	}
 
@@ -238,7 +238,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		assertEquals(3389, totalrecords);
-
+		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "filtered_data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -251,7 +252,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		assertTrue(totalrecords < 3389);
-
+		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -293,7 +295,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		assertEquals(3389, totalrecords);
-
+		
+		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "filtered_data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -307,7 +311,9 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		assertTrue(totalrecords < 3389);
-
+		
+		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -320,7 +326,10 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 		assertEquals(1, totalrecords);
-
+		
+		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data2",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -580,6 +589,28 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			for (Object[] obj : recordspart) {
 				assertEquals(1, obj.length);
 				assertEquals(-63278, obj[0]);
+			}
+		}
+	}
+	
+	
+	@Test
+	public void testPigLoadSumAvgCount() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE UniqueCarrier, SUM(ArrDelay) as sumdelay,COUNT(*) as cnt,AVG(ArrDelay) as avgarrdelay,SUM(DepDelay) as sumdepdelay,AVG(DepDelay) as avgdepdelay;");
+		pigQueriesToExecute.add("ordered_data = ORDER data1 BY UniqueCarrier ASC,sumdelay;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "ordered_data", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info(Arrays.toString(obj));
+				assertEquals(6, obj.length);				
 			}
 		}
 	}
