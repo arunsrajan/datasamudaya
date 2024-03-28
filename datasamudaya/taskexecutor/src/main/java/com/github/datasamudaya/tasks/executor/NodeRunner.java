@@ -151,8 +151,16 @@ public class NodeRunner implements Callable<Object> {
 							thr.start();
 							threads.get(tuple.v1).add(thr);
 						});
-				containeridcontainerthreads.put(lc.getJobid(), threads);
-				containerprocesses.put(lc.getJobid(), processes);
+				if(containeridcontainerthreads.containsKey(lc.getJobid())) {
+					containeridcontainerthreads.get(lc.getJobid()).putAll(threads);
+				} else {
+					containeridcontainerthreads.put(lc.getJobid(), threads);
+				}
+				if(containerprocesses.containsKey(lc.getJobid())) {
+					containerprocesses.get(lc.getJobid()).putAll(processes);
+				} else {
+					containerprocesses.put(lc.getJobid(), processes);
+				}
 				return ports;
 			} else if (deserobj instanceof Resources rsc) {
 				var runtime = Runtime.getRuntime();

@@ -68,6 +68,8 @@ public class PigQueryServer {
 						int numberofcontainers = 1;
 						int cpupercontainer = 1;
 						int memorypercontainer = 1024;
+						int cpudriver = 1;
+						int memorydriver = 1024;
 						String scheduler = "";
 						String tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 						Map<String, Object> pigAliasExecutedObjectMap = new ConcurrentHashMap<>();
@@ -87,6 +89,8 @@ public class PigQueryServer {
 							numberofcontainers = Integer.valueOf(in.readLine());
 							cpupercontainer = Integer.valueOf(in.readLine());
 							memorypercontainer = Integer.valueOf(in.readLine());
+							cpudriver = Integer.valueOf(in.readLine());
+							memorydriver = Integer.valueOf(in.readLine());
 							scheduler = in.readLine();
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
@@ -99,7 +103,7 @@ public class PigQueryServer {
 							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT)
 									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
 								tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-								containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+								containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver);
 								cpumemory = Utils.getAllocatedContainersResources(containers);
 								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 								Utils.printNodesAndContainers(containers, out);
@@ -166,7 +170,7 @@ public class PigQueryServer {
 													}
 													if (!iscontainerlaunched) {
 														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
@@ -246,7 +250,7 @@ public class PigQueryServer {
 													}
 													if (!iscontainerlaunched) {
 														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");

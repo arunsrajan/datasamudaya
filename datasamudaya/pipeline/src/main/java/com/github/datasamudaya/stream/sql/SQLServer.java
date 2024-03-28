@@ -53,6 +53,8 @@ public class SQLServer {
 						int numberofcontainers = 1;
 						int cpupercontainer = 1;
 						int memorypercontainer = 1024;
+						int cpudriver = 1;
+						int memorydriver = 1024;
 						String scheduler = "";
 						String tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 						boolean iscontainerlaunched = false;
@@ -65,6 +67,8 @@ public class SQLServer {
 							numberofcontainers = Integer.valueOf(in.readLine());
 							cpupercontainer = Integer.valueOf(in.readLine());
 							memorypercontainer = Integer.valueOf(in.readLine());
+							cpudriver = Integer.valueOf(in.readLine());
+							memorydriver = Integer.valueOf(in.readLine());
 							scheduler = in.readLine();
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
@@ -76,7 +80,7 @@ public class SQLServer {
 							Map<String, Object> cpumemory = null;
 							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT)
 									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
-								containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+								containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver);
 								cpumemory = Utils.getAllocatedContainersResources(containers);
 								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 								Utils.printNodesAndContainers(containers, out);
@@ -137,7 +141,7 @@ public class SQLServer {
 													}
 													if (!iscontainerlaunched) {
 														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
@@ -202,7 +206,7 @@ public class SQLServer {
 													}
 													if (!iscontainerlaunched) {
 														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");

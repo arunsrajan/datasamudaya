@@ -108,23 +108,15 @@ public class RemoteJobScheduler {
 	 * @throws Exception 
 	 */
 	public Object scheduleJob(Job job) throws Exception {
-		try (var zo = new ZookeeperOperations();
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                var fstout = new Output(baos);) {
+		try (var zo = new ZookeeperOperations();) {
 			zo.connect();
 			getTaskExecutorsHostPort(job, job.getPipelineconfig(), zo);
 			String choosente = taskexecutors.iterator().next();
-			Kryo kryo = Utils.getKryoInstance();
-			if (nonNull(job.getPipelineconfig().getClsloader())) {
-				kryo.setClassLoader(job.getPipelineconfig().getClsloader());
-			}
-			kryo.writeClassAndObject(fstout, job);
-			fstout.flush();
 			String jobid = job.getId();
 			if (job.getPipelineconfig().getUseglobaltaskexecutors()) {
 				jobid = job.getPipelineconfig().getTejobid();
 			}
-			Object output = Utils.getResultObjectByInput(choosente, baos.toByteArray(), jobid);
+			Object output = Utils.getResultObjectByInput(choosente, job, jobid);
 			job.getJm().setJobcompletiontime(System.currentTimeMillis());
 			Utils.writeToOstream(job.getPipelineconfig().getOutput(), "Concluded job in "
 					+ ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0) + " seconds");

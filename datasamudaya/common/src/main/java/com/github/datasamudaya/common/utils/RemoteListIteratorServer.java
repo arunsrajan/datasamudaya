@@ -106,7 +106,7 @@ public class RemoteListIteratorServer<T> {
 								}
 								if (rlin.getRequestType() == RequestType.ELEMENT) {
 									Object objfromfile = currentList.get(indexperlist);
-									kryo.writeClassAndObject(output, getObjectToNik(lfcds, totindex, task, objfromfile));
+									kryo.writeClassAndObject(output, objfromfile);
 									output.flush();
 									indexperlist++;
 									totindex++;

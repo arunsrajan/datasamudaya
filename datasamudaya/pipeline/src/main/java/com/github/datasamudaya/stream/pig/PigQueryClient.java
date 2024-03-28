@@ -52,6 +52,8 @@ public class PigQueryClient {
 		options.addOption(DataSamudayaConstants.PIGCONTAINERS, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.CPUPERCONTAINER, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.MEMORYPERCONTAINER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.CPUDRIVER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.MEMORYDRIVER, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.PIGWORKERMODE, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
 		var cmd = parser.parse(options, args);
@@ -81,6 +83,18 @@ public class PigQueryClient {
 			numberofcontainers = Integer
 					.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS));
 		}
+		
+		if(numberofcontainers <= 0) {
+			throw new PigClientException("Number of containers cannot be less than 1");
+		}
+		
+		boolean isremotescheduler = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(
+				DataSamudayaConstants.IS_REMOTE_SCHEDULER, DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT));
+		
+		if(isremotescheduler && numberofcontainers<2) {
+			throw new PigClientException("Number of containers cannot be less than 2 for allocating both driver and executors");
+		}
+		
 		int cpupercontainer = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUPERCONTAINER);
@@ -93,6 +107,22 @@ public class PigQueryClient {
 			memorypercontainer = Integer.valueOf(memory);
 
 		}
+		
+		int cpudriver = 1;
+		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isremotescheduler) {
+			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUDRIVER);
+			cpudriver = Integer.valueOf(cpu);
+		} else {
+			cpudriver = 0;
+		}
+		int memorydriver = 1024;
+		if (cmd.hasOption(DataSamudayaConstants.MEMORYDRIVER) && isremotescheduler) {
+			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYDRIVER);
+			memorydriver = Integer.valueOf(memory);
+		}else {
+			memorydriver = 0;
+		}
+		
 		String mode = DataSamudayaConstants.PIGWORKERMODE_DEFAULT;
 		if (cmd.hasOption(DataSamudayaConstants.PIGWORKERMODE)) {
 			mode = cmd.getOptionValue(DataSamudayaConstants.PIGWORKERMODE);
@@ -118,6 +148,8 @@ public class PigQueryClient {
 						out.println(numberofcontainers);
 						out.println(cpupercontainer);
 						out.println(memorypercontainer);
+						out.println(cpudriver);
+						out.println(memorydriver);
 						out.println(mode);
 						printServerResponse(in);
 						String messagestorefile = DataSamudayaProperties.get().getProperty(

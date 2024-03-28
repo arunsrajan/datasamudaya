@@ -2,24 +2,20 @@ package com.github.datasamudaya.stream.executors.actors;
 
 import static java.util.Objects.isNull;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
-import org.jooq.lambda.tuple.Tuple2;
-import org.xerial.snappy.SnappyInputStream;
 
 import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FieldCollationDirection;
@@ -55,6 +51,7 @@ public class ProcessDistributedSort extends AbstractActor {
 	int btreesize;
 	int diskspillpercentage;
 	DiskSpillingList diskspilllistinterm;
+
 	public ProcessDistributedSort(JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<ActorSelection> childpipes, int terminatingsize) {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -63,11 +60,12 @@ public class ProcessDistributedSort extends AbstractActor {
 		this.childpipes = childpipes;
 		this.cache = cache;
 		this.js = js;
-		this.btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.BTREEELEMENTSNUMBER, 
-				DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
-		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
-				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
-		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, true, false, false, null, null, 0);
+		this.btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
+				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
+		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
+				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
+		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, true, false, false, null,
+				null, 0);
 	}
 
 	@Override
@@ -81,7 +79,7 @@ public class ProcessDistributedSort extends AbstractActor {
 				if (dsl.isSpilled()) {
 					log.info("In Distributed Sort Spilled {}", dsl.isSpilled());
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
-				} else {					
+				} else {
 					diskspilllistinterm.addAll(dsl.readListFromBytes());
 				}
 				dsl.clear();
@@ -96,30 +94,32 @@ public class ProcessDistributedSort extends AbstractActor {
 				Kryo kryo = Utils.getKryo();
 				NodeIndexKey root = null;
 				BTree btree = new BTree(btreesize);
-				
-					if (isNull(tasktoprocess.getHostport()) || predecessors.size() == 1 || !diskspilllistinterm.isSpilled()) {
-						String key = Utils.getIntermediateResultFS(tasktoprocess);
-						try (Stream<Object[]> datastream = diskspilllistinterm.isSpilled()
-								? (Stream<Object[]>) Utils.getStreamData(new FileInputStream(Utils
-										.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
-								: diskspilllistinterm.readListFromBytes().stream()) {
-							AtomicInteger index = new AtomicInteger(0);
-														
-							datastream.forEach(obj-> {
-									NodeIndexKey nik = new NodeIndexKey(tasktoprocess.getHostport(), index.getAndIncrement(),
-											Utils.getKeyFromNodeIndexKey(fcsc, obj), obj, null, null, key, tasktoprocess);
-									btree.insert(nik, fcsc);
-								});
-							
-						}
-					} else {
-						for (Task predecessor : predecessors) {
-						try (RemoteListIteratorClient client = new RemoteListIteratorClient(predecessor, fcsc, RequestType.LIST)) {
+
+				if (isNull(tasktoprocess.getHostport()) || !diskspilllistinterm.isSpilled()) {
+					String key = Utils.getIntermediateResultFS(tasktoprocess);
+					try (Stream<Object[]> datastream = diskspilllistinterm.isSpilled()
+							? (Stream<Object[]>) Utils.getStreamData(new FileInputStream(Utils
+									.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
+							: diskspilllistinterm.readListFromBytes().stream()) {
+						AtomicInteger index = new AtomicInteger(0);
+
+						datastream.forEach(obj -> {
+							NodeIndexKey nik = new NodeIndexKey(tasktoprocess.getHostport(), index.getAndIncrement(),
+									Utils.getKeyFromNodeIndexKey(fcsc, obj), obj, null, null, key, tasktoprocess);
+							btree.insert(nik, fcsc);
+						});
+
+					}
+				} else {
+					for (Task predecessor : predecessors) {
+						try (RemoteListIteratorClient client = new RemoteListIteratorClient(predecessor, fcsc,
+								RequestType.LIST)) {
 							while (client.hasNext()) {
 								log.info("Getting Next List From Remote Server");
-								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils.convertBytesToObjectCompressed((byte[]) client.next(), null);
+								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
+										.convertBytesToObjectCompressed((byte[]) client.next(), null);
 								log.info("Next List From Remote Server with size {}", niks.size());
-								for(NodeIndexKey nik:niks) {
+								for (NodeIndexKey nik : niks) {
 									nik.setTask(predecessor);
 									btree.insert(nik, fcsc);
 								}
@@ -127,7 +127,8 @@ public class ProcessDistributedSort extends AbstractActor {
 						}
 					}
 				}
-				DiskSpillingList rootniks = new DiskSpillingList<>(tasktoprocess, diskspillpercentage, null, false, false, false, null, null, 0);
+				DiskSpillingList rootniks = new DiskSpillingList<>(tasktoprocess, diskspillpercentage, null, false,
+						false, false, null, null, 0);
 				btree.traverse(rootniks);
 				try {
 					rootniks.close();
@@ -135,19 +136,22 @@ public class ProcessDistributedSort extends AbstractActor {
 					log.error(DataSamudayaConstants.EMPTY, e);
 				}
 				if (CollectionUtils.isNotEmpty(childpipes)) {
-					childpipes.stream().forEach(downstreampipe -> {						
-						downstreampipe.tell(new OutputObject(rootniks, false, false, NodeIndexKey.class), ActorRef.noSender());
+					childpipes.stream().forEach(downstreampipe -> {
+						downstreampipe.tell(new OutputObject(rootniks, false, false, NodeIndexKey.class),
+								ActorRef.noSender());
 					});
 				} else {
 					Stream<NodeIndexKey> datastream = rootniks.isSpilled()
-							? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(Utils
-									.getLocalFilePathForTask(rootniks.getTask(), null, false, false, false)))
+							? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
+									Utils.getLocalFilePathForTask(rootniks.getTask(), null, false, false, false)))
 							: rootniks.readListFromBytes().stream();
-					cache.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
-						+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), Utils.convertObjectToBytesCompressed(datastream.toList(), null));
+					cache.put(
+							tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
+									+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(),
+							Utils.convertObjectToBytesCompressed(datastream.collect(Collectors.toList()), null));
 				}
-				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
-				+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);
+				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN
+						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);
 			}
 		}
 	}

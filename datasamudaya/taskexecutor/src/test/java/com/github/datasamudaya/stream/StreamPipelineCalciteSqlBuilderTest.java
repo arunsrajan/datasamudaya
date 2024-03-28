@@ -58,14 +58,14 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 	@BeforeClass
 	public static void pipelineSetup() throws Exception, Throwable {
-		pipelineconfig.setLocal("true");
+		pipelineconfig.setLocal("false");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
 		if ("false".equals(pipelineconfig.getLocal())) {
 			pipelineconfig.setUseglobaltaskexecutors(true);
 			String teid = Utils.getUUID();
-			Utils.launchContainersUserSpec("arun", teid, 6, 1000, 1);
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 6, 5000, 2, 6, 5000);
 			pipelineconfig.setTejobid(teid);
 			pipelineconfig.setUser("arun");
 		}
@@ -1465,7 +1465,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		log.info("In testFlightsDistinctUniqueCarrierFlightnumOriginDest() method Entry");
 		String statement = "select distinct uniquecarrier,flightnum,origin,dest from airlines order by uniquecarrier,flightnum,origin,dest";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
-				.add(airlinesamplesql, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.add(airlinesample, "airlines", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);

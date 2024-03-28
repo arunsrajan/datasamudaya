@@ -307,8 +307,8 @@ public class FileBlocksPartitionerHDFS {
 			job.setAllstageshostport(allstageshostport);
 			log.debug("Partitioning of Blocks ended.");
 		} catch (Exception ex) {
-			destroyTaskExecutors();
 			log.error(PipelineConstants.FILEBLOCKSPARTITIONINGERROR, ex);
+			destroyTaskExecutors();			
 			throw new PipelineException(PipelineConstants.FILEBLOCKSPARTITIONINGERROR, ex);
 		}
 	}
@@ -482,8 +482,8 @@ public class FileBlocksPartitionerHDFS {
 		var hostcontainermap = containers.stream()
 				.collect(Collectors.groupingBy(key -> key.split(DataSamudayaConstants.UNDERSCORE)[0],
 						Collectors.mapping(container -> container, Collectors.toCollection(ArrayList::new))));
-		var containerallocatecount = (Map<String, Long>) containers.stream().parallel()
-				.collect(Collectors.toMap(container -> container, container -> 0l));
+		var containerallocatecount = (Map<String, Long>) containers.stream()
+				.collect(Collectors.toMap(container -> container, container -> 0l, (val1, val2)->val1+val2));
 		List<String> hostportcontainer;
 		// Iterate over the blocks location
 		for (var b : bls) {
