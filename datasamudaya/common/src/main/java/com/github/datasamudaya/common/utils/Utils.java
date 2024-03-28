@@ -1504,7 +1504,6 @@ public class Utils {
 				resources.iterator(), usersshare,
 				1, cpudriver, memorydriverbytes, jobid,
 				pc, globallaunchcontainers, launchedcontainerhostports);
-			numberofcontainers--;
 		}
 		allocateDriverOrExecutor(user,numresavailable, 
 				resources.iterator(), usersshare,
@@ -2570,6 +2569,23 @@ public class Utils {
 				List records = (List) kryo.readClassAndObject(input);
 				dslout.addAll(records);
 			}
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+	}
+	
+	/**
+	 * Copy Disk Spilling List To Disk For Sorting
+	 * @param dslinput
+	 */
+	public static void copyDiskSpillingListToDisk(DiskSpillingList dslinput) {
+		Kryo kryo = Utils.getKryo();
+		try (FileOutputStream ostream = new FileOutputStream(
+				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
+						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				var sos = new SnappyOutputStream(ostream);
+				Output output = new Output(sos);) {
+			kryo.writeClassAndObject(output, dslinput.readListFromBytes());
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}

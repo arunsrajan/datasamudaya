@@ -65,7 +65,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		if ("false".equals(pipelineconfig.getLocal())) {
 			pipelineconfig.setUseglobaltaskexecutors(true);
 			String teid = Utils.getUUID();
-			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 6, 5000, 2, 6, 5000);
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 6, 5000, 1, 6, 10000);
 			pipelineconfig.setTejobid(teid);
 			pipelineconfig.setUser("arun");
 		}

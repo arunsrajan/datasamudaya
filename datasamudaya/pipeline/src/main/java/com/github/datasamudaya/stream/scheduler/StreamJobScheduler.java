@@ -129,8 +129,11 @@ import com.github.datasamudaya.common.functions.RightJoin;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.UnionFunction;
+import com.github.datasamudaya.common.utils.BTree;
 import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
+import com.github.datasamudaya.common.utils.RemoteListIteratorClient;
+import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.PipelineException;
@@ -2277,8 +2280,29 @@ public class StreamJobScheduler {
 									|| job.getJobtype() == JOBTYPE.PIG)) {
 								PrintWriter out = pipelineconfig.getWriter();
 								if(result instanceof List lst && CollectionUtils.isNotEmpty(lst) && lst.get(0) instanceof NodeIndexKey) {
+									int btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
+											DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
+									BTree btree = new BTree(btreesize);
+									for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
+										log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
+										try (RemoteListIteratorClient client = new RemoteListIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
+												RequestType.LIST)) {
+											while (client.hasNext()) {
+												log.info("Getting Next List From Remote Server");
+												List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
+														.convertBytesToObjectCompressed((byte[]) client.next(), null);
+												log.info("Next List From Remote Server with size {}", niks.size());
+												for (NodeIndexKey niktree : niks) {
+													niktree.setTask(nik.getTask());
+													btree.insert(niktree, nik.getTask().getFcsc());
+												}
+											}
+										}
+									}
 									List larrayobj = new ArrayList<>();
-									Stream stream = Utils.getStreamData(lst, null);
+									List<NodeIndexKey> rootniks = new ArrayList<>();
+									btree.traverse(rootniks);
+									Stream stream = Utils.getStreamData(rootniks, null);
 									stream.map(new MapFunction<Object[], Object[]>(){
 										private static final long serialVersionUID = -6478016520828716284L;
 

@@ -84,7 +84,7 @@ public class RemoteListIteratorServer<T> {
 							if (deserobj instanceof RemoteListIteratorTask rlit) {
 								task = rlit.getTask();
 								lfcds = rlit.getFcsc();
-								log.info("Obtaining Cache for File {}",task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid);
+								log.info("Obtaining Cache for File {} with FCD {}",task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid, lfcds);
 								byte[] bt = cache.get(task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid);
 								baistream = nonNull(bt)?new ByteArrayInputStream(bt):new FileInputStream(Utils.getLocalFilePathForTask(task, null, false, false, false));
 								sis = new SnappyInputStream(baistream);
@@ -106,7 +106,7 @@ public class RemoteListIteratorServer<T> {
 								}
 								if (rlin.getRequestType() == RequestType.ELEMENT) {
 									Object objfromfile = currentList.get(indexperlist);
-									kryo.writeClassAndObject(output, objfromfile);
+									kryo.writeClassAndObject(output, getObjectToNik(lfcds, totindex, task, objfromfile));
 									output.flush();
 									indexperlist++;
 									totindex++;

@@ -91,10 +91,6 @@ public class PigQueryClient {
 		boolean isremotescheduler = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.IS_REMOTE_SCHEDULER, DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT));
 		
-		if(isremotescheduler && numberofcontainers<2) {
-			throw new PigClientException("Number of containers cannot be less than 2 for allocating both driver and executors");
-		}
-		
 		int cpupercontainer = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUPERCONTAINER);
@@ -112,14 +108,14 @@ public class PigQueryClient {
 		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isremotescheduler) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUDRIVER);
 			cpudriver = Integer.valueOf(cpu);
-		} else {
+		} else if(!isremotescheduler){
 			cpudriver = 0;
 		}
 		int memorydriver = 1024;
 		if (cmd.hasOption(DataSamudayaConstants.MEMORYDRIVER) && isremotescheduler) {
 			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYDRIVER);
 			memorydriver = Integer.valueOf(memory);
-		}else {
+		} else if(!isremotescheduler){
 			memorydriver = 0;
 		}
 		

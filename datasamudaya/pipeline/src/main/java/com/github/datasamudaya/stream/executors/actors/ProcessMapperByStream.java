@@ -48,6 +48,8 @@ import akka.actor.ActorSelection;
 import akka.cluster.Cluster;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Akka actors for the Mapper operation by streaming operators
@@ -58,6 +60,7 @@ import akka.event.LoggingAdapter;
 public class ProcessMapperByStream extends AbstractActor implements Serializable {
 	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 	Cluster cluster = Cluster.get(getContext().getSystem());
+	private static Logger logger = LoggerFactory.getLogger(ProcessMapperByStream.class);
 
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
@@ -105,9 +108,9 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, true, false, false, null,
-				null, 0);
+				null, 1);
 		diskspilllist = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, false, false, false, null, null,
-				0);
+				1);
 		this.pipeline = pipeline;
 		this.actorselections = actorselections;
 	}
@@ -120,8 +123,8 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 	private void processMapperByStream(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
-				if (dsl.isSpilled()) {
-					log.info("In Mapper Stream Spilled {}", dsl.isSpilled());
+				log.info("In Mapper Stream Spilled {} {}", dsl.isSpilled(), !dsl.isSpilled()?dsl.readListFromBytes():dsl.getData());
+				if (dsl.isSpilled()) {					
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
 					diskspilllistinterm.addAll(dsl.readListFromBytes());
@@ -137,9 +140,11 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 			}
 			if (initialsize == terminatingsize) {
 				diskspilllistinterm.close();
-				log.info("processMapStream::Started InitialSize {} , Terminating Size {}", initialsize,
-						terminatingsize);
+				Object data = !diskspilllistinterm.isSpilled()?diskspilllistinterm.readListFromBytes():diskspilllistinterm.getData();
+				log.info("processMapStream InitialSize {} , Terminating Size {} and Terminating Class {} data {}", initialsize,
+						terminatingsize, object.getTerminiatingclass(), data);
 				if (object.getTerminiatingclass() == NodeIndexKey.class) {
+					log.info("Is Terminating Class NodeIndexKey Shuffle Records{} isEmpty {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite));
 					if (CollectionUtils.isNotEmpty(childpipes)) {
 						final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
@@ -248,6 +253,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 						}
 					}
 				} else {
+					log.info("Is Terminating Class DiskSpillingList Is Shuffle Records {} Is Empty {} and intermediate Spilled ? {}",shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite),diskspilllistinterm.isSpilled());
 					if (CollectionUtils.isNotEmpty(childpipes)) {
 						final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
@@ -298,14 +304,17 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class),
 												ActorRef.noSender()));
 							} else {
+								log.info("Is Disk Spilling List Spilled {} stream processing for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								streammap.forEach(diskspilllist::add);
+								log.info("Is Disk Spilling List Spilled {} Close for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								diskspilllist.close();
+								log.info("Is Disk Spilling List Spilled {} for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								childpipes.stream().forEach(action -> action.tell(
 										new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class),
 										ActorRef.noSender()));
 							}
 						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);
+							logger.error(DataSamudayaConstants.EMPTY, ex);
 						}
 					} else {
 						Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()

@@ -1054,20 +1054,8 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		}		
 		if (af.tasks.get(0) instanceof SortedComparator && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
 				&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)) {
-
+			parentstage.tasks.add(af.tasks.get(0));
 			var childstage = new Stage();
-			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
-			childstage.tasks.add(af.tasks.get(0));
-			graphstages.addVertex(parentstage);
-			graphstages.addVertex(childstage);
-			graphstages.addEdge(parentstage, childstage);
-			childstage.parent.add(parentstage);
-			parentstage.child.add(childstage);
-			taskstagemap.put(childstage.tasks.get(0), childstage);
-			taskstagemap.put(af.tasks.get(0), childstage);
-			
-			parentstage = childstage;
-			childstage = new Stage();
 			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
 			childstage.tasks.add(new DistributedSort());
 			graphstages.addVertex(parentstage);
