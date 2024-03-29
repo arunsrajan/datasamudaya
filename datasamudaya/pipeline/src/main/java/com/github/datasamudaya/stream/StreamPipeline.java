@@ -1190,7 +1190,14 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 				results = (ArrayList) submitJob(job);
 			} else if (toexecute && jobtrigger == Job.TRIGGER.PIGDUMP) {
 				job.setIsresultrequired(true);
-				submitJob(job);
+				if(pipelineconfig.getIsremotescheduler()) {
+					results = (ArrayList) submitJob(job);
+					for(List result:(List<List>)results) {
+						Utils.printTableOrError((List) result, pipelineconfig.getWriter(), JOBTYPE.PIG);
+					}
+				} else {
+					submitJob(job);
+				}
 			}
 			return (List) results;
 		}
