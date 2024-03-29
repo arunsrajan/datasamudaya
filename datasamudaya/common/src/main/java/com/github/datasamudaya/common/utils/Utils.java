@@ -45,6 +45,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -157,6 +158,7 @@ import com.github.datasamudaya.common.DataSamudayaUsers;
 import com.github.datasamudaya.common.DestroyContainer;
 import com.github.datasamudaya.common.DestroyContainers;
 import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.EXECUTORTYPE;
 import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
@@ -1498,17 +1500,19 @@ public class Utils {
 			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		PipelineConfig pc = new PipelineConfig();
-		List<String> launchedcontainerhostports = new ArrayList<>();
+		List<String> launchedcontainerhostports = new ArrayList<>();		
 		if(cpudriver > 0 && memorydriver > 0) {
-			allocateDriverOrExecutor(user,numresavailable, 
-				resources.iterator(), usersshare,
+			allocateDriverOrExecutor(user, 
+				resources, usersshare,
 				1, cpudriver, memorydriverbytes, jobid,
-				pc, globallaunchcontainers, launchedcontainerhostports);
+				pc, globallaunchcontainers, launchedcontainerhostports, 
+				EXECUTORTYPE.DRIVER);
 		}
-		allocateDriverOrExecutor(user,numresavailable, 
-				resources.iterator(), usersshare,
+		allocateDriverOrExecutor(user, 
+				resources, usersshare,
 				numberofcontainers, cpuuser, memoryuserbytes, jobid,
-				pc, globallaunchcontainers, launchedcontainerhostports);
+				pc, globallaunchcontainers, launchedcontainerhostports, 
+				EXECUTORTYPE.EXECUTOR);
 		for (LaunchContainers lc : globallaunchcontainers) {
 			List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
 					lc, DataSamudayaConstants.EMPTY);
@@ -1552,8 +1556,7 @@ public class Utils {
 	/**
 	 * allocates diver or executors with the given spec
 	 * @param user
-	 * @param numnoderes
-	 * @param res
+	 * @param resources
 	 * @param usersshare
 	 * @param numberofcontainers
 	 * @param cpuuser
@@ -1562,80 +1565,95 @@ public class Utils {
 	 * @param pc
 	 * @param globallaunchcontainers
 	 * @param launchedcontainerhostports
+	 * @param executortype
 	 * @throws ContainerException
 	 * @throws RpcRegistryException
 	 */
-	private static void allocateDriverOrExecutor(String user,int numnoderes, 
-			Iterator<ConcurrentMap<String, Resources>> res, ConcurrentMap<String, User> usersshare,
+	private static void allocateDriverOrExecutor(String user, 
+			Collection<ConcurrentMap<String, Resources>> resources, ConcurrentMap<String, User> usersshare,
 			int numberofcontainers, int cpuuser, long memoryuserbytes, String jobid,
-			PipelineConfig pc, List<LaunchContainers> globallaunchcontainers,List<String> launchedcontainerhostports) throws ContainerException, RpcRegistryException {
-		for (int container = 0; container < numnoderes; container++) {
-			ConcurrentMap<String, Resources> noderesmap = res.next();
-			Resources restolaunch = noderesmap.get(user);
-			var usershare = usersshare.get(user);
-			if (isNull(usershare)) {
-				throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+			PipelineConfig pc, List<LaunchContainers> globallaunchcontainers,
+			List<String> launchedcontainerhostports,
+			EXECUTORTYPE executortype) throws ContainerException, RpcRegistryException {
+		Map<String, Boolean> allresourcesallocated = new HashMap<>();
+		int numofcontcount = 0;
+		outer:
+		while(numofcontcount<numberofcontainers) {
+			Iterator<ConcurrentMap<String, Resources>> res = resources.iterator();
+			while (res.hasNext()) {
+				ConcurrentMap<String, Resources> noderesmap = res.next();
+				Resources restolaunch = noderesmap.get(user);
+				var usershare = usersshare.get(user);
+				if (isNull(usershare)) {
+					throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+				}
+				int cpu = restolaunch.getNumberofprocessors();
+				if(resources.size() == allresourcesallocated.size()){
+					break outer;
+				}
+				if (cpu <= 0 || cpu < cpuuser) {
+					allresourcesallocated.put(restolaunch.getNodeport(), true);
+					continue;
+				}
+				var actualmemory = restolaunch.getFreememory();
+				var memoryrequire = actualmemory;
+				if (actualmemory < (128 * DataSamudayaConstants.MB) || memoryrequire < memoryuserbytes) {
+					allresourcesallocated.put(restolaunch.getNodeport(), true);
+					continue;
+				}			
+				var heapmem = memoryuserbytes * Integer.parseInt(DataSamudayaProperties.get()
+						.getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
+						/ 100;
+	
+				var directmem = memoryuserbytes - heapmem;
+				var ac = new AllocateContainers();
+				ac.setJobid(jobid);
+				ac.setNumberofcontainers(1);
+				List<Integer> ports = (List<Integer>) Utils.getResultObjectByInput(restolaunch.getNodeport(), ac,
+						DataSamudayaConstants.EMPTY);
+				if (Objects.isNull(ports)) {
+					throw new ContainerException("Port Allocation Error From Container");
+				}
+				log.info("Chamber alloted with node: {} amidst ports: {}", restolaunch.getNodeport(), ports);
+	
+				var cla = new ContainerLaunchAttributes();
+				var crl = new ArrayList<ContainerResources>();
+				for (Integer port : ports) {
+					var crs = new ContainerResources();
+					crs.setPort(port);
+					crs.setCpu(cpuuser);
+					crs.setMinmemory(heapmem);
+					crs.setMaxmemory(heapmem);
+					crs.setDirectheap(directmem);
+					crs.setGctype(pc.getGctype());
+					crl.add(crs);
+				}
+				cla.setCr(crl);
+				cla.setNumberofcontainers(1);
+				LaunchContainers lc = new LaunchContainers();
+				lc.setCla(cla);
+				lc.setNodehostport(restolaunch.getNodeport());
+				lc.setJobid(jobid);
+				globallaunchcontainers.add(lc);
+				String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
+				for (ContainerResources crs : crl) {
+					String conthp = containerhost + DataSamudayaConstants.UNDERSCORE + crs.getPort();
+					GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
+					GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
+					restolaunch.setFreememory(restolaunch.getFreememory() - heapmem - directmem);
+					restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpuuser);
+				}
+				if(nonNull(DataSamudayaUsers.get().get(user).getNodecontainersmap().get(restolaunch.getNodeport()))){
+					DataSamudayaUsers.get().get(user).getNodecontainersmap().get(restolaunch.getNodeport()).addAll(crl);
+				} else {
+					DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), new ArrayList<>(crl));
+				}				
+				numofcontcount++;
+				if(executortype == EXECUTORTYPE.DRIVER || numofcontcount == numberofcontainers || resources.size() == allresourcesallocated.size()) {
+					allresourcesallocated.clear();
+					break outer;
+				}
 			}
-			int cpu = restolaunch.getNumberofprocessors();
-			cpu = cpu / numberofcontainers;
-			if (cpu <= 0) {
-				throw new ContainerException(PipelineConstants.INSUFFCPUALLOCATIONERROR);
-			}
-			cpu = cpu < cpuuser ? cpu : cpuuser;
-			var actualmemory = restolaunch.getFreememory();
-			if (actualmemory < (128 * DataSamudayaConstants.MB)) {
-				throw new ContainerException(PipelineConstants.MEMORYALLOCATIONERROR);
-			}
-			var memoryrequire = actualmemory;
-			memoryrequire = memoryrequire / numberofcontainers;
-			memoryrequire = memoryrequire < memoryuserbytes ? memoryrequire : memoryuserbytes;
-			var heapmem = memoryrequire * Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
-					/ 100;
-
-			var directmem = memoryrequire - heapmem;
-			var ac = new AllocateContainers();
-			ac.setJobid(jobid);
-			ac.setNumberofcontainers(numberofcontainers);
-			List<Integer> ports = (List<Integer>) Utils.getResultObjectByInput(restolaunch.getNodeport(), ac,
-					DataSamudayaConstants.EMPTY);
-			if (Objects.isNull(ports)) {
-				throw new ContainerException("Port Allocation Error From Container");
-			}
-			log.info("Chamber alloted with node: {} amidst ports: {}", restolaunch.getNodeport(), ports);
-
-			var cla = new ContainerLaunchAttributes();
-			var crl = new ArrayList<ContainerResources>();
-			for (Integer port : ports) {
-				var crs = new ContainerResources();
-				crs.setPort(port);
-				crs.setCpu(cpu);
-				crs.setMinmemory(heapmem);
-				crs.setMaxmemory(heapmem);
-				crs.setDirectheap(directmem);
-				crs.setGctype(pc.getGctype());
-				crl.add(crs);
-			}
-			cla.setCr(crl);
-			cla.setNumberofcontainers(numberofcontainers);
-			LaunchContainers lc = new LaunchContainers();
-			lc.setCla(cla);
-			lc.setNodehostport(restolaunch.getNodeport());
-			lc.setJobid(jobid);
-			globallaunchcontainers.add(lc);
-			String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
-			for (ContainerResources crs : crl) {
-				String conthp = containerhost + DataSamudayaConstants.UNDERSCORE + crs.getPort();
-				GlobalContainerAllocDealloc.getHportcrs().put(conthp, crs);
-				GlobalContainerAllocDealloc.getContainernode().put(conthp, restolaunch.getNodeport());
-				restolaunch.setFreememory(restolaunch.getFreememory() - heapmem - directmem);
-				restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpu);
-			}
-			if(nonNull(DataSamudayaUsers.get().get(user).getNodecontainersmap().get(restolaunch.getNodeport()))){
-				DataSamudayaUsers.get().get(user).getNodecontainersmap().get(restolaunch.getNodeport()).addAll(crl);
-			} else {
-				DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), new ArrayList<>(crl));
-			}			
 		}
 	}
 	
