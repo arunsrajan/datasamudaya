@@ -144,7 +144,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 				log.info("processMapStream InitialSize {} , Terminating Size {} and Terminating Class {} data {}", initialsize,
 						terminatingsize, object.getTerminiatingclass(), data);
 				if (object.getTerminiatingclass() == NodeIndexKey.class) {
-					log.info("Is Terminating Class NodeIndexKey Shuffle Records{} isEmpty {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite));
+					log.info("Is Terminating Class NodeIndexKey Shuffle Records {} isEmpty {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite));
 					if (CollectionUtils.isNotEmpty(childpipes)) {
 						final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;

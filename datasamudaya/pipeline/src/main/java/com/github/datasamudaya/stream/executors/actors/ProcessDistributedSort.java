@@ -1,7 +1,5 @@
 package com.github.datasamudaya.stream.executors.actors;
 
-import static java.util.Objects.isNull;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.OutputStream;
@@ -10,13 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
 
-import com.esotericsoftware.kryo.Kryo;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FieldCollationDirection;
@@ -26,8 +22,6 @@ import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.BTree;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
-import com.github.datasamudaya.common.utils.RemoteListIteratorClient;
-import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
@@ -77,9 +71,17 @@ public class ProcessDistributedSort extends AbstractActor {
 	private void processDistributedSort(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
-				if (!dsl.isSpilled()) {
-					log.info("In Distributed Sort Spilled {}", dsl.isSpilled());
-					Utils.copyDiskSpillingListToDisk(dsl);
+				if(CollectionUtils.isEmpty(childpipes)) {
+					if (!dsl.isSpilled()) {
+						log.info("In Distributed Sort Spilled {} {}", dsl.isSpilled(), !dsl.isSpilled()?dsl.readListFromBytes():dsl.getData());
+						Utils.copyDiskSpillingListToDisk(dsl);
+					}
+				} else {
+					if (dsl.isSpilled()) {					
+						Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
+					} else {
+						diskspilllistinterm.addAll(dsl.readListFromBytes());
+					}
 				}
 				dsl.clear();
 				initialsize++;

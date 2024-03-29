@@ -53,7 +53,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 		if ("false".equals(pipelineconfig.getLocal())) {
-			Utils.launchContainersUserSpec("arun", tejobid, 5, 1000 , 2);
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", tejobid, 6, 1000, 1, 6, 1000);
 		}
 	}
 
