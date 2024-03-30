@@ -16,7 +16,6 @@
 package com.github.datasamudaya.common;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
@@ -46,8 +45,8 @@ public class ByteBufferPoolDirect {
 	 */
 	public static void init(long dm) {
 		directmemory = dm;
-		bufferPool = new Vector<>((int) (directmemory / (130 * DataSamudayaConstants.MB)) + 30);
-		log.info("Total Buffer pool size: {}", bufferPool.size());
+		log.info("Total memory In Bytes: {}", directmemory);
+		bufferPool = new Vector<>((int) (directmemory / DataSamudayaConstants.BYTEBUFFERSIZE));		
 	}
 
 	/**
@@ -56,35 +55,26 @@ public class ByteBufferPoolDirect {
 	 * @return bytebuffer object
 	 * @throws Exception
 	 */
-	public static synchronized ByteBuffer get(long memorytoallocate) throws Exception {
-		lock.acquire();
-		if (memorytoallocate + totalmemoryallocated < directmemory) {
-			ByteBuffer bb = ByteBuffer.allocateDirect((int) memorytoallocate);
-			totalmemoryallocated += memorytoallocate;
-			lock.release();
-			return bb;
-		}
-		Collections.sort(bufferPool, (bb1, bb2) -> {
-			if (bb1.capacity() > bb2.capacity()) {
-				return 1;
-			} else if (bb1.capacity() < bb2.capacity()) {
-				return -1;
+	public static synchronized ByteBuffer get(int memorytoallocate) throws Exception {
+		try {
+			lock.acquire();
+			if (bufferPool.size() > 0) {
+				ByteBuffer bb = bufferPool.remove(0);	
+				bb.position(bb.limit());
+				return bb;
+			} else if (memorytoallocate + totalmemoryallocated < directmemory) {
+				ByteBuffer bb = ByteBuffer.allocateDirect((int) memorytoallocate);
+				bb.position(bb.limit());
+				totalmemoryallocated += memorytoallocate;
+				return bb;
+			} else {
+				ByteBuffer bb = ByteBuffer.allocate((int) memorytoallocate);
+				bb.position(bb.limit());				
+				return bb;
 			}
-			return 0;
-		});
-		int bbindex = bufferPool.size() - 1;
-		for (;bbindex >= 0 && bufferPool.get(bbindex).capacity() >= memorytoallocate;bbindex--) {
-		}
-		if (bbindex == bufferPool.size() - 1) {
-			ByteBuffer bb = ByteBuffer.allocate((int) memorytoallocate);
+		} finally {
 			lock.release();
-			return bb;
 		}
-		ByteBuffer bb = bufferPool.remove(bbindex + 1);
-		bb.clear();
-		bb.limit((int) memorytoallocate);
-		lock.release();
-		return bb;
 	}
 
 	public static void destroy() {

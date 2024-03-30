@@ -3,25 +3,27 @@ package com.github.datasamudaya.common;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 
-import parquet.org.slf4j.Logger;
-import parquet.org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BlockReaderInputStream extends InputStream implements Serializable {
 	private static final Logger log = LoggerFactory.getLogger(BlockReaderInputStream.class);
 	private static final long serialVersionUID = 7812408972554339334L;
 	private final long limit;
 	private long bytesRead;
-	private transient final FSDataInputStream br;
-	byte[] onebyt = new byte[1];
+	private transient FSDataInputStream fsdis;
+	ByteBuffer buffer;
 	long startoffset;
 
-	public BlockReaderInputStream(FSDataInputStream br, long startoffset, long limit) throws IOException {
-		this.br = br;
+	public BlockReaderInputStream(FSDataInputStream fsdis, long startoffset, long limit) throws Exception {
+		this.fsdis = fsdis;
 		this.startoffset = startoffset;
-		br.seek(startoffset);
+		fsdis.seek(startoffset);
+		buffer = ByteBufferPoolDirect.get(DataSamudayaConstants.BYTEBUFFERSIZE);		
 		this.limit = limit;
 		this.bytesRead = 0;
 	}
@@ -29,34 +31,31 @@ public class BlockReaderInputStream extends InputStream implements Serializable 
 	@Override
 	public int read() throws IOException {
 		if (bytesRead >= limit) {
-			return -1;
-		}
-		int result = br.read(onebyt, 0, 1);
-		if (result != -1) {
-			bytesRead++;
-		}
-		return result;
-	}
-
-	@Override
-	public int read(byte[] b, int off, int len) throws IOException {
-		if (bytesRead >= limit) {
-			return -1;
-		}
-		int bytesToRead = (int) Math.min(len, limit - bytesRead);
-		int bytesReadNow = br.read(b, off, bytesToRead);
-		if (bytesReadNow != -1) {
-			bytesRead += bytesReadNow;
-		}
-		return bytesReadNow;
+            return -1; // Read limit reached
+        }
+        if (!buffer.hasRemaining()) {
+            buffer.clear(); // Clear the buffer for writing
+            int bytesToRead = (int) Math.min(buffer.capacity(), limit - bytesRead);
+            buffer.limit(bytesToRead); // Adjust buffer limit based on the read limit
+            int numread = fsdis.read(buffer);
+            if (numread == -1) {
+                return -1; // End of file reached
+            }
+            buffer.flip(); // Flip the buffer for reading
+        }
+        bytesRead++;
+        return buffer.get() & 0xFF; // Return the next byte
 	}
 
 	@Override
 	public void close() {
 		try {
-			br.close();
-		} catch (IOException e) {
-			log.warn("Error While closing BlockReader {}", br);
+			fsdis.close();
+			fsdis = null;			
+			ByteBufferPoolDirect.destroy(buffer);
+			buffer = null;
+		} catch (Exception e) {
+			log.warn("Error While closing BlockReader {}", fsdis);
 		}
 	}
 

@@ -54,7 +54,7 @@ public class ContainerLauncher {
 			//Maximum number of cpu power to restrict execution thread
 			argumentsForSpawn.add("-XX:ActiveProcessorCount=" + cr.getCpu());
 			argumentsForSpawn
-					.add("-Djava.util.concurrent.ForkJoinPool.common.parallelism=" + cr.getCpu());
+					.add("-Djava.util.concurrent.ForkJoinPool.common.parallelism=1");
 			//Heap dump on out of memory error configuration
 			argumentsForSpawn.add("-XX:+HeapDumpOnOutOfMemoryError");
 			//Enable preview features

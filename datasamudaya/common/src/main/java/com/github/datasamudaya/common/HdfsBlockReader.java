@@ -200,20 +200,20 @@ public class HdfsBlockReader {
 	 */
 	public static InputStream getBlockDataInputStreamMerge(final BlocksLocation bl, FileSystem hdfs) throws Exception {
 		try {
-			log.debug("Entered HdfsBlockReader.getBlockDataSnappyStream");
+			log.debug("Entered HdfsBlockReader.getBlockDataInputStreamMerge");
 			var block = bl.getBlock();
 			log.info("Obtaining Data for the " + block + " with offset: " + block[0].getBlockOffset());
 			FSDataInputStream dfsis = hdfs.open(new Path(block[0].getFilename()));
 			long blocklimit = block[0].getBlockend() - block[0].getBlockstart();
 			if (block.length > 1 && nonNull(block[1])) {
-				blocklimit += block[1].getBlockend() - block[1].getBlockstart();
+				blocklimit += (block[1].getBlockend() - block[1].getBlockstart());
 			}
 			BlockReaderInputStream bris = new BlockReaderInputStream(dfsis,
 					(long) (block[0].getBlockOffset() + block[0].getBlockstart()), blocklimit);
-			log.debug("Exiting HdfsBlockReader.getBlockDataSnappyStream");
+			log.debug("Exiting HdfsBlockReader.getBlockDataInputStreamMerge");
 			return bris;
 		} catch (Exception ex) {
-			log.error("Unable to Obtain Block Data getBlockDataSnappyStream: ", ex);
+			log.error("Unable to Obtain Block Data getBlockDataInputStreamMerge: ", ex);
 		}
 
 		return null;

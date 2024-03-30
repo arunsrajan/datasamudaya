@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -32,6 +33,8 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
@@ -54,21 +57,16 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 import com.google.common.collect.Maps;
-import com.univocity.parsers.csv.CsvWriter;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.cluster.Cluster;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvCallbackHandler;
 import de.siegmar.fastcsv.reader.CsvReader;
 import de.siegmar.fastcsv.reader.NamedCsvRecord;
 import de.siegmar.fastcsv.reader.NamedCsvRecordHandler;
-import jp.co.yahoo.yosegi.config.Configuration;
-import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
 
 /**
  * Akka actors for the Mapper operators by blocks location
@@ -77,7 +75,7 @@ import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
  */
 public class ProcessMapperByBlocksLocation extends AbstractActor implements Serializable {
 
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+	Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 
 	protected JobStage jobstage;
@@ -87,7 +85,6 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 	Task tasktoprocess;
 	boolean iscacheable;
 	ExecutorService executor;
-	private final boolean topersist = false;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	int diskspillpercentage;
 	protected List getFunctions() {
@@ -132,11 +129,8 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 		log.info("BlocksLocation Columns: {}", blockslocation.getColumns());
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
-		YosegiRecordWriter writer = null;
-		ByteArrayOutputStream baos = null;
 		BufferedReader buffer = null;
 		InputStream bais = null;
-		CsvWriter writercsv = null;
 		List<String> reqcols = null;
 		List<String> originalcolsorder = null;
 		List<SqlTypeName> sqltypenamel = null;
@@ -189,12 +183,6 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 										.quoteCharacter('"').commentStrategy(CommentStrategy.SKIP).commentCharacter('#')
 										.skipEmptyLines(true).ignoreDifferentFieldCount(false).detectBomHeader(false)
 										.build(callbackHandler, buffer);
-								if (topersist) {
-									baos = new ByteArrayOutputStream();
-								}
-								YosegiRecordWriter writerdataload = writer = topersist
-										? new YosegiRecordWriter(baos, new Configuration())
-										: null;
 								intermediatestreamobject = csv.stream().map(values -> {
 									Object[] valuesobject = new Object[headers.length];
 									Object[] toconsidervalueobjects = new Object[headers.length];
@@ -213,12 +201,6 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 									return valueswithconsideration;
 								});
 							} else {
-								if (topersist) {
-									baos = new ByteArrayOutputStream();
-								}
-								YosegiRecordWriter writerdataload = writer = topersist
-										? new YosegiRecordWriter(baos, new Configuration())
-										: null;
 								intermediatestreamobject = buffer.lines();
 								intermediatestreamobject = intermediatestreamobject.map(line -> {
 									try {
@@ -241,9 +223,6 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 												SQLUtils.getValueFromYosegiObject(valuesobject, toconsidervalueobjects,
 														headers[index], data, index);
 											});
-											if (topersist) {
-												writerdataload.addRow(data);
-											}
 										} catch (Exception ex) {
 											log.error(DataSamudayaConstants.EMPTY, ex);
 										}
@@ -289,12 +268,13 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 				log.info("Number Of Shuffle Files PerExecutor {}", numfileperexec);
 				if (MapUtils.isNotEmpty(blr.pipeline)) {
 					int numfilepart = blr.pipeline.keySet().size();
-					Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap).collect(
+					ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+					Map<Integer, DiskSpillingList> results = fjpool.submit(()-> (Map) ((Stream<Tuple2>) streammap).collect(
 							Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 									Collectors.mapping(tup2 -> tup2,
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 													diskspillpercentage,
-													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, blr.pipeline.size())))));
+													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, blr.pipeline.size())))))).get();
 					results.entrySet().forEach(entry -> {
 						try {
 							entry.getValue().close();
@@ -354,6 +334,35 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 			}
 		} catch (Exception ex) {
 			log.error(PipelineConstants.PROCESSHDFSERROR, ex);
+		} finally {			
+			if (nonNull(buffer)) {
+				try {
+					buffer.close();
+				} catch (IOException e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+			if (nonNull(bais)) {
+				try {
+					bais.close();
+				} catch (IOException e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+			if (nonNull(buffernocols)) {
+				try {
+					buffernocols.close();
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+			if (nonNull(istreamnocols)) {
+				try {
+					istreamnocols.close();
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
 		}
 	}
 

@@ -123,7 +123,6 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 	private void processMapperByStream(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
-				log.info("In Mapper Stream Spilled {} {}", dsl.isSpilled(), !dsl.isSpilled()?dsl.readListFromBytes():dsl.getData());
 				if (dsl.isSpilled()) {					
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
@@ -140,9 +139,8 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 			}
 			if (initialsize == terminatingsize) {
 				diskspilllistinterm.close();
-				Object data = !diskspilllistinterm.isSpilled()?diskspilllistinterm.readListFromBytes():diskspilllistinterm.getData();
-				log.info("processMapStream InitialSize {} , Terminating Size {} and Terminating Class {} data {}", initialsize,
-						terminatingsize, object.getTerminiatingclass(), data);
+				log.info("processMapStream InitialSize {} , Terminating Size {} and Terminating Class {}", initialsize,
+						terminatingsize, object.getTerminiatingclass());
 				if (object.getTerminiatingclass() == NodeIndexKey.class) {
 					log.info("Is Terminating Class NodeIndexKey Shuffle Records {} isEmpty {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite));
 					if (CollectionUtils.isNotEmpty(childpipes)) {
