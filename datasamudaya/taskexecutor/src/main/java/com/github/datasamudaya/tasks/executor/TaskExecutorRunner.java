@@ -175,7 +175,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			log.info("Ceasing the connections...");
 			server.close();
 			ter.destroy();
-			ByteBufferPoolDirect.destroy();
+			ByteBufferPoolDirect.destroyPool();
 			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v1)) {
 				shuffleFileServer.v1.close();
 			}

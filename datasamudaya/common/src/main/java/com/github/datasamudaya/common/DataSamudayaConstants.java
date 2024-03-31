@@ -601,5 +601,6 @@ public class DataSamudayaConstants {
 	public static final String DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT = "10000";
 	public static final String BTREEELEMENTSNUMBER = "btree.elements.number";
 	public static final String BTREEELEMENTSNUMBER_DEFAULT = "10000";
-	public static final int BYTEBUFFERSIZE = 1024; 
+	public static final int BYTEBUFFERSIZE = 1024;
+	public static final int BYTEBUFFERPOOLMAXIDLE = 10;
 }

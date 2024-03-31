@@ -1,6 +1,7 @@
 package com.github.datasamudaya.stream.executors;
 
 import static java.util.Objects.isNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -11,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
@@ -19,10 +21,10 @@ import org.jgroups.util.UUID;
 
 import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
-import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
 import com.github.datasamudaya.common.RemoteDataFetcher;
@@ -111,7 +113,7 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 			var path = getIntermediateDataFSFilePath(task);
 			log.info("ResultStream Path: " + path);
 			OutputStream os;
-			os = new ByteBufferOutputStream(ByteBufferPoolDirect.get(buffersize));
+			os = new ByteBufferOutputStream(ByteBufferPoolDirectOld.get(buffersize));
 			resultstream.put(path, os);
 			log.debug("Exiting StreamPipelineTaskExecutorInMemory.createIntermediateDataToFS");
 			return os;

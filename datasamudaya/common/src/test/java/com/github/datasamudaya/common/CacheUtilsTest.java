@@ -53,7 +53,7 @@ public class CacheUtilsTest {
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 				DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.CACHEBLOCKS);
-		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
+		ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
 	}
 
 	@Test
@@ -126,7 +126,7 @@ public class CacheUtilsTest {
 	public static void destroyCache() throws Exception {
 		DataSamudayaCache.get().clear();
 		DataSamudayaCacheManager.get().close();
-		ByteBufferPoolDirect.destroy();
+		ByteBufferPoolDirectOld.destroy();
 	}
 
 }

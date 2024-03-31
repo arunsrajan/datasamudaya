@@ -65,11 +65,11 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
-import com.github.datasamudaya.common.HdfsBlockReader;
-import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.HdfsBlockReader;
+import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
 import com.github.datasamudaya.common.RemoteDataFetcher;
@@ -128,7 +128,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 		log.debug("Entered StreamPipelineTaskExecutorInMemoryDisk.createIntermediateDataToFS");
 		try {
 			OutputStream os;
-			os = new ByteBufferOutputStream(ByteBufferPoolDirect.get(buffersize));
+			os = new ByteBufferOutputStream(ByteBufferPoolDirectOld.get(buffersize));
 			log.debug("Exiting StreamPipelineTaskExecutorInMemoryDisk.createIntermediateDataToFS");
 			return os;
 		} catch (Exception e) {

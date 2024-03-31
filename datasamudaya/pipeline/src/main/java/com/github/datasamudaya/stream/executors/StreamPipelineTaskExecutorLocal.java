@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
@@ -32,10 +33,10 @@ import org.ehcache.Cache;
 
 import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
-import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
 import com.github.datasamudaya.common.RemoteDataFetcher;
@@ -107,7 +108,7 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 		try {
 			var path = getIntermediateDataFSFilePath(task);
 			OutputStream os;
-			os = new ByteBufferOutputStream(ByteBufferPoolDirect.get(buffersize));
+			os = new ByteBufferOutputStream(ByteBufferPoolDirectOld.get(buffersize));
 			resultstream.put(path, os);
 			log.debug("Exiting StreamPipelineTaskExecutorLocal.createIntermediateDataToFS");
 			return os;

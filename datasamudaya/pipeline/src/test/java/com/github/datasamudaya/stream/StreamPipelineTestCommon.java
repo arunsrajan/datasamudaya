@@ -16,12 +16,14 @@
 package com.github.datasamudaya.stream;
 
 import static java.util.Objects.nonNull;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -34,7 +36,7 @@ import org.ehcache.Cache;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaCacheManager;
@@ -89,7 +91,7 @@ public class StreamPipelineTestCommon {
 		Configuration conf = new Configuration();
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
-		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
+		ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 				DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.CACHEBLOCKS);
@@ -129,7 +131,7 @@ public class StreamPipelineTestCommon {
 		if (!Objects.isNull(hdfs)) {
 			hdfs.close();
 		}
-		ByteBufferPoolDirect.destroy();
+		ByteBufferPoolDirectOld.destroy();
 		if (nonNull(DataSamudayaCacheManager.get())) {
 			DataSamudayaCacheManager.get().close();
 			DataSamudayaCacheManager.put(null);

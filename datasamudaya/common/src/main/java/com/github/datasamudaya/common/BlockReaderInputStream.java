@@ -10,6 +10,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Objects.nonNull;
+
 public class BlockReaderInputStream extends InputStream implements Serializable {
 	private static final Logger log = LoggerFactory.getLogger(BlockReaderInputStream.class);
 	private static final long serialVersionUID = 7812408972554339334L;
@@ -23,7 +25,7 @@ public class BlockReaderInputStream extends InputStream implements Serializable 
 		this.fsdis = fsdis;
 		this.startoffset = startoffset;
 		fsdis.seek(startoffset);
-		buffer = ByteBufferPoolDirect.get(DataSamudayaConstants.BYTEBUFFERSIZE);		
+		buffer = ByteBufferPoolDirect.get();		
 		this.limit = limit;
 		this.bytesRead = 0;
 	}
@@ -50,12 +52,16 @@ public class BlockReaderInputStream extends InputStream implements Serializable 
 	@Override
 	public void close() {
 		try {
-			fsdis.close();
-			fsdis = null;			
-			ByteBufferPoolDirect.destroy(buffer);
-			buffer = null;
+			if(nonNull(fsdis)) {
+				fsdis.close();
+				fsdis = null;
+			}
+			if(nonNull(buffer)) {
+				ByteBufferPoolDirect.destroy(buffer);
+				buffer = null;
+			}
 		} catch (Exception e) {
-			log.warn("Error While closing BlockReader {}", fsdis);
+			log.error("Error While closing BlockReader", e);
 		}
 	}
 

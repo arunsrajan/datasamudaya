@@ -43,7 +43,7 @@ import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.DataSamudayaCacheManager;
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -87,7 +87,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			pipelineconfig.setBatchsize("4");
 			tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
-			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
+			ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
@@ -267,6 +267,6 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 				}
 			});
 		});
-		ByteBufferPoolDirect.destroy();
+		ByteBufferPoolDirectOld.destroy();
 	}
 }

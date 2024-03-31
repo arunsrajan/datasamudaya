@@ -25,7 +25,7 @@ public class ByteBufferPoolDirectTest {
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 				DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.CACHEBLOCKS);
-		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
+		ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
 	}
 
 	@Test
@@ -39,7 +39,7 @@ public class ByteBufferPoolDirectTest {
 			Thread thr = new Thread(() -> {
 				ByteBuffer bf = null;
 				try {
-					bf = ByteBufferPoolDirect.get(128 * 1024 * 1024);
+					bf = ByteBufferPoolDirectOld.get(128 * 1024 * 1024);
 					log.info("" + bf + " is Direct: " + bf.isDirect());
 					Thread.sleep(rand.nextLong(10000));
 				} catch (Exception e) {
@@ -75,6 +75,6 @@ public class ByteBufferPoolDirectTest {
 	public static void destroyCache() throws Exception {
 		DataSamudayaCache.get().clear();
 		DataSamudayaCacheManager.get().close();
-		ByteBufferPoolDirect.destroy();
+		ByteBufferPoolDirectOld.destroy();
 	}
 }

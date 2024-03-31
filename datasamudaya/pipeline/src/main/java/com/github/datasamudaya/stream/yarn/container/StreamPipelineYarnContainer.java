@@ -32,7 +32,7 @@ import org.springframework.yarn.integration.container.AbstractIntegrationYarnCon
 import org.springframework.yarn.integration.ip.mind.MindAppmasterServiceClient;
 
 import com.esotericsoftware.kryo.io.Input;
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -88,7 +88,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 							+ DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			var inmemorycache = DataSamudayaCache.get();
 			log.info("Initializing Cache Completed");
-			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
+			ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
 			while (true) {
 				request = new JobRequest();
 				request.setState(JobRequest.State.WHATTODO);
@@ -166,7 +166,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 
 			}
 			log.debug(containerid + ": Completed Job Exiting with status 0...");
-			ByteBufferPoolDirect.destroy();
+			ByteBufferPoolDirectOld.destroy();
 			shutdownExecutor();
 			System.exit(0);
 		}
@@ -183,7 +183,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 				var response = (JobResponse) client.doMindRequest(request);
 				log.debug("Job Completion Error..." + response.getState() + "..., See cause below \n", ex);
 			}
-			ByteBufferPoolDirect.destroy();
+			ByteBufferPoolDirectOld.destroy();
 			try {
 				shutdownExecutor();
 			} catch (InterruptedException e) {
