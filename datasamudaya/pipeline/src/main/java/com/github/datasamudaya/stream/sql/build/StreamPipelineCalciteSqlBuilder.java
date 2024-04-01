@@ -22,6 +22,7 @@ import org.apache.calcite.adapter.enumerable.EnumerableProject;
 import org.apache.calcite.adapter.enumerable.EnumerableSort;
 import org.apache.calcite.adapter.enumerable.EnumerableSortedAggregate;
 import org.apache.calcite.adapter.enumerable.EnumerableTableScan;
+import org.apache.calcite.adapter.enumerable.EnumerableUnion;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.JoinRelType;
@@ -177,13 +178,14 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 
 		RelNode relnode = SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
 		descendants.put(relnode, false);
-		log.info("Required Columns: {}", new RequiredColumnsExtractor(requiredcolumnindex, tablecolumnsmap).getRequiredColumns(relnode));
+		requiredcolumnindex = new RequiredColumnsExtractor().getRequiredColumnsByTable(relnode);
+		log.info("Required Columns: {}", requiredcolumnindex);
 		return new StreamPipelineSql(execute(relnode, 0));
 	}
 
 	private final Map<RelNode, Boolean> descendants = new ConcurrentHashMap<>();
 
-	private final Map<String, Set<String>> requiredcolumnindex = new ConcurrentHashMap<>();
+	private Map<String, Set<String>> requiredcolumnindex;
 
 	/**
 	 * Execute the sql statement.
@@ -272,6 +274,20 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 				});
 			}
 			return spjoin;
+		} else if (relNode instanceof EnumerableUnion ehj) {
+			StreamPipeline<Object[]> spunion = (StreamPipeline<Object[]>) buildUnion((StreamPipeline<Object[]>) sp.get(0)
+			, (StreamPipeline<Object[]>) sp.get(1)
+			);
+			if (!SQLUtils.hasDescendants(relNode, descendants)) {
+				return spunion.map(new MapFunction<Object[], Object[]>(){
+					private static final long serialVersionUID = 15264560692156277L;
+
+					public Object[] apply(Object[] values) {
+						return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+					}
+				});
+			}
+			return spunion;
 		} else if (relNode instanceof EnumerableProject ep) {
 			boolean hasdecendants = SQLUtils.hasDescendants(relNode, descendants);
 
@@ -595,6 +611,48 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 					});
 		}
 		return null;
+	}
+	
+	/**
+	 * The function returns union of distinct of two pipelines.
+	 * @param pipeline1
+	 * @param pipeline2
+	 * @return union of two pipelines
+	 * @throws PipelineException
+	 */
+	public static StreamPipeline<Object[]> buildUnion(
+			StreamPipeline<Object[]> pipeline1, StreamPipeline<Object[]> pipeline2) throws PipelineException{
+		return pipeline1.map(new MapFunction<Object[], List<Object>>(){
+			private static final long serialVersionUID = -1219246537117693979L;
+
+			@Override
+			public List<Object> apply(Object[] obj) {
+				return Arrays.asList((Object[])obj[0]);
+			}
+		}).distinct()
+				.map(new MapFunction<List<Object>, Object[]>(){
+					private static final long serialVersionUID = 6404372514784230364L;
+
+					@Override
+					public Object[] apply(List<Object> obj) {
+						return obj.toArray();
+					}
+				}).union(pipeline2.map(new MapFunction<Object[], List<Object>>(){
+					private static final long serialVersionUID = -4809552374913602070L;
+
+					@Override
+					public List<Object> apply(Object[] obj) {
+						return Arrays.asList((Object[])obj[0]);
+					}
+				}).distinct()
+						.map(new MapFunction<List<Object>, Object[]>(){
+							private static final long serialVersionUID = 5625475672514170727L;
+
+							@Override
+							public Object[] apply(List<Object> obj) {
+								return obj.toArray();
+							}
+						}));
 	}
 
 	/**

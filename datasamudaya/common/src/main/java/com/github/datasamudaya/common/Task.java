@@ -66,6 +66,7 @@ public class Task implements Serializable, Cloneable {
 	public List<Task> shufflechildactors;
 	public boolean tosort;
 	public List<FieldCollationDirection> fcsc;
+	public boolean isunion;
 
 	@Override
 	public Object clone() throws CloneNotSupportedException {

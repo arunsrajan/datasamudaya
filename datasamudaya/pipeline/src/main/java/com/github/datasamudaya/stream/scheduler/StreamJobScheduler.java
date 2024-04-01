@@ -14,6 +14,7 @@ import static java.util.Objects.nonNull;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -131,6 +132,7 @@ import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.UnionFunction;
 import com.github.datasamudaya.common.utils.BTree;
 import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
+import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
 import com.github.datasamudaya.common.utils.RemoteListIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
@@ -580,7 +582,7 @@ public class StreamJobScheduler {
 			}
 			if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && CollectionUtils.isNotEmpty(taskexecutors)) {
 				for(String tehost:taskexecutors) {
-					Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId()), pipelineconfig.getTejobid());
+				//	Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId()), pipelineconfig.getTejobid());
 				}
 			}
 		}
@@ -1761,37 +1763,59 @@ public class StreamJobScheduler {
 					}
 				}
 			} else if (function instanceof UnionFunction) {
-				if (outputparent1.size() != outputparent2.size()) {
-					throw new Exception("Partition Not Equal");
-				}
-				for (var inputparent1 : outputparent1) {
-					for (var inputparent2 : outputparent2) {
-						partitionindex++;
-						var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
-								Arrays.asList(inputparent1, inputparent2));
-						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
-						tasks.add(spts);
-						graph.addVertex(spts);
-						taskgraph.addVertex(spts.getTask());
-						if (inputparent1 instanceof StreamPipelineTaskSubmitter input1) {
-							if (!graph.containsVertex(input1)) {
-								graph.addVertex(input1);
-							}
-							if (!taskgraph.containsVertex(input1.getTask())) {
-								taskgraph.addVertex(input1.getTask());
-							}
-							graph.addEdge(input1, spts);
-							taskgraph.addEdge(input1.getTask(), spts.getTask());
+				if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
+					List allparents = new ArrayList<>();
+					allparents.addAll(outputparent1);
+					allparents.addAll(outputparent2);
+					partitionindex++;
+					var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+							allparents);
+					spts.getTask().setIsunion(true);
+					spts.getTask().setTaskspredecessor(new ArrayList<>());
+					tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
+					tasks.add(spts);
+					graph.addVertex(spts);
+					taskgraph.addVertex(spts.getTask());
+					for(var parent:allparents) {						
+						if (parent instanceof StreamPipelineTaskSubmitter sptsparent) {
+							spts.getTask().getTaskspredecessor().add(sptsparent.getTask());
+							graph.addEdge(sptsparent, spts);
+							taskgraph.addEdge(sptsparent.getTask(), spts.getTask());
 						}
-						if (inputparent2 instanceof StreamPipelineTaskSubmitter input2) {
-							if (!graph.containsVertex(input2)) {
-								graph.addVertex(input2);
+					}
+				} else {
+					if (outputparent1.size() != outputparent2.size()) {
+						throw new Exception("Partition Not Equal");
+					}
+					for (var inputparent1 : outputparent1) {
+						for (var inputparent2 : outputparent2) {
+							partitionindex++;
+							var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+									Arrays.asList(inputparent1, inputparent2));
+							tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
+							tasks.add(spts);
+							graph.addVertex(spts);
+							taskgraph.addVertex(spts.getTask());
+							if (inputparent1 instanceof StreamPipelineTaskSubmitter input1) {
+								if (!graph.containsVertex(input1)) {
+									graph.addVertex(input1);
+								}
+								if (!taskgraph.containsVertex(input1.getTask())) {
+									taskgraph.addVertex(input1.getTask());
+								}
+								graph.addEdge(input1, spts);
+								taskgraph.addEdge(input1.getTask(), spts.getTask());
 							}
-							if (!taskgraph.containsVertex(input2.getTask())) {
-								taskgraph.addVertex(input2.getTask());
+							if (inputparent2 instanceof StreamPipelineTaskSubmitter input2) {
+								if (!graph.containsVertex(input2)) {
+									graph.addVertex(input2);
+								}
+								if (!taskgraph.containsVertex(input2.getTask())) {
+									taskgraph.addVertex(input2.getTask());
+								}
+								graph.addEdge(input2, spts);
+								taskgraph.addEdge(input2.getTask(), spts.getTask());
 							}
-							graph.addEdge(input2, spts);
-							taskgraph.addEdge(input2.getTask(), spts.getTask());
 						}
 					}
 				}
@@ -2280,40 +2304,79 @@ public class StreamJobScheduler {
 									|| job.getJobtype() == JOBTYPE.PIG)) {
 								PrintWriter out = pipelineconfig.getWriter();
 								if(result instanceof List lst && CollectionUtils.isNotEmpty(lst) && lst.get(0) instanceof NodeIndexKey) {
-									int btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
-											DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
-									BTree btree = new BTree(btreesize);
-									for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
-										log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
-										try (RemoteListIteratorClient client = new RemoteListIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
-												RequestType.LIST)) {
-											while (client.hasNext()) {
-												log.info("Getting Next List From Remote Server");
-												List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
-														.convertBytesToObjectCompressed((byte[]) client.next(), null);
-												log.info("Next List From Remote Server with size {}", niks.size());
-												for (NodeIndexKey niktree : niks) {
-													niktree.setTask(nik.getTask());
-													btree.insert(niktree, nik.getTask().getFcsc());
+									if(task.isIsunion()) {
+										int diskexceedpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+												DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
+										DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false,false ,false, null, null, 1);
+										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
+											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
+											try (RemoteListIteratorClient client = new RemoteListIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
+													RequestType.LIST)) {
+												while (client.hasNext()) {
+													log.info("Getting Next List From Remote Server");
+													List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
+															.convertBytesToObjectCompressed((byte[]) client.next(), null);
+													log.info("Next List From Remote Server with size {}", niks.size());
+													niks.stream().parallel().forEach(diskspillset::add);
 												}
 											}
 										}
-									}
-									List larrayobj = new ArrayList<>();
-									List<NodeIndexKey> rootniks = new ArrayList<>();
-									btree.traverse(rootniks);
-									Stream stream = Utils.getStreamData(rootniks, null);
-									stream.map(new MapFunction<Object[], Object[]>(){
-										private static final long serialVersionUID = -6478016520828716284L;
-
-										public Object[] apply(Object[] values) {
-											return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+										List larrayobj = new ArrayList<>();
+										List<NodeIndexKey> rootniks = new ArrayList<>();
+										diskspillset.close();
+										Stream<NodeIndexKey> datastream = diskspillset.isSpilled()
+												? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
+												Utils.getLocalFilePathForTask(diskspillset.getTask(), null, false, false, false)))
+												: diskspillset.readSetFromBytes().stream();
+										datastream.map(nik->nik.getKey()).map(new MapFunction<Object[], Object[]>(){
+											private static final long serialVersionUID = -6478016520828716284L;
+	
+											public Object[] apply(Object[] values) {
+												return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+											}
+										}).forEach(larrayobj::add);
+										diskspillset.clear();
+										if(nonNull(out)) {
+											totalrecords += Utils.printTableOrError((List) larrayobj, out, JOBTYPE.PIG);
+										} else {
+											stageoutput.add(larrayobj);
 										}
-									}).forEach(larrayobj::add);									
-									if(nonNull(out)) {
-										totalrecords += Utils.printTableOrError((List) larrayobj, out, JOBTYPE.PIG);
-									} else {
-										stageoutput.add(larrayobj);
+									} else if(task.isTosort()) {
+										int btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
+												DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
+										BTree btree = new BTree(btreesize);
+										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
+											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
+											try (RemoteListIteratorClient client = new RemoteListIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
+													RequestType.LIST)) {
+												while (client.hasNext()) {
+													log.info("Getting Next List From Remote Server");
+													List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
+															.convertBytesToObjectCompressed((byte[]) client.next(), null);
+													log.info("Next List From Remote Server with size {}", niks.size());
+													for (NodeIndexKey niktree : niks) {
+														niktree.setTask(nik.getTask());
+														btree.insert(niktree, nik.getTask().getFcsc());
+													}
+												}
+											}
+										}
+										List larrayobj = new ArrayList<>();
+										List<NodeIndexKey> rootniks = new ArrayList<>();
+										btree.traverse(rootniks);
+										Stream stream = Utils.getStreamData(rootniks, null);
+										stream.map(new MapFunction<Object[], Object[]>(){
+											private static final long serialVersionUID = -6478016520828716284L;
+	
+											public Object[] apply(Object[] values) {
+												return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+											}
+										}).forEach(larrayobj::add);									
+										if(nonNull(out)) {
+											totalrecords += Utils.printTableOrError((List) larrayobj, out, JOBTYPE.PIG);
+										} else {
+											stageoutput.add(larrayobj);
+										}
 									}
 								} else {
 									if(nonNull(out)) {

@@ -121,6 +121,7 @@ import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ShuffleStage;
+import com.github.datasamudaya.common.functions.UnionFunction;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.executors.actors.ProcessCoalesce;
@@ -132,6 +133,7 @@ import com.github.datasamudaya.stream.executors.actors.ProcessMapperByStream;
 import com.github.datasamudaya.stream.executors.actors.ProcessReduce;
 import com.github.datasamudaya.stream.executors.actors.ProcessRightOuterJoin;
 import com.github.datasamudaya.stream.executors.actors.ProcessShuffle;
+import com.github.datasamudaya.stream.executors.actors.ProcessUnion;
 
 import akka.actor.Actor;
 import akka.actor.ActorRef;
@@ -2304,7 +2306,8 @@ public class SQLUtils {
 				CoreRules.PROJECT_FILTER_VALUES_MERGE, EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
 				EnumerableRules.ENUMERABLE_PROJECT_RULE, EnumerableRules.ENUMERABLE_FILTER_RULE,
 				EnumerableRules.ENUMERABLE_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_SORT_RULE,
-				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_JOIN_RULE);
+				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_JOIN_RULE,
+				EnumerableRules.ENUMERABLE_UNION_RULE, EnumerableRules.ENUMERABLE_INTERSECT_RULE);
 
 		return optimizer.optimize(relTree, relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
 	}
@@ -3650,6 +3653,18 @@ public class SQLUtils {
 				cluster.registerOnMemberUp(() -> {
 					actors.add(system.actorOf(Props.create(ProcessShuffle.class, jobidstageidtaskidcompletedmap,
 							taskactor.getTask(), childactors), jobstageid + taskactor.getTask().getTaskid()));
+				});
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().tasks.get(0) instanceof UnionFunction) {
+				List<ActorSelection> childactors = new ArrayList<>();
+				for (String actorselectionurl : taskactor.getChildtaskactors()) {
+					childactors.add(system.actorSelection(actorselectionurl));
+				}
+				cluster.registerOnMemberUp(() -> {
+					actors.add(system.actorOf(Props.create(ProcessUnion.class, js, inmemorycache, jobidstageidtaskidcompletedmap,
+							taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()), jobstageid + taskactor.getTask().getTaskid()));
 				});
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
 						+ taskactor.getTask().getTaskid());

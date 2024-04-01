@@ -65,7 +65,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		if ("false".equals(pipelineconfig.getLocal())) {
 			pipelineconfig.setUseglobaltaskexecutors(true);
 			String teid = Utils.getUUID();
-			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 6, 1000, 1, 6, 1000);
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 6, 5000, 1, 6, 5000);
 			pipelineconfig.setTejobid(teid);
 			pipelineconfig.setUser("arun");
 		}
@@ -557,6 +557,33 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		log.info("In testRequiredColumnsJoin() method Exit");
 	}
 
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsUnion() throws Exception {
+		log.info("In testRequiredColumnsUnion() method Entry");
+
+		String statement = """
+				select airlinesamplesql.uniquecarrier, airlinesamplesql.origin from airlinesamplesql union select airlinesample.uniquecarrier, airlinesample.dest from airlinesample
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlinesamplesql", airlineheader, airlineheadertypes)
+				.add(airlinesample, "airlinesample", airlineheader, airlineheadertypes)
+				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		long totalrecords = 0;
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			totalrecords += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2l, rec.length);
+			}
+		}
+		log.info("In testRequiredColumnsUnion() method Exit");
+	}
+	
 	@Test
 	public void testRequiredColumnsJoinCarrierSpecific() throws Exception {
 		log.info("In testRequiredColumnsJoinCarrierSpecific() method Entry");

@@ -36,6 +36,7 @@ import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TerminatingActorValue;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
+import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.RemoteListIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
@@ -127,6 +128,13 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
 					diskspilllistinterm.addAll(dsl.readListFromBytes());
+				}
+				dsl.clear();
+			} else if (object.getValue() instanceof DiskSpillingSet dsl) {
+				if (dsl.isSpilled()) {					
+					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
+				} else {
+					diskspilllistinterm.addAll(dsl.readSetFromBytes());
 				}
 				dsl.clear();
 			}

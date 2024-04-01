@@ -3144,4 +3144,45 @@ public class Utils {
 		});
 	}
 	
+	/**
+	 * The Copy of the spilled data from one file to another file
+	 * 
+	 * @param dslinput
+	 * @param kryo
+	 * @param dslout
+	 */
+	public static void copySpilledDataSourceToDestination(DiskSpillingSet dslinput, DiskSpillingList dslout) {
+		Kryo kryo = Utils.getKryo();
+		try (FileInputStream istream = new FileInputStream(
+				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
+						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				var sis = new SnappyInputStream(istream);
+				Input input = new Input(sis);) {
+			while (input.available() > 0) {
+				Set records = (Set) kryo.readClassAndObject(input);
+				dslout.addAll(records);
+			}
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+	}
+	
+	/**
+	 * Copy Disk Spilling Set To Disk For Union
+	 * @param dslinput
+	 */
+	public static void copyDiskSpillingSetToDisk(DiskSpillingSet dslinput) {
+		Kryo kryo = Utils.getKryo();
+		try (FileOutputStream ostream = new FileOutputStream(
+				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
+						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				var sos = new SnappyOutputStream(ostream);
+				Output output = new Output(sos);) {
+			kryo.writeClassAndObject(output, dslinput.readSetFromBytes());
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+	}
+	
+	
 }

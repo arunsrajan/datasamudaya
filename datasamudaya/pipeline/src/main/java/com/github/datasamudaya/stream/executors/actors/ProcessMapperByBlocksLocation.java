@@ -291,6 +291,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 								ActorRef.noSender());
 					});
 				} else if (CollectionUtils.isNotEmpty(blr.childactors)) {
+					log.info("Child Actors pipeline Process Started ...");
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							diskspillpercentage, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);
@@ -299,7 +300,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 							action -> action.tell(new OutputObject(diskspilllist, left, right, Dummy.class), ActorRef.noSender()));
 					blr.childactors().stream().forEach(
 							action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class), ActorRef.noSender()));
-
+					log.info("Child Actors pipeline Process Ended ...");
 				} else {
 					log.info("Processing Mapper Task In Writing To Cache Started ...");
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,

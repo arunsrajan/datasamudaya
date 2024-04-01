@@ -5,7 +5,11 @@ import java.nio.ByteBuffer;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
-
+/**
+ * The Factory Methos for creating ByteBuffer
+ * @author arun
+ *
+ */
 public class ByteBufferFactory extends BasePooledObjectFactory<ByteBuffer> {
 
     private final int bufferSize;
@@ -24,5 +28,4 @@ public class ByteBufferFactory extends BasePooledObjectFactory<ByteBuffer> {
         return new DefaultPooledObject<>(buffer);
     }
 
-    // Optionally, you can override methods to validate objects, destroy objects, etc.
 }
