@@ -174,6 +174,7 @@ import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
+import net.sf.jsqlparser.statement.select.SetOperationList;
 import net.sf.jsqlparser.statement.select.SubSelect;
 
 /**
@@ -2360,6 +2361,8 @@ public class SQLUtils {
 				}
 				tmptables.add(table.getName());
 			}
+		} else if(statement instanceof Select selectbody && selectbody.getSelectBody() instanceof SetOperationList sol) {
+			sol.getSelects().forEach(select -> getAllTables(select, tables, tmptables));
 		}
 	}
 
