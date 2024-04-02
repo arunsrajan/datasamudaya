@@ -2,7 +2,6 @@ package com.github.datasamudaya.stream.scheduler;
 
 import static java.util.Objects.nonNull;
 
-import java.io.ByteArrayOutputStream;
 import java.net.Socket;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -12,12 +11,11 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.LoadJar;
-import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.utils.Utils;
@@ -116,7 +114,12 @@ public class RemoteJobScheduler {
 			if (job.getPipelineconfig().getUseglobaltaskexecutors()) {
 				jobid = job.getPipelineconfig().getTejobid();
 			}
-			Object output = Utils.getResultObjectByInput(choosente, job, jobid);
+			Object output = null;
+			if(nonNull(job.getPipelineconfig().getJar())) {
+				output = Utils.getResultObjectByInput(choosente, job, jobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
+			} else {
+				output = Utils.getResultObjectByInput(choosente, job, jobid);
+			}
 			job.getJm().setJobcompletiontime(System.currentTimeMillis());
 			Utils.writeToOstream(job.getPipelineconfig().getOutput(), "Concluded job in "
 					+ ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0) + " seconds");

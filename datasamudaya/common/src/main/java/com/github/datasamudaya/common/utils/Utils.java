@@ -894,6 +894,28 @@ public class Utils {
 	}
 
 	/**
+	 * The function sends the object to remote rpc server and returns the result
+	 * @param hp
+	 * @param inputobj
+	 * @param jobid
+	 * @param cl
+	 * @return The result of the Object sent to rpc server
+	 * @throws RpcRegistryException
+	 */
+	public static Object getResultObjectByInput(String hp, Object inputobj, String jobid, ClassLoader cl) throws RpcRegistryException {
+		try {
+			var hostport = hp.split(DataSamudayaConstants.UNDERSCORE);
+			final Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
+			StreamDataCruncher cruncher = (StreamDataCruncher) registry
+					.lookup(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + jobid);
+			return cruncher.postObject(Utils.convertObjectToBytesCompressed(inputobj, cl));
+		} catch (Exception ex) {
+			throw new RpcRegistryException(String.format(
+					"Unable to read result Object for the input object %s from host port %s", inputobj, hp), ex);
+		}
+	}
+	
+	/**
 	 * This function returns the jgroups channel object.
 	 * 
 	 * @param bindaddr

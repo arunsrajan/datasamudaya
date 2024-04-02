@@ -83,6 +83,7 @@ import com.github.datasamudaya.common.CloseStagesGraphExecutor;
 import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.ExecuteTaskActor;
@@ -640,7 +641,11 @@ public class StreamJobScheduler {
 				if (nonNull(js)) {
 					js.setTejobid(finaljobid);				
 					for (String te : jobexecutorsmap.get(key)) {
-						Utils.getResultObjectByInput(te, js, finaljobid);
+						if(nonNull(job.getPipelineconfig().getJar())) {
+							Utils.getResultObjectByInput(te, js, finaljobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
+						} else {
+							Utils.getResultObjectByInput(te, js, finaljobid);
+						}
 					}
 				}
 			} catch (Exception e) {

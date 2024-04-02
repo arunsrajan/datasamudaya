@@ -1159,7 +1159,16 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	private Object submitJob(Job job) throws Exception {
 		try {
-			if (pipelineconfig.getIsremotescheduler()) {
+			boolean ismesos = Boolean.parseBoolean(pipelineconfig.getMesos());
+			// If scheduler is yarn?
+			boolean isyarn = Boolean.parseBoolean(pipelineconfig.getYarn());
+			// If scheduler is local?
+			boolean islocal = Boolean.parseBoolean(pipelineconfig.getLocal());
+			// If ignite mode is choosen
+			boolean isignite = Objects.isNull(pipelineconfig.getMode()) ? false
+					: pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_DEFAULT) ? true : false;
+			if (pipelineconfig.getIsremotescheduler() && Boolean.FALSE.equals(ismesos) && Boolean.FALSE.equals(isyarn) && Boolean.FALSE.equals(islocal)
+					&& !isignite) {
 				RemoteJobScheduler rjs = new RemoteJobScheduler();
 				return rjs.scheduleJob(job);
 			} else {

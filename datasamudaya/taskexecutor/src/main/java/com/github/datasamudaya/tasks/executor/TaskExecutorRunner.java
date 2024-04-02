@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.CleanupTaskActors;
 import com.github.datasamudaya.common.DataSamudayaCache;
@@ -142,6 +143,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			}
 			StaticComponentContainer.Modules.exportAllToAll();
 			zo.connect();
+			ByteBufferPoolDirectOld.init(Long.parseLong(args[1]));
 			ByteBufferPoolDirect.init(Long.parseLong(args[1]));
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
@@ -155,8 +157,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid);
 			ter.start(zo, jobid);
-			int metricsport = Integer
-					.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT)) + 200;
+			int metricsport = Utils.getRandomPort();
 			DefaultExports.initialize(); // Initialize JVM metrics
 			PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT,
 					CollectorRegistry.defaultRegistry, Clock.SYSTEM);
