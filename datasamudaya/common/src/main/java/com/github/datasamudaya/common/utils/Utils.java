@@ -11,6 +11,14 @@ package com.github.datasamudaya.common.utils;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.awt.AWTException;
+import java.awt.Image;
+import java.awt.MenuItem;
+import java.awt.PopupMenu;
+import java.awt.SystemTray;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
+import java.awt.TrayIcon.MessageType;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -3184,5 +3192,69 @@ public class Utils {
 		}
 	}
 	
+	/**
+	 * The function sends push notification to the system tray
+	 * @param title
+	 * @param message
+	 * @param messageType
+	 * @throws AWTException
+	 */
+	public static void showNotification(String title, String message, MessageType messageType) throws AWTException {
+        // Check if SystemTray is supported
+        if (!SystemTray.isSupported()) {
+            log.error("System tray is not supported!");
+            return;
+        }
+
+        // Get the SystemTray instance
+        SystemTray tray = SystemTray.getSystemTray();
+
+        // Load an image
+        Image image = Toolkit.getDefaultToolkit().createImage("Notification Image");
+
+        // Create a popup menu (optional)
+        PopupMenu popup = new PopupMenu();
+        MenuItem defaultItem = new MenuItem("Open");
+        defaultItem.addActionListener(e -> log.info("Opening..."));
+        popup.add(defaultItem);
+
+        // Create a TrayIcon
+        TrayIcon trayIcon = new TrayIcon(image, "Push Notification", popup);
+        // Auto-size
+        trayIcon.setImageAutoSize(true);
+
+        // Add the TrayIcon to the SystemTray
+        tray.add(trayIcon);
+
+        // Display a notification
+        trayIcon.displayMessage(title, message, messageType);
+    }
+	
+	/**
+	 * The function forms details on job for push notification
+	 * @param job
+	 * @return job information
+	 */
+	public static String getJobInfo(Job job) {
+		StringBuilder builder = new StringBuilder();
+		builder.append("Job Metrics");
+		builder.append(DataSamudayaConstants.NEWLINE);
+		builder.append("JobId: ");
+		builder.append(job.getId());
+		builder.append(DataSamudayaConstants.NEWLINE);
+		builder.append("Job Mode: ");
+		builder.append(job.getPipelineconfig().getMode());
+		builder.append(DataSamudayaConstants.NEWLINE);
+		builder.append("Job Type: ");
+		builder.append(job.getJobtype());
+		builder.append(DataSamudayaConstants.NEWLINE);
+		if(nonNull(job.getJm())) {
+			builder.append("Total Time Taken: ");
+			builder.append(job.getJm().getTotaltimetaken());
+			builder.append(" Seconds");
+			builder.append(DataSamudayaConstants.NEWLINE);
+		}
+		return builder.toString();
+	}
 	
 }

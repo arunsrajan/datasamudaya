@@ -603,4 +603,7 @@ public class DataSamudayaConstants {
 	public static final String BTREEELEMENTSNUMBER_DEFAULT = "10000";
 	public static final int BYTEBUFFERSIZE = 1024;
 	public static final int BYTEBUFFERPOOLMAXIDLE = 10;
+	
+	public static final String PUSHNOTIFICATION = "push.notification";
+	public static final String PUSHNOTIFICATION_DEFAULT = "false";
 }

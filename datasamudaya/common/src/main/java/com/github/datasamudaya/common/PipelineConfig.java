@@ -85,6 +85,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	private String sqlpigquery;
 	private boolean topersistcolumnar;
 	private transient PrintWriter writer;
+	private Boolean windowspushnotification;
 
 	public void setOutput(OutputStream  output) {
 		this.output = output;
@@ -456,6 +457,18 @@ public class PipelineConfig implements Serializable, Cloneable {
 			return topersistcolumnar;
 		}
 		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR, DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT) : DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT);
+	}
+
+	
+	public boolean isWindowspushnotification() {
+		if (nonNull(windowspushnotification)) {
+			return windowspushnotification;
+		}
+		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.PUSHNOTIFICATION, DataSamudayaConstants.PUSHNOTIFICATION_DEFAULT) : DataSamudayaConstants.PUSHNOTIFICATION_DEFAULT);
+	}
+
+	public void setWindowspushnotification(boolean windowspushnotification) {
+		this.windowspushnotification = windowspushnotification;
 	}
 
 	public void setTopersistcolumnar(boolean topersistcolumnar) {

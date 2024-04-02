@@ -2,6 +2,7 @@ package com.github.datasamudaya.stream;
 
 import static java.util.Objects.nonNull;
 
+import java.awt.TrayIcon.MessageType;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -1157,15 +1158,20 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @
 	 */
 	private Object submitJob(Job job) throws Exception {
-		if (pipelineconfig.getIsremotescheduler()) {
-			RemoteJobScheduler rjs = new RemoteJobScheduler();
-			return rjs.scheduleJob(job);
-		} else {
-			StreamJobScheduler js = new StreamJobScheduler();
-			job.setPipelineconfig(pipelineconfig);
-			return js.schedule(job);
+		try {
+			if (pipelineconfig.getIsremotescheduler()) {
+				RemoteJobScheduler rjs = new RemoteJobScheduler();
+				return rjs.scheduleJob(job);
+			} else {
+				StreamJobScheduler js = new StreamJobScheduler();
+				job.setPipelineconfig(pipelineconfig);
+				return js.schedule(job);
+			}
+		} finally {
+			if(pipelineconfig.isWindowspushnotification()) {
+				Utils.showNotification(DataSamudayaConstants.DATASAMUDAYA+" Job Completed", Utils.getJobInfo(job), MessageType.INFO);
+			}
 		}
-
 	}
 
 	/**
