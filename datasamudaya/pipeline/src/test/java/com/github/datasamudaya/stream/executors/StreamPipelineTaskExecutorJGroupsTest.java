@@ -105,7 +105,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths
+		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls, false);
@@ -151,11 +151,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task);
@@ -200,11 +200,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task);
@@ -263,11 +263,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task1);
@@ -335,7 +335,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths
+		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls, false);
@@ -381,11 +381,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task);
@@ -430,11 +430,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task);
@@ -492,11 +492,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task1);
@@ -567,7 +567,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -612,7 +612,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -658,7 +658,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -709,7 +709,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -755,7 +755,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -801,7 +801,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -847,7 +847,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -892,7 +892,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -936,7 +936,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -983,7 +983,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1034,7 +1034,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1081,7 +1081,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1128,7 +1128,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1175,7 +1175,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1220,7 +1220,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1277,7 +1277,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1340,7 +1340,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1398,7 +1398,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1457,7 +1457,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1516,7 +1516,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1575,7 +1575,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1619,7 +1619,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1664,7 +1664,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1722,7 +1722,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -1787,11 +1787,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(reducebykeytask1);
@@ -1878,11 +1878,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(reducebykeytask1);
@@ -1974,11 +1974,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(reducebykeytask1);
@@ -2063,7 +2063,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -2128,7 +2128,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -2193,7 +2193,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -2258,7 +2258,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -2321,7 +2321,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
@@ -2393,11 +2393,11 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
 		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(reducebykeytask1);
@@ -2480,7 +2480,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
 		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);

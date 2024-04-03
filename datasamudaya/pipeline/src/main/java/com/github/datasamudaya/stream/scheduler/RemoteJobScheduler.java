@@ -80,6 +80,7 @@ public class RemoteJobScheduler {
 			}
 			var tes = zo.getTaskExectorsByJobId(jobid);
 			taskexecutors = new LinkedHashSet<>();
+			taskexecutors.addAll(zo.getDriversByJobId(jobid));
 			taskexecutors.addAll(tes);
 			while (taskexecutors.size() != job.getTaskexecutors().size()) {
 				Thread.sleep(1000);
@@ -109,11 +110,12 @@ public class RemoteJobScheduler {
 		try (var zo = new ZookeeperOperations();) {
 			zo.connect();
 			getTaskExecutorsHostPort(job, job.getPipelineconfig(), zo);
-			String choosente = taskexecutors.iterator().next();
 			String jobid = job.getId();
 			if (job.getPipelineconfig().getUseglobaltaskexecutors()) {
 				jobid = job.getPipelineconfig().getTejobid();
-			}
+			};
+			String choosente = getDriverNode(zo, jobid);
+			log.info("Choosen Task Executor Host Port {}", choosente);			
 			Object output = null;
 			if(nonNull(job.getPipelineconfig().getJar())) {
 				output = Utils.getResultObjectByInput(choosente, job, jobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
@@ -139,5 +141,15 @@ public class RemoteJobScheduler {
 		return null;
 	}
 
-
+	/**
+	 * The function gets all the drivers from zookeeepr for given job id
+	 * @param zo
+	 * @param job
+	 * @return driver host port
+	 * @throws Exception
+	 */
+	protected String getDriverNode(ZookeeperOperations zo, String jobid) throws Exception {
+		return zo.getDriversByJobId(jobid).stream().filter(hp->taskexecutors.contains(hp)).findFirst().get();
+	}
+	
 }

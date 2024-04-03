@@ -72,7 +72,8 @@ public class ContainerLauncher {
 			//Direct heap for unsafe memory.
 			argumentsForSpawn.add("" + cr.getDirectheap());
 			argumentsForSpawn.add(jobid);
-			log.debug("Launching Container Daemon Process: " + argumentsForSpawn);
+			argumentsForSpawn.add(DataSamudayaConstants.EMPTY + cr.getExecutortype());
+			log.info("Launching Container Daemon Process: " + argumentsForSpawn);
 			//Spawning the process for running task executor
 			Process process = Runtime.getRuntime()
 					.exec(argumentsForSpawn.toArray(new String[argumentsForSpawn.size()]));

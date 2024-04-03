@@ -59,7 +59,7 @@ public class HDFSBlockUtils {
 	 * @return list of blocks information with multiple location from HDFS.
 	 * @throws Exception
 	 */
-	public static List<BlocksLocation> getBlocksLocationByFixedBlockSizeAuto(FileSystem hdfs, List<Path> filepaths,
+	public static List<BlocksLocation> getBlocksLocation(FileSystem hdfs, List<Path> filepaths,
 			List<String> columns)
 			throws Exception {
 		lock.acquire();
@@ -74,7 +74,7 @@ public class HDFSBlockUtils {
 					var lb = locatedblocks.get(lbindex);
 					var dinfoa = lb.getLocations();
 					var dninfos = Arrays.asList(dinfoa);
-					log.info("In getBlocksLocationByFixedBlockSizeAuto dninfos TimeTaken {}",
+					log.info("In getBlocksLocation dninfos TimeTaken {}",
 							(System.currentTimeMillis() - starttime) / 1000.0);
 					var skipbytes = 0l;
 					while (true) {
@@ -94,15 +94,15 @@ public class HDFSBlockUtils {
 						bls.setBlock(block);
 						blocklocationsl.add(bls);
 						skipbytes = 0l;
-						log.info("In getBlocksLocationByFixedBlockSizeAuto skipbytes TimeTaken {}",
+						log.info("In getBlocksLocation skipbytes TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
 						boolean isnewline = isNewLineAtEnd(hdfs, lb, lb.getStartOffset() + block[0].getBlockend() - 1,
 								dninfos.get(0).getXferAddr());
-						log.info("In getBlocksLocationByFixedBlockSizeAuto isnewline TimeTaken {}",
+						log.info("In getBlocksLocation isnewline TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
 						if (!isnewline && lbindex < locatedblocks.size() - 1) {
 							log.info(
-									"In getBlocksLocationByFixedBlockSizeAuto lbindex < locatedblocks.size TimeTaken {}",
+									"In getBlocksLocation lbindex < locatedblocks.size TimeTaken {}",
 									(System.currentTimeMillis() - starttime) / 1000.0);
 							lbindex++;
 							lb = locatedblocks.get(lbindex);
@@ -130,11 +130,11 @@ public class HDFSBlockUtils {
 						} else {
 							break;
 						}
-						log.info("In getBlocksLocationByFixedBlockSizeAuto blockslocations TimeTaken {}",
+						log.info("In getBlocksLocation blockslocations TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
 					}
 					var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-					log.info("In getBlocksLocationByFixedBlockSizeAuto TimeTaken {}", timetaken);
+					log.info("In getBlocksLocation TimeTaken {}", timetaken);
 				}
 			} catch (Exception ex) {
 				log.error("Blocks Unavailable due to error", ex);

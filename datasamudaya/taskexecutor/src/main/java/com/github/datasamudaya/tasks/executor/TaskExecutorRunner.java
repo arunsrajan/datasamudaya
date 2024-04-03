@@ -52,6 +52,7 @@ import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.EXECUTORTYPE;
 import com.github.datasamudaya.common.ExecuteTaskActor;
 import com.github.datasamudaya.common.GetTaskActor;
 import com.github.datasamudaya.common.Job;
@@ -113,7 +114,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {
 			URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
-			if (args == null || args.length != 3) {
+			if (args == null || args.length != 4) {
 				log.debug("Args" + args);
 				if (args != null) {
 					log.debug("Args Not of Length 2!=" + args.length);
@@ -123,13 +124,14 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				}
 				System.exit(1);
 			}
-			if (args.length == 3) {
+			if (args.length == 4) {
 				log.debug("Args = ");
 				for (var arg : args) {
 					log.debug(arg);
 				}
 			}
-			String jobid = args[2];			
+			String jobid = args[2];
+			String executortype = args[3];	
 			shuffleFileServer = Utils.startShuffleRecordsServer();			
 			String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 			PropertyConfigurator.configure(
@@ -155,7 +157,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			escompute = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS,
 					new LinkedBlockingQueue());
 			var ter = new TaskExecutorRunner();
-			ter.init(zo, jobid);
+			ter.init(zo, jobid, executortype);
 			ter.start(zo, jobid);
 			int metricsport = Utils.getRandomPort();
 			DefaultExports.initialize(); // Initialize JVM metrics
@@ -198,7 +200,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	 * Initializes the zo.
 	 */
 	@Override
-	public void init(ZookeeperOperations zo, String jobid) throws Exception {
+	public void init(ZookeeperOperations zo, String jobid, String executortype) throws Exception {
 
 		var host = NetworkUtil
 				.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
@@ -206,9 +208,15 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 
 		var hp = host + DataSamudayaConstants.UNDERSCORE + port;
 
-		zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
-			log.info("TaskExecutor {} initialized and started", hp);
-		});
+		if(executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
+			zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
+				log.info("TaskExecutor {} initialized and started", hp);
+			});
+		} else if(executortype.equalsIgnoreCase(EXECUTORTYPE.DRIVER.name())) {
+			zo.createDriverNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
+				log.info("Driver {} initialized and started", hp);
+			});
+		}
 
 	}
 

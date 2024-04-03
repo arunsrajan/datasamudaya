@@ -175,6 +175,34 @@ public class ZookeeperOperations implements AutoCloseable {
 	}
 
 	/**
+	 * The method creates the driver znode in zookeeper with the jobid and driver, data and watcher.
+	 * @param jobid
+	 * @param driver
+	 * @param data
+	 * @param watcher
+	 * @throws ZookeeperException
+	 */
+	public void createDriverNode(String jobid, String driver, byte[] data, Watcher watcher) throws ZookeeperException {
+		try {
+			if (curator.checkExists()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.DRIVERSZK
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+							+ driver) == null) {
+				curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
+						.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
+						.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.DRIVERSZK
+								+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+								+ driver, data);
+				curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
+						+ DataSamudayaConstants.DRIVERSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+			}
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
+	
+	/**
 	  This method creates the znodes for tasks given jobid, task and watcher. 
 	  @param jobid
 		 @param task
@@ -434,6 +462,21 @@ public class ZookeeperOperations implements AutoCloseable {
 		try {
 			return curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
+	/**
+	 * The function returns all the drivers registered for the given job id 
+	 * @param jobid
+	 * @return list of drivers registered in zookeeper
+	 * @throws ZookeeperException
+	 */
+	public List<String> getDriversByJobId(String jobid) throws ZookeeperException {
+		try {
+			return curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.DRIVERSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
 		} catch (Exception ex) {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}

@@ -43,6 +43,7 @@ public class ContainerResources implements Serializable, Cloneable {
 	private int cpu;
 	private int port;
 	private boolean islaunched;
+	private EXECUTORTYPE executortype;
 
 	@Override
 	public Object clone() throws CloneNotSupportedException {

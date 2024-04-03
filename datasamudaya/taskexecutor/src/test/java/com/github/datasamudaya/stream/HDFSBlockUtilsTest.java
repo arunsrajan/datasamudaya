@@ -60,7 +60,7 @@ public class HDFSBlockUtilsTest extends StreamPipelineBaseTestCommon {
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			blockpath.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null);
+		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocation(hdfs, blockpath, null);
 		long totalbytes = 0;
 		for (BlocksLocation bl :bls) {
 			int sum = 0;
@@ -73,7 +73,7 @@ public class HDFSBlockUtilsTest extends StreamPipelineBaseTestCommon {
 			totalbytes += sum;
 		}
 		assertEquals(TOTAL, totalbytes);
-		bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null);
+		bls = HDFSBlockUtils.getBlocksLocation(hdfs, blockpath, null);
 		totalbytes = 0;
 		for (BlocksLocation bl :bls) {
 			log.info(bl);
@@ -99,7 +99,7 @@ public class HDFSBlockUtilsTest extends StreamPipelineBaseTestCommon {
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			blockpath.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null);
+		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocation(hdfs, blockpath, null);
 		long totalbytes = 0;
 		for (BlocksLocation bl :bls) {
 			log.info(bl);

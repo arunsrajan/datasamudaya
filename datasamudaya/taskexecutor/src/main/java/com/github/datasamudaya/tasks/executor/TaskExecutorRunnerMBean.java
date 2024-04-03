@@ -23,7 +23,7 @@ import com.github.datasamudaya.common.utils.ZookeeperOperations;
  *
  */
 public interface TaskExecutorRunnerMBean {
-	public void init(ZookeeperOperations zo, String jobid) throws Exception;
+	public void init(ZookeeperOperations zo, String jobid, String executortype) throws Exception;
 
 	public void start(ZookeeperOperations zo, String jobid) throws Exception;
 

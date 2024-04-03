@@ -1321,6 +1321,7 @@ public class Utils {
 				crs.setMaxmemory(heapmem);
 				crs.setDirectheap(directmem);
 				crs.setGctype(pc.getGctype());
+				crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
 				crl.add(crs);
 				String conthp = restolaunch.getNodeport().split(DataSamudayaConstants.UNDERSCORE)[0]
 						+ DataSamudayaConstants.UNDERSCORE + port;
@@ -1444,6 +1445,7 @@ public class Utils {
 				crs.setMaxmemory(heapmem);
 				crs.setDirectheap(directmem);
 				crs.setGctype(pc.getGctype());
+				crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
 				crl.add(crs);
 			}
 			cla.setCr(crl);
@@ -1656,6 +1658,7 @@ public class Utils {
 					crs.setMaxmemory(heapmem);
 					crs.setDirectheap(directmem);
 					crs.setGctype(pc.getGctype());
+					crs.setExecutortype(executortype);
 					crl.add(crs);
 				}
 				cla.setCr(crl);

@@ -463,7 +463,7 @@ public class FileBlocksPartitionerHDFS {
 		try {
 			List<BlocksLocation> bls = null;
 			// Fetch the location of blocks for user defined block size.
-			bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths, columns);
+			bls = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths, columns);
 			return bls;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.FILEBLOCKSERROR, ex);

@@ -547,7 +547,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				var paths = FileUtil.stat2Paths(fileStatuses.toArray(new FileStatus[fileStatuses.size()]));
 				blockpath.addAll(Arrays.asList(paths));
 				bls = new ArrayList<>();
-				bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null));
+				bls.addAll(HDFSBlockUtils.getBlocksLocation(hdfs, blockpath, null));
 				folderblocks.put(hdfsdir, bls);
 				allfilebls.addAll(bls);
 				allfiles.addAll(Utils.getAllFilePaths(blockpath));
