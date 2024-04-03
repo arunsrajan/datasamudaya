@@ -54,6 +54,7 @@ public class PigQueryClient {
 		options.addOption(DataSamudayaConstants.MEMORYPERCONTAINER, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.CPUDRIVER, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.MEMORYDRIVER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.ISDRIVERREQUIRED, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.PIGWORKERMODE, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
 		var cmd = parser.parse(options, args);
@@ -88,8 +89,13 @@ public class PigQueryClient {
 			throw new PigClientException("Number of containers cannot be less than 1");
 		}
 		
-		boolean isremotescheduler = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(
+		boolean isdriverrequired = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.IS_REMOTE_SCHEDULER, DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT));
+		
+		if (cmd.hasOption(DataSamudayaConstants.ISDRIVERREQUIRED)) {
+			String driverrequired = cmd.getOptionValue(DataSamudayaConstants.ISDRIVERREQUIRED);
+			isdriverrequired = Boolean.parseBoolean(driverrequired);
+		}
 		
 		int cpupercontainer = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
@@ -105,17 +111,17 @@ public class PigQueryClient {
 		}
 		
 		int cpudriver = 1;
-		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isremotescheduler) {
+		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isdriverrequired) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUDRIVER);
 			cpudriver = Integer.valueOf(cpu);
-		} else if(!isremotescheduler){
+		} else if(!isdriverrequired){
 			cpudriver = 0;
 		}
 		int memorydriver = 1024;
-		if (cmd.hasOption(DataSamudayaConstants.MEMORYDRIVER) && isremotescheduler) {
+		if (cmd.hasOption(DataSamudayaConstants.MEMORYDRIVER) && isdriverrequired) {
 			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYDRIVER);
 			memorydriver = Integer.valueOf(memory);
-		} else if(!isremotescheduler){
+		} else if(!isdriverrequired){
 			memorydriver = 0;
 		}
 		

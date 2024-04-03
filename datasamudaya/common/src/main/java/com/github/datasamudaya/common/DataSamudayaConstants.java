@@ -435,6 +435,7 @@ public class DataSamudayaConstants {
 	public static final String CPUPERCONTAINER = "containercpu";
 	public static final String MEMORYDRIVER = "drivermemory";
 	public static final String CPUDRIVER = "drivercpu";
+	public static final String ISDRIVERREQUIRED = "isdriverrequired";
 	public static final String SQLWORKERMODE = "sqlworkermode";
 	public static final String SQLWORKERMODE_DEFAULT = "standalone";
 	public static final String USERPIG = "piguser";

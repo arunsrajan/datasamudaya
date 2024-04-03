@@ -79,6 +79,7 @@ import com.github.datasamudaya.common.Block;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
+import com.github.datasamudaya.common.CleanupTaskActors;
 import com.github.datasamudaya.common.CloseStagesGraphExecutor;
 import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataSamudayaCache;
@@ -582,7 +583,7 @@ public class StreamJobScheduler {
 			}
 			if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && CollectionUtils.isNotEmpty(taskexecutors)) {
 				for(String tehost:taskexecutors) {
-				//	Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId()), pipelineconfig.getTejobid());
+					Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId()), pipelineconfig.getTejobid());
 				}
 			}
 		}
