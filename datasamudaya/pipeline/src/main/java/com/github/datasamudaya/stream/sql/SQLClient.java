@@ -152,6 +152,7 @@ public class SQLClient {
 						out.println(memorypercontainer);
 						out.println(cpudriver);
 						out.println(memorydriver);
+						out.println(isdriverrequired);
 						out.println(mode);
 						printServerResponse(in);
 						String messagestorefile = DataSamudayaProperties.get().getProperty(

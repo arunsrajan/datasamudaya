@@ -50,7 +50,7 @@ public class SelectQueryExecutor {
 	 * @throws Exception
 	 */
 	public static List executeSelectQuery(String dbdefault, String selectquery, String user, String jobid,
-			String tejobid, boolean isjgroups, boolean isyarn, PrintWriter writerresult) throws Exception {
+			String tejobid, boolean isjgroups, boolean isyarn, PrintWriter writerresult, boolean isschedulerremote) throws Exception {
 		try {
 			PipelineConfig pc = new PipelineConfig();
 			pc.setWriter(writerresult);
@@ -73,6 +73,7 @@ public class SelectQueryExecutor {
 			pc.setUser(user);
 			pc.setJobid(jobid);
 			pc.setTejobid(tejobid);
+			pc.setIsremotescheduler(isschedulerremote);
 			CCJSqlParserManager parserManager = new CCJSqlParserManager();
 			Validation validation = new Validation(Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB,
 					DatabaseType.POSTGRESQL, DatabaseType.H2), selectquery);

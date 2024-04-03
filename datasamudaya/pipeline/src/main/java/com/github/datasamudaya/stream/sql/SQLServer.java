@@ -55,6 +55,7 @@ public class SQLServer {
 						int memorypercontainer = 1024;
 						int cpudriver = 1;
 						int memorydriver = 1024;
+						boolean isdriverrequired;
 						String scheduler = "";
 						String tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 						boolean iscontainerlaunched = false;
@@ -69,6 +70,7 @@ public class SQLServer {
 							memorypercontainer = Integer.valueOf(in.readLine());
 							cpudriver = Integer.valueOf(in.readLine());
 							memorydriver = Integer.valueOf(in.readLine());
+							isdriverrequired = Boolean.parseBoolean(in.readLine());
 							scheduler = in.readLine();
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
@@ -254,7 +256,7 @@ public class SQLServer {
 												results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid);
 											} else {
 												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
-												results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups, isyarn, out);
+												results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups, isyarn, out, isdriverrequired);
 											}
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 											int partitionno = 1;

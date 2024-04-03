@@ -70,6 +70,7 @@ public class PigQueryServer {
 						int memorypercontainer = 1024;
 						int cpudriver = 1;
 						int memorydriver = 1024;
+						boolean isdriverrequired;
 						String scheduler = "";
 						String tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 						Map<String, Object> pigAliasExecutedObjectMap = new ConcurrentHashMap<>();
@@ -91,7 +92,9 @@ public class PigQueryServer {
 							memorypercontainer = Integer.valueOf(in.readLine());
 							cpudriver = Integer.valueOf(in.readLine());
 							memorydriver = Integer.valueOf(in.readLine());
+							isdriverrequired = Boolean.parseBoolean(in.readLine());
 							scheduler = in.readLine();
+							pipelineconfig.setIsremotescheduler(isdriverrequired);
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
 								out.println(usernotexistsmessage);
