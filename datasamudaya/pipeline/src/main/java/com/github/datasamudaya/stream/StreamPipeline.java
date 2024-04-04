@@ -76,6 +76,7 @@ import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.CountByKeyFunction;
 import com.github.datasamudaya.common.functions.CountByValueFunction;
 import com.github.datasamudaya.common.functions.Distinct;
+import com.github.datasamudaya.common.functions.DistributedDistinct;
 import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.DoubleFlatMapFunction;
 import com.github.datasamudaya.common.functions.FlatMapFunction;
@@ -812,18 +813,46 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 					graphstages.addVertex(parentstage);
 					taskstagemap.put(af.tasks.get(0), parentstage);
 				} else if (af.parents.size() >= 2) {
-					var childstage = new Stage();
-					childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
-					for (var afparent : af.parents) {
-						Stage parentstage = taskstagemap.get(afparent.tasks.get(0));
-						graphstages.addVertex(parentstage);
+					if (af.tasks.get(0) instanceof IntersectionFunction && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+							&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)) {
+						List<Stage> stages = new ArrayList<>();
+						for (var afparent : af.parents) {							
+								var parentstage = taskstagemap.get(afparent.tasks.get(0));
+								var childstagedisdistinct = new Stage();
+								childstagedisdistinct.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+								childstagedisdistinct.tasks.add(new DistributedDistinct());
+								graphstages.addVertex(parentstage);
+								graphstages.addVertex(childstagedisdistinct);
+								graphstages.addEdge(parentstage, childstagedisdistinct);
+								childstagedisdistinct.parent.add(parentstage);
+								parentstage.child.add(childstagedisdistinct);
+								taskstagemap.put(childstagedisdistinct.tasks.get(0), childstagedisdistinct);
+								stages.add(childstagedisdistinct);
+							}
+						var childstage = new Stage();
+						childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
 						graphstages.addVertex(childstage);
-						graphstages.addEdge(parentstage, childstage);
-						childstage.parent.add(parentstage);
-						parentstage.child.add(childstage);
+						childstage.tasks.add(af.tasks.get(0));
+						taskstagemap.put(af.tasks.get(0), childstage);
+						for (var stage : stages) {
+							childstage.parent.add(stage);
+							stage.child.add(childstage);
+							graphstages.addEdge(stage, childstage);
+						}
+					} else {
+						var childstage = new Stage();
+						childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+						for (var afparent : af.parents) {
+							Stage parentstage = taskstagemap.get(afparent.tasks.get(0));
+							graphstages.addVertex(parentstage);
+							graphstages.addVertex(childstage);
+							graphstages.addEdge(parentstage, childstage);
+							childstage.parent.add(parentstage);
+							parentstage.child.add(childstage);
+						}
+						childstage.tasks.add(af.tasks.get(0));
+						taskstagemap.put(af.tasks.get(0), childstage);
 					}
-					childstage.tasks.add(af.tasks.get(0));
-					taskstagemap.put(af.tasks.get(0), childstage);
 				} else if (af.parents.size() == 1) {
 					// create a new stage and add the abstract function to
 					// new stage created and form the edges between last stage
@@ -893,7 +922,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 							|| ((af.parents.get(0).tasks.get(0) instanceof ReduceByKeyFunction
 							|| af.parents.get(0).tasks.get(0) instanceof ReduceByKeyFunctionValues
 							|| af.parents.get(0).tasks.get(0) instanceof ReduceFunction
-							|| af.parents.get(0).tasks.get(0) instanceof SortedComparator
+							|| af.parents.get(0).tasks.get(0) instanceof SortedComparator							
 					) && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
 							&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)
 					))) {
@@ -1067,7 +1096,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			taskstagemap.put(childstage.tasks.get(0), childstage);
 			taskstagemap.put(af.tasks.get(0), childstage);
 			return;
-		}
+		}		
 		if(nonNull(parentstage)) {
 			var childstage = new Stage();
 			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());

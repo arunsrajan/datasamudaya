@@ -31,6 +31,7 @@ import com.github.datasamudaya.common.functions.CoalesceFunction;
 import com.github.datasamudaya.common.functions.CountByKeyFunction;
 import com.github.datasamudaya.common.functions.CountByValueFunction;
 import com.github.datasamudaya.common.functions.Distinct;
+import com.github.datasamudaya.common.functions.DistributedDistinct;
 import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.DoubleFlatMapFunction;
 import com.github.datasamudaya.common.functions.FlatMapFunction;
@@ -161,6 +162,8 @@ public class PipelineUtils {
 			return DataSamudayaConstants.SHUFFLE;
 		} else if (obj instanceof DistributedSort) {
 			return DataSamudayaConstants.DISTRIBUTEDSORT;
+		} else if (obj instanceof DistributedDistinct) {
+			return DataSamudayaConstants.DISTRIBUTEDDISTINCT;
 		}
 		return DataSamudayaConstants.EMPTY;
 	}

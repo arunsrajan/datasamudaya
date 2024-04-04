@@ -37,7 +37,7 @@ import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TerminatingActorValue;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
-import com.github.datasamudaya.common.utils.RemoteListIteratorClient;
+import com.github.datasamudaya.common.utils.RemoteIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
@@ -162,7 +162,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
 												null, true, false, false)))
 								: diskspilllistinterm.readListFromBytes().stream();
-						Map<String, RemoteListIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>();
+						Map<String, RemoteIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>();
 						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
 								datastream.map(nik -> {
 									try {
@@ -171,7 +171,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 											return nik.getValue();
 										}
 										if (isNull(taskrlistiterclientmap.get(jstid))) {
-											taskrlistiterclientmap.put(jstid, new RemoteListIteratorClient<>(
+											taskrlistiterclientmap.put(jstid, new RemoteIteratorClient<>(
 													nik.getTask(), null, RequestType.ELEMENT));
 										}
 										if(!taskrlistiterclientmap.get(jstid).isclosed() && taskrlistiterclientmap.get(jstid).hasNext()) {

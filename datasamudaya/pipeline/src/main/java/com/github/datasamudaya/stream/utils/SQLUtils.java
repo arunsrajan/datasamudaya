@@ -115,7 +115,9 @@ import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskStatus;
 import com.github.datasamudaya.common.TaskType;
 import com.github.datasamudaya.common.functions.Coalesce;
+import com.github.datasamudaya.common.functions.DistributedDistinct;
 import com.github.datasamudaya.common.functions.DistributedSort;
+import com.github.datasamudaya.common.functions.IntersectionFunction;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
@@ -125,8 +127,10 @@ import com.github.datasamudaya.common.functions.UnionFunction;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.executors.actors.ProcessCoalesce;
+import com.github.datasamudaya.stream.executors.actors.ProcessDistributedDistinct;
 import com.github.datasamudaya.stream.executors.actors.ProcessDistributedSort;
 import com.github.datasamudaya.stream.executors.actors.ProcessInnerJoin;
+import com.github.datasamudaya.stream.executors.actors.ProcessIntersection;
 import com.github.datasamudaya.stream.executors.actors.ProcessLeftOuterJoin;
 import com.github.datasamudaya.stream.executors.actors.ProcessMapperByBlocksLocation;
 import com.github.datasamudaya.stream.executors.actors.ProcessMapperByStream;
@@ -3660,13 +3664,32 @@ public class SQLUtils {
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
 						+ taskactor.getTask().getTaskid());
 				return taskactor.getTask();
-			} else if (js.getStage().tasks.get(0) instanceof UnionFunction) {
+			} else if (js.getStage().tasks.get(0) instanceof DistributedDistinct dd) {
 				List<ActorSelection> childactors = new ArrayList<>();
 				for (String actorselectionurl : taskactor.getChildtaskactors()) {
 					childactors.add(system.actorSelection(actorselectionurl));
 				}
 				cluster.registerOnMemberUp(() -> {
-					actors.add(system.actorOf(Props.create(ProcessUnion.class, js, inmemorycache, jobidstageidtaskidcompletedmap,
+					actors.add(system.actorOf(Props.create(ProcessDistributedDistinct.class, jobidstageidtaskidcompletedmap,
+							taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()), jobstageid + taskactor.getTask().getTaskid()));
+				});
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().tasks.get(0) instanceof UnionFunction || 
+					js.getStage().tasks.get(0) instanceof IntersectionFunction) {
+				List<ActorSelection> childactors = new ArrayList<>();
+				for (String actorselectionurl : taskactor.getChildtaskactors()) {
+					childactors.add(system.actorSelection(actorselectionurl));
+				}
+				final Class<?> cls;
+				if(js.getStage().tasks.get(0) instanceof UnionFunction) {
+					cls = ProcessUnion.class;
+				} else {
+					cls = ProcessIntersection.class;
+				}
+				cluster.registerOnMemberUp(() -> {
+					actors.add(system.actorOf(Props.create(cls, js, inmemorycache, jobidstageidtaskidcompletedmap,
 							taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()), jobstageid + taskactor.getTask().getTaskid()));
 				});
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid

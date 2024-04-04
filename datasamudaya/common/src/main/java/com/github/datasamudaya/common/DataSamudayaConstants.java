@@ -235,6 +235,7 @@ public class DataSamudayaConstants {
 
 	public static final String SHUFFLE = "Shuffle";
 	public static final String DISTRIBUTEDSORT = "DistributedSort";
+	public static final String DISTRIBUTEDDISTINCT = "DistributedDistinct";
 	public static final String PREDICATESERIALIZABLE = "PredicateSerializable";
 	public static final String DISTINCT = "Distinct";
 	public static final String MAPFUNCTION = "MapFunction";

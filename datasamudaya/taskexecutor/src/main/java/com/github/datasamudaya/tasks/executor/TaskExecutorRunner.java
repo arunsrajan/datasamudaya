@@ -66,7 +66,7 @@ import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskExecutorShutdown;
 import com.github.datasamudaya.common.WebResourcesServlet;
-import com.github.datasamudaya.common.utils.RemoteListIteratorServer;
+import com.github.datasamudaya.common.utils.RemoteIteratorServer;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.scheduler.StreamJobScheduler;
@@ -248,7 +248,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		var configuration = new Configuration();
 
 		var inmemorycache = DataSamudayaCache.get();
-		sortServer = new RemoteListIteratorServer(inmemorycache).start();
+		sortServer = new RemoteIteratorServer(inmemorycache).start();
 		cl = TaskExecutorRunner.class.getClassLoader();
 		ActorSystem system = null;
 		while(true) {

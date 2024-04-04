@@ -18,6 +18,7 @@ import org.apache.calcite.adapter.enumerable.EnumerableAggregate;
 import org.apache.calcite.adapter.enumerable.EnumerableAggregateBase;
 import org.apache.calcite.adapter.enumerable.EnumerableFilter;
 import org.apache.calcite.adapter.enumerable.EnumerableHashJoin;
+import org.apache.calcite.adapter.enumerable.EnumerableIntersect;
 import org.apache.calcite.adapter.enumerable.EnumerableProject;
 import org.apache.calcite.adapter.enumerable.EnumerableSort;
 import org.apache.calcite.adapter.enumerable.EnumerableSortedAggregate;
@@ -274,8 +275,22 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 				});
 			}
 			return spjoin;
-		} else if (relNode instanceof EnumerableUnion ehj) {
+		} else if (relNode instanceof EnumerableUnion) {
 			StreamPipeline<Object[]> spunion = (StreamPipeline<Object[]>) buildUnion((StreamPipeline<Object[]>) sp.get(0)
+			, (StreamPipeline<Object[]>) sp.get(1)
+			);
+			if (!SQLUtils.hasDescendants(relNode, descendants)) {
+				return spunion.map(new MapFunction<Object[], Object[]>(){
+					private static final long serialVersionUID = 15264560692156277L;
+
+					public Object[] apply(Object[] values) {
+						return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+					}
+				});
+			}
+			return spunion;
+		} else if (relNode instanceof EnumerableIntersect) {
+			StreamPipeline<Object[]> spunion = (StreamPipeline<Object[]>) buildIntersection((StreamPipeline<Object[]>) sp.get(0)
 			, (StreamPipeline<Object[]>) sp.get(1)
 			);
 			if (!SQLUtils.hasDescendants(relNode, descendants)) {
@@ -655,6 +670,49 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 						}));
 	}
 
+	/**
+	 * The function returns intersection of distinct of two pipelines.
+	 * @param pipeline1
+	 * @param pipeline2
+	 * @return intersection of two pipelines
+	 * @throws PipelineException
+	 */
+	public static StreamPipeline<Object[]> buildIntersection(
+			StreamPipeline<Object[]> pipeline1, StreamPipeline<Object[]> pipeline2) throws PipelineException{
+		return pipeline1.map(new MapFunction<Object[], List<Object>>(){
+			private static final long serialVersionUID = -1219246537117693979L;
+
+			@Override
+			public List<Object> apply(Object[] obj) {
+				return Arrays.asList((Object[])obj[0]);
+			}
+		}).distinct()
+				.map(new MapFunction<List<Object>, Object[]>(){
+					private static final long serialVersionUID = 6404372514784230364L;
+
+					@Override
+					public Object[] apply(List<Object> obj) {
+						return obj.toArray();
+					}
+				}).intersection(pipeline2.map(new MapFunction<Object[], List<Object>>(){
+					private static final long serialVersionUID = -4809552374913602070L;
+
+					@Override
+					public List<Object> apply(Object[] obj) {
+						return Arrays.asList((Object[])obj[0]);
+					}
+				}).distinct()
+						.map(new MapFunction<List<Object>, Object[]>(){
+							private static final long serialVersionUID = 5625475672514170727L;
+
+							@Override
+							public Object[] apply(List<Object> obj) {
+								return obj.toArray();
+							}
+						}));
+	}
+
+	
 	/**
 	 * Exceutes the order by in sql query
 	 * 

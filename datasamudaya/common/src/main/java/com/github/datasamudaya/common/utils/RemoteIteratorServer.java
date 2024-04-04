@@ -11,7 +11,9 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,10 +37,10 @@ import com.github.datasamudaya.common.Task;
  *
  * @param <T>
  */
-public class RemoteListIteratorServer<T> {
+public class RemoteIteratorServer<T> {
 	private Cache<String,byte[]> cache;
-	private static final Logger log = LoggerFactory.getLogger(RemoteListIteratorServer.class);
-	public RemoteListIteratorServer(Cache<String,byte[]> cache) {
+	private static final Logger log = LoggerFactory.getLogger(RemoteIteratorServer.class);
+	public RemoteIteratorServer(Cache<String,byte[]> cache) {
 		this.cache = cache;
 	}
 
@@ -101,7 +103,8 @@ public class RemoteListIteratorServer<T> {
 								}
 							} else if (deserobj instanceof RemoteListIteratorNext rlin) {
 								if(isNull(currentList) || indexperlist>=currentList.size()) {
-									currentList = (List) kryo.readClassAndObject(inputfile);
+									Object data = kryo.readClassAndObject(inputfile);
+									currentList = (List) ((data instanceof Set)?new ArrayList<>((Collection)data):(List)data);
 									indexperlist = 0;									
 								}
 								if (rlin.getRequestType() == RequestType.ELEMENT) {

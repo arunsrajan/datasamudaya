@@ -115,6 +115,7 @@ import com.github.datasamudaya.common.TssHAHostPorts;
 import com.github.datasamudaya.common.WhoIsResponse;
 import com.github.datasamudaya.common.functions.AggregateReduceFunction;
 import com.github.datasamudaya.common.functions.Coalesce;
+import com.github.datasamudaya.common.functions.DistributedDistinct;
 import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.GroupByFunction;
 import com.github.datasamudaya.common.functions.HashPartitioner;
@@ -135,7 +136,7 @@ import com.github.datasamudaya.common.utils.BTree;
 import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
-import com.github.datasamudaya.common.utils.RemoteListIteratorClient;
+import com.github.datasamudaya.common.utils.RemoteIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
@@ -583,7 +584,7 @@ public class StreamJobScheduler {
 			}
 			if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && CollectionUtils.isNotEmpty(taskexecutors)) {
 				for(String tehost:taskexecutors) {
-					Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId()), pipelineconfig.getTejobid());
+					//Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId()), pipelineconfig.getTejobid());
 				}
 			}
 		}
@@ -1730,40 +1731,88 @@ public class StreamJobScheduler {
 			var function = currentstage.tasks.get(0);
 			// Form the graph for intersection function.
 			if (function instanceof IntersectionFunction) {
-				for (var parentthread1 : outputparent2) {
-					for (var parentthread2 : outputparent1) {
-						partitionindex++;
-						StreamPipelineTaskSubmitter spts;
-						if ((parentthread1 instanceof BlocksLocation) && (parentthread2 instanceof BlocksLocation)) {
-							spts = getPipelineTasks(jobid, Arrays.asList(parentthread1, parentthread2), currentstage,
-									partitionindex, currentstage.number, null);
-						} else {
-							spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
-									Arrays.asList(parentthread2, parentthread1));
-						}
-						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
-						tasks.add(spts);
-						graph.addVertex(spts);
-						taskgraph.addVertex(spts.getTask());
+				if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {					
+					partitionindex++;
+					List allparents = new ArrayList<>();
+					allparents.addAll(outputparent1);
+					allparents.addAll(outputparent2);
+					var sptsintersection = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+							allparents);
+					tasksptsthread.put(sptsintersection.getTask().jobid + sptsintersection.getTask().stageid + sptsintersection.getTask().taskid, sptsintersection);
+					sptsintersection.getTask().setTaskspredecessor(new ArrayList<>());
+					sptsintersection.getTask().setParentterminatingsize(allparents.size());
+					tasks.add(sptsintersection);
+					graph.addVertex(sptsintersection);
+					taskgraph.addVertex(sptsintersection.getTask());
+					for (var parentthread1 : allparents) {
 						if (parentthread1 instanceof StreamPipelineTaskSubmitter sptsparent) {
+							sptsintersection.getTask().getTaskspredecessor().add(sptsparent.getTask());
 							if (!graph.containsVertex(sptsparent)) {
 								graph.addVertex(sptsparent);
 							}
 							if (!taskgraph.containsVertex(sptsparent.getTask())) {
 								taskgraph.addVertex(sptsparent.getTask());
 							}
-							graph.addEdge(sptsparent, spts);
-							taskgraph.addEdge(sptsparent.getTask(), spts.getTask());
+							graph.addEdge(sptsparent, sptsintersection);
+							taskgraph.addEdge(sptsparent.getTask(), sptsintersection.getTask());
 						}
-						if (parentthread2 instanceof StreamPipelineTaskSubmitter sptsparent) {
-							if (!graph.containsVertex(sptsparent)) {
-								graph.addVertex(sptsparent);
+					}
+				} else {
+					for (var parentthread1 : outputparent2) {
+						for (var parentthread2 : outputparent1) {
+							partitionindex++;
+							StreamPipelineTaskSubmitter spts;
+							if ((parentthread1 instanceof BlocksLocation) && (parentthread2 instanceof BlocksLocation)) {
+								spts = getPipelineTasks(jobid, Arrays.asList(parentthread1, parentthread2), currentstage,
+										partitionindex, currentstage.number, null);
+							} else {
+								spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+										Arrays.asList(parentthread2, parentthread1));
 							}
-							if (!taskgraph.containsVertex(sptsparent.getTask())) {
-								taskgraph.addVertex(sptsparent.getTask());
+							tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
+							tasks.add(spts);
+							graph.addVertex(spts);
+							taskgraph.addVertex(spts.getTask());
+							if (parentthread1 instanceof StreamPipelineTaskSubmitter sptsparent) {
+								if (!graph.containsVertex(sptsparent)) {
+									graph.addVertex(sptsparent);
+								}
+								if (!taskgraph.containsVertex(sptsparent.getTask())) {
+									taskgraph.addVertex(sptsparent.getTask());
+								}
+								graph.addEdge(sptsparent, spts);
+								taskgraph.addEdge(sptsparent.getTask(), spts.getTask());
 							}
-							graph.addEdge(sptsparent, spts);
-							taskgraph.addEdge(sptsparent.getTask(), spts.getTask());
+							if (parentthread2 instanceof StreamPipelineTaskSubmitter sptsparent) {
+								if (!graph.containsVertex(sptsparent)) {
+									graph.addVertex(sptsparent);
+								}
+								if (!taskgraph.containsVertex(sptsparent.getTask())) {
+									taskgraph.addVertex(sptsparent.getTask());
+								}
+								graph.addEdge(sptsparent, spts);
+								taskgraph.addEdge(sptsparent.getTask(), spts.getTask());
+							}
+						}
+					}
+				}
+			} else if (function instanceof DistributedDistinct) {
+				if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {					
+					partitionindex++;
+					var sptsleft = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+							outputparent1);
+					sptsleft.getTask().setIsintersection(true);
+					sptsleft.getTask().setTaskspredecessor(new ArrayList<>());
+					sptsleft.getTask().parentterminatingsize = outputparent1.size();
+					tasksptsthread.put(sptsleft.getTask().jobid + sptsleft.getTask().stageid + sptsleft.getTask().taskid, sptsleft);
+					tasks.add(sptsleft);
+					graph.addVertex(sptsleft);
+					taskgraph.addVertex(sptsleft.getTask());
+					for(var parent:outputparent1) {						
+						if (parent instanceof StreamPipelineTaskSubmitter sptsparent) {
+							sptsleft.getTask().getTaskspredecessor().add(sptsparent.getTask());
+							graph.addEdge(sptsparent, sptsleft);
+							taskgraph.addEdge(sptsparent.getTask(), sptsleft.getTask());
 						}
 					}
 				}
@@ -2309,13 +2358,13 @@ public class StreamJobScheduler {
 									|| job.getJobtype() == JOBTYPE.PIG)) {
 								PrintWriter out = pipelineconfig.getWriter();
 								if(result instanceof List lst && CollectionUtils.isNotEmpty(lst) && lst.get(0) instanceof NodeIndexKey) {
-									if(task.isIsunion()) {
+									if(task.isIsunion() || task.isIsintersection()) {
 										int diskexceedpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
 												DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 										DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false,false ,false, null, null, 1);
 										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
 											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
-											try (RemoteListIteratorClient client = new RemoteListIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
+											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
 													RequestType.LIST)) {
 												while (client.hasNext()) {
 													log.info("Getting Next List From Remote Server");
@@ -2352,7 +2401,7 @@ public class StreamJobScheduler {
 										BTree btree = new BTree(btreesize);
 										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
 											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
-											try (RemoteListIteratorClient client = new RemoteListIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
+											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
 													RequestType.LIST)) {
 												while (client.hasNext()) {
 													log.info("Getting Next List From Remote Server");

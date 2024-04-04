@@ -30,9 +30,9 @@ import net.jpountz.lz4.LZ4BlockInputStream;
  *
  * @param <T>
  */
-public class RemoteListIteratorClient<T> implements Iterator<T>, Closeable {
+public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 	
-	private static final Logger log = LoggerFactory.getLogger(RemoteListIteratorClient.class);
+	private static final Logger log = LoggerFactory.getLogger(RemoteIteratorClient.class);
 	
 	private InputStream inputStream;
 	private LZ4BlockInputStream lbis;
@@ -47,7 +47,7 @@ public class RemoteListIteratorClient<T> implements Iterator<T>, Closeable {
 	Kryo kryo = Utils.getKryo();
 	RemoteListIteratorHasNext hasnext = new RemoteListIteratorHasNext();
 	RemoteListIteratorNext nextelem = new RemoteListIteratorNext();
-	public RemoteListIteratorClient(Task task, List<FieldCollationDirection> fcsc, RequestType requesttype) throws Exception {
+	public RemoteIteratorClient(Task task, List<FieldCollationDirection> fcsc, RequestType requesttype) throws Exception {
 		try {			
 			log.info("Trying to split host and port {}", task.getHostport());
 			String[] hostport = task.getHostport().split(DataSamudayaConstants.UNDERSCORE);

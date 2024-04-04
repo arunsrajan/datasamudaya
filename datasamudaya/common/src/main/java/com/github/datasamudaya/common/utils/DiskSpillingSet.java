@@ -11,6 +11,7 @@ import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -133,6 +134,12 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		}
 	}
 
+	public void addAll(List<T> values) {
+		if (CollectionUtils.isNotEmpty(values)) {
+			values.stream().forEach(this::add);
+		}
+	}
+	
 	/**
 	 * The method which returns the task of the spilled data to disk
 	 * @return task

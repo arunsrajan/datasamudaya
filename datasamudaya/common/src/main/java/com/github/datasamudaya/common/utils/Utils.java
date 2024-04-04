@@ -443,6 +443,8 @@ public class Utils {
 		kryo.register(Vector.class);
 		kryo.register(DiskSpillingList.class,
 				new CompatibleFieldSerializer<DiskSpillingList>(kryo, DiskSpillingList.class));
+		kryo.register(DiskSpillingList.class,
+				new CompatibleFieldSerializer<DiskSpillingSet>(kryo, DiskSpillingSet.class));
 		kryo.register(ArrayList.class);
 		kryo.register(HashMap.class);
 		kryo.register(ConcurrentHashMap.class);
@@ -545,6 +547,8 @@ public class Utils {
 		kryo.register(Vector.class);
 		kryo.register(DiskSpillingList.class,
 				new CompatibleFieldSerializer<DiskSpillingList>(kryo, DiskSpillingList.class));
+		kryo.register(DiskSpillingList.class,
+				new CompatibleFieldSerializer<DiskSpillingSet>(kryo, DiskSpillingSet.class));
 		kryo.register(ArrayList.class);
 		kryo.register(HashMap.class);
 		kryo.register(ConcurrentHashMap.class);
@@ -2797,7 +2801,7 @@ public class Utils {
 					Map<String, SnappyInputStream> keysismap = new ConcurrentHashMap<>();
 					Map<String, List> cachekeylistmap = new ConcurrentHashMap<>();
 					Map<String, Integer> cachekeyindexmap = new ConcurrentHashMap<>();
-					Map<Task,RemoteListIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>(); 
+					Map<Task,RemoteIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>(); 
 					try {
 						for(var node:orderednodesinternal) {
 							if(iscachenonempty) {
@@ -2812,7 +2816,7 @@ public class Utils {
 								cachekeyindexmap.put(node.getCachekey(), cachekeyindexmap.get(node.getCachekey())+1);
 							} else {
 								if(isNull(taskrlistiterclientmap.get(node.getTask()))) {
-									taskrlistiterclientmap.put(node.getTask(), new RemoteListIteratorClient<>(node.getTask(), null, RequestType.ELEMENT));
+									taskrlistiterclientmap.put(node.getTask(), new RemoteIteratorClient<>(node.getTask(), null, RequestType.ELEMENT));
 								}
 								action.accept(taskrlistiterclientmap.get(node.getTask()).next().getValue());
 							}
@@ -3185,6 +3189,48 @@ public class Utils {
 	 * @param dslout
 	 */
 	public static void copySpilledDataSourceToDestination(DiskSpillingSet dslinput, DiskSpillingList dslout) {
+		Kryo kryo = Utils.getKryo();
+		try (FileInputStream istream = new FileInputStream(
+				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
+						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				var sis = new SnappyInputStream(istream);
+				Input input = new Input(sis);) {
+			while (input.available() > 0) {
+				Set records = (Set) kryo.readClassAndObject(input);
+				dslout.addAll(records);
+			}
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+	}
+	
+	/**
+	 * The Copy of the spilled data from list to set
+	 * @param dslinput
+	 * @param dslout
+	 */
+	public static void copySpilledDataSourceToDestination(DiskSpillingList dslinput, DiskSpillingSet dslout) {
+		Kryo kryo = Utils.getKryo();
+		try (FileInputStream istream = new FileInputStream(
+				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
+						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+				var sis = new SnappyInputStream(istream);
+				Input input = new Input(sis);) {
+			while (input.available() > 0) {
+				List records = (List) kryo.readClassAndObject(input);
+				dslout.addAll(records);
+			}
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+	}
+	
+	/**
+	 * The Copy of the spilled data from set to set
+	 * @param dslinput
+	 * @param dslout
+	 */
+	public static void copySpilledDataSourceToDestination(DiskSpillingSet dslinput, DiskSpillingSet dslout) {
 		Kryo kryo = Utils.getKryo();
 		try (FileInputStream istream = new FileInputStream(
 				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),

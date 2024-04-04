@@ -1,12 +1,15 @@
 package com.github.datasamudaya.stream.executors.actors;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
@@ -17,7 +20,6 @@ import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
-import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.RemoteIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
@@ -28,11 +30,11 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.cluster.Cluster;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ProcessUnion extends AbstractActor {
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+public class ProcessIntersection extends AbstractActor {
+	Logger log = LoggerFactory.getLogger(ProcessIntersection.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 	int terminatingsize;
 	int initialsize = 0;
@@ -44,9 +46,8 @@ public class ProcessUnion extends AbstractActor {
 	private boolean iscacheable = true;
 	int btreesize;
 	int diskspillpercentage;
-	DiskSpillingList diskspilllistinterm;
 
-	public ProcessUnion(JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+	public ProcessIntersection(JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<ActorSelection> childpipes, int terminatingsize) {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
@@ -58,35 +59,55 @@ public class ProcessUnion extends AbstractActor {
 				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
-		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, true, false, false, null,
-				null, 0);
 	}
 
 	@Override
 	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processUnion).build();
+		return receiveBuilder().match(OutputObject.class, this::processIntersection).build();
 	}
 
-	private void processUnion(OutputObject object) throws PipelineException, Exception {
+	private void processIntersection(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			if (object.getValue() instanceof DiskSpillingList dsl) {
-				if (dsl.isSpilled()) {
-					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
-				} else {
-					Utils.copyDiskSpillingListToDisk(dsl);
+			if (object.getValue() instanceof DiskSpillingSet dss) {
+				log.info("Is ProcessIntersection Spilled {} {}", dss.isSpilled(), dss.getTask());
+				if (!dss.isSpilled()) {
+					Utils.copyDiskSpillingSetToDisk(dss);
 				}
-				dsl.clear();
+				dss.clear();
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
-				log.info("processUnion::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}", initialsize,
-						terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
-				diskspilllistinterm.close();				
+				log.info(
+						"processIntersection::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}",
+						initialsize, terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
-				if (CollectionUtils.isNotEmpty(childpipes)) {										
-					DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false,false ,false, null, null, 1);
+				if (CollectionUtils.isNotEmpty(childpipes)) {
+					int index = 0;
+					DiskSpillingSet<NodeIndexKey> diskspillsetresult = new DiskSpillingSet(tasktoprocess, diskspillpercentage,
+							null, false, false, false, null, null, 1);
+					
+					DiskSpillingSet<NodeIndexKey> diskspillsetintm1 = new DiskSpillingSet(tasktoprocess,
+							diskspillpercentage,
+							DataSamudayaConstants.INTERMEDIATE + DataSamudayaConstants.HYPHEN + index, false, false,
+							false, null, null, 1);
+					try (RemoteIteratorClient client = new RemoteIteratorClient(predecessors.remove(0), null,
+							RequestType.LIST)) {
+						while (client.hasNext()) {
+							log.info("Getting Next List From Remote Server");
+							List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
+									.convertBytesToObjectCompressed((byte[]) client.next(), null);
+							log.info("Next List From Remote Server with size {}", niks.size());
+							niks.stream().forEach(diskspillsetintm1::add);
+						}
+					}
+					diskspillsetintm1.close();					
 					for (Task predecessor : predecessors) {
-						log.info("Getting Next List From Remote Server with FCD {}",predecessor);
+						index++;
+						log.info("Getting Next List From Remote Server with FCD {}", predecessor);
+						DiskSpillingSet<NodeIndexKey> diskspillsetintm2 = new DiskSpillingSet(tasktoprocess,
+								diskspillpercentage,
+								DataSamudayaConstants.INTERMEDIATE + DataSamudayaConstants.HYPHEN + index, false, false,
+								false, null, null, 1);
 						try (RemoteIteratorClient client = new RemoteIteratorClient(predecessor, null,
 								RequestType.LIST)) {
 							while (client.hasNext()) {
@@ -94,22 +115,38 @@ public class ProcessUnion extends AbstractActor {
 								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 										.convertBytesToObjectCompressed((byte[]) client.next(), null);
 								log.info("Next List From Remote Server with size {}", niks.size());
-								niks.stream().forEach(diskspillset::add);
+								niks.stream().forEach(diskspillsetintm2::add);
 							}
 						}
+						diskspillsetintm2.close();
+						Stream<NodeIndexKey> datastream1 = diskspillsetintm1.isSpilled()
+								? (Stream) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
+										diskspillsetintm1.getTask(), null, false, false, false)))
+								: diskspillsetintm1.readSetFromBytes().stream();
+
+						Stream<NodeIndexKey> datastream2 = diskspillsetintm2.isSpilled()
+								? (Stream) Utils.getStreamData(new FileInputStream(Utils
+										.getLocalFilePathForTask(diskspillsetintm2.getTask(), null, false, false, false)))
+								: diskspillsetintm2.readSetFromBytes().stream();
+						((Map<NodeIndexKey,List<NodeIndexKey>>)Stream.concat(datastream1, datastream2).peek(nik->log.info("{}",nik)).collect(Collectors.groupingBy(nik->nik, Collectors.mapping(nik->nik, Collectors.toList()))))
+			            .entrySet().stream()
+			            .filter(e -> e.getValue().size() > 1)
+			            .map(e -> e.getKey())
+			            .forEach(diskspillsetresult::add);
+						
 					}
-					diskspillset.close();
-					log.info("DiskSpill Set Size {}", diskspillset.size());
+					log.info("DiskSpill Set Size {}", diskspillsetresult.size());
+					diskspillsetresult.close();
 					childpipes.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspillset, false, false, NodeIndexKey.class),
+						downstreampipe.tell(new OutputObject(diskspillsetresult, false, false, NodeIndexKey.class),
 								ActorRef.noSender());
 					});
 				} else {
 					AtomicInteger index = new AtomicInteger(0);
 					List<NodeIndexKey> niks = new ArrayList<>();
 					for (Task predecessor : predecessors) {
-						NodeIndexKey nik = new NodeIndexKey(predecessor.getHostport(), index.getAndIncrement(),
-								null,null, null, null, null, predecessor);
+						NodeIndexKey nik = new NodeIndexKey(predecessor.getHostport(), index.getAndIncrement(), null,
+								null, null, null, null, predecessor);
 						niks.add(nik);
 					}
 					cache.put(
