@@ -88,7 +88,9 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 	}
 
 	@Override
-	public void close() throws IOException {		
+	public void close() throws IOException {
+		kryo.writeClassAndObject(output, new RemoteListIteratorClose());
+		output.flush();
 		if(nonNull(input)) {
 			input.close();
 		}

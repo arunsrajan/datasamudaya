@@ -192,7 +192,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	 * The function reads compresseed bytes to Set 
 	 * @return
 	 */
-	public Set readSetFromBytes() {
+	public Set<T> readSetFromBytes() {
 		if (nonNull(bytes)) {
 			return (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 		}

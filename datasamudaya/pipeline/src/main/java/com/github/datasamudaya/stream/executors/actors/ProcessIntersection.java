@@ -83,8 +83,7 @@ public class ProcessIntersection extends AbstractActor {
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					int index = 0;
-					DiskSpillingSet<NodeIndexKey> diskspillsetresult = new DiskSpillingSet(tasktoprocess, diskspillpercentage,
-							null, false, false, false, null, null, 1);
+					DiskSpillingSet<NodeIndexKey> diskspillsetresult = null;
 					
 					DiskSpillingSet<NodeIndexKey> diskspillsetintm1 = new DiskSpillingSet(tasktoprocess,
 							diskspillpercentage,
@@ -96,13 +95,18 @@ public class ProcessIntersection extends AbstractActor {
 							log.info("Getting Next List From Remote Server");
 							List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 									.convertBytesToObjectCompressed((byte[]) client.next(), null);
-							log.info("Next List From Remote Server with size {}", niks.size());
+							log.info("Next List From Remote Server with size {} {}", niks.size(), niks.get(0));
 							niks.stream().forEach(diskspillsetintm1::add);
+							log.info("DiskSpillSet Intermediate1 {}", niks.size());
 						}
 					}
+					log.info("DiskSpillSet Intermediate1 Closing...");					
 					diskspillsetintm1.close();					
+					log.info("DiskSpillSet Intermediate1 Closed with remaining pred {}...", predecessors);
 					for (Task predecessor : predecessors) {
 						index++;
+						diskspillsetresult = new DiskSpillingSet(tasktoprocess, diskspillpercentage,
+								index<predecessors.size()-1?(DataSamudayaConstants.INTERMEDIATERESULT + DataSamudayaConstants.HYPHEN + index):null, false, false, false, null, null, 1);
 						log.info("Getting Next List From Remote Server with FCD {}", predecessor);
 						DiskSpillingSet<NodeIndexKey> diskspillsetintm2 = new DiskSpillingSet(tasktoprocess,
 								diskspillpercentage,
@@ -114,31 +118,34 @@ public class ProcessIntersection extends AbstractActor {
 								log.info("Getting Next List From Remote Server");
 								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 										.convertBytesToObjectCompressed((byte[]) client.next(), null);
-								log.info("Next List From Remote Server with size {}", niks.size());
+								log.info("Next List From Remote Server with size {} {}", niks.size(), niks.get(0));
 								niks.stream().forEach(diskspillsetintm2::add);
 							}
 						}
 						diskspillsetintm2.close();
+						DiskSpillingSet<NodeIndexKey> diskspillsetintm1final = diskspillsetintm1;
 						Stream<NodeIndexKey> datastream1 = diskspillsetintm1.isSpilled()
 								? (Stream) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
 										diskspillsetintm1.getTask(), null, false, false, false)))
-								: diskspillsetintm1.readSetFromBytes().stream();
+								: diskspillsetintm1.readSetFromBytes().stream().peek(nik->nik.setTask(diskspillsetintm1final.getTask()));
 
 						Stream<NodeIndexKey> datastream2 = diskspillsetintm2.isSpilled()
 								? (Stream) Utils.getStreamData(new FileInputStream(Utils
 										.getLocalFilePathForTask(diskspillsetintm2.getTask(), null, false, false, false)))
-								: diskspillsetintm2.readSetFromBytes().stream();
-						((Map<NodeIndexKey,List<NodeIndexKey>>)Stream.concat(datastream1, datastream2).peek(nik->log.info("{}",nik)).collect(Collectors.groupingBy(nik->nik, Collectors.mapping(nik->nik, Collectors.toList()))))
+								: (Stream<NodeIndexKey>)(diskspillsetintm2.readSetFromBytes().stream().peek(nik->nik.setTask(diskspillsetintm2.getTask())));
+						((Map<NodeIndexKey,List<NodeIndexKey>>)Stream.concat(datastream1, datastream2).collect(Collectors.groupingBy(nik->nik, Collectors.mapping(nik->nik, Collectors.toList()))))
 			            .entrySet().stream()
 			            .filter(e -> e.getValue().size() > 1)
 			            .map(e -> e.getKey())
 			            .forEach(diskspillsetresult::add);
+						diskspillsetresult.close();
+						diskspillsetintm1 = diskspillsetresult;
 						
 					}
-					log.info("DiskSpill Set Size {}", diskspillsetresult.size());
-					diskspillsetresult.close();
+					log.info("DiskSpill Set Size {} {}", diskspillsetresult.size(), diskspillsetresult.readSetFromBytes());
+					DiskSpillingSet<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
 					childpipes.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspillsetresult, false, false, NodeIndexKey.class),
+						downstreampipe.tell(new OutputObject(diskspillsetresultfinal, false, false, DiskSpillingSet.class),
 								ActorRef.noSender());
 					});
 				} else {

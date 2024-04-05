@@ -16,6 +16,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.ehcache.Cache;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
@@ -32,9 +34,6 @@ import com.github.datasamudaya.common.utils.Utils;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
-import akka.cluster.Cluster;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 
 /**
  * Akka actors for the inner join operators
@@ -42,8 +41,7 @@ import akka.event.LoggingAdapter;
  *
  */
 public class ProcessInnerJoin extends AbstractActor implements Serializable {
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
-	Cluster cluster = Cluster.get(getContext().getSystem());
+	Logger log = LoggerFactory.getLogger(ProcessInnerJoin.class);
 	
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
@@ -81,9 +79,10 @@ public class ProcessInnerJoin extends AbstractActor implements Serializable {
 				.build();
 	}
 
-	private ProcessInnerJoin processInnerJoin(OutputObject oo) throws Exception {
-		if (oo.isLeft()) {
+	private ProcessInnerJoin processInnerJoin(OutputObject oo) throws Exception {		
+		if (oo.isLeft()) {			
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
+				log.info("In process Inner Join Left {} {}", oo.isLeft(), getIntermediateDataFSFilePath(task));
 				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
@@ -91,8 +90,9 @@ public class ProcessInnerJoin extends AbstractActor implements Serializable {
 					diskspilllistintermleft.addAll(dsl.readListFromBytes());
 				}
 			}
-		} else if (oo.isRight()) {
+		} else if (oo.isRight()) {			
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
+				log.info("In process Inner Join Right {} {}", oo.isRight(), getIntermediateDataFSFilePath(task));
 				diskspilllistintermright = new DiskSpillingList(task, diskspillpercentage, null, true, false, true, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
@@ -122,15 +122,16 @@ public class ProcessInnerJoin extends AbstractActor implements Serializable {
 					: diskspilllistintermright.readListFromBytes().stream();
 			try (var seq1 = Seq.seq(datastreamleft);
 					var seq2 = Seq.seq(datastreamright);
-					var join = seq1.innerJoin(seq2, jp);
-					DiskSpillingList diskspill = diskspilllist) {
+					var join = seq1.innerJoin(seq2, jp);) {
 				join.forEach(diskspilllist::add);
-				diskspilllist.close();
 				if (Objects.nonNull(pipelines)) {
-					pipelines.parallelStream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class),
-								ActorRef.noSender());
-						downstreampipe.tell(new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class), ActorRef.noSender());
+					pipelines.forEach(downstreampipe -> {
+						try {
+							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class),
+									ActorRef.noSender());
+						} catch(Exception ex) {
+							log.error(DataSamudayaConstants.EMPTY, ex);
+						}
 					});
 				} else {
 					Stream<Tuple2> datastream = diskspilllist.isSpilled()

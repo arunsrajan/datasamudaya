@@ -291,7 +291,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 								ActorRef.noSender());
 					});
 				} else if (CollectionUtils.isNotEmpty(blr.childactors)) {
-					log.info("Child Actors pipeline Process Started ...");
+					log.info("Child Actors pipeline Process Started with actors {} with left {} right {} Task {}...",blr.childactors(), left ,right, getIntermediateDataFSFilePath(tasktoprocess));
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							diskspillpercentage, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);

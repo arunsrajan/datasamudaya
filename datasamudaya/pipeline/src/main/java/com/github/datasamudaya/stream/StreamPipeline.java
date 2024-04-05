@@ -814,9 +814,10 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 					taskstagemap.put(af.tasks.get(0), parentstage);
 				} else if (af.parents.size() >= 2) {
 					if (af.tasks.get(0) instanceof IntersectionFunction && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
-							&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)) {
+							&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL) ) {
 						List<Stage> stages = new ArrayList<>();
-						for (var afparent : af.parents) {							
+						for (var afparent : af.parents) {
+							if(nonNull(afparent.csvoptions)) {
 								var parentstage = taskstagemap.get(afparent.tasks.get(0));
 								var childstagedisdistinct = new Stage();
 								childstagedisdistinct.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
@@ -828,7 +829,11 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 								parentstage.child.add(childstagedisdistinct);
 								taskstagemap.put(childstagedisdistinct.tasks.get(0), childstagedisdistinct);
 								stages.add(childstagedisdistinct);
+							} else {
+								Stage parentstage = taskstagemap.get(afparent.tasks.get(0));
+								stages.add(parentstage);
 							}
+						}
 						var childstage = new Stage();
 						childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
 						graphstages.addVertex(childstage);

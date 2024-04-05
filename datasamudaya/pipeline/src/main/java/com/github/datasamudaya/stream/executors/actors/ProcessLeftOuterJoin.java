@@ -151,7 +151,6 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 					}
 					return maprec;
 				}).forEach(diskspilllist::add);
-				diskspilllist.close();
 				try (DiskSpillingList diskspill = diskspilllist) {
 					if (Objects.nonNull(pipelines)) {
 						pipelines.parallelStream().forEach(downstreampipe -> {

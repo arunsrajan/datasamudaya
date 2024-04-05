@@ -433,6 +433,7 @@ public class Utils {
 				new ImmutableListSerializer());
 		kryo.register(Object.class);
 		kryo.register(Object[].class);
+		kryo.register(Object[][].class);
 		kryo.register(byte.class);
 		kryo.register(byte[].class, new ByteArraySerializer());
 		kryo.register(String[].class, new StringArraySerializer());
@@ -443,7 +444,7 @@ public class Utils {
 		kryo.register(Vector.class);
 		kryo.register(DiskSpillingList.class,
 				new CompatibleFieldSerializer<DiskSpillingList>(kryo, DiskSpillingList.class));
-		kryo.register(DiskSpillingList.class,
+		kryo.register(DiskSpillingSet.class,
 				new CompatibleFieldSerializer<DiskSpillingSet>(kryo, DiskSpillingSet.class));
 		kryo.register(ArrayList.class);
 		kryo.register(HashMap.class);
@@ -537,6 +538,7 @@ public class Utils {
 				new ImmutableListSerializer());
 		kryo.register(Object.class);
 		kryo.register(Object[].class);
+		kryo.register(Object[][].class);
 		kryo.register(byte.class);
 		kryo.register(byte[].class, new ByteArraySerializer());
 		kryo.register(String[].class, new StringArraySerializer());
@@ -547,7 +549,7 @@ public class Utils {
 		kryo.register(Vector.class);
 		kryo.register(DiskSpillingList.class,
 				new CompatibleFieldSerializer<DiskSpillingList>(kryo, DiskSpillingList.class));
-		kryo.register(DiskSpillingList.class,
+		kryo.register(DiskSpillingSet.class,
 				new CompatibleFieldSerializer<DiskSpillingSet>(kryo, DiskSpillingSet.class));
 		kryo.register(ArrayList.class);
 		kryo.register(HashMap.class);

@@ -590,6 +590,7 @@ public class DataSamudayaConstants {
 	public static final String TOPERSISTYOSEGICOLUMNAR_DEFAULT = "false";
 	public static final String ACTORUSERNAME = "RemoteActor";
 	public static final String INTERMEDIATE = "intermediate";
+	public static final String INTERMEDIATERESULT = "result";
 	public static final String INTERMEDIATEJOINLEFT = "intermediateleft";
 	public static final String INTERMEDIATEJOINRIGHT = "intermediateright";
 	public static final String SPILLTODISK_PERCENTAGE = "disk.spill.percentage";

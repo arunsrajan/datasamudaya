@@ -65,7 +65,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		if ("false".equals(pipelineconfig.getLocal())) {
 			pipelineconfig.setUseglobaltaskexecutors(true);
 			String teid = Utils.getUUID();
-			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 6, 5000, 1, 6, 5000);
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 6, 1000, 1, 6, 1000);
 			pipelineconfig.setTejobid(teid);
 			pipelineconfig.setUser("arun");
 		}
@@ -584,6 +584,32 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		log.info("In testRequiredColumnsUnion() method Exit");
 	}
 	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsUnionUnion() throws Exception {
+		log.info("In testRequiredColumnsUnionUnion() method Entry");
+
+		String statement = """
+				select airlinesamplesql1.uniquecarrier, airlinesamplesql1.origin from airlinesamplesql1 union select airlinesample.uniquecarrier, airlinesample.dest from airlinesample union select airlinesamplesql2.uniquecarrier, airlinesamplesql2.dest from airlinesamplesql2
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlinesamplesql1", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "airlinesamplesql2", airlineheader, airlineheadertypes)
+				.add(airlinesample, "airlinesample", airlineheader, airlineheadertypes)
+				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		long totalrecords = 0;
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			totalrecords += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2l, rec.length);
+			}
+		}
+		log.info("In testRequiredColumnsUnionUnion() method Exit");
+	}
 	
 	@SuppressWarnings({"unchecked"})
 	@Test
@@ -610,6 +636,34 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		}
 		assertNotEquals(0, totalrecords);
 		log.info("In testRequiredColumnsIntersection() method Exit");
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsIntersectionIntersection() throws Exception {
+		log.info("In testRequiredColumnsIntersectionIntersection() method Entry");
+
+		String statement = """
+				select airlinesamplesql1.uniquecarrier, airlinesamplesql1.origin from airlinesamplesql1 intersect select airlinesample.uniquecarrier, airlinesample.dest from airlinesample intersect select airlinesamplesql2.uniquecarrier, airlinesamplesql2.dest from airlinesamplesql2
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlinesamplesql1", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "airlinesamplesql2", airlineheader, airlineheadertypes)
+				.add(airlinesample, "airlinesample", airlineheader, airlineheadertypes)
+				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		long totalrecords = 0;
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			totalrecords += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2l, rec.length);
+			}
+		}
+		assertNotEquals(0, totalrecords);
+		log.info("In testRequiredColumnsIntersectionIntersection() method Exit");
 	}
 	
 	@Test

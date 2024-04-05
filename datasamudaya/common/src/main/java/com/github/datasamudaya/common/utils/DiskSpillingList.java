@@ -49,6 +49,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	private transient Runtime rt;
 	private String diskfilepath;
 	private boolean isspilled;
+	private boolean isclosed;
 	private int batchsize;
 	private Task task;
 	private boolean left;
@@ -84,6 +85,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		this.lock = new Semaphore(1);
 		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE, 
 				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
+		this.isclosed = false;
 	}
 
 	/**
@@ -104,6 +106,14 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		return isspilled;
 	}
 
+	/**
+	 * The function returns whether the stream is closed or not
+	 * @return is stream closed
+	 */
+	public boolean isClosed() {
+		return isclosed;
+	}
+	
 	/**
 	 * The method adds the value to the list and spills to disk when memory
 	 * exceeds limit
@@ -259,6 +269,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 					dataList.clear();
 				}
 			}
+			this.isclosed = true;
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}

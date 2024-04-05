@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.functions.CoalesceFunction;
+import com.github.datasamudaya.common.functions.IntersectionFunction;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.MapFunction;
@@ -47,6 +48,7 @@ import com.github.datasamudaya.common.functions.PredicateSerializable;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
+import com.github.datasamudaya.stream.CsvOptions;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.sql.RequiredColumnsExtractor;
@@ -290,11 +292,11 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 			}
 			return spunion;
 		} else if (relNode instanceof EnumerableIntersect) {
-			StreamPipeline<Object[]> spunion = (StreamPipeline<Object[]>) buildIntersection((StreamPipeline<Object[]>) sp.get(0)
+			StreamPipeline<Object[]> spintersection = (StreamPipeline<Object[]>) buildIntersection((StreamPipeline<Object[]>) sp.get(0)
 			, (StreamPipeline<Object[]>) sp.get(1)
 			);
 			if (!SQLUtils.hasDescendants(relNode, descendants)) {
-				return spunion.map(new MapFunction<Object[], Object[]>(){
+				return spintersection.map(new MapFunction<Object[], Object[]>(){
 					private static final long serialVersionUID = 15264560692156277L;
 
 					public Object[] apply(Object[] values) {
@@ -302,7 +304,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 					}
 				});
 			}
-			return spunion;
+			return spintersection;
 		} else if (relNode instanceof EnumerableProject ep) {
 			boolean hasdecendants = SQLUtils.hasDescendants(relNode, descendants);
 
@@ -637,37 +639,44 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	 */
 	public static StreamPipeline<Object[]> buildUnion(
 			StreamPipeline<Object[]> pipeline1, StreamPipeline<Object[]> pipeline2) throws PipelineException{
-		return pipeline1.map(new MapFunction<Object[], List<Object>>(){
-			private static final long serialVersionUID = -1219246537117693979L;
+		if(nonNull(pipeline1.getCsvOptions())) {
+			pipeline1= pipeline1.map(new MapFunction<Object[], List<Object>>(){
+				private static final long serialVersionUID = -1219246537117693979L;
 
-			@Override
-			public List<Object> apply(Object[] obj) {
-				return Arrays.asList((Object[])obj[0]);
-			}
-		}).distinct()
-				.map(new MapFunction<List<Object>, Object[]>(){
-					private static final long serialVersionUID = 6404372514784230364L;
+				@Override
+				public List<Object> apply(Object[] obj) {
+					return Arrays.asList((Object[])obj[0]);
+				}
+			}).distinct()
+					.map(new MapFunction<List<Object>, Object[]>(){
+						private static final long serialVersionUID = 6404372514784230364L;
 
-					@Override
-					public Object[] apply(List<Object> obj) {
-						return obj.toArray();
-					}
-				}).union(pipeline2.map(new MapFunction<Object[], List<Object>>(){
-					private static final long serialVersionUID = -4809552374913602070L;
+						@Override
+						public Object[] apply(List<Object> obj) {
+							return obj.toArray();
+						}
+					});
+		}
+		
+		if(nonNull(pipeline2.getCsvOptions())) {
+			pipeline2 = pipeline2.map(new MapFunction<Object[], List<Object>>(){
+				private static final long serialVersionUID = -1219246537117693979L;
 
-					@Override
-					public List<Object> apply(Object[] obj) {
-						return Arrays.asList((Object[])obj[0]);
-					}
-				}).distinct()
-						.map(new MapFunction<List<Object>, Object[]>(){
-							private static final long serialVersionUID = 5625475672514170727L;
+				@Override
+				public List<Object> apply(Object[] obj) {
+					return Arrays.asList((Object[])obj[0]);
+				}
+			}).distinct()
+					.map(new MapFunction<List<Object>, Object[]>(){
+						private static final long serialVersionUID = 6404372514784230364L;
 
-							@Override
-							public Object[] apply(List<Object> obj) {
-								return obj.toArray();
-							}
-						}));
+						@Override
+						public Object[] apply(List<Object> obj) {
+							return obj.toArray();
+						}
+					});
+		}
+		return pipeline1.union(pipeline2);
 	}
 
 	/**
@@ -679,37 +688,46 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	 */
 	public static StreamPipeline<Object[]> buildIntersection(
 			StreamPipeline<Object[]> pipeline1, StreamPipeline<Object[]> pipeline2) throws PipelineException{
-		return pipeline1.map(new MapFunction<Object[], List<Object>>(){
-			private static final long serialVersionUID = -1219246537117693979L;
+		
+		
+		if(nonNull(pipeline1.getCsvOptions())) {
+			pipeline1= pipeline1.map(new MapFunction<Object[], List<Object>>(){
+				private static final long serialVersionUID = -1219246537117693979L;
 
-			@Override
-			public List<Object> apply(Object[] obj) {
-				return Arrays.asList((Object[])obj[0]);
-			}
-		}).distinct()
-				.map(new MapFunction<List<Object>, Object[]>(){
-					private static final long serialVersionUID = 6404372514784230364L;
+				@Override
+				public List<Object> apply(Object[] obj) {
+					return Arrays.asList((Object[])obj[0]);
+				}
+			}).distinct()
+					.map(new MapFunction<List<Object>, Object[]>(){
+						private static final long serialVersionUID = 6404372514784230364L;
 
-					@Override
-					public Object[] apply(List<Object> obj) {
-						return obj.toArray();
-					}
-				}).intersection(pipeline2.map(new MapFunction<Object[], List<Object>>(){
-					private static final long serialVersionUID = -4809552374913602070L;
+						@Override
+						public Object[] apply(List<Object> obj) {
+							return obj.toArray();
+						}
+					});
+		}
+		
+		if(nonNull(pipeline2.getCsvOptions())) {
+			pipeline2 = pipeline2.map(new MapFunction<Object[], List<Object>>(){
+				private static final long serialVersionUID = -1219246537117693979L;
 
-					@Override
-					public List<Object> apply(Object[] obj) {
-						return Arrays.asList((Object[])obj[0]);
-					}
-				}).distinct()
-						.map(new MapFunction<List<Object>, Object[]>(){
-							private static final long serialVersionUID = 5625475672514170727L;
+				@Override
+				public List<Object> apply(Object[] obj) {
+					return Arrays.asList((Object[])obj[0]);
+				}
+			}).distinct()
+					.map(new MapFunction<List<Object>, Object[]>(){
+						private static final long serialVersionUID = 6404372514784230364L;
 
-							@Override
-							public Object[] apply(List<Object> obj) {
-								return obj.toArray();
-							}
-						}));
+						@Override
+						public Object[] apply(List<Object> obj) {
+							return obj.toArray();
+						}
+					});
+		}
+		return pipeline1.intersection(pipeline2);
 	}
 
 	

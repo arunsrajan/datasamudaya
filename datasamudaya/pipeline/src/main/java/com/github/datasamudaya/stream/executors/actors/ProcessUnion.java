@@ -70,12 +70,17 @@ public class ProcessUnion extends AbstractActor {
 	private void processUnion(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
-				if (dsl.isSpilled()) {
-					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
-				} else {
+				if (!dsl.isSpilled()) {
 					Utils.copyDiskSpillingListToDisk(dsl);
 				}
 				dsl.clear();
+				initialsize++;
+			} else if (object.getValue() instanceof DiskSpillingSet dss) {
+				log.info("Is ProcessIntersection Spilled {} {}", dss.isSpilled(), dss.getTask());
+				if (!dss.isSpilled()) {
+					Utils.copyDiskSpillingSetToDisk(dss);
+				}
+				dss.clear();
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
@@ -93,15 +98,15 @@ public class ProcessUnion extends AbstractActor {
 								log.info("Getting Next List From Remote Server");
 								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 										.convertBytesToObjectCompressed((byte[]) client.next(), null);
-								log.info("Next List From Remote Server with size {}", niks.size());
+								log.info("Next List From Remote Server with size {} {}", niks.size(), niks.get(0));
 								niks.stream().forEach(diskspillset::add);
 							}
 						}
 					}
 					diskspillset.close();
-					log.info("DiskSpill Set Size {}", diskspillset.size());
+					log.info("DiskSpill Set Size {} {}", diskspillset.size(), childpipes);
 					childpipes.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspillset, false, false, NodeIndexKey.class),
+						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class),
 								ActorRef.noSender());
 					});
 				} else {

@@ -83,7 +83,9 @@ public class RemoteIteratorServer<T> {
 								break;
 							}
 							Object deserobj = Utils.getKryo().readClassAndObject(input);
-							if (deserobj instanceof RemoteListIteratorTask rlit) {
+							if(deserobj instanceof RemoteListIteratorClose) {
+								break;
+							} else if (deserobj instanceof RemoteListIteratorTask rlit) {
 								task = rlit.getTask();
 								lfcds = rlit.getFcsc();
 								log.info("Obtaining Cache for File {} with FCD {}",task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid, lfcds);
@@ -166,6 +168,14 @@ public class RemoteIteratorServer<T> {
 				nik.setKey(Utils.getKeyFromNodeIndexKey(lfcds, (Object[]) tup2.v1()));
 			} else {
 				nik.setValue(objfromfile);
+			}
+		} else if(objfromfile instanceof NodeIndexKey nikfromfile) {
+			nik.setIndex(totindex);
+			nik.setNode(task.getHostport());
+			if(nonNull(lfcds)) {
+				nik.setKey(Utils.getKeyFromNodeIndexKey(lfcds, (Object[]) nikfromfile.getValue()));
+			} else {
+				nik.setValue(nikfromfile.getValue());
 			}
 		} else {
 			nik.setIndex(totindex);
