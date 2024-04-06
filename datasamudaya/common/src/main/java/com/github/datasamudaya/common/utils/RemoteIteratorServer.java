@@ -100,9 +100,6 @@ public class RemoteIteratorServer<T> {
 								boolean isavailable = inputfile.available() > 0 || nonNull(currentList) && indexperlist<currentList.size();
 								kryo.writeClassAndObject(output, isavailable);
 								output.flush();
-								if (!isavailable) {
-									break;
-								}
 							} else if (deserobj instanceof RemoteListIteratorNext rlin) {
 								if(isNull(currentList) || indexperlist>=currentList.size()) {
 									Object data = kryo.readClassAndObject(inputfile);

@@ -2642,7 +2642,7 @@ public class Utils {
 						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
 				var sos = new SnappyOutputStream(ostream);
 				Output output = new Output(sos);) {
-			kryo.writeClassAndObject(output, dslinput.readListFromBytes());
+			kryo.writeClassAndObject(output, dslinput.getData());
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
@@ -3259,7 +3259,7 @@ public class Utils {
 						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
 				var sos = new SnappyOutputStream(ostream);
 				Output output = new Output(sos);) {
-			kryo.writeClassAndObject(output, dslinput.readSetFromBytes());
+			kryo.writeClassAndObject(output, dslinput.getData());
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}

@@ -105,7 +105,7 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 						if (dsl.isSpilled()) {
 							Utils.copySpilledDataSourceToFileShuffle(dsl, output);
 						} else {
-							Utils.getKryo().writeClassAndObject(output, dsl.readListFromBytes());
+							Utils.getKryo().writeClassAndObject(output, dsl.getData());
 							output.flush();
 						}
 						dsl.clear();

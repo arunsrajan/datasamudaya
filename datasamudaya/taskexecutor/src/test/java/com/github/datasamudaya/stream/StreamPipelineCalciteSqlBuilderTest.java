@@ -638,6 +638,35 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		log.info("In testRequiredColumnsIntersection() method Exit");
 	}
 	
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testAggregateIntersection() throws Exception {
+		log.info("In testAggregateIntersection() method Entry");
+
+		String statement = """
+				select airlinesamplesql.uniquecarrier,avg(airlinesamplesql.arrdelay) adelay,avg(airlinesamplesql.depdelay) ddelay,sum(airlinesamplesql.arrdelay) sarrdelay, sum(airlinesamplesql.depdelay) sdepdelay, count(*) cnt from airlinesamplesql group by airlinesamplesql.uniquecarrier intersect select airlinesample.uniquecarrier,avg(airlinesample.arrdelay) adelay,avg(airlinesample.depdelay) ddelay,sum(airlinesample.arrdelay) sarrdelay, sum(airlinesample.depdelay) sdepdelay, count(*) cnt from airlinesample group by airlinesample.uniquecarrier
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlinesamplesql", airlineheader, airlineheadertypes)
+				.add(airlinesample, "airlinesample", airlineheader, airlineheadertypes)
+				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		long totalrecords = 0;
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			totalrecords += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(6l, rec.length);
+			}
+		}
+		assertNotEquals(0, totalrecords);
+		log.info("In testAggregateIntersection() method Exit");
+	}
+	
+	
 	@SuppressWarnings({"unchecked"})
 	@Test
 	public void testRequiredColumnsIntersectionIntersection() throws Exception {

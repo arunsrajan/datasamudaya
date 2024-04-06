@@ -3,6 +3,7 @@ package com.github.datasamudaya.stream.executors.actors;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -76,7 +77,7 @@ public class ProcessUnion extends AbstractActor {
 				dsl.clear();
 				initialsize++;
 			} else if (object.getValue() instanceof DiskSpillingSet dss) {
-				log.info("Is ProcessIntersection Spilled {} {}", dss.isSpilled(), dss.getTask());
+				log.info("Is ProcessUnion Spilled {} {}", dss.isSpilled(), dss.getTask());
 				if (!dss.isSpilled()) {
 					Utils.copyDiskSpillingSetToDisk(dss);
 				}
@@ -86,7 +87,9 @@ public class ProcessUnion extends AbstractActor {
 			if (initialsize == terminatingsize) {
 				log.info("processUnion::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}", initialsize,
 						terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
-				diskspilllistinterm.close();				
+				if(diskspilllistinterm.isSpilled()) {
+					diskspilllistinterm.close();		
+				}
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 				if (CollectionUtils.isNotEmpty(childpipes)) {										
 					DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false,false ,false, null, null, 1);
@@ -96,16 +99,18 @@ public class ProcessUnion extends AbstractActor {
 								RequestType.LIST)) {
 							while (client.hasNext()) {
 								log.info("Getting Next List From Remote Server");
-								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
+								Collection<NodeIndexKey> niks = (Collection<NodeIndexKey>) Utils
 										.convertBytesToObjectCompressed((byte[]) client.next(), null);
-								log.info("Next List From Remote Server with size {} {}", niks.size(), niks.get(0));
+								log.info("Next List From Remote Server with size {}", niks.size());
 								niks.stream().forEach(diskspillset::add);
 							}
 						}
 					}
-					diskspillset.close();
-					log.info("DiskSpill Set Size {} {}", diskspillset.size(), childpipes);
+					if(diskspillset.isSpilled()) {
+						diskspillset.close();
+					}
 					childpipes.stream().forEach(downstreampipe -> {
+						log.info("Pushing data to downstream");
 						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class),
 								ActorRef.noSender());
 					});

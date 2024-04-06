@@ -118,7 +118,6 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 	}
 
 	private void processMapperByStream(OutputObject object) throws PipelineException, Exception {
-		log.info("In process mapper by stream {} {}", object.getValue(), terminatingsize);
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				if(!dsl.isClosed()) {
@@ -135,7 +134,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 					if (dsl.isSpilled()) {					
 						Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 					} else {
-						diskspilllistinterm.addAll(dsl.readListFromBytes());
+						diskspilllistinterm.addAll(dsl.getData());
 					}
 				}				
 				dsl.clear();
@@ -143,7 +142,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 				if (dss.isSpilled()) {					
 					Utils.copySpilledDataSourceToDestination(dss, diskspilllistinterm);
 				} else {
-					diskspilllistinterm.addAll(dss.readSetFromBytes());
+					diskspilllistinterm.addAll(dss.getData());
 				}
 				dss.clear();
 			}
@@ -157,7 +156,9 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
-				diskspilllistinterm.close();
+				if(diskspilllistinterm.isSpilled()) {
+					diskspilllistinterm.close();
+				}
 				log.info("processMapStream InitialSize {} , Terminating Size {} and Terminating Class {}", initialsize,
 						terminatingsize, object.getTerminiatingclass());
 				if (object.getTerminiatingclass() == NodeIndexKey.class) {
@@ -172,22 +173,25 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 								? (Stream<NodeIndexKey>) Utils.getStreamData(
 										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
 												null, true, false, false)))
-								: diskspilllistinterm.readListFromBytes().stream();
+								: diskspilllistinterm.getData().stream();
 						Map<String, RemoteIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>();
 						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
 								datastream.map(nik -> {
-									try {
-										String jstid = Utils.getIntermediateInputStreamTask(nik.getTask());
-										if(isNull(nik.getTask().getHostport())) {
+									try {										
+										if(isNull(nik.getTask().getHostport()) || !diskspilllistinterm.isSpilled()) {
 											return nik.getValue();
 										}
+										String jstid = Utils.getIntermediateInputStreamTask(nik.getTask());
 										if (isNull(taskrlistiterclientmap.get(jstid))) {
 											taskrlistiterclientmap.put(jstid, new RemoteIteratorClient<>(
 													nik.getTask(), null, RequestType.ELEMENT));
 										}
 										if(!taskrlistiterclientmap.get(jstid).isclosed() && taskrlistiterclientmap.get(jstid).hasNext()) {
-											NodeIndexKey nikwithvalue = (NodeIndexKey) taskrlistiterclientmap.get(jstid).next().getValue();
-											return nikwithvalue.getValue();
+											Object value = taskrlistiterclientmap.get(jstid).next().getValue();
+											if(value instanceof NodeIndexKey nikwithvalue) {
+												return nikwithvalue.getValue();
+											}
+											return value;
 										}
 									} catch (Exception ex) {
 										log.error("{}", ex);
@@ -213,7 +217,9 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 														ActorRef.noSender()));
 								results.entrySet().forEach(entry -> {
 									try {
-										entry.getValue().close();
+										if(entry.getValue().isSpilled()) {
+											entry.getValue().close();
+										}
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
@@ -233,7 +239,9 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 												ActorRef.noSender()));
 							} else {
 								streammap.forEach(diskspilllist::add);
-								diskspilllist.close();
+								if(diskspilllist.isSpilled()) {
+									diskspilllist.close();
+								}
 								childpipes.stream().forEach(action -> action.tell(
 										new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class),
 										ActorRef.noSender()));
@@ -253,7 +261,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 								? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
 										Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
 												diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
-								: diskspilllistinterm.readListFromBytes().stream();
+								: diskspilllistinterm.getData().stream();
 						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream.map(nik->nik.getValue()));
 								var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
@@ -281,7 +289,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 								? (Stream) Utils.getStreamData(
 										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
 												null, true, false, false)))
-								: diskspilllistinterm.readListFromBytes().stream();
+								: diskspilllistinterm.getData().stream();
 						if(object.getTerminiatingclass() == DiskSpillingSet.class) {
 							datastream = ((Stream<NodeIndexKey>)datastream).map(nik->nik.getValue());
 						}
@@ -305,7 +313,9 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 														ActorRef.noSender()));
 								results.entrySet().forEach(entry -> {
 									try {
-										entry.getValue().close();
+										if(entry.getValue().isSpilled()) {
+											entry.getValue().close();
+										}
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
@@ -327,7 +337,9 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 								log.info("Is Disk Spilling List Spilled {} stream processing for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								streammap.forEach(diskspilllist::add);
 								log.info("Is Disk Spilling List Spilled {} Close for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
-								diskspilllist.close();
+								if(diskspilllist.isSpilled()) {
+									diskspilllist.close();
+								}
 								log.info("Is Disk Spilling List Spilled {} for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								childpipes.stream().forEach(action -> action.tell(
 										new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class),
@@ -341,7 +353,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 								? (Stream) Utils.getStreamData(new FileInputStream(
 										Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
 												diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
-								: diskspilllistinterm.readListFromBytes().stream();
+								: diskspilllistinterm.getData().stream();
 						if(object.getTerminiatingclass() == DiskSpillingSet.class) {
 							datastream = ((Stream<NodeIndexKey>)datastream).map(nik->nik.getValue());
 						}

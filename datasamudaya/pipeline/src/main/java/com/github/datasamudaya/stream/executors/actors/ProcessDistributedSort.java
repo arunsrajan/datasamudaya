@@ -80,7 +80,7 @@ public class ProcessDistributedSort extends AbstractActor {
 					if (dsl.isSpilled()) {					
 						Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 					} else {
-						diskspilllistinterm.addAll(dsl.readListFromBytes());
+						diskspilllistinterm.addAll(dsl.getData());
 					}
 				}
 				dsl.clear();
@@ -89,7 +89,9 @@ public class ProcessDistributedSort extends AbstractActor {
 			if (initialsize == terminatingsize) {
 				log.info("processDistributedSort::Started InitialSize {} , Terminating Size {}", initialsize,
 						terminatingsize);
-				diskspilllistinterm.close();				
+				if(diskspilllistinterm.isSpilled()) {
+					diskspilllistinterm.close();		
+				}
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 				List<FieldCollationDirection> fcsc = (List<FieldCollationDirection>) tasktoprocess.getFcsc();
 				if (CollectionUtils.isNotEmpty(childpipes)) {										
@@ -99,7 +101,7 @@ public class ProcessDistributedSort extends AbstractActor {
 					try (Stream<Object[]> datastream = diskspilllistinterm.isSpilled()
 							? (Stream<Object[]>) Utils.getStreamData(new FileInputStream(Utils
 									.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
-							: diskspilllistinterm.readListFromBytes().stream()) {
+							: diskspilllistinterm.getData().stream()) {
 						AtomicInteger index = new AtomicInteger(0);
 
 						datastream.forEach(obj -> {
@@ -113,7 +115,9 @@ public class ProcessDistributedSort extends AbstractActor {
 							false, false, null, null, 0);
 					btree.traverse(rootniks);
 					try {
-						rootniks.close();
+						if(rootniks.isSpilled()) {
+							rootniks.close();
+						}
 					} catch (Exception e) {
 						log.error(DataSamudayaConstants.EMPTY, e);
 					}

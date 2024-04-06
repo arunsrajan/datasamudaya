@@ -93,23 +93,23 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
-					diskspilllistinterm.addAll(dsl.readListFromBytes());
+					diskspilllistinterm.addAll(dsl.getData());
 				}
 				dsl.clear();
 			}
-			if(object.getTerminiatingclass() == Dummy.class) {
-				initialsize++;
-			} else if(object.getTerminiatingclass() == DiskSpillingList.class) {
+			if(object.getTerminiatingclass() == Dummy.class || object.getTerminiatingclass() == DiskSpillingList.class) {
 				initialsize++;
 			}
 			log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
 			if (initialsize == terminatingsize) {
 				log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
-				diskspilllistinterm.close();
+				if(diskspilllistinterm.isSpilled()) {
+					diskspilllistinterm.close();
+				}
 				Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
 						Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
-						: diskspilllistinterm.readListFromBytes().stream();
+						: diskspilllistinterm.getData().stream();
 				datastream
 						.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
 								(input1, input2) ->
@@ -117,7 +117,9 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 						.entrySet().stream()
 						.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
 						.forEach(diskspilllist::add);
-				diskspilllist.close();
+				if(diskspilllist.isSpilled()) {
+					diskspilllist.close();
+				}
 				final boolean left = isNull(task.joinpos) ? false
 						: nonNull(task.joinpos) && "left".equals(task.joinpos) ? true : false;
 				final boolean right = isNull(task.joinpos) ? false
@@ -134,7 +136,7 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 							? (Stream<Tuple2>) Utils.getStreamData(
 							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null,
 									true, diskspilllist.getLeft(), diskspilllist.getRight())))
-							: diskspilllist.readListFromBytes().stream();
+							: diskspilllist.getData().stream();
 					try (var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);
 							var output = new Output(sos);) {

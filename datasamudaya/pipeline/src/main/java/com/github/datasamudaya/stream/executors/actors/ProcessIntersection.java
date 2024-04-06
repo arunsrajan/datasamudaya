@@ -101,7 +101,9 @@ public class ProcessIntersection extends AbstractActor {
 						}
 					}
 					log.info("DiskSpillSet Intermediate1 Closing...");					
-					diskspillsetintm1.close();					
+					if(diskspillsetintm1.isSpilled()) {
+						diskspillsetintm1.close();			
+					}
 					log.info("DiskSpillSet Intermediate1 Closed with remaining pred {}...", predecessors);
 					for (Task predecessor : predecessors) {
 						index++;
@@ -122,23 +124,28 @@ public class ProcessIntersection extends AbstractActor {
 								niks.stream().forEach(diskspillsetintm2::add);
 							}
 						}
-						diskspillsetintm2.close();
+						if(diskspillsetintm2.isSpilled()) {
+							diskspillsetintm2.close();
+						}
 						DiskSpillingSet<NodeIndexKey> diskspillsetintm1final = diskspillsetintm1;
 						Stream<NodeIndexKey> datastream1 = diskspillsetintm1.isSpilled()
 								? (Stream) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
 										diskspillsetintm1.getTask(), null, false, false, false)))
-								: diskspillsetintm1.readSetFromBytes().stream().peek(nik->nik.setTask(diskspillsetintm1final.getTask()));
+								: diskspillsetintm1.getData().stream().peek(nik->nik.setTask(diskspillsetintm1final.getTask()));
 
 						Stream<NodeIndexKey> datastream2 = diskspillsetintm2.isSpilled()
 								? (Stream) Utils.getStreamData(new FileInputStream(Utils
 										.getLocalFilePathForTask(diskspillsetintm2.getTask(), null, false, false, false)))
-								: (Stream<NodeIndexKey>)(diskspillsetintm2.readSetFromBytes().stream().peek(nik->nik.setTask(diskspillsetintm2.getTask())));
+								: (Stream<NodeIndexKey>)(diskspillsetintm2.getData().stream().peek(nik->nik.setTask(diskspillsetintm2.getTask())));
 						((Map<NodeIndexKey,List<NodeIndexKey>>)Stream.concat(datastream1, datastream2).collect(Collectors.groupingBy(nik->nik, Collectors.mapping(nik->nik, Collectors.toList()))))
 			            .entrySet().stream()
 			            .filter(e -> e.getValue().size() > 1)
 			            .map(e -> e.getKey())
 			            .forEach(diskspillsetresult::add);
-						diskspillsetresult.close();
+						if(diskspillsetresult.isSpilled()) {
+							diskspillsetresult.close();
+						}
+						
 						diskspillsetintm1 = diskspillsetresult;
 						
 					}

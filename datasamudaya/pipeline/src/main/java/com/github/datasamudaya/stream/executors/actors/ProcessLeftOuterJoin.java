@@ -92,7 +92,7 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
 				} else {
-					diskspilllistintermleft.addAll(dsl.readListFromBytes());
+					diskspilllistintermleft.addAll(dsl.getData());
 				}
 			}
 		} else if (oo.isRight()) {
@@ -101,15 +101,19 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
 				} else {
-					diskspilllistintermright.addAll(dsl.readListFromBytes());
+					diskspilllistintermright.addAll(dsl.getData());
 				}
 			}
 		}
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
 				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
 				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
-			diskspilllistintermleft.close();
-			diskspilllistintermright.close();
+			if(diskspilllistintermleft.isSpilled()) {
+				diskspilllistintermleft.close();
+			}
+			if(diskspilllistintermright.isSpilled()) {
+				diskspilllistintermright.close();
+			}
 			final boolean leftvalue = isNull(task.joinpos) ? false
 					: nonNull(task.joinpos) && "left".equals(task.joinpos) ? true : false;
 			final boolean rightvalue = isNull(task.joinpos) ? false
@@ -118,12 +122,12 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 					? (Stream<Tuple2>) Utils.getStreamData(
 					new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), null, true,
 							diskspilllistintermleft.getLeft(), diskspilllistintermleft.getRight())))
-					: diskspilllistintermleft.readListFromBytes().stream();
+					: diskspilllistintermleft.getData().stream();
 			Stream<Tuple2> datastreamright = diskspilllistintermright.isSpilled()
 					? (Stream<Tuple2>) Utils.getStreamData(
 					new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
 							diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
-					: diskspilllistintermright.readListFromBytes().stream();
+					: diskspilllistintermright.getData().stream();
 			try (var seq1 = Seq.seq(datastreamleft);
 					var seq2 = Seq.seq(datastreamright);
 					var join = seq1.leftOuterJoin(seq2, lojp)) {
@@ -131,17 +135,19 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 				Stream datastreamrightfirstelem = diskspilllistintermright.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
 						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
-								diskspilllistintermright.getLeft(), diskspilllistintermright.getRight()))) : diskspilllistintermright.readListFromBytes().stream();
+								diskspilllistintermright.getLeft(), diskspilllistintermright.getRight()))) : diskspilllistintermright.getData().stream();
 				Object[] origobjarray = (Object[]) datastreamrightfirstelem.findFirst().get();
 				Object[][] nullobjarr = new Object[2][((Object[]) origobjarray[0]).length];
 				for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
 					nullobjarr[1][numvalues] = true;
 				}
-				diskspilllistinterm.close();
+				if(diskspilllistinterm.isSpilled()) {
+					diskspilllistinterm.close();
+				}
 				Stream diskspilllistintermstream = diskspilllistinterm.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
 						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-								diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))) : diskspilllistinterm.readListFromBytes().stream();
+								diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))) : diskspilllistinterm.getData().stream();
 				diskspilllistintermstream.filter(val -> val instanceof Tuple2).map(value -> {
 					Tuple2 maprec = (Tuple2) value;
 					Object[] rec1 = (Object[]) maprec.v1;
@@ -151,7 +157,10 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 					}
 					return maprec;
 				}).forEach(diskspilllist::add);
-				try (DiskSpillingList diskspill = diskspilllist) {
+				if(diskspilllist.isSpilled()) {
+					diskspilllist.close();
+				}
+				try {
 					if (Objects.nonNull(pipelines)) {
 						pipelines.parallelStream().forEach(downstreampipe -> {
 							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class),
@@ -163,7 +172,7 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 								? (Stream<Tuple2>) Utils.getStreamData(
 								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, true,
 										diskspilllist.getLeft(), diskspilllist.getRight())))
-								: diskspilllist.readListFromBytes().stream();
+								: diskspilllist.getData().stream();
 						try (var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {
@@ -176,6 +185,8 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 							log.error("Error in putting output in cache", ex);
 						}
 					}
+				} catch(Exception ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);

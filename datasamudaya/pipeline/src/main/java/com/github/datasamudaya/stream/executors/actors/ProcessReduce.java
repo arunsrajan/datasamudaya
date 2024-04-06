@@ -148,7 +148,9 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 							log.error(DataSamudayaConstants.EMPTY, ex);
 						}
 					});
-					diskspilllist.close();
+					if(diskspilllist.isSpilled()) {
+						diskspilllist.close();
+					}
 					childpipes.stream().forEach(action -> action
 							.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class), ActorRef.noSender()));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);

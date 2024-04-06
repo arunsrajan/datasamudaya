@@ -277,7 +277,9 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, blr.pipeline.size())))))).get();
 					results.entrySet().forEach(entry -> {
 						try {
-							entry.getValue().close();
+							if(entry.getValue().isSpilled()) {
+								entry.getValue().close();
+							}
 							blr.pipeline.get(entry.getKey()).tell(new OutputObject(new ShuffleBlock(null,
 											Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey())), entry.getValue()), left, right, Dummy.class),
 									ActorRef.noSender());
@@ -295,7 +297,9 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							diskspillpercentage, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);
-					diskspilllist.close();
+					if(diskspilllist.isSpilled()) {
+						diskspilllist.close();
+					}
 					blr.childactors().stream().forEach(
 							action -> action.tell(new OutputObject(diskspilllist, left, right, Dummy.class), ActorRef.noSender()));
 					blr.childactors().stream().forEach(

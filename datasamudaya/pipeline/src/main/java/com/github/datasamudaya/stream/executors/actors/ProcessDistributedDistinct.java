@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -20,11 +22,9 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.cluster.Cluster;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 
 public class ProcessDistributedDistinct extends AbstractActor {
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+	Logger log = LoggerFactory.getLogger(ProcessDistributedDistinct.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 	int terminatingsize;
 	int initialsize = 0;
@@ -54,20 +54,23 @@ public class ProcessDistributedDistinct extends AbstractActor {
 	private void processDistributedDistinct(OutputObject object) throws PipelineException, Exception {		
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
-				log.info("In Distributed Distinct {} {} {} {}", object, dsl.size(), dsl.isSpilled(), dsl.getTask());
+				log.info("In Distributed Distinct {} {} {} {} {}", object, dsl.size(), dsl.isSpilled(), dsl.getTask(), terminatingsize);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspillset);
 				} else {
-					diskspillset.addAll(dsl.readListFromBytes());
+					diskspillset.addAll(dsl.getData());
 				}
 				dsl.clear();				
-			} else if(object.getValue() instanceof Dummy) {
+			} 
+			if(object.getTerminiatingclass() == DiskSpillingList.class || object.getTerminiatingclass() == Dummy.class) {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
 				log.info("processDistributedDistinct::Started InitialSize {} , Terminating Size {} childPipes {} Task {}", initialsize,
 						terminatingsize, childpipes, diskspillset.getTask());
-				diskspillset.close();				
+				if(diskspillset.isSpilled()) {
+					diskspillset.close();			
+				}
 				if (CollectionUtils.isNotEmpty(childpipes)) {															
 					log.info("processDistributedDistinct::DiskSpill intermediate Set Size {} Task {}", diskspillset.size(), diskspillset.getTask());
 					childpipes.stream().forEach(downstreampipe -> {
