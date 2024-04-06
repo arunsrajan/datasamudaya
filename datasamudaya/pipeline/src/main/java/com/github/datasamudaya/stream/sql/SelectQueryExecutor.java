@@ -5,11 +5,10 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -21,14 +20,12 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.stream.PipelineException;
-import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 
 import net.sf.jsqlparser.parser.CCJSqlParserManager;
-import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
-import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.util.validation.Validation;
 import net.sf.jsqlparser.util.validation.ValidationError;
 import net.sf.jsqlparser.util.validation.feature.DatabaseType;
@@ -82,16 +79,15 @@ public class SelectQueryExecutor {
 				throw new Exception("Syntax error in SQL");
 			}
 			Statement statement = parserManager.parse(new StringReader(selectquery));
-			var tables = new ArrayList<Table>();
-			var tmpset = new HashSet<String>();
-			SQLUtils.getAllTables(statement, tables, tmpset);
+			var tables = new ArrayList<String>();
+			SQLUtils.getAllTables(statement, tables);
 			var builder = StreamPipelineCalciteSqlBuilder.newBuilder()
 					.setHdfs(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);
-			for (Table table : tables) {
+			for (String tablename : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				TableCreator.getColumnMetadataFromTable(dbdefault, table.getName(), columnMetadatas);
+				TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
 				String hdfslocation = null;
 				String fileformat = null;
 				List<String> tablecolumn = new ArrayList<>();
@@ -106,7 +102,7 @@ public class SelectQueryExecutor {
 						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
 					}
 				}
-				builder = builder.add(hdfslocation, table.getName().toLowerCase(), tablecolumn, tablecolumnDataType);
+				builder = builder.add(hdfslocation, tablename.toLowerCase(), tablecolumn, tablecolumnDataType);
 				builder.setFileformat(fileformat);
 			}
 			StreamPipelineSql mdpsql = builder.build();
@@ -147,14 +143,13 @@ public class SelectQueryExecutor {
 				throw new Exception("Syntax error in SQL");
 			}
 			Statement statement = parserManager.parse(new StringReader(selectquery));
-			var tables = new ArrayList<Table>();
-			var tmpset = new HashSet<String>();
-			SQLUtils.getAllTables(statement, tables, tmpset);
+			var tables = new ArrayList<String>();
+			SQLUtils.getAllTables(statement, tables);
 			ConcurrentMap<String, List<String>> tablecolumnsmap = new ConcurrentHashMap<>();
 			ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap = new ConcurrentHashMap<>();
-			for (Table table : tables) {
+			for (String tablename : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				TableCreator.getColumnMetadataFromTable(dbdefault, table.getName(), columnMetadatas);
+				TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
@@ -165,8 +160,8 @@ public class SelectQueryExecutor {
 						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
 					}
 				}
-				tablecolumnsmap.put(table.getName(), tablecolumn);
-				tablecolumntypesmap.put(table.getName(), tablecolumnDataType);
+				tablecolumnsmap.put(tablename, tablecolumn);
+				tablecolumntypesmap.put(tablename, tablecolumnDataType);
 			}
 			AtomicBoolean isdistinct = new AtomicBoolean(false);
 			RelNode relnode = SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, selectquery, dbdefault,
@@ -270,17 +265,15 @@ public class SelectQueryExecutor {
 				throw new Exception("Syntax error in SQL");
 			}
 			Statement statement = parserManager.parse(new StringReader(selectquery));
-			Select select = (Select) statement;
-			var tables = new ArrayList<Table>();
-			var tmpset = new HashSet<String>();
-			SQLUtils.getAllTables(statement, tables, tmpset);
+			var tables = new ArrayList<String>();
+			SQLUtils.getAllTables(statement, tables);
 			var builder = StreamPipelineCalciteSqlBuilder.newBuilder()
 					.setHdfs(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);
-			for (Table table : tables) {
+			for (String tablename : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				TableCreator.getColumnMetadataFromTable(dbdefault, table.getName(), columnMetadatas);
+				TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
 				String hdfslocation = null;
 				String fileformat = null;
 				List<String> tablecolumn = new ArrayList<>();
@@ -295,7 +288,7 @@ public class SelectQueryExecutor {
 						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
 					}
 				}
-				builder = builder.add(hdfslocation, table.getName().toLowerCase(), tablecolumn, tablecolumnDataType);
+				builder = builder.add(hdfslocation, tablename.toLowerCase(), tablecolumn, tablecolumnDataType);
 				builder.setFileformat(fileformat);
 			}
 			StreamPipelineSql ipsql = builder.build();

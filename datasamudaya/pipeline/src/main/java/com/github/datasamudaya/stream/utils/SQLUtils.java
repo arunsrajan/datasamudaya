@@ -172,6 +172,7 @@ import net.sf.jsqlparser.expression.operators.relational.ItemsList;
 import net.sf.jsqlparser.expression.operators.relational.LikeExpression;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.GroupByElement;
 import net.sf.jsqlparser.statement.select.Join;
@@ -2340,34 +2341,10 @@ public class SQLUtils {
 	 * 
 	 * @param statement
 	 * @param tables
-	 * @param tmptables
 	 */
-	public static void getAllTables(Object statement, List<Table> tables, Set<String> tmptables) {
-		if ((statement instanceof Select select && select.getSelectBody() instanceof PlainSelect)
-				|| statement instanceof PlainSelect) {
-			var plainSelect = (PlainSelect) (statement instanceof PlainSelect ? statement
-					: ((Select) statement).getSelectBody());
-			FromItem fromItem = plainSelect.getFromItem();
-			if (fromItem instanceof SubSelect select) {
-				SelectBody subSelectBody = select.getSelectBody();
-				if (subSelectBody instanceof PlainSelect) {
-					getAllTables(subSelectBody, tables, tmptables);
-				}
-			} else if (fromItem instanceof Table table) {
-				if (!tmptables.contains(table.getName())) {
-					tables.add(table);
-					if (nonNull(plainSelect.getJoins())) {
-						for (Join join : plainSelect.getJoins()) {
-							tables.add(((Table) join.getRightItem()));
-							tmptables.add(((Table) join.getRightItem()).getName());
-						}
-					}
-				}
-				tmptables.add(table.getName());
-			}
-		} else if(statement instanceof Select selectbody && selectbody.getSelectBody() instanceof SetOperationList sol) {
-			sol.getSelects().forEach(select -> getAllTables(select, tables, tmptables));
-		}
+	public static void getAllTables(Statement statement, List<String> tables) {
+		net.sf.jsqlparser.util.TablesNamesFinder tablesNamesFinder = new net.sf.jsqlparser.util.TablesNamesFinder();
+		tables.addAll(tablesNamesFinder.getTableList(statement));
 	}
 
 	/**
