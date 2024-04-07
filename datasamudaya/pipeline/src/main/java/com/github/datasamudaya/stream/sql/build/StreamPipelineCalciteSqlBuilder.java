@@ -482,7 +482,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 							if (nonNull(grpcolindex) && grpcolindex.length > 0) {
 								grpbyobj = new Object[grpcolindex.length];
 								for (;index < grpcolindex.length;index++) {
-									grpbyobj[index] = ((Object[]) values[0])[grpcolindex[index]];
+									grpbyobj[index] = values[0].getClass() == Object[].class ? ((Object[]) values[0])[grpcolindex[index]]:values[grpcolindex[index]];
 								}
 							}
 							index = 0;
@@ -491,9 +491,10 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 								if ("count".equalsIgnoreCase(functionname)) {
 									fnobj.add(1l);
 								} else {
-									fnobj.add(((Object[]) values[0])[colindex.get(index)]);
+									fnobj.add(values[0].getClass() == Object[].class ? ((Object[]) values[0])[colindex.get(index)]:values[colindex.get(index)]);
 									long cval = 0l;
-									if ((boolean) ((Object[]) values[1])[colindex.get(index)]) {
+									boolean toconsider = (boolean) (values.length > 1 && values[1].getClass() == Object[].class ? ((Object[]) values[1])[colindex.get(index)]:true);
+									if (toconsider) {
 										cval = 1l;
 									}
 									if (functionname.startsWith("avg")) {

@@ -611,6 +611,59 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		log.info("In testRequiredColumnsUnionUnion() method Exit");
 	}
 	
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsUnionUnionSum() throws Exception {
+		log.info("In testRequiredColumnsUnionUnionSum() method Entry");
+
+		String statement = """
+				select sum(flight.delay) from (select uniquecarrier,min(arrdelay) delay from airlinessamplesql1 group by uniquecarrier union select uniquecarrier,max(arrdelay) delay from airlinesamplesql2 group by uniquecarrier) flight
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlinessamplesql1", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "airlinesamplesql2", airlineheader, airlineheadertypes)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		long totalrecords = 0;
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			totalrecords += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(1l, rec.length);
+			}
+		}
+		assertNotEquals(0, totalrecords);
+		log.info("In testRequiredColumnsUnionUnionSum() method Exit");
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsUnionUnionSumGroupBy() throws Exception {
+		log.info("In testRequiredColumnsUnionUnionSumGroupBy() method Entry");
+
+		String statement = """
+				select uniquecarrier, sum(flight.delay) from (select uniquecarrier,min(arrdelay) delay from airlinessamplesql1 group by uniquecarrier union select uniquecarrier,max(arrdelay) delay from airlinesamplesql2 group by uniquecarrier) flight group by uniquecarrier
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlinessamplesql1", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "airlinesamplesql2", airlineheader, airlineheadertypes)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		long totalrecords = 0;
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			totalrecords += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(2l, rec.length);
+			}
+		}
+		assertNotEquals(0, totalrecords);
+		log.info("In testRequiredColumnsUnionUnionSumGroupBy() method Exit");
+	}
+	
 	@SuppressWarnings({"unchecked"})
 	@Test
 	public void testRequiredColumnsIntersection() throws Exception {
