@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -146,11 +147,15 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 					diskspilllistinterm.addAll(dss.getData());
 				}
 				dss.clear();
+			} else if (object.getValue() instanceof TreeSet treeset) {				
+					diskspilllistinterm.addAll(treeset);
+					treeset.clear();
 			}
 			if (object.getTerminiatingclass() == DiskSpillingList.class
 					|| object.getTerminiatingclass() == Dummy.class
 					|| object.getTerminiatingclass() == NodeIndexKey.class
-					|| object.getTerminiatingclass() == DiskSpillingSet.class) {
+					|| object.getTerminiatingclass() == DiskSpillingSet.class
+					|| object.getTerminiatingclass() == TreeSet.class) {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {

@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,12 +85,9 @@ public class ProcessIntersection extends AbstractActor {
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					int index = 0;
-					DiskSpillingSet<NodeIndexKey> diskspillsetresult = null;
+					Set<NodeIndexKey> diskspillsetresult = null;
 					
-					DiskSpillingSet<NodeIndexKey> diskspillsetintm1 = new DiskSpillingSet(tasktoprocess,
-							diskspillpercentage,
-							DataSamudayaConstants.INTERMEDIATE + DataSamudayaConstants.HYPHEN + index, false, false,
-							false, null, null, 1);
+					Set<NodeIndexKey> diskspillsetintm1 = new TreeSet<>();
 					try (RemoteIteratorClient client = new RemoteIteratorClient(predecessors.remove(0), null,
 							RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 						while (client.hasNext()) {
@@ -96,18 +95,11 @@ public class ProcessIntersection extends AbstractActor {
 									.convertBytesToObjectCompressed((byte[]) client.next(), null);
 							diskspillsetintm1.addAll(niks);
 						}
-					}
-					if(diskspillsetintm1.isSpilled()) {
-						diskspillsetintm1.close();			
-					}
+					}					
 					for (Task predecessor : predecessors) {
 						index++;
-						diskspillsetresult = new DiskSpillingSet(tasktoprocess, diskspillpercentage,
-								index<predecessors.size()-1?(DataSamudayaConstants.INTERMEDIATERESULT + DataSamudayaConstants.HYPHEN + index):null, false, false, false, null, null, 1);
-						DiskSpillingSet<NodeIndexKey> diskspillsetintm2 = new DiskSpillingSet(tasktoprocess,
-								diskspillpercentage,
-								DataSamudayaConstants.INTERMEDIATE + DataSamudayaConstants.HYPHEN + index, false, false,
-								false, null, null, 1);
+						diskspillsetresult = new TreeSet<>();
+						Set<NodeIndexKey> diskspillsetintm2 = new TreeSet<>();
 						try (RemoteIteratorClient client = new RemoteIteratorClient(predecessor, null,
 								RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 							while (client.hasNext()) {
@@ -116,31 +108,38 @@ public class ProcessIntersection extends AbstractActor {
 								diskspillsetintm2.addAll(niks);
 							}
 						}
-						if(diskspillsetintm2.isSpilled()) {
-							diskspillsetintm2.close();
-						}
-						DiskSpillingSet<NodeIndexKey> diskspillsetintm1final = diskspillsetintm1;
-						Stream<NodeIndexKey> datastream1 = diskspillsetintm1.isSpilled()
-								? (Stream) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
-										diskspillsetintm1.getTask(), diskspillsetintm1.getAppendwithpath(), diskspillsetintm1.getAppendintermediate(), diskspillsetintm1.getLeft(), diskspillsetintm1.getRight())))
-								: diskspillsetintm1.getData().stream().peek(nik->nik.setTask(diskspillsetintm1final.getTask()));
+						Iterator<NodeIndexKey> it1 = diskspillsetintm1.iterator();
+			            Iterator<NodeIndexKey> it2 = diskspillsetintm2.iterator();
 
-						Stream<NodeIndexKey> datastream2 = diskspillsetintm2.isSpilled()
-								? (Stream) Utils.getStreamData(new FileInputStream(Utils
-										.getLocalFilePathForTask(diskspillsetintm2.getTask(), diskspillsetintm2.getAppendwithpath(), diskspillsetintm2.getAppendintermediate(), diskspillsetintm2.getLeft(), diskspillsetintm2.getRight())))
-								: (Stream<NodeIndexKey>)(diskspillsetintm2.getData().stream().peek(nik->nik.setTask(diskspillsetintm2.getTask())));
-						((Map<NodeIndexKey,List<NodeIndexKey>>)Stream.concat(datastream1, datastream2).collect(Collectors.groupingBy(nik->nik, Collectors.mapping(nik->nik, Collectors.toList()))))
-			            .entrySet().stream()
-			            .filter(e -> e.getValue().size() > 1)
-			            .map(e -> e.getKey())
-			            .forEach(diskspillsetresult::add);
-						if(diskspillsetresult.isSpilled()) {
-							diskspillsetresult.close();
-						}
+			            if (!it1.hasNext() || !it2.hasNext()) break; // One of the sets is empty
+
+			            NodeIndexKey item1 = it1.next();
+			            NodeIndexKey item2 = it2.next();
+
+			            while (it1.hasNext() && it2.hasNext()) {
+			                int compare = item1.compareTo(item2);
+			                if (compare == 0) {
+			                    // Add to result, advance both
+			                	diskspillsetresult.add(item1);
+			                    item1 = it1.next();
+			                    item2 = it2.next();
+			                } else if (compare < 0) {
+			                    // item1 is smaller, advance it1
+			                    item1 = it1.next();
+			                } else {
+			                    // item2 is smaller, advance it2
+			                    item2 = it2.next();
+			                }
+			            }
+
+			            // Check last pair if any
+			            if (item1.compareTo(item2) == 0) {
+			            	diskspillsetresult.add(item1);
+			            }
 			            diskspillsetintm1 = diskspillsetresult;
 			        }					
-					log.info("DiskSpill Object {} To be sent to downstream pipeline size {}", diskspillsetresult.isSpilled(), !diskspillsetresult.isSpilled()?diskspillsetresult.size():null);
-					DiskSpillingSet<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
+					log.info("Object To be sent to downstream pipeline size {}", diskspillsetresult.size());
+					Set<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
 					childpipes.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspillsetresultfinal, false, false, DiskSpillingSet.class),
 								ActorRef.noSender());
