@@ -247,7 +247,7 @@ public class SQLServer {
 											for (ColumnMetadata colmetadata : columns) {
 												out.println(colmetadata);
 											}
-										} else if (inputLine.startsWith("select")) {
+										} else if (inputLine.contains("select")) {
 											long starttime = System.currentTimeMillis();
 											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 											List<List> results = null;

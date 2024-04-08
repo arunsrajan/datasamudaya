@@ -509,17 +509,27 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 					}).reduceByKey(new ReduceByKeyFunction<Tuple>() {
 						private static final long serialVersionUID = -8773950223630733894L;
 						final List<String> functions = functionnames;
+						final Boolean isnotempty = CollectionUtils.isNotEmpty(functions);
 						@Override
 						public Tuple apply(Tuple tuple1, Tuple tuple2) {
-							return SQLUtils.evaluateTuple(functions, tuple1, tuple2);
+							if(isnotempty) {
+								return SQLUtils.evaluateTuple(functions, tuple1, tuple2);
+							} else {
+								return tuple1;
+							}
 						}
 
 					}).coalesce(1, new CoalesceFunction<Tuple>() {
 						private static final long serialVersionUID = -6496272568103409255L;
 						final List<String> functions = functionnames;
+						final Boolean isnotempty = CollectionUtils.isNotEmpty(functions);
 						@Override
 						public Tuple apply(Tuple tuple1, Tuple tuple2) {
-							return SQLUtils.evaluateTuple(functions, tuple1, tuple2);
+							if(isnotempty) {
+								return SQLUtils.evaluateTuple(functions, tuple1, tuple2);
+							} else {
+								return tuple1;
+							}
 						}
 
 					}).map(new MapFunction<Tuple2<Tuple, Tuple>, Object[]>() {

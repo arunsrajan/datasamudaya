@@ -7,7 +7,7 @@ import java.io.Serializable;
  * @author arun
  *
  */
-public class RemoteListIteratorHasNext implements Serializable {
+public class RemoteIteratorHasNext implements Serializable {
 
 	private static final long serialVersionUID = 6236873569705500616L;
 

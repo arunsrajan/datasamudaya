@@ -16,9 +16,9 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RemoteListIteratorNext implements Serializable {
+public class RemoteIteratorClose implements Serializable {
 
-	private static final long serialVersionUID = 5456804524884828242L;
+	private static final long serialVersionUID = -8817024385824956183L;
 	private RequestType requestType;
 
 }

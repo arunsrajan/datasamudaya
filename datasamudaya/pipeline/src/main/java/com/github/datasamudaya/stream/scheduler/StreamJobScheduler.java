@@ -136,6 +136,7 @@ import com.github.datasamudaya.common.utils.BTree;
 import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
+import com.github.datasamudaya.common.utils.IteratorType;
 import com.github.datasamudaya.common.utils.RemoteIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
@@ -2365,7 +2366,7 @@ public class StreamJobScheduler {
 										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
 											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
-													RequestType.LIST)) {
+													RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 												while (client.hasNext()) {
 													log.info("Getting Next List From Remote Server");
 													List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
@@ -2375,13 +2376,14 @@ public class StreamJobScheduler {
 												}
 											}
 										}
-										List larrayobj = new ArrayList<>();
-										List<NodeIndexKey> rootniks = new ArrayList<>();
-										diskspillset.close();
+										List larrayobj = new ArrayList<>();										
+										if(diskspillset.isSpilled()) {
+											diskspillset.close();
+										}
 										Stream<NodeIndexKey> datastream = diskspillset.isSpilled()
 												? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
 												Utils.getLocalFilePathForTask(diskspillset.getTask(), null, false, false, false)))
-												: diskspillset.readSetFromBytes().stream();
+												: diskspillset.getData().stream();
 										datastream.map(nik->nik.getKey()).map(new MapFunction<Object[], Object[]>(){
 											private static final long serialVersionUID = -6478016520828716284L;
 	
@@ -2402,7 +2404,7 @@ public class StreamJobScheduler {
 										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
 											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
-													RequestType.LIST)) {
+													RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 												while (client.hasNext()) {
 													log.info("Getting Next List From Remote Server");
 													List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils

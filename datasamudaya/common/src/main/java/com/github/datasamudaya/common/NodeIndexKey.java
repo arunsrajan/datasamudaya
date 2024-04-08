@@ -2,9 +2,12 @@ package com.github.datasamudaya.common;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Comparator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.datasamudaya.common.utils.Utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -46,5 +49,21 @@ public class NodeIndexKey implements Serializable {
 		result = prime * result + Arrays.deepHashCode((Object[])value);
 		return result;
 	}
+
+	public int compareTo(NodeIndexKey nik2) {		
+		Object[] objarr1 = (Object[])this.value;
+		Object[] objarr2 = (Object[])nik2.value;		
+		for (int indexarr = 0; indexarr < objarr1.length; indexarr++) {
+			Object value1 = objarr1[0].getClass() == Object[].class ? ((Object[]) objarr1[0])[indexarr]
+					: objarr1[indexarr];
+			Object value2 = objarr2[0].getClass() == Object[].class ? ((Object[]) objarr2[0])[indexarr]
+					: objarr2[indexarr];
+			int result = Utils.compareTo(value1, value2);
+			if(result!=0) return result;
+		}
+		return 0;
+	}
+	
+	
 	
 }

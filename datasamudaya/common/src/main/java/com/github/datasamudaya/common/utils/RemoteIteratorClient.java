@@ -45,9 +45,9 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 	private RequestType requesttype;
 	Socket socket;
 	Kryo kryo = Utils.getKryo();
-	RemoteListIteratorHasNext hasnext = new RemoteListIteratorHasNext();
-	RemoteListIteratorNext nextelem = new RemoteListIteratorNext();
-	public RemoteIteratorClient(Task task, List<FieldCollationDirection> fcsc, RequestType requesttype) throws Exception {
+	RemoteIteratorHasNext hasnext = new RemoteIteratorHasNext();
+	RemoteIteratorNext nextelem = new RemoteIteratorNext();
+	public RemoteIteratorClient(Task task, List<FieldCollationDirection> fcsc, RequestType requesttype, IteratorType iteratortype) throws Exception {
 		try {			
 			log.info("Trying to split host and port {}", task.getHostport());
 			String[] hostport = task.getHostport().split(DataSamudayaConstants.UNDERSCORE);
@@ -60,7 +60,7 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 			outputStream = socket.getOutputStream();
 			output = new Output(outputStream);
 			this.task = task;
-			kryo.writeClassAndObject(output, new RemoteListIteratorTask(task, fcsc));
+			kryo.writeClassAndObject(output, new RemoteIteratorTask(task, fcsc, iteratortype));
 			output.flush();
 			this.requesttype = requesttype;
 			nextelem.setRequestType(requesttype);
@@ -89,7 +89,7 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 
 	@Override
 	public void close() throws IOException {
-		kryo.writeClassAndObject(output, new RemoteListIteratorClose());
+		kryo.writeClassAndObject(output, new RemoteIteratorClose());
 		output.flush();
 		if(nonNull(input)) {
 			input.close();

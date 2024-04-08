@@ -20,11 +20,11 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RemoteListIteratorTask implements Serializable {
+public class RemoteIteratorTask implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
 	private Task task;
 	private List<FieldCollationDirection> fcsc;
-	
+	private IteratorType iteratortype;
 }

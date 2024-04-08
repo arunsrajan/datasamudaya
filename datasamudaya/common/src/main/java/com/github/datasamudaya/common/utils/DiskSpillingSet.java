@@ -10,10 +10,10 @@ import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Semaphore;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
@@ -73,7 +73,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	public DiskSpillingSet(Task task, int spillexceedpercentage, String appendwithpath, boolean appendintermediate, boolean left, boolean right, Map<Integer, FilePartitionId> filepartids, Map<Integer, ActorSelection> downstreampipelines, int numfileperexec) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
-		dataSet = new LinkedHashSet<>();
+		dataSet = new CopyOnWriteArraySet();
 		rt = Runtime.getRuntime();
 		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((spillexceedpercentage) / 100.0)));
 		this.left = left;
@@ -116,7 +116,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	@Override
 	public boolean add(T value) {
 		if (isNull(dataSet)) {
-			dataSet = new LinkedHashSet<>();
+			dataSet = new CopyOnWriteArraySet();
 		}
 		dataSet.add(value);
 		spillToDiskIntermediate(false);
@@ -196,7 +196,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		if (nonNull(bytes)) {
 			return (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 		}
-		return new LinkedHashSet<>();
+		return new CopyOnWriteArraySet();
 	}
 
 	/**

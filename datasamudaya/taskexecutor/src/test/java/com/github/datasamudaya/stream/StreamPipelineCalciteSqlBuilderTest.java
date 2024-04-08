@@ -691,6 +691,31 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		log.info("In testRequiredColumnsIntersection() method Exit");
 	}
 	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsDistinctIntersection() throws Exception {
+		log.info("In testRequiredColumnsDistinctIntersection() method Entry");
+
+		String statement = """
+				select distinct uniquecarrier,flightnum,origin,dest from airlinesamplesql intersect select distinct uniquecarrier,flightnum,origin,dest from airlinesample
+				""";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airlinesamplesql", airlineheader, airlineheadertypes)
+				.add(airlinesample, "airlinesample", airlineheader, airlineheadertypes)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		long totalrecords = 0;
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			totalrecords += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(4l, rec.length);
+			}
+		}
+		assertNotEquals(0, totalrecords);
+		log.info("In testRequiredColumnsDistinctIntersection() method Exit");
+	}
 	
 	@SuppressWarnings({"unchecked"})
 	@Test

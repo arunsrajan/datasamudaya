@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -11,8 +12,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -21,6 +24,7 @@ import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
+import com.github.datasamudaya.common.utils.IteratorType;
 import com.github.datasamudaya.common.utils.RemoteIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
@@ -29,13 +33,9 @@ import com.github.datasamudaya.stream.PipelineException;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
-import akka.cluster.Cluster;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ProcessIntersection extends AbstractActor {
 	Logger log = LoggerFactory.getLogger(ProcessIntersection.class);
-	Cluster cluster = Cluster.get(getContext().getSystem());
 	int terminatingsize;
 	int initialsize = 0;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
@@ -90,7 +90,7 @@ public class ProcessIntersection extends AbstractActor {
 							DataSamudayaConstants.INTERMEDIATE + DataSamudayaConstants.HYPHEN + index, false, false,
 							false, null, null, 1);
 					try (RemoteIteratorClient client = new RemoteIteratorClient(predecessors.remove(0), null,
-							RequestType.LIST)) {
+							RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 						while (client.hasNext()) {
 							log.info("Getting Next List From Remote Server");
 							List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
@@ -115,7 +115,7 @@ public class ProcessIntersection extends AbstractActor {
 								DataSamudayaConstants.INTERMEDIATE + DataSamudayaConstants.HYPHEN + index, false, false,
 								false, null, null, 1);
 						try (RemoteIteratorClient client = new RemoteIteratorClient(predecessor, null,
-								RequestType.LIST)) {
+								RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 							while (client.hasNext()) {
 								log.info("Getting Next List From Remote Server");
 								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
@@ -127,15 +127,17 @@ public class ProcessIntersection extends AbstractActor {
 						if(diskspillsetintm2.isSpilled()) {
 							diskspillsetintm2.close();
 						}
+						log.info("DiskSpillSetIntermediate1 Object {} To be sent to downstream pipeline size {}", diskspillsetintm1.isSpilled(), !diskspillsetintm1.isSpilled()?diskspillsetintm1.size():null);
+						log.info("DiskSpillSetIntermediate2 Object {} To be sent to downstream pipeline size {}", diskspillsetintm2.isSpilled(), !diskspillsetintm2.isSpilled()?diskspillsetintm2.size():null);
 						DiskSpillingSet<NodeIndexKey> diskspillsetintm1final = diskspillsetintm1;
 						Stream<NodeIndexKey> datastream1 = diskspillsetintm1.isSpilled()
 								? (Stream) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
-										diskspillsetintm1.getTask(), null, false, false, false)))
+										diskspillsetintm1.getTask(), diskspillsetintm1.getAppendwithpath(), diskspillsetintm1.getAppendintermediate(), diskspillsetintm1.getLeft(), diskspillsetintm1.getRight())))
 								: diskspillsetintm1.getData().stream().peek(nik->nik.setTask(diskspillsetintm1final.getTask()));
 
 						Stream<NodeIndexKey> datastream2 = diskspillsetintm2.isSpilled()
 								? (Stream) Utils.getStreamData(new FileInputStream(Utils
-										.getLocalFilePathForTask(diskspillsetintm2.getTask(), null, false, false, false)))
+										.getLocalFilePathForTask(diskspillsetintm2.getTask(), diskspillsetintm2.getAppendwithpath(), diskspillsetintm2.getAppendintermediate(), diskspillsetintm2.getLeft(), diskspillsetintm2.getRight())))
 								: (Stream<NodeIndexKey>)(diskspillsetintm2.getData().stream().peek(nik->nik.setTask(diskspillsetintm2.getTask())));
 						((Map<NodeIndexKey,List<NodeIndexKey>>)Stream.concat(datastream1, datastream2).collect(Collectors.groupingBy(nik->nik, Collectors.mapping(nik->nik, Collectors.toList()))))
 			            .entrySet().stream()
@@ -147,9 +149,8 @@ public class ProcessIntersection extends AbstractActor {
 						}
 						
 						diskspillsetintm1 = diskspillsetresult;
-						
 					}
-					log.info("DiskSpill Set Size {} {}", diskspillsetresult.size(), diskspillsetresult.readSetFromBytes());
+					log.info("DiskSpill Object {} To be sent to downstream pipeline size {}", diskspillsetresult.isSpilled(), !diskspillsetresult.isSpilled()?diskspillsetresult.size():null);
 					DiskSpillingSet<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
 					childpipes.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspillsetresultfinal, false, false, DiskSpillingSet.class),

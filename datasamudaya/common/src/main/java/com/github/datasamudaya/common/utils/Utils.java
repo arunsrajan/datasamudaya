@@ -2616,18 +2616,35 @@ public class Utils {
 	 * @param dslout
 	 */
 	public static void copySpilledDataSourceToDestination(DiskSpillingList dslinput, DiskSpillingList dslout) {
-		Kryo kryo = Utils.getKryo();
-		try (FileInputStream istream = new FileInputStream(
-				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
-						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
-				var sis = new SnappyInputStream(istream);
-				Input input = new Input(sis);) {
-			while (input.available() > 0) {
-				List records = (List) kryo.readClassAndObject(input);
-				dslout.addAll(records);
+		if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+			Kryo kryo = Utils.getKryo();
+			try (FileInputStream istream = new FileInputStream(
+					Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
+							dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+					var sis = new SnappyInputStream(istream);
+					Input input = new Input(sis);) {
+				while (input.available() > 0) {
+					List records = (List) kryo.readClassAndObject(input);
+					dslout.addAll(records);
+				}
+			} catch (Exception ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
-		} catch (Exception ex) {
-			log.error(DataSamudayaConstants.EMPTY, ex);
+		} else {
+			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+					RequestType.LIST, IteratorType.DISKSPILLITERATOR)) {
+				while (client.hasNext()) {
+					
+					List records = (List) Utils
+							.convertBytesToObjectCompressed((byte[]) client.next(), null);
+					
+					dslout.addAll(records);
+					
+				}
+			} catch (Exception e) {
+				log.error(DataSamudayaConstants.EMPTY, e);
+			}
 		}
 	}
 	
@@ -2636,13 +2653,14 @@ public class Utils {
 	 * @param dslinput
 	 */
 	public static void copyDiskSpillingListToDisk(DiskSpillingList dslinput) {
-		Kryo kryo = Utils.getKryo();
+		Kryo kryo = Utils.getKryoInstance();
 		try (FileOutputStream ostream = new FileOutputStream(
 				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
 						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
 				var sos = new SnappyOutputStream(ostream);
 				Output output = new Output(sos);) {
 			kryo.writeClassAndObject(output, dslinput.getData());
+			output.flush();
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
@@ -2747,7 +2765,7 @@ public class Utils {
 				public boolean tryAdvance(Consumer<? super Object> action) {
 					try {
 						if (inputinternal.available() > 0) {
-							List<?> intermdata = (List<?>) kryo.readClassAndObject(inputinternal);
+							Collection<?> intermdata = (Collection<?>) kryo.readClassAndObject(inputinternal);
 							for (Object obj : intermdata) {
 								action.accept(obj);
 							}
@@ -2818,7 +2836,7 @@ public class Utils {
 								cachekeyindexmap.put(node.getCachekey(), cachekeyindexmap.get(node.getCachekey())+1);
 							} else {
 								if(isNull(taskrlistiterclientmap.get(node.getTask()))) {
-									taskrlistiterclientmap.put(node.getTask(), new RemoteIteratorClient<>(node.getTask(), null, RequestType.ELEMENT));
+									taskrlistiterclientmap.put(node.getTask(), new RemoteIteratorClient<>(node.getTask(), null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION));
 								}
 								action.accept(taskrlistiterclientmap.get(node.getTask()).next().getValue());
 							}
@@ -3191,18 +3209,35 @@ public class Utils {
 	 * @param dslout
 	 */
 	public static void copySpilledDataSourceToDestination(DiskSpillingSet dslinput, DiskSpillingList dslout) {
-		Kryo kryo = Utils.getKryo();
-		try (FileInputStream istream = new FileInputStream(
-				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
-						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
-				var sis = new SnappyInputStream(istream);
-				Input input = new Input(sis);) {
-			while (input.available() > 0) {
-				Set records = (Set) kryo.readClassAndObject(input);
-				dslout.addAll(records);
+		if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+			Kryo kryo = Utils.getKryo();
+			try (FileInputStream istream = new FileInputStream(
+					Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
+							dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+					var sis = new SnappyInputStream(istream);
+					Input input = new Input(sis);) {
+				while (input.available() > 0) {
+					Set records = (Set) kryo.readClassAndObject(input);
+					dslout.addAll(records);
+				}
+			} catch (Exception ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
-		} catch (Exception ex) {
-			log.error(DataSamudayaConstants.EMPTY, ex);
+		} else {
+			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+					RequestType.LIST, IteratorType.DISKSPILLITERATOR)) {
+				while (client.hasNext()) {
+					
+					List records = (List) Utils
+							.convertBytesToObjectCompressed((byte[]) client.next(), null);
+					
+					dslout.addAll(records);
+					
+				}
+			} catch (Exception e) {
+				log.error(DataSamudayaConstants.EMPTY, e);
+			}
 		}
 	}
 	
@@ -3212,18 +3247,35 @@ public class Utils {
 	 * @param dslout
 	 */
 	public static void copySpilledDataSourceToDestination(DiskSpillingList dslinput, DiskSpillingSet dslout) {
-		Kryo kryo = Utils.getKryo();
-		try (FileInputStream istream = new FileInputStream(
-				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
-						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
-				var sis = new SnappyInputStream(istream);
-				Input input = new Input(sis);) {
-			while (input.available() > 0) {
-				List records = (List) kryo.readClassAndObject(input);
-				dslout.addAll(records);
+		if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+			Kryo kryo = Utils.getKryo();
+			try (FileInputStream istream = new FileInputStream(
+					Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
+							dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+					var sis = new SnappyInputStream(istream);
+					Input input = new Input(sis);) {
+				while (input.available() > 0) {
+					List records = (List) kryo.readClassAndObject(input);
+					dslout.addAll(records);
+				}
+			} catch (Exception ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
-		} catch (Exception ex) {
-			log.error(DataSamudayaConstants.EMPTY, ex);
+		} else {
+			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+					RequestType.LIST, IteratorType.DISKSPILLITERATOR)) {
+				while (client.hasNext()) {
+					
+					List records = (List) Utils
+							.convertBytesToObjectCompressed((byte[]) client.next(), null);
+					
+					dslout.addAll(records);
+					
+				}
+			} catch (Exception e) {
+				log.error(DataSamudayaConstants.EMPTY, e);
+			}
 		}
 	}
 	
@@ -3233,18 +3285,35 @@ public class Utils {
 	 * @param dslout
 	 */
 	public static void copySpilledDataSourceToDestination(DiskSpillingSet dslinput, DiskSpillingSet dslout) {
-		Kryo kryo = Utils.getKryo();
-		try (FileInputStream istream = new FileInputStream(
-				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
-						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
-				var sis = new SnappyInputStream(istream);
-				Input input = new Input(sis);) {
-			while (input.available() > 0) {
-				Set records = (Set) kryo.readClassAndObject(input);
-				dslout.addAll(records);
+		if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+			Kryo kryo = Utils.getKryo();
+			try (FileInputStream istream = new FileInputStream(
+					Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
+							dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
+					var sis = new SnappyInputStream(istream);
+					Input input = new Input(sis);) {
+				while (input.available() > 0) {
+					Set records = (Set) kryo.readClassAndObject(input);
+					dslout.addAll(records);
+				}
+			} catch (Exception ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
-		} catch (Exception ex) {
-			log.error(DataSamudayaConstants.EMPTY, ex);
+		} else {
+			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+					RequestType.LIST, IteratorType.DISKSPILLITERATOR)) {
+				while (client.hasNext()) {
+					
+					List records = (List) Utils
+							.convertBytesToObjectCompressed((byte[]) client.next(), null);
+					
+					dslout.addAll(records);
+					
+				}
+			} catch (Exception e) {
+				log.error(DataSamudayaConstants.EMPTY, e);
+			}
 		}
 	}
 	
@@ -3253,13 +3322,14 @@ public class Utils {
 	 * @param dslinput
 	 */
 	public static void copyDiskSpillingSetToDisk(DiskSpillingSet dslinput) {
-		Kryo kryo = Utils.getKryo();
+		Kryo kryo = Utils.getKryoInstance();
 		try (FileOutputStream ostream = new FileOutputStream(
 				Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
 						dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
 				var sos = new SnappyOutputStream(ostream);
 				Output output = new Output(sos);) {
 			kryo.writeClassAndObject(output, dslinput.getData());
+			output.flush();
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}

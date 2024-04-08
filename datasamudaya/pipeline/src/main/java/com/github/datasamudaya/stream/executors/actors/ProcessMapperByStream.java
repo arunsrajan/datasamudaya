@@ -39,6 +39,7 @@ import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TerminatingActorValue;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
+import com.github.datasamudaya.common.utils.IteratorType;
 import com.github.datasamudaya.common.utils.RemoteIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
@@ -184,7 +185,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 										String jstid = Utils.getIntermediateInputStreamTask(nik.getTask());
 										if (isNull(taskrlistiterclientmap.get(jstid))) {
 											taskrlistiterclientmap.put(jstid, new RemoteIteratorClient<>(
-													nik.getTask(), null, RequestType.ELEMENT));
+													nik.getTask(), null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION));
 										}
 										if(!taskrlistiterclientmap.get(jstid).isclosed() && taskrlistiterclientmap.get(jstid).hasNext()) {
 											Object value = taskrlistiterclientmap.get(jstid).next().getValue();

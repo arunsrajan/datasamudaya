@@ -70,6 +70,7 @@ public class RemoteIteratorServer<T> {
 					List currentList = null;
 					Task task = null;
 					List<FieldCollationDirection> lfcds = null;
+					IteratorType iteratortype = null;
 					try (Socket socket = clientSocket;
 							InputStream istream = socket.getInputStream();
 							Input input = new Input(istream);
@@ -83,11 +84,12 @@ public class RemoteIteratorServer<T> {
 								break;
 							}
 							Object deserobj = Utils.getKryo().readClassAndObject(input);
-							if(deserobj instanceof RemoteListIteratorClose) {
+							if(deserobj instanceof RemoteIteratorClose) {
 								break;
-							} else if (deserobj instanceof RemoteListIteratorTask rlit) {
+							} else if (deserobj instanceof RemoteIteratorTask rlit) {
 								task = rlit.getTask();
 								lfcds = rlit.getFcsc();
+								iteratortype = rlit.getIteratortype();
 								log.info("Obtaining Cache for File {} with FCD {}",task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid, lfcds);
 								byte[] bt = cache.get(task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid);
 								baistream = nonNull(bt)?new ByteArrayInputStream(bt):new FileInputStream(Utils.getLocalFilePathForTask(task, null, false, false, false));
@@ -96,30 +98,39 @@ public class RemoteIteratorServer<T> {
 								log.info("Obtaining Input {}", baistream);
 								indexperlist = 0;
 								totindex = 0;
-							} else if (deserobj instanceof RemoteListIteratorHasNext rlit) {
+							} else if (deserobj instanceof RemoteIteratorHasNext rlit) {
 								boolean isavailable = inputfile.available() > 0 || nonNull(currentList) && indexperlist<currentList.size();
 								kryo.writeClassAndObject(output, isavailable);
 								output.flush();
-							} else if (deserobj instanceof RemoteListIteratorNext rlin) {
+							} else if (deserobj instanceof RemoteIteratorNext rlin) {
 								if(isNull(currentList) || indexperlist>=currentList.size()) {
 									Object data = kryo.readClassAndObject(inputfile);
 									currentList = (List) ((data instanceof Set)?new ArrayList<>((Collection)data):(List)data);
 									indexperlist = 0;									
 								}
 								if (rlin.getRequestType() == RequestType.ELEMENT) {
-									Object objfromfile = currentList.get(indexperlist);
-									kryo.writeClassAndObject(output, getObjectToNik(lfcds, totindex, task, objfromfile));
+									if(iteratortype == IteratorType.SORTORUNIONORINTERSECTION) {
+										Object objfromfile = currentList.get(indexperlist);
+										kryo.writeClassAndObject(output, getObjectToNik(lfcds, totindex, task, objfromfile));
+									} else {
+										Object objfromfile = currentList.get(indexperlist);
+										kryo.writeClassAndObject(output, objfromfile);
+									}
 									output.flush();
 									indexperlist++;
 									totindex++;
 								} else if (rlin.getRequestType() == RequestType.LIST) {
 							        // Send the entire list
-									List<NodeIndexKey> niks = new ArrayList<>();
-									for(Object obj:currentList) {
-										niks.add(getObjectToNik(lfcds, totindex, task, obj));
-										totindex++;
+									if(iteratortype == IteratorType.SORTORUNIONORINTERSECTION) {
+										List<NodeIndexKey> niks = new ArrayList<>();
+										for(Object obj:currentList) {
+											niks.add(getObjectToNik(lfcds, totindex, task, obj));
+											totindex++;
+										}
+								        kryo.writeClassAndObject(output, Utils.convertObjectToBytesCompressed(niks, null));
+									} else if(iteratortype == IteratorType.DISKSPILLITERATOR) {
+										kryo.writeClassAndObject(output, Utils.convertObjectToBytesCompressed(currentList, null));
 									}
-							        kryo.writeClassAndObject(output, Utils.convertObjectToBytesCompressed(niks, null));
 							        output.flush();
 							        indexperlist = currentList.size(); // Ensure we mark as done
 							    }

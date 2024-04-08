@@ -20,6 +20,7 @@ import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
+import com.github.datasamudaya.common.utils.IteratorType;
 import com.github.datasamudaya.common.utils.RemoteIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
@@ -96,7 +97,7 @@ public class ProcessUnion extends AbstractActor {
 					for (Task predecessor : predecessors) {
 						log.info("Getting Next List From Remote Server with FCD {}",predecessor);
 						try (RemoteIteratorClient client = new RemoteIteratorClient(predecessor, null,
-								RequestType.LIST)) {
+								RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 							while (client.hasNext()) {
 								log.info("Getting Next List From Remote Server");
 								Collection<NodeIndexKey> niks = (Collection<NodeIndexKey>) Utils
