@@ -20,7 +20,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class NodeIndexKey implements Serializable {	
+public class NodeIndexKey implements Serializable,Comparable<NodeIndexKey> {	
 	private static final long serialVersionUID = 1L;
 	private String node;
 	private Integer index;
@@ -50,6 +50,7 @@ public class NodeIndexKey implements Serializable {
 		return result;
 	}
 
+	@Override
 	public int compareTo(NodeIndexKey nik2) {		
 		Object[] objarr1 = (Object[])this.value;
 		Object[] objarr2 = (Object[])nik2.value;		

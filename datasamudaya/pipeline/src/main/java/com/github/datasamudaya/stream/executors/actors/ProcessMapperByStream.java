@@ -147,13 +147,10 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 				}
 				dss.clear();
 			}
-			if (object.getTerminiatingclass() == DiskSpillingList.class) {
-				initialsize++;
-			} else if (object.getTerminiatingclass() == Dummy.class) {
-				initialsize++;
-			} else if (object.getTerminiatingclass() == NodeIndexKey.class) {
-				initialsize++;
-			} else if (object.getTerminiatingclass() == DiskSpillingSet.class){
+			if (object.getTerminiatingclass() == DiskSpillingList.class
+					|| object.getTerminiatingclass() == Dummy.class
+					|| object.getTerminiatingclass() == NodeIndexKey.class
+					|| object.getTerminiatingclass() == DiskSpillingSet.class) {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {

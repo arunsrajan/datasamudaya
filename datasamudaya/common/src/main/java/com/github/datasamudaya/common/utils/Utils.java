@@ -2761,17 +2761,19 @@ public class Utils {
 				SnappyInputStream sisinternal = new SnappyInputStream(istream);
 				Input inputinternal = new Input(sisinternal);
 				Kryo kryo = Utils.getKryo();
-
+				Collection<?> intermdata = null;
+				Iterator<?> iterator = null;
 				public boolean tryAdvance(Consumer<? super Object> action) {
 					try {
-						if (inputinternal.available() > 0) {
-							Collection<?> intermdata = (Collection<?>) kryo.readClassAndObject(inputinternal);
-							for (Object obj : intermdata) {
-								action.accept(obj);
-							}
-							if (inputinternal.available() > 0) {
-								return true;
-							}
+						if (isNull(intermdata) && inputinternal.available() > 0 || inputinternal.available() > 0 && !iterator.hasNext()) {
+							intermdata = (Collection<?>) kryo.readClassAndObject(inputinternal);
+							iterator = intermdata.iterator();
+						}
+						if(nonNull(iterator) && iterator.hasNext() ) {								
+							action.accept(iterator.next());							
+						}
+						if(inputinternal.available() > 0 || iterator.hasNext()) {
+							return true;
 						}
 						inputinternal.close();
 						sisinternal.close();

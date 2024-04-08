@@ -92,24 +92,18 @@ public class ProcessIntersection extends AbstractActor {
 					try (RemoteIteratorClient client = new RemoteIteratorClient(predecessors.remove(0), null,
 							RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 						while (client.hasNext()) {
-							log.info("Getting Next List From Remote Server");
 							List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 									.convertBytesToObjectCompressed((byte[]) client.next(), null);
-							log.info("Next List From Remote Server with size {} {}", niks.size(), niks.get(0));
-							niks.stream().forEach(diskspillsetintm1::add);
-							log.info("DiskSpillSet Intermediate1 {}", niks.size());
+							diskspillsetintm1.addAll(niks);
 						}
 					}
-					log.info("DiskSpillSet Intermediate1 Closing...");					
 					if(diskspillsetintm1.isSpilled()) {
 						diskspillsetintm1.close();			
 					}
-					log.info("DiskSpillSet Intermediate1 Closed with remaining pred {}...", predecessors);
 					for (Task predecessor : predecessors) {
 						index++;
 						diskspillsetresult = new DiskSpillingSet(tasktoprocess, diskspillpercentage,
 								index<predecessors.size()-1?(DataSamudayaConstants.INTERMEDIATERESULT + DataSamudayaConstants.HYPHEN + index):null, false, false, false, null, null, 1);
-						log.info("Getting Next List From Remote Server with FCD {}", predecessor);
 						DiskSpillingSet<NodeIndexKey> diskspillsetintm2 = new DiskSpillingSet(tasktoprocess,
 								diskspillpercentage,
 								DataSamudayaConstants.INTERMEDIATE + DataSamudayaConstants.HYPHEN + index, false, false,
@@ -117,18 +111,14 @@ public class ProcessIntersection extends AbstractActor {
 						try (RemoteIteratorClient client = new RemoteIteratorClient(predecessor, null,
 								RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 							while (client.hasNext()) {
-								log.info("Getting Next List From Remote Server");
 								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 										.convertBytesToObjectCompressed((byte[]) client.next(), null);
-								log.info("Next List From Remote Server with size {} {}", niks.size(), niks.get(0));
-								niks.stream().forEach(diskspillsetintm2::add);
+								diskspillsetintm2.addAll(niks);
 							}
 						}
 						if(diskspillsetintm2.isSpilled()) {
 							diskspillsetintm2.close();
 						}
-						log.info("DiskSpillSetIntermediate1 Object {} To be sent to downstream pipeline size {}", diskspillsetintm1.isSpilled(), !diskspillsetintm1.isSpilled()?diskspillsetintm1.size():null);
-						log.info("DiskSpillSetIntermediate2 Object {} To be sent to downstream pipeline size {}", diskspillsetintm2.isSpilled(), !diskspillsetintm2.isSpilled()?diskspillsetintm2.size():null);
 						DiskSpillingSet<NodeIndexKey> diskspillsetintm1final = diskspillsetintm1;
 						Stream<NodeIndexKey> datastream1 = diskspillsetintm1.isSpilled()
 								? (Stream) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
@@ -147,9 +137,8 @@ public class ProcessIntersection extends AbstractActor {
 						if(diskspillsetresult.isSpilled()) {
 							diskspillsetresult.close();
 						}
-						
-						diskspillsetintm1 = diskspillsetresult;
-					}
+			            diskspillsetintm1 = diskspillsetresult;
+			        }					
 					log.info("DiskSpill Object {} To be sent to downstream pipeline size {}", diskspillsetresult.isSpilled(), !diskspillsetresult.isSpilled()?diskspillsetresult.size():null);
 					DiskSpillingSet<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
 					childpipes.stream().forEach(downstreampipe -> {

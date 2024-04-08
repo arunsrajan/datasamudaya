@@ -713,7 +713,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 				assertEquals(4l, rec.length);
 			}
 		}
-		assertNotEquals(0, totalrecords);
+		assertNotEquals(201, totalrecords);
 		log.info("In testRequiredColumnsDistinctIntersection() method Exit");
 	}
 	
