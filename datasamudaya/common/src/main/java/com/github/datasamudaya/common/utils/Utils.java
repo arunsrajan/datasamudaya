@@ -2618,7 +2618,7 @@ public class Utils {
 	public static void copySpilledDataSourceToDestination(DiskSpillingList dslinput, DiskSpillingList dslout) {
 		if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
 				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
-			Kryo kryo = Utils.getKryo();
+			Kryo kryo = Utils.getKryoInstance();
 			try (FileInputStream istream = new FileInputStream(
 					Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
 							dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
@@ -2674,7 +2674,7 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void copySpilledDataSourceToFileShuffle(DiskSpillingList dslinput, Output output) throws Exception {
-		Kryo kryo = Utils.getKryo();
+		Kryo kryo = Utils.getKryoInstance();
 		InputStream istream = null;
 		if (nonNull(dslinput)) {
 			if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
@@ -2760,7 +2760,7 @@ public class Utils {
 				InputStream istream = is;
 				SnappyInputStream sisinternal = new SnappyInputStream(istream);
 				Input inputinternal = new Input(sisinternal);
-				Kryo kryo = Utils.getKryo();
+				Kryo kryo = Utils.getKryoInstance();
 				Collection<?> intermdata = null;
 				Iterator<?> iterator = null;
 				public boolean tryAdvance(Consumer<? super Object> action) {
@@ -2816,7 +2816,7 @@ public class Utils {
 		try {
 			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
 					Spliterator.IMMUTABLE | Spliterator.ORDERED | Spliterator.NONNULL) {				
-				Kryo kryo = Utils.getKryo();					
+				Kryo kryo = Utils.getKryoInstance();					
 				public boolean tryAdvance(Consumer<? super Object> action) {
 					List<NodeIndexKey> orderednodesinternal = niks;
 					Map<String, Input> keyinputmap = new ConcurrentHashMap<>();
@@ -2896,7 +2896,7 @@ public class Utils {
 	 */
 	public static byte[] convertObjectToBytes(Object obj) {
 		try (var ostream = new ByteArrayOutputStream(); var op = new Output(ostream);) {
-			Kryo kryo = Utils.getKryo();
+			Kryo kryo = Utils.getKryoInstance();
 			kryo.writeClassAndObject(op, obj);
 			op.flush();
 			return ostream.toByteArray();
@@ -2916,7 +2916,7 @@ public class Utils {
 		try (var istream = new ByteArrayInputStream(obj);
 				var sis = new SnappyInputStream(istream);
 				var ip = new Input(sis);) {
-			Kryo kryo = Utils.getKryo();
+			Kryo kryo = Utils.getKryoInstance();
 			if(nonNull(cl)) {
 				kryo.setClassLoader(cl);
 			}
@@ -2937,7 +2937,7 @@ public class Utils {
 		try (var ostream = new ByteArrayOutputStream();
 				var sos = new SnappyOutputStream(ostream);
 				var op = new Output(sos);) {
-			Kryo kryo = Utils.getKryo();
+			Kryo kryo = Utils.getKryoInstance();
 			if(nonNull(cl)) {
 				kryo.setClassLoader(cl);
 			}
@@ -2958,7 +2958,7 @@ public class Utils {
 	 */
 	public static Object convertBytesToObject(byte[] obj) {
 		try (var istream = new ByteArrayInputStream(obj); var ip = new Input(istream);) {
-			Kryo kryo = Utils.getKryo();
+			Kryo kryo = Utils.getKryoInstance();
 			return kryo.readClassAndObject(ip);
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
@@ -2994,8 +2994,8 @@ public class Utils {
 					}
 					executors.execute(() -> {
 					try (Socket socket = sock;) {
-							Kryo readkryo = Utils.getKryo();
-							Kryo writekryo = Utils.getKryo();
+							Kryo readkryo = Utils.getKryoInstance();
+							Kryo writekryo = Utils.getKryoInstance();
 							try (InputStream istream = socket.getInputStream();
 									Input input = new Input(istream);
 									OutputStream soutput = socket.getOutputStream();
@@ -3213,7 +3213,7 @@ public class Utils {
 	public static void copySpilledDataSourceToDestination(DiskSpillingSet dslinput, DiskSpillingList dslout) {
 		if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
 				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
-			Kryo kryo = Utils.getKryo();
+			Kryo kryo = Utils.getKryoInstance();
 			try (FileInputStream istream = new FileInputStream(
 					Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
 							dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
@@ -3251,7 +3251,7 @@ public class Utils {
 	public static void copySpilledDataSourceToDestination(DiskSpillingList dslinput, DiskSpillingSet dslout) {
 		if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
 				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
-			Kryo kryo = Utils.getKryo();
+			Kryo kryo = Utils.getKryoInstance();
 			try (FileInputStream istream = new FileInputStream(
 					Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
 							dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));
@@ -3289,7 +3289,7 @@ public class Utils {
 	public static void copySpilledDataSourceToDestination(DiskSpillingSet dslinput, DiskSpillingSet dslout) {
 		if (isNull(dslinput.getTask().getHostport()) || dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
 				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
-			Kryo kryo = Utils.getKryo();
+			Kryo kryo = Utils.getKryoInstance();
 			try (FileInputStream istream = new FileInputStream(
 					Utils.getLocalFilePathForTask(dslinput.getTask(), dslinput.getAppendwithpath(),
 							dslinput.getAppendintermediate(), dslinput.getLeft(), dslinput.getRight()));

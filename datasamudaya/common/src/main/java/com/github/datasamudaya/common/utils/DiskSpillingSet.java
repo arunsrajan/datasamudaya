@@ -223,7 +223,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
 					op = new Output(sos);
-					kryo = Utils.getKryo();
+					kryo = Utils.getKryoInstance();
 				}
 				if (Utils.mpBeanLocalToJVM.isUsageThresholdExceeded() && (dataSet.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataSet)) {
 					kryo.writeClassAndObject(op, dataSet);

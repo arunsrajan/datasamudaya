@@ -225,7 +225,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
 					op = new Output(sos);
-					kryo = Utils.getKryo();
+					kryo = Utils.getKryoInstance();
 				}
 				if (Utils.mpBeanLocalToJVM.isUsageThresholdExceeded() && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {
 					kryo.writeClassAndObject(op, dataList);
