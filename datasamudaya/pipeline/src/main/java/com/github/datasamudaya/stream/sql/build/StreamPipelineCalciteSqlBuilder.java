@@ -493,7 +493,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 								} else {
 									fnobj.add(values[0].getClass() == Object[].class ? ((Object[]) values[0])[colindex.get(index)]:values[colindex.get(index)]);
 									long cval = 0l;
-									boolean toconsider = (boolean) (values.length > 1 && values[1].getClass() == Object[].class ? ((Object[]) values[1])[colindex.get(index)]:true);
+									boolean toconsider = (boolean) (values.length > 1 && values[1].getClass() == Object[].class && colindex.get(index)<((Object[]) values[1]).length? ((Object[]) values[1])[colindex.get(index)]:true);
 									if (toconsider) {
 										cval = 1l;
 									}

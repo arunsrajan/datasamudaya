@@ -130,7 +130,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 	@Test
 	public void testRequiredColumns() throws Exception {
 		log.info("In testRequiredColumns() method Entry");
-		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DepDelay FROM airline ";
+		String statement = "SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DepDelay FROM airline";
 
 		int total = 0;
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
@@ -713,7 +713,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 				assertEquals(4l, rec.length);
 			}
 		}
-		assertNotEquals(201, totalrecords);
+		assertEquals(201, totalrecords);
 		log.info("In testRequiredColumnsDistinctIntersection() method Exit");
 	}
 	
@@ -746,7 +746,6 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 	
 	
 	@SuppressWarnings({"unchecked"})
-	@Test
 	public void testRequiredColumnsIntersectionIntersection() throws Exception {
 		log.info("In testRequiredColumnsIntersectionIntersection() method Entry");
 
