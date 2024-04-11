@@ -746,6 +746,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 	
 	
 	@SuppressWarnings({"unchecked"})
+	@Test
 	public void testRequiredColumnsIntersectionIntersection() throws Exception {
 		log.info("In testRequiredColumnsIntersectionIntersection() method Entry");
 

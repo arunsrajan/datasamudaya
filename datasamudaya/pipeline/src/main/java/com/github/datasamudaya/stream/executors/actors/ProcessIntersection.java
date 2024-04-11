@@ -48,7 +48,7 @@ public class ProcessIntersection extends AbstractActor {
 	private boolean iscacheable = true;
 	int btreesize;
 	int diskspillpercentage;
-
+	DiskSpillingSet diskspillset;
 	public ProcessIntersection(JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<ActorSelection> childpipes, int terminatingsize) {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -61,6 +61,8 @@ public class ProcessIntersection extends AbstractActor {
 				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
+		diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false, false, false, null,
+				null, 0);
 	}
 
 	@Override
@@ -137,11 +139,14 @@ public class ProcessIntersection extends AbstractActor {
 			            	diskspillsetresult.add(item1);
 			            }
 			            diskspillsetintm1 = diskspillsetresult;
-			        }					
+			        }
+					diskspillset.addAll(diskspillsetresult);
+					if(diskspillset.isSpilled()) {
+						diskspillset.close();
+					}
 					log.info("Object To be sent to downstream pipeline size {}", diskspillsetresult.size());
-					Set<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
 					childpipes.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspillsetresultfinal, false, false, DiskSpillingSet.class),
+						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class),
 								ActorRef.noSender());
 					});
 				} else {
