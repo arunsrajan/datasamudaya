@@ -1,28 +1,28 @@
 package com.github.datasamudaya.stream.executors.actors;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
-import com.github.datasamudaya.common.utils.IteratorType;
-import com.github.datasamudaya.common.utils.RemoteIteratorClient;
-import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
@@ -73,16 +73,25 @@ public class ProcessUnion extends AbstractActor {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				if (!dsl.isSpilled()) {
-					Utils.copyDiskSpillingListToDisk(dsl);
+					diskspilllistinterm.addAll(dsl.getData());
+				} else {
+					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				}
 				dsl.clear();
-				initialsize++;
 			} else if (object.getValue() instanceof DiskSpillingSet dss) {
 				log.info("Is ProcessUnion Spilled {} {}", dss.isSpilled(), dss.getTask());
 				if (!dss.isSpilled()) {
-					Utils.copyDiskSpillingSetToDisk(dss);
+					diskspilllistinterm.addAll(dss.getData());
+				} else {
+					Utils.copySpilledDataSourceToDestination(dss, diskspilllistinterm);
 				}
 				dss.clear();
+			}
+			if (object.getTerminiatingclass() == DiskSpillingList.class
+					|| object.getTerminiatingclass() == Dummy.class
+					|| object.getTerminiatingclass() == NodeIndexKey.class
+					|| object.getTerminiatingclass() == DiskSpillingSet.class
+					|| object.getTerminiatingclass() == TreeSet.class) {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
@@ -94,19 +103,18 @@ public class ProcessUnion extends AbstractActor {
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 				if (CollectionUtils.isNotEmpty(childpipes)) {										
 					DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false,false ,false, null, null, 1);
-					for (Task predecessor : predecessors) {
-						log.info("Getting Next List From Remote Server with FCD {}",predecessor);
-						try (RemoteIteratorClient client = new RemoteIteratorClient(predecessor, null,
-								RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
-							while (client.hasNext()) {
-								log.info("Getting Next List From Remote Server");
-								Collection<NodeIndexKey> niks = (Collection<NodeIndexKey>) Utils
-										.convertBytesToObjectCompressed((byte[]) client.next(), null);
-								log.info("Next List From Remote Server with size {}", niks.size());
-								niks.stream().forEach(diskspillset::add);
-							}
-						}
-					}
+					try (Stream<Object[]> datastream = diskspilllistinterm.isSpilled()
+							? (Stream<Object[]>) Utils.getStreamData(new FileInputStream(Utils
+									.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
+							: diskspilllistinterm.getData().stream()) {
+						AtomicInteger index = new AtomicInteger(0);
+						datastream.forEach(obj -> {
+							NodeIndexKey nik = new NodeIndexKey(tasktoprocess.getHostport(), index.getAndIncrement(),
+									null, obj, null, null, null, tasktoprocess);
+							diskspillset.add(nik);
+						});
+
+					}					
 					if(diskspillset.isSpilled()) {
 						diskspillset.close();
 					}
