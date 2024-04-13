@@ -301,7 +301,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 						diskspilllist.close();
 					}
 					blr.childactors().stream().forEach(
-							action -> action.tell(new OutputObject(diskspilllist, left, right, Dummy.class), ActorRef.noSender()));
+							action -> action.tell(new OutputObject(diskspilllist, left, right, DiskSpillingList.class), ActorRef.noSender()));
 					blr.childactors().stream().forEach(
 							action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class), ActorRef.noSender()));
 					log.info("Child Actors pipeline Process Ended ...");

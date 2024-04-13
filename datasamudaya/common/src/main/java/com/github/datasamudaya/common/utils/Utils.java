@@ -2791,6 +2791,196 @@ public class Utils {
 		return null;
 	}
 	
+	
+	/**
+	 * The function returns stream of data of diskspilled whether it is local or remote server.
+	 * @param dslinput
+	 * @return get stream of diskspill for list
+	 */
+	public static Stream<?> getStreamData(DiskSpillingList dslinput) {
+		try {
+			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
+					Spliterator.IMMUTABLE | Spliterator.ORDERED | Spliterator.NONNULL) {
+				InputStream istream;
+				SnappyInputStream sisinternal;
+				Input inputinternal;
+				Kryo kryo = Utils.getKryoInstance();
+				Collection<?> intermdata = null;
+				Iterator<?> iterator = null;
+				RemoteIteratorClient client = null;
+				public boolean tryAdvance(Consumer<? super Object> action) {
+					try {
+						if (dslinput.isSpilled()) {
+							if (isNull(dslinput.getTask().getHostport())
+									|| dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+											.equals(DataSamudayaProperties.get()
+													.getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+								if (isNull(istream)) {
+									istream = new FileInputStream(Utils.getLocalFilePathForTask(dslinput.getTask(),
+											dslinput.getAppendwithpath(), dslinput.getAppendintermediate(),
+											dslinput.getLeft(), dslinput.getRight()));
+									sisinternal = new SnappyInputStream(istream);
+									inputinternal = new Input(sisinternal);
+								}
+								if (isNull(intermdata) && inputinternal.available() > 0
+										|| inputinternal.available() > 0 && !iterator.hasNext()) {
+									intermdata = (Collection<?>) kryo.readClassAndObject(inputinternal);
+									iterator = intermdata.iterator();
+								}
+
+							} else {
+								if(isNull(client)) {
+									client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+										RequestType.LIST, IteratorType.DISKSPILLITERATOR);
+								}
+								if (isNull(iterator) && client.hasNext() || client.hasNext() && nonNull(iterator) && 
+										!iterator.hasNext()) {
+									List records = (List) Utils.convertBytesToObjectCompressed((byte[]) client.next(),
+											null);
+									iterator = records.iterator();
+								}
+							}
+						} else if(isNull(iterator)){
+							iterator = dslinput.getData().iterator();
+						}
+						if (nonNull(iterator) && iterator.hasNext()) {
+							action.accept(iterator.next());
+						}
+						if (nonNull(inputinternal) && inputinternal.available() > 0 || nonNull(iterator) && iterator.hasNext()) {
+							return true;
+						}						
+						return false;
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+					} finally {
+						if(nonNull(inputinternal)) {
+							inputinternal.close();
+						}
+						if(nonNull(sisinternal)) {
+							try {
+								sisinternal.close();
+							} catch (IOException e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(istream)) {
+							try {
+								istream.close();
+							} catch (IOException e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(client)) {
+							try {
+								client.close();
+							} catch (IOException e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+					}
+					return false;
+				}
+			}, false);
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	}
+	
+	/**
+	 * The function returns stream of data of diskspilled whether it is local or remote server.
+	 * @param dslinput
+	 * @return get stream of diskspill for set
+	 */
+	public static Stream<?> getStreamData(DiskSpillingSet dslinput) {
+		try {
+			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
+					Spliterator.IMMUTABLE | Spliterator.ORDERED | Spliterator.NONNULL) {
+				InputStream istream;
+				SnappyInputStream sisinternal;
+				Input inputinternal;
+				Kryo kryo = Utils.getKryoInstance();
+				Collection<?> intermdata = null;
+				Iterator<?> iterator = null;
+				RemoteIteratorClient client = null;
+				public boolean tryAdvance(Consumer<? super Object> action) {
+					try {
+						if (dslinput.isSpilled()) {
+							if (isNull(dslinput.getTask().getHostport())
+									|| dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+											.equals(DataSamudayaProperties.get()
+													.getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+								if (isNull(istream)) {
+									istream = new FileInputStream(Utils.getLocalFilePathForTask(dslinput.getTask(),
+											dslinput.getAppendwithpath(), dslinput.getAppendintermediate(),
+											dslinput.getLeft(), dslinput.getRight()));
+									sisinternal = new SnappyInputStream(istream);
+									inputinternal = new Input(sisinternal);
+								}
+								if (isNull(intermdata) && inputinternal.available() > 0
+										|| inputinternal.available() > 0 && !iterator.hasNext()) {
+									intermdata = (Collection<?>) kryo.readClassAndObject(inputinternal);
+									iterator = intermdata.iterator();
+								}
+
+							} else {
+								if(isNull(client)) {
+									client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+										RequestType.LIST, IteratorType.DISKSPILLITERATOR);
+								}
+								if (isNull(iterator) && client.hasNext() || client.hasNext() && nonNull(iterator) &&
+										!iterator.hasNext()) {
+									List records = (List) Utils.convertBytesToObjectCompressed((byte[]) client.next(),
+											null);
+									iterator = records.iterator();
+								}
+							}
+						} else if(isNull(iterator)){
+							iterator = dslinput.getData().iterator();
+						}
+						if (nonNull(iterator) && iterator.hasNext()) {
+							action.accept(iterator.next());
+						}
+						if (nonNull(inputinternal) && inputinternal.available() > 0 || nonNull(iterator) && iterator.hasNext()) {
+							return true;
+						}						
+						return false;
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+					} finally {
+						if(nonNull(inputinternal)) {
+							inputinternal.close();
+						}
+						if(nonNull(sisinternal)) {
+							try {
+								sisinternal.close();
+							} catch (IOException e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(istream)) {
+							try {
+								istream.close();
+							} catch (IOException e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(client)) {
+							try {
+								client.close();
+							} catch (IOException e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+					}
+					return false;
+				}
+			}, false);
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	}
 	/**
 	 * The function converts ordered tree to lists inorder traversal
 	 * @param nik

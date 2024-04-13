@@ -1,7 +1,6 @@
 package com.github.datasamudaya.stream.executors.actors;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -11,7 +10,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -25,16 +23,16 @@ import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
-import com.github.datasamudaya.common.utils.IteratorType;
-import com.github.datasamudaya.common.utils.RemoteIteratorClient;
-import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
+
+import static java.util.Objects.nonNull;
 
 public class ProcessIntersection extends AbstractActor {
 	Logger log = LoggerFactory.getLogger(ProcessIntersection.class);
@@ -48,7 +46,7 @@ public class ProcessIntersection extends AbstractActor {
 	private boolean iscacheable = true;
 	int btreesize;
 	int diskspillpercentage;
-	DiskSpillingSet diskspillset;
+	List ldiskspill;
 	public ProcessIntersection(JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<ActorSelection> childpipes, int terminatingsize) {
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -61,8 +59,7 @@ public class ProcessIntersection extends AbstractActor {
 				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
-		diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false, false, false, null,
-				null, 0);
+		ldiskspill = new ArrayList<>();
 	}
 
 	@Override
@@ -72,43 +69,73 @@ public class ProcessIntersection extends AbstractActor {
 
 	private void processIntersection(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			if (object.getValue() instanceof DiskSpillingSet dss) {
-				log.info("Is ProcessIntersection Spilled {} {}", dss.isSpilled(), dss.getTask());
-				if (!dss.isSpilled()) {
-					Utils.copyDiskSpillingSetToDisk(dss);
-				}
-				dss.clear();
+			log.info("processIntersection::: {}",object.getValue().getClass());
+			if (object.getValue() instanceof DiskSpillingList<?> dsl) {
+				ldiskspill.add(dsl);
+			} else if (object.getValue() instanceof DiskSpillingSet<?> dss) {
+				ldiskspill.add(dss);
+			} else if (object.getValue() instanceof TreeSet<?> ts) {
+				ldiskspill.add(ts);
+			}
+			if (object.getTerminiatingclass() == DiskSpillingList.class					
+					|| object.getTerminiatingclass() == NodeIndexKey.class
+					|| object.getTerminiatingclass() == DiskSpillingSet.class
+					|| object.getTerminiatingclass() == TreeSet.class) {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
 				log.info(
 						"processIntersection::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}",
 						initialsize, terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
-				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					int index = 0;
 					Set<NodeIndexKey> diskspillsetresult = null;
-					
 					Set<NodeIndexKey> diskspillsetintm1 = new TreeSet<>();
-					try (RemoteIteratorClient client = new RemoteIteratorClient(predecessors.remove(0), null,
-							RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
-						while (client.hasNext()) {
-							List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
-									.convertBytesToObjectCompressed((byte[]) client.next(), null);
-							diskspillsetintm1.addAll(niks);
-						}
-					}					
-					for (Task predecessor : predecessors) {
+					Object diskspill = ldiskspill.remove(0);
+					Stream<?> datastream = null;
+					if (diskspill instanceof DiskSpillingList<?> dsl) {
+						datastream = Utils.getStreamData(dsl);
+					} else if (diskspill instanceof DiskSpillingSet<?> dss) {
+						datastream = Utils.getStreamData(dss);
+					} else if (diskspill instanceof TreeSet<?> ts) {
+						diskspillsetintm1 = (Set<NodeIndexKey>) ts;
+						datastream = null;
+					}
+					AtomicInteger atomindex = new AtomicInteger(0);
+					Set<NodeIndexKey> diskspillsetinterm = diskspillsetintm1;
+					if(nonNull(datastream)) {
+						datastream.forEach(obj -> {
+							if (obj instanceof NodeIndexKey nik) {
+								diskspillsetinterm.add(nik);
+							} else {
+								diskspillsetinterm.add(new NodeIndexKey(tasktoprocess.getHostport(),
+										atomindex.getAndIncrement(), null, obj, null, null, null, tasktoprocess));
+							}
+						});
+					}
+					for (Object diskspill1 : ldiskspill) {
 						index++;
 						diskspillsetresult = new TreeSet<>();
 						Set<NodeIndexKey> diskspillsetintm2 = new TreeSet<>();
-						try (RemoteIteratorClient client = new RemoteIteratorClient(predecessor, null,
-								RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
-							while (client.hasNext()) {
-								List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
-										.convertBytesToObjectCompressed((byte[]) client.next(), null);
-								diskspillsetintm2.addAll(niks);
-							}
+						Set<NodeIndexKey> diskspillsetinterm2 = diskspillsetintm2;
+						if (diskspill1 instanceof DiskSpillingList<?> dsl) {
+							datastream = Utils.getStreamData(dsl);
+						} else if (diskspill1 instanceof DiskSpillingSet<?> dss) {
+							datastream = Utils.getStreamData(dss);
+						} else if (diskspill1 instanceof TreeSet<?> ts) {
+							diskspillsetintm2 = (Set<NodeIndexKey>) ts;
+							datastream = null;
+						}
+						AtomicInteger atomindex1 = new AtomicInteger(0);
+						if(nonNull(datastream)) {
+							datastream.forEach(obj -> {
+								if (obj instanceof NodeIndexKey nik) {
+									diskspillsetinterm2.add(nik);
+								} else {
+									diskspillsetinterm2.add(new NodeIndexKey(tasktoprocess.getHostport(),
+											atomindex1.getAndIncrement(), null, obj, null, null, null, tasktoprocess));
+								}
+							});
 						}
 						Iterator<NodeIndexKey> it1 = diskspillsetintm1.iterator();
 			            Iterator<NodeIndexKey> it2 = diskspillsetintm2.iterator();
@@ -139,20 +166,17 @@ public class ProcessIntersection extends AbstractActor {
 			            	diskspillsetresult.add(item1);
 			            }
 			            diskspillsetintm1 = diskspillsetresult;
-			        }
-					diskspillset.addAll(diskspillsetresult);
-					if(diskspillset.isSpilled()) {
-						diskspillset.close();
-					}
+			        }					
 					log.info("Object To be sent to downstream pipeline size {}", diskspillsetresult.size());
+					Set<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
 					childpipes.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class),
+						downstreampipe.tell(new OutputObject(diskspillsetresultfinal, false, false, DiskSpillingSet.class),
 								ActorRef.noSender());
 					});
 				} else {
 					AtomicInteger index = new AtomicInteger(0);
 					List<NodeIndexKey> niks = new ArrayList<>();
-					for (Task predecessor : predecessors) {
+					for (Task predecessor : tasktoprocess.getTaskspredecessor()) {
 						NodeIndexKey nik = new NodeIndexKey(predecessor.getHostport(), index.getAndIncrement(), null,
 								null, null, null, null, predecessor);
 						niks.add(nik);
