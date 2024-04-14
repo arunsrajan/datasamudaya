@@ -63,8 +63,8 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	private Map<Integer, ActorSelection> downstreampipelines;
 	private Map<Integer, FilePartitionId> filepartids;
 	int numfileperexec;
-	private transient Semaphore lock;
-	private transient Semaphore filelock;
+	private Semaphore lock;
+	private Semaphore filelock;
 
 	public DiskSpillingSet() {
 		lock = new Semaphore(1);
@@ -209,12 +209,6 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if(isNull(lock)) {
-				lock = new Semaphore(1);
-			}
-			if(isNull(filelock)) {
-				filelock = new Semaphore(1);
-			}
 			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
 					&& CollectionUtils.isNotEmpty(dataSet)) {
 				filelock.acquire();
@@ -225,8 +219,8 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 					op = new Output(sos);
 				}
 				filelock.release();
-				if (isspilled && (dataSet.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataSet)) {
-					lock.acquire();
+				lock.acquire();
+				if (isspilled && (dataSet.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataSet)) {					
 					Utils.getKryoInstance().writeClassAndObject(op, dataSet);
 					op.flush();
 					dataSet.clear();

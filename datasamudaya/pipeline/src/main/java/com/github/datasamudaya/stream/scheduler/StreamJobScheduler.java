@@ -2398,30 +2398,10 @@ public class StreamJobScheduler {
 											stageoutput.add(larrayobj);
 										}
 									} else if(task.isTosort()) {
-										int btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
-												DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
-										BTree btree = new BTree(btreesize);
-										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
-											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
-											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
-													RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
-												while (client.hasNext()) {
-													log.info("Getting Next List From Remote Server");
-													List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
-															.convertBytesToObjectCompressed((byte[]) client.next(), null);
-													log.info("Next List From Remote Server with size {}", niks.size());
-													for (NodeIndexKey niktree : niks) {
-														niktree.setTask(nik.getTask());
-														btree.insert(niktree, nik.getTask().getFcsc());
-													}
-												}
-											}
-										}
+										List<NodeIndexKey> rootniks = lst;
 										List larrayobj = new ArrayList<>();
-										List<NodeIndexKey> rootniks = new ArrayList<>();
-										btree.traverse(rootniks);
-										Stream stream = Utils.getStreamData(rootniks, null);
-										stream.map(new MapFunction<Object[], Object[]>(){
+										Stream<NodeIndexKey> stream = rootniks.stream();
+										stream.map(nik-> (Object[])nik.getValue()).map(new MapFunction<Object[], Object[]>(){
 											private static final long serialVersionUID = -6478016520828716284L;
 	
 											public Object[] apply(Object[] values) {

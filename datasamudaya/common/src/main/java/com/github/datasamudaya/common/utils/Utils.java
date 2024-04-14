@@ -392,6 +392,7 @@ public class Utils {
 		kryo.setReferences(true);
 		kryo.setRegistrationRequired(false);
 		kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
+		kryo.setOptimizedGenerics(true);
 		kryo.register(Arrays.asList("").getClass(), new ArraysAsListSerializer());
 		kryo.register(Collections.EMPTY_LIST.getClass(), new CollectionsEmptyListSerializer());
 		kryo.register(Collections.EMPTY_MAP.getClass(), new CollectionsEmptyMapSerializer());
@@ -496,6 +497,7 @@ public class Utils {
 		kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
 		kryo.setReferences(true);
 		kryo.setRegistrationRequired(false);
+		kryo.setOptimizedGenerics(true);
 		kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
 		kryo.register(Arrays.asList("").getClass(), new ArraysAsListSerializer());
 		kryo.register(Collections.EMPTY_LIST.getClass(), new CollectionsEmptyListSerializer());

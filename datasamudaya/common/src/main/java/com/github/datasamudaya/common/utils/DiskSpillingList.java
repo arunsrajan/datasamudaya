@@ -62,9 +62,8 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	private Map<Integer, ActorSelection> downstreampipelines;
 	private Map<Integer, FilePartitionId> filepartids;
 	int numfileperexec;
-	private transient Semaphore lock;
-	private transient Semaphore filelock;
-	private transient Semaphore addlock;
+	private Semaphore lock;
+	private Semaphore filelock;
 
 	public DiskSpillingList() {
 		lock = new Semaphore(1);
@@ -213,12 +212,6 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if(isNull(lock)) {
-				lock = new Semaphore(1);
-			}
-			if(isNull(filelock)) {
-				filelock = new Semaphore(1);
-			}
 			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
 					&& CollectionUtils.isNotEmpty(dataList)) {
 				filelock.acquire();
@@ -229,8 +222,8 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 					op = new Output(sos);
 				}
 				filelock.release();
-				if (isspilled && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {
-					lock.acquire();
+				lock.acquire();
+				if (isspilled && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {					
 					Utils.getKryoInstance().writeClassAndObject(op, dataList);
 					op.flush();
 					dataList.clear();
