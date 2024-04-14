@@ -337,7 +337,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 				log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 				throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 			}
-		} catch (Exception ex) {
+		} catch (Throwable ex) {
 			log.error(PipelineConstants.PROCESSHDFSERROR, ex);
 		} finally {			
 			if (nonNull(buffer)) {

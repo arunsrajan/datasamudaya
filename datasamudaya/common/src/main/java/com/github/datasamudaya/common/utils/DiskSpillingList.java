@@ -7,8 +7,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.AbstractList;
+import java.util.Vector;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -46,7 +46,6 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 
 	private List dataList;
 	private byte[] bytes;
-	private transient Runtime rt;
 	private String diskfilepath;
 	private boolean isspilled;
 	private boolean isclosed;
@@ -64,16 +63,18 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	private Map<Integer, FilePartitionId> filepartids;
 	int numfileperexec;
 	private transient Semaphore lock;
+	private transient Semaphore filelock;
+	private transient Semaphore addlock;
 
 	public DiskSpillingList() {
 		lock = new Semaphore(1);
+		filelock = new Semaphore(1);
 	}
 
 	public DiskSpillingList(Task task, int spillexceedpercentage, String appendwithpath, boolean appendintermediate, boolean left, boolean right, Map<Integer, FilePartitionId> filepartids, Map<Integer, ActorSelection> downstreampipelines, int numfileperexec) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
-		dataList = new ArrayList<>();
-		rt = Runtime.getRuntime();
+		dataList = new Vector<>();
 		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((spillexceedpercentage) / 100.0)));
 		this.left = left;
 		this.right = right;
@@ -83,6 +84,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		this.filepartids = filepartids;
 		this.numfileperexec = numfileperexec;
 		this.lock = new Semaphore(1);
+		this.filelock = new Semaphore(1);
 		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE, 
 				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
 		this.isclosed = false;
@@ -124,10 +126,10 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	@Override
 	public boolean add(T value) {
 		if (isNull(dataList)) {
-			dataList = new ArrayList<>();
+			dataList = new Vector<>();
 		}
-		dataList.add(value);
 		spillToDiskIntermediate(false);
+		dataList.add(value);		
 		return true;
 	}
 
@@ -138,7 +140,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	 */
 	public void addAll(List<T> values) {
 		if (CollectionUtils.isNotEmpty(values)) {
-			values.stream().forEach(this::add);
+			values.stream().parallel().forEach(this::add);
 		}
 	}
 
@@ -198,7 +200,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		if (nonNull(bytes)) {
 			return (List) Utils.convertBytesToObjectCompressed(bytes, null);
 		}
-		return new ArrayList<>();
+		return new Vector<>();
 	}
 
 	/**
@@ -211,15 +213,15 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if (isNull(lock)) {
+			if(isNull(lock)) {
 				lock = new Semaphore(1);
 			}
-			lock.acquire();
-			if (isNull(rt)) {
-				rt = Runtime.getRuntime();
+			if(isNull(filelock)) {
+				filelock = new Semaphore(1);
 			}
-			if ((Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()
-					|| isspilled) && CollectionUtils.isNotEmpty(dataList)) {
+			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
+					&& CollectionUtils.isNotEmpty(dataList)) {
+				filelock.acquire();
 				if (isNull(ostream)) {
 					isspilled = true;
 					ostream = new FileOutputStream(new File(diskfilepath), true);
@@ -227,12 +229,15 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 					op = new Output(sos);
 					kryo = Utils.getKryoInstance();
 				}
-				if (Utils.mpBeanLocalToJVM.isUsageThresholdExceeded() && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {
+				filelock.release();
+				if (isspilled && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {
+					lock.acquire();
 					kryo.writeClassAndObject(op, dataList);
 					op.flush();
 					dataList.clear();
 				}
 			} else if (nonNull(downstreampipelines) && dataList.size() >= batchsize || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {
+				lock.acquire();
 				transferDataToDownStreamPipelines();
 			}
 

@@ -51,6 +51,7 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
@@ -63,6 +64,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.Optionality;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
@@ -3423,9 +3425,13 @@ public class SQLUtils {
 								+ (Integer) getValue(length, SqlTypeName.INTEGER)));
 			case "cast":
 				return evaluateRexNode(expfunc, values);
-			case "grpconcat":
+			case "group_concat":
 				RexNode rexnode1 = call.getOperands().get(0);
 				RexNode rexnode2 = call.getOperands().get(1);
+				return (String) evaluateRexNode(rexnode1, values) + evaluateRexNode(rexnode2, values);
+			case "concat":
+				rexnode1 = call.getOperands().get(0);
+				rexnode2 = call.getOperands().get(1);
 				return (String) evaluateRexNode(rexnode1, values) + evaluateRexNode(rexnode2, values);
 			case "case":
 				List<RexNode> rexnodes = call.getOperands();
@@ -3441,6 +3447,8 @@ public class SQLUtils {
 		} else if (node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction) {
 			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null,
 					call.getOperator().getName().toLowerCase());
+		} else if(node instanceof RexLiteral literal) { 
+			return getValue(literal, literal.getType().getSqlTypeName());
 		} else {
 			return getValueObject(node, values);
 		}
@@ -3583,12 +3591,23 @@ public class SQLUtils {
 		SqlFunction current_iso_date = new SqlFunction("currentisodate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
-		SqlFunction grp_concat = new SqlFunction("grpconcat", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+		SqlFunction concat = new SqlFunction("concat", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlAggFunction group_concat = new SqlAggFunction("group_concat",
+	            null,
+	            SqlKind.OTHER_FUNCTION,
+	            ReturnTypes.VARCHAR_4, 
+	            null,
+	            OperandTypes.STRING_STRING, 
+	            SqlFunctionCategory.USER_DEFINED_FUNCTION,
+	            false,
+	            false,
+	            Optionality.FORBIDDEN) {};	            
 
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, substring, base64encode, base64decode,
-				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, current_iso_date, grp_concat,
-				trimFunction);
+				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, current_iso_date, concat,
+				trimFunction, group_concat);
 
 	}
 

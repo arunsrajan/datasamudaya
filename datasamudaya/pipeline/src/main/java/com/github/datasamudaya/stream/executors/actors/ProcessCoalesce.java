@@ -100,9 +100,9 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 			if(object.getTerminiatingclass() == Dummy.class || object.getTerminiatingclass() == DiskSpillingList.class) {
 				initialsize++;
 			}
-			log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
+			log.info("processCoalesce::: InitSize {} TermSize {}", initialsize, terminatingsize);
 			if (initialsize == terminatingsize) {
-				log.info("InitSize {} TermSize {}", initialsize, terminatingsize);
+				log.info("processCoalesce::: InitSize {} TermSize {}", initialsize, terminatingsize);
 				if(diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}

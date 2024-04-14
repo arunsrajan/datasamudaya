@@ -48,7 +48,6 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 
 	private Set dataSet;
 	private byte[] bytes;
-	private transient Runtime rt;
 	private String diskfilepath;
 	private boolean isspilled;
 	private int batchsize;
@@ -65,16 +64,17 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	private Map<Integer, FilePartitionId> filepartids;
 	int numfileperexec;
 	private transient Semaphore lock;
+	private transient Semaphore filelock;
 
 	public DiskSpillingSet() {
 		lock = new Semaphore(1);
+		filelock = new Semaphore(1);
 	}
 
 	public DiskSpillingSet(Task task, int spillexceedpercentage, String appendwithpath, boolean appendintermediate, boolean left, boolean right, Map<Integer, FilePartitionId> filepartids, Map<Integer, ActorSelection> downstreampipelines, int numfileperexec) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataSet = new CopyOnWriteArraySet();
-		rt = Runtime.getRuntime();
 		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((spillexceedpercentage) / 100.0)));
 		this.left = left;
 		this.right = right;
@@ -118,8 +118,8 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		if (isNull(dataSet)) {
 			dataSet = new CopyOnWriteArraySet();
 		}
-		dataSet.add(value);
 		spillToDiskIntermediate(false);
+		dataSet.add(value);		
 		return true;
 	}
 
@@ -130,13 +130,13 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	 */
 	public void addAll(Set<T> values) {
 		if (CollectionUtils.isNotEmpty(values)) {
-			values.stream().forEach(this::add);
+			values.stream().parallel().forEach(this::add);
 		}
 	}
 
 	public void addAll(List<T> values) {
 		if (CollectionUtils.isNotEmpty(values)) {
-			values.stream().forEach(this::add);
+			values.stream().parallel().forEach(this::add);
 		}
 	}
 	
@@ -209,15 +209,15 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if (isNull(lock)) {
+			if(isNull(lock)) {
 				lock = new Semaphore(1);
 			}
-			lock.acquire();
-			if (isNull(rt)) {
-				rt = Runtime.getRuntime();
+			if(isNull(filelock)) {
+				filelock = new Semaphore(1);
 			}
-			if ((Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()
-					|| isspilled) && CollectionUtils.isNotEmpty(dataSet)) {
+			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
+					&& CollectionUtils.isNotEmpty(dataSet)) {
+				filelock.acquire();
 				if (isNull(ostream)) {
 					isspilled = true;
 					ostream = new FileOutputStream(new File(diskfilepath), true);
@@ -225,12 +225,15 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 					op = new Output(sos);
 					kryo = Utils.getKryoInstance();
 				}
-				if (Utils.mpBeanLocalToJVM.isUsageThresholdExceeded() && (dataSet.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataSet)) {
+				filelock.release();
+				if (isspilled && (dataSet.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataSet)) {
+					lock.acquire();
 					kryo.writeClassAndObject(op, dataSet);
 					op.flush();
 					dataSet.clear();
 				}
 			} else if (nonNull(downstreampipelines) && dataSet.size() >= batchsize || isfstoclose && CollectionUtils.isNotEmpty(dataSet)) {
+				lock.acquire();
 				transferDataToDownStreamPipelines();
 			}
 

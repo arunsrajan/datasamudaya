@@ -1642,7 +1642,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testRequiredColumnTrim() throws Exception {
 		log.info("In testRequiredColumnTrim() method Entry");
 
-		String statement = "SELECT trimstr(grpconcat(airline.Origin , ' ')) trmorig ,trimstr(grpconcat(' ' , airline.Dest)) trimdest FROM airline";
+		String statement = "SELECT trimstr(concat(airline.Origin , ' ')) trmorig ,trimstr(concat(' ' , airline.Dest)) trimdest FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2486,7 +2486,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	@Test
 	public void testSelectGroupConcatGroupBy() throws Exception {
 		log.info("In testSelectGroupConcatGroupBy() method Entry");
-		String statement = "SELECT airline.DayofMonth, grpconcat(airline.TailNum, '||') FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG' group by airline.DayofMonth,airline.TailNum";
+		String statement = "SELECT airline.DayofMonth, concat(airline.TailNum, '||') FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG' group by airline.DayofMonth,airline.TailNum";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2506,7 +2506,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnLengthWithExp() throws Exception {
 		log.info("In testColumnLengthWithExp() method Entry");
 
-		String statement = "SELECT length(grpconcat(airline.Origin , airline.Dest))  FROM airline";
+		String statement = "SELECT length(concat(airline.Origin , airline.Dest))  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2526,7 +2526,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnAbsLengthWithExp() throws Exception {
 		log.info("In testColumnAbsLengthWithExp() method Entry");
 
-		String statement = "SELECT abs(length(grpconcat(airline.Origin , airline.Dest)))  FROM airline";
+		String statement = "SELECT abs(length(concat(airline.Origin , airline.Dest)))  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2546,7 +2546,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnRoundLengthWithExp() throws Exception {
 		log.info("In testColumnRoundLengthWithExp() method Entry");
 
-		String statement = "SELECT round(length(grpconcat(airline.Origin , airline.Dest)) + 0.4)  FROM airline";
+		String statement = "SELECT round(length(concat(airline.Origin , airline.Dest)) + 0.4)  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2566,7 +2566,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnRoundLengthWithExpWithInc() throws Exception {
 		log.info("In testColumnRoundLengthWithExpWithInc() method Entry");
 
-		String statement = "SELECT round(length(grpconcat(airline.Origin , airline.Dest)) + 0.6)  FROM airline";
+		String statement = "SELECT round(length(concat(airline.Origin , airline.Dest)) + 0.6)  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2586,7 +2586,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnCeilLengthWithExpWithInc() throws Exception {
 		log.info("In testColumnCeilLengthWithExpWithInc() method Entry");
 
-		String statement = "SELECT ceil(length(grpconcat(airline.Origin , airline.Dest)) + 0.6)  FROM airline";
+		String statement = "SELECT ceil(length(concat(airline.Origin , airline.Dest)) + 0.6)  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2606,7 +2606,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnCeilLengthWithExp() throws Exception {
 		log.info("In testColumnCeilLengthWithExp() method Entry");
 
-		String statement = "SELECT ceil(length(grpconcat(airline.Origin , airline.Dest)) + 0.4)  FROM airline";
+		String statement = "SELECT ceil(length(concat(airline.Origin , airline.Dest)) + 0.4)  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2626,7 +2626,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnFloorLengthWithExpWithInc() throws Exception {
 		log.info("In testColumnFloorLengthWithExpWithInc() method Entry");
 
-		String statement = "SELECT floor(length(grpconcat(airline.Origin , airline.Dest)) + 0.6)  FROM airline";
+		String statement = "SELECT floor(length(concat(airline.Origin , airline.Dest)) + 0.6)  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2646,7 +2646,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnFloorLengthWithExp() throws Exception {
 		log.info("In testColumnFloorLengthWithExp() method Entry");
 
-		String statement = "SELECT floor(length(grpconcat(airline.Origin , airline.Dest)) + 0.4)  FROM airline";
+		String statement = "SELECT floor(length(concat(airline.Origin , airline.Dest)) + 0.4)  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2666,7 +2666,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnLengthWithParanthesisExp() throws Exception {
 		log.info("In testColumnLengthWithParanthesisExp() method Entry");
 
-		String statement = "SELECT (length(grpconcat(airline.Origin , airline.Dest)) + 0.4) paransum  FROM airline";
+		String statement = "SELECT (length(concat(airline.Origin , airline.Dest)) + 0.4) paransum  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2686,7 +2686,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnPowerLengthWithExp() throws Exception {
 		log.info("In testColumnPowerLengthWithExp() method Entry");
 
-		String statement = "SELECT pow(length(grpconcat(airline.Origin , airline.Dest)), 2) powlen  FROM airline";
+		String statement = "SELECT pow(length(concat(airline.Origin , airline.Dest)), 2) powlen  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2706,7 +2706,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnSqrtLengthWithExp() throws Exception {
 		log.info("In testColumnSqrtLengthWithExp() method Entry");
 
-		String statement = "SELECT sqrt(length(grpconcat(airline.Origin , airline.Dest))) sqrtlen  FROM airline";
+		String statement = "SELECT sqrt(length(concat(airline.Origin , airline.Dest))) sqrtlen  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2727,7 +2727,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnExpLengthWithExp() throws Exception {
 		log.info("In testColumnExpLengthWithExp() method Entry");
 
-		String statement = "SELECT exp(length(grpconcat(airline.Origin , airline.Dest))) explen  FROM airline";
+		String statement = "SELECT exp(length(concat(airline.Origin , airline.Dest))) explen  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2747,7 +2747,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnLogLengthWithExp() throws Exception {
 		log.info("In testColumnLogLengthWithExp() method Entry");
 
-		String statement = "SELECT loge(length(grpconcat(airline.Origin , airline.Dest))) loglen  FROM airline";
+		String statement = "SELECT loge(length(concat(airline.Origin , airline.Dest))) loglen  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2767,7 +2767,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnLowerCaseWithUpperCaseWithExp() throws Exception {
 		log.info("In testColumnLowerCaseWithUpperCaseWithExp() method Entry");
 
-		String statement = "SELECT lowercase(uppercase(grpconcat(airline.Origin , airline.Dest) + 'low') + 'UPP') lowup  FROM airline";
+		String statement = "SELECT lowercase(uppercase(concat(airline.Origin , airline.Dest) + 'low') + 'UPP') lowup  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2787,7 +2787,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') uplow  FROM airline";
+		String statement = "SELECT uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') uplow  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2807,7 +2807,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnTrimUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnTrimUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT trimstr('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ') uplow  FROM airline";
+		String statement = "SELECT trimstr('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ') uplow  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2827,7 +2827,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnBase64_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnBase64_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ') encstring  FROM airline";
+		String statement = "SELECT base64encode('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ') encstring  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2847,7 +2847,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT base64decode(base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')) decstring  FROM airline";
+		String statement = "SELECT base64decode(base64encode('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')) decstring  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2867,7 +2867,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT normalizespaces(base64decode(base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      '))) normalizedstring  FROM airline";
+		String statement = "SELECT normalizespaces(base64decode(base64encode('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      '))) normalizedstring  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2887,7 +2887,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT substring(base64decode(base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6) substr  FROM airline";
+		String statement = "SELECT substring(base64decode(base64encode('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6) substr  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2907,7 +2907,7 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	public void testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT normalizespaces(substring(base64decode(base64encode('     ' + uppercase(lowercase(grpconcat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6)) normsubstr  FROM airline";
+		String statement = "SELECT normalizespaces(substring(base64decode(base64encode('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6)) normsubstr  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)

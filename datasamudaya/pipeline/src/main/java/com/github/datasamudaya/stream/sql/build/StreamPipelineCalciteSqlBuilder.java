@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.functions.CoalesceFunction;
-import com.github.datasamudaya.common.functions.IntersectionFunction;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.MapFunction;
@@ -48,7 +47,6 @@ import com.github.datasamudaya.common.functions.PredicateSerializable;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
-import com.github.datasamudaya.stream.CsvOptions;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.sql.RequiredColumnsExtractor;
@@ -508,19 +506,6 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 						}
 					}).reduceByKey(new ReduceByKeyFunction<Tuple>() {
 						private static final long serialVersionUID = -8773950223630733894L;
-						final List<String> functions = functionnames;
-						final Boolean isnotempty = CollectionUtils.isNotEmpty(functions);
-						@Override
-						public Tuple apply(Tuple tuple1, Tuple tuple2) {
-							if(isnotempty) {
-								return SQLUtils.evaluateTuple(functions, tuple1, tuple2);
-							} else {
-								return tuple1;
-							}
-						}
-
-					}).coalesce(1, new CoalesceFunction<Tuple>() {
-						private static final long serialVersionUID = -6496272568103409255L;
 						final List<String> functions = functionnames;
 						final Boolean isnotempty = CollectionUtils.isNotEmpty(functions);
 						@Override
