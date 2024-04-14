@@ -227,12 +227,11 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
 					op = new Output(sos);
-					kryo = Utils.getKryoInstance();
 				}
 				filelock.release();
 				if (isspilled && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {
 					lock.acquire();
-					kryo.writeClassAndObject(op, dataList);
+					Utils.getKryoInstance().writeClassAndObject(op, dataList);
 					op.flush();
 					dataList.clear();
 				}

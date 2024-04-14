@@ -14,6 +14,8 @@ import java.util.concurrent.Semaphore;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -33,8 +35,6 @@ import akka.actor.AbstractActor;
 import akka.actor.Actor;
 import akka.actor.ActorSelection;
 import akka.cluster.Cluster;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 
 /**
  * Akka Actors for the shuffle operators
@@ -42,7 +42,7 @@ import akka.event.LoggingAdapter;
  *
  */
 public class ProcessShuffle extends AbstractActor implements Serializable {
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+	Logger log = LoggerFactory.getLogger(ProcessShuffle.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 	
 	protected JobStage jobstage;
@@ -84,9 +84,9 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof TerminatingActorValue tav) {
 				this.terminatingsize = tav.getTerminatingval();
-			} else if (object.getValue() instanceof ShuffleBlock sb) {
-				lock.acquire();
+			} else if (object.getValue() instanceof ShuffleBlock sb) {				
 				FilePartitionId fpid = (FilePartitionId) Utils.convertBytesToObject(sb.getPartitionId());
+				lock.acquire();
 				if (isNull(fileblockpath.get(fpid.getPartitionNumber()))) {
 					fileblockpath.put(fpid.getPartitionNumber(), Utils.getLocalFilePathForTask(tasktoprocess,
 							DataSamudayaConstants.EMPTY + fpid.getPartitionNumber(), false, false, false)
@@ -96,6 +96,7 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 					var output = new Output(sos);
 					outputstream.put(fpid.getPartitionNumber(), output);
 				}
+				lock.release();
 				try {
 					Object obj = sb.getData();
 					Output output = outputstream.get(fpid.getPartitionNumber());
@@ -103,26 +104,29 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 					sb.setPartitionId(null);
 					if (obj instanceof DiskSpillingList dsl) {
 						if (dsl.isSpilled()) {
+							log.info("processShuffle::: Spilled Write Started...");
 							Utils.copySpilledDataSourceToFileShuffle(dsl, output);
+							log.info("processShuffle::: Spilled Write Completed");
 						} else {
+							log.info("processShuffle::: NotSpilled {}",  dsl.getData().size());
 							Utils.getKryo().writeClassAndObject(output, dsl.getData());
 							output.flush();
+							log.info("processShuffle::: NotSpilled Completed size {}",  dsl.getData().size());
 						}
 						dsl.clear();
 					} else {
+						log.info("processShuffle::: DataToWrite Started ...");
 						Utils.getKryo().writeClassAndObject(output, Utils.convertBytesToObject((byte[]) obj));
 						output.flush();
+						log.info("processShuffle::: DataToWrite Ended ...");
 					}
 				} catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);
 				} finally {
-					lock.release();
 				}
-			} else if (object.getValue() instanceof Dummy) {
-				lock.acquire();
+			} else if (object.getValue() instanceof Dummy) {				
 				initialshufflesize++;
 				log.info("processShuffle::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
-				lock.release();
 			}
 			if (initialshufflesize == terminatingsize && !shufflecompleted) {
 				log.info("processShuffle::InitialSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
