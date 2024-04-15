@@ -59,6 +59,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.fun.SqlFloorFunction;
+import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -723,12 +724,37 @@ public class SQLUtils {
 		case "atan":
 			
 			return Math.atan(Double.valueOf(String.valueOf(value)));
+			
+		case "cos":
+			
+			return Math.cos(Double.valueOf(String.valueOf(value)));
+		case "sin":
+			
+			return Math.sin(Double.valueOf(String.valueOf(value)));
+		case "tan":
+			
+			return Math.tan(Double.valueOf(String.valueOf(value)));
+		case "cosec":
+			
+			return 1.0/Math.sin(Double.valueOf(String.valueOf(value)));
+		case "sec":
+			
+			return 1.0/Math.cos(Double.valueOf(String.valueOf(value)));
+		case "cot":
+			
+			return 1.0/Math.tan(Double.valueOf(String.valueOf(value)));
 		case "cbrt":
 			
 			return Math.cbrt(Double.valueOf(String.valueOf(value)));
 		case "pii":
 			
 			return Math.PI;
+		case "radians":
+			
+			return Double.valueOf(String.valueOf(value))/180 * Math.PI;
+		case "degrees":
+			
+			return Double.valueOf(String.valueOf(value)) / Math.PI *180;
 		}
 		return name;
 	}
@@ -2813,6 +2839,8 @@ public class SQLUtils {
 				return value.getValueAs(Double.class);
 			} else if (type == SqlTypeName.DECIMAL) {
 				return value.getValueAs(Double.class);
+			} else if (type == SqlTypeName.SYMBOL) {
+				return ((SqlTrimFunction.Flag)value.getValue4()).name();
 			} else {
 				return value.getValueAs(String.class);
 			}
@@ -3279,7 +3307,7 @@ public class SQLUtils {
 			case "abs":
 
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "abs");
-			case "length":
+			case "length", "char_length", "character_length":
 				// Get the length of string value
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "length");
 			case "round":
@@ -3300,9 +3328,9 @@ public class SQLUtils {
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "exp");
 			case "loge":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "loge");
-			case "lowercase":
+			case "lowercase", "lower":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "lowercase");
-			case "uppercase":
+			case "uppercase", "upper":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "uppercase");
 			case "base64encode":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "base64encode");
@@ -3333,12 +3361,36 @@ public class SQLUtils {
 			case "atan":
 				
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "atan");
+			case "cos":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "cos");
+			case "sin":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "sin");
+			case "tan":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "tan");
+			case "cosec":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "cosec");
+			case "sec":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "sec");
+			case "cot":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "cot");
 			case "cbrt":
 				
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "cbrt");
 			case "pii":
 				
 				return evaluateFunctionsWithType(null, null, "pii");
+			case "degrees":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "degrees");
+			case "radians":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "radians");
 			case "trimstr":
 
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "trim");
@@ -3358,7 +3410,42 @@ public class SQLUtils {
 			case "concat":
 				rexnode1 = call.getOperands().get(0);
 				rexnode2 = call.getOperands().get(1);
-				return (String) evaluateRexNode(rexnode1, values) + evaluateRexNode(rexnode2, values);
+				return (String) evaluateRexNode(rexnode1, values) + evaluateRexNode(rexnode2, values);				
+			case "position":
+				rexnode1 = call.getOperands().get(0);
+				rexnode2 = call.getOperands().get(1);
+				RexNode rexnode3 = call.getOperands().size()>2?call.getOperands().get(2) : null;
+				if(nonNull(rexnode3)) {
+					return ((String)evaluateRexNode(rexnode2, values)).indexOf((String)evaluateRexNode(rexnode1, values), (Integer)evaluateRexNode(rexnode3, values));
+				}
+				return ((String)evaluateRexNode(rexnode2, values)).indexOf((String)evaluateRexNode(rexnode1, values));
+			case "trim":
+				rexnode1 = call.getOperands().get(0);
+				rexnode2 = call.getOperands().get(1);
+				rexnode3 = call.getOperands().get(2);
+				String leadtrailboth = (String)evaluateRexNode(rexnode1, values);
+				String str1 = (String)evaluateRexNode(rexnode2, values);
+				String str2 = (String)evaluateRexNode(rexnode3, values);
+				if(leadtrailboth.equalsIgnoreCase("leading")) {
+					while (str2.startsWith(str1)) {
+						str2 = str2.substring(str1.length());
+			        }
+					return str2;
+				}
+				if(leadtrailboth.equalsIgnoreCase("trailing")) {
+					while (str2.endsWith(str1)) {
+						str2 = str2.substring(0, str2.length() - str1.length());
+			        }
+					return str2;
+				}
+				while (str2.startsWith(str1)) {
+					str2 = str2.substring(str1.length());
+		        }
+				while (str2.endsWith(str1)) {
+					str2 = str2.substring(0, str2.length() - str1.length());
+		        }
+				return str2;
+				
 			case "case":
 				List<RexNode> rexnodes = call.getOperands();
 				for (int numnodes = 0; numnodes < rexnodes.size(); numnodes += 2) {
@@ -3373,8 +3460,8 @@ public class SQLUtils {
 		} else if (node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction) {
 			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null,
 					call.getOperator().getName().toLowerCase());
-		} else if(node instanceof RexLiteral literal) { 
-			return getValue(literal, literal.getType().getSqlTypeName());
+		} else if(node instanceof RexLiteral) { 
+			return getValue((RexLiteral)node, ((RexLiteral)node).getType().getSqlTypeName());
 		} else {
 			return getValueObject(node, values);
 		}
@@ -3467,6 +3554,16 @@ public class SQLUtils {
 
 		SqlFunction sqrtFunction = new SqlFunction("sqrt", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
 				OperandTypes.ANY, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		
+		SqlFunction secantfunction = new SqlFunction("sec", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction cosecantfunction = new SqlFunction("cosec", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction cotangentfunction = new SqlFunction("cot", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
 		SqlFunction lengthFunction = new SqlFunction("length", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
@@ -3540,7 +3637,7 @@ public class SQLUtils {
 
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, substring, base64encode, base64decode,
 				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, currentisodate, concat,
-				trimFunction, groupconcat, currenttimemillis, pii);
+				trimFunction, groupconcat, currenttimemillis, pii, secantfunction, cosecantfunction, cotangentfunction);
 
 	}
 
