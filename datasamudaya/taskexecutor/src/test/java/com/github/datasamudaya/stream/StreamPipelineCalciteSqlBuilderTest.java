@@ -58,7 +58,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 	@BeforeClass
 	public static void pipelineSetup() throws Exception, Throwable {
-		pipelineconfig.setLocal("false");
+		pipelineconfig.setLocal("true");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
@@ -3628,7 +3628,196 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		}
 		log.info("In testRequiredColumnsFunctionsSubSelect() method Exit");
 	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsCurrentTimeMillisFunction() throws Exception {
+		log.info("In testRequiredColumnsCurrentTimeMillisFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,current_timemillis() FROM airline";
 
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsFunctionsSubSelect() method Exit");
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsRandFunction() throws Exception {
+		log.info("In testRequiredColumnsRandFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,rand(current_timemillis()) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRandFunction() method Exit");
+	}
+
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsRandIntegerFunction() throws Exception {
+		log.info("In testRequiredColumnsRandIntegerFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,rand_integer(current_timemillis(),100) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRandIntegerFunction() method Exit");
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsAcosFunction() throws Exception {
+		log.info("In testRequiredColumnsAcosFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,acos(MonthOfYear/DayOfMonth) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsAcosFunction() method Exit");
+	}
+	
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsAsinFunction() throws Exception {
+		log.info("In testRequiredColumnsAsinFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,asin(MonthOfYear/DayOfMonth) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsAsinFunction() method Exit");
+	}
+	
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsCubeRootFunction() throws Exception {
+		log.info("In testRequiredColumnsCubeRootFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,cbrt(MonthOfYear) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsCubeRootFunction() method Exit");
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsCubeRootPIFunction() throws Exception {
+		log.info("In testRequiredColumnsCubeRootPIFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,cbrt(pii()) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsCubeRootPIFunction() method Exit");
+	}
+	
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsAtanFunction() throws Exception {
+		log.info("In testRequiredColumnsAtanFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,atan(MonthOfYear/DayOfMonth) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsAtanFunction() method Exit");
+	}
+	
+	
 	@SuppressWarnings({"unchecked"})
 	@Test
 	public void testRequiredColumnsSubSelectFunctions() throws Exception {
@@ -3648,7 +3837,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 				log.info(Arrays.toString(record));
 			}
 		}
-		log.info("In testRequiredColumnsSubSelectFunctions() method Exit");
+		log.info("In testRequiredColumnsCurrentTimeMillisFunction() method Exit");
 	}
 
 	@SuppressWarnings({"unchecked"})

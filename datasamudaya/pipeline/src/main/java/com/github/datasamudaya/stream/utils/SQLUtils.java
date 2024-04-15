@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
@@ -548,7 +549,7 @@ public class SQLUtils {
 
 	static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
-	public static Object evaluateFunctionsWithType(Object value, Object powerval, String name) {
+	public static Object evaluateFunctionsWithType(Object value, Object extraval, String name) {
 		switch (name) {
 		case "abs":
 
@@ -614,37 +615,37 @@ public class SQLUtils {
 			}
 		case "pow":
 
-			if (value instanceof Double pdv && powerval instanceof Integer powval) {
+			if (value instanceof Double pdv && extraval instanceof Integer powval) {
 				return Math.pow(pdv, powval);
-			} else if (value instanceof Long plv && powerval instanceof Integer powval) {
+			} else if (value instanceof Long plv && extraval instanceof Integer powval) {
 				return Math.pow(plv, powval);
-			} else if (value instanceof Float pfv && powerval instanceof Integer powval) {
+			} else if (value instanceof Float pfv && extraval instanceof Integer powval) {
 				return Math.pow(pfv, powval);
-			} else if (value instanceof Integer piv && powerval instanceof Integer powval) {
+			} else if (value instanceof Integer piv && extraval instanceof Integer powval) {
 				return Math.pow(piv, powval);
-			} else if (value instanceof Double pdv && powerval instanceof Double powval) {
+			} else if (value instanceof Double pdv && extraval instanceof Double powval) {
 				return Math.pow(pdv, powval);
-			} else if (value instanceof Long plv && powerval instanceof Double powval) {
+			} else if (value instanceof Long plv && extraval instanceof Double powval) {
 				return Math.pow(plv, powval);
-			} else if (value instanceof Float pfv && powerval instanceof Double powval) {
+			} else if (value instanceof Float pfv && extraval instanceof Double powval) {
 				return Math.pow(pfv, powval);
-			} else if (value instanceof Integer piv && powerval instanceof Double powval) {
+			} else if (value instanceof Integer piv && extraval instanceof Double powval) {
 				return Math.pow(piv, powval);
-			} else if (value instanceof Double pdv && powerval instanceof Float powval) {
+			} else if (value instanceof Double pdv && extraval instanceof Float powval) {
 				return Math.pow(pdv, powval);
-			} else if (value instanceof Long plv && powerval instanceof Float powval) {
+			} else if (value instanceof Long plv && extraval instanceof Float powval) {
 				return Math.pow(plv, powval);
-			} else if (value instanceof Float pfv && powerval instanceof Float powval) {
+			} else if (value instanceof Float pfv && extraval instanceof Float powval) {
 				return Math.pow(pfv, powval);
-			} else if (value instanceof Integer piv && powerval instanceof Float powval) {
+			} else if (value instanceof Integer piv && extraval instanceof Float powval) {
 				return Math.pow(piv, powval);
-			} else if (value instanceof Double pdv && powerval instanceof Long powval) {
+			} else if (value instanceof Double pdv && extraval instanceof Long powval) {
 				return Math.pow(pdv, powval);
-			} else if (value instanceof Long plv && powerval instanceof Long powval) {
+			} else if (value instanceof Long plv && extraval instanceof Long powval) {
 				return Math.pow(plv, powval);
-			} else if (value instanceof Float pfv && powerval instanceof Long powval) {
+			} else if (value instanceof Float pfv && extraval instanceof Long powval) {
 				return Math.pow(pfv, powval);
-			} else if (value instanceof Integer piv && powerval instanceof Long powval) {
+			} else if (value instanceof Integer piv && extraval instanceof Long powval) {
 				return Math.pow(piv, powval);
 			} else {
 				return 0;
@@ -702,134 +703,34 @@ public class SQLUtils {
 
 			return StringUtils.normalizeSpace((String) value);
 		case "currentisodate":
-
+			
 			return dateFormat.format(new Date(System.currentTimeMillis()));
+		case "currenttimemillis":
+			
+			return System.currentTimeMillis();
+		case "rand":
+			
+			return new Random((long)value).nextDouble();
+		case "randinteger":
+			
+			return new Random((long)value).nextInt((int)extraval);
+		case "acos":
+			
+			return Math.acos(Double.valueOf(String.valueOf(value)));
+		case "asin":
+			
+			return Math.asin(Double.valueOf(String.valueOf(value)));
+		case "atan":
+			
+			return Math.atan(Double.valueOf(String.valueOf(value)));
+		case "cbrt":
+			
+			return Math.cbrt(Double.valueOf(String.valueOf(value)));
+		case "pii":
+			
+			return Math.PI;
 		}
 		return name;
-	}
-
-	/**
-	 * Evaluate non aggregate expression for addition, subtraction,
-	 * multiplication and division and some math functions
-	 * 
-	 * @param expression
-	 * @param row
-	 * @return
-	 */
-	public static Object evaluateBinaryExpression(Expression expression, Map<String, Object> row) {
-		if (expression instanceof Function fn) {
-			String name = fn.getName().toLowerCase();
-			List<Expression> expfunc = fn.getParameters().getExpressions();
-			switch (name) {
-			case "abs":
-
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "abs");
-			case "length":
-				// Get the length of string value
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "length");
-			case "round":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "round");
-			case "ceil":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "ceil");
-			case "floor":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "floor");
-			case "pow":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row),
-						evaluateBinaryExpression(expfunc.get(1), row), "pow");
-			case "sqrt":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "sqrt");
-			case "exp":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "exp");
-			case "loge":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "loge");
-			case "lowercase":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "lowercase");
-			case "uppercase":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "uppercase");
-			case "base64encode":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "base64encode");
-			case "base64decode":
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "base64decode");
-			case "normalizespaces":
-
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null,
-						"normalizespaces");
-			case "trim":
-
-				return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "trim");
-			case "substring":
-				LongValue pos = (LongValue) expfunc.get(1);
-				LongValue length = (LongValue) expfunc.get(2);
-				String val = (String) evaluateBinaryExpression(expfunc.get(0), row);
-				return val.substring((int) pos.getValue(),
-						Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
-			}
-		} else if (expression instanceof BinaryExpression bex) {
-			Expression leftExpression = bex.getLeftExpression();
-			Expression rightExpression = bex.getRightExpression();
-			String operator = bex.getStringExpression();
-			Object leftValue = null;
-			Object rightValue = null;
-			if (leftExpression instanceof Function fn) {
-				leftValue = evaluateBinaryExpression(leftExpression, row);
-			} else if (leftExpression instanceof LongValue lv) {
-				leftValue = lv.getValue();
-			} else if (leftExpression instanceof DoubleValue dv) {
-				leftValue = dv.getValue();
-			} else if (leftExpression instanceof StringValue sv) {
-				leftValue = sv.getValue();
-			} else if (leftExpression instanceof Column column) {
-				String columnName = column.getColumnName();
-				Object value = row.get(columnName);
-				leftValue = value;
-			} else if (leftExpression instanceof BinaryExpression) {
-				leftValue = evaluateBinaryExpression(leftExpression, row);
-			} else if (leftExpression instanceof Parenthesis parenthesis) {
-				Expression subExpression = parenthesis.getExpression();
-				leftValue = evaluateBinaryExpression(subExpression, row);
-			}
-			if (rightExpression instanceof Function fn) {
-				rightValue = evaluateBinaryExpression(rightExpression, row);
-			} else if (rightExpression instanceof LongValue lv) {
-				rightValue = lv.getValue();
-			} else if (rightExpression instanceof DoubleValue dv) {
-				rightValue = dv.getValue();
-			} else if (rightExpression instanceof StringValue sv) {
-				rightValue = sv.getValue();
-			} else if (rightExpression instanceof Column column) {
-				Object value = row.get(column.getColumnName());
-				rightValue = value;
-			} else if (rightExpression instanceof BinaryExpression binaryExpression) {
-				rightValue = evaluateBinaryExpression(binaryExpression, row);
-			} else if (rightExpression instanceof Parenthesis parenthesis) {
-				Expression subExpression = parenthesis.getExpression();
-				rightValue = evaluateBinaryExpression(subExpression, row);
-			}
-			switch (operator) {
-			case "+":
-				return evaluateValuesByOperator(leftValue, rightValue, operator);
-			case "-":
-				return evaluateValuesByOperator(leftValue, rightValue, operator);
-			case "*":
-				return evaluateValuesByOperator(leftValue, rightValue, operator);
-			case "/":
-				return evaluateValuesByOperator(leftValue, rightValue, operator);
-			default:
-				throw new IllegalArgumentException("Invalid operator: " + operator);
-			}
-		} else if (expression instanceof LongValue lv) {
-			return Double.valueOf(lv.getValue());
-		} else if (expression instanceof DoubleValue dv) {
-			return dv.getValue();
-		} else if (expression instanceof StringValue sv) {
-			return sv.getValue();
-		} else if (expression instanceof Parenthesis parenthesis) {
-			return evaluateBinaryExpression(parenthesis.getExpression(), row);
-		} else if (expression instanceof Column column) {
-			Object value = row.get(column.getColumnName());
-			return value;
-		}
-		return Double.valueOf(0.0d);
 	}
 
 	/**
@@ -3413,6 +3314,31 @@ public class SQLUtils {
 			case "currentisodate":
 
 				return evaluateFunctionsWithType(null, null, "currentisodate");
+			case "current_timemillis":
+
+				return evaluateFunctionsWithType(null, null, "currenttimemillis");
+			case "rand":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "rand");
+			case "rand_integer":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), 
+						evaluateRexNode(call.getOperands().get(1), values), "randinteger");
+			case "acos":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "acos");
+			case "asin":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "asin");
+			case "atan":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "atan");
+			case "cbrt":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "cbrt");
+			case "pii":
+				
+				return evaluateFunctionsWithType(null, null, "pii");
 			case "trimstr":
 
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "trim");
@@ -3588,13 +3514,20 @@ public class SQLUtils {
 		SqlFunction abs = new SqlFunction("abs", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
 				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
-		SqlFunction current_iso_date = new SqlFunction("currentisodate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+		SqlFunction currentisodate = new SqlFunction("currentisodate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		
+		SqlFunction currenttimemillis = new SqlFunction("current_timemillis", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction pii = new SqlFunction("pii", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
 		SqlFunction concat = new SqlFunction("concat", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlAggFunction group_concat = new SqlAggFunction("group_concat",
+		SqlAggFunction groupconcat = new SqlAggFunction("group_concat",
 	            null,
 	            SqlKind.OTHER_FUNCTION,
 	            ReturnTypes.VARCHAR_4, 
@@ -3606,8 +3539,8 @@ public class SQLUtils {
 	            Optionality.FORBIDDEN) {};	            
 
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, substring, base64encode, base64decode,
-				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, current_iso_date, concat,
-				trimFunction, group_concat);
+				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, currentisodate, concat,
+				trimFunction, groupconcat, currenttimemillis, pii);
 
 	}
 

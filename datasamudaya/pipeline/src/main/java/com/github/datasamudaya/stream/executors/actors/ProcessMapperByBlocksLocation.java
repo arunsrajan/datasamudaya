@@ -75,8 +75,7 @@ import de.siegmar.fastcsv.reader.NamedCsvRecordHandler;
  */
 public class ProcessMapperByBlocksLocation extends AbstractActor implements Serializable {
 
-	Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);
-	Cluster cluster = Cluster.get(getContext().getSystem());
+	Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);	
 
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
