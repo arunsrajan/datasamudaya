@@ -3329,9 +3329,9 @@ public class SQLUtils {
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "exp");
 			case "loge":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "loge");
-			case "lowercase", "lower":
+			case "lowercase", "lower", "lcase":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "lowercase");
-			case "uppercase", "upper":
+			case "uppercase", "upper", "ucase":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "uppercase");
 			case "base64encode":
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "base64encode");
@@ -3416,6 +3416,15 @@ public class SQLUtils {
 									+ (Integer) getValue(length, SqlTypeName.INTEGER))), val2);
 				}
 				return val1.replaceAll(val1.substring((Integer) getValue(pos, SqlTypeName.INTEGER)),val2);
+			case "locate":				
+				val1 = (String) evaluateRexNode(call.getOperands().get(0), values);
+				val2 = (String) evaluateRexNode(call.getOperands().get(1), values);
+				pos = (RexLiteral) (call.getOperands().size()>2?call.getOperands().get(2): null);
+				if(nonNull(pos)) {
+					int positiontosearch = Math.min((Integer) getValue(pos, SqlTypeName.INTEGER),val2.length());
+					return positiontosearch + val2.substring(positiontosearch).indexOf(val1);
+				}
+				return val2.indexOf(val1);
 			case "cast":
 				return evaluateRexNode(expfunc, values);
 			case "group_concat":
@@ -3437,6 +3446,30 @@ public class SQLUtils {
 			case "initcap":
 				val = (String) evaluateRexNode(call.getOperands().get(0), values);
 				return val.length()>1?StringUtils.upperCase(""+val.charAt(0))+val.substring(1):val.length()==1?StringUtils.upperCase(""+val.charAt(0)):val;
+			case "ascii":
+				val = (String) evaluateRexNode(call.getOperands().get(0), values);
+				return (int)val.charAt(0);
+			case "charac":
+				Integer asciicode = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(0), values)));
+				return (char)(asciicode%256);
+			case "insertstr":
+				String value1= (String) evaluateRexNode(call.getOperands().get(0), values);
+				Integer postoinsert = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(2), values)));
+				Integer lengthtoinsert = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(3), values)));
+				String value2= (String) evaluateRexNode(call.getOperands().get(1), values);
+				value2 = value2.substring(0, Math.min(lengthtoinsert, value2.length()));
+				return value1.substring(0, Math.min(value1.length(), postoinsert))+value2+value1.substring(Math.min(value1.length(), postoinsert), value1.length());
+			case "leftchars":
+				value1= (String) evaluateRexNode(call.getOperands().get(0), values);
+				Integer lengthtoextract = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(1), values)));
+				return value1.substring(0, Math.min(lengthtoextract, value1.length()));
+			case "rightchars":
+				value1= (String) evaluateRexNode(call.getOperands().get(0), values);
+				lengthtoextract = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(1), values)));
+				return value1.substring(value1.length() - Math.min(lengthtoextract, value1.length()));
+			case "reverse":
+				value1= (String) evaluateRexNode(call.getOperands().get(0), values);
+				return StringUtils.reverse(value1);
 			case "trim":
 				rexnode1 = call.getOperands().get(0);
 				rexnode2 = call.getOperands().get(1);
@@ -3600,8 +3633,17 @@ public class SQLUtils {
 
 		SqlFunction uppercase = new SqlFunction("uppercase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction ucase = new SqlFunction("ucase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction reverse = new SqlFunction("reverse", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
 		SqlFunction lowercase = new SqlFunction("lowercase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction lcase = new SqlFunction("lcase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
 		SqlFunction loge = new SqlFunction("loge", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
@@ -3638,6 +3680,23 @@ public class SQLUtils {
 		SqlFunction concat = new SqlFunction("concat", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
+		
+		SqlFunction insertstr = new SqlFunction("insertstr", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING_INTEGER_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		
+		SqlFunction leftchars = new SqlFunction("leftchars", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction rightchars = new SqlFunction("rightchars", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction locate = new SqlFunction("locate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction charfunction = new SqlFunction("charac", SqlKind.OTHER_FUNCTION, ReturnTypes.CHAR, null,
+				OperandTypes.INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
 		SqlAggFunction groupconcat = new SqlAggFunction("group_concat",
 	            null,
 	            SqlKind.OTHER_FUNCTION,
@@ -3651,7 +3710,8 @@ public class SQLUtils {
 
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, base64encode, base64decode,
 				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, currentisodate, concat,
-				trimFunction, groupconcat, currenttimemillis, pii, secantfunction, cosecantfunction, cotangentfunction);
+				trimFunction, groupconcat, currenttimemillis, pii, secantfunction, cosecantfunction, cotangentfunction,
+				charfunction, insertstr, ucase, lcase, leftchars, rightchars, reverse, locate);
 
 	}
 
