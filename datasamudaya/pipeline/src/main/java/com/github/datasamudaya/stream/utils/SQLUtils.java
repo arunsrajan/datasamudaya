@@ -9,10 +9,12 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -549,6 +551,9 @@ public class SQLUtils {
 	}
 
 	static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+	static SimpleDateFormat dateExtract = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	static SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
+	static SimpleDateFormat time = new SimpleDateFormat("HH:mm:ss");
 
 	public static Object evaluateFunctionsWithType(Object value, Object extraval, String name) {
 		switch (name) {
@@ -3497,6 +3502,50 @@ public class SQLUtils {
 		        }
 				return str2;
 				
+			case "ltrim":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);				
+				return StringUtils.stripStart(str1, null);
+			case "rtrim":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);				
+				return StringUtils.stripEnd(str1, null);
+			case "curdate":
+				return date.format(new Date(System.currentTimeMillis()));
+			case "curtime":
+				return time.format(new Date(System.currentTimeMillis()));
+			case "now":
+				return dateExtract.format(new Date(System.currentTimeMillis()));
+			case "year":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);		
+				java.util.Calendar calendar = new java.util.GregorianCalendar();
+				try {
+					calendar.setTime(dateExtract.parse(str1));
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}				
+				return calendar.get(Calendar.YEAR);
+			case "month":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);		
+				calendar = new java.util.GregorianCalendar();
+				try {
+					calendar.setTime(dateExtract.parse(str1));
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}				
+				return calendar.get(Calendar.MONTH);
+			case "day":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);		
+				calendar = new java.util.GregorianCalendar();
+				try {
+					calendar.setTime(dateExtract.parse(str1));
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}				
+				return calendar.get(Calendar.MONTH);
 			case "case":
 				List<RexNode> rexnodes = call.getOperands();
 				for (int numnodes = 0; numnodes < rexnodes.size(); numnodes += 2) {
@@ -3545,6 +3594,16 @@ public class SQLUtils {
 				if(((RexCall) rexNode).getOperator() instanceof SqlFunction sqlfunc) {
 					if(sqlfunc.getName().startsWith("currentisodate")) {
 						return SqlTypeName.CHAR;
+					} else if(sqlfunc.getName().startsWith("current_timemillis")) {
+						return rexNode.getType().getSqlTypeName();
+					}  else if(sqlfunc.getName().startsWith("curdate")) {
+						return rexNode.getType().getSqlTypeName();
+					} else if(sqlfunc.getName().startsWith("curtime")) {
+						return rexNode.getType().getSqlTypeName();
+					} else if(sqlfunc.getName().startsWith("now")) {
+						return rexNode.getType().getSqlTypeName();
+					} else if(sqlfunc.getName().startsWith("pii")) {
+						return rexNode.getType().getSqlTypeName();
 					}
 				}
 			}
@@ -3643,6 +3702,12 @@ public class SQLUtils {
 		SqlFunction lowercase = new SqlFunction("lowercase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
+		SqlFunction ltrim = new SqlFunction("ltrim", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction rtrim = new SqlFunction("rtrim", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
 		SqlFunction lcase = new SqlFunction("lcase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
@@ -3670,6 +3735,14 @@ public class SQLUtils {
 		SqlFunction currentisodate = new SqlFunction("currentisodate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
+		SqlFunction curdate = new SqlFunction("curdate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction curtime = new SqlFunction("curtime", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction now = new SqlFunction("now", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
 		SqlFunction currenttimemillis = new SqlFunction("current_timemillis", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
@@ -3711,7 +3784,8 @@ public class SQLUtils {
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, base64encode, base64decode,
 				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, currentisodate, concat,
 				trimFunction, groupconcat, currenttimemillis, pii, secantfunction, cosecantfunction, cotangentfunction,
-				charfunction, insertstr, ucase, lcase, leftchars, rightchars, reverse, locate);
+				charfunction, insertstr, ucase, lcase, leftchars, rightchars, reverse, locate,
+				ltrim, rtrim, curdate, now, curtime);
 
 	}
 

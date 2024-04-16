@@ -306,7 +306,8 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 		} else if (relNode instanceof EnumerableProject ep) {
 			boolean hasdecendants = SQLUtils.hasDescendants(relNode, descendants);
 
-			List<SqlTypeName> togeneratezerobytype = ep.getProjects().stream().map(rexnode -> SQLUtils.findGreatestType(rexnode)).toList();
+			List<SqlTypeName> togeneratezerobytype = ep.getProjects().stream().map(rexnode -> 
+							SQLUtils.findGreatestType(rexnode)).toList();
 			List<RexNode> columnsp = new ArrayList<>(ep.getProjects());
 			log.info("Column Enumerable Aggregate {}", columnsp);
 			return sp.get(0).map(new MapFunction<Object[], Object[]>() {

@@ -58,7 +58,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 
 	@BeforeClass
 	public static void pipelineSetup() throws Exception, Throwable {
-		pipelineconfig.setLocal("true");
+		pipelineconfig.setLocal("false");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
@@ -3669,7 +3669,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 			}
 		}
 		assertNotEquals(0, total);
-		log.info("In testRequiredColumnsFunctionsSubSelect() method Exit");
+		log.info("In testRequiredColumnsCurrentTimeMillisFunction() method Exit");
 	}
 	
 	@SuppressWarnings({"unchecked"})
@@ -4445,6 +4445,75 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 	
 	@SuppressWarnings({"unchecked"})
 	@Test
+	public void testRequiredColumnsLtrimFunction() throws Exception {
+		log.info("In testRequiredColumnsLtrimFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,ltrim(concat(concat('   ',dest),'   ')) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsLtrimFunction() method Exit");
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsRtrimFunction() throws Exception {
+		log.info("In testRequiredColumnsRtrimFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,rtrim(concat(concat('   ',dest),'   ')) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRtrimFunction() method Exit");
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsCurdateNowCurtimeFunction() throws Exception {
+		log.info("In testRequiredColumnsCurdateNowCurtimeFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,curdate(),now(),curtime() FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				log.info(Arrays.toString(record));
+				assertTrue(record.length == 4);				
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsCurdateNowCurtimeFunction() method Exit");
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
 	public void testRequiredColumnsReverseFunction() throws Exception {
 		log.info("In testRequiredColumnsReverseFunction() method Entry");
 		String statement = "SELECT UniqueCarrier,origin,dest,reverse(concat(origin,dest)) FROM airline";
@@ -4485,7 +4554,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 				log.info(Arrays.toString(record));
 			}
 		}
-		log.info("In testRequiredColumnsCurrentTimeMillisFunction() method Exit");
+		log.info("In testRequiredColumnsSubSelectFunctions() method Exit");
 	}
 
 	@SuppressWarnings({"unchecked"})
