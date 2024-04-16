@@ -2764,9 +2764,10 @@ public class SQLUtils {
 				return toEvaluateRexNode(call.operands.get(0), boolvalues)
 						&& toEvaluateRexNode(call.operands.get(1), boolvalues);
 			} else if ("substring".equals(name)) {
-				return toEvaluateRexNode(call.operands.get(0), boolvalues)
-						&& toEvaluateRexNode(call.operands.get(1), boolvalues)
-						&& toEvaluateRexNode(call.operands.get(2), boolvalues);
+				boolean resultvalue = toEvaluateRexNode(call.operands.get(0), boolvalues)
+				&& toEvaluateRexNode(call.operands.get(1), boolvalues);
+				resultvalue = call.operands.size()>2?resultvalue && toEvaluateRexNode(call.operands.get(2), boolvalues):resultvalue;
+				return resultvalue;
 			} else {
 				for (RexNode opernode : call.operands) {
 					return toEvaluateRexNode(opernode, boolvalues);
@@ -3396,11 +3397,25 @@ public class SQLUtils {
 				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "trim");
 			case "substring":
 				RexLiteral pos = (RexLiteral) call.getOperands().get(1);
-				RexLiteral length = (RexLiteral) call.getOperands().get(2);
+				RexLiteral length = (RexLiteral) (call.getOperands().size()>2? call.getOperands().get(2) : null);
 				String val = (String) evaluateRexNode(expfunc, values);
-				return val.substring((Integer) getValue(pos, SqlTypeName.INTEGER),
+				if(nonNull(length)) {
+					return val.substring((Integer) getValue(pos, SqlTypeName.INTEGER),
 						Math.min(((String) val).length(), (Integer) getValue(pos, SqlTypeName.INTEGER)
 								+ (Integer) getValue(length, SqlTypeName.INTEGER)));
+				}
+				return val.substring((Integer) getValue(pos, SqlTypeName.INTEGER));
+			case "overlay":
+				pos = (RexLiteral) call.getOperands().get(2);
+				length = (RexLiteral) (call.getOperands().size()>3? call.getOperands().get(3) : null);
+				String val1 = (String) evaluateRexNode(call.getOperands().get(0), values);
+				String val2 = (String) evaluateRexNode(call.getOperands().get(1), values);
+				if(nonNull(length)) {
+					return val1.replaceAll(val1.substring((Integer) getValue(pos, SqlTypeName.INTEGER),
+							Math.min(((String) val2).length(), (Integer) getValue(pos, SqlTypeName.INTEGER)
+									+ (Integer) getValue(length, SqlTypeName.INTEGER))), val2);
+				}
+				return val1.replaceAll(val1.substring((Integer) getValue(pos, SqlTypeName.INTEGER)),val2);
 			case "cast":
 				return evaluateRexNode(expfunc, values);
 			case "group_concat":
@@ -3419,6 +3434,9 @@ public class SQLUtils {
 					return ((String)evaluateRexNode(rexnode2, values)).indexOf((String)evaluateRexNode(rexnode1, values), (Integer)evaluateRexNode(rexnode3, values));
 				}
 				return ((String)evaluateRexNode(rexnode2, values)).indexOf((String)evaluateRexNode(rexnode1, values));
+			case "initcap":
+				val = (String) evaluateRexNode(call.getOperands().get(0), values);
+				return val.length()>1?StringUtils.upperCase(""+val.charAt(0))+val.substring(1):val.length()==1?StringUtils.upperCase(""+val.charAt(0)):val;
 			case "trim":
 				rexnode1 = call.getOperands().get(0);
 				rexnode2 = call.getOperands().get(1);
@@ -3574,10 +3592,6 @@ public class SQLUtils {
 		SqlFunction normalizespaces = new SqlFunction("normalizespaces", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
 				null, OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
-		SqlFunction substring = new SqlFunction("substring", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
-				OperandTypes.and(OperandTypes.STRING, OperandTypes.INTEGER, OperandTypes.INTEGER),
-				SqlFunctionCategory.USER_DEFINED_FUNCTION);
-
 		SqlFunction base64encode = new SqlFunction("base64encode", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
@@ -3635,7 +3649,7 @@ public class SQLUtils {
 	            false,
 	            Optionality.FORBIDDEN) {};	            
 
-		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, substring, base64encode, base64decode,
+		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, base64encode, base64decode,
 				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, currentisodate, concat,
 				trimFunction, groupconcat, currenttimemillis, pii, secantfunction, cosecantfunction, cotangentfunction);
 

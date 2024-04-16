@@ -2025,7 +2025,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 	public void testRequiredColumnSubStringAlias() throws Exception {
 		log.info("In testRequiredColumnSubStringAlias() method Entry");
 
-		String statement = "SELECT airline.Origin,substring(airline.Origin,0,1) as substr  FROM airline";
+		String statement = "SELECT airline.Origin,substring(airline.Origin from 0 for 1) as substr  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -2041,10 +2041,30 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 	}
 
 	@Test
-	public void testRequiredColumnSubString() throws Exception {
+	public void testRequiredColumnSubStringPos() throws Exception {
+		log.info("In testRequiredColumnSubStringPos() method Entry");
+
+		String statement = "SELECT airline.Origin,substring(airline.Origin from 1),airline.Dest,substring(airline.Dest from 2) FROM airline";
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(4, rec.length);
+			}
+		}
+		log.info("In testRequiredColumnSubStringPos() method Exit");
+	}
+
+	
+	@Test
+	public void testRequiredColumnSubStringPosLength() throws Exception {
 		log.info("In testRequiredColumnSubString() method Entry");
 
-		String statement = "SELECT airline.Origin,substring(airline.Origin,0,1),airline.Dest,substring(airline.Dest,0,2) FROM airline";
+		String statement = "SELECT airline.Origin,substring(airline.Origin from 0 for 1),airline.Dest,substring(airline.Dest from 0 for 2) FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -3255,7 +3275,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 	public void testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT substring(base64decode(base64encode('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6) substr  FROM airline";
+		String statement = "SELECT substring(base64decode(base64encode('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')) from 0 for 6) substr  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -3275,7 +3295,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 	public void testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
 
-		String statement = "SELECT normalizespaces(substring(base64decode(base64encode('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')), 0 , 6)) normsubstr  FROM airline";
+		String statement = "SELECT normalizespaces(substring(base64decode(base64encode('     ' + uppercase(lowercase(concat(airline.Origin , airline.Dest) + 'LOW') + 'upp') + ' Spaces      ')) from 0 for 6)) normsubstr  FROM airline";
 		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -4141,6 +4161,77 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 		}
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsTrimLeadingTrailingBothFunction() method Exit");
+	}
+	
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsOverlayPosFunction() throws Exception {
+		log.info("In testRequiredColumnsOverlayPosFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,concat(origin,dest),dest,overlay(concat(origin,dest) PLACING dest from 2) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsOverlayPosFunction() method Exit");
+	}
+	
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsInitcapFunction() throws Exception {
+		log.info("In testRequiredColumnsInitcapFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,initcap(lower(concat(origin,dest))) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 2);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsInitcapFunction() method Exit");
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Test
+	public void testRequiredColumnsOverlayPosLengthFunction() throws Exception {
+		log.info("In testRequiredColumnsOverlayPosLengthFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,concat(origin,dest),dest,overlay(concat(origin,dest) PLACING dest from 0 for 2) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsOverlayPosLengthFunction() method Exit");
 	}
 	
 	@SuppressWarnings({"unchecked"})
