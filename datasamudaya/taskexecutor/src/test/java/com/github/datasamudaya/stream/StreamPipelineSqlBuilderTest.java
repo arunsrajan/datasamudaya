@@ -36,7 +36,7 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 
-public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestCommon {
+public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
 			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime",
 			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
@@ -51,7 +51,7 @@ public class StreamPipelineCalciteSqlBuilderTest extends StreamPipelineBaseTestC
 			SqlTypeName.BIGINT);
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
-	Logger log = Logger.getLogger(StreamPipelineCalciteSqlBuilderTest.class);
+	Logger log = Logger.getLogger(StreamPipelineSqlBuilderTest.class);
 	List<String> airportsheader = Arrays.asList("iata", "airport", "city", "state", "country", "latitude", "longitude");
 	List<SqlTypeName> airportstype = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);

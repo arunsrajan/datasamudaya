@@ -1,25 +1,27 @@
 package com.github.datasamudaya.stream.sql;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.Stack;
+import java.util.stream.Collectors;
 
+import org.apache.calcite.adapter.enumerable.EnumerableTableScan;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.core.Intersect;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Project;
-import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.core.Union;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
@@ -27,7 +29,14 @@ import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.shaded.org.apache.commons.collections.MapUtils;
+import org.jgrapht.Graphs;
+import org.jgrapht.graph.EdgeReversedGraph;
+import org.jgrapht.graph.SimpleDirectedGraph;
+import org.jgrapht.traverse.TopologicalOrderIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 
 /**
@@ -36,184 +45,143 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
  *
  */
 public class RequiredColumnsExtractor {
+	private static final Logger log = LoggerFactory.getLogger(RequiredColumnsExtractor.class);
     private final Map<String, Set<String>> requiredColumnsByTable = new HashMap<>();
     private final Map<String, Set<String>> requiredColumnsByTableCondition = new HashMap<>();
-    private final Map<String, Integer> tableNumElemMap = new LinkedHashMap<>();
-    private final Map<RelNode, RelNode> childToParentMap = new HashMap<>();
-    private final Map<RelNode, Set<Integer>> nodeColumnIndexSet = new HashMap<>();
-    private Stack<Set<Integer>> columnStack = new Stack<>();
-    private Stack<String> tablestack = new Stack<>();
+    
+    private final Map<RelNode, List<String>> relNodeTablesMap = new HashMap<>();
+    
+    private final Map<RelNode, List<Set<Integer>>> nodeColumnIndexSet = new HashMap<>();
     private boolean isanyproject = false;
+    SimpleDirectedGraph<RelNode,DAGEdge> sdg = new SimpleDirectedGraph<RelNode,DAGEdge>(DAGEdge.class);
     public Map<String, Set<String>> getRequiredColumnsByTable(RelNode relNode) {
     	buildParentMap(relNode);
+    	EdgeReversedGraph<RelNode,DAGEdge> erg = new EdgeReversedGraph<RelNode,DAGEdge>(sdg);
+    	TopologicalOrderIterator<RelNode,DAGEdge> toi = new TopologicalOrderIterator<>(erg);
+    	while(toi.hasNext()) {
+    		RelNode child = toi.next();
+    		if(child instanceof EnumerableTableScan tscan) {    			
+    			relNodeTablesMap.put(tscan, Arrays.asList(tscan.getTable().getQualifiedName().get(1)));
+    			handleTableScan(tscan);
+    		} else if(child instanceof Filter filter) {
+    			var predecessors = Graphs.predecessorListOf(erg, child);    			
+    			var successors = Graphs.successorListOf(erg, child);
+    			if(CollectionUtils.isEmpty(successors)) {
+    				List<String> tablenames = relNodeTablesMap.get(predecessors.get(0));
+    				if(isNull(requiredColumnsByTable.get(tablenames.get(0)))) {
+    					requiredColumnsByTable.put(tablenames.get(0), convertToString(nodeColumnIndexSet.get(predecessors.get(0))).get(0));
+    				} else {
+    					requiredColumnsByTable.get(tablenames.get(0)).addAll(convertToString(nodeColumnIndexSet.get(predecessors.get(0))).get(0));
+    				}
+    			}
+    			relNodeTablesMap.put(filter, relNodeTablesMap.get(predecessors.get(0)));
+    			handleFilter(filter, nodeColumnIndexSet.get(predecessors.get(0)));
+    		} else if(child instanceof Project project) {
+    			isanyproject = true;
+    			var predecessors = Graphs.predecessorListOf(erg, child);    			
+    			var successors = Graphs.successorListOf(erg, child);
+    			List<String> tablenames = relNodeTablesMap.get(predecessors.get(0));
+    			relNodeTablesMap.put(project, tablenames);
+    			if(CollectionUtils.isEmpty(successors)) {    				
+    				if(isNull(requiredColumnsByTable.get(tablenames.get(0)))) {
+    					requiredColumnsByTable.put(tablenames.get(0), convertToString(nodeColumnIndexSet.get(predecessors.get(0))).get(0));
+    				} else {
+    					requiredColumnsByTable.get(tablenames.get(0)).addAll(convertToString(nodeColumnIndexSet.get(predecessors.get(0))).get(0));
+    				}
+    			}
+    			handleProject(project, nodeColumnIndexSet.get(predecessors.get(0)));
+    			relNodeTablesMap.put(project, relNodeTablesMap.get(predecessors.get(0)));
+    		} else if(child instanceof Aggregate agg) {
+    			var predecessors = Graphs.predecessorListOf(erg, child);    			
+    			var successors = Graphs.successorListOf(erg, child);
+    			List<String> tablenames = relNodeTablesMap.get(predecessors.get(0));
+    			relNodeTablesMap.put(agg, tablenames);
+    			if(CollectionUtils.isEmpty(successors)) {    				
+    				if(isNull(requiredColumnsByTable.get(tablenames.get(0)))) {
+    					requiredColumnsByTable.put(tablenames.get(0), convertToString(nodeColumnIndexSet.get(predecessors.get(0))).get(0));
+    				} else {
+    					requiredColumnsByTable.get(tablenames.get(0)).addAll(convertToString(nodeColumnIndexSet.get(predecessors.get(0))).get(0));
+    				}
+    			}
+    			handleAggregate(agg, nodeColumnIndexSet.get(predecessors.get(0)));
+    			relNodeTablesMap.put(agg, relNodeTablesMap.get(predecessors.get(0)));
+    		} else if(child instanceof Join join) {
+    			var predecessors = Graphs.predecessorListOf(erg, child);    			
+    			List<String> tablenames = new ArrayList<>();
+    			tablenames.addAll(relNodeTablesMap.get(predecessors.get(0)));
+    			tablenames.addAll(relNodeTablesMap.get(predecessors.get(1)));
+    			relNodeTablesMap.put(join, tablenames);
+    			handleJoin(join, nodeColumnIndexSet.get(predecessors.get(0)),nodeColumnIndexSet.get(predecessors.get(1)));
+    		} else if(child instanceof Union union) {
+    			var predecessors = Graphs.predecessorListOf(erg, child);    			
+    			List<String> tablenames = new ArrayList<>();
+    			tablenames.addAll(relNodeTablesMap.get(predecessors.get(0)));
+    			tablenames.addAll(relNodeTablesMap.get(predecessors.get(1)));
+    			relNodeTablesMap.put(union, tablenames);
+    			handleUnion(union, nodeColumnIndexSet.get(predecessors.get(0)),nodeColumnIndexSet.get(predecessors.get(1)));
+    		} else if(child instanceof Intersect intersect) {
+    			var predecessors = Graphs.predecessorListOf(erg, child);    			
+    			List<String> tablenames = new ArrayList<>();
+    			tablenames.addAll(relNodeTablesMap.get(predecessors.get(0)));
+    			tablenames.addAll(relNodeTablesMap.get(predecessors.get(1)));
+    			relNodeTablesMap.put(intersect, tablenames);
+    			handleIntersect(intersect, nodeColumnIndexSet.get(predecessors.get(0)),nodeColumnIndexSet.get(predecessors.get(1)));
+    		}
+    	}
     	if(isanyproject) {
     		return requiredColumnsByTableCondition;
     	}
         return requiredColumnsByTable;
     }
     
+    private List<Set<String>> convertToString(List<Set<Integer>> lindexes){
+    	return lindexes.stream().map(indexes-> indexes.stream().map(index->index+DataSamudayaConstants.EMPTY).collect(Collectors.toCollection(LinkedHashSet::new))).collect(Collectors.toList());
+    }
+    
     public void buildParentMap(RelNode node) {
-    	if (node instanceof TableScan) {
-            handleTableScan((TableScan) node);
-        } else if (node instanceof Project) {
-        	isanyproject = true;
-            handleProject((Project) node);
-        } else if (node instanceof Filter) {
-            handleFilter((Filter) node);
-        } else if (node instanceof Sort) {
-            handleSort((Sort) node);
-        } else if (node instanceof Aggregate) {
-            handleAggregate((Aggregate) node);
-        }
-        if(node instanceof Join join) {
-    		if(join.getLeft() instanceof TableScan left) {
-    			 handleTableScan((TableScan) left);
-    		} else {
-    			buildParentMap(join.getLeft());
-    		}
-    		if(join.getRight() instanceof TableScan right) {
-   			 handleTableScan((TableScan) right);
-	   		} else {
-	   			buildParentMap(join.getRight());
-	   		}
-    		Set<Integer> requiredColumns = new LinkedHashSet<>();
-            // Process the join condition to extract required columns
-            join.getCondition().accept(new JoinConditionColumnVisitor(requiredColumns));
-            nodeColumnIndexSet.put(join, requiredColumns); 
-            columnStack.push(requiredColumns);
-    		if (!columnStack.isEmpty()) {                
-    			mergeOriginsJoin(join.getLeft(), join.getRight(), node);
-            }
-    	} else {
-			for (RelNode child : node.getInputs()) {
-				childToParentMap.put(child, node);
-				buildParentMap(child); // Recurse to handle all levels
-				if (!columnStack.isEmpty()) {
-					mergeOrigins(child, node);
-				}
-			}
-    	}
-    }
-    private void mergeOriginsJoin(RelNode child1,RelNode child2, RelNode parent) {
-    	Join join = (Join) parent;    	
-    	Set<Integer> childindexesroot = columnStack.pop();
-        Set<Integer> childindexesright = columnStack.pop(); 
-        Set<Integer> childindexesleft = columnStack.pop();
-        Set<Integer> topushindexes = new LinkedHashSet<>(childindexesleft);
-        topushindexes.addAll(childindexesright);
-        topushindexes.stream().forEach(index->{
-			addColumnIndexToRequiredColumn(index, false);			
-		});
-		columnStack.push(topushindexes);
-		childindexesroot.stream().forEach(index->{
-			addColumnIndexToRequiredColumn(index, true);			
-		});
-    }
-    
-    private void addColumnIndexToRequiredColumn(int index, boolean condition) {    	
-    	boolean isfirstelem = true;
-    	Entry<String, Integer> entryforindextoadd = null;
-    	Entry<String, Integer> preventryforindextoadd = null;
-    	for(Entry<String, Integer> entryforindex : tableNumElemMap.entrySet()) {
-    		entryforindextoadd = entryforindex;
-    		if(index<entryforindex.getValue()) {  
-    			break;
-    		} else {
-    			isfirstelem = false;
-    		}
-    		preventryforindextoadd = entryforindextoadd;
-    	}
-    	if(condition) {
-    		requiredColumnsByTableCondition.computeIfAbsent(entryforindextoadd.getKey(), k -> new LinkedHashSet<>());
-    		requiredColumnsByTableCondition.get(entryforindextoadd.getKey()).add((isfirstelem?index:index-preventryforindextoadd.getValue())+DataSamudayaConstants.EMPTY);
-    	} else {
-    		requiredColumnsByTable.computeIfAbsent(entryforindextoadd.getKey(), k -> new LinkedHashSet<>());
-    		requiredColumnsByTable.get(entryforindextoadd.getKey()).add((isfirstelem?index:index-preventryforindextoadd.getValue())+DataSamudayaConstants.EMPTY);
-    	}
-    }    
-    
-    private void mergeOrigins(RelNode child, RelNode parent) {
-    	Set<Integer> topushindexes = new LinkedHashSet<>();
-    	if(parent instanceof Filter) {
-    		if(isNull(getParent(parent))) {
-    			Set<Integer> childindexes = columnStack.pop(); 
-    			Set<Integer> parentindexes = columnStack.pop();
-        		topushindexes.addAll(childindexes);
-        		topushindexes.addAll(parentindexes);    	
-    			String tablename = tablestack.pop();
-    			topushindexes.stream().forEach(index->{
-    				addColumnIndexToRequiredColumn(index, true);
-    			});
-    			tablestack.push(tablename);
-    		} else {
-    			String tablename = tablestack.pop();
-    			Set<Integer> childindexes = columnStack.pop(); 
-    			Set<Integer> parentindexes = columnStack.pop();
-    			topushindexes.addAll(childindexes);
-    			parentindexes.stream().forEach(index->{
-    				addColumnIndexToRequiredColumn(index, true);
-    			});
-    			tablestack.push(tablename);
-    		}
-    	} else if(parent instanceof Project || parent instanceof Aggregate || parent instanceof Sort) {
-    		Set<Integer> childindexes = columnStack.pop(); 
-    		Set<Integer> parentindexes = columnStack.pop();
-    		List<Integer> childindexl = new ArrayList<>(childindexes);
-    		parentindexes.stream().filter(index->index!=-1 && index<childindexl.size()).map(index->childindexl.get(index)).forEach(topushindexes::add);
-    		String tablename = tablestack.pop();
-    		tablestack.push(tablename);
-    		topushindexes.stream().forEach(index->{
-				addColumnIndexToRequiredColumn(index, true);
-			});
-    	}
-    	columnStack.push(topushindexes);
-    }
-    public RelNode getParent(RelNode child) {
-        return childToParentMap.get(child);
+    	sdg.addVertex(node);
+		for (RelNode child : node.getInputs()) {
+			sdg.addVertex(child);
+			sdg.addEdge(node, child);
+			buildParentMap(child); // Recurse to handle all levels
+		}
     }
 
-    private void handleSort(Sort sort) {
-    	Set<Integer> requiredColumns = new LinkedHashSet<>();
-    	sort.getCollation().getFieldCollations().forEach(fc -> {
-    		requiredColumns.add(fc.getFieldIndex());    		
-    	});
-    	nodeColumnIndexSet.put(sort, requiredColumns); 
-    	columnStack.push(requiredColumns);
-    }
-
-    private void handleAggregate(Aggregate aggregate) {    	
+    private void handleAggregate(Aggregate aggregate, List<Set<Integer>> parentindexes) {    	
+    	List<Set<Integer>> lRequiredColumns = new ArrayList<>();
+    	List<Set<Integer>> lparentindexes = new ArrayList<>(parentindexes);
     	Set<Integer> requiredColumns = new LinkedHashSet<>();
         // Add grouping columns
         aggregate.getGroupSet().asList().stream().forEach(colIndex->{
-            requiredColumns.add(colIndex);
+            addColumnToMap(aggregate, colIndex, requiredColumns, lparentindexes);
         });
 
         // Add columns involved in aggregation functions
         for (AggregateCall call : aggregate.getAggCallList()) {
-        	if(CollectionUtils.isEmpty(call.getArgList())){
-        		requiredColumns.add(-1);
-        	}
             call.getArgList().stream().forEach(colIndex->{
-            	 requiredColumns.add(colIndex);            	
+            	 addColumnToMap(aggregate, colIndex, requiredColumns, lparentindexes);            	
             });
         }
-        nodeColumnIndexSet.put(aggregate, requiredColumns); 
-        columnStack.push(requiredColumns);
+        lRequiredColumns.add(requiredColumns);
+        nodeColumnIndexSet.put(aggregate, lRequiredColumns); 
     }
     
     private void handleTableScan(TableScan scan) {
-        String tableName = scan.getTable().getQualifiedName().get(1);        
-        Set<Integer> requiredColumns = new LinkedHashSet<>();        
-        requiredColumnsByTable.putIfAbsent(tableName, new LinkedHashSet<>());
-        int greatestindex = greatestInMap(tableNumElemMap);
-        tableNumElemMap.putIfAbsent(tableName, scan.getTable().getRowType().getFieldCount()+greatestInMap(tableNumElemMap));
+        Set<Integer> requiredColumns = new LinkedHashSet<>();
+        List<String> tablenames = relNodeTablesMap.get(scan);
+        String tablename = tablenames.get(0);
         for(int fieldindex=0; fieldindex < scan.getTable().getRowType().getFieldCount(); fieldindex++) {
-        	requiredColumns.add(greatestindex+fieldindex);
-        	addColumnIndexToRequiredColumn(greatestindex+fieldindex, false);
-        }        
-        nodeColumnIndexSet.put(scan, requiredColumns); 
-        columnStack.push(requiredColumns);
-        tablestack.push(tableName);                
+        	requiredColumns.add(fieldindex);
+        	Set<String> finalcolumns = requiredColumnsByTable.get(tablename);
+        	if(isNull(finalcolumns)) {
+        		finalcolumns = new LinkedHashSet<>();
+        		requiredColumnsByTable.put(tablename, finalcolumns);
+        	}
+        	finalcolumns.add(fieldindex+DataSamudayaConstants.EMPTY);
+        }
+        List<Set<Integer>> lRequiredColumns = new ArrayList<>();
+        lRequiredColumns.add(requiredColumns);
+        nodeColumnIndexSet.put(scan, lRequiredColumns);         
     }
 
     
@@ -224,69 +192,91 @@ public class RequiredColumnsExtractor {
     	return tableStartIndexMap.values().stream().mapToInt(value->value).max().getAsInt();
     }
     
-    private void handleProject(Project project) {
+    private void handleProject(Project project, List<Set<Integer>> parentindexes) {
     	Set<Integer> requiredColumns = new LinkedHashSet<>();
-    	ColumnIndexVisitor civ = new ColumnIndexVisitor(requiredColumns);
+    	ColumnIndexVisitor civ = new ColumnIndexVisitor(project, requiredColumns, parentindexes);
         project.getProjects().forEach(expr -> expr.accept(civ));
-        nodeColumnIndexSet.put(project, requiredColumns); 
-        columnStack.push(requiredColumns);
+        List<Set<Integer>> lRequiredColumns = new ArrayList<>();
+        lRequiredColumns.add(requiredColumns);
+        nodeColumnIndexSet.put(project, lRequiredColumns); 
     }
 
-    private void handleFilter(Filter filter) {
-    	Set<Integer> requiredColumns = new LinkedHashSet<>();
-        filter.getCondition().accept(new ColumnIndexVisitor(requiredColumns));
+    private void handleFilter(Filter filter, List<Set<Integer>> requiredColumns) {
+    	filter.getCondition().accept(new ColumnIndexVisitor(filter, new LinkedHashSet<>(), requiredColumns));
         nodeColumnIndexSet.put(filter, requiredColumns); 
-        columnStack.push(requiredColumns);
     }
 
-    private void handleJoin(Join join) {
-        // Recursively handle both sides of the join
-        buildParentMap(join.getLeft());
-        buildParentMap(join.getRight());
+    private void handleJoin(Join join, List<Set<Integer>> parentindexes1, List<Set<Integer>> parentindexes2) {
+        // Recursively handle both sides of the join       
         Set<Integer> requiredColumns = new LinkedHashSet<>();
+        List<Set<Integer>> parents = new ArrayList<>();
+        parents.addAll(parentindexes1);
+        parents.addAll(parentindexes2);
         // Process the join condition to extract required columns
-        join.getCondition().accept(new JoinConditionColumnVisitor(requiredColumns));
-        nodeColumnIndexSet.put(join, requiredColumns); 
-        columnStack.push(requiredColumns);
+        join.getCondition().accept(new JoinConditionColumnVisitor(join, requiredColumns, parents));
+        nodeColumnIndexSet.put(join, parents); 
     }
+    
+    private void handleUnion(Union union, List<Set<Integer>> parentindexes1, List<Set<Integer>> parentindexes2) {
+        List<Set<Integer>> parents = new ArrayList<>();
+        parents.addAll(parentindexes1);
+        parents.addAll(parentindexes2);
+        nodeColumnIndexSet.put(union, parents); 
+    }
+    
+    private void handleIntersect(Intersect intersect, List<Set<Integer>> parentindexes1, List<Set<Integer>> parentindexes2) {
+        List<Set<Integer>> parents = new ArrayList<>();
+        parents.addAll(parentindexes1);
+        parents.addAll(parentindexes2);
+        nodeColumnIndexSet.put(intersect, parents); 
+    }
+    
     private class JoinConditionColumnVisitor extends RexVisitorImpl<Void> {
     	Set<Integer> requiredColumns;
-        protected JoinConditionColumnVisitor(Set<Integer> requiredColumns) {
+    	List<Set<Integer>> parents;
+    	Join join;
+        protected JoinConditionColumnVisitor(Join join, Set<Integer> requiredColumns, List<Set<Integer>> parents) {
             super(true);
+            this.join = join;
             this.requiredColumns = requiredColumns;
+            this.parents = parents;
         }
 
         @Override
         public Void visitInputRef(RexInputRef inputRef) {
-            int index = inputRef.getIndex();
-            requiredColumns.add(index);
+            addColumnToMap(join, inputRef.getIndex(), requiredColumns, parents);
             return null;
         }
 
         @Override
         public Void visitCall(RexCall call) {
             // For complex conditions (e.g., expressions within the join condition), recursively visit arguments
+        	analyzeCondition(join, call, requiredColumns, parents);
             call.operands.forEach(operand -> operand.accept(this));
             return null;
         }
     }
     private class ColumnIndexVisitor extends RexVisitorImpl<Void> {
         Set<Integer> requiredColumns;
-        protected ColumnIndexVisitor(Set<Integer> requiredColumns) {
+        List<Set<Integer>> parentindexes;
+        RelNode relNode;
+        protected ColumnIndexVisitor(RelNode relNode, Set<Integer> requiredColumns, List<Set<Integer>> parentindexes) {
             super(true);
+            this.relNode = relNode;
             this.requiredColumns = requiredColumns;
+            this.parentindexes = parentindexes;
         }
 
         @Override
         public Void visitInputRef(RexInputRef inputRef) {
-        	requiredColumns.add(inputRef.getIndex());
+        	addColumnToMap(relNode, inputRef.getIndex(), requiredColumns, parentindexes);
             return null;
         }
         
         @Override
         public Void visitCall(RexCall call) {
             // Recursively handle complex expressions within aggregate functions    
-        	analyzeCondition(call, requiredColumns);
+        	analyzeCondition(relNode, call, requiredColumns, parentindexes);
             call.getOperands().forEach(operand -> operand.accept(this));
             return null;
         }
@@ -295,7 +285,7 @@ public class RequiredColumnsExtractor {
 	 * The function analyzes the condition from join or filter
 	 * @param condition
 	 */
-	private void analyzeCondition(RexNode condition, Set<Integer> requiredColumns) {
+	private void analyzeCondition(RelNode relNode, RexNode condition, Set<Integer> requiredColumns, List<Set<Integer>> parentindexes) {
 		if (condition.isA(SqlKind.AND) || condition.isA(SqlKind.OR)
 				|| condition.isA(SqlKind.EQUALS) || condition.isA(SqlKind.NOT_EQUALS)
 				|| condition.isA(SqlKind.GREATER_THAN) || condition.isA(SqlKind.GREATER_THAN_OR_EQUAL)
@@ -310,12 +300,46 @@ public class RequiredColumnsExtractor {
 			// For AND nodes, recursively evaluate left and right children
 			RexCall rexcall = (RexCall) condition;
 			for (RexNode rexnode : rexcall.operands) {
-				analyzeCondition(rexnode, requiredColumns);
+				analyzeCondition(relNode, rexnode, requiredColumns, parentindexes);
 			}
 
 		} else if (condition.isA(SqlKind.INPUT_REF)) {
-			RexInputRef colref = (RexInputRef) condition;			
-			requiredColumns.add(colref.getIndex());
+			RexInputRef colref = (RexInputRef) condition;		
+			int index = colref.getIndex();
+			addColumnToMap(relNode, index, requiredColumns, parentindexes);
 		}
 	}
+	
+	
+	public void addColumnToMap(RelNode node, int index,Set<Integer> requiredColumns, List<Set<Integer>> parentindexes) {
+		int totalcolcount = 0;
+		int prevtotalcolcount = 0;
+		Set<Integer> currparent = null;
+		int indextable = 0;
+		String tablename = null;
+		for(Set<Integer> parent:parentindexes) {
+			prevtotalcolcount = totalcolcount;
+			totalcolcount += parent.size();
+			if(index<totalcolcount) {
+				tablename = relNodeTablesMap.get(node).get(indextable);
+				currparent = parent;
+				break;					
+			}
+			indextable++;
+		}				
+		if(nonNull(currparent)) {
+			List<Integer> lcurrparent = new ArrayList<>(currparent);
+			requiredColumns.add(lcurrparent.get(index-prevtotalcolcount));
+			if(nonNull(tablename)) {
+				Set<String> columnstable = requiredColumnsByTableCondition.get(tablename);
+				if(isNull(columnstable)) {
+					columnstable = new LinkedHashSet<>();
+					requiredColumnsByTableCondition.put(tablename, columnstable);
+				}
+				columnstable.add(lcurrparent.get(index-prevtotalcolcount)+DataSamudayaConstants.EMPTY);
+			}
+		}
+	}
+	
+	
 }
