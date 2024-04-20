@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
@@ -69,7 +70,7 @@ public class ProcessIntersection extends AbstractActor {
 
 	private void processIntersection(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			log.info("processIntersection::: {}",object.getValue().getClass());
+			log.info("processIntersection::: InitialSize {} terminating size {}",initialsize, terminatingsize);
 			if (object.getValue() instanceof DiskSpillingList<?> dsl) {
 				ldiskspill.add(dsl);
 			} else if (object.getValue() instanceof DiskSpillingSet<?> dss) {
@@ -77,7 +78,8 @@ public class ProcessIntersection extends AbstractActor {
 			} else if (object.getValue() instanceof TreeSet<?> ts) {
 				ldiskspill.add(ts);
 			}
-			if (object.getTerminiatingclass() == DiskSpillingList.class					
+			if (object.getTerminiatingclass() == DiskSpillingList.class	
+					|| object.getTerminiatingclass() == Dummy.class
 					|| object.getTerminiatingclass() == NodeIndexKey.class
 					|| object.getTerminiatingclass() == DiskSpillingSet.class
 					|| object.getTerminiatingclass() == TreeSet.class) {

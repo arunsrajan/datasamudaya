@@ -72,7 +72,7 @@ public class ProcessDistributedDistinct extends AbstractActor {
 					diskspillset.close();			
 				}
 				if (CollectionUtils.isNotEmpty(childpipes)) {															
-					log.info("processDistributedDistinct::DiskSpill intermediate Set Size {} Task {}", diskspillset.size(), diskspillset.getTask());
+					log.info("processDistributedDistinct::DiskSpill intermediate Set Is Spilled {} Task {}", diskspillset.isSpilled(), diskspillset.getTask());
 					childpipes.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class),
 								ActorRef.noSender());

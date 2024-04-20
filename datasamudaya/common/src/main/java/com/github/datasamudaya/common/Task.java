@@ -62,7 +62,7 @@ public class Task implements Serializable, Cloneable {
 	public String actorselection;
 	public String joinpos;
 	public Map<Integer, FilePartitionId> filepartitionsid;
-	public int parentterminatingsize;
+	public Integer parentterminatingsize;
 	public List<Task> shufflechildactors;
 	public boolean tosort;
 	public List<FieldCollationDirection> fcsc;

@@ -139,7 +139,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	 */
 	public void addAll(List<T> values) {
 		if (CollectionUtils.isNotEmpty(values)) {
-			values.stream().parallel().forEach(this::add);
+			values.stream().forEach(this::add);
 		}
 	}
 
@@ -215,11 +215,11 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
 					&& CollectionUtils.isNotEmpty(dataList)) {
 				filelock.acquire();
-				if (isNull(ostream)) {
-					isspilled = true;
+				if (isNull(ostream)) {					
 					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
 					op = new Output(sos);
+					isspilled = true;
 				}
 				filelock.release();
 				lock.acquire();
@@ -244,17 +244,20 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	@Override
 	public void close() throws Exception {
 		try {
-			if (nonNull(ostream)) {
+			if (isspilled) {
 				if (CollectionUtils.isNotEmpty(dataList)) {
 					spillToDiskIntermediate(true);
 				}
+				log.info("Closing Stream For Task {} {} {} {}", task, op, sos, ostream);
 				if (nonNull(op)) {
 					op.close();
 				}
 				if (nonNull(sos)) {
 					sos.close();
 				}
-				ostream.close();
+				if(nonNull(ostream)) {
+					ostream.close();
+				}
 				op = null;
 				sos = null;
 				ostream = null;
@@ -294,7 +297,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	public void clear() {
 		if (nonNull(bytes)) {
 			bytes = null;
-		} else if (isspilled && CollectionUtils.isNotEmpty(dataList)) {
+		} else if (CollectionUtils.isNotEmpty(dataList)) {
 			dataList.clear();
 			dataList = null;
 		}

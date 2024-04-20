@@ -1170,14 +1170,14 @@ public class StreamJobScheduler {
 					var predecessors = Graphs.predecessorListOf(graphreversed, sptsreverse);
 					var successors = Graphs.successorListOf(graphreversed, sptsreverse);
 					if (CollectionUtils.isEmpty(predecessors)) {
-						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, successors.size());
+						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, nonNull(sptsreverse.getTask().parentterminatingsize)?sptsreverse.getTask().parentterminatingsize:successors.size());
 						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 					} else {
 						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
 								.collect(Collectors.toList());
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
-								successors.size());
+								nonNull(sptsreverse.getTask().parentterminatingsize)?sptsreverse.getTask().parentterminatingsize:successors.size());
 						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 						sptsreverse.setChildactors(childactorsoriggraph);
@@ -1998,11 +1998,13 @@ public class StreamJobScheduler {
 					graph.addEdge(parentthread, spts);
 					taskgraph.addEdge(parentthread.getTask(), spts.getTask());
 				}
-			} else if (function instanceof ShuffleStage) {
+			} else if (function instanceof HashPartitioner || function instanceof GroupByFunction
+					|| function instanceof ReduceByKeyFunction || function instanceof ReduceByKeyFunctionValues
+					|| function instanceof ReduceFunction) {
 				partitionindex++;
 				Map<Integer, FilePartitionId> filepartitionsid = new ConcurrentHashMap<>();
-				Map<String, StreamPipelineTaskSubmitter> taskexecshuffleblockmap = new ConcurrentHashMap<>();
-				int nooffilepartitions = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+				new ConcurrentHashMap<>();
+				int nooffilepartitions = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
 						DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
 				int startrange = 0;
 				int endrange = nooffilepartitions;
@@ -2086,38 +2088,6 @@ public class StreamJobScheduler {
 							parentthread.getTask().setShufflechildactors(tasksshuffle);
 						}
 					}
-				}
-			} else if (function instanceof HashPartitioner || function instanceof GroupByFunction
-					|| function instanceof ReduceByKeyFunction || function instanceof ReduceByKeyFunctionValues
-					|| function instanceof ReduceFunction) {
-				partitionindex++;
-				for (var input : outputparent1) {
-					if (input instanceof Task task) {
-						var spts = getPipelineTasks(jobid, input, currentstage, partitionindex, currentstage.number,
-								null);
-						tasks.add(spts);
-						graph.addVertex(spts);
-						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
-						taskgraph.addVertex(task);
-						taskgraph.addVertex(spts.getTask());
-						taskgraph.addEdge(task, spts.getTask());
-					} else if (input instanceof StreamPipelineTaskSubmitter parentthread) {
-						var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
-								Arrays.asList(input));
-						tasks.add(spts);
-						graph.addVertex(spts);
-						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
-						taskgraph.addVertex(spts.getTask());
-						if (!graph.containsVertex(parentthread)) {
-							graph.addVertex(parentthread);
-						}
-						if (!taskgraph.containsVertex(parentthread.getTask())) {
-							taskgraph.addVertex(parentthread.getTask());
-						}
-						graph.addEdge(parentthread, spts);
-						taskgraph.addEdge(parentthread.getTask(), spts.getTask());
-					}
-
 				}
 			} else if (function instanceof DistributedSort){
 				var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,

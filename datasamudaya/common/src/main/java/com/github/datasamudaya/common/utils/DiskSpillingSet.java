@@ -84,6 +84,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		this.filepartids = filepartids;
 		this.numfileperexec = numfileperexec;
 		this.lock = new Semaphore(1);
+		this.filelock = new Semaphore(1);
 		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE, 
 				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
 	}
@@ -212,11 +213,11 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
 					&& CollectionUtils.isNotEmpty(dataSet)) {
 				filelock.acquire();
-				if (isNull(ostream)) {
-					isspilled = true;
+				if (isNull(ostream)) {					
 					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
 					op = new Output(sos);
+					isspilled = true;
 				}
 				filelock.release();
 				lock.acquire();
@@ -241,17 +242,20 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	@Override
 	public void close() throws Exception {
 		try {
-			if (nonNull(ostream)) {
+			if (isspilled) {
 				if (CollectionUtils.isNotEmpty(dataSet)) {
 					spillToDiskIntermediate(true);
 				}
+				log.info("Closing Stream For Task {} {} {} {}", task, op, sos, ostream);
 				if (nonNull(op)) {
 					op.close();
 				}
 				if (nonNull(sos)) {
 					sos.close();
 				}
-				ostream.close();
+				if(nonNull(ostream)) {
+					ostream.close();
+				}				
 				op = null;
 				sos = null;
 				ostream = null;
@@ -290,7 +294,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	public void clear() {
 		if (nonNull(bytes)) {
 			bytes = null;
-		} else if (isspilled && CollectionUtils.isNotEmpty(dataSet)) {
+		} else if (CollectionUtils.isNotEmpty(dataSet)) {
 			dataSet.clear();
 			dataSet = null;
 		}

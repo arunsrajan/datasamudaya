@@ -86,6 +86,7 @@ import java.util.stream.StreamSupport;
 
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeFamily;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
@@ -95,6 +96,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
+import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.zookeeper.server.ServerCnxnFactory;
@@ -137,7 +139,6 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.util.CollectionUtils;
 import org.springframework.yarn.client.CommandYarnClient;
 import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
@@ -2037,7 +2038,7 @@ public class Utils {
 		GlobalContainerLaunchers.remove(user, jobid);
 		GlobalJobFolderBlockLocations.remove(jobid);
 		Map<String, List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);
-		if (CollectionUtils.isEmpty(jobcontainermap)) {
+		if (MapUtils.isEmpty(jobcontainermap)) {
 			GlobalContainerLaunchers.remove(user);
 		}
 	}
@@ -2628,7 +2629,9 @@ public class Utils {
 					Input input = new Input(sis);) {
 				while (input.available() > 0) {
 					List records = (List) kryo.readClassAndObject(input);
-					dslout.addAll(records);
+					if(CollectionUtils.isNotEmpty(records)) {
+						dslout.addAll(records);
+					}
 				}
 			} catch (Exception ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
@@ -2641,7 +2644,9 @@ public class Utils {
 					List records = (List) Utils
 							.convertBytesToObjectCompressed((byte[]) client.next(), null);
 					
-					dslout.addAll(records);
+					if(CollectionUtils.isNotEmpty(records)) {
+						dslout.addAll(records);
+					}
 					
 				}
 			} catch (Exception e) {
@@ -2806,7 +2811,6 @@ public class Utils {
 				InputStream istream;
 				SnappyInputStream sisinternal;
 				Input inputinternal;
-				Kryo kryo = Utils.getKryoInstance();
 				Collection<?> intermdata = null;
 				Iterator<?> iterator = null;
 				RemoteIteratorClient client = null;
@@ -2826,7 +2830,7 @@ public class Utils {
 								}
 								if (isNull(intermdata) && inputinternal.available() > 0
 										|| inputinternal.available() > 0 && !iterator.hasNext()) {
-									intermdata = (Collection<?>) kryo.readClassAndObject(inputinternal);
+									intermdata = (Collection<?>) Utils.getKryoInstance().readClassAndObject(inputinternal);
 									iterator = intermdata.iterator();
 								}
 
@@ -2843,39 +2847,78 @@ public class Utils {
 								}
 							}
 						} else if(isNull(iterator)){
-							iterator = dslinput.getData().iterator();
+							if(nonNull(dslinput.getData())) {
+								iterator = dslinput.getData().iterator();
+							} else {
+								iterator = new Vector<>().iterator();
+							}
 						}
 						if (nonNull(iterator) && iterator.hasNext()) {
 							action.accept(iterator.next());
 						}
 						if (nonNull(inputinternal) && inputinternal.available() > 0 || nonNull(iterator) && iterator.hasNext()) {
 							return true;
-						}						
-						return false;
-					} catch (Exception ex) {
-						log.error(DataSamudayaConstants.EMPTY, ex);
-					} finally {
+						}
+						log.info("Stream Close {} {} {} {}", inputinternal,sisinternal, istream, client); 
 						if(nonNull(inputinternal)) {
-							inputinternal.close();
+							try {
+								inputinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
 						}
 						if(nonNull(sisinternal)) {
 							try {
 								sisinternal.close();
-							} catch (IOException e) {
+							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
 						if(nonNull(istream)) {
 							try {
 								istream.close();
-							} catch (IOException e) {
+							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
 						if(nonNull(client)) {
 							try {
 								client.close();
-							} catch (IOException e) {
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						log.info("Stream Close {}", Utils.getLocalFilePathForTask(dslinput.getTask(),
+								dslinput.getAppendwithpath(), dslinput.getAppendintermediate(),
+								dslinput.getLeft(), dslinput.getRight()));
+						return false;
+					} catch (Throwable ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+						if(nonNull(inputinternal)) {
+							try {
+								inputinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(sisinternal)) {
+							try {
+								sisinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(istream)) {
+							try {
+								istream.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(client)) {
+							try {
+								client.close();
+							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
@@ -2901,7 +2944,6 @@ public class Utils {
 				InputStream istream;
 				SnappyInputStream sisinternal;
 				Input inputinternal;
-				Kryo kryo = Utils.getKryoInstance();
 				Collection<?> intermdata = null;
 				Iterator<?> iterator = null;
 				RemoteIteratorClient client = null;
@@ -2921,7 +2963,7 @@ public class Utils {
 								}
 								if (isNull(intermdata) && inputinternal.available() > 0
 										|| inputinternal.available() > 0 && !iterator.hasNext()) {
-									intermdata = (Collection<?>) kryo.readClassAndObject(inputinternal);
+									intermdata = (Collection<?>) Utils.getKryoInstance().readClassAndObject(inputinternal);
 									iterator = intermdata.iterator();
 								}
 
@@ -2938,42 +2980,82 @@ public class Utils {
 								}
 							}
 						} else if(isNull(iterator)){
-							iterator = dslinput.getData().iterator();
+							if(nonNull(dslinput.getData())) {
+								iterator = dslinput.getData().iterator();
+							} else {
+								iterator = new LinkedHashSet<>().iterator();
+							}
 						}
 						if (nonNull(iterator) && iterator.hasNext()) {
 							action.accept(iterator.next());
 						}
 						if (nonNull(inputinternal) && inputinternal.available() > 0 || nonNull(iterator) && iterator.hasNext()) {
 							return true;
-						}						
-						return false;
-					} catch (Exception ex) {
-						log.error(DataSamudayaConstants.EMPTY, ex);
-					} finally {
+						}
+						log.info("Stream Close {} {} {} {}", inputinternal,sisinternal, istream, client); 
 						if(nonNull(inputinternal)) {
-							inputinternal.close();
+							try {
+								inputinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
 						}
 						if(nonNull(sisinternal)) {
 							try {
 								sisinternal.close();
-							} catch (IOException e) {
+							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
 						if(nonNull(istream)) {
 							try {
 								istream.close();
-							} catch (IOException e) {
+							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
 						if(nonNull(client)) {
 							try {
 								client.close();
-							} catch (IOException e) {
+							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
+						log.info("Stream Close {}", Utils.getLocalFilePathForTask(dslinput.getTask(),
+											dslinput.getAppendwithpath(), dslinput.getAppendintermediate(),
+											dslinput.getLeft(), dslinput.getRight()));
+						return false;
+					} catch (Throwable ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+						if(nonNull(inputinternal)) {
+							try {
+								inputinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(sisinternal)) {
+							try {
+								sisinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(istream)) {
+							try {
+								istream.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if(nonNull(client)) {
+							try {
+								client.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+					} finally {						
 					}
 					return false;
 				}
@@ -3413,7 +3495,9 @@ public class Utils {
 					Input input = new Input(sis);) {
 				while (input.available() > 0) {
 					Set records = (Set) kryo.readClassAndObject(input);
-					dslout.addAll(records);
+					if(CollectionUtils.isNotEmpty(records)) {
+						dslout.addAll(records);
+					}
 				}
 			} catch (Exception ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
@@ -3426,7 +3510,9 @@ public class Utils {
 					List records = (List) Utils
 							.convertBytesToObjectCompressed((byte[]) client.next(), null);
 					
-					dslout.addAll(records);
+					if(CollectionUtils.isNotEmpty(records)) {
+						dslout.addAll(records);
+					}
 					
 				}
 			} catch (Exception e) {
@@ -3451,7 +3537,9 @@ public class Utils {
 					Input input = new Input(sis);) {
 				while (input.available() > 0) {
 					List records = (List) kryo.readClassAndObject(input);
-					dslout.addAll(records);
+					if(CollectionUtils.isNotEmpty(records)) {
+						dslout.addAll(records);
+					}
 				}
 			} catch (Exception ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
@@ -3464,7 +3552,9 @@ public class Utils {
 					List records = (List) Utils
 							.convertBytesToObjectCompressed((byte[]) client.next(), null);
 					
-					dslout.addAll(records);
+					if(CollectionUtils.isNotEmpty(records)) {
+						dslout.addAll(records);
+					}
 					
 				}
 			} catch (Exception e) {
@@ -3489,7 +3579,9 @@ public class Utils {
 					Input input = new Input(sis);) {
 				while (input.available() > 0) {
 					Set records = (Set) kryo.readClassAndObject(input);
-					dslout.addAll(records);
+					if(CollectionUtils.isNotEmpty(records)) {
+						dslout.addAll(records);
+					}
 				}
 			} catch (Exception ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
@@ -3502,7 +3594,9 @@ public class Utils {
 					List records = (List) Utils
 							.convertBytesToObjectCompressed((byte[]) client.next(), null);
 					
-					dslout.addAll(records);
+					if(CollectionUtils.isNotEmpty(records)) {
+						dslout.addAll(records);
+					}
 					
 				}
 			} catch (Exception e) {
