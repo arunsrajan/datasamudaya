@@ -265,7 +265,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			}
 		}
 		Cluster cluster = Cluster.get(system);
-		cluster.joinSeedNodes(Arrays.asList(cluster.selfAddress()));
+		cluster.join(cluster.selfAddress());
 
 		final String actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME + "://" + DataSamudayaConstants.ACTORUSERNAME + "@"
 				+ system.provider().getDefaultAddress().getHost().get() + ":" + system.provider().getDefaultAddress().getPort().get() + "/user";

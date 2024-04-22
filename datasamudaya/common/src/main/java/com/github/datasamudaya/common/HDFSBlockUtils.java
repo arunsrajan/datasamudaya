@@ -66,7 +66,6 @@ public class HDFSBlockUtils {
 		var blocklocationsl = new Vector<BlocksLocation>();
 		filepaths.parallelStream().forEachOrdered(filepath -> {
 			try {
-				long offset = 0;
 				long starttime = System.currentTimeMillis();
 				try (var hdis = (HdfsDataInputStream) hdfs.open(filepath);) {
 					var locatedblocks = hdis.getAllBlocks();
@@ -124,7 +123,6 @@ public class HDFSBlockUtils {
 														Collectors.toCollection(HashSet::new)))));
 							}
 						} else if (lbindex < locatedblocks.size() - 1) {
-							offset = 0;
 							lbindex++;
 							lb = locatedblocks.get(lbindex);
 						} else {
