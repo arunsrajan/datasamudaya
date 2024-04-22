@@ -266,29 +266,29 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 						DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
 				log.info("Number Of Shuffle Files PerExecutor {}", numfileperexec);
 				if (MapUtils.isNotEmpty(blr.pipeline)) {
-					int numexecutorpipe = blr.pipeline.keySet().size();
-					int totalranges = numfileperexec * numexecutorpipe;
-					log.info("Total Ranges {}", numfileperexec);
+					int totalranges = blr.pipeline.keySet().size();
+					log.info("Total Ranges {}", totalranges);
 					ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
 					Map<Integer, DiskSpillingList> results = fjpool.submit(()-> (Map) ((Stream<Tuple2>) streammap).collect(
 							Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % totalranges,
 									Collectors.mapping(tup2 -> tup2,
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 													diskspillpercentage,
-													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, blr.pipeline.size())))))).get();
+													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, totalranges)))))).get();
 					results.entrySet().forEach(entry -> {
 						try {
 							if(entry.getValue().isSpilled()) {
 								entry.getValue().close();
 							}
-							blr.pipeline.get(entry.getKey()%numexecutorpipe).tell(new OutputObject(new ShuffleBlock(null,
-											Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey())), entry.getValue()), left, right, null),
+							blr.pipeline.get(entry.getKey()%totalranges).tell(new OutputObject(new ShuffleBlock(null,
+											Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey() % totalranges)), entry.getValue()), left, right, null),
 									ActorRef.noSender());
 						} catch (Exception e) {
 							log.error(DataSamudayaConstants.EMPTY, e);
 						}
 					});
-					IntStream.range(0, numexecutorpipe).filter(val -> val % numfileperexec == 0).forEach(val -> {
+					int numexecutorpipe = totalranges/numfileperexec;
+					IntStream.range(0, numexecutorpipe).map(val-> val * numfileperexec).forEach(val -> {
 						log.info("Sending Dummy To Actor: {}", blr.pipeline.get(val));
 						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right, Dummy.class),
 								ActorRef.noSender());

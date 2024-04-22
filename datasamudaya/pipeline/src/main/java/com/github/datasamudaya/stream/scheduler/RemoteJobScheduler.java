@@ -80,7 +80,9 @@ public class RemoteJobScheduler {
 			}
 			var tes = zo.getTaskExectorsByJobId(jobid);
 			taskexecutors = new LinkedHashSet<>();
-			taskexecutors.addAll(zo.getDriversByJobId(jobid));
+			List<String> drivers = zo.getDriversByJobId(jobid);
+			job.getTaskexecutors().addAll(0, drivers);
+			taskexecutors.addAll(drivers);
 			taskexecutors.addAll(tes);
 			while (taskexecutors.size() != job.getTaskexecutors().size()) {
 				Thread.sleep(1000);

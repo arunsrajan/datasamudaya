@@ -55,6 +55,7 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.DataSamudayaUsers;
 import com.github.datasamudaya.common.DestroyContainer;
 import com.github.datasamudaya.common.DestroyContainers;
+import com.github.datasamudaya.common.EXECUTORTYPE;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
 import com.github.datasamudaya.common.GlobalJobFolderBlockLocations;
@@ -768,6 +769,15 @@ public class FileBlocksPartitionerHDFS {
 		job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser(), pipelineconfig.getTejobid()));
 		job.setId(pipelineconfig.getJobid());
 		// Get containers
+		LaunchContainers launchcontainer = job.getLcs().get(0);
+		ContainerResources continerresources = launchcontainer.getCla().getCr().get(0);
+		if(continerresources.getExecutortype() == EXECUTORTYPE.DRIVER) {
+			if(launchcontainer.getCla().getCr().size()>1) {
+				launchcontainer.getCla().getCr().remove(0);
+			} else {
+				job.getLcs().remove(0);
+			}
+		}
 		containers = job.getLcs().stream().flatMap(lc -> {
 			var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
 			return lc.getCla().getCr().stream().map(cr -> {

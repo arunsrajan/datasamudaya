@@ -285,7 +285,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		}
 		ActorSelection actorselection = downstreampipelines.get(filetransferindex);
 		actorselection.tell(new OutputObject(new ShuffleBlock(null,
-						Utils.convertObjectToBytes(filepartids.get(filetransferindex)), Utils.convertObjectToBytes(dataSet)), left, right, Dummy.class),
+						Utils.convertObjectToBytes(filepartids.get(filetransferindex)), Utils.convertObjectToBytesCompressed(dataSet, null)), left, right, null),
 				ActorRef.noSender());
 		dataSet.clear();
 	}

@@ -1,14 +1,11 @@
 package com.github.datasamudaya.stream.executors.actors;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,13 +18,14 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
-import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
@@ -43,9 +41,6 @@ import com.github.datasamudaya.stream.utils.StreamUtils;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
-import akka.cluster.Cluster;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 
 /**
  * Akka actors for the Reduce operators.
@@ -53,8 +48,7 @@ import akka.event.LoggingAdapter;
  *
  */
 public class ProcessReduce extends AbstractActor implements Serializable {
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
-	Cluster cluster = Cluster.get(getContext().getSystem());
+	Logger log = LoggerFactory.getLogger(ProcessReduce.class);
 	
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
@@ -120,11 +114,13 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 							Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 							log.info("ProcessReduce::: Spilled Write Completed");
 						} else {
-							log.info("ProcessReduce::: NotSpilled {}",  dsl.getData().size());
+							log.info("ProcessReduce::: NotSpilled {}",  dsl.isSpilled());
 							diskspilllistinterm.addAll(dsl.getData());
-							log.info("ProcessReduce::: NotSpilled Completed size {}",  dsl.getData().size());
+							log.info("ProcessReduce::: NotSpilled Completed {}",  dsl.isSpilled());
 						}
 						dsl.clear();
+					} else if (obj instanceof byte[] data){
+						diskspilllistinterm.addAll((Collection<?>)Utils.convertBytesToObjectCompressed(data, null));
 					}
 				} catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);

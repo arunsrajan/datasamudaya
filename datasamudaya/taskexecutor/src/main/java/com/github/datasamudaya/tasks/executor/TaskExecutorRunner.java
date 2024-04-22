@@ -8,10 +8,8 @@
  */
 package com.github.datasamudaya.tasks.executor;
 
-import akka.actor.ActorRef;
-
-import static java.util.Objects.nonNull;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -21,7 +19,6 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -75,6 +72,7 @@ import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 import com.typesafe.config.Config;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.cluster.Cluster;
 import io.micrometer.core.instrument.Clock;
@@ -158,7 +156,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					new LinkedBlockingQueue());
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid, executortype);
-			ter.start(zo, jobid);
+			ter.start(zo, jobid, executortype);
 			int metricsport = Utils.getRandomPort();
 			DefaultExports.initialize(); // Initialize JVM metrics
 			PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT,
@@ -228,7 +226,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	 */
 	@SuppressWarnings({})
 	@Override
-	public void start(ZookeeperOperations zo, String jobid) throws Exception {
+	public void start(ZookeeperOperations zo, String jobid, String executortype) throws Exception {
 		var port = Integer.parseInt(System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 		log.info("TaskExecutor Port: {}", port);
 		var su = new ServerUtils();
@@ -251,27 +249,33 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		sortServer = new RemoteIteratorServer(inmemorycache).start();
 		cl = TaskExecutorRunner.class.getClassLoader();
 		ActorSystem system = null;
-		while(true) {
-			try {
-				Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.AKKA_HOST
-				, DataSamudayaConstants.AKKA_HOST_DEFAULT)
-				, Utils.getRandomPort(),
-						Runtime.getRuntime().availableProcessors());
-				system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
-				break;
-			} catch(Exception ex) {
-				log.error("Unable To Create Akka Actors System...",ex);
-				log.info("Trying to create Akka actor system again...");
+		Cluster cluster;
+		final String actorsystemurl;
+		if(executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
+			while(true) {
+				try {
+					Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.AKKA_HOST
+					, DataSamudayaConstants.AKKA_HOST_DEFAULT)
+					, Utils.getRandomPort(),
+							Runtime.getRuntime().availableProcessors());
+					system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
+					break;
+				} catch(Exception ex) {
+					log.error("Unable To Create Akka Actors System...",ex);
+					log.info("Trying to create Akka actor system again...");
+				}
 			}
+			cluster = Cluster.get(system);
+			cluster.join(cluster.selfAddress());
+	
+			actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME + "://" + DataSamudayaConstants.ACTORUSERNAME + "@"
+					+ system.provider().getDefaultAddress().getHost().get() + ":" + system.provider().getDefaultAddress().getPort().get() + "/user";
+	
+			log.info("Actor System Url {}", actorsystemurl);
+		} else {
+			actorsystemurl = "";
+			cluster = null;
 		}
-		Cluster cluster = Cluster.get(system);
-		cluster.join(cluster.selfAddress());
-
-		final String actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME + "://" + DataSamudayaConstants.ACTORUSERNAME + "@"
-				+ system.provider().getDefaultAddress().getHost().get() + ":" + system.provider().getDefaultAddress().getPort().get() + "/user";
-
-		log.info("Actor System Url {}", actorsystemurl);
-
 		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 		var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);

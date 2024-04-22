@@ -203,13 +203,10 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 								}).filter(Objects::nonNull));) {
 							if (MapUtils.isNotEmpty(shufflerectowrite)) {
 								int numfilepart = shufflerectowrite.size();
-								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
-										DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-								int totalranges = numfileperexec * numfilepart;
 								Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap)
 										.collect(
 												Collectors.groupingByConcurrent(
-														(Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % totalranges,
+														(Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 														Collectors.mapping(tup2 -> tup2,
 																Collectors.toCollection(() -> new DiskSpillingList(
 																		tasktoprocess, diskspillpercentage,
@@ -230,15 +227,19 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
 									pipeline.get(
-											entry.getKey()%numfilepart).tell(
+											entry.getKey()).tell(
 													new OutputObject(
 															new ShuffleBlock(null,
 																	Utils.convertObjectToBytes(
 																			shufflerectowrite.get(entry.getKey())),
 																	entry.getValue()),
-															leftvalue, rightvalue, ShuffleBlock.class),
+															leftvalue, rightvalue, null),
 													ActorRef.noSender());
-								});								
+								});
+								pipeline.entrySet().stream()
+										.forEach(entry -> entry.getValue().tell(
+												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class),
+												ActorRef.noSender()));
 							} else {
 								streammap.forEach(diskspilllist::add);
 								if(diskspilllist.isSpilled()) {
@@ -298,13 +299,10 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
 							if (MapUtils.isNotEmpty(shufflerectowrite)) {
 								int numfilepart = shufflerectowrite.size();
-								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
-										DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-								int totalranges = numfileperexec * numfilepart;
 								Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap)
 										.collect(
 												Collectors.groupingByConcurrent(
-														(Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % totalranges,
+														(Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 														Collectors.mapping(tup2 -> tup2,
 																Collectors.toCollection(() -> new DiskSpillingList(
 																		tasktoprocess, diskspillpercentage,
@@ -325,15 +323,19 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
 									pipeline.get(
-											entry.getKey()%numfilepart).tell(
+											entry.getKey()).tell(
 													new OutputObject(
 															new ShuffleBlock(null,
 																	Utils.convertObjectToBytes(
 																			shufflerectowrite.get(entry.getKey())),
 																	entry.getValue()),
-															leftvalue, rightvalue, ShuffleBlock.class),
+															leftvalue, rightvalue, null),
 													ActorRef.noSender());
 								});
+								pipeline.entrySet().stream()
+										.forEach(entry -> entry.getValue().tell(
+												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class),
+												ActorRef.noSender()));
 							} else {
 								log.info("Is Disk Spilling List Spilled {} stream processing for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								streammap.forEach(diskspilllist::add);

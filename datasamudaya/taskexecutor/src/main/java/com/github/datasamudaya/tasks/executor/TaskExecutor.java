@@ -113,26 +113,6 @@ public class TaskExecutor implements Callable<Object> {
 	ClassLoader cl;
 
 	/**
-	* initializes the zo.
-	* @param zo
-	* @param jobid
-	* @throws Exception
-	*/
-	public void init(ZookeeperOperations zo, String jobid) throws Exception {
-
-		var host = NetworkUtil
-				.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
-		var port = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT);
-
-		var hp = host + DataSamudayaConstants.UNDERSCORE + port;
-
-		zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
-			log.info("TaskExecutor {} initialized and started", hp);
-		});
-
-	}
-
-	/**
 	 * Executes the tasks and return the results.
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -145,7 +125,6 @@ public class TaskExecutor implements Callable<Object> {
 				tasktoreturn.taskstatus = TaskStatus.COMPLETED;
 				tasktoreturn.tasktype = TaskType.JOBSTAGEMAPPUT;
 				tasktoreturn.stagefailuremessage = "Acquired job stage: " + jobstage;
-				init(zo, jobstage.getJobid());
 				return tasktoreturn;
 			} else if (deserobj instanceof Task task) {
 				log.info("Acquired Task: " + task);
