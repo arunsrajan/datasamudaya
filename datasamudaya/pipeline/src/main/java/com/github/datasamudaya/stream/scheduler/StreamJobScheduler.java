@@ -2335,7 +2335,7 @@ public class StreamJobScheduler {
 										DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false,false ,false, null, null, 1);
 										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
 											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
-											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), nik.getTask().getFcsc(),
+											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(),null, false, false, false, nik.getTask().getFcsc(),
 													RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
 												while (client.hasNext()) {
 													log.info("Getting Next List From Remote Server");

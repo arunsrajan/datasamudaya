@@ -25,6 +25,10 @@ public class RemoteIteratorTask implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Task task;
+	private String appendwithpath; 
+	private boolean appendintermediate;
+	private boolean left;
+	private boolean right;
 	private List<FieldCollationDirection> fcsc;
 	private IteratorType iteratortype;
 }

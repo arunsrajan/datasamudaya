@@ -2637,7 +2637,12 @@ public class Utils {
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 		} else {
-			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask()
+					, dslinput.getAppendwithpath()
+					, dslinput.getAppendintermediate()
+					, dslinput.getLeft()
+					, dslinput.getRight()
+					, dslinput.getTask().getFcsc(),
 					RequestType.LIST, IteratorType.DISKSPILLITERATOR)) {
 				while (client.hasNext()) {
 					
@@ -2836,7 +2841,12 @@ public class Utils {
 
 							} else {
 								if(isNull(client)) {
-									client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+									client = new RemoteIteratorClient(dslinput.getTask()
+											, dslinput.getAppendwithpath()
+											, dslinput.getAppendintermediate()
+											,dslinput.getLeft()
+											,dslinput.getRight()
+											, dslinput.getTask().getFcsc(),
 										RequestType.LIST, IteratorType.DISKSPILLITERATOR);
 								}
 								if (isNull(iterator) && client.hasNext() || client.hasNext() && nonNull(iterator) && 
@@ -2969,7 +2979,10 @@ public class Utils {
 
 							} else {
 								if(isNull(client)) {
-									client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+									client = new RemoteIteratorClient(dslinput.getTask(),dslinput.getAppendwithpath(),
+											dslinput.getAppendintermediate(),
+											dslinput.getLeft(),
+											dslinput.getRight(), dslinput.getTask().getFcsc(),
 										RequestType.LIST, IteratorType.DISKSPILLITERATOR);
 								}
 								if (isNull(iterator) && client.hasNext() || client.hasNext() && nonNull(iterator) &&
@@ -3112,7 +3125,7 @@ public class Utils {
 								cachekeyindexmap.put(node.getCachekey(), cachekeyindexmap.get(node.getCachekey())+1);
 							} else {
 								if(isNull(taskrlistiterclientmap.get(node.getTask()))) {
-									taskrlistiterclientmap.put(node.getTask(), new RemoteIteratorClient<>(node.getTask(), null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION));
+									taskrlistiterclientmap.put(node.getTask(), new RemoteIteratorClient<>(node.getTask(), null, false, false ,false , null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION));
 								}
 								action.accept(taskrlistiterclientmap.get(node.getTask()).next().getValue());
 							}
@@ -3503,7 +3516,12 @@ public class Utils {
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 		} else {
-			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask()
+					, dslinput.getAppendwithpath()
+					, dslinput.getAppendintermediate()
+					, dslinput.getLeft()
+					, dslinput.getRight()
+					, dslinput.getTask().getFcsc(),
 					RequestType.LIST, IteratorType.DISKSPILLITERATOR)) {
 				while (client.hasNext()) {
 					
@@ -3545,7 +3563,12 @@ public class Utils {
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 		} else {
-			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask()
+					, dslinput.getAppendwithpath()
+					, dslinput.getAppendintermediate()
+					, dslinput.getLeft()
+					, dslinput.getRight()
+					, dslinput.getTask().getFcsc(),
 					RequestType.LIST, IteratorType.DISKSPILLITERATOR)) {
 				while (client.hasNext()) {
 					
@@ -3587,7 +3610,12 @@ public class Utils {
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 		} else {
-			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getTask().getFcsc(),
+			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask()
+					, dslinput.getAppendwithpath()
+					, dslinput.getAppendintermediate()
+					, dslinput.getLeft()
+					, dslinput.getRight()
+					,dslinput.getTask().getFcsc(),
 					RequestType.LIST, IteratorType.DISKSPILLITERATOR)) {
 				while (client.hasNext()) {
 					

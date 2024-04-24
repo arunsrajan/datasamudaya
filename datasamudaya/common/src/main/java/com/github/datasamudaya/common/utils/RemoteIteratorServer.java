@@ -92,7 +92,7 @@ public class RemoteIteratorServer<T> {
 								iteratortype = rlit.getIteratortype();
 								log.info("Obtaining Cache for File {} with FCD {}",task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid, lfcds);
 								byte[] bt = cache.get(task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid);
-								baistream = nonNull(bt)?new ByteArrayInputStream(bt):new FileInputStream(Utils.getLocalFilePathForTask(task, null, false, false, false));
+								baistream = nonNull(bt)?new ByteArrayInputStream(bt):new FileInputStream(Utils.getLocalFilePathForTask(task, rlit.getAppendwithpath(), rlit.isAppendintermediate(), rlit.isLeft(), rlit.isRight()));
 								sis = new SnappyInputStream(baistream);
 								inputfile = new Input(sis);
 								log.info("Obtaining Input {}", baistream);
