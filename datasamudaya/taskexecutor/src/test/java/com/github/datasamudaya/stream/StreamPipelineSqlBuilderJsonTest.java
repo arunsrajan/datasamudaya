@@ -31,7 +31,7 @@ import org.junit.Test;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
-import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 
 public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestCommon {
 	List<String> githubeventsheader = Arrays.asList("id", "type", "actor", "repo", "payload",
@@ -54,7 +54,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		String statement = "SELECT * FROM gevents";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -78,7 +78,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		String statement = "SELECT * FROM gevents WHERE gevents.type='CreateEvent' and gevents.public='true'";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -103,7 +103,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		String statement = "SELECT gevents.id,gevents.type,gevents.public FROM gevents ";
 
 		int total = 0;
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -126,7 +126,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsWithWhere() method Entry");
 		String statement = "SELECT gevents.id,gevents.type,gevents.public FROM gevents WHERE gevents.type='CreateEvent' and gevents.public='true'";
 
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -154,7 +154,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				FROM gevents \
 				WHERE gevents.id>2614896676\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -182,7 +182,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				FROM gevents \
 				WHERE gevents.id<2614896676\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -211,7 +211,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				FROM gevents \
 				WHERE gevents.id>=2614896676\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -239,7 +239,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				FROM gevents \
 				WHERE gevents.id<=2614896676\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -267,7 +267,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				FROM gevents \
 				WHERE 'CreateEvent'=gevents.type\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -294,7 +294,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				FROM gevents \
 				WHERE gevents.type=gevents.type\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -317,7 +317,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsCount() method Entry");
 
 		String statement = "SELECT count(*) FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -333,7 +333,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsCountWithWhere() method Entry");
 
 		String statement = "SELECT count(*) FROM gevents WHERE gevents.type='CreateEvent'";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -350,7 +350,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsSumWithWhere() method Entry");
 
 		String statement = "SELECT sum(gevents.id) FROM gevents WHERE 'CreateEvent'=gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -367,7 +367,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsMinWithWhere() method Entry");
 
 		String statement = "SELECT min(gevents.id) FROM gevents WHERE 'PushEvent'=gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -383,7 +383,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsMaxWithWhere() method Entry");
 
 		String statement = "SELECT max(gevents.id) FROM gevents WHERE 'IssueCommentEvent'=gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -401,7 +401,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				SELECT * FROM gevents \
 				WHERE gevents.id>2614896670 and gevents.type='CreateEvent'\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -427,7 +427,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				SELECT * FROM gevents \
 				WHERE (gevents.id>2614896670 or gevents.type='CreateEvent')\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -450,7 +450,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testNumberOfRecordsEventType() throws Exception {
 		log.info("In testNumberOfRecordsEventType() method Entry");
 		String statement = "SELECT gevents.type, count(*) FROM gevents GROUP BY gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -472,7 +472,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testNumberOfPushEventsWithWhere() throws Exception {
 		log.info("In testNumberOfPushEventsWithWhere() method Entry");
 		String statement = "SELECT count(*) FROM gevents WHERE gevents.type='PushEvent'";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -493,7 +493,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testSumByEventType() throws Exception {
 		log.info("In testSumByEventType() method Entry");
 		String statement = "SELECT gevents.type, sum(gevents.id) FROM gevents GROUP BY gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -515,7 +515,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testSumTotalIdRecordCount() throws Exception {
 		log.info("In testSumTotalIdRecordCount() method Entry");
 		String statement = "SELECT gevents.type, sum(gevents.id), count(*) FROM gevents GROUP BY gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -540,7 +540,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testSumIdAvgIdEventType() throws Exception {
 		log.info("In testSumIdAvgIdEventType() method Entry");
 		String statement = "SELECT gevents.type, sum(gevents.id),avg(gevents.id) avgid FROM gevents GROUP BY gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -565,7 +565,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testEventTypeOrderBy() throws Exception {
 		log.info("In testEventTypeOrderBy() method Entry");
 		String statement = "SELECT * FROM gevents WHERE gevents.type='PushEvent' or gevents.type='CreateEvent' ORDER BY gevents.type DESC";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -589,7 +589,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testDistinctEventsType() throws Exception {
 		log.info("In testDistinctEventsType() method Entry");
 		String statement = "SELECT distinct gevents.type FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -611,7 +611,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testDistinctEventTypesWithWhere() throws Exception {
 		log.info("In testDistinctEventTypesWithWhere() method Entry");
 		String statement = "SELECT distinct gevents.type FROM gevents where gevents.type <> 'PushEvent'";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -633,7 +633,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testDistinctIdTypeWithWhereAndOrder() throws Exception {
 		log.info("In testDistinctIdTypeWithWhereAndOrder() method Entry");
 		String statement = "SELECT distinct gevents.id,gevents.type FROM gevents where gevents.type <> 'PushEvent' order by gevents.id,gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -656,7 +656,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsAvg() method Entry");
 
 		String statement = "SELECT avg(gevents.id) FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -673,7 +673,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsAvgIdPerType() method Entry");
 
 		String statement = "SELECT gevents.type,avg(gevents.id) FROM gevents group by gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -700,7 +700,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsAvgIdPerTypeWithWhere() method Entry");
 
 		String statement = "SELECT gevents.type,avg(gevents.id) FROM gevents where gevents.type='PushEvent' or gevents.type='CreateEvent' group by gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -731,7 +731,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				sum(gevents.id) as sumid, count(*) as ct, min(gevents.id) as minid, max(gevents.id) as maxid\
 				 FROM gevents group by gevents.type order by gevents.type, avgid\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -756,7 +756,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 				sum(gevents.id) as sumid, count(*) as ct, min(gevents.id) as minid, max(gevents.id) as maxid\
 				 FROM gevents group by gevents.type order by avgid\
 				""";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -778,7 +778,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testColumnLength() method Entry");
 
 		String statement = "SELECT length(gevents.type) FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -798,7 +798,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnWithLength() method Entry");
 
 		String statement = "SELECT gevents.type,length(gevents.type)  FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -818,7 +818,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnWithMultipleLengths() method Entry");
 
 		String statement = "SELECT gevents.type,length(gevents.type),length(gevents.created_at)  FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -838,7 +838,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Entry");
 
 		String statement = "SELECT lowercase(gevents.type),lowercase(gevents.actor),length(gevents.type),length(gevents.actor)  FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -857,7 +857,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnWithLengthsAndUppercase() method Entry");
 
 		String statement = "SELECT uppercase(gevents.type),uppercase(gevents.actor),length(gevents.type),length(gevents.actor)  FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -876,7 +876,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnTrim() method Entry");
 
 		String statement = "SELECT trim(gevents.type + ' ') trmtype ,trim(' ' + gevents.type) trimtypefront FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -895,7 +895,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnBase64Encode() method Entry");
 
 		String statement = "SELECT base64encode(gevents.type) FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -914,7 +914,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnSubStringAlias() method Entry");
 
 		String statement = "SELECT gevents.type,substring(gevents.type,0,1) as substr  FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -933,7 +933,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnSubString() method Entry");
 
 		String statement = "SELECT gevents.type,substring(gevents.type,0,1) FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -952,7 +952,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnNormailizeSpaces() method Entry");
 
 		String statement = "SELECT normalizespaces(gevents.type),normalizespaces(' This is   good  work') eg FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -971,7 +971,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testDate() method Entry");
 
 		String statement = "SELECT normalizespaces(' This is   good  work') normspace,currentisodate() isodate FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -990,7 +990,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testDateWithCount() method Entry");
 
 		String statement = "SELECT normalizespaces(gevents.type + ' This is   good  work') normspace,currentisodate() isodate,count(*) numrec FROM gevents group by gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -1009,7 +1009,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testSumWithMultuplication() method Entry");
 
 		String statement = "SELECT sum(gevents.id * 2) FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -1023,7 +1023,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testSumWithAddition() method Entry");
 
 		String statement = "SELECT sum(gevents.id + 2) FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -1037,7 +1037,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testSumWithSubtraction() method Entry");
 
 		String statement = "SELECT sum(gevents.id - 2) FROM gevents";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();
@@ -1050,7 +1050,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 	public void testSumWithBase64Encode() throws Exception {
 		log.info("In testSumWithBase64Encode() method Entry");
 		String statement = "SELECT base64encode(gevents.type) originalias,sum(gevents.id - 2) FROM gevents group by gevents.type";
-		StreamPipelineSql spsql = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(githubevents, "gevents", githubeventsheader, githubeventsheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.JSON).setSql(statement).build();

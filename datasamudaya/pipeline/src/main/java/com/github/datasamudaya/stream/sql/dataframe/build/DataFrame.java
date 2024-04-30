@@ -27,7 +27,7 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.SimpleSchema;
@@ -196,7 +196,7 @@ public class DataFrame {
 		RelNode relnode = builder.build();
 		String sql = convertRelNodeToSqlString(relnode, SqlDialect.DatabaseProduct.H2.getDialect());
 		log.info("SQL From DataFrame Builder {}", sql);
-		StreamPipelineSql sps = StreamPipelineCalciteSqlBuilder.newBuilder()
+		StreamPipelineSql sps = StreamPipelineSqlBuilder.newBuilder()
 				.add(dfcontext.folder, dfcontext.tablename,
 						Arrays.asList(dfcontext.columns), dfcontext.types)
 				.setSql(sql)

@@ -2845,6 +2845,8 @@ public class SQLUtils {
 				return value.getValueAs(Double.class);
 			} else if (type == SqlTypeName.DECIMAL) {
 				return value.getValueAs(Double.class);
+			} else if (type == SqlTypeName.BOOLEAN) {
+				return value.getValueAs(Boolean.class);
 			} else if (type == SqlTypeName.SYMBOL) {
 				return ((SqlTrimFunction.Flag)value.getValue4()).name();
 			} else {
@@ -3248,6 +3250,9 @@ public class SQLUtils {
 			Object value1 = getValueObject(call.operands.get(0), values1, values2);
 			Object value2 = getValueObject(call.operands.get(1), values1, values2);
 			return evaluatePredicate(value1, value2, "<=");
+		} else if (node instanceof RexLiteral rlit) {
+			// Boolean Value
+			return (boolean) getValue((RexLiteral)rlit, rlit.getType().getSqlTypeName());
 		} else {
 			return false;
 		}

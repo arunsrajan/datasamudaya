@@ -114,7 +114,7 @@ public class Optimizer {
 
 		SqlToRelConverter.Config converterConfig = SqlToRelConverter.configBuilder()
 				.withTrimUnusedFields(true)
-				.withExpand(false)
+				.withExpand(true)
 				.build();
 
 		SqlToRelConverter converter = new SqlToRelConverter(

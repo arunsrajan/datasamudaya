@@ -20,7 +20,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.stream.PipelineException;
-import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 
@@ -81,7 +81,7 @@ public class SelectQueryExecutor {
 			Statement statement = parserManager.parse(new StringReader(selectquery));
 			var tables = new ArrayList<String>();
 			SQLUtils.getAllTables(statement, tables);
-			var builder = StreamPipelineCalciteSqlBuilder.newBuilder()
+			var builder = StreamPipelineSqlBuilder.newBuilder()
 					.setHdfs(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);
@@ -267,7 +267,7 @@ public class SelectQueryExecutor {
 			Statement statement = parserManager.parse(new StringReader(selectquery));
 			var tables = new ArrayList<String>();
 			SQLUtils.getAllTables(statement, tables);
-			var builder = StreamPipelineCalciteSqlBuilder.newBuilder()
+			var builder = StreamPipelineSqlBuilder.newBuilder()
 					.setHdfs(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);

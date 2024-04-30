@@ -19,6 +19,7 @@ import org.apache.calcite.adapter.enumerable.EnumerableAggregateBase;
 import org.apache.calcite.adapter.enumerable.EnumerableFilter;
 import org.apache.calcite.adapter.enumerable.EnumerableHashJoin;
 import org.apache.calcite.adapter.enumerable.EnumerableIntersect;
+import org.apache.calcite.adapter.enumerable.EnumerableNestedLoopJoin;
 import org.apache.calcite.adapter.enumerable.EnumerableProject;
 import org.apache.calcite.adapter.enumerable.EnumerableSort;
 import org.apache.calcite.adapter.enumerable.EnumerableSortedAggregate;
@@ -63,9 +64,9 @@ import net.sf.jsqlparser.util.validation.feature.DatabaseType;
  * @author arun
  *
  */
-public class StreamPipelineCalciteSqlBuilder implements Serializable {
+public class StreamPipelineSqlBuilder implements Serializable {
 	private static final long serialVersionUID = -8585345445522511086L;
-	private static final Logger log = LoggerFactory.getLogger(StreamPipelineCalciteSqlBuilder.class);
+	private static final Logger log = LoggerFactory.getLogger(StreamPipelineSqlBuilder.class);
 	String sql;
 	String db;
 	String fileformat;
@@ -76,7 +77,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	transient PipelineConfig pc;
 	private final Stack<List<String>> columnstack = new Stack<>();
 
-	private StreamPipelineCalciteSqlBuilder() {
+	private StreamPipelineSqlBuilder() {
 
 	}
 
@@ -85,8 +86,8 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	 * 
 	 * @return sql builder object.
 	 */
-	public static StreamPipelineCalciteSqlBuilder newBuilder() {
-		return new StreamPipelineCalciteSqlBuilder();
+	public static StreamPipelineSqlBuilder newBuilder() {
+		return new StreamPipelineSqlBuilder();
 	}
 
 	/**
@@ -99,7 +100,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	 * @param sqltypes
 	 * @return sql builder object
 	 */
-	public StreamPipelineCalciteSqlBuilder add(String folder, String tablename, List<String> columns,
+	public StreamPipelineSqlBuilder add(String folder, String tablename, List<String> columns,
 			List<SqlTypeName> sqltypes) {
 		tablefoldermap.put(tablename, folder);
 		tablecolumnsmap.put(tablename, columns);
@@ -113,7 +114,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	 * @param hdfs
 	 * @return sql builder object
 	 */
-	public StreamPipelineCalciteSqlBuilder setHdfs(String hdfs) {
+	public StreamPipelineSqlBuilder setHdfs(String hdfs) {
 		this.hdfs = hdfs;
 		return this;
 	}
@@ -124,7 +125,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	 * @param pc
 	 * @return sql builder object
 	 */
-	public StreamPipelineCalciteSqlBuilder setPipelineConfig(PipelineConfig pc) {
+	public StreamPipelineSqlBuilder setPipelineConfig(PipelineConfig pc) {
 		this.pc = pc;
 		return this;
 	}
@@ -135,7 +136,7 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	 * @param sql
 	 * @return sql builder object
 	 */
-	public StreamPipelineCalciteSqlBuilder setSql(String sql) {
+	public StreamPipelineSqlBuilder setSql(String sql) {
 		this.sql = sql;
 		return this;
 	}
@@ -146,12 +147,12 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 	 * @param db
 	 * @return sql builder object
 	 */
-	public StreamPipelineCalciteSqlBuilder setDb(String db) {
+	public StreamPipelineSqlBuilder setDb(String db) {
 		this.db = db;
 		return this;
 	}
 
-	public StreamPipelineCalciteSqlBuilder setFileformat(String fileformat) {
+	public StreamPipelineSqlBuilder setFileformat(String fileformat) {
 		this.fileformat = fileformat;
 		return this;
 	}
@@ -275,6 +276,31 @@ public class StreamPipelineCalciteSqlBuilder implements Serializable {
 				});
 			}
 			return spjoin;
+		} else if(relNode instanceof EnumerableNestedLoopJoin enlj) {
+			StreamPipeline<Object[]> spjoin = (StreamPipeline<Object[]>) buildJoinPredicate((StreamPipeline<Object[]>) sp.get(0)
+					, (StreamPipeline<Object[]>) sp.get(1)
+					, enlj.getJoinType(),
+					enlj.getCondition()).map(new MapFunction<Tuple2<Object[], Object[]>, Object[]>() {
+						private static final long serialVersionUID = 7234029084423998495L;
+
+						@Override
+						public Object[] apply(Tuple2<Object[], Object[]> tup2) {
+
+							return new Object[]{concatenate(((Object[]) tup2.v1()[0]), ((Object[]) tup2.v2()[0])),
+									concatenate(((Object[]) tup2.v1()[1]), ((Object[]) tup2.v2()[1]))};
+						}
+					});
+					;
+					if (!SQLUtils.hasDescendants(relNode, descendants)) {
+						return spjoin.map(new MapFunction<Object[], Object[]>(){
+							private static final long serialVersionUID = 15264560692156277L;
+
+							public Object[] apply(Object[] values) {
+								return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+							}
+						});
+					}
+					return spjoin;
 		} else if (relNode instanceof EnumerableUnion) {
 			StreamPipeline<Object[]> spunion = (StreamPipeline<Object[]>) buildUnion((StreamPipeline<Object[]>) sp.get(0)
 			, (StreamPipeline<Object[]>) sp.get(1)
