@@ -8,20 +8,22 @@ import java.io.FileInputStream;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.ehcache.Cache;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
@@ -32,9 +34,6 @@ import com.github.datasamudaya.common.utils.Utils;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
-import akka.cluster.Cluster;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 
 /**
  * Akka actors for the left outer join operators
@@ -42,8 +41,7 @@ import akka.event.LoggingAdapter;
  *
  */
 public class ProcessLeftOuterJoin extends AbstractActor implements Serializable {
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
-	Cluster cluster = Cluster.get(getContext().getSystem());
+	private static Logger log =LoggerFactory.getLogger(ProcessLeftOuterJoin.class);
 
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
@@ -86,6 +84,7 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 	}
 
 	private ProcessLeftOuterJoin processLeftOuterJoin(OutputObject oo) throws Exception {
+		log.info("ProcessLeftOuterJoin {} {} {}", oo.getValue().getClass(), oo.isLeft(), oo.isRight());
 		if (oo.isLeft()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
@@ -108,6 +107,7 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
 				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
 				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
+			log.info("Left Outer Join Task {} from hostport {}", task, task.hostport);
 			if(diskspilllistintermleft.isSpilled()) {
 				diskspilllistintermleft.close();
 			}
@@ -132,22 +132,32 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 					var seq2 = Seq.seq(datastreamright);
 					var join = seq1.leftOuterJoin(seq2, lojp)) {
 				join.forEach(diskspilllistinterm::add);
+				if(diskspilllistinterm.isSpilled()) {
+					diskspilllistinterm.close();
+				}
 				Stream datastreamrightfirstelem = diskspilllistintermright.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
 						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
 								diskspilllistintermright.getLeft(), diskspilllistintermright.getRight()))) : diskspilllistintermright.getData().stream();
-				Object[] origobjarray = (Object[]) datastreamrightfirstelem.findFirst().get();
-				Object[][] nullobjarr = new Object[2][((Object[]) origobjarray[0]).length];
-				for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
-					nullobjarr[1][numvalues] = true;
-				}
-				if(diskspilllistinterm.isSpilled()) {
-					diskspilllistinterm.close();
-				}
+				Optional optionalfirstelement = datastreamrightfirstelem.findFirst();
+				Object[][] nullobjarr;
+				if(optionalfirstelement.isPresent()) {
+					Object[] origobjarray = (Object[]) optionalfirstelement.get();			
+					nullobjarr = new Object[2][((Object[]) origobjarray[0]).length];
+					for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
+						nullobjarr[1][numvalues] = true;
+					}					
+				} else {
+					nullobjarr = new Object[2][1];
+					for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
+						nullobjarr[1][numvalues] = true;
+					}	
+				}				
 				Stream diskspilllistintermstream = diskspilllistinterm.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
-						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-								diskspilllistinterm.getLeft(), diskspilllistinterm.getRight()))) : diskspilllistinterm.getData().stream();
+								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null,
+										true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+						: diskspilllistinterm.getData().stream();
 				diskspilllistintermstream.filter(val -> val instanceof Tuple2).map(value -> {
 					Tuple2 maprec = (Tuple2) value;
 					Object[] rec1 = (Object[]) maprec.v1;
@@ -157,15 +167,15 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 					}
 					return maprec;
 				}).forEach(diskspilllist::add);
-				if(diskspilllist.isSpilled()) {
+				if (diskspilllist.isSpilled()) {
 					diskspilllist.close();
 				}
 				try {
-					if (Objects.nonNull(pipelines)) {
-						pipelines.parallelStream().forEach(downstreampipe -> {
-							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class),
+					log.info("processLeftOuterJoin::: DownStream Pipelines {}", pipelines);
+					if (CollectionUtils.isNotEmpty(pipelines)) {
+						pipelines.stream().forEach(downstreampipe -> {
+							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class),
 									ActorRef.noSender());
-							downstreampipe.tell(new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class), ActorRef.noSender());
 						});
 					} else {
 						Stream<Tuple2> datastream = diskspilllist.isSpilled()
@@ -191,6 +201,8 @@ public class ProcessLeftOuterJoin extends AbstractActor implements Serializable 
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
 				return this;
+			} catch(Exception ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 		}
 		return this;

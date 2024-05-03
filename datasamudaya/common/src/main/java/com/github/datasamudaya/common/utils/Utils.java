@@ -369,8 +369,7 @@ public class Utils {
 			StaticComponentContainer.Configuration.Default
 					.setFileName(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.BURNINGWAVE_PROPERTIES,
 							DataSamudayaConstants.BURNINGWAVE_PROPERTIES_DEFAULT));
-		} catch (UnsupportedOperationException uoe) {
-			log.error("Problem in loading burningwave properties, See the cause below", uoe);
+		} catch (UnsupportedOperationException uoe) {			
 		}
 	}
 

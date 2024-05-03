@@ -49,6 +49,9 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 		this.parents.add(parent);
 		parent.childs.add(this);
 		tasks.add(tointfunction);
+		this.pipelineconfig = parent.pipelineconfig;
+		this.csvoptions = parent.csvoptions;
+		this.json = parent.json;
 	}
 
 

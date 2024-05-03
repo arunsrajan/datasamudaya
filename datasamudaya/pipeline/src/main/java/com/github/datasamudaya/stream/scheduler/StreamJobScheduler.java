@@ -331,6 +331,7 @@ public class StreamJobScheduler {
 			}
 			log.debug("{}", sptsl);
 			var sptss = getFinalPhasesWithNoSuccessors(graph, sptsl);
+			log.info("Results To Print from stream pipeline tasks {}", sptss);
 			var partitionnumber = 0;
 			var ishdfs = false;
 			if (nonNull(job.getUri())) {
@@ -2002,75 +2003,111 @@ public class StreamJobScheduler {
 					|| function instanceof ReduceByKeyFunction || function instanceof ReduceByKeyFunctionValues
 					|| function instanceof ReduceFunction) {
 				partitionindex++;
-				Map<Integer, FilePartitionId> filepartitionsid = new ConcurrentHashMap<>();
-				new ConcurrentHashMap<>();
-				int nooffilepartitions = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
-						DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-				int startrange = 0;
-				int endrange = nooffilepartitions;
-				List<StreamPipelineTaskSubmitter> parents = outputparent1;
-				if (CollectionUtils.isNotEmpty(job.getTaskexecutors())) {
-					Map<String, List<Object>> hpsptsl = parents.stream()
-							.collect(Collectors.groupingBy(StreamPipelineTaskSubmitter::getHostPort,
-									Collectors.mapping(spts -> spts, Collectors.toList())));
-					for (Entry<String, List<Object>> entry : hpsptsl.entrySet()) {
-						int initialrange = startrange;
-						for (; initialrange < endrange; initialrange++) {
-							filepartitionsid.put(initialrange, new FilePartitionId(Utils.getUUID(),
-									DataSamudayaConstants.EMPTY, startrange, endrange, initialrange));
-						}
-						startrange += nooffilepartitions;
-						endrange += nooffilepartitions;
-						var parentsgraph = hpsptsl.get(entry.getKey());
-						var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
-								parentsgraph);
-						spts.getTask().parentterminatingsize = outputparent1.size();
-						tasks.add(spts);
-						graph.addVertex(spts);
-						for (var parent : parentsgraph) {
-							StreamPipelineTaskSubmitter parentthread = (StreamPipelineTaskSubmitter) parent;
-							parentthread.getTask().filepartitionsid = filepartitionsid;
-							spts.getTask().filepartitionsid = filepartitionsid;
-							tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid,
-									spts);
-							taskgraph.addVertex(spts.getTask());
-							if (!graph.containsVertex(parentthread)) {
-								graph.addVertex(parentthread);
+				if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
+					Map<Integer, FilePartitionId> filepartitionsid = new ConcurrentHashMap<>();
+					new ConcurrentHashMap<>();
+					int nooffilepartitions = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+							DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+					int startrange = 0;
+					int endrange = nooffilepartitions;
+					List<StreamPipelineTaskSubmitter> parents = outputparent1;
+					if (CollectionUtils.isNotEmpty(job.getTaskexecutors())) {
+						Map<String, List<Object>> hpsptsl = parents.stream()
+								.collect(Collectors.groupingBy(StreamPipelineTaskSubmitter::getHostPort,
+										Collectors.mapping(spts -> spts, Collectors.toList())));
+						for (Entry<String, List<Object>> entry : hpsptsl.entrySet()) {
+							int initialrange = startrange;
+							for (; initialrange < endrange; initialrange++) {
+								filepartitionsid.put(initialrange, new FilePartitionId(Utils.getUUID(),
+										DataSamudayaConstants.EMPTY, startrange, endrange, initialrange));
 							}
-							if (!taskgraph.containsVertex(parentthread.getTask())) {
-								taskgraph.addVertex(parentthread.getTask());
+							startrange += nooffilepartitions;
+							endrange += nooffilepartitions;
+							var parentsgraph = hpsptsl.get(entry.getKey());
+							var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+									parentsgraph);
+							spts.getTask().parentterminatingsize = outputparent1.size();
+							tasks.add(spts);
+							graph.addVertex(spts);
+							for (var parent : parentsgraph) {
+								StreamPipelineTaskSubmitter parentthread = (StreamPipelineTaskSubmitter) parent;
+								parentthread.getTask().filepartitionsid = filepartitionsid;
+								spts.getTask().filepartitionsid = filepartitionsid;
+								tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid,
+										spts);
+								taskgraph.addVertex(spts.getTask());
+								if (!graph.containsVertex(parentthread)) {
+									graph.addVertex(parentthread);
+								}
+								if (!taskgraph.containsVertex(parentthread.getTask())) {
+									taskgraph.addVertex(parentthread.getTask());
+								}
+								graph.addEdge(parentthread, spts);
+								taskgraph.addEdge(parentthread.getTask(), spts.getTask());
 							}
-							graph.addEdge(parentthread, spts);
-							taskgraph.addEdge(parentthread.getTask(), spts.getTask());
 						}
-					}
-					List<Task> tasksshuffle = tasks.stream().map(spts -> spts.getTask()).collect(Collectors.toList());
-					for (var input : outputparent1) {
-						if (input instanceof StreamPipelineTaskSubmitter parentthread) {
-							parentthread.getTask().setShufflechildactors(tasksshuffle);
+						List<Task> tasksshuffle = tasks.stream().map(spts -> spts.getTask()).collect(Collectors.toList());
+						for (var input : outputparent1) {
+							if (input instanceof StreamPipelineTaskSubmitter parentthread) {
+								parentthread.getTask().setShufflechildactors(tasksshuffle);
+							}
+						}
+					} else {
+						for (int filepartcount = 0; filepartcount < 1; filepartcount++) {
+							int initialrange = startrange;
+							for (; initialrange < endrange; initialrange++) {
+								filepartitionsid.put(initialrange, new FilePartitionId(Utils.getUUID(),
+										DataSamudayaConstants.EMPTY, startrange, endrange, initialrange));
+							}
+							startrange += nooffilepartitions;
+							endrange += nooffilepartitions;
+							var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+									outputparent1);
+							spts.getTask().parentterminatingsize = parents.size();
+							tasks.add(spts);
+							graph.addVertex(spts);
+							for (var parent : outputparent1) {
+								StreamPipelineTaskSubmitter parentthread = (StreamPipelineTaskSubmitter) parent;
+								parentthread.getTask().filepartitionsid = filepartitionsid;
+								spts.getTask().filepartitionsid = filepartitionsid;
+								spts.getTask().parentterminatingsize = outputparent1.size();
+								tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid,
+										spts);
+								taskgraph.addVertex(spts.getTask());
+								if (!graph.containsVertex(parentthread)) {
+									graph.addVertex(parentthread);
+								}
+								if (!taskgraph.containsVertex(parentthread.getTask())) {
+									taskgraph.addVertex(parentthread.getTask());
+								}
+								graph.addEdge(parentthread, spts);
+								taskgraph.addEdge(parentthread.getTask(), spts.getTask());
+							}
+						}
+						List<Task> tasksshuffle = tasks.stream().map(spts -> spts.getTask()).collect(Collectors.toList());
+						for (var input : outputparent1) {
+							if (input instanceof StreamPipelineTaskSubmitter parentthread) {
+								parentthread.getTask().setShufflechildactors(tasksshuffle);
+							}
 						}
 					}
 				} else {
-					for (int filepartcount = 0; filepartcount < 1; filepartcount++) {
-						int initialrange = startrange;
-						for (; initialrange < endrange; initialrange++) {
-							filepartitionsid.put(initialrange, new FilePartitionId(Utils.getUUID(),
-									DataSamudayaConstants.EMPTY, startrange, endrange, initialrange));
-						}
-						startrange += nooffilepartitions;
-						endrange += nooffilepartitions;
-						var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
-								outputparent1);
-						spts.getTask().parentterminatingsize = parents.size();
-						tasks.add(spts);
-						graph.addVertex(spts);
-						for (var parent : outputparent1) {
-							StreamPipelineTaskSubmitter parentthread = (StreamPipelineTaskSubmitter) parent;
-							parentthread.getTask().filepartitionsid = filepartitionsid;
-							spts.getTask().filepartitionsid = filepartitionsid;
-							spts.getTask().parentterminatingsize = outputparent1.size();
-							tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid,
-									spts);
+					for (var input : outputparent1) {								
+						if (input instanceof Task task) {
+							var spts = getPipelineTasks(jobid, input, currentstage, partitionindex, currentstage.number,
+									null);
+							tasks.add(spts);
+							graph.addVertex(spts);
+							tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
+							taskgraph.addVertex(task);
+							taskgraph.addVertex(spts.getTask());
+							taskgraph.addEdge(task, spts.getTask());
+						} else if(input instanceof StreamPipelineTaskSubmitter parentthread) {
+							var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+									Arrays.asList(input));
+							tasks.add(spts);
+							graph.addVertex(spts);
+							tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
 							taskgraph.addVertex(spts.getTask());
 							if (!graph.containsVertex(parentthread)) {
 								graph.addVertex(parentthread);
@@ -2081,12 +2118,7 @@ public class StreamJobScheduler {
 							graph.addEdge(parentthread, spts);
 							taskgraph.addEdge(parentthread.getTask(), spts.getTask());
 						}
-					}
-					List<Task> tasksshuffle = tasks.stream().map(spts -> spts.getTask()).collect(Collectors.toList());
-					for (var input : outputparent1) {
-						if (input instanceof StreamPipelineTaskSubmitter parentthread) {
-							parentthread.getTask().setShufflechildactors(tasksshuffle);
-						}
+							
 					}
 				}
 			} else if (function instanceof DistributedSort){

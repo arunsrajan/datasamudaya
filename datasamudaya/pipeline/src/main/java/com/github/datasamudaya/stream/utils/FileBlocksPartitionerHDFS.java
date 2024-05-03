@@ -877,6 +877,7 @@ public class FileBlocksPartitionerHDFS {
 			res.setMaxmemory(heapmem);
 			res.setDirectheap(memoryrequire - heapmem);
 			res.setGctype(gctype);
+			res.setExecutortype(EXECUTORTYPE.EXECUTOR);
 			cr.add(res);
 			return cr;
 		} else if (pipelineconfig.getContaineralloc().equals(DataSamudayaConstants.CONTAINER_ALLOC_DIVIDED)) {
@@ -897,6 +898,7 @@ public class FileBlocksPartitionerHDFS {
 					res.setMaxmemory(heapmem);
 					res.setDirectheap(maxmemory - heapmem);
 					res.setGctype(gctype);
+					res.setExecutortype(EXECUTORTYPE.EXECUTOR);
 					cpu -= dividedcpus;
 					actualmemory -= maxmemory;
 					cr.add(res);
@@ -908,6 +910,7 @@ public class FileBlocksPartitionerHDFS {
 					res.setMaxmemory(heapmem);
 					res.setDirectheap(maxmemory - heapmem);
 					res.setGctype(gctype);
+					res.setExecutortype(EXECUTORTYPE.EXECUTOR);
 					cpu = 0;
 					actualmemory -= maxmemory;
 					cr.add(res);
@@ -943,6 +946,7 @@ public class FileBlocksPartitionerHDFS {
 				res.setMaxmemory(heapmem);
 				res.setDirectheap(memoryrequired - heapmem);
 				res.setGctype(gctype);
+				res.setExecutortype(EXECUTORTYPE.EXECUTOR);
 				cr.add(res);
 			}
 			return cr;
@@ -966,6 +970,7 @@ public class FileBlocksPartitionerHDFS {
 			res.setMaxmemory(heapmem);
 			res.setDirectheap(memoryrequire - heapmem);
 			res.setGctype(gctype);
+			res.setExecutortype(EXECUTORTYPE.EXECUTOR);
 			cr.add(res);
 			return cr;
 		} else {

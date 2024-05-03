@@ -1190,7 +1190,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			// If ignite mode is choosen
 			boolean isignite = Objects.isNull(pipelineconfig.getMode()) ? false
 					: pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_DEFAULT) ? true : false;
-			if (pipelineconfig.getIsremotescheduler() && Boolean.FALSE.equals(ismesos) && Boolean.FALSE.equals(isyarn) && Boolean.FALSE.equals(islocal)
+			if (nonNull(pipelineconfig.getUseglobaltaskexecutors())
+					&& pipelineconfig.getUseglobaltaskexecutors()
+					&& nonNull(pipelineconfig.getIsremotescheduler())
+					&& pipelineconfig.getIsremotescheduler() 
+					&& Boolean.FALSE.equals(ismesos) 
+					&& Boolean.FALSE.equals(isyarn) 
+					&& Boolean.FALSE.equals(islocal)
 					&& !isignite) {
 				RemoteJobScheduler rjs = new RemoteJobScheduler();
 				return rjs.scheduleJob(job);

@@ -105,6 +105,9 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 					new StreamDataCruncher() {
 						public Object postObject(Object object) throws RemoteException {
 							try {
+								if (object instanceof byte[] bytes) {
+									object = Utils.convertBytesToObjectCompressed(bytes, null);
+								}
 								var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
 										containerprocesses, hdfs, containeridthreads, containeridports,
 										object, zo);
@@ -166,6 +169,9 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		fbp.pipelineconfig = new PipelineConfig();
 		fbp.pipelineconfig.setMaxmem("2048");
 		fbp.pipelineconfig.setNumberofcontainers("2");
+		fbp.pipelineconfig.setLocal("true");
+		fbp.pipelineconfig.setUseglobaltaskexecutors(false);
+		fbp.pipelineconfig.setIsremotescheduler(false);
 		fbp.job = new Job();
 		fbp.job.setId(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 		fbp.job.setJm(new JobMetrics());
@@ -186,6 +192,9 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		fbp.pipelineconfig = new PipelineConfig();
 		fbp.pipelineconfig.setMaxmem("1024");
 		fbp.pipelineconfig.setNumberofcontainers("2");
+		fbp.pipelineconfig.setLocal("true");
+		fbp.pipelineconfig.setUseglobaltaskexecutors(false);
+		fbp.pipelineconfig.setIsremotescheduler(false);
 		fbp.job = new Job();
 		fbp.job.setId(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 		fbp.job.setJm(new JobMetrics());

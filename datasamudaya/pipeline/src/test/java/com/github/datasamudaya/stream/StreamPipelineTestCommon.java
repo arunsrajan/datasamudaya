@@ -36,7 +36,7 @@ import org.ehcache.Cache;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
+import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaCacheManager;
@@ -75,6 +75,7 @@ public class StreamPipelineTestCommon {
 
 	@BeforeClass
 	public static void init() {
+		ByteBufferPoolDirect.init(512 * DataSamudayaConstants.MB);
 		es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	}
 
@@ -91,7 +92,6 @@ public class StreamPipelineTestCommon {
 		Configuration conf = new Configuration();
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
-		ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 				DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.CACHEBLOCKS);
@@ -131,7 +131,7 @@ public class StreamPipelineTestCommon {
 		if (!Objects.isNull(hdfs)) {
 			hdfs.close();
 		}
-		ByteBufferPoolDirectOld.destroy();
+		ByteBufferPoolDirect.destroyPool();
 		if (nonNull(DataSamudayaCacheManager.get())) {
 			DataSamudayaCacheManager.get().close();
 			DataSamudayaCacheManager.put(null);

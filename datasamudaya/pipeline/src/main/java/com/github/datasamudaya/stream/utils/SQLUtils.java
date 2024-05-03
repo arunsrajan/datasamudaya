@@ -2762,6 +2762,9 @@ public class SQLUtils {
 			return true;
 		} else if (rexnode instanceof RexInputRef inputRef) {
 			// Handle column references
+			if(boolvalues.length < inputRef.getIndex()) {
+				return true;
+			}
 			return (Boolean) boolvalues[inputRef.getIndex()];
 		} else if (rexnode instanceof RexCall call) {
 			String name = call.getOperator().getName().toLowerCase();

@@ -81,7 +81,7 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMap() throws Exception {
-		log.info("testMap Before---------------------------------------");
+		log.info("{}","testMap Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		String local = pipelineconfig.getLocal();
@@ -96,13 +96,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMap After---------------------------------------");
+		log.info("{}","testMap After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testFilter() throws Exception {
-		log.info("testFilter Before---------------------------------------");
+		log.info("{}","testFilter Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -117,13 +117,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testFilter After---------------------------------------");
+		log.info("{}","testFilter After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testflatMap() throws Exception {
-		log.info("testflatMap Before---------------------------------------");
+		log.info("{}","testflatMap Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -138,13 +138,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count * 29, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testflatMap After---------------------------------------");
+		log.info("{}","testflatMap After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testflatMapToDouble() throws Exception {
-		log.info("flatMapToDouble Before---------------------------------------");
+		log.info("{}","flatMapToDouble Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -167,13 +167,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("flatMapToDouble After---------------------------------------");
+		log.info("{}","flatMapToDouble After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testflatMapToLong() throws Exception {
-		log.info("testflatMapToLong Before---------------------------------------");
+		log.info("{}","testflatMapToLong Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -196,14 +196,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testflatMapToLong After---------------------------------------");
+		log.info("{}","testflatMapToLong After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testflatMapToTuple2() throws Exception {
-		log.info("testflatMapToTuple2 Before---------------------------------------");
+		log.info("{}","testflatMapToTuple2 Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -221,13 +221,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testflatMapToTuple2 After---------------------------------------");
+		log.info("{}","testflatMapToTuple2 After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testflatMapToTuple() throws Exception {
-		log.info("testflatMapToTuple Before---------------------------------------");
+		log.info("{}","testflatMapToTuple Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -245,13 +245,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testflatMapToTuple After---------------------------------------");
+		log.info("{}","testflatMapToTuple After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testKeyByFunction() throws Exception {
-		log.info("testKeyByFunction Before---------------------------------------");
+		log.info("{}","testKeyByFunction Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -266,19 +266,19 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testKeyByFunction After---------------------------------------");
+		log.info("{}","testKeyByFunction After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testLeftOuterJoin() throws Exception {
-		log.info("testLeftOuterJoin Before---------------------------------------");
+		log.info("{}","testLeftOuterJoin Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
-				pipelineconfig);
+				pipelineconfig).map(val->val);
 		StreamPipeline<String> datastream2 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
-				pipelineconfig);
+				pipelineconfig).map(val->val);
 		LineNumberReader linereader = new LineNumberReader(new InputStreamReader(new FileInputStream("src/test/resources/airlinesample.csv")));
 		long count = linereader.lines().count();
 		linereader.close();
@@ -289,13 +289,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testLeftOuterJoin After---------------------------------------");
+		log.info("{}","testLeftOuterJoin After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testLeftOuterJoinFilter() throws Exception {
-		log.info("testLeftOuterJoinFilter Before---------------------------------------");
+		log.info("{}","testLeftOuterJoinFilter Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -309,13 +309,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(3875, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testLeftOuterJoinFilter After---------------------------------------");
+		log.info("{}","testLeftOuterJoinFilter After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testJoin() throws Exception {
-		log.info("testJoin Before---------------------------------------");
+		log.info("{}","testJoin Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
@@ -332,13 +332,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testJoin After---------------------------------------");
+		log.info("{}","testJoin After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testJoinFilter() throws Exception {
-		log.info("testJoinFilter Before---------------------------------------");
+		log.info("{}","testJoinFilter Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
@@ -354,20 +354,20 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(3, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testJoinFilter After---------------------------------------");
+		log.info("{}","testJoinFilter After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testRightOuterJoin() throws Exception {
-		log.info("testRightOuterJoin Before---------------------------------------");
+		log.info("{}","testRightOuterJoin Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
-				pipelineconfig);
+				pipelineconfig).map(val->val);
 		StreamPipeline<String> datastream2 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
-				pipelineconfig);
+				pipelineconfig).map(val->val);
 		LineNumberReader linereader = new LineNumberReader(new InputStreamReader(new FileInputStream("src/test/resources/airlinesamplejoin.csv")));
 		long count = linereader.lines().count();
 		linereader.close();
@@ -378,13 +378,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testRightOuterJoin After---------------------------------------");
+		log.info("{}","testRightOuterJoin After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testRightOuterJoinFilterReverse() throws Exception {
-		log.info("testRightOuterJoinFilterReverse Before---------------------------------------");
+		log.info("{}","testRightOuterJoinFilterReverse Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
@@ -400,13 +400,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(3, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testRightOuterJoinFilterReverse After---------------------------------------");
+		log.info("{}","testRightOuterJoinFilterReverse After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testRightOuterJoinFilter() throws Exception {
-		log.info("testRightOuterJoinFilter Before---------------------------------------");
+		log.info("{}","testRightOuterJoinFilter Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
@@ -422,14 +422,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(20, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testRightOuterJoinFilter After---------------------------------------");
+		log.info("{}","testRightOuterJoinFilter After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testUnion() throws Exception {
-		log.info("testUnion Before---------------------------------------");
+		log.info("{}","testUnion Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		LineNumberReader linereader1 = new LineNumberReader(new InputStreamReader(new FileInputStream("src/test/resources/airline1987.csv")));
@@ -449,14 +449,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count - 1, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testUnion After---------------------------------------");
+		log.info("{}","testUnion After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testUnionFilter() throws Exception {
-		log.info("testUnionFilter Before---------------------------------------");
+		log.info("{}","testUnionFilter Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1987,
@@ -472,13 +472,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(504, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testUnionFilter After---------------------------------------");
+		log.info("{}","testUnionFilter After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testUnionFilterFilter() throws Exception {
-		log.info("testUnionFilterFilter Before---------------------------------------");
+		log.info("{}","testUnionFilterFilter Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1987,
@@ -496,14 +496,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(46, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testUnionFilterFilter After---------------------------------------");
+		log.info("{}","testUnionFilterFilter After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testIntersection() throws Exception {
-		log.info("testIntersection Before---------------------------------------");
+		log.info("{}","testIntersection Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		LineNumberReader linereader1 = new LineNumberReader(new InputStreamReader(new FileInputStream("src/test/resources/airlinesamplejoin.csv")));
@@ -520,14 +520,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testIntersection After---------------------------------------");
+		log.info("{}","testIntersection After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testIntersectionFilter() throws Exception {
-		log.info("testIntersectionFilter Before---------------------------------------");
+		log.info("{}","testIntersectionFilter Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
@@ -543,13 +543,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(3, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testIntersectionFilter After---------------------------------------");
+		log.info("{}","testIntersectionFilter After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testIntersectionFilterFilter() throws Exception {
-		log.info("testIntersectionFilterFilter Before---------------------------------------");
+		log.info("{}","testIntersectionFilterFilter Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
@@ -567,13 +567,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(3, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testIntersectionFilterFilter After---------------------------------------");
+		log.info("{}","testIntersectionFilterFilter After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testPeek() throws Exception {
-		log.info("testPeek Before---------------------------------------");
+		log.info("{}","testPeek Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		LineNumberReader linereader1 = new LineNumberReader(new InputStreamReader(new FileInputStream("src/test/resources/airlinesamplejoin.csv")));
@@ -588,14 +588,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testPeek After---------------------------------------");
+		log.info("{}","testPeek After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testFilterSorted() throws Exception {
-		log.info("testFilterSorted Before---------------------------------------");
+		log.info("{}","testFilterSorted Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		LineNumberReader linereader1 = new LineNumberReader(new InputStreamReader(new FileInputStream("src/test/resources/airlinesamplejoin.csv")));
@@ -617,13 +617,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count - 1, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testFilterSorted After---------------------------------------");
+		log.info("{}","testFilterSorted After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPair() throws Exception {
-		log.info("testMapPair Before---------------------------------------");
+		log.info("{}","testMapPair Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		LineNumberReader linereader1 = new LineNumberReader(new InputStreamReader(new FileInputStream("src/test/resources/airlinesamplejoin.csv")));
@@ -642,13 +642,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(count, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPair After---------------------------------------");
+		log.info("{}","testMapPair After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairFilter() throws Exception {
-		log.info("testMapPairFilter Before---------------------------------------");
+		log.info("{}","testMapPairFilter Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -664,13 +664,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(3875, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairFilter After---------------------------------------");
+		log.info("{}","testMapPairFilter After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairFlatMap() throws Exception {
-		log.info("testMapPairFlatMap Before---------------------------------------");
+		log.info("{}","testMapPairFlatMap Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -686,14 +686,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(92722, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairFlatMap After---------------------------------------");
+		log.info("{}","testMapPairFlatMap After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairFlatMapToLong() throws Exception {
-		log.info("testMapPairFlatMapToLong Before---------------------------------------");
+		log.info("{}","testMapPairFlatMapToLong Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -717,13 +717,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(46361, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairFlatMapToLong After---------------------------------------");
+		log.info("{}","testMapPairFlatMapToLong After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairFlatMapToDouble() throws Exception {
-		log.info("testMapPairFlatMapToDouble Before---------------------------------------");
+		log.info("{}","testMapPairFlatMapToDouble Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -747,13 +747,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(46361, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairFlatMapToDouble After---------------------------------------");
+		log.info("{}","testMapPairFlatMapToDouble After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairCoalesce() throws Exception {
-		log.info("testMapPairCoalesce Before---------------------------------------");
+		log.info("{}","testMapPairCoalesce Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		String blocksize = pipelineconfig.getBlocksize();
@@ -778,13 +778,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		assertEquals(-63278l, sum);
 		pipelineconfig.setLocal(local);
 		pipelineconfig.setBlocksize(blocksize);
-		log.info("testMapPairCoalesce After---------------------------------------");
+		log.info("{}","testMapPairCoalesce After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairReduceByKey() throws Exception {
-		log.info("testMapPairReduceByKey Before---------------------------------------");
+		log.info("{}","testMapPairReduceByKey Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		String blocksize = pipelineconfig.getBlocksize();
@@ -809,13 +809,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		assertEquals(-63278l, sum);
 		pipelineconfig.setLocal(local);
 		pipelineconfig.setBlocksize(blocksize);
-		log.info("testMapPairReduceByKey After---------------------------------------");
+		log.info("{}","testMapPairReduceByKey After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairSample() throws Exception {
-		log.info("testMapPairSample Before---------------------------------------");
+		log.info("{}","testMapPairSample Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -837,13 +837,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(100, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairSample After---------------------------------------");
+		log.info("{}","testMapPairSample After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairPeek() throws Exception {
-		log.info("testMapPairPeek Before---------------------------------------");
+		log.info("{}","testMapPairPeek Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -865,14 +865,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(46361l, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairPeek After---------------------------------------");
+		log.info("{}","testMapPairPeek After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairFoldLeft() throws Exception {
-		log.info("testMapPairFoldLeft Before---------------------------------------");
+		log.info("{}","testMapPairFoldLeft Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -895,13 +895,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(-63278l, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairFoldLeft After---------------------------------------");
+		log.info("{}","testMapPairFoldLeft After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairFoldRight() throws Exception {
-		log.info("testMapPairFoldRight Before---------------------------------------");
+		log.info("{}","testMapPairFoldRight Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -924,14 +924,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(-63278l, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairFoldRight After---------------------------------------");
+		log.info("{}","testMapPairFoldRight After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairGroupByKey() throws Exception {
-		log.info("testMapPairGroupByKey Before---------------------------------------");
+		log.info("{}","testMapPairGroupByKey Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
@@ -959,13 +959,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		assertEquals(46361l, totalrec);
 		assertEquals(-63278l, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairGroupByKey After---------------------------------------");
+		log.info("{}","testMapPairGroupByKey After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairJoin() throws Exception {
-		log.info("testMapPairJoin Before---------------------------------------");
+		log.info("{}","testMapPairJoin Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, carriers,
@@ -986,14 +986,14 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(1492l, totalrec);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairJoin After---------------------------------------");
+		log.info("{}","testMapPairJoin After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairLeftOuterJoin() throws Exception {
-		log.info("testMapPairLeftOuterJoin Before---------------------------------------");
+		log.info("{}","testMapPairLeftOuterJoin Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, carriers,
@@ -1014,13 +1014,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(1492l, totalrec);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairLeftOuterJoin After---------------------------------------");
+		log.info("{}","testMapPairLeftOuterJoin After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairRightOuterJoin() throws Exception {
-		log.info("testMapPairRightOuterJoin Before---------------------------------------");
+		log.info("{}","testMapPairRightOuterJoin Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, carriers,
@@ -1041,13 +1041,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(1492l, totalrec);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairRightOuterJoin After---------------------------------------");
+		log.info("{}","testMapPairRightOuterJoin After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairUnion() throws Exception {
-		log.info("testMapPairUnion Before---------------------------------------");
+		log.info("{}","testMapPairUnion Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, carriers,
@@ -1067,13 +1067,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(1492l, totalrec);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairUnion After---------------------------------------");
+		log.info("{}","testMapPairUnion After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairIntersection() throws Exception {
-		log.info("testMapPairIntersection Before---------------------------------------");
+		log.info("{}","testMapPairIntersection Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, carriers,
@@ -1093,13 +1093,13 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 		}
 		assertEquals(1492l, totalrec);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairIntersection After---------------------------------------");
+		log.info("{}","testMapPairIntersection After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapPairSorted() throws Exception {
-		log.info("testMapPairSorted Before---------------------------------------");
+		log.info("{}","testMapPairSorted Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, carriers,
@@ -1110,18 +1110,18 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 			sum += data.size();
 			for (Tuple2<String, String> tuple : data) {
 				assertTrue(tuple instanceof Tuple2);
-				log.info(tuple);
+				log.info("{}",tuple);
 			}
 		}
 		assertEquals(1492l, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testMapPairSorted After---------------------------------------");
+		log.info("{}","testMapPairSorted After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked"})
 	public void testMapFilterMapPairCogroup() throws Exception {
-		log.info("testFilterMapPairCogroup Before---------------------------------------");
+		log.info("{}","testFilterMapPairCogroup Before---------------------------------------");
 		String local = pipelineconfig.getLocal();
 		pipelineconfig.setLocal("true");
 		StreamPipeline<String[]> datastream1 = StreamPipeline
@@ -1140,12 +1140,12 @@ public class StreamPipelineTransformationsCollectTest extends StreamPipelineBase
 			for (Tuple2<Tuple2<String, List<Long>>, Tuple2<String, List<Long>>> tuple : data) {
 				assertTrue(tuple instanceof Tuple2);
 				sum += tuple.v1.v2.size();
-				log.info(tuple);
+				log.info("{}",tuple);
 			}
 		}
 		assertEquals(45957l, sum);
 		pipelineconfig.setLocal(local);
-		log.info("testFilterMapPairCogroup After---------------------------------------");
+		log.info("{}","testFilterMapPairCogroup After---------------------------------------");
 	}
 
 }

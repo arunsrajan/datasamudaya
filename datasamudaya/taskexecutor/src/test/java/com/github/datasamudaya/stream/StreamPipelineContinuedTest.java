@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.jooq.lambda.tuple.Tuple4;
@@ -35,6 +36,8 @@ import com.github.datasamudaya.common.functions.MapFunction;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipelineContinuedTest extends StreamPipelineBaseTestCommon {
 
+	Logger log = Logger.getLogger(StreamPipelineContinuedTest.class);
+	
 	boolean toexecute = true;
 
 	@SuppressWarnings({"unchecked", "rawtypes"})

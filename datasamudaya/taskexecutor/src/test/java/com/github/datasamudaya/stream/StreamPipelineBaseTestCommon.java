@@ -37,11 +37,12 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
@@ -62,7 +63,7 @@ import com.github.datasamudaya.tasks.executor.NodeRunner;
 
 public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 	static Registry server;
-	static Logger log = Logger.getLogger(StreamPipelineBaseTestCommon.class);
+	static Logger log = LoggerFactory.getLogger(StreamPipelineBaseTestCommon.class);
 	protected static ZookeeperOperations zo;
 	protected static String tejobid;
 
@@ -131,7 +132,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 				resource.setUsabledisksize(Utils.usablediskspace());
 				resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
 				zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource, event -> {
-					log.info(event);
+					log.info("{}", event);
 				});
 				while (isNull(DataSamudayaNodesResources.get()) || nonNull(DataSamudayaNodesResources.get()) && DataSamudayaNodesResources.get().size() != numberofnodes) {
 					Thread.sleep(1000);

@@ -529,7 +529,7 @@ public sealed class MapPair<I1, I2> extends AbstractPipeline permits MapValues {
 	public MapPair<I1, Tuple2<List<I2>, List<I2>>> cogroup(MapPair<I1, I2> mappair2) {
 		var gbkleft = this.groupByKey();
 		var gbkright = mappair2.groupByKey();
-		var mdp = new MapPair(this, mappair2, (LeftOuterJoinPredicate<Tuple2<I1, List<I2>>, Tuple2<I1, List<I2>>>)
+		var mdp = new MapPair(gbkleft, gbkright, (LeftOuterJoinPredicate<Tuple2<I1, List<I2>>, Tuple2<I1, List<I2>>>)
 				((Tuple2<I1, List<I2>> tuple1, Tuple2<I1, List<I2>> tuple2) -> tuple1.v1.equals(tuple2.v1)));
 		return mdp;
 	}

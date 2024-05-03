@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.csv.CSVRecord;
+import org.apache.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.Assert;
@@ -38,6 +39,8 @@ import com.github.datasamudaya.common.functions.HashPartitioner;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipelineTest extends StreamPipelineBaseTestCommon {
 
+	Logger log = Logger.getLogger(StreamPipelineTest.class);
+	
 	boolean toexecute = true;
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
