@@ -130,15 +130,18 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			}
 			String jobid = args[2];
 			String executortype = args[3];	
-			shuffleFileServer = Utils.startShuffleRecordsServer();			
-			String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-			PropertyConfigurator.configure(
-					datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
-							+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+			shuffleFileServer = Utils.startShuffleRecordsServer();						
 			if (args[0].equals(DataSamudayaConstants.TEPROPLOADDISTROCONFIG)) {
+				String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
+				PropertyConfigurator.configure(
+						datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
+								+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 				Utils.initializeProperties(
 						DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 								+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
+						DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+			} else if(args[0].equals(DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG)) {
+				Utils.initializePropertiesClasspath(DataSamudayaConstants.FORWARD_SLASH,
 						DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 			}
 			StaticComponentContainer.Modules.exportAllToAll();
@@ -156,7 +159,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					new LinkedBlockingQueue());
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid, executortype);
-			ter.start(zo, jobid, executortype);
+			ter.start(zo, jobid, executortype, args);
 			int metricsport = Utils.getRandomPort();
 			DefaultExports.initialize(); // Initialize JVM metrics
 			PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT,
@@ -226,7 +229,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	 */
 	@SuppressWarnings({})
 	@Override
-	public void start(ZookeeperOperations zo, String jobid, String executortype) throws Exception {
+	public void start(ZookeeperOperations zo, String jobid, String executortype,String[] args) throws Exception {
 		var port = Integer.parseInt(System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 		log.info("TaskExecutor Port: {}", port);
 		var su = new ServerUtils();
@@ -254,10 +257,10 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		if(executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
 			while(true) {
 				try {
-					Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.AKKA_HOST
+					Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST
 					, DataSamudayaConstants.AKKA_HOST_DEFAULT)
 					, Utils.getRandomPort(),
-							Runtime.getRuntime().availableProcessors());
+					args[0]);
 					system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
 					break;
 				} catch(Exception ex) {

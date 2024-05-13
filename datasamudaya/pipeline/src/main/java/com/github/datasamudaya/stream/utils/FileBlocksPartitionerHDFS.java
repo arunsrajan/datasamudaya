@@ -296,8 +296,17 @@ public class FileBlocksPartitionerHDFS {
 				}
 				job.getJm().setNodes(nodeschoosen);
 				job.getJm().setContainersallocated(new ConcurrentHashMap<>());
-			} else if (islocal || isyarn || ismesos) {
+			} else if (islocal || ismesos) {
 				getDnXref(totalblockslocation, false);
+			} else if(isyarn) {
+				getDnXref(totalblockslocation, false);
+				if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
+					try(ZookeeperOperations zo=new ZookeeperOperations();){
+						zo.connect();
+						containers = zo.getTaskExectorsByJobId(pipelineconfig.getTejobid());
+						allocateContainersLoadBalanced(totalblockslocation);
+					}
+				}
 			}
 			job.setNoofpartitions(noofpartition);
 			if (job.getStageoutputmap() != null) {

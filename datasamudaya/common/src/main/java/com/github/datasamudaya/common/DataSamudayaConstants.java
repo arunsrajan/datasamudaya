@@ -227,11 +227,13 @@ public class DataSamudayaConstants {
 	public static final String MESOS_CONFIGDIR = "../config/";
 
 	public static final String YARNINPUTFOLDER = "yarninput";
+	public static final String MASSIVEDATA_YARNINPUT_CONFIGFILE = "pipelineconfig.dat"; 
 	public static final String MASSIVEDATA_YARNINPUT_DATAFILE = "mdststs.dat";
 	public static final String MASSIVEDATA_YARNINPUT_GRAPH_FILE = "graph.dat";
 	public static final String MASSIVEDATA_YARNINPUT_TASK_FILE = "taskmdsthread.dat";
 	public static final String MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE = "jobstagemapfile.dat";
 	public static final String YARN_CLIENT = "yarnClient";
+	public static final String SQL_YARN_DEFAULT_APP_CONTEXT_FILE = "sql-application-context.xml";
 
 	public static final String SHUFFLE = "Shuffle";
 	public static final String DISTRIBUTEDSORT = "DistributedSort";
@@ -610,4 +612,8 @@ public class DataSamudayaConstants {
 	
 	public static final String PUSHNOTIFICATION = "push.notification";
 	public static final String PUSHNOTIFICATION_DEFAULT = "false";
+	
+	public static final String DEFAULTASKEXECUTORRUNNER = "com.github.datasamudaya.tasks.executor.TaskExecutorRunner";
+	
+	public static final String NM_HOST = "NM_HOST";
 }

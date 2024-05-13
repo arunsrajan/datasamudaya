@@ -22,6 +22,7 @@
 	<yarn:localresources>
 		<yarn:copy src="file:../appjar/*.jar" dest="/libdatasamudaya/" />
 		<yarn:hdfs path="/libdatasamudaya/*" />
+		<yarn:hdfs path="/libdatasamudayamodules/*" />
 	</yarn:localresources>
 
 	<yarn:environment>

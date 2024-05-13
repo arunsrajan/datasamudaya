@@ -23,7 +23,6 @@
 				<include>com.github.datasamudaya:taskscheduler:jar:*</include>
 				<include>com.github.datasamudaya:common:jar:*</include>
 				<include>com.github.datasamudaya:pipeline:jar:*</include>
-				<include>com.github.datasamudaya:dsagent:jar:*</include>
 			</includes>
 			<binaries>
 				<includeDependencies>false</includeDependencies>

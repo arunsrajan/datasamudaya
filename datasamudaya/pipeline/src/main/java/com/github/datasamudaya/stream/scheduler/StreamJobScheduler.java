@@ -84,8 +84,8 @@ import com.github.datasamudaya.common.CloseStagesGraphExecutor;
 import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.ExecuteTaskActor;
 import com.github.datasamudaya.common.FieldCollationDirection;
@@ -130,9 +130,7 @@ import com.github.datasamudaya.common.functions.ReduceByKeyFunctionValues;
 import com.github.datasamudaya.common.functions.ReduceFunction;
 import com.github.datasamudaya.common.functions.RightJoin;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
-import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.UnionFunction;
-import com.github.datasamudaya.common.utils.BTree;
 import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
@@ -360,7 +358,7 @@ public class StreamJobScheduler {
 					int akkaport = Utils.getRandomPort();
 					Config config = Utils.getAkkaSystemConfig(
 							DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST),
-							akkaport, Runtime.getRuntime().availableProcessors());
+							akkaport, DataSamudayaConstants.TEPROPLOADDISTROCONFIG);
 					system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
 					Cluster cluster = Cluster.get(system);
 					cluster.joinSeedNodes(Arrays.asList(cluster.selfAddress()));
@@ -2303,7 +2301,7 @@ public class StreamJobScheduler {
 						}
 					}
 				}
-			} else if (Boolean.TRUE.equals(ismesos) || Boolean.TRUE.equals(isyarn)) {
+			} else if (Boolean.TRUE.equals(ismesos) || Boolean.TRUE.equals(isyarn) && pipelineconfig.getStorage() != STORAGE.COLUMNARSQL) {
 				int partition = 0;
 				if (Boolean.TRUE.equals(isyarn) && job.getTrigger() == TRIGGER.PIGDUMP) {
 					var vertices = taskgraph.vertexSet();
@@ -2347,7 +2345,7 @@ public class StreamJobScheduler {
 						rdf.setTaskid(task.taskid);
 						rdf.setTejobid(task.jobid);
 						rdf.setStorage(pipelineconfig.getStorage());
-						if (pipelineconfig.getUseglobaltaskexecutors()) {
+						if (pipelineconfig.getUseglobaltaskexecutors() || Boolean.TRUE.equals(isyarn)) {
 							rdf.setTejobid(pipelineconfig.getTejobid());
 						}
 						boolean isJGroups = Boolean.parseBoolean(pipelineconfig.getJgroups());
@@ -2358,7 +2356,9 @@ public class StreamJobScheduler {
 								: new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {
 							var result = Utils.getKryo().readClassAndObject(input);
 							if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && (job.getJobtype() == JOBTYPE.NORMAL 
-									|| job.getJobtype() == JOBTYPE.PIG)) {
+									|| job.getJobtype() == JOBTYPE.PIG
+									|| Boolean.TRUE.equals(isyarn)
+									)) {
 								PrintWriter out = pipelineconfig.getWriter();
 								if(result instanceof List lst && CollectionUtils.isNotEmpty(lst) && lst.get(0) instanceof NodeIndexKey) {
 									if(task.isIsunion() || task.isIsintersection()) {

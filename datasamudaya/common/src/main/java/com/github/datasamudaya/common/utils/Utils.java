@@ -206,6 +206,7 @@ import com.github.datasamudaya.common.exceptions.YarnLaunchException;
 import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.google.common.collect.ImmutableList;
+import com.nimbusds.jose.util.IOUtils;
 import com.sun.management.OperatingSystemMXBean;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -359,6 +360,58 @@ public class Utils {
 			throw new PropertiesException(PropertiesException.LOADING_PROPERTIES, ex);
 		}
 		log.debug("Exiting Utils.initializeProperties");
+	}
+	
+	/**
+	 * Load Properties from class path
+	 * @param propertiesfilepath
+	 * @param propertyfile
+	 * @throws PropertiesException
+	 */
+	public static void initializePropertiesClasspath(String propertiesfilepath, String propertyfile) throws PropertiesException {
+		log.debug("Entered Utils.initializePropertiesClasspath");
+		if (Objects.isNull(propertyfile)) {
+			throw new PropertiesException("Property File Name cannot be null");
+		}
+		if (Objects.isNull(propertiesfilepath)) {
+			throw new PropertiesException("Properties File Path cannot be null");
+		}
+		try (var fis = Utils.class.getResourceAsStream(propertiesfilepath + propertyfile)) {
+			var prop = new Properties();
+			prop.load(fis);
+			prop.putAll(System.getProperties());
+			log.debug("Properties: {}", prop.entrySet());
+			DataSamudayaProperties.put(prop);
+			String containerusersshare = prop.getProperty(DataSamudayaConstants.CONTAINER_ALLOC_USERS_PLUS_SHARE);
+			if (nonNull(containerusersshare)) {
+				String[] cus = containerusersshare.split(",");
+				int userswithshare = cus.length;
+				if (userswithshare > 0 && userswithshare % 2 == 0) {
+					int noofusers = userswithshare / 2;
+					var userssharepercentage = new ConcurrentHashMap<String, User>();
+					double sharepercentagetotal = 0;
+					for (int usercount = 0; usercount < noofusers; usercount++) {
+						int sharepercentage = Integer.parseInt(cus[usercount * 2 + 1]);
+						String username = cus[usercount * 2];
+						User user = new User(username, sharepercentage, new ConcurrentHashMap<>());
+						userssharepercentage.put(username, user);
+						sharepercentagetotal += sharepercentage;
+					}
+					if (sharepercentagetotal > 100.0) {
+						throw new PropertiesException(
+								"Users share total not tally and it should be less that or equal to 100.0");
+					}
+					DataSamudayaUsers.put(userssharepercentage);
+				} else {
+					throw new PropertiesException(
+							"Container users share property [container.alloc.users.share] not properly formatted");
+				}
+			}
+			burningWaveInitialization();
+		} catch (Exception ex) {
+			throw new PropertiesException(PropertiesException.LOADING_PROPERTIES, ex);
+		}
+		log.debug("Exiting Utils.initializePropertiesClasspath");
 	}
 
 	/**
@@ -987,6 +1040,16 @@ public class Utils {
 		try (var target = new JarOutputStream(
 				new FileOutputStream(outputfolder + DataSamudayaConstants.FORWARD_SLASH + outjarfilename), manifest);) {
 			add(folder, target);
+			add(new File(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER 
+					+ DataSamudayaConstants.FORWARD_SLASH
+					+ DataSamudayaConstants.DATASAMUDAYA_PROPERTIES)
+					, target);
+			add(new File(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER 
+					+ DataSamudayaConstants.FORWARD_SLASH
+					+ DataSamudayaConstants.AKKACONF)
+					, target);
 		} catch (IOException ioe) {
 			log.error("Unable to create Jar", ioe);
 		}
@@ -1731,6 +1794,9 @@ public class Utils {
 			String yarnappcontextfile) throws YarnLaunchException {
 		try {
 			yarnmutex.acquire();
+			new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
+			Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
+					DataSamudayaConstants.YARNOUTJAR);
 			System.setProperty("jobcount", "1");
 			System.setProperty("containercount", "" + numberofcontainers);
 			System.setProperty("containermemory", "" + memoryuser);
@@ -1791,6 +1857,8 @@ public class Utils {
 					DataSamudayaConstants.YARNOUTJAR);
 			var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
 					+ pipelineconfig.getJobid();
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(pipelineconfig, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_CONFIGFILE, pipelineconfig);
 			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(sptsl, yarninputfolder,
 					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_DATAFILE, pipelineconfig);
 			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(graph, yarninputfolder,
@@ -3166,11 +3234,17 @@ public class Utils {
 	 * @throws Exception
 	 * @throws IOException
 	 */
-	public static Config getAkkaSystemConfig(String hostname, int akkaport, int threadpool)
+	public static Config getAkkaSystemConfig(String hostname, int akkaport, String configtype)
 			throws IOException, Exception {
-		String akkaconf = Files.readString(java.nio.file.Path.of(DataSamudayaConstants.PREV_FOLDER
+		String akkaconf;
+		if(configtype.equals(DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG)) {			
+			akkaconf = IOUtils.readInputStreamToString(Utils.class.getResourceAsStream(DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.AKKACONF));
+		}
+		else {
+			akkaconf = Files.readString(java.nio.file.Path.of(DataSamudayaConstants.PREV_FOLDER
 				+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
 				+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.AKKACONF), Charset.defaultCharset());
+		}
 		return ConfigFactory.parseString(String.format(akkaconf, hostname, akkaport, hostname, akkaport));
 	}
 

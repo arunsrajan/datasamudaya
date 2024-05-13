@@ -9,11 +9,6 @@
 		http://www.springframework.org/schema/beans jar:file:./pipeline-2.0.jar!/xsd/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/context jar:file:./pipeline-2.0.jar!/xsd/spring-context-4.2.xsd">
 
-	<context:annotation-config />
-
-	<bean id="yarnEventPublisher"
-		class="org.springframework.yarn.event.DefaultYarnEventPublisher" />
-
 	<context:property-placeholder
 		location="classpath*:/datasamudayahadoop.properties"
 		system-properties-mode="OVERRIDE" />
@@ -22,29 +17,9 @@
 		fs.defaultFS=${hd.fs}
 		yarn.resourcemanager.address=${hd.rm}
 		yarn.resourcemanager.scheduler.address=${hd.scheduler}
-		hdfs.namenode.url=${hd.fs}
-		taskexecutor.hdfsnn=${hd.fs}
 	</yarn:configuration>
 
-	<yarn:localresources>
-		<yarn:hdfs path="/libdatasamudaya/*" />
-		<yarn:hdfs path="/libdatasamudayamodules/*" />
-	</yarn:localresources>
 
-	<yarn:environment>
-		<yarn:classpath use-yarn-app-classpath="true"
-			delimiter=",">
-			./*
-		</yarn:classpath>
-	</yarn:environment>
-	<yarn:master
-		appmaster-class="com.github.datasamudaya.stream.yarn.appmaster.StreamPipelineYarnAppmaster"
-		id="yarnAppmaster">
-		<yarn:container-allocator/>
-		<yarn:container-runner
-			command="java --enable-preview --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.sql/java.sql=ALL-UNNAMED"
-			context-file="container-context.xml" bean-name="yarnContainer" />
-	</yarn:master>
 
 	<bean id="mapper"
 		class="org.springframework.yarn.integration.support.Jackson2ObjectMapperFactoryBean" />
@@ -62,7 +37,21 @@
 			<constructor-arg ref="mapper" />
 		</bean>
 	</yarn-int:converter>
-	<yarn-int:amservice
-		service-impl="com.github.datasamudaya.stream.yarn.appmaster.StreamPipelineYarnAppmasterService" />
+
+	<yarn-int:amservice-client
+		service-impl="org.springframework.yarn.integration.ip.mind.DefaultMindAppmasterServiceClient"
+		host="${SHDP_AMSERVICE_HOST}" port="${SHDP_AMSERVICE_PORT}" />
+
+	<bean id="sqlYarnContainer"
+		class="com.github.datasamudaya.stream.yarn.container.StreamPipelineSQLYarnContainer">
+		<property name="integrationServiceClient"
+			ref="yarnAmserviceClient" />
+		<property name="containerprops">
+			<map>
+				<entry key="hdfs.namenode.url" value="${hd.fs}" />
+			</map>
+		</property>
+	</bean>
+
 
 </beans>
