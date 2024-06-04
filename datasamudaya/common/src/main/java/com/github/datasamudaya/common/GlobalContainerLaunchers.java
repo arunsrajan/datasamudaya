@@ -44,12 +44,11 @@ public class GlobalContainerLaunchers {
 	 * @param lcs
 	 */
 	public static void put(String userid, String jobid, List<LaunchContainers> lcs) {
-		Map<String,List<LaunchContainers>> jobidcontainersmap = lcsmap.get(userid);
+		Map<String, List<LaunchContainers>> jobidcontainersmap = lcsmap.get(userid);
 		if (isNull(jobidcontainersmap)) {
 			jobidcontainersmap = new ConcurrentHashMap<>();
 			lcsmap.put(userid, jobidcontainersmap);
-		}
-		else {
+		} else {
 			log.info("Chamber launched already: " + userid + " with assets: " + lcs);
 		}
 		jobidcontainersmap.put(jobid, lcs);
@@ -62,7 +61,7 @@ public class GlobalContainerLaunchers {
 	public static List<LaunchContainers> getAll() {
 		return lcsmap.keySet().stream().flatMap(userid -> lcsmap.get(userid).entrySet().stream()).flatMap(es -> es.getValue().stream()).collect(Collectors.toList());
 	}
-	
+
 	/**
 	 * Get All Users Job Containers Map for printing in web console
 	 * @return map of User Job Containers
@@ -87,16 +86,16 @@ public class GlobalContainerLaunchers {
 	public static void remove(String userid) {
 		lcsmap.remove(userid);
 	}
-	
+
 	/**
 	 * Get the entries for the given userid
 	 * @param userid
 	 * @return Container entries for the user
 	 */
-	public static Map<String, List<LaunchContainers>> get(String userid){
+	public static Map<String, List<LaunchContainers>> get(String userid) {
 		return lcsmap.get(userid);
 	}
-	
+
 	/**
 	 * Remove entries for given userid and jobid
 	 * @param userid
@@ -105,5 +104,5 @@ public class GlobalContainerLaunchers {
 	public static void remove(String userid, String jobid) {
 		lcsmap.get(userid).remove(jobid);
 	}
-	
+
 }

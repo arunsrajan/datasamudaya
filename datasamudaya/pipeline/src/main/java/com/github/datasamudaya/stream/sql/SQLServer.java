@@ -34,15 +34,15 @@ import com.github.datasamudaya.common.utils.Utils;
 public class SQLServer {
 	static Logger log = LoggerFactory.getLogger(SQLServer.class);
 	static ServerSocket serverSocket;
-	
+
 	/**
 	 * Start the SQL server.
 	 * @throws Exception
 	 */
-	public static void start() throws Exception {		
+	public static void start() throws Exception {
 		ExecutorService executors = Executors.newFixedThreadPool(10);
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.SQLPORT, DataSamudayaConstants.SQLPORT_DEFAULT)));		
+				.getProperty(DataSamudayaConstants.SQLPORT, DataSamudayaConstants.SQLPORT_DEFAULT)));
 		executors.execute(() -> {
 			while (true) {
 				Socket sock;
@@ -53,6 +53,9 @@ public class SQLServer {
 						int numberofcontainers = 1;
 						int cpupercontainer = 1;
 						int memorypercontainer = 1024;
+						int cpudriver = 1;
+						int memorydriver = 1024;
+						boolean isdriverrequired;
 						String scheduler = "";
 						String tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 						boolean iscontainerlaunched = false;
@@ -63,8 +66,11 @@ public class SQLServer {
 										new InputStreamReader(clientSocket.getInputStream()));) {
 							user = in.readLine();
 							numberofcontainers = Integer.valueOf(in.readLine());
-							cpupercontainer = Integer.valueOf(in.readLine());							
+							cpupercontainer = Integer.valueOf(in.readLine());
 							memorypercontainer = Integer.valueOf(in.readLine());
+							cpudriver = Integer.valueOf(in.readLine());
+							memorydriver = Integer.valueOf(in.readLine());
+							isdriverrequired = Boolean.parseBoolean(in.readLine());
 							scheduler = in.readLine();
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
@@ -74,9 +80,9 @@ public class SQLServer {
 							}
 							List<LaunchContainers> containers = null;
 							Map<String, Object> cpumemory = null;
-							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT) 
+							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT)
 									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
-								containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+								containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver);
 								cpumemory = Utils.getAllocatedContainersResources(containers);
 								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 								Utils.printNodesAndContainers(containers, out);
@@ -93,7 +99,7 @@ public class SQLServer {
 								isjgroups = false;
 								isignite = false;
 								isyarn = true;
-								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT);
+								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE);
 								isyarncontainerlaunched = true;
 							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
 								isjgroups = false;
@@ -103,11 +109,11 @@ public class SQLServer {
 								isjgroups = false;
 								isignite = true;
 								isyarn = false;
-							}						
+							}
 							out.println("Welcome to the SQL Server!");
 							out.println("Type 'quit' to exit.");
-							out.println("Done");							
-							String inputLine;							
+							out.println("Done");
+							String inputLine;
 							String dbdefault = DataSamudayaProperties.get()
 									.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
 							outer:
@@ -137,7 +143,7 @@ public class SQLServer {
 													}
 													if (!iscontainerlaunched) {
 														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
@@ -181,7 +187,7 @@ public class SQLServer {
 													if (!isyarncontainerlaunched) {
 														try {
 															tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, YarnSystemConstants.DEFAULT_CONTEXT_FILE_CLIENT);
+															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE);
 														} catch (Exception ex) {
 															log.error(DataSamudayaConstants.EMPTY, ex);
 														}
@@ -202,7 +208,7 @@ public class SQLServer {
 													}
 													if (!iscontainerlaunched) {
 														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-														containers = Utils.launchContainersUserSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers);
+														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
@@ -215,8 +221,7 @@ public class SQLServer {
 										} else if (inputLine.startsWith("getmode")) {
 											if (isignite) {
 												out.println("ignite");
-											}
-											else if (isjgroups) {
+											} else if (isjgroups) {
 												out.println("jgroups");
 											} else if (isyarn) {
 												out.println("yarn");
@@ -227,7 +232,7 @@ public class SQLServer {
 											dbdefault = StringUtils.normalizeSpace(inputLine.trim()).split(" ")[1];
 										} else if (inputLine.startsWith("getdb")) {
 											out.println(dbdefault);
-										} else if (inputLine.startsWith("create") 
+										} else if (inputLine.startsWith("create")
 												|| inputLine.startsWith("alter")) {
 											out.println(TableCreator.createAlterTable(dbdefault, inputLine));
 										} else if (inputLine.startsWith("drop")) {
@@ -242,16 +247,16 @@ public class SQLServer {
 											for (ColumnMetadata colmetadata : columns) {
 												out.println(colmetadata);
 											}
-										} else if (inputLine.startsWith("select")) {
+										} else if (inputLine.contains("select")) {
 											long starttime = System.currentTimeMillis();
 											String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-											List<List> results = null; 
+											List<List> results = null;
 											if (isignite) {
 												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
 												results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid);
 											} else {
 												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
-												results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups, isyarn);
+												results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups, isyarn, out, isdriverrequired);
 											}
 											double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 											int partitionno = 1;
@@ -276,9 +281,9 @@ public class SQLServer {
 								} catch (Exception exception) {
 									log.error(DataSamudayaConstants.EMPTY, exception);
 								}
-							}							
+							}
 						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);							
+							log.error(DataSamudayaConstants.EMPTY, ex);
 						} finally {
 							if (iscontainerlaunched) {
 								try {

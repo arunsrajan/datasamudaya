@@ -7,6 +7,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import org.apache.pig.newplan.logical.expression.LogicalExpression;
+
 /**
  * POJO Object holding Function with params
  * @author arun
@@ -20,9 +21,9 @@ import org.apache.pig.newplan.logical.expression.LogicalExpression;
 public class FunctionParams {
 
 	private String functionName;
-	
+
 	LogicalExpression params;
-	
+
 	private String alias;
-	
+
 }

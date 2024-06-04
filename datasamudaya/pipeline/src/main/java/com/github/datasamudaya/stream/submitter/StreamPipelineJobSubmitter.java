@@ -69,7 +69,7 @@ public class StreamPipelineJobSubmitter {
 			Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
 		} else {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
 		StaticComponentContainer.Modules.exportAllToAll();
 		try (var zo = new ZookeeperOperations()) {
@@ -81,9 +81,7 @@ public class StreamPipelineJobSubmitter {
 				// For docker container or kubernetes pods.
 				if (hostport != null) {
 					currenttaskscheduler = hostport;
-				}
-				// If not, obtain schedulers host port from zookeeper.
-				else {
+				} else {
 					var rand = new Random(System.currentTimeMillis());
 					currenttaskscheduler = taskscheduler;
 				}

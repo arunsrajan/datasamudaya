@@ -146,8 +146,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					builder.append(userresmap.getKey());
 					builder.append("</h1>");
 					String[] nodeport = userresmap.getKey().split(DataSamudayaConstants.UNDERSCORE);
-					builder.append(
-							"""
+					builder.append("""
 									<script language="Javascript" type="text/javascript">
 											$(document).ready(function(){
 											var allocres%s = $('#allocatedresources%s').DataTable({
@@ -217,8 +216,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					Map<String, List<LaunchContainers>> usercontainersmap = userjobcontainersmap.get(user);
 					usercontainersmap.keySet().forEach(jobid -> {
 						builder.append("<br/>");
-						builder.append(
-								"""
+						builder.append("""
 										  			<script language="Javascript" type="text/javascript">
 										  		$(document).ready(function(){
 										  			var te%s = $('#taskexecutors%s').DataTable({
@@ -371,7 +369,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 				buffer.append(lc.getNodehostport());
 				buffer.append("</td>");
 				String te = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0]
-						+DataSamudayaConstants.UNDERSCORE+crs.getPort();
+						+ DataSamudayaConstants.UNDERSCORE + crs.getPort();
 				buffer.append("<td>");
 				buffer.append(te);
 				buffer.append("</td>");
@@ -396,16 +394,16 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 	 * @param port
 	 * @return status of task executor as UP/DOWN
 	 */
-	protected String getTaskExecutorStatus(String hp, int port){
-		try(Socket sock=new Socket()){
+	protected String getTaskExecutorStatus(String hp, int port) {
+		try (Socket sock = new Socket()) {
 			sock.connect(new InetSocketAddress(hp, port));
-			return "<font color=\"green\">"+DataSamudayaConstants.TASKEXECUTOR_STATUS_UP+"</font>";
-		} catch(Exception ex) {
-			return "<font color=\"red\">"+DataSamudayaConstants.TASKEXECUTOR_STATUS_DOWN+"</font>";
+			return "<font color=\"green\">" + DataSamudayaConstants.TASKEXECUTOR_STATUS_UP + "</font>";
+		} catch (Exception ex) {
+			return "<font color=\"red\">" + DataSamudayaConstants.TASKEXECUTOR_STATUS_DOWN + "</font>";
 		}
 	}
-	
-	
+
+
 	/**
 	 * The method converts the data object in the form of list or map to html
 	 * 

@@ -26,6 +26,6 @@ import java.util.List;
  * @param <Iv>
  * @param <Context>
  */
-public interface Reducer<Ik, Iv, Context> extends Serializable{
+public interface Reducer<Ik, Iv, Context> extends Serializable {
 	public void reduce(Ik ik, List<Iv> iv, Context context);
 }

@@ -16,10 +16,11 @@
 package com.github.datasamudaya.common;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.Semaphore;
+
+import org.apache.commons.pool2.impl.AbandonedConfig;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,18 +36,25 @@ public class ByteBufferPoolDirect {
 
 	private static final Logger log = LoggerFactory.getLogger(ByteBufferPoolDirect.class);
 
-	private static List<ByteBuffer> bufferPool;
-	static int totalnumberofblocks;
+	private static transient GenericObjectPool<ByteBuffer> pool;
 	static long directmemory;
 	static long totalmemoryallocated;
 	static Semaphore lock = new Semaphore(1);
+
 	/**
 	 * Initialize the bytebuffer heapsize and direct memory size
 	 */
-	public static void init(long dm) {		
+	public static void init(long dm) {
 		directmemory = dm;
-		bufferPool = new Vector<>((int) (directmemory / (130 * DataSamudayaConstants.MB)) + 30);
-        log.info("Total Buffer pool size: {}", bufferPool.size());
+		log.info("Total memory In Bytes: {}", directmemory);
+		GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+		config.setMaxIdle(DataSamudayaConstants.BYTEBUFFERPOOLMAXIDLE);
+		config.setBlockWhenExhausted(false);
+        config.setMaxTotal((int) (directmemory / DataSamudayaConstants.BYTEBUFFERSIZE));
+        pool = new GenericObjectPool<>(new ByteBufferFactory(DataSamudayaConstants.BYTEBUFFERSIZE), config);
+        var abandoned = new AbandonedConfig();
+        abandoned.setRemoveAbandonedOnBorrow(false);
+        pool.setAbandonedConfig(abandoned);
 	}
 
 	/**
@@ -55,50 +63,37 @@ public class ByteBufferPoolDirect {
 	 * @return bytebuffer object
 	 * @throws Exception
 	 */
-	public static synchronized ByteBuffer get(long memorytoallocate) throws Exception {
-		lock.acquire();
-		if(memorytoallocate+totalmemoryallocated<directmemory) {
-			ByteBuffer bb = ByteBuffer.allocateDirect((int) memorytoallocate);
-			totalmemoryallocated += memorytoallocate;
-			lock.release();
+	public static ByteBuffer get() throws Exception {
+		try {
+			ByteBuffer bb = pool.borrowObject();
+			bb.position(bb.limit());
 			return bb;
+		} finally {
 		}
-		Collections.sort(bufferPool, (bb1, bb2) -> {
-			if (bb1.capacity() > bb2.capacity()) {
-				return 1;
-			} else if (bb1.capacity() < bb2.capacity()) {
-				return -1;
-			}
-			return 0;
-		});
-		int bbindex=bufferPool.size()-1;
-		for (;bbindex >= 0 && bufferPool.get(bbindex).capacity() >= memorytoallocate;bbindex--) {
-		}
-		if(bbindex == bufferPool.size()-1) {
-			ByteBuffer bb = ByteBuffer.allocate((int) memorytoallocate);
-			lock.release();
-			return bb;
-		}
-		ByteBuffer bb = bufferPool.remove(bbindex + 1);
-		bb.clear();
-		bb.limit((int) memorytoallocate);
-		lock.release();
-		return bb;
 	}
 
-	public static void destroy() {
-	}
-
+	/**
+	 * Destroys the Buffer Pool
+	 */
+	public static void destroyPool() {
+        if (pool != null && !pool.isClosed()) {
+            try {
+                pool.close();
+                pool = null;
+            } catch (Exception e) {
+                // Handle exception, possibly logging it
+            }
+        }
+    }
+	
 	/**
 	 * Unallocate direct byte buffer to reuse the memory 
 	 * @param bb
 	 * @throws Exception
 	 */
-	public static synchronized void destroy(ByteBuffer buffer) throws Exception {
-		lock.acquire();
+	public static void destroy(ByteBuffer buffer) throws Exception {
 		buffer.clear();
-		bufferPool.add(buffer);
-		lock.release();
+		pool.returnObject(buffer);
 	}
 
 	private ByteBufferPoolDirect() {

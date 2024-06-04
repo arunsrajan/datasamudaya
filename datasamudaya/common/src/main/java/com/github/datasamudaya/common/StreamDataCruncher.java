@@ -8,6 +8,6 @@ import java.rmi.RemoteException;
  * @author arun
  *
  */
-public interface StreamDataCruncher extends Remote{
-	public Object postObject(Object object)throws RemoteException;
+public interface StreamDataCruncher extends Remote {
+	public Object postObject(Object object) throws RemoteException;
 }

@@ -131,7 +131,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			blocksize = Integer.parseInt(jobconf.getBlocksize());
 			hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
-			
+
 			var combiner = new HashSet<>();
 			var reducer = new HashSet<>();
 			var mapclzchunkfile = new HashMap<String, Set<Object>>();
@@ -170,7 +170,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 				allfiles.addAll(Utils.getAllFilePaths(blockpath));
 				jm.setTotalfilesize(jm.getTotalfilesize() + Utils.getTotalLengthByFiles(hdfs, blockpath));
 				bls = new ArrayList<>();
-				bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null));
+				bls.addAll(HDFSBlockUtils.getBlocksLocation(hdfs, blockpath, null));
 				folderfileblocksmap.put(hdfsdir, bls);
 				FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 				fbp.getDnXref(bls, false);

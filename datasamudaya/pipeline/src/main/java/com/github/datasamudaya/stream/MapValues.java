@@ -43,7 +43,7 @@ public final class MapValues<I1, I2> extends MapPair<I1, I2> {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public MapValues<I1, I2> reduceByValues(ReduceByKeyFunctionValues<I2> rfv) {
 		var mapvalues = new MapValues(this, rfv);
-		
+
 		return mapvalues;
 	}
 }

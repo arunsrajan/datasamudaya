@@ -28,6 +28,7 @@
 
 	<yarn:localresources>
 		<yarn:hdfs path="/libdatasamudaya/*" />
+		<yarn:hdfs path="/libdatasamudayamodules/*" />
 	</yarn:localresources>
 
 	<yarn:environment>

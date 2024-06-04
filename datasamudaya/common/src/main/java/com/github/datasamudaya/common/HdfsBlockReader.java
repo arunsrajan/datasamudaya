@@ -123,7 +123,7 @@ public class HdfsBlockReader {
 			String containerhost) {
 		log.debug("Entered HdfsBlockReader.getDataBlock");
 		int totalbytestoread = (int) (block.getBlockend() - block.getBlockstart());
-		try (var breader = getBlockReader((DistributedFileSystem) hdfs, lb, lb.getStartOffset() + block.getBlockstart(), containerhost);) {			
+		try (var breader = getBlockReader((DistributedFileSystem) hdfs, lb, lb.getStartOffset() + block.getBlockstart(), containerhost);) {
 			log.debug("In getDataBlock Read Bytes: " + totalbytestoread);
 			var readsize = 4096;
 			var byt = new byte[readsize];
@@ -142,10 +142,7 @@ public class HdfsBlockReader {
 					if (sum + read < totalbytestoread) {
 						baos.write(byt, 0, read);
 						baos.flush();
-					}
-					// If total chunk bytes read exceeds total bytes to
-					// process, write to stream only required bytes.
-					else {
+					} else {
 						baos.write(byt, 0, (totalbytestoread - sum));
 						baos.flush();
 						break;
@@ -195,12 +192,41 @@ public class HdfsBlockReader {
 	}
 
 	/**
+	 * The Merged InputStream
+	 * @param bl
+	 * @param hdfs
+	 * @return inputstream object
+	 * @throws Exception
+	 */
+	public static InputStream getBlockDataInputStreamMerge(final BlocksLocation bl, FileSystem hdfs) throws Exception {
+		try {
+			log.debug("Entered HdfsBlockReader.getBlockDataInputStreamMerge");
+			var block = bl.getBlock();
+			log.info("Obtaining Data for the " + block + " with offset: " + block[0].getBlockOffset());
+			FSDataInputStream dfsis = hdfs.open(new Path(block[0].getFilename()));
+			long blocklimit = block[0].getBlockend() - block[0].getBlockstart();
+			if (block.length > 1 && nonNull(block[1])) {
+				blocklimit += (block[1].getBlockend() - block[1].getBlockstart());
+			}
+			BlockReaderInputStream bris = new BlockReaderInputStream(dfsis,
+					(long) (block[0].getBlockOffset() + block[0].getBlockstart()), blocklimit);
+			log.debug("Exiting HdfsBlockReader.getBlockDataInputStreamMerge");
+			return bris;
+		} catch (Exception ex) {
+			log.error("Unable to Obtain Block Data getBlockDataInputStreamMerge: ", ex);
+		}
+
+		return null;
+
+	}
+
+	/**
 	 * To calculate the total amount of bytes required;
 	 * @param block
 	 * @return
 	 */
-	public static int calculateBytesRequired(Block[] block) {
-		int totalmemoryrequired = (int) (block[0].getBlockend() - block[0].getBlockstart());
+	public static long calculateBytesRequired(Block[] block) {
+		long totalmemoryrequired = (long) (block[0].getBlockend() - block[0].getBlockstart());
 		if (block.length > 1 && nonNull(block[1])) {
 			totalmemoryrequired += block[1].getBlockend() - block[1].getBlockstart();
 		}

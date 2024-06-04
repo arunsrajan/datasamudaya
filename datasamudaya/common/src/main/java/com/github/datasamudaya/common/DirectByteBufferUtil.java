@@ -17,17 +17,17 @@ import static java.util.Objects.nonNull;
  *
  */
 public final class DirectByteBufferUtil {
-	
+
 	static Logger log = LoggerFactory.getLogger(DirectByteBufferUtil.class);
-	
+
 	static AtomicInteger allocation = new AtomicInteger(1);
 	static AtomicInteger deallocation = new AtomicInteger(1);
 
 	protected static Unsafe getUnsafe() {
 		try {
-			 Field f = Unsafe.class.getDeclaredField("theUnsafe");
-             f.setAccessible(true);
-             return (Unsafe) f.get(null);
+			Field f = Unsafe.class.getDeclaredField("theUnsafe");
+			f.setAccessible(true);
+			return (Unsafe) f.get(null);
 		} catch (Exception ex) {
 			return null;
 		}
@@ -43,7 +43,7 @@ public final class DirectByteBufferUtil {
 	 * @return Whether or not the memory allocation was freed
 	 */
 	public static synchronized boolean freeDirectBufferMemory(ByteBuffer buffer) {
-		if(buffer != null) {
+		if (buffer != null) {
 			if (!buffer.isDirect()) {
 				return false;
 			}
@@ -51,7 +51,7 @@ public final class DirectByteBufferUtil {
 				Method cleanerMethod = buffer.getClass().getMethod("cleaner");
 				cleanerMethod.setAccessible(true);
 				Object cleaner = cleanerMethod.invoke(buffer);
-				if(nonNull(cleaner)) {
+				if (nonNull(cleaner)) {
 					Method cleanMethod = cleaner.getClass().getMethod("clean");
 					cleanMethod.setAccessible(true);
 					cleanMethod.invoke(cleaner);

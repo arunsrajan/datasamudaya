@@ -54,6 +54,9 @@ public class SQLClient {
 		options.addOption(DataSamudayaConstants.SQLCONTAINERS, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.CPUPERCONTAINER, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.MEMORYPERCONTAINER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.CPUDRIVER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.MEMORYDRIVER, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.ISDRIVERREQUIRED, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.SQLWORKERMODE, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
 		var cmd = parser.parse(options, args);
@@ -78,22 +81,51 @@ public class SQLClient {
 		if (cmd.hasOption(DataSamudayaConstants.SQLCONTAINERS)) {
 			String containers = cmd.getOptionValue(DataSamudayaConstants.SQLCONTAINERS);
 			numberofcontainers = Integer.valueOf(containers);
-			
+
 		} else {
 			numberofcontainers = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS));
 		}
+		
+		if(numberofcontainers <= 0) {
+			throw new SQLClientException("Number of containers cannot be less than 1");
+		}
+		
+		boolean isdriverrequired = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(
+				DataSamudayaConstants.IS_REMOTE_SCHEDULER, DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT));
+		
+		if (cmd.hasOption(DataSamudayaConstants.ISDRIVERREQUIRED)) {
+			String driverrequired = cmd.getOptionValue(DataSamudayaConstants.ISDRIVERREQUIRED);
+			isdriverrequired = Boolean.parseBoolean(driverrequired);
+		}
+		
 		int cpupercontainer = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUPERCONTAINER);
 			cpupercontainer = Integer.valueOf(cpu);
-			
+
 		}
 		int memorypercontainer = 1024;
 		if (cmd.hasOption(DataSamudayaConstants.MEMORYPERCONTAINER)) {
 			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYPERCONTAINER);
 			memorypercontainer = Integer.valueOf(memory);
-			
+
 		}
+		
+		int cpudriver = 1;
+		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isdriverrequired) {
+			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUDRIVER);
+			cpudriver = Integer.valueOf(cpu);
+		} if(!isdriverrequired){
+			cpudriver = 0;
+		}
+		int memorydriver = 1024;
+		if (cmd.hasOption(DataSamudayaConstants.MEMORYDRIVER) && isdriverrequired) {
+			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYDRIVER);
+			memorydriver = Integer.valueOf(memory);
+		} else if(!isdriverrequired){
+			memorydriver = 0;
+		}
+		
 		String mode = DataSamudayaConstants.SQLWORKERMODE_DEFAULT;
 		if (cmd.hasOption(DataSamudayaConstants.SQLWORKERMODE)) {
 			mode = cmd.getOptionValue(DataSamudayaConstants.SQLWORKERMODE);
@@ -118,6 +150,9 @@ public class SQLClient {
 						out.println(numberofcontainers);
 						out.println(cpupercontainer);
 						out.println(memorypercontainer);
+						out.println(cpudriver);
+						out.println(memorydriver);
+						out.println(isdriverrequired);
 						out.println(mode);
 						printServerResponse(in);
 						String messagestorefile = DataSamudayaProperties.get().getProperty(
@@ -255,7 +290,7 @@ public class SQLClient {
 							reader.flush();
 						} else if (key == 51) {
 							int curPos = reader.getCursorBuffer().cursor;
-							if (curPos >= 0 && curPos<reader.getCursorBuffer().length()) {
+							if (curPos >= 0 && curPos < reader.getCursorBuffer().length()) {
 								reader.setCursorPosition(curPos + 1);
 								reader.backspace();
 								reader.flush();
@@ -295,7 +330,7 @@ public class SQLClient {
 					reader.setConsoleBuffer(sb.toString());
 					reader.setCursorPosition(curPos + 1);
 					reader.flush();
-					
+
 				}
 			}
 			line = sb.toString();

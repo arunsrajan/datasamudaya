@@ -37,6 +37,7 @@ public class IgnitePipelineDepth32ContinuedTest extends StreamPipelineIgniteBase
 	int sum;
 
 	static Logger log = Logger.getLogger(IgnitePipelineDepth32ContinuedTest.class);
+
 	@Test
 	public void testMapPairMapPairReduceByKeyMapPairCollect() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyMapPair Before---------------------------------------");

@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 public class CsvOptionsSQL extends CsvOptions {
 	private static final long serialVersionUID = -5592994943064203479L;
-	
+
 	public CsvOptionsSQL(String[] header, List<SqlTypeName> types, List<String> requiredcolumns) {
 		super(header);
 		this.types.addAll(types);

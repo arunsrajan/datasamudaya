@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class HashPartitioner implements Serializable{
+public class HashPartitioner implements Serializable {
 	private static final long serialVersionUID = -5978113889847160389L;
 	private int partitionnumber;
 }

@@ -15,8 +15,8 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class TaskExecutorShutdown implements Serializable{
+public class TaskExecutorShutdown implements Serializable {
 
 	private static final long serialVersionUID = 8673890517000699908L;
-	
+
 }

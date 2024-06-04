@@ -260,7 +260,7 @@ public class RemoteDataFetcherTest {
 
 	@AfterClass
 	public static void closeHdfs() throws Exception {
-		if(!Objects.isNull(hdfsLocalCluster)) {
+		if (!Objects.isNull(hdfsLocalCluster)) {
 			hdfsLocalCluster.shutdown(true);
 		}
 	}

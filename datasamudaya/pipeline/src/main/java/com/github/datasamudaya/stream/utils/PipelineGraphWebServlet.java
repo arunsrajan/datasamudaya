@@ -19,7 +19,6 @@ import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.stream.PipelineUtils;
 
 
-
 /**
  * Graph Servlet for pipeline stages and 
  * @author Arun
@@ -104,7 +103,7 @@ public class PipelineGraphWebServlet extends HttpServlet {
 
 		}
 	}
-	
+
 	/**
 	 * Stage graph nodes and edges in string json format .
 	 * @param graph
@@ -115,11 +114,11 @@ public class PipelineGraphWebServlet extends HttpServlet {
 		var sourcebuilder = new StringBuilder();
 		var targetbuilder = new StringBuilder();
 		Set<DAGEdge> edges = graph.edgeSet();
-		for(DAGEdge edge: edges){
+		for (DAGEdge edge : edges) {
 			Stage stagesource = (Stage) edge.getSource();
-			Stage stagetarget = (Stage) edge.getTarget();			
+			Stage stagetarget = (Stage) edge.getTarget();
 			builder.append("{ from: '"
-			+ getStageTasks(sourcebuilder, stagesource) + "', to: '"
+					+ getStageTasks(sourcebuilder, stagesource) + "', to: '"
 					+ getStageTasks(targetbuilder, stagetarget) + "', name: '" + stagesource.getId() + DataSamudayaConstants.HYPHEN + stagetarget.getId() + "' },");
 			sourcebuilder.delete(0, sourcebuilder.length());
 			targetbuilder.delete(0, targetbuilder.length());
@@ -127,7 +126,7 @@ public class PipelineGraphWebServlet extends HttpServlet {
 		String fromtobuild = builder.toString();
 		return fromtobuild.substring(0, fromtobuild.length() - 1);
 	}
-	
+
 	/**
 	 * Task graph nodes and edges in string json format .
 	 * @param graph
@@ -138,11 +137,11 @@ public class PipelineGraphWebServlet extends HttpServlet {
 		var sourcebuilder = new StringBuilder();
 		var targetbuilder = new StringBuilder();
 		Set<DAGEdge> edges = graph.edgeSet();
-		for(DAGEdge edge: edges){
+		for (DAGEdge edge : edges) {
 			Task tasksource = (Task) edge.getSource();
-			Task tasktarget = (Task) edge.getTarget();			
+			Task tasktarget = (Task) edge.getTarget();
 			builder.append("{ from: '"
-			+ getTasks(sourcebuilder, tasksource) + "', to: '"
+					+ getTasks(sourcebuilder, tasksource) + "', to: '"
 					+ getTasks(targetbuilder, tasktarget) + "', name: '" + tasksource.taskid + DataSamudayaConstants.HYPHEN + tasktarget.taskid + "' },");
 			sourcebuilder.delete(0, sourcebuilder.length());
 			targetbuilder.delete(0, targetbuilder.length());
@@ -150,6 +149,7 @@ public class PipelineGraphWebServlet extends HttpServlet {
 		String fromtobuild = builder.toString();
 		return fromtobuild.substring(0, fromtobuild.length() - 1);
 	}
+
 	/**
 	 * Gets all tasks from stage.
 	 * @param builder
@@ -163,8 +163,8 @@ public class PipelineGraphWebServlet extends HttpServlet {
 		}
 		return builder.toString();
 	}
-	
-	
+
+
 	/**
 	 * Gets a task in html format.
 	 * @param builder
@@ -173,16 +173,16 @@ public class PipelineGraphWebServlet extends HttpServlet {
 	 */
 	public String getTasks(StringBuilder builder, Task task) {
 		Object[] input = task.input;
-		for(Object obj:input) {
-			if(obj instanceof BlocksLocation bl) {
+		for (Object obj :input) {
+			if (obj instanceof BlocksLocation bl) {
 				builder.append(task.taskid);
 				builder.append("<BR/>");
 				builder.append(bl.getExecutorhp());
 				builder.append("<BR/>");
-			}			
+			}
 		}
 		RemoteDataFetch[] rdfs = task.parentremotedatafetch;
-		if(rdfs!=null) {
+		if (rdfs != null) {
 			for (RemoteDataFetch rdf : rdfs) {
 				builder.append(task.taskid);
 				builder.append("<BR/>");
@@ -192,11 +192,10 @@ public class PipelineGraphWebServlet extends HttpServlet {
 				builder.append("<BR/>");
 			}
 		}
-		
-		
-		
+
+
 		return builder.toString();
 	}
-	
-	
+
+
 }

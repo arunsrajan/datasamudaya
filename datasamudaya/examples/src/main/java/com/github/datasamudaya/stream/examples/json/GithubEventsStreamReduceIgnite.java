@@ -24,6 +24,7 @@ public class GithubEventsStreamReduceIgnite implements Serializable, Pipeline {
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
 		testReduce(args, pipelineconfig);
 	}
+
 	public void testReduce(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("GithubEventsStreamReduceIgnite.testReduce Before---------------------------------------");
 		var datastream = StreamPipeline.newJsonStreamHDFS(args[0], args[1], pipelineconfig);
@@ -33,7 +34,7 @@ public class GithubEventsStreamReduceIgnite implements Serializable, Pipeline {
 		var githubevents = mappair1.reduceByKey((dat1, dat2) -> dat1 + dat2).coalesce(1,
 				(dat1, dat2) -> dat1 + dat2);
 
-		
+
 		githubevents.saveAsTextFile(new URI(args[0]), args[2] + "/githubevents-" + System.currentTimeMillis());
 		log.info("GithubEventsStreamReduceIgnite.testReduce After---------------------------------------");
 	}

@@ -27,7 +27,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class WhoIsRequest implements Serializable{
+public class WhoIsRequest implements Serializable {
 
 	private static final long serialVersionUID = 4221335659547935394L;
 	private String stagepartitionid;

@@ -1,6 +1,7 @@
 package com.github.datasamudaya.stream.executors;
 
 import static java.util.Objects.isNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -11,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
@@ -19,10 +21,10 @@ import org.jgroups.util.UUID;
 
 import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
-import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
 import com.github.datasamudaya.common.RemoteDataFetcher;
@@ -37,17 +39,17 @@ import com.github.datasamudaya.stream.PipelineException;
  * Task executors thread for standalone task executors daemon.  
  */
 @SuppressWarnings("rawtypes")
-public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTaskExecutor permits StreamPipelineTaskExecutorInMemoryDisk  {
+public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTaskExecutor permits StreamPipelineTaskExecutorInMemoryDisk {
 	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorInMemory.class);
-	protected ConcurrentMap<String,OutputStream> resultstream;
+	protected ConcurrentMap<String, OutputStream> resultstream;
 	public double timetaken = 0.0;
-	
-	public StreamPipelineTaskExecutorInMemory(JobStage jobstage, 
-			ConcurrentMap<String,OutputStream> resultstream, Cache cache) {
+
+	public StreamPipelineTaskExecutorInMemory(JobStage jobstage,
+			ConcurrentMap<String, OutputStream> resultstream, Cache cache) {
 		super(jobstage, cache);
 		this.resultstream = resultstream;
 	}
-	
+
 	/**
 	 * The path from RDF to output stream.
 	 * @param rdf
@@ -57,20 +59,18 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 	public OutputStream getIntermediateInputStreamRDF(RemoteDataFetch rdf) throws Exception {
 		log.debug("Entered StreamPipelineTaskExecutorInMemory.getIntermediateInputStreamRDF");
 		var path = rdf.getJobid() + DataSamudayaConstants.HYPHEN
-				+ rdf.getStageid() + DataSamudayaConstants.HYPHEN +rdf.getTaskid();
+				+ rdf.getStageid() + DataSamudayaConstants.HYPHEN + rdf.getTaskid();
 		OutputStream os = resultstream.get(path);
 		log.debug("Exiting StreamPipelineTaskExecutorInMemory.getIntermediateInputStreamFS");
-		if(isNull(os)) {
+		if (isNull(os)) {
 			return null;
-		}
-		else if(os instanceof ByteBufferOutputStream baos) {
+		} else if (os instanceof ByteBufferOutputStream baos) {
 			return baos;
-		}
-		else {
+		} else {
 			throw new UnsupportedOperationException("Unknown I/O operation");
 		}
 	}
-	
+
 	/**
 	 * The path from RDF to output stream.
 	 * @param rdf
@@ -80,20 +80,18 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 	public OutputStream getIntermediateInputStreamTask(Task task) throws Exception {
 		log.debug("Entered StreamPipelineTaskExecutorInMemory.getIntermediateInputStreamTask");
 		var path = task.getJobid() + DataSamudayaConstants.HYPHEN
-				+ task.getStageid() + DataSamudayaConstants.HYPHEN +task.getTaskid();
+				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid();
 		OutputStream os = resultstream.get(path);
 		log.debug("Exiting StreamPipelineTaskExecutorInMemory.getIntermediateInputStreamTask");
-		if(isNull(os)) {
+		if (isNull(os)) {
 			return null;
-		}
-		else if(os instanceof ByteBufferOutputStream baos) {
+		} else if (os instanceof ByteBufferOutputStream baos) {
 			return baos;
-		}
-		else {
+		} else {
 			throw new UnsupportedOperationException("Unknown I/O operation");
 		}
 	}
-	
+
 	/**
 	 * Get the HDFS file path using the job id, stage id and task id.
 	 * @return jobid-stageid-taskid
@@ -101,9 +99,9 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 	@Override
 	public String getIntermediateDataFSFilePath(Task task) {
 		return task.jobid + DataSamudayaConstants.HYPHEN
-				+ task.stageid + DataSamudayaConstants.HYPHEN +task.taskid;
+				+ task.stageid + DataSamudayaConstants.HYPHEN + task.taskid;
 	}
-	
+
 	/**
 	 * Create a new BytebufferOutputStream using task and buffer size 
 	 * and return it. 
@@ -115,7 +113,7 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 			var path = getIntermediateDataFSFilePath(task);
 			log.info("ResultStream Path: " + path);
 			OutputStream os;
-			os = new ByteBufferOutputStream(ByteBufferPoolDirect.get(buffersize));
+			os = new ByteBufferOutputStream(ByteBufferPoolDirectOld.get(buffersize));
 			resultstream.put(path, os);
 			log.debug("Exiting StreamPipelineTaskExecutorInMemory.createIntermediateDataToFS");
 			return os;
@@ -134,12 +132,12 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 		var path = getIntermediateDataFSFilePath(task);
 		log.debug("Exiting StreamPipelineTaskExecutorInMemory.getIntermediateInputStreamFS");
 		OutputStream os = resultstream.get(path);
-		if(os instanceof ByteBufferOutputStream baos) {
+		if (os instanceof ByteBufferOutputStream baos) {
 			return new ByteBufferInputStream(baos.get());
 		} else {
 			throw new UnsupportedOperationException("Unknown I/O operation");
 		}
-		
+
 	}
 
 
@@ -156,11 +154,11 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 		log.info("Acclaimed namenode URL " + hdfsfilepath);
 		log.info("Result Stream " + resultstream);
 		var configuration = new Configuration();
-		try(var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);) {
+		try (var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);) {
 			stageTasks = getStagesTask();
 			log.info("Submitted Task " + task);
 			if (task.input != null && task.parentremotedatafetch != null) {
-				if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
+				if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
 					var numinputs = task.parentremotedatafetch.length;
 					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.parentremotedatafetch[inputindex];
@@ -177,7 +175,7 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 							}
 						}
 					}
-				} else if(task.input!=null && task.input[0]!=null) {
+				} else if (task.input != null && task.input[0] != null) {
 					var numinputs = task.input.length;
 					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.input[inputindex];
@@ -217,7 +215,7 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 				log.error("Message Send Failed for Task Failed: ", e);
 			}
 		} finally {
-			if(!Objects.isNull(hdfs)) {
+			if (!Objects.isNull(hdfs)) {
 				try {
 					hdfs.close();
 				} catch (Exception e) {
@@ -228,5 +226,5 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 		log.debug("Exiting StreamPipelineTaskExecutorInMemory.call");
 		return completed;
 	}
-	
+
 }

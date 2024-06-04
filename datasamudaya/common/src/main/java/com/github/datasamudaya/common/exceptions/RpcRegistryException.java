@@ -12,9 +12,9 @@ public class RpcRegistryException extends Exception {
 	public RpcRegistryException(String message) {
 		super(message);
 	}
-	
+
 	public RpcRegistryException(String message, Exception parent) {
 		super(message, parent);
 	}
-	
+
 }

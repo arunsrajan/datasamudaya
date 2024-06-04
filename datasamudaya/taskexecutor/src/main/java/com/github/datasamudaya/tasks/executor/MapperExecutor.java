@@ -44,6 +44,7 @@ public class MapperExecutor implements Callable<Context> {
 		this.datastream = datastream;
 		this.crunchmappers = crunchmappers;
 	}
+
 	/**
 	 * Executes the call method and returns context object.
 	 */

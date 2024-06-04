@@ -77,8 +77,7 @@ public class MapReduceApplicationBuilder {
 		}
 		if (jobconf.getExecmode().equals(DataSamudayaConstants.EXECMODE_IGNITE)) {
 			return new MapReduceApplicationIgnite(jobname, jobconf, mappers, combiners, reducers, outputfolder);
-		}
-		else if (jobconf.getExecmode().equals(DataSamudayaConstants.EXECMODE_YARN)) {
+		} else if (jobconf.getExecmode().equals(DataSamudayaConstants.EXECMODE_YARN)) {
 			return new MapReduceApplicationYarn(jobname, jobconf, mappers, combiners, reducers, outputfolder);
 		}
 		return new MapReduceApplication(jobname, jobconf, mappers, combiners, reducers, outputfolder);

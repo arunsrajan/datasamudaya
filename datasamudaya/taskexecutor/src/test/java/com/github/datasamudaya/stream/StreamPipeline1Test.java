@@ -32,14 +32,14 @@ import com.github.datasamudaya.common.functions.HashPartitioner;
 public class StreamPipeline1Test extends StreamPipelineBaseTestCommon {
 
 	boolean toexecute = true;
-	
+
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testHashPartitionerReduceByKeyPartitioned() throws Throwable {
-		log.info("testHashPartitionerReduceByKeyPartitioned Before---------------------------------------");
+		log.info("{}","testHashPartitionerReduceByKeyPartitioned Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
-		List<List<Tuple2<Integer,List<Tuple2<String,Integer>>>>> tupleslist = (List) datastream.map(str -> str.split(","))
+		List<List<Tuple2<Integer, List<Tuple2<String, Integer>>>>> tupleslist = (List) datastream.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14])).mapToPair(str -> new Tuple2<String, Integer>(str[1], Integer.parseInt(str[14])))
 				.partition(new HashPartitioner(3))
 				.flatMap(tuples -> tuples.v2().stream())
@@ -48,24 +48,24 @@ public class StreamPipeline1Test extends StreamPipelineBaseTestCommon {
 				.collect(toexecute, null);
 		int sum = 0;
 		assertEquals(1, tupleslist.size());
-		for (List<Tuple2<Integer,List<Tuple2<String,Integer>>>> tuples : tupleslist) {			
-			for (Tuple2<Integer,List<Tuple2<String,Integer>>> tuple2 : tuples) {
-				log.info("partition-------");
-				for(Tuple2<String,Integer> tup2:tuple2.v2()) {
-					log.info(tup2);
+		for (List<Tuple2<Integer, List<Tuple2<String, Integer>>>> tuples : tupleslist) {
+			for (Tuple2<Integer, List<Tuple2<String, Integer>>> tuple2 : tuples) {
+				log.info("{}","partition-------");
+				for (Tuple2<String, Integer> tup2 :tuple2.v2()) {
+					log.info("{}",tup2);
 					sum += tup2.v2();
 				}
-			}			
+			}
 		}
 		assertEquals(-63278l, sum);
-		log.info("testHashPartitionerReduceByKeyPartitioned After---------------------------------------");
+		log.info("{}","testHashPartitionerReduceByKeyPartitioned After---------------------------------------");
 	}
-	
-	
+
+
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testGroupBy() throws Throwable {
-		log.info("testGroupBy Before---------------------------------------");
+		log.info("{}","testGroupBy Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		List<List<Tuple2<Map, List<String[]>>>> tupleslist = (List) datastream.map(str -> str.split(","))
@@ -80,14 +80,14 @@ public class StreamPipeline1Test extends StreamPipelineBaseTestCommon {
 				.collect(toexecute, null);
 		int sum = 0;
 		assertEquals(1, tupleslist.size());
-		for (List<Tuple2<Map, List<String[]>>> tuples : tupleslist) {			
+		for (List<Tuple2<Map, List<String[]>>> tuples : tupleslist) {
 			for (Tuple2<Map, List<String[]>> tuple2 : tuples) {
-				log.info("partition-------");
-				log.info(tuple2);
+				log.info("{}","partition-------");
+				log.info("{}",tuple2);
 				sum += tuple2.v2.size();
-			}			
+			}
 		}
 		assertEquals(45957l, sum);
-		log.info("testGroupBy After---------------------------------------");
+		log.info("{}","testGroupBy After---------------------------------------");
 	}
 }

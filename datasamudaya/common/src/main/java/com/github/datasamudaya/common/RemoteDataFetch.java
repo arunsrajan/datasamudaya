@@ -16,6 +16,9 @@
 package com.github.datasamudaya.common;
 
 import java.io.Serializable;
+
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -25,8 +28,8 @@ import lombok.ToString;
 
 /**
  * 
- * @author Arun
- * The Holder of job, stage and tasks information to receive the final stage output.
+ * @author Arun The Holder of job, stage and tasks information to receive the
+ *         final stage output.
  */
 @Getter
 @Setter
@@ -43,4 +46,6 @@ public class RemoteDataFetch implements Serializable {
 	private String hp;
 	private byte[] data;
 	private String mode;
+	private STORAGE storage;
+	private String shufflefilepath;
 }

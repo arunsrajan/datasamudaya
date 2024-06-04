@@ -34,7 +34,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 @EqualsAndHashCode
-public class ContainerResources implements Serializable, Cloneable{
+public class ContainerResources implements Serializable, Cloneable {
 	private static final long serialVersionUID = 1492654050202561687L;
 	private long minmemory;
 	private long maxmemory;
@@ -43,10 +43,11 @@ public class ContainerResources implements Serializable, Cloneable{
 	private int cpu;
 	private int port;
 	private boolean islaunched;
-	
+	private EXECUTORTYPE executortype;
+
 	@Override
 	public Object clone() throws CloneNotSupportedException {
 		return super.clone();
-		
+
 	}
 }

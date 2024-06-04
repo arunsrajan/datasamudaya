@@ -16,7 +16,7 @@
 package com.github.datasamudaya.common.functions;
 
 public class FoldByKey {
-	private @SuppressWarnings("rawtypes")
+	private  @SuppressWarnings("rawtypes")
 	ReduceByKeyFunction reduceFunction;
 	Object value;
 	boolean left;

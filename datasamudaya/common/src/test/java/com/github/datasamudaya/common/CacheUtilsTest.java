@@ -51,22 +51,22 @@ public class CacheUtilsTest {
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_TEST_PROPERTIES);
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-	            + DataSamudayaConstants.CACHEBLOCKS);
-		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
+				DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.CACHEBLOCKS);
+		ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
 	}
 
 	@Test
 	public void testCache() throws Exception {
 		FileSystem hdfs = FileSystem.get(new URI(hdfsurl), new Configuration());
-		List<Path> blockpath  = new ArrayList<>();
+		List<Path> blockpath = new ArrayList<>();
 		for (String hdfsdir : hdfsdirpaths) {
 			FileStatus[] fileStatus = hdfs.listStatus(
 					new Path(hdfsurl + hdfsdir));
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			blockpath.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null);
+		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocation(hdfs, blockpath, null);
 		assertNotNull(bls);
 		getDnXref(bls);
 		String cacheblock = "cacheblock";
@@ -111,7 +111,7 @@ public class CacheUtilsTest {
 			var xref = xrefselected.get();
 			dnxrefallocatecount.put(xref, dnxrefallocatecount.get(xref) + 1);
 			b.getBlock()[0].setHp(xref);
-			if(b.getBlock().length > 1 && !Objects.isNull(b.getBlock()[1])) {
+			if (b.getBlock().length > 1 && !Objects.isNull(b.getBlock()[1])) {
 				xrefselected = b.getBlock()[1].getDnxref().keySet().stream()
 						.flatMap(xrefhost -> b.getBlock()[1].getDnxref().get(xrefhost).stream()).sorted((xref1, xref2) -> {
 					return dnxrefallocatecount.get(xref1).compareTo(dnxrefallocatecount.get(xref2));
@@ -126,7 +126,7 @@ public class CacheUtilsTest {
 	public static void destroyCache() throws Exception {
 		DataSamudayaCache.get().clear();
 		DataSamudayaCacheManager.get().close();
-		ByteBufferPoolDirect.destroy();
+		ByteBufferPoolDirectOld.destroy();
 	}
 
 }

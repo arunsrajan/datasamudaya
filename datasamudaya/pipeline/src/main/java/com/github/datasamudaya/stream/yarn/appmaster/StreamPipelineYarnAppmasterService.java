@@ -42,7 +42,7 @@ public class StreamPipelineYarnAppmasterService extends MindAppmasterService {
 
 
 	private StreamPipelineYarnAppmaster yarnAppMaster;
-	
+
 	public StreamPipelineYarnAppmasterService() {
 		StaticComponentContainer.Modules.exportAllToAll();
 	}
@@ -92,9 +92,7 @@ public class StreamPipelineYarnAppmasterService extends MindAppmasterService {
 					if (request.getState().equals(JobRequest.State.JOBDONE)) {
 						yarnAppMaster.reportJobStatus(task, true, request.getContainerid());
 						return response;
-					}
-					// Update statuses to App Master if job has been Failed.
-					else if (request.getState().equals(JobRequest.State.JOBFAILED)) {
+					} else if (request.getState().equals(JobRequest.State.JOBFAILED)) {
 						yarnAppMaster.reportJobStatus(task, false, request.getContainerid());
 					} else if (request.getState().equals(JobRequest.State.RESPONSERECIEVED)) {
 						yarnAppMaster.requestRecieved(task);
@@ -122,10 +120,7 @@ public class StreamPipelineYarnAppmasterService extends MindAppmasterService {
 					response.setState(JobResponse.State.RUNJOB);
 					response.setResstate(JobResponse.State.RUNJOB.name());
 				}
-			}
-			//If there is no jobs to executor return the status for
-			//container to DIE.
-			else if (!yarnAppMaster.hasJobs()) {
+			} else if (!yarnAppMaster.hasJobs()) {
 				response.setState(JobResponse.State.DIE);
 				response.setResstate(JobResponse.State.DIE.name());
 			}

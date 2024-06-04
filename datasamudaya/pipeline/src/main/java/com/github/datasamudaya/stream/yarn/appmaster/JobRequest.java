@@ -74,7 +74,8 @@ public class JobRequest extends BaseObject {
 		WHATTODO,
 		JOBDONE,
 		JOBFAILED,
-		RESPONSERECIEVED
+		RESPONSERECIEVED,
+		GETTASKEXECUTORID
 	}
 
 }

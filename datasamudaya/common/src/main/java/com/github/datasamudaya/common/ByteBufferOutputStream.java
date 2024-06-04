@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
  * @author arun
  *
  */
-public class ByteBufferOutputStream extends OutputStream implements Serializable{
+public class ByteBufferOutputStream extends OutputStream implements Serializable {
 	private static final long serialVersionUID = 281956849242378938L;
 	private final ByteBuffer bb;
 

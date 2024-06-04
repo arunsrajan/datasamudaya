@@ -16,12 +16,14 @@
 package com.github.datasamudaya.stream;
 
 import static java.util.Objects.nonNull;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -73,6 +75,7 @@ public class StreamPipelineTestCommon {
 
 	@BeforeClass
 	public static void init() {
+		ByteBufferPoolDirect.init(512 * DataSamudayaConstants.MB);
 		es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	}
 
@@ -89,10 +92,9 @@ public class StreamPipelineTestCommon {
 		Configuration conf = new Configuration();
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
-		ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-	            + DataSamudayaConstants.CACHEBLOCKS);
+				DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.CACHEBLOCKS);
 		CacheUtils.initBlockMetadataCache(DataSamudayaConstants.BLOCKCACHE);
 		hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
 		cache = (Cache<String, byte[]>) DataSamudayaCache.get();
@@ -129,8 +131,8 @@ public class StreamPipelineTestCommon {
 		if (!Objects.isNull(hdfs)) {
 			hdfs.close();
 		}
-		ByteBufferPoolDirect.destroy();
-		if(nonNull(DataSamudayaCacheManager.get())){
+		ByteBufferPoolDirect.destroyPool();
+		if (nonNull(DataSamudayaCacheManager.get())) {
 			DataSamudayaCacheManager.get().close();
 			DataSamudayaCacheManager.put(null);
 		}

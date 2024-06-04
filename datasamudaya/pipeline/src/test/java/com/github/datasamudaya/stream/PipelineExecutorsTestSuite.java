@@ -21,6 +21,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgniteTest;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroupsTest;
+import com.github.datasamudaya.stream.sql.RequiredColumnsExtractorTest;
 import com.github.datasamudaya.stream.utils.PipelineConfigValidatorTest;
 
 
@@ -28,7 +29,8 @@ import com.github.datasamudaya.stream.utils.PipelineConfigValidatorTest;
 @SuiteClasses({
 		StreamPipelineTaskExecutorJGroupsTest.class,
 		PipelineConfigValidatorTest.class,
-		StreamPipelineTaskExecutorIgniteTest.class})
-public class PipelineExecutorsTestSuite{
+		StreamPipelineTaskExecutorIgniteTest.class,
+		RequiredColumnsExtractorTest.class})
+public class PipelineExecutorsTestSuite {
 
 }

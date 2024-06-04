@@ -44,11 +44,13 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class Job implements Serializable{
+public class Job implements Serializable {
 	private static final long serialVersionUID = 2778442248313879982L;
+
 	public static enum TRIGGER {
 		COUNT,COLLECT,SAVERESULTSTOFILE,FOREACH,PIGDUMP
 	}
+
 	public static enum JOBTYPE {
 		PIG,NORMAL
 	}

@@ -19,5 +19,5 @@ public class FunctionWithCols implements Serializable {
 	private String alias;
 	private String tablename;
 	private List<String> parameters;
-	private Function function; 
+	private Function function;
 }

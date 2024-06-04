@@ -77,7 +77,7 @@ public class MesosScheduler implements Scheduler {
 		this.graph = graph;
 		this.jobstagemdsthread = jobstagemdsthread;
 		this.mrjar = mrjar;
-		mtpld =  new MesosThirdPartyLibraryDistributor(DataSamudayaConstants.MESOS_CONFIGDIR);
+		mtpld = new MesosThirdPartyLibraryDistributor(DataSamudayaConstants.MESOS_CONFIGDIR);
 		try {
 			port = mtpld.start();
 			log.debug("Properties server started:" + port);
@@ -407,9 +407,7 @@ public class MesosScheduler implements Scheduler {
 		//Initialize the mesos framework via driver with credentials.
 		if (scheduler.credential != null) {
 			driver = new MesosSchedulerDriver(scheduler, frameworkinfo, mesosMaster, scheduler.credential);
-		}
-		//Initialize the mesos framework if otherwise.
-		else {
+		} else {
 			driver = new MesosSchedulerDriver(scheduler, frameworkinfo, mesosMaster, true);
 		}
 		//Run the mesos framework via driver.

@@ -11,6 +11,6 @@ import java.util.function.Function;
  * @param <R>
  */
 @FunctionalInterface
-public interface GroupByFunction <T, R> extends Function<T, R>,Serializable{
+public interface GroupByFunction<T, R> extends Function<T, R>,Serializable {
 
 }

@@ -24,49 +24,49 @@ public class StreamJobSchedulerTest extends TestCase {
 	public void testUpdateGraph() throws Exception {
 		DataSamudayaProperties.put(new Properties());
 		StreamJobScheduler sjs = new StreamJobScheduler();
-		String[] tes = { "192.168.10.2_1024", "192.168.10.3_1024", "192.168.10.3_1025", "192.168.10.2_1025" };
+		String[] tes = {"192.168.10.2_1024", "192.168.10.3_1024", "192.168.10.3_1025", "192.168.10.2_1025"};
 		List<String> availabletes = new ArrayList<>(Arrays.asList(tes));
 		List<String> deadtes = new ArrayList<>();
 		deadtes.add(availabletes.remove(0));
 		Graph<StreamPipelineTaskSubmitter, DAGEdge> graph = createGraph(tes);
 		sjs.updateOriginalGraph(graph, deadtes, availabletes);
-		assertGraph(graph,getRoots(graph), availabletes);
+		assertGraph(graph, getRoots(graph), availabletes);
 	}
-	
-	
+
+
 	@Test
 	public void testUpdateGraphMultipleTesDown() throws Exception {
 		DataSamudayaProperties.put(new Properties());
 		StreamJobScheduler sjs = new StreamJobScheduler();
-		String[] tes = { "192.168.10.2_1024", "192.168.10.3_1024", "192.168.10.3_1025", "192.168.10.2_1025" };
+		String[] tes = {"192.168.10.2_1024", "192.168.10.3_1024", "192.168.10.3_1025", "192.168.10.2_1025"};
 		List<String> availabletes = new ArrayList<>(Arrays.asList(tes));
 		List<String> deadtes = new ArrayList<>();
 		deadtes.add(availabletes.remove(0));
 		deadtes.add(availabletes.remove(0));
 		Graph<StreamPipelineTaskSubmitter, DAGEdge> graph = createGraph(tes);
 		sjs.updateOriginalGraph(graph, deadtes, availabletes);
-		assertGraph(graph,getRoots(graph), availabletes);
+		assertGraph(graph, getRoots(graph), availabletes);
 	}
-	
-	
+
+
 	private static List<StreamPipelineTaskSubmitter> getRoots(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph) {
-        List<StreamPipelineTaskSubmitter> roots = new ArrayList<>();
+		List<StreamPipelineTaskSubmitter> roots = new ArrayList<>();
 
-        for (StreamPipelineTaskSubmitter vertex : graph.vertexSet()) {
-            if (graph.incomingEdgesOf(vertex).isEmpty()) {
-            	roots.add(vertex);
-            }
-        }
+		for (StreamPipelineTaskSubmitter vertex : graph.vertexSet()) {
+			if (graph.incomingEdgesOf(vertex).isEmpty()) {
+				roots.add(vertex);
+			}
+		}
 
-        return roots;
-    }
+		return roots;
+	}
 
 	protected Graph<StreamPipelineTaskSubmitter, DAGEdge> createGraph(String[] tes) {
 		List<StreamPipelineTaskSubmitter> sptss = new ArrayList<>();
 		Graph<StreamPipelineTaskSubmitter, DAGEdge> graph = new SimpleDirectedGraph<>(DAGEdge.class);
 		int teslength = tes.length;
 		Random rand = new Random(System.currentTimeMillis());
-		for (int index = 0; index < 100; index++) {
+		for (int index = 0;index < 100;index++) {
 			Task task = new Task();
 			task.taskid = "Task" + (index + 1);
 			String hostport = tes[rand.nextInt(100) % teslength];
@@ -82,7 +82,7 @@ public class StreamJobSchedulerTest extends TestCase {
 	protected List<StreamPipelineTaskSubmitter> formGraph(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph,
 			List<StreamPipelineTaskSubmitter> roots, int startindex) {
 		List<StreamPipelineTaskSubmitter> sptss = new ArrayList<>();
-		for (int index = 0; index < 100; index++) {
+		for (int index = 0;index < 100;index++) {
 			Task task = new Task();
 			task.taskid = "Task" + (startindex + index + 1);
 			String hostport = roots.get(index).getHostPort();
@@ -96,16 +96,16 @@ public class StreamJobSchedulerTest extends TestCase {
 	}
 
 	protected void assertGraph(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph, List<StreamPipelineTaskSubmitter> roottasks, List<String> availabletes) {
-		for(int index = 0; index<roottasks.size();index++) {
+		for (int index = 0;index < roottasks.size();index++) {
 			StreamPipelineTaskSubmitter spts = roottasks.get(index);
 			assertTrue(availabletes.contains(spts.getTask().getHostport()));
 			Set<DAGEdge> dagedges = graph.outgoingEdgesOf(spts);
-			for(DAGEdge dagedge: dagedges) {
+			for (DAGEdge dagedge : dagedges) {
 				StreamPipelineTaskSubmitter childtask = graph.getEdgeTarget(dagedge);
 				assertGraph(graph, Arrays.asList(childtask), availabletes);
 			}
 		}
 	}
-	
-	
+
+
 }

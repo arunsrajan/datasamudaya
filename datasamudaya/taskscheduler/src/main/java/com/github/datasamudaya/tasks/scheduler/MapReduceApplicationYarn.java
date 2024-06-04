@@ -167,7 +167,7 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 			DataSamudayaJobMetrics.put(jm);
 			hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
-			
+
 			var combiner = new HashSet<Object>();
 			var reducer = new HashSet<>();
 			var mapclzchunkfile = new HashMap<String, Set<Object>>();
@@ -194,7 +194,7 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 				var paths = FileUtil.stat2Paths(fileStatus);
 				blockpath.addAll(Arrays.asList(paths));
 				bls = new ArrayList<>();
-				bls.addAll(HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, blockpath, null));
+				bls.addAll(HDFSBlockUtils.getBlocksLocation(hdfs, blockpath, null));
 				getDnXref(bls);
 				mrtaskcount += bls.size();
 				folderfileblocksmap.put(hdfsdir, bls);
@@ -223,7 +223,7 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 			jobconf.setOutputfolder(outputfolder);
 			jobconf.setOutput(null);
 			TaskInfoYARN tinfoyarn = null;
-			if(nonNull(jobconf.isIsuseglobalte()) && !jobconf.isIsuseglobalte()) {
+			if (nonNull(jobconf.isIsuseglobalte()) && !jobconf.isIsuseglobalte()) {
 				decideContainerCountAndPhysicalMemoryByBlockSize();
 				System.setProperty("jobcount", "" + mrtaskcount);
 				new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
@@ -266,7 +266,7 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 					.readYarnAppmasterServiceDataFromDFS(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL),
 							yarnoutput, DataSamudayaConstants.MASSIVEDATA_YARN_RESULT);
 			List<DataCruncherContext> results = new ArrayList<>();
-			for (YarnReducer red: reducers) {
+			for (YarnReducer red : reducers) {
 				var ctxreducerpart = (Context) RemoteDataFetcher.readIntermediatePhaseOutputFromDFS(
 						red.getApptask().getApplicationid(),
 						(red.getApptask().getApplicationid() + red.getApptask().getTaskid()), false);
