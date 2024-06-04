@@ -8,7 +8,6 @@ import java.util.function.Predicate;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelFieldCollation.Direction;
 import org.apache.calcite.rel.RelCollation;
-import org.apache.calcite.rel.RelCollationImpl;
 import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
@@ -28,7 +27,7 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.datasamudaya.stream.sql.build.StreamPipelineCalciteSqlBuilder;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.SimpleSchema;
@@ -46,7 +45,8 @@ public class DataFrame {
 	RelBuilder builder;
 	List<String> columns;
 	SimpleSchema simpleschema;
-	private static Logger log = LoggerFactory.getLogger(DataFrame.class);
+	private static final Logger log = LoggerFactory.getLogger(DataFrame.class);
+
 	protected DataFrame(DataFrameContext dfcontext) {
 		this.dfcontext = dfcontext;
 		SqlStdOperatorTable sqlStdOperatorTable = SqlStdOperatorTable.instance();
@@ -92,53 +92,53 @@ public class DataFrame {
 		List<RexNode> columnsbuilder = new ArrayList<>();
 		List<String> addedColumns = new ArrayList<>();
 		for (RelDataTypeField field : updatedFields) {
-		        addedColumns.add(field.getName());
+			addedColumns.add(field.getName());
 		}
-		for (String column: requiredcolumns) {
+		for (String column : requiredcolumns) {
 			columnsbuilder.add(builder.field(addedColumns.indexOf(column)));
 		}
 		builder = builder.project(columnsbuilder);
 		return this;
 	}
-	
+
 	/**
 	 * The function sorts the output from previous RelNode
 	 * @param requiredcolumns
 	 * @return dataframe object
 	 */
-	public DataFrame sortBy(Tuple2<String,String>... requiredcolumns) {
+	public DataFrame sortBy(Tuple2<String, String>... requiredcolumns) {
 		RelDataType updatedRowType = builder.peek().getRowType();
 		List<RelDataTypeField> updatedFields = updatedRowType.getFieldList();
 		List<RelFieldCollation> columnsbuilder = new ArrayList<>();
 		List<String> addedColumns = new ArrayList<>();
 		for (RelDataTypeField field : updatedFields) {
-		        addedColumns.add(field.getName());
+			addedColumns.add(field.getName());
 		}
-		for (Tuple2<String,String> column: requiredcolumns) {			
-			RelFieldCollation relfieldcollation = new RelFieldCollation(addedColumns.indexOf(column.v1), isNull(column.v2)||column.v2.equals("ASC")?Direction.ASCENDING:Direction.DESCENDING);
+		for (Tuple2<String, String> column : requiredcolumns) {
+			RelFieldCollation relfieldcollation = new RelFieldCollation(addedColumns.indexOf(column.v1), isNull(column.v2) || "ASC".equals(column.v2) ? Direction.ASCENDING : Direction.DESCENDING);
 			columnsbuilder.add(relfieldcollation);
 		}
 		RelCollation relcollation = RelCollations.of(columnsbuilder);
 		builder = builder.sort(relcollation);
 		return this;
 	}
-	
+
 	/**
 	 * The function sorts the output from previous RelNode using ordinal
 	 * @param ordinal
 	 * @return dataframe object
 	 */
-	public DataFrame sortByOrdinal(Tuple2<Integer,String>... ordinal) {
+	public DataFrame sortByOrdinal(Tuple2<Integer, String>... ordinal) {
 		List<RelFieldCollation> columnsbuilder = new ArrayList<>();
-		for (Tuple2<Integer,String> column: ordinal) {
-			RelFieldCollation relfieldcollation = new RelFieldCollation(column.v1, isNull(column.v2)||column.v2.equals("ASC")?Direction.ASCENDING:Direction.DESCENDING);
+		for (Tuple2<Integer, String> column : ordinal) {
+			RelFieldCollation relfieldcollation = new RelFieldCollation(column.v1, isNull(column.v2) || "ASC".equals(column.v2) ? Direction.ASCENDING : Direction.DESCENDING);
 			columnsbuilder.add(relfieldcollation);
 		}
 		RelCollation relcollation = RelCollations.of(columnsbuilder);
 		builder = builder.sort(relcollation);
 		return this;
 	}
-	
+
 	/**
 	 * Select With Ordinal
 	 * @param ordinal
@@ -146,13 +146,13 @@ public class DataFrame {
 	 */
 	public DataFrame select(Integer... ordinal) {
 		List<RexNode> columnsbuilder = new ArrayList<>();
-		for (Integer column: ordinal) {
+		for (Integer column : ordinal) {
 			columnsbuilder.add(builder.field(column));
 		}
 		builder = builder.project(columnsbuilder);
 		return this;
 	}
-	
+
 	/**
 	 * The function add functions to the select expression
 	 * @param funcbuilder
@@ -163,7 +163,7 @@ public class DataFrame {
 		builder = builder.project(functions);
 		return this;
 	}
-	
+
 	/**
 	 * The function builds the filter condition
 	 * @param filtercondition
@@ -174,18 +174,19 @@ public class DataFrame {
 		builder = builder.filter(predtorex.convertPredicateToRexNode(filtercondition));
 		return this;
 	}
-	
+
 	/**
 	 * This function builds the aggregate functions and adds to the builder
 	 * @param aggfunctionbuilder
 	 * @param groupby
 	 * @return dataframe object
 	 */
-	public DataFrame aggregate(AggregateFunctionBuilder aggfunctionbuilder,String... groupby) {
+	public DataFrame aggregate(AggregateFunctionBuilder aggfunctionbuilder, String... groupby) {
 		List<AggCall> aggfunctions = aggfunctionbuilder.build(builder);
 		builder.aggregate(builder.groupKey(groupby), aggfunctions.toArray(new AggCall[0]));
 		return this;
 	}
+
 	/**
 	 * The method executes the sql
 	 * @return executed sql output
@@ -194,16 +195,16 @@ public class DataFrame {
 	public Object execute() throws Exception {
 		RelNode relnode = builder.build();
 		String sql = convertRelNodeToSqlString(relnode, SqlDialect.DatabaseProduct.H2.getDialect());
-		log.info("SQL From DataFrame Builder {}",sql);
-		StreamPipelineSql sps = StreamPipelineCalciteSqlBuilder.newBuilder()
-		.add(dfcontext.folder, dfcontext.tablename, 
-				Arrays.asList(dfcontext.columns), dfcontext.types)
-		.setSql(sql)
-		.setFileformat(dfcontext.fileformat)
-		.setDb(dfcontext.db)
-		.setPipelineConfig(dfcontext.pipelineconfig)
-		.build();
-		
+		log.info("SQL From DataFrame Builder {}", sql);
+		StreamPipelineSql sps = StreamPipelineSqlBuilder.newBuilder()
+				.add(dfcontext.folder, dfcontext.tablename,
+						Arrays.asList(dfcontext.columns), dfcontext.types)
+				.setSql(sql)
+				.setFileformat(dfcontext.fileformat)
+				.setDb(dfcontext.db)
+				.setPipelineConfig(dfcontext.pipelineconfig)
+				.build();
+
 		return sps.collect(true, null);
 	}
 

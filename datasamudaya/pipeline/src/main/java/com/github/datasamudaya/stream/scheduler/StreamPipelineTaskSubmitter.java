@@ -10,14 +10,20 @@ package com.github.datasamudaya.stream.scheduler;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.ExecuteTaskActor;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.StreamPipelineTaskSubmitterMBean;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.utils.Utils;
 
 import static java.util.Objects.nonNull;
 
@@ -34,6 +40,8 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 	private boolean completedexecution;
 	private boolean resultobtainedte;
 	private PipelineConfig pc;
+	private List<String> childactors;
+	private List<String> taskexecutors;
 
 	public StreamPipelineTaskSubmitter() {
 	}
@@ -67,7 +75,7 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 	public Object call() throws Exception {
 		try {
 			String jobid = task.jobid;
-			if(nonNull(pc) && pc.getUseglobaltaskexecutors()) {
+			if (nonNull(pc) && pc.getUseglobaltaskexecutors()) {
 				jobid = pc.getTejobid();
 			}
 			String hostport[] = hp.split(DataSamudayaConstants.UNDERSCORE);
@@ -75,6 +83,34 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 			StreamDataCruncher sdc = (StreamDataCruncher) registry.lookup(DataSamudayaConstants.BINDTESTUB
 					+ DataSamudayaConstants.HYPHEN + jobid);
 			return sdc.postObject(task);
+		} catch (Exception ex) {
+			log.error("Unable to connect and submit tasks to executor with host and port: " + hp, ex);
+			throw ex;
+		}
+	}
+
+	/**
+	 * Execute Akka Actors
+	 * @return result
+	 * @throws Exception
+	 */
+	public Object actors() throws Exception {
+		try {
+			String jobid = task.jobid;
+			if (nonNull(pc) && pc.getUseglobaltaskexecutors()) {
+				jobid = pc.getTejobid();
+			}
+			String hostport[] = hp.split(DataSamudayaConstants.UNDERSCORE);
+			Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
+			StreamDataCruncher sdc = (StreamDataCruncher) registry.lookup(DataSamudayaConstants.BINDTESTUB
+					+ DataSamudayaConstants.HYPHEN + jobid);
+			if (CollectionUtils.isNotEmpty(task.getShufflechildactors())) {
+				childactors = task.getShufflechildactors().stream().map(task -> task.actorselection).collect(Collectors.toList());
+			}
+			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors, taskexecutors.indexOf(hostport) * 3);
+			task.setTeid(jobid);
+			byte[] objbytes = Utils.convertObjectToBytesCompressed(eta, null);
+			return sdc.postObject(objbytes);
 		} catch (Exception ex) {
 			log.error("Unable to connect and submit tasks to executor with host and port: " + hp, ex);
 			throw ex;
@@ -118,10 +154,9 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 		return true;
 	}
 
-	
 	@Override
 	public String toString() {
-		return "StreamPipelineTaskSubmitter [task=" + task + "]";
+		return "StreamPipelineTaskSubmitter [task=" + task + ", hp=" + hp + "]";
 	}
 
 	@Override
@@ -158,5 +193,17 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 	public void setPc(PipelineConfig pc) {
 		this.pc = pc;
 	}
-	
+
+	public List<String> getChildactors() {
+		return childactors;
+	}
+
+	public void setChildactors(List<String> childactors) {
+		this.childactors = childactors;
+	}
+
+	public void setTaskexecutors(List<String> taskexecutors) {
+		this.taskexecutors = taskexecutors;
+	}
+
 }

@@ -34,7 +34,7 @@ IF EXIST %DATASAMUDAYA_JAVA_HOME%\bin\java.exe (
 
 "%DATASAMUDAYA_JAVA_HOME%\bin\java" -version
 
-"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.stream.pig.PigQueryClient -piguser arun -containerspig 1 -containercpu 2 -containermemory 2048 -pigworkermode standalone
+"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -Djava.net.preferIPv4Stack=true com.github.datasamudaya.stream.pig.PigQueryClient -piguser arun -containerspig 1 -containercpu 2 -containermemory 2048 -drivercpu 1 -drivermemory 2048 -isdriverrequired false -pigworkermode standalone
 
 ) ELSE (
  @echo on

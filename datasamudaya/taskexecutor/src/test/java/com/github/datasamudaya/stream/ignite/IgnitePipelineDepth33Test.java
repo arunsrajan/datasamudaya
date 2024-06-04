@@ -41,6 +41,7 @@ public class IgnitePipelineDepth33Test extends StreamPipelineIgniteBase {
 	boolean toexecute = true;
 	int sum;
 	static Logger log = Logger.getLogger(IgnitePipelineDepth33Test.class);
+
 	@Test
 	public void testMapPairSortedMapPairCount() throws Throwable {
 		log.info("testMapPairSortedMapPairCount Before---------------------------------------");

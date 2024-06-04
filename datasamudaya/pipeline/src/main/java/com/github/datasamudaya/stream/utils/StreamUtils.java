@@ -97,8 +97,7 @@ public class StreamUtils {
 			} else if (function instanceof Distinct) {
 				if (streamparser instanceof IntStream sp) {
 					streamparser = distinct(sp);
-				}
-				else if (streamparser instanceof Stream sp) {
+				} else if (streamparser instanceof Stream sp) {
 					streamparser = distinct(sp);
 				}
 			} else if (function instanceof ToIntFunction tif) {
@@ -313,8 +312,7 @@ public class StreamUtils {
 		if (optional.isPresent()) {
 			List out = Arrays.asList(optional.get());
 			return out.stream();
-		}
-		else {
+		} else {
 			List out = Arrays.asList(0l);
 			return out.stream();
 		}

@@ -115,7 +115,8 @@ public class MesosExecutor implements Executor {
 				//Get the job stage object from jar.
 				//kryo.setClassLoader(clsloader);
 				var jobstagestream = new Input(new ByteArrayInputStream(jarandjobstage));
-				var job = (JobStage) Utils.getKryo().readClassAndObject(jobstagestream);;
+				var job = (JobStage) Utils.getKryo().readClassAndObject(jobstagestream);
+				;
 				jobstagestream.close();
 				//Initialize the mesos task executor.
 				var mdstem = new StreamPipelineTaskExecutorMesos(job, driver, task.getTaskId());

@@ -41,6 +41,7 @@ public class IgnitePipelineDepth34Test extends StreamPipelineIgniteBase {
 	boolean toexecute = true;
 	int sum;
 	static Logger log = Logger.getLogger(IgnitePipelineDepth34Test.class);
+
 	@Test
 	public void testSampleMapPairReduceByKeyFilterForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyFilter Before---------------------------------------");

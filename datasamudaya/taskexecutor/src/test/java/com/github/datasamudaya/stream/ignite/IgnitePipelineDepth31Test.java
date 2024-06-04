@@ -40,6 +40,7 @@ public class IgnitePipelineDepth31Test extends StreamPipelineIgniteBase {
 	boolean toexecute = true;
 	int sum;
 	static Logger log = Logger.getLogger(IgnitePipelineDepth31Test.class);
+
 	@Test
 	public void testFilterFilterFilterCollect() throws Throwable {
 		log.info("testFilterFilterFilter Before---------------------------------------");

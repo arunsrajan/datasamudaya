@@ -2,6 +2,7 @@ package com.github.datasamudaya.stream;
 
 import static java.util.Objects.nonNull;
 
+import java.awt.TrayIcon.MessageType;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -75,6 +76,8 @@ import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.CountByKeyFunction;
 import com.github.datasamudaya.common.functions.CountByValueFunction;
 import com.github.datasamudaya.common.functions.Distinct;
+import com.github.datasamudaya.common.functions.DistributedDistinct;
+import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.DoubleFlatMapFunction;
 import com.github.datasamudaya.common.functions.FlatMapFunction;
 import com.github.datasamudaya.common.functions.FoldByKey;
@@ -93,10 +96,13 @@ import com.github.datasamudaya.common.functions.MapToPairFunction;
 import com.github.datasamudaya.common.functions.PeekConsumer;
 import com.github.datasamudaya.common.functions.PipelineCoalesceFunction;
 import com.github.datasamudaya.common.functions.PredicateSerializable;
+import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
+import com.github.datasamudaya.common.functions.ReduceByKeyFunctionValues;
 import com.github.datasamudaya.common.functions.ReduceFunction;
 import com.github.datasamudaya.common.functions.RightJoin;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.SToIntFunction;
+import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.SortedComparator;
 import com.github.datasamudaya.common.functions.TupleFlatMapFunction;
 import com.github.datasamudaya.common.functions.UnionFunction;
@@ -117,16 +123,16 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	private List<Path> filepaths = new ArrayList<>();
 	protected String protocol;
 	private int blocksize;
-	IntSupplier supplier;	
+	IntSupplier supplier;
 	private String hdfspath;
 	private String folder;
-	
+
 	private static Logger log = Logger.getLogger(StreamPipeline.class);
-	
+
 	protected StreamPipeline() {
-		
+
 	}
-	
+
 	/**
 	 * private Constructor for StreamPipeline 
 	 * @param hdfspath
@@ -137,7 +143,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	private StreamPipeline(String hdfspath, String folder, PipelineConfig pipelineconfig) throws PipelineException {
 		var validator = new PipelineConfigValidator();
 		var errormessages = validator.validate(pipelineconfig);
-		if(!errormessages.isEmpty()) {
+		if (!errormessages.isEmpty()) {
 			var errors = new StringBuilder();
 			errormessages.stream().forEach(error -> errors.append(error + DataSamudayaConstants.NEWLINE));
 			throw new PipelineException(errors.toString());
@@ -148,7 +154,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		this.protocol = FileSystemSupport.HDFS;
 		blocksize = Integer.parseInt(pipelineconfig.getBlocksize()) * 1024 * 1024;
 	}
-	
+
 	/**
 	 * The function newStreamHDFS creates Data Pipeline
 	 * accepts the three params hdfs path, folder in HDFS and
@@ -163,41 +169,41 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		StreamPipeline<String> pipeline = new StreamPipeline<String>(hdfspath, folder, pipelineconfig);
 		pipeline.tasks.add(new Dummy());
 		return pipeline;
-		
+
 	}
-	
-	
+
+
 	public static CsvStream<CSVRecord> newCsvStreamHDFS(String hdfspath, String folder, PipelineConfig pipelineconfig, String[] header) throws PipelineException {
 		StreamPipeline<String> pipeline = new StreamPipeline<String>(hdfspath, folder, pipelineconfig);
 		CsvStream<CSVRecord> csvpipeline = pipeline.csvWithHeader(header);
 		pipeline.tasks.add(new Dummy());
 		return csvpipeline;
-		
+
 	}
-	
+
 	public static CsvStream<Map<String, Object>> newCsvStreamHDFSSQL(String hdfspath, String folder, PipelineConfig pipelineconfig, String[] header, List<SqlTypeName> types, List<String> requiredcolumns) throws PipelineException {
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 		StreamPipeline<String> pipeline = new StreamPipeline<String>(hdfspath, folder, pipelineconfig);
 		pipeline.tasks.add(new Dummy());
 		return pipeline.csvWithHeader(header, types, requiredcolumns);
-		
+
 	}
-	
+
 	public static JsonStream<JSONObject> newJsonStreamHDFS(String hdfspath, String folder, PipelineConfig pipelineconfig) throws PipelineException {
 		StreamPipeline<String> pipeline = new StreamPipeline<String>(hdfspath, folder, pipelineconfig);
 		pipeline.tasks.add(new Dummy());
 		return pipeline.toJson();
-		
+
 	}
-	
+
 	public static JsonStream<Map<String, Object>> newJsonStreamHDFSSQL(String hdfspath, String folder, PipelineConfig pipelineconfig, String[] header, List<SqlTypeName> types, List<String> requiredcolumns) throws PipelineException {
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 		StreamPipeline<String> pipeline = new StreamPipeline<String>(hdfspath, folder, pipelineconfig);
 		pipeline.tasks.add(new Dummy());
 		return pipeline.toJson(header, types, requiredcolumns);
-		
+
 	}
-	
+
 	public static StreamPipeline<String> newStream(String filepathwithscheme, PipelineConfig pipelineconfig) throws PipelineException {
 		StreamPipeline<String> sp = null;
 		URL url;
@@ -205,14 +211,14 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			url = new URL(filepathwithscheme);
 			if (url.getProtocol().equals(FileSystemSupport.HDFS)) {
 				sp = newStreamHDFS(url.getProtocol() + DataSamudayaConstants.COLON + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FORWARD_SLASH + url.getHost() + DataSamudayaConstants.COLON + url.getPort(), url.getPath(), pipelineconfig);
-			} 
+			}
 			return sp;
 		}
-		catch(MalformedURLException use) {
-			throw new PipelineException(PipelineConstants.URISYNTAXNOTPROPER, use); 
+		catch (MalformedURLException use) {
+			throw new PipelineException(PipelineConstants.URISYNTAXNOTPROPER, use);
 		}
 	}
-	
+
 	/**
 	 * Creates csv stream object
 	 * @param header
@@ -221,7 +227,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	private CsvStream<CSVRecord> csvWithHeader(String[] header) {
 		return new CsvStream<>(this, new CsvOptions(header));
 	}
-	
+
 	/**
 	 * Creates csv stream object
 	 * @param header
@@ -230,7 +236,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	private CsvStream<Map<String, Object>> csvWithHeader(String[] header, List<SqlTypeName> columntypes, List<String> columns) {
 		return new CsvStream<>(this, new CsvOptionsSQL(header, columntypes, columns));
 	}
-	
+
 	/**
 	 * Creates Json stream object.
 	 * @return JsonStream object
@@ -238,7 +244,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	private JsonStream<JSONObject> toJson() {
 		return new JsonStream<>(this);
 	}
-	
+
 	/**
 	 * Creates Json stream object.
 	 * @param header
@@ -246,7 +252,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @param columns
 	 * @return json stream object
 	 */
-	private JsonStream<Map<String,Object>> toJson(String[] header, List<SqlTypeName> columntypes, List<String> columns) {
+	private JsonStream<Map<String, Object>> toJson(String[] header, List<SqlTypeName> columntypes, List<String> columns) {
 		return new JsonStream<>(this, new JsonSQL(header, columntypes, columns));
 	}
 
@@ -259,20 +265,21 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> StreamPipeline<T> map(MapFunction<I1 , ? extends T> map) throws PipelineException {
-		if(Objects.isNull(map)) {
+		if (Objects.isNull(map)) {
 			throw new PipelineException(PipelineConstants.MAPFUNCTIONNULL);
 		}
 		var mapobj = new StreamPipeline(this, map);
 		return mapobj;
 	}
-	
+
 	public List<Path> getFilepaths() {
 		return filepaths;
 	}
+
 	public void setFilepaths(List<Path> filepaths) {
 		this.filepaths = filepaths;
 	}
-	
+
 	/**
 	 * Add child task to parent 
 	 * @param parent
@@ -286,7 +293,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		this.csvoptions = parent.csvoptions;
 		this.json = parent.json;
 	}
-	
+
 	/**
 	 * Parent And Child Relationship for Union, Intersection etc.
 	 * @param parent1
@@ -300,9 +307,9 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		this.parents.add(parent2);
 		this.tasks.add(task);
 		this.pipelineconfig = parent1.pipelineconfig;
-	}	
-	
-	
+	}
+
+
 	/**
 	 * StreamPipeline accepts the filter i.e predicate function.
 	 * @param predicate
@@ -310,13 +317,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public StreamPipeline<I1> filter(PredicateSerializable<I1> predicate) throws PipelineException {
-		if(Objects.isNull(predicate)) {
+		if (Objects.isNull(predicate)) {
 			throw new PipelineException(PipelineConstants.PREDICATENULL);
 		}
 		var filter = new StreamPipeline<I1>(this, predicate);
 		return filter;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the union function.
 	 * @param union
@@ -324,15 +331,15 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public StreamPipeline<I1> union(StreamPipeline<I1> union) throws PipelineException {
-		if(Objects.isNull(union)) {
+		if (Objects.isNull(union)) {
 			throw new PipelineException(PipelineConstants.UNIONNULL);
 		}
 		var unionfunction = new UnionFunction();
-		var unionchild =new  StreamPipeline(this, union, unionfunction);
+		var unionchild = new  StreamPipeline(this, union, unionfunction);
 		return unionchild;
 	}
-	
-	
+
+
 	/**
 	 * StreamPipeline accepts the intersection function.
 	 * @param intersection
@@ -340,14 +347,14 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public StreamPipeline<I1> intersection(StreamPipeline<I1> intersection) throws PipelineException {
-		if(Objects.isNull(intersection)) {
+		if (Objects.isNull(intersection)) {
 			throw new PipelineException(PipelineConstants.INTERSECTIONNULL);
 		}
 		var intersectionfunction = new IntersectionFunction();
-		var intersectionchild =new  StreamPipeline(this, intersection, intersectionfunction);
+		var intersectionchild = new  StreamPipeline(this, intersection, intersectionfunction);
 		return intersectionchild;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the MapPair function.
 	 * @param <I3>
@@ -358,13 +365,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public <I3, I4> MapPair<I3, I4> mapToPair(MapToPairFunction<? super I1, ? extends Tuple2<I3, I4>> pf) throws PipelineException {
-		if(Objects.isNull(pf)) {
+		if (Objects.isNull(pf)) {
 			throw new PipelineException(PipelineConstants.MAPPAIRNULL);
 		}
-		var mappair = new MapPair(this, pf);	
+		var mappair = new MapPair(this, pf);
 		return mappair;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the sample function.
 	 * @param numsample
@@ -372,14 +379,14 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public StreamPipeline<I1> sample(Integer numsample) throws PipelineException {
-		if(Objects.isNull(numsample)) {
+		if (Objects.isNull(numsample)) {
 			throw new PipelineException(PipelineConstants.SAMPLENULL);
 		}
 		var sampleintegersupplier = new SampleSupplierInteger(numsample);
 		var samplesupplier = new StreamPipeline(this, sampleintegersupplier);
 		return samplesupplier;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the right outer join function.
 	 * @param mappair
@@ -388,16 +395,16 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public <I2> StreamPipeline<Tuple2<I1, I2>> rightOuterjoin(StreamPipeline<? extends I2> mappair, RightOuterJoinPredicate<? super I1, ? super I2> conditionrightouterjoin) throws PipelineException {
-		if(Objects.isNull(mappair)) {
+		if (Objects.isNull(mappair)) {
 			throw new PipelineException(PipelineConstants.RIGHTOUTERJOIN);
 		}
-		if(Objects.isNull(conditionrightouterjoin)) {
+		if (Objects.isNull(conditionrightouterjoin)) {
 			throw new PipelineException(PipelineConstants.RIGHTOUTERJOINCONDITION);
 		}
 		var sp = new StreamPipeline(this, mappair, conditionrightouterjoin);
 		return sp;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the left outer join function.
 	 * @param mappair
@@ -416,7 +423,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		StreamPipeline<Tuple2<I1, I2>> sp = new StreamPipeline(this, mappair, conditionleftouterjoin);
 		return sp;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the inner join function.
 	 * @param mappair
@@ -424,17 +431,17 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @return StreamPipeline object.
 	 * @throws PipelineException
 	 */
-	public <I2> StreamPipeline<Tuple2<I1, I2>> join(StreamPipeline<I2> mappair, JoinPredicate<I1,I2> innerjoin) throws PipelineException {
-		if(Objects.isNull(mappair)) {
+	public <I2> StreamPipeline<Tuple2<I1, I2>> join(StreamPipeline<I2> mappair, JoinPredicate<I1, I2> innerjoin) throws PipelineException {
+		if (Objects.isNull(mappair)) {
 			throw new PipelineException(PipelineConstants.INNERJOIN);
 		}
-		if(Objects.isNull(innerjoin)) {
+		if (Objects.isNull(innerjoin)) {
 			throw new PipelineException(PipelineConstants.INNERJOINCONDITION);
 		}
 		StreamPipeline<Tuple2<I1, I2>> sp = new StreamPipeline(this, mappair, innerjoin);
 		return sp;
 	}
-	
+
 	/**
 	 * StreamPipeline constructor for FlatMap function.
 	 * @param <T>
@@ -451,13 +458,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public <T> StreamPipeline<T> flatMap(FlatMapFunction<I1, ? extends T> fmf) throws PipelineException {
-		if(Objects.isNull(fmf)) {
+		if (Objects.isNull(fmf)) {
 			throw new PipelineException(PipelineConstants.FLATMAPNULL);
 		}
 		var sp = new StreamPipeline(this, fmf);
 		return sp;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the TupleFlatMap function.
 	 * @param <I3>
@@ -468,13 +475,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public <I3, I4> MapPair<I3, I4> flatMapToTuple2(TupleFlatMapFunction<? super I1, ? extends Tuple2<I3, I4>> fmt) throws PipelineException {
-		if(Objects.isNull(fmt)) {
+		if (Objects.isNull(fmt)) {
 			throw new PipelineException(PipelineConstants.FLATMAPPAIRNULL);
 		}
 		var sp = new MapPair(this, fmt);
 		return sp;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the TupleFlatMap function.
 	 * @param fmt
@@ -483,13 +490,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public StreamPipeline<Tuple> flatMapToTuple(TupleFlatMapFunction<? super I1, ? extends Tuple> fmt) throws PipelineException {
-		if(Objects.isNull(fmt)) {
+		if (Objects.isNull(fmt)) {
 			throw new PipelineException(PipelineConstants.FLATMAPPAIRNULL);
 		}
 		var sp = new StreamPipeline(this, fmt);
 		return sp;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the LongFlatMap function.
 	 * @param lfmf
@@ -497,7 +504,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public StreamPipeline<Long> flatMapToLong(LongFlatMapFunction<I1> lfmf) throws PipelineException {
-		if(Objects.isNull(lfmf)) {
+		if (Objects.isNull(lfmf)) {
 			throw new PipelineException(PipelineConstants.LONGFLATMAPNULL);
 		}
 		var sp = new StreamPipeline<Long>(this, lfmf);
@@ -512,13 +519,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public StreamPipeline<Double> flatMapToDouble(DoubleFlatMapFunction<I1> dfmf) throws PipelineException {
-		if(Objects.isNull(dfmf)) {
+		if (Objects.isNull(dfmf)) {
 			throw new PipelineException(PipelineConstants.DOUBLEFLATMAPNULL);
 		}
 		var sp = new StreamPipeline(this, dfmf);
 		return sp;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the peek function.
 	 * @param consumer
@@ -526,13 +533,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public StreamPipeline<I1> peek(PeekConsumer<I1> consumer) throws PipelineException {
-		if(Objects.isNull(consumer)) {
+		if (Objects.isNull(consumer)) {
 			throw new PipelineException(PipelineConstants.PEEKNULL);
 		}
 		var peek = new StreamPipeline<I1>(this, consumer);
 		return peek;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the sorting function.
 	 * @param sortedcomparator
@@ -540,13 +547,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public StreamPipeline<I1> sorted(SortedComparator<I1> sortedcomparator) throws PipelineException {
-		if(Objects.isNull(sortedcomparator)) {
+		if (Objects.isNull(sortedcomparator)) {
 			throw new PipelineException(PipelineConstants.SORTEDNULL);
 		}
 		var sort = new StreamPipeline<I1>(this, sortedcomparator);
 		return sort;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the distinct.
 	 * @return StreamPipeline object.
@@ -556,7 +563,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		var map = new StreamPipeline(this, distinct);
 		return map;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the SToInt function.
 	 * @param tointfunction
@@ -564,14 +571,14 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public PipelineIntStream<I1> mapToInt(SToIntFunction<I1> tointfunction) throws PipelineException {
-		if(Objects.isNull(tointfunction)) {
+		if (Objects.isNull(tointfunction)) {
 			throw new PipelineException(PipelineConstants.MAPTOINTNULL);
 		}
 		var map = new PipelineIntStream<I1>(this, tointfunction);
 		return map;
 	}
-	
-	
+
+
 	/**
 	 * StreamPipeline accepts the KeyBy function.
 	 * @param <O>
@@ -580,13 +587,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public <O> MapPair<O, I1> keyBy(KeyByFunction<I1, O> keybyfunction) throws PipelineException {
-		if(Objects.isNull(keybyfunction)) {
+		if (Objects.isNull(keybyfunction)) {
 			throw new PipelineException(PipelineConstants.KEYBYNULL);
 		}
 		var mt = new MapPair(this, keybyfunction);
 		return mt;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the Reduce function.
 	 * @param reduce
@@ -594,13 +601,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public StreamPipeline<I1> reduce(ReduceFunction<I1> reduce) throws PipelineException {
-		if(Objects.isNull(reduce)) {
+		if (Objects.isNull(reduce)) {
 			throw new PipelineException(PipelineConstants.KEYBYNULL);
 		}
 		var sp = new StreamPipeline<I1>(this, reduce);
 		return sp;
 	}
-	
+
 	/**
 	 * StreamPipeline accepts the coalesce function.
 	 * @param partition
@@ -610,13 +617,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	@SuppressWarnings({"unchecked"})
 	public StreamPipeline<I1> coalesce(int partition, PipelineCoalesceFunction<I1> cf) throws PipelineException {
-		if(Objects.isNull(cf)) {
+		if (Objects.isNull(cf)) {
 			throw new PipelineException(PipelineConstants.COALESCENULL);
 		}
 		var streampipelinecoalesce = new StreamPipeline<I1>(this, new Coalesce(partition, cf));
 		return streampipelinecoalesce;
 	}
-	
+
 	/**
 	 * 
 	 * @param <T>
@@ -625,13 +632,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public <T1> StreamPipeline<Tuple2<T1, List<I1>>> groupBy(GroupByFunction<I1, T1> gbf) throws PipelineException {
-		if(Objects.isNull(gbf)) {
+		if (Objects.isNull(gbf)) {
 			throw new PipelineException(PipelineConstants.GROUPBYNULL);
 		}
 		var sp = new StreamPipeline<Tuple2<T1, List<I1>>>(this, gbf);
 		return sp;
-	}	
-	
+	}
+
 	/**
 	 * Loads the data from hdfs and cached
 	 * @return
@@ -641,9 +648,9 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		this.childs.clear();
 		return this;
 	}
-	
+
 	public StreamPipeline<I1> cache() throws Exception {
-		var job = this.createJob();		
+		var job = this.createJob();
 		job.setJobtype(JOBTYPE.PIG);
 		this.pipelineconfig.setJobid(job.getId());
 		job.getJm().setSqlpigquery(this.pipelineconfig.getSqlpigquery());
@@ -652,7 +659,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			return new StreamPipeline<I1>(this, rjs.scheduleJob(job));
 		} else {
 			StreamJobScheduler js = new StreamJobScheduler();
-			job.setPipelineconfig(this.pipelineconfig);			
+			job.setPipelineconfig(this.pipelineconfig);
 			var csp = new StreamPipeline<I1>(new Dummy());
 			csp.pigtasks = (Set<Task>) js.schedule(job);
 			this.clearChild();
@@ -663,17 +670,18 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			return csp;
 		}
 	}
+
 	/**
 	 * No Parent and child with dummy task
 	 * @param task
 	 */
-	protected StreamPipeline(Object task){
+	protected StreamPipeline(Object task) {
 		tasks.add(task);
 	}
-	
+
 	private Set<Task> pigtasks;
 	protected DirectedAcyclicGraph<AbstractPipeline, DAGEdge> graph = new DirectedAcyclicGraph<>(DAGEdge.class);
-	
+
 	boolean reexecutealltasks;
 	private Job job;
 	Job jobCreated;
@@ -687,18 +695,22 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws IOException 
 	 * @ 
 	 */
-	protected Job createJob() throws PipelineException, ExportException, IOException, URISyntaxException {		
-		if(this.job!=null) {
+	protected Job createJob() throws PipelineException, ExportException, IOException, URISyntaxException {
+		if (this.job != null) {
 			jobCreated = this.job;
-		}
-		else {
+		} else {
 			jobCreated = new Job();
 			jobCreated.setJm(new JobMetrics());
 			jobCreated.getJm().setJobstarttime(System.currentTimeMillis());
 			jobCreated.setPipelineconfig(pipelineconfig);
-			if(pipelineconfig.getUseglobaltaskexecutors()) {
-				jobCreated.setId(pipelineconfig.getJobid());
-			}else {
+			if (pipelineconfig.getUseglobaltaskexecutors()) {
+				if(nonNull(pipelineconfig.getJobid())) {
+					jobCreated.setId(pipelineconfig.getJobid());
+				} else {
+					pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
+					jobCreated.setId(pipelineconfig.getJobid());
+				}
+			} else {
 				jobCreated.setId(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 			}
 			jobCreated.getJm().setJobid(jobCreated.getId());
@@ -706,11 +718,12 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			jobCreated.getJm().setJobname(pipelineconfig.getJobname());
 			DataSamudayaJobMetrics.put(jobCreated.getJm());
 		}
-		
+
 		getDAG(jobCreated);
 		return jobCreated;
 	}
 	int tmptaskid;
+
 	/**
 	 * Form nodes and edges and get Directed Acyclic graph 
 	 * @param root
@@ -730,29 +743,30 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		}
 	}
 	private int stageid = 1;
-	
+
 	private String printTasks(List<AbstractPipeline> functions) {
 		var tasksnames = functions.stream().map(absfunc -> absfunc.tasks).collect(Collectors.toList());
 		return tasksnames.toString();
 	}
+
 	private String printStages(Set<Stage> stages) {
 		var stagenames = stages.stream().map(sta -> sta.getId()).collect(Collectors.toList());
 		return stagenames.toString();
 	}
 	private Set<Stage> finalstages = new LinkedHashSet<>();
 	private Set<Stage> rootstages = new LinkedHashSet<>();
-	
-	
+
+
 	public void getParents(AbstractPipeline parent, List<AbstractPipeline> parents) {
-		if(CollectionUtils.isEmpty(parent.parents)) {
+		if (CollectionUtils.isEmpty(parent.parents)) {
 			parents.add(parent);
 			return;
 		}
-		for(AbstractPipeline parentroot: parent.parents) {
+		for (AbstractPipeline parentroot : parent.parents) {
 			getParents(parentroot, parents);
 		}
 	}
-	
+
 	/**
 	 * Get Directed Acyclic graph for Map reduce API from functions graph 
 	 * to stages graph.
@@ -798,35 +812,53 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 					rootstages.add(parentstage);
 					graphstages.addVertex(parentstage);
 					taskstagemap.put(af.tasks.get(0), parentstage);
-				}
-				// If abstract functions parent size is greater than 0 then
-				// check if the first childs size is greater than or equal to 2.
-				// Create new child stage and add abstract function to child and
-				// form the edges
-				// between parent and child.
-				else if (af.parents.size() >= 2) {
-					var childstage = new Stage();
-					childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
-					for (var afparent : af.parents) {
-						Stage parentstage = taskstagemap.get(afparent.tasks.get(0));
-						graphstages.addVertex(parentstage);
+				} else if (af.parents.size() >= 2) {
+					if (af.tasks.get(0) instanceof IntersectionFunction && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+							&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL) ) {
+						List<Stage> stages = new ArrayList<>();
+						for (var afparent : af.parents) {
+							if(nonNull(afparent.csvoptions)) {
+								var parentstage = taskstagemap.get(afparent.tasks.get(0));
+								var childstagedisdistinct = new Stage();
+								childstagedisdistinct.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+								childstagedisdistinct.tasks.add(new DistributedDistinct());
+								graphstages.addVertex(parentstage);
+								graphstages.addVertex(childstagedisdistinct);
+								graphstages.addEdge(parentstage, childstagedisdistinct);
+								childstagedisdistinct.parent.add(parentstage);
+								parentstage.child.add(childstagedisdistinct);
+								taskstagemap.put(childstagedisdistinct.tasks.get(0), childstagedisdistinct);
+								stages.add(childstagedisdistinct);
+							} else {
+								Stage parentstage = taskstagemap.get(afparent.tasks.get(0));
+								stages.add(parentstage);
+							}
+						}
+						var childstage = new Stage();
+						childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
 						graphstages.addVertex(childstage);
-						graphstages.addEdge(parentstage, childstage);
-						childstage.parent.add(parentstage);
-						parentstage.child.add(childstage);
+						childstage.tasks.add(af.tasks.get(0));
+						taskstagemap.put(af.tasks.get(0), childstage);
+						for (var stage : stages) {
+							childstage.parent.add(stage);
+							stage.child.add(childstage);
+							graphstages.addEdge(stage, childstage);
+						}
+					} else {
+						var childstage = new Stage();
+						childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+						for (var afparent : af.parents) {
+							Stage parentstage = taskstagemap.get(afparent.tasks.get(0));
+							graphstages.addVertex(parentstage);
+							graphstages.addVertex(childstage);
+							graphstages.addEdge(parentstage, childstage);
+							childstage.parent.add(parentstage);
+							parentstage.child.add(childstage);
+						}
+						childstage.tasks.add(af.tasks.get(0));
+						taskstagemap.put(af.tasks.get(0), childstage);
 					}
-					childstage.tasks.add(af.tasks.get(0));
-					taskstagemap.put(af.tasks.get(0), childstage);
-				}
-				// If the abstract functions are ReduceFunction,
-				// GroupByKeyFunction, JoinPairFunction,
-				// JoinPairFunction, AggregateReduceFunction
-				// SampleSupplierInteger, SampleSupplierPartition
-				// UnionFunction, IntersectionFunction
-				// and if the previous tasks is not added i.e no tasks
-				// are added to stage then add it to tasks of the last available
-				// stage.
-				else if (af.parents.size() == 1) {
+				} else if (af.parents.size() == 1) {
 					// create a new stage and add the abstract function to
 					// new stage created and form the edges between last stage
 					// and new stage.
@@ -862,28 +894,43 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 							|| af.tasks.get(0) instanceof SampleSupplierPartition
 							|| af.tasks.get(0) instanceof UnionFunction
 							|| af.tasks.get(0) instanceof FoldByKey
-							|| af.tasks.get(0) instanceof IntersectionFunction)) {
+							|| af.tasks.get(0) instanceof IntersectionFunction
+							|| ((af.tasks.get(0) instanceof ReduceByKeyFunction
+							|| af.tasks.get(0) instanceof ReduceByKeyFunctionValues
+							|| af.tasks.get(0) instanceof ReduceFunction
+							|| af.tasks.get(0) instanceof SortedComparator
+					) && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+							&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)
+					))
+					) {
 						stageCreator(graphstages, taskstagemap, af, job);
 					} else if (!Objects.isNull(af.parents.get(0).tasks.get(0))
 							&& !(af.parents.get(0).tasks.get(0) instanceof Coalesce
-									|| af.parents.get(0).tasks.get(0) instanceof GroupByKeyFunction
-									|| af.parents.get(0).tasks.get(0) instanceof GroupByFunction
-									|| af.parents.get(0).tasks.get(0) instanceof HashPartitioner
-									|| af.parents.get(0).tasks.get(0) instanceof CountByKeyFunction
-									|| af.parents.get(0).tasks.get(0) instanceof CountByValueFunction
-									|| af.parents.get(0).tasks.get(0) instanceof JoinPredicate
-									|| af.parents.get(0).tasks.get(0) instanceof LeftOuterJoinPredicate
-									|| af.parents.get(0).tasks.get(0) instanceof RightOuterJoinPredicate
-									|| af.parents.get(0).tasks.get(0) instanceof AggregateFunction
-									|| af.parents.get(0).tasks.get(0) instanceof AggregateReduceFunction
-									|| af.parents.get(0).tasks.get(0) instanceof SampleSupplierInteger
-									|| af.parents.get(0).tasks.get(0) instanceof SampleSupplierPartition
-									|| af.parents.get(0).tasks.get(0) instanceof UnionFunction
-									|| af.parents.get(0).tasks.get(0) instanceof FoldByKey
-									|| af.parents.get(0).tasks.get(0) instanceof IntersectionFunction
-									|| af.parents.get(0).tasks.get(0) instanceof Join
-									|| af.parents.get(0).tasks.get(0) instanceof LeftJoin
-									|| af.parents.get(0).tasks.get(0) instanceof RightJoin)) {
+							|| af.parents.get(0).tasks.get(0) instanceof GroupByKeyFunction
+							|| af.parents.get(0).tasks.get(0) instanceof GroupByFunction
+							|| af.parents.get(0).tasks.get(0) instanceof HashPartitioner
+							|| af.parents.get(0).tasks.get(0) instanceof CountByKeyFunction
+							|| af.parents.get(0).tasks.get(0) instanceof CountByValueFunction
+							|| af.parents.get(0).tasks.get(0) instanceof JoinPredicate
+							|| af.parents.get(0).tasks.get(0) instanceof LeftOuterJoinPredicate
+							|| af.parents.get(0).tasks.get(0) instanceof RightOuterJoinPredicate
+							|| af.parents.get(0).tasks.get(0) instanceof AggregateFunction
+							|| af.parents.get(0).tasks.get(0) instanceof AggregateReduceFunction
+							|| af.parents.get(0).tasks.get(0) instanceof SampleSupplierInteger
+							|| af.parents.get(0).tasks.get(0) instanceof SampleSupplierPartition
+							|| af.parents.get(0).tasks.get(0) instanceof UnionFunction
+							|| af.parents.get(0).tasks.get(0) instanceof FoldByKey
+							|| af.parents.get(0).tasks.get(0) instanceof IntersectionFunction
+							|| af.parents.get(0).tasks.get(0) instanceof Join
+							|| af.parents.get(0).tasks.get(0) instanceof LeftJoin
+							|| af.parents.get(0).tasks.get(0) instanceof RightJoin
+							|| ((af.parents.get(0).tasks.get(0) instanceof ReduceByKeyFunction
+							|| af.parents.get(0).tasks.get(0) instanceof ReduceByKeyFunctionValues
+							|| af.parents.get(0).tasks.get(0) instanceof ReduceFunction
+							|| af.parents.get(0).tasks.get(0) instanceof SortedComparator							
+					) && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+							&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)
+					))) {
 						var parentstage = taskstagemap.get(af.parents.get(0).tasks.get(0));
 						parentstage.tasks.add(af.tasks.get(0));
 						taskstagemap.put(af.tasks.get(0), parentstage);
@@ -908,16 +955,15 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			finalstages.clear();
 			finalstages.add(taskstagemap.get(this.tasks.get(0)));
 			var stages = new LinkedHashSet<Stage>();
-			if(rootstages.size() == 1 && finalstages.size() == 1 && rootstages.containsAll(finalstages)) {
+			if (rootstages.size() == 1 && finalstages.size() == 1 && rootstages.containsAll(finalstages)) {
 				stages.addAll(rootstages);
-			}
-			else {
+			} else {
 				// Directed paths
 				var adp = new AllDirectedPaths<>(graphstages);
-	
+
 				// Get graph paths between root stage and final stage.
 				List<GraphPath<Stage, DAGEdge>> graphPaths = adp.getAllPaths(rootstages, finalstages, true,
-						Integer.MAX_VALUE);				
+						Integer.MAX_VALUE);
 				// Collect the graph paths by getting source and target stages.
 				for (var graphpath : graphPaths) {
 					var dagedges = graphpath.getEdgeList();
@@ -938,32 +984,32 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			var abspipeline = new ArrayList<AbstractPipeline>();
 			Set<Stage> stagesblocks = new LinkedHashSet<>();
 			boolean allEmptyPigTasks = isAllEmptyPigTasks(mdsroots);
-			if(!allEmptyPigTasks) {
+			if (!allEmptyPigTasks) {
 				ConcurrentMap<Stage, Object> stageoutputmap = new ConcurrentHashMap<>();
 				Iterator<AbstractPipeline> sps = mdsroots.iterator();
-				for(Stage stage:rootstages) {
+				for (Stage stage :rootstages) {
 					StreamPipeline sp = (StreamPipeline) sps.next();
-					if(nonNull(sp.pigtasks)) {
+					if (nonNull(sp.pigtasks)) {
 						stageoutputmap.put(stage, new ArrayList<>(sp.pigtasks));
 					} else {
 						stagesblocks.add(stage);
 						abspipeline.add(sp);
 					}
-				}				
+				}
 				job.setStageoutputmap(stageoutputmap);
-				if(CollectionUtils.isNotEmpty(abspipeline)) {
+				if (CollectionUtils.isNotEmpty(abspipeline)) {
 					var dbPartitioner = new FileBlocksPartitionerHDFS();
 					dbPartitioner.getJobStageBlocks(job, supplier, "hdfs", stagesblocks, abspipeline, ((StreamPipeline) this).blocksize, ((StreamPipeline) this).pipelineconfig);
 				}
 				PipelineConfig pipeconf = ((StreamPipeline) this).pipelineconfig;
-				if(pipeconf.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
-					var ignite = DataSamudayaIgniteClient.instance((this).pipelineconfig);
+				if (pipeconf.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
+					var ignite = DataSamudayaIgniteClient.instance(this.pipelineconfig);
 					IgniteCache<Object, byte[]> ignitecache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
 					job.setIgcache(ignitecache);
 					job.setIgnite(ignite);
-				} else if(pipeconf.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_NORMAL) &&
-						pipeconf.getLocal().equalsIgnoreCase("false")
-						&& pipeconf.getYarn().equalsIgnoreCase("false")) {
+				} else if (pipeconf.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_NORMAL)
+						&& "false".equalsIgnoreCase(pipeconf.getLocal())
+						&& "false".equalsIgnoreCase(pipeconf.getYarn())) {
 					job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser(), pipelineconfig.getTejobid()));
 					List<String> containers = job.getLcs().stream().flatMap(lc -> {
 						var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
@@ -998,7 +1044,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			throw new PipelineException(PipelineConstants.DAGERROR, ex);
 		}
 	}
-	
+
 	/**
 	 * Check whether the pig tasks are available in all root
 	 * @param abspipelines
@@ -1006,9 +1052,9 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	protected boolean isAllEmptyPigTasks(Collection<AbstractPipeline> abspipelines) {
 		Iterator<AbstractPipeline> iteratorpipelines = abspipelines.iterator();
-		while(iteratorpipelines.hasNext()) {
+		while (iteratorpipelines.hasNext()) {
 			StreamPipeline<?> sp = (StreamPipeline<?>) iteratorpipelines.next();
-			if(CollectionUtils.isNotEmpty(sp.pigtasks)) {
+			if (CollectionUtils.isNotEmpty(sp.pigtasks)) {
 				return false;
 			}
 		}
@@ -1023,20 +1069,42 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @param af
 	 */
 	private void stageCreator(DirectedAcyclicGraph<Stage, DAGEdge> graphstages,
-	Map<Object, Stage> taskstagemap, AbstractPipeline af, Job job) {
+			Map<Object, Stage> taskstagemap, AbstractPipeline af, Job job) {
 		var parentstage = taskstagemap.get(af.parents.get(0).tasks.get(0));
-		var childstage = new Stage();
-		childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
-		childstage.tasks.add(af.tasks.get(0));
-		graphstages.addVertex(parentstage);
-		graphstages.addVertex(childstage);
-		graphstages.addEdge(parentstage, childstage);
-		childstage.parent.add(parentstage);
-		parentstage.child.add(childstage);
-		taskstagemap.put(af.tasks.get(0), childstage);
+		if (af.tasks.get(0) instanceof ReduceByKeyFunction || af.tasks.get(0) instanceof ReduceByKeyFunctionValues
+				|| af.tasks.get(0) instanceof ReduceFunction && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+				&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)) {
+			parentstage.tasks.add(af.tasks.get(0));
+		}		
+		if (af.tasks.get(0) instanceof SortedComparator && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL
+				&& pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_NORMAL)) {
+			parentstage.tasks.add(af.tasks.get(0));
+			var childstage = new Stage();
+			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+			childstage.tasks.add(new DistributedSort());
+			graphstages.addVertex(parentstage);
+			graphstages.addVertex(childstage);
+			graphstages.addEdge(parentstage, childstage);
+			childstage.parent.add(parentstage);
+			parentstage.child.add(childstage);
+			taskstagemap.put(childstage.tasks.get(0), childstage);
+			taskstagemap.put(af.tasks.get(0), childstage);
+			return;
+		}		
+		if(nonNull(parentstage)) {
+			var childstage = new Stage();
+			childstage.setId(DataSamudayaConstants.STAGE + DataSamudayaConstants.HYPHEN + job.getStageidgenerator().getAndIncrement());
+			childstage.tasks.add(af.tasks.get(0));
+			graphstages.addVertex(parentstage);
+			graphstages.addVertex(childstage);
+			graphstages.addEdge(parentstage, childstage);
+			childstage.parent.add(parentstage);
+			parentstage.child.add(childstage);
+			taskstagemap.put(af.tasks.get(0), childstage);
+		}
 	}
-	
-	
+
+
 	/**
 	 * The method renderGraph writes the graph information to files.
 	 * @param graph
@@ -1045,28 +1113,27 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	private static void renderGraph(Graph<AbstractPipeline, DAGEdge> graph, Writer writer) throws ExportException {
 		ComponentNameProvider<AbstractPipeline> vertexIdProvider = task -> {
-			
+
 			try {
 				Thread.sleep(500);
 			} catch (Exception ex) {
 				log.error("Delay Error, see cause below \n", ex);
 			}
 			return "" + System.currentTimeMillis();
-		
-	};
-	ComponentNameProvider<AbstractPipeline> vertexLabelProvider = AbstractPipeline::toString;
-	GraphExporter<AbstractPipeline, DAGEdge> exporter = new DOTExporter<>(vertexIdProvider, vertexLabelProvider, null);
-	exporter.exportGraph(graph, writer);
-	var path = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.GRAPDIRPATH);
-	new File(path).mkdirs();
-	try(var stagegraphfile = new FileWriter(path + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.GRAPHTASKFILENAME) + System.currentTimeMillis());) {
-		stagegraphfile.write(writer.toString());
-	} catch (Exception e) {
-		log.error("File Write Error, see cause below \n", e);
+
+		};
+		ComponentNameProvider<AbstractPipeline> vertexLabelProvider = AbstractPipeline::toString;
+		GraphExporter<AbstractPipeline, DAGEdge> exporter = new DOTExporter<>(vertexIdProvider, vertexLabelProvider, null);
+		exporter.exportGraph(graph, writer);
+		var path = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.GRAPDIRPATH);
+		new File(path).mkdirs();
+		try (var stagegraphfile = new FileWriter(path + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.GRAPHTASKFILENAME) + System.currentTimeMillis());) {
+			stagegraphfile.write(writer.toString());
+		} catch (Exception e) {
+			log.error("File Write Error, see cause below \n", e);
+		}
 	}
-}
-	
-	
+
 
 	/**
 	 * Terminal operation save as file.
@@ -1076,14 +1143,14 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void saveAsTextFile(URI uri, String path) throws PipelineException,Exception {
-			var jobcreated = createJob();
-			jobcreated.setTrigger(Job.TRIGGER.SAVERESULTSTOFILE);
-			jobcreated.setIsresultrequired(true);
-			jobcreated.setUri(uri.toString());
-			jobcreated.setSavepath(path);
-			submitJob(jobcreated);
+		var jobcreated = createJob();
+		jobcreated.setTrigger(Job.TRIGGER.SAVERESULTSTOFILE);
+		jobcreated.setIsresultrequired(true);
+		jobcreated.setUri(uri.toString());
+		jobcreated.setSavepath(path);
+		submitJob(jobcreated);
 	}
-	
+
 	/**
 	 * 
 	 * @param uri
@@ -1093,16 +1160,16 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void saveAsTextFilePig(URI uri, String path) throws PipelineException,Exception {
-			var mdscollect = (StreamPipeline) this;
-			var jobcreated = mdscollect.createJob();
-			jobcreated.setTrigger(Job.TRIGGER.SAVERESULTSTOFILE);
-			jobcreated.setUri(uri.toString());
-			jobcreated.setSavepath(path);
-			mdscollect.submitJob(jobcreated);
-			mdscollect.graph = new DirectedAcyclicGraph<>(DAGEdge.class);
-			mdscollect.childs.clear();
-			mdscollect.tasks = new ArrayList<>();
-			mdscollect.tasks.add(new Dummy());
+		var mdscollect = (StreamPipeline) this;
+		var jobcreated = mdscollect.createJob();
+		jobcreated.setTrigger(Job.TRIGGER.SAVERESULTSTOFILE);
+		jobcreated.setUri(uri.toString());
+		jobcreated.setSavepath(path);
+		mdscollect.submitJob(jobcreated);
+		mdscollect.graph = new DirectedAcyclicGraph<>(DAGEdge.class);
+		mdscollect.childs.clear();
+		mdscollect.tasks = new ArrayList<>();
+		mdscollect.tasks.add(new Dummy());
 	}
 
 	/**
@@ -1114,17 +1181,37 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @
 	 */
 	private Object submitJob(Job job) throws Exception {
-		if (pipelineconfig.getIsremotescheduler()) {
-			RemoteJobScheduler rjs = new RemoteJobScheduler();
-			return rjs.scheduleJob(job);
-		} else {
-			StreamJobScheduler js = new StreamJobScheduler();
-			job.setPipelineconfig(pipelineconfig);
-			return js.schedule(job);
+		try {
+			boolean ismesos = Boolean.parseBoolean(pipelineconfig.getMesos());
+			// If scheduler is yarn?
+			boolean isyarn = Boolean.parseBoolean(pipelineconfig.getYarn());
+			// If scheduler is local?
+			boolean islocal = Boolean.parseBoolean(pipelineconfig.getLocal());
+			// If ignite mode is choosen
+			boolean isignite = Objects.isNull(pipelineconfig.getMode()) ? false
+					: pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_DEFAULT) ? true : false;
+			if (nonNull(pipelineconfig.getUseglobaltaskexecutors())
+					&& pipelineconfig.getUseglobaltaskexecutors()
+					&& nonNull(pipelineconfig.getIsremotescheduler())
+					&& pipelineconfig.getIsremotescheduler() 
+					&& Boolean.FALSE.equals(ismesos) 
+					&& Boolean.FALSE.equals(isyarn) 
+					&& Boolean.FALSE.equals(islocal)
+					&& !isignite) {
+				RemoteJobScheduler rjs = new RemoteJobScheduler();
+				return rjs.scheduleJob(job);
+			} else {
+				StreamJobScheduler js = new StreamJobScheduler();
+				job.setPipelineconfig(pipelineconfig);
+				return js.schedule(job);
+			}
+		} finally {
+			if(pipelineconfig.isWindowspushnotification()) {
+				Utils.showNotification(DataSamudayaConstants.DATASAMUDAYA+" Job Completed", Utils.getJobInfo(job), MessageType.INFO);
+			}
 		}
-
 	}
-	
+
 	/**
 	 * Collect the result which is terminal operation.
 	 * @param toexecute
@@ -1137,21 +1224,28 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		try {
 			var job = createJob();
 			job.getJm().setSqlpigquery(pipelineconfig.getSqlpigquery());
-			if(jobtrigger == Job.TRIGGER.PIGDUMP) {
+			if (jobtrigger == Job.TRIGGER.PIGDUMP) {
 				job.setJobtype(JOBTYPE.PIG);
 			}
 			job.setTrigger(jobtrigger);
-			var results=new ArrayList();
-			if(toexecute && jobtrigger != Job.TRIGGER.PIGDUMP) {
+			var results = new ArrayList();
+			if (toexecute && jobtrigger != Job.TRIGGER.PIGDUMP) {
 				job.setIsresultrequired(true);
 				results = (ArrayList) submitJob(job);
-			} else if(toexecute && jobtrigger == Job.TRIGGER.PIGDUMP) {
+			} else if (toexecute && jobtrigger == Job.TRIGGER.PIGDUMP) {
 				job.setIsresultrequired(true);
-				submitJob(job);
+				if(pipelineconfig.getIsremotescheduler()) {
+					results = (ArrayList) submitJob(job);
+					for(List result:(List<List>)results) {
+						Utils.printTableOrError((List) result, pipelineconfig.getWriter(), JOBTYPE.PIG);
+					}
+				} else {
+					submitJob(job);
+				}
 			}
 			return (List) results;
 		}
-		catch(Exception ex) {
+		catch (Exception ex) {
 			log.error(PipelineConstants.CREATEOREXECUTEJOBERROR, ex);
 			throw new PipelineException(PipelineConstants.CREATEOREXECUTEJOBERROR, (Exception) ex);
 		}
@@ -1172,7 +1266,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			var mdscollect = (StreamPipeline) this;
 			Utils.writeToOstream(pipelineconfig.getOutput(), "Collect task begin...");
 			if (mdscollect.supplier != null && supplier != null) {
-				if (mdscollect.supplier.getAsInt()!=supplier.getAsInt()) {
+				if (mdscollect.supplier.getAsInt() != supplier.getAsInt()) {
 					mdscollect.supplier = supplier;
 					mdscollect.reexecutealltasks = true;
 				} else {
@@ -1191,12 +1285,12 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			Utils.writeToOstream(pipelineconfig.getOutput(), "Collect task ended.");
 			return result;
 		}
-		catch(Exception ex) {
+		catch (Exception ex) {
 			log.error(PipelineConstants.PIPELINECOLLECTERROR, ex);
 			throw new PipelineException(PipelineConstants.PIPELINECOLLECTERROR, ex);
 		}
 	}
-	
+
 	/**
 	 * Dumps or prints PIG results
 	 * @param toexecute
@@ -1209,7 +1303,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			Utils.writeToOstream(pipelineconfig.getOutput(), "Dump task begin...");
 			var mdscollect = (StreamPipeline) this;
 			if (mdscollect.supplier != null && supplier != null) {
-				if (mdscollect.supplier.getAsInt()!=supplier.getAsInt()) {
+				if (mdscollect.supplier.getAsInt() != supplier.getAsInt()) {
 					mdscollect.supplier = supplier;
 					mdscollect.reexecutealltasks = true;
 				} else {
@@ -1222,17 +1316,17 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 				mdscollect.reexecutealltasks = true;
 			} else {
 				mdscollect.reexecutealltasks = false;
-			}		
+			}
 			var result = mdscollect.collect(toexecute, Job.TRIGGER.PIGDUMP);
 			log.debug("Dump task ended.");
 			Utils.writeToOstream(pipelineconfig.getOutput(), "Dump task ended.");
 		}
-		catch(Exception ex) {
+		catch (Exception ex) {
 			log.error(PipelineConstants.PIPELINECOLLECTERROR, ex);
 			throw new PipelineException(PipelineConstants.PIPELINECOLLECTERROR, ex);
 		}
 	}
-	
+
 	/**
 	 * The function count return the results of count.
 	 * @param supplier
@@ -1245,7 +1339,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			var sp = new StreamPipeline(this, new CalculateCount());
 			var mdscollect = (StreamPipeline) sp;
 			if (mdscollect.supplier != null && supplier != null) {
-				if (mdscollect.supplier.getAsInt()!=supplier.getAsInt()) {
+				if (mdscollect.supplier.getAsInt() != supplier.getAsInt()) {
 					mdscollect.supplier = supplier;
 					mdscollect.reexecutealltasks = true;
 				} else {
@@ -1261,12 +1355,12 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			}
 			return mdscollect.collect(true, Job.TRIGGER.COUNT);
 		}
-		catch(Exception ex) {
+		catch (Exception ex) {
 			log.error(PipelineConstants.PIPELINECOUNTERROR, ex);
 			throw new PipelineException(PipelineConstants.PIPELINECOUNTERROR, ex);
 		}
 	}
-	
+
 	/**
 	 * This function executes the forEach tasks.
 	 * @param consumer
@@ -1278,7 +1372,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		try {
 			var mdscollect = (StreamPipeline) this;
 			if (mdscollect.supplier != null && supplier != null) {
-				if (mdscollect.supplier.getAsInt()!=supplier.getAsInt()) {
+				if (mdscollect.supplier.getAsInt() != supplier.getAsInt()) {
 					mdscollect.supplier = supplier;
 					mdscollect.reexecutealltasks = true;
 				} else {
@@ -1295,7 +1389,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			List<StreamPipelineTaskSubmitter> results = mdscollect.collect(true, Job.TRIGGER.FOREACH);
 			results.parallelStream().map(spts -> {
 				try {
-					Task task = spts.getTask();					
+					Task task = spts.getTask();
 					if (task.hostport != null) {
 						RemoteDataFetch rdf = new RemoteDataFetch();
 						rdf.setHp(task.hostport);
@@ -1312,13 +1406,13 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 					} else if (spts.getPc().getLocal().equals(Boolean.TRUE.toString())) {
 						try (var fsstream = mdscollect.jobCreated.getResultstream().get(Utils.getIntermediateResultFS(task));
 				                ByteBufferInputStream bbis =
-				                    new ByteBufferInputStream(((ByteBufferOutputStream) fsstream).get());
+										new ByteBufferInputStream(((ByteBufferOutputStream) fsstream).get());
 				                var input = new Input(bbis);) {
-				              return Utils.getKryo().readClassAndObject(input);
+							return Utils.getKryo().readClassAndObject(input);
 						}
-					} else if(spts.getPc().getMode().equals(DataSamudayaConstants.MODE_DEFAULT)) {
+					} else if (spts.getPc().getMode().equals(DataSamudayaConstants.MODE_DEFAULT)) {
 						try (var sis = new ByteArrayInputStream(
-								((StreamPipeline)this).jobCreated.getIgcache().get(task.jobid + task.stageid + task.taskid));
+								((StreamPipeline) this).jobCreated.getIgcache().get(task.jobid + task.stageid + task.taskid));
 								var input = new Input(sis);) {
 							return Utils.getKryo().readClassAndObject(input);
 						}
@@ -1330,18 +1424,20 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			}).forEach((Consumer) consumer);
 			Utils.destroyTaskExecutors(mdscollect.jobCreated);
 		}
-		catch(Exception ex) {
+		catch (Exception ex) {
 			log.error(PipelineConstants.PIPELINEFOREACHERROR, ex);
 			throw new PipelineException(PipelineConstants.PIPELINEFOREACHERROR, ex);
 		}
 	}
+
 	public String getHdfspath() {
 		return hdfspath;
 	}
+
 	public String getFolder() {
 		return folder;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "StreamPipeline [task=" + tasks + "]";
@@ -1350,17 +1446,17 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	public Set<Task> getPigtasks() {
 		return pigtasks;
 	}
-	
+
 	public void clearChild() {
 		this.childs.clear();
 	}
-	
+
 	public CsvOptions getCsvOptions() {
 		return this.csvoptions;
 	}
-	
+
 	public Json getJson() {
 		return this.json;
 	}
-	
+
 }

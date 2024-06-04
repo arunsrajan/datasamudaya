@@ -36,27 +36,27 @@ public class IgnitePipelineTest extends StreamPipelineIgniteBase {
 		log.info("testHashPartitioner Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
-		List<List<Tuple2<Integer,List<Tuple2>>>> tupleslist = (List) datastream.map(str -> str.split(","))
+		List<List<Tuple2<Integer, List<Tuple2>>>> tupleslist = (List) datastream.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14])).mapToPair(str -> Tuple.tuple(str[1], str[14]))
 				.partition(new HashPartitioner(3))
 				.collect(toexecute, null);
 		long sum = 0;
-		for (List<Tuple2<Integer,List<Tuple2>>> tuples : tupleslist) {			
-			for(Tuple2<Integer,List<Tuple2>> tuplespartitioned: tuples) {
-				sum+=tuplespartitioned.v2.size();
+		for (List<Tuple2<Integer, List<Tuple2>>> tuples : tupleslist) {
+			for (Tuple2<Integer, List<Tuple2>> tuplespartitioned : tuples) {
+				sum += tuplespartitioned.v2.size();
 				log.info(tuplespartitioned.v1);
 			}
 		}
 		assertEquals(46360l, sum);
 		log.info("testHashPartitioner After---------------------------------------");
 	}
-	
+
 	@Test
 	public void testHashPartitionerReduceByKey() throws Throwable {
 		log.info("testHashPartitionerReduceByKey Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
-		List<List<Tuple2<String,Integer>>> tupleslist = (List) datastream.map(str -> str.split(","))
+		List<List<Tuple2<String, Integer>>> tupleslist = (List) datastream.map(str -> str.split(","))
 				.filter(str -> !"ArrDelay".equals(str[14]) && !"NA".equals(str[14])).mapToPair(str -> new Tuple2<String, Integer>(str[1], Integer.parseInt(str[14])))
 				.partition(new HashPartitioner(3))
 				.flatMap(tuples -> tuples.v2().stream())
@@ -64,8 +64,8 @@ public class IgnitePipelineTest extends StreamPipelineIgniteBase {
 				.collect(toexecute, null);
 		int sum = 0;
 		assertEquals(1, tupleslist.size());
-		for (List<Tuple2<String,Integer>> tuples : tupleslist) {
-			for (Tuple2<String,Integer> tuple2 : tuples) {
+		for (List<Tuple2<String, Integer>> tuples : tupleslist) {
+			for (Tuple2<String, Integer> tuple2 : tuples) {
 				log.info(tuple2);
 				sum += tuple2.v2();
 			}
@@ -74,7 +74,7 @@ public class IgnitePipelineTest extends StreamPipelineIgniteBase {
 		assertEquals(-63278l, sum);
 		log.info("testHashPartitionerReduceByKey After---------------------------------------");
 	}
-	
+
 	@Test
 	public void testHashPartitionerReduceByKeyPartitioned() throws Throwable {
 		log.info("testHashPartitionerReduceByKeyPartitioned Before---------------------------------------");
@@ -116,15 +116,15 @@ public class IgnitePipelineTest extends StreamPipelineIgniteBase {
 				.collect(toexecute, null);
 		int sum = 0;
 		assertEquals(1, tupleslist.size());
-		for (List<Tuple2<Map, List<String[]>>> tuples : tupleslist) {			
+		for (List<Tuple2<Map, List<String[]>>> tuples : tupleslist) {
 			for (Tuple2<Map, List<String[]>> tuple2 : tuples) {
 				log.info("partition-------");
 				log.info(tuple2);
 				sum += tuple2.v2.size();
-			}			
+			}
 		}
 		assertEquals(45957l, sum);
 		log.info("testGroupBy After---------------------------------------");
 	}
-	
+
 }

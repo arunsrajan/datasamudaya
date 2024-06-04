@@ -2,17 +2,17 @@ package com.github.datasamudaya.lambdaInspector.expr;
 
 public class ThisExpression extends Expression {
 
-    public ThisExpression(Class<?> thisType) {
-        super(thisType);
-    }
+	public ThisExpression(Class<?> thisType) {
+		super(thisType);
+	}
 
-    @Override
-    public <T> T accept(ExpressionVisitor<T> visitor) {
-        return visitor.visit(this);
-    }
+	@Override
+	public <T> T accept(ExpressionVisitor<T> visitor) {
+		return visitor.visit(this);
+	}
 
-    @Override
-    public String toString() {
-        return "this";
-    }
+	@Override
+	public String toString() {
+		return "this";
+	}
 }

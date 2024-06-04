@@ -34,7 +34,7 @@ public class DataSamudayaCache {
 	public static Cache<?, ?> get() {
 		return DataSamudayaCache.cache;
 	}
-	
+
 	public static void putBlocksMetadata(Cache<String, BlocksLocation[]> blockslocationmetadatacache) {
 		DataSamudayaCache.blockslocationmetadatacache = blockslocationmetadatacache;
 	}
@@ -50,8 +50,8 @@ public class DataSamudayaCache {
 	public static Cache<String, String> getFileMetadata() {
 		return DataSamudayaCache.filemetadatacache;
 	}
-	
-	
+
+
 	private DataSamudayaCache() {
 	}
 }

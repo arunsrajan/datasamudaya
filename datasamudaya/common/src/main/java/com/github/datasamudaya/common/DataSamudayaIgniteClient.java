@@ -41,6 +41,7 @@ public class DataSamudayaIgniteClient {
 	}
 
 	private static Ignite ignite;
+
 	/**
 	 * Obtain ignite client object for given configuration for streaming scheduler.
 	 * @param pipelineconfig
@@ -49,41 +50,41 @@ public class DataSamudayaIgniteClient {
 	public static synchronized Ignite instance(PipelineConfig pipelineconfig) {
 		if (isNull(ignite) || nonNull(ignite) && !ignite.active()) {
 			IgniteConfiguration cfg = new IgniteConfiguration()
-				    .setDiscoverySpi(new TcpDiscoverySpi()
-				        .setIpFinder(new TcpDiscoveryVmIpFinder()
-				            .setAddresses(Collections.singletonList(pipelineconfig.getIgnitehp()))))
-				    .setDeploymentMode(DeploymentMode.CONTINUOUS)
-				    .setClientMode(true)
-				    .setPeerClassLoadingEnabled(true)
-				    .setCacheConfiguration(new CacheConfiguration<>(DataSamudayaConstants.DATASAMUDAYACACHE)
-				    		.setCacheMode(CacheMode.PARTITIONED).setAtomicityMode(CacheAtomicityMode.ATOMIC)
-				    		.setBackups(Integer.parseInt(pipelineconfig.getIgnitebackup())));
+					.setDiscoverySpi(new TcpDiscoverySpi()
+							.setIpFinder(new TcpDiscoveryVmIpFinder()
+									.setAddresses(Collections.singletonList(pipelineconfig.getIgnitehp()))))
+					.setDeploymentMode(DeploymentMode.CONTINUOUS)
+					.setClientMode(true)
+					.setPeerClassLoadingEnabled(true)
+					.setCacheConfiguration(new CacheConfiguration<>(DataSamudayaConstants.DATASAMUDAYACACHE)
+							.setCacheMode(CacheMode.PARTITIONED).setAtomicityMode(CacheAtomicityMode.ATOMIC)
+							.setBackups(Integer.parseInt(pipelineconfig.getIgnitebackup())));
 			ignite = Ignition.start(cfg);
 		}
 		return ignite;
 	}
-	
+
 	/**
 	 * Obtain ignite client object for given configuration for map reduce scheduler.
 	 * @param jobconf
 	 * @return ignite client object
 	 */
 	public static synchronized Ignite instanceMR(JobConfiguration jobconf) {
-		if (isNull(ignite) || nonNull(ignite) && !ignite.active()) {			
+		if (isNull(ignite) || nonNull(ignite) && !ignite.active()) {
 			IgniteConfiguration cfg = new IgniteConfiguration()
-				    .setDiscoverySpi(new TcpDiscoverySpi()
-				        .setIpFinder(new TcpDiscoveryVmIpFinder()
-					            .setAddresses(Collections.singletonList(jobconf.getIgnitehp()))))
-				    .setDeploymentMode(DeploymentMode.CONTINUOUS)
-				    .setClientMode(true)
-				    .setPeerClassLoadingEnabled(true)
-				    .setCacheConfiguration(new CacheConfiguration<>(DataSamudayaConstants.DATASAMUDAYACACHE)
-				    		.setCacheMode(CacheMode.PARTITIONED).setAtomicityMode(CacheAtomicityMode.ATOMIC)
-				    		.setBackups(Integer.parseInt(jobconf.getIgnitebackup())));
+					.setDiscoverySpi(new TcpDiscoverySpi()
+							.setIpFinder(new TcpDiscoveryVmIpFinder()
+									.setAddresses(Collections.singletonList(jobconf.getIgnitehp()))))
+					.setDeploymentMode(DeploymentMode.CONTINUOUS)
+					.setClientMode(true)
+					.setPeerClassLoadingEnabled(true)
+					.setCacheConfiguration(new CacheConfiguration<>(DataSamudayaConstants.DATASAMUDAYACACHE)
+							.setCacheMode(CacheMode.PARTITIONED).setAtomicityMode(CacheAtomicityMode.ATOMIC)
+							.setBackups(Integer.parseInt(jobconf.getIgnitebackup())));
 			ignite = Ignition.start(cfg);
 		}
 		return ignite;
 	}
-	
+
 
 }

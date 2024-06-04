@@ -36,6 +36,7 @@ public class JsonSQL extends Json implements Serializable {
 	private String[] header;
 	private List<SqlTypeName> types = new ArrayList<>();
 	private List<String> requiredcolumns = new ArrayList<>();
+
 	public JsonSQL(String[] header, List<SqlTypeName> types, List<String> requiredcolumns) {
 		this.header = header;
 		this.types = types;

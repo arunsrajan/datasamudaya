@@ -24,7 +24,7 @@ import com.github.datasamudaya.common.utils.Utils;
 public class TaskSchedulerCommon {
 
 	@BeforeClass
-	public static void init() throws Exception {		
+	public static void init() throws Exception {
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
 		StaticComponentContainer.Modules.exportAllToAll();

@@ -24,6 +24,6 @@ import com.github.datasamudaya.common.PipelineConfig;
  * @author arun
  * The interface for the pipeline.
  */
-public interface Pipeline extends Serializable{
+public interface Pipeline extends Serializable {
 	public abstract void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception;
 }

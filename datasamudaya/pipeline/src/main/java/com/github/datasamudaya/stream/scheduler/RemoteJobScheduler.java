@@ -2,7 +2,6 @@ package com.github.datasamudaya.stream.scheduler;
 
 import static java.util.Objects.nonNull;
 
-import java.io.ByteArrayOutputStream;
 import java.net.Socket;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -12,12 +11,11 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.LoadJar;
-import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.utils.Utils;
@@ -33,6 +31,7 @@ public class RemoteJobScheduler {
 
 	private static final Logger log = LoggerFactory.getLogger(RemoteJobScheduler.class);
 	Set<String> taskexecutors;
+
 	/**
 	 * 
 	 * @param job
@@ -81,6 +80,9 @@ public class RemoteJobScheduler {
 			}
 			var tes = zo.getTaskExectorsByJobId(jobid);
 			taskexecutors = new LinkedHashSet<>();
+			List<String> drivers = zo.getDriversByJobId(jobid);
+			job.getTaskexecutors().addAll(0, drivers);
+			taskexecutors.addAll(drivers);
 			taskexecutors.addAll(tes);
 			while (taskexecutors.size() != job.getTaskexecutors().size()) {
 				Thread.sleep(1000);
@@ -99,7 +101,7 @@ public class RemoteJobScheduler {
 			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		}
 	}
-	
+
 	/**
 	 * Scheduler Job Remotely
 	 * @param job
@@ -107,24 +109,22 @@ public class RemoteJobScheduler {
 	 * @throws Exception 
 	 */
 	public Object scheduleJob(Job job) throws Exception {
-		try (var zo = new ZookeeperOperations();
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                var fstout = new Output(baos);) {	    	
-	    	zo.connect();
-	    	getTaskExecutorsHostPort(job, job.getPipelineconfig(), zo);
-	    	String choosente = taskexecutors.iterator().next();
-           	Kryo kryo = Utils.getKryoInstance();
-           	if (nonNull(job.getPipelineconfig().getClsloader())) {
-    			kryo.setClassLoader(job.getPipelineconfig().getClsloader());
-    		}
-	        kryo.writeClassAndObject(fstout, job);
-	        fstout.flush();
-	        String jobid = job.getId();
-	        if (job.getPipelineconfig().getUseglobaltaskexecutors()) {
+		try (var zo = new ZookeeperOperations();) {
+			zo.connect();
+			getTaskExecutorsHostPort(job, job.getPipelineconfig(), zo);
+			String jobid = job.getId();
+			if (job.getPipelineconfig().getUseglobaltaskexecutors()) {
 				jobid = job.getPipelineconfig().getTejobid();
+			};
+			String choosente = getDriverNode(zo, jobid);
+			log.info("Choosen Task Executor Host Port {}", choosente);			
+			Object output = null;
+			if(nonNull(job.getPipelineconfig().getJar())) {
+				output = Utils.getResultObjectByInput(choosente, job, jobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
+			} else {
+				output = Utils.getResultObjectByInput(choosente, job, jobid);
 			}
-	    	Object output = Utils.getResultObjectByInput(choosente, baos.toByteArray(), jobid);
-	    	job.getJm().setJobcompletiontime(System.currentTimeMillis());
+			job.getJm().setJobcompletiontime(System.currentTimeMillis());
 			Utils.writeToOstream(job.getPipelineconfig().getOutput(), "Concluded job in "
 					+ ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0) + " seconds");
 			log.info("Concluded job in "
@@ -132,16 +132,26 @@ public class RemoteJobScheduler {
 			job.getJm()
 					.setTotaltimetaken((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0);
 			Utils.writeToOstream(job.getPipelineconfig().getOutput(), "Job stats " + job.getJm());
-	    	return output;
-		} catch(Exception ex) {
+			return output;
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		} finally {
-			 if (!job.getPipelineconfig().getUseglobaltaskexecutors()) {
-				 Utils.destroyTaskExecutors(job);
-			 }
+			if (!job.getPipelineconfig().getUseglobaltaskexecutors()) {
+				Utils.destroyTaskExecutors(job);
+			}
 		}
 		return null;
 	}
-	
+
+	/**
+	 * The function gets all the drivers from zookeeepr for given job id
+	 * @param zo
+	 * @param job
+	 * @return driver host port
+	 * @throws Exception
+	 */
+	protected String getDriverNode(ZookeeperOperations zo, String jobid) throws Exception {
+		return zo.getDriversByJobId(jobid).stream().filter(hp->taskexecutors.contains(hp)).findFirst().get();
+	}
 	
 }

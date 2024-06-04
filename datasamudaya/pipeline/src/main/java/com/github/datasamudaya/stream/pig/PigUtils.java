@@ -1,4 +1,5 @@
 package com.github.datasamudaya.stream.pig;
+
 import static java.util.Objects.nonNull;
 
 import java.lang.reflect.InvocationTargetException;
@@ -85,11 +86,12 @@ import com.github.datasamudaya.stream.utils.SQLUtils;
  *
  */
 public class PigUtils {
-	
-	private PigUtils() {}
+
+	private PigUtils() {
+	}
 
 	private static final Logger log = LoggerFactory.getLogger(PigUtils.class);
-	
+
 	/**
 	 * Get the Pig Query parser by passing scope
 	 * @param scope
@@ -99,15 +101,14 @@ public class PigUtils {
 	public static synchronized QueryParserDriver getQueryParserDriver(String scope) throws Exception {
 		PigServer pigServer = null;
 		PigContext pigcontext = null;
-		if(nonNull(GlobalPigServer.getPigServer())) {
+		if (nonNull(GlobalPigServer.getPigServer())) {
 			pigServer = GlobalPigServer.getPigServer();
 			pigcontext = pigServer.getPigContext();
-		}
-		else {
+		} else {
 			Configuration conf = new Configuration();
-	        pigcontext = new PigContext(LocalExecType.LOCAL, conf);
-	        pigServer = new PigServer(pigcontext, true);
-	        FuncSpec funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.AbsUDF");
+			pigcontext = new PigContext(LocalExecType.LOCAL, conf);
+			pigServer = new PigServer(pigcontext, true);
+			FuncSpec funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.AbsUDF");
 			pigServer.registerFunction("abs", funcSpec);
 			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.LengthUDF");
 			pigServer.registerFunction("length", funcSpec);
@@ -135,10 +136,10 @@ public class PigUtils {
 			pigServer.registerFunction("base64decode", funcSpec);
 			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.NormalizeSpacesUDF");
 			pigServer.registerFunction("normalizespaces", funcSpec);
-	        GlobalPigServer.setPigServer(pigServer);
+			GlobalPigServer.setPigServer(pigServer);
 		}
-        Map<String, String> filenamemap = new HashMap<>();
-        QueryParserDriver parserdriver = new QueryParserDriver(pigcontext, scope, filenamemap);
+		Map<String, String> filenamemap = new HashMap<>();
+		QueryParserDriver parserdriver = new QueryParserDriver(pigcontext, scope, filenamemap);
 		return parserdriver;
 	}
 
@@ -153,8 +154,8 @@ public class PigUtils {
 		LogicalPlan logicalplan = queryparserdriver.parse(pigquery);
 		return logicalplan.getOperators();
 	}
-	
-	
+
+
 	/**
 	 * Get LogicalPlan by passing pigquery and query parser
 	 * @param pigquery
@@ -167,12 +168,12 @@ public class PigUtils {
 			StringBuilder pigCommands = new StringBuilder();
 			pigQueries.forEach(pigCommands::append);
 			return queryparserdriver.parse(pigCommands.toString());
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Get Stream object for LOLoad operator
 	 * @param user
@@ -183,14 +184,14 @@ public class PigUtils {
 	 * @return stream object
 	 * @throws Exception
 	 */
-	public static StreamPipeline<?> executeLOLoad(String user, String jobid, String tejobid, LOLoad loload, PipelineConfig pipelineconfig) throws Exception {		
+	public static StreamPipeline<?> executeLOLoad(String user, String jobid, String tejobid, LOLoad loload, PipelineConfig pipelineconfig) throws Exception {
 		String[] headers = getHeaderFromSchema(loload.getSchema());
 		List<SqlTypeName> schematypes = getTypesFromSchema(loload.getSchema());
 		return StreamPipeline.newCsvStreamHDFSSQL(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
-				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT), loload.getSchemaFile(),
+						DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT), loload.getSchemaFile(),
 				pipelineconfig, headers, schematypes, Arrays.asList(headers));
 	}
-	
+
 	/**
 	 * Convert value to for a given data type
 	 * @param value
@@ -199,36 +200,36 @@ public class PigUtils {
 	 */
 	public static Object getValue(String value, Class<?> type) {
 		try {
-			if(type == Integer.class) {
+			if (type == Integer.class) {
 				return Integer.valueOf(value);
-			} else if(type == Long.class) {
+			} else if (type == Long.class) {
 				return Long.valueOf(value);
-			} else if(type == String.class) {
+			} else if (type == String.class) {
 				return String.valueOf(value);
-			} else if(type == Float.class) {
-				return Float.valueOf(value);			
-			} else if(type == Double.class) {
+			} else if (type == Float.class) {
+				return Float.valueOf(value);
+			} else if (type == Double.class) {
 				return Double.valueOf(value);
 			} else {
 				return String.valueOf(value);
 			}
-		} catch(Exception ex) {
-			if(type == Integer.class) {
+		} catch (Exception ex) {
+			if (type == Integer.class) {
 				return Integer.valueOf(0);
-			} else if(type == Long.class) {
+			} else if (type == Long.class) {
 				return Long.valueOf(0l);
-			} else if(type == String.class) {
+			} else if (type == String.class) {
 				return String.valueOf(0);
-			} else if(type == Float.class) {
-				return Float.valueOf(0.0f);			
-			} else if(type == Double.class) {
+			} else if (type == Float.class) {
+				return Float.valueOf(0.0f);
+			} else if (type == Double.class) {
 				return Double.valueOf(0.0d);
 			} else {
 				return String.valueOf(0);
 			}
 		}
 	}
-	
+
 	/**
 	 * filter the data
 	 * @param sp
@@ -248,12 +249,12 @@ public class PigUtils {
 						return false;
 					}
 				});
-		if(!hasdescendants) {
-			return sp.map(obj->((Object[])obj[0]));
+		if (!hasdescendants) {
+			return sp.map(obj -> ((Object[]) obj[0]));
 		}
 		return sp;
 	}
-	
+
 	/**
 	 * Executes the sorting stream in ascending or descending order 
 	 * @param sp
@@ -266,37 +267,20 @@ public class PigUtils {
 		List<LogicalExpressionPlan> leps = loSort.getSortColPlans();
 		Iterator<Boolean> asccolumns = loSort.getAscendingCols().iterator();
 		List<SortOrderColumns> sortordercolumns = new ArrayList<>();
-		for(LogicalExpressionPlan lep:leps) {
+		for (LogicalExpressionPlan lep :leps) {
 			ProjectExpression projectexpression = (ProjectExpression) lep.getOperators().next();
 			SortOrderColumns soc = new SortOrderColumns();
-			soc.setColumn(projectexpression.getColAlias());
+			soc.setColumn(aliasorcolumns.indexOf(projectexpression.getColAlias()));
 			soc.setIsasc(asccolumns.next());
 			sortordercolumns.add(soc);
 		}
-		sp = sp.sorted((map1, map2) -> {
-			List<SortOrderColumns> columnssortorder = sortordercolumns;
-
-			for (int i = 0;i < columnssortorder.size();i++) {
-				String columnName = columnssortorder.get(i).getColumn();
-				Boolean isAsc = columnssortorder.get(i).isIsasc();
-				Object value1 = ((Object[])map1[0])[aliasorcolumns.indexOf(columnName)];
-				Object value2 = ((Object[])map2[0])[aliasorcolumns.indexOf(columnName)];
-				int result = SQLUtils.compareTo(value1, value2);
-				if (!isAsc) {
-					result = -result;
-				}
-				if (result != 0) {
-					return result;
-				}
-			}
-			return 0;
-		});
-		if(!hasdescendants) {
-			return sp.map(obj->((Object[])obj[0]));
+		sp = sp.sorted(new PigSortedComparator(sortordercolumns));
+		if (!hasdescendants) {
+			return sp.map(obj -> ((Object[]) obj[0]));
 		}
 		return sp;
 	}
-	
+
 	/**
 	 * Execute Distinct values 
 	 * @param sp
@@ -304,47 +288,47 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static StreamPipeline<Object[]> executeLODistinct(StreamPipeline<Object[]> spparent, boolean hasdescendants) throws Exception {
-		
+
 		StreamPipeline<Object[]> spdistinct = spparent
-				.map(new MapFunction<Object[],List<Object>>(){					
+				.map(new MapFunction<Object[], List<Object>>(){
 					private static final long serialVersionUID = 4839257897910999653L;
 					@Override
 					public List<Object> apply(Object[] distobj) {
-						return Arrays.asList(((Object[])distobj[0]));
+						return Arrays.asList(((Object[]) distobj[0]));
 					}
 				}).distinct()
 				.mapToPair(new MapToPairFunction<List<Object>, Tuple2<List<Object>, Double>>() {
-					private static final long serialVersionUID = -6412672309048067129L;		
+					private static final long serialVersionUID = -6412672309048067129L;
 					@Override
 					public Tuple2<List<Object>, Double> apply(List<Object> record) {
 						return new Tuple2<>(record, 1.0d);
 					}
 
 				}).reduceByKey(new ReduceByKeyFunction<Double>() {
-					private static final long serialVersionUID = -2395505885613892042L;
+			private static final long serialVersionUID = -2395505885613892042L;
 
-					@Override
-					public Double apply(Double t, Double u) {
-						return t + u;
-					}
+			@Override
+			public Double apply(Double t, Double u) {
+				return t + u;
+			}
 
-				}).coalesce(1, new CoalesceFunction<Double>() {
-					private static final long serialVersionUID = 8667714333390649847L;
+		}).coalesce(1, new CoalesceFunction<Double>() {
+			private static final long serialVersionUID = 8667714333390649847L;
 
-					@Override
-					public Double apply(Double t, Double u) {
-						return t + u;
-					}
+			@Override
+			public Double apply(Double t, Double u) {
+				return t + u;
+			}
 
-				}).map(new MapFunction<Tuple2<List<Object>, Double>, List<Object>>() {
-					private static final long serialVersionUID = -7888406734785506543L;
+		}).map(new MapFunction<Tuple2<List<Object>, Double>, List<Object>>() {
+			private static final long serialVersionUID = -7888406734785506543L;
 
-					@Override
-					public List<Object> apply(Tuple2<List<Object>, Double> tup2) {
-						return tup2.v1();
-					}
-					
-				}).distinct()
+			@Override
+			public List<Object> apply(Tuple2<List<Object>, Double> tup2) {
+				return tup2.v1();
+			}
+
+		}).distinct()
 				.map(new MapFunction<List<Object>, Object[]>() {
 					private static final long serialVersionUID = 5319711801798549984L;
 
@@ -353,19 +337,19 @@ public class PigUtils {
 						Object[] objdistinct = new Object[2];
 						objdistinct[0] = list.toArray(new Object[0]);
 						objdistinct[1] = new Object[list.size()];
-						for(int index=0;index<list.size(); index++) {
-							((Object[])objdistinct[1])[index] = true;
+						for (int index = 0;index < list.size();index++) {
+							((Object[]) objdistinct[1])[index] = true;
 						}
 						return objdistinct;
 					}
-					
+
 				});
-		if(!hasdescendants) {
-			return spdistinct.map(obj->((Object[])obj[0]));
+		if (!hasdescendants) {
+			return spdistinct.map(obj -> ((Object[]) obj[0]));
 		}
 		return spdistinct;
 	}
-	
+
 	/**
 	 * Join two streams based on columns
 	 * @param sp1
@@ -376,16 +360,16 @@ public class PigUtils {
 	 */
 	public static StreamPipeline<Object[]> executeLOJoin(StreamPipeline<Object[]> sp1,
 			StreamPipeline<Object[]> sp2,
-			List<String> columnsleft, List<String> columnsright,			
+			List<String> columnsleft, List<String> columnsright,
 			LOJoin loJoin,
-			List<String> reqcolsleft, 
+			List<String> reqcolsleft,
 			List<String> allcolsleft,
-			List<String> reqcolsright, 
+			List<String> reqcolsright,
 			List<String> allcolsright,
-			List<String> aliasleft, 
+			List<String> aliasleft,
 			List<String> aliasright,
 			boolean hasdescendants) throws Exception {
-		
+
 		StreamPipeline<Object[]> sp = sp1.join(sp2, new JoinPredicate<Object[], Object[]>() {
 			private static final long serialVersionUID = -2218859526944624786L;
 			List<String> leftablecol = columnsleft;
@@ -394,15 +378,15 @@ public class PigUtils {
 			List<String> allcolleft = allcolsleft;
 			List<String> reqcolright = reqcolsright;
 			List<String> allcolright = allcolsright;
-			List<String> alileft = aliasleft; 
-			List<String> aliright = aliasright; 
+			List<String> alileft = aliasleft;
+			List<String> aliright = aliasright;
 			public boolean test(Object[] rowleft, Object[] rowright) {
 				for (int columnindex = 0;columnindex < leftablecol.size();columnindex++) {
 					String leftcol = leftablecol.get(columnindex);
 					String rightcol = righttablecol.get(columnindex);
-					Object leftvalue = ((Object[])rowleft[0])[alileft.indexOf(leftcol)];
-					Object rightvalue = ((Object[])rowright[0])[aliright.indexOf(rightcol)];
-					if(leftvalue==null && rightvalue == null||nonNull(leftvalue) && nonNull(rightvalue) && !leftvalue.equals(rightvalue)) {
+					Object leftvalue = ((Object[]) rowleft[0])[alileft.indexOf(leftcol)];
+					Object rightvalue = ((Object[]) rowright[0])[aliright.indexOf(rightcol)];
+					if (leftvalue == null && rightvalue == null || nonNull(leftvalue) && nonNull(rightvalue) && !leftvalue.equals(rightvalue)) {
 						return false;
 					}
 				}
@@ -413,18 +397,18 @@ public class PigUtils {
 
 			@Override
 			public Object[] apply(
-					Tuple2<Object[], Object[]> tup2) {				
-				return new Object[] {concatenate(((Object[])tup2.v1()[0]), ((Object[])tup2.v2()[0])), 
-						concatenate(((Object[])tup2.v1()[1]), ((Object[])tup2.v2()[1]))};
+					Tuple2<Object[], Object[]> tup2) {
+				return new Object[]{concatenate(((Object[]) tup2.v1()[0]), ((Object[]) tup2.v2()[0])),
+						concatenate(((Object[]) tup2.v1()[1]), ((Object[]) tup2.v2()[1]))};
 			}
 		});
-		
-		if(!hasdescendants) {
-			return sp.map(obj->((Object[])obj[0]));
+
+		if (!hasdescendants) {
+			return sp.map(obj -> ((Object[]) obj[0]));
 		}
 		return sp;
 	}
-	
+
 	/**
 	 * Merges two object array in to single
 	 * @param <T>
@@ -432,14 +416,14 @@ public class PigUtils {
 	 * @param b
 	 * @return merged object
 	 */
-	public static <T> Object[] concatenate(T[] a, T[] b) 
-    { 
-        return Stream.of(a, b) 
-                    .flatMap(Stream::of) 
-                    .toArray(); 
-    } 
-	
-	
+	public static <T> Object[] concatenate(T[] a, T[] b)
+	{
+		return Stream.of(a, b)
+				.flatMap(Stream::of)
+				.toArray();
+	}
+
+
 	/**
 	 * This function evaluates to consider the expression 
 	 * @param expression
@@ -449,57 +433,53 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static boolean toEvaluateBinaryExpression(LogicalExpression expression, Object[] row, List<String> aliasorcolname) throws Exception {
-		if(expression instanceof BinaryExpression bex) {
+		if (expression instanceof BinaryExpression bex) {
 			String operator = expression.getName();
 			LogicalExpression leftExpression = bex.getLhs();
 			LogicalExpression rightExpression = bex.getRhs();
-		    boolean leftValue=false;
-		    boolean rightValue=false;
-		    if(leftExpression instanceof UserFuncExpression fn) {
-		    	leftValue = toEvaluateBinaryExpression(leftExpression, row, aliasorcolname);
-		    }
-		    else if (leftExpression instanceof ConstantExpression lv) {
-		    	leftValue =  true;
-		    } else if (leftExpression instanceof ProjectExpression pex) {
-		        String columnName = pex.getFieldSchema().alias;
-				Object value = ((Object[])row[1])[aliasorcolname.indexOf(columnName)];
-				leftValue =  (boolean) value;
-		    } else if (leftExpression instanceof BinaryExpression) {
-		    	leftValue = toEvaluateBinaryExpression(leftExpression, row, aliasorcolname);
-		    }
-		    
-		    if(rightExpression instanceof UserFuncExpression fn) {
-		    	rightValue = toEvaluateBinaryExpression(rightExpression, row, aliasorcolname);
-		    }
-		    else if (rightExpression instanceof ConstantExpression lv) {
-		    	rightValue =  true;
-		    } else if (rightExpression instanceof ProjectExpression pex) {
-		        String columnName = pex.getFieldSchema().alias;
-				Object value = ((Object[])row[1])[aliasorcolname.indexOf(columnName)];
-				rightValue =  (boolean) value;
-		    } else if (rightExpression instanceof BinaryExpression) {
-		    	rightValue = toEvaluateBinaryExpression(rightExpression, row, aliasorcolname);
-		    }
-		    switch (operator) {
-		        case "Add":
-		        case "Subtract":
-		        case "Multiply":
-		        case "Divide":
-		        	return leftValue && rightValue;
-		        default:
-		            throw new IllegalArgumentException("Invalid operator: " + operator);
-		    }
-		} 
-		else if (expression instanceof ConstantExpression lv) {
-	    	return true;
-	    } else if (expression instanceof ProjectExpression pex) {
-	        String columnName = pex.getFieldSchema().alias;
-			return (boolean)((Object[])row[1])[aliasorcolname.indexOf(columnName)];
-	    }
+			boolean leftValue = false;
+			boolean rightValue = false;
+			if (leftExpression instanceof UserFuncExpression fn) {
+				leftValue = toEvaluateBinaryExpression(leftExpression, row, aliasorcolname);
+			} else if (leftExpression instanceof ConstantExpression lv) {
+				leftValue = true;
+			} else if (leftExpression instanceof ProjectExpression pex) {
+				String columnName = pex.getFieldSchema().alias;
+				Object value = ((Object[]) row[1])[aliasorcolname.indexOf(columnName)];
+				leftValue = (boolean) value;
+			} else if (leftExpression instanceof BinaryExpression) {
+				leftValue = toEvaluateBinaryExpression(leftExpression, row, aliasorcolname);
+			}
+			if (rightExpression instanceof UserFuncExpression fn) {
+				rightValue = toEvaluateBinaryExpression(rightExpression, row, aliasorcolname);
+			} else if (rightExpression instanceof ConstantExpression lv) {
+				rightValue = true;
+			} else if (rightExpression instanceof ProjectExpression pex) {
+				String columnName = pex.getFieldSchema().alias;
+				Object value = ((Object[]) row[1])[aliasorcolname.indexOf(columnName)];
+				rightValue = (boolean) value;
+			} else if (rightExpression instanceof BinaryExpression) {
+				rightValue = toEvaluateBinaryExpression(rightExpression, row, aliasorcolname);
+			}
+			switch (operator) {
+				case "Add":
+				case "Subtract":
+				case "Multiply":
+				case "Divide":
+					return leftValue && rightValue;
+				default:
+					throw new IllegalArgumentException("Invalid operator: " + operator);
+			}
+		} else if (expression instanceof ConstantExpression lv) {
+			return true;
+		} else if (expression instanceof ProjectExpression pex) {
+			String columnName = pex.getFieldSchema().alias;
+			return (boolean) ((Object[]) row[1])[aliasorcolname.indexOf(columnName)];
+		}
 		return false;
 	}
-	
-	
+
+
 	/**
 	 * Flatten source map to formatted map
 	 * @param sp
@@ -508,48 +488,49 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static StreamPipeline<Object[]> executeLOForEach(StreamPipeline<Object[]> sp, LOForEach loForEach, List<String> aliasorcolumns, List<String> outcols, boolean hasdescendants) throws Exception {
-		
+
 		List<FunctionParams> functionparams = getFunctionsWithParamsGrpBy(loForEach);
 		LogicalExpression[] lexp = getLogicalExpressions(functionparams);
 		LogicalExpression[] headers = getHeaders(functionparams);
-		
-		outcols.addAll(functionparams.stream().map(fp->fp.getAlias()).toList());
-		
+
+		outcols.addAll(functionparams.stream().map(fp -> fp.getAlias()).toList());
+
 		Set<String> grpbyheader = new LinkedHashSet<>();
-		
-		if(nonNull(headers)) {
+
+		if (nonNull(headers)) {
 			List<String> columns = new ArrayList<>();
-			for(LogicalExpression lex:headers) {
+			for (LogicalExpression lex :headers) {
 				getColumnsFromExpressions(lex, columns);
 				grpbyheader.addAll(columns);
 				columns.clear();
 			}
 		}
-		
+
 		List<String> aliases = getAlias(functionparams);
-		
+
 		List<FunctionParams> aggfunctions = getAggFunctions(functionparams);
 		List<FunctionParams> nonaggfunctions = getNonAggFunctions(functionparams);
-		if(CollectionUtils.isEmpty(aggfunctions) && CollectionUtils.isEmpty(nonaggfunctions)) {
+		if (CollectionUtils.isEmpty(aggfunctions) && CollectionUtils.isEmpty(nonaggfunctions)) {
 			sp = sp.filter(new PredicateSerializable<Object[]>() {
 				private static final long serialVersionUID = 1042338514393215380L;
 				List<String> aliascolumns = aliasorcolumns;
 				LogicalExpression[] headera = lexp;
 				public boolean test(Object[] obj) {
-				try {					
-					boolean toevaluateexpression = true;
-					for (LogicalExpression exp : headera) {
-						toevaluateexpression = toevaluateexpression
-								&& toEvaluateBinaryExpression(exp, obj, aliascolumns);
-						if (!toevaluateexpression) {
-							break;
+					try {
+						boolean toevaluateexpression = true;
+						for (LogicalExpression exp : headera) {
+							toevaluateexpression = toevaluateexpression
+									&& toEvaluateBinaryExpression(exp, obj, aliascolumns);
+							if (!toevaluateexpression) {
+								break;
+							}
 						}
+						return toevaluateexpression;
+					} catch (Exception ex) {
+						return false;
 					}
-					return toevaluateexpression;
-				} catch(Exception ex) {
-					return false;
 				}
-			}}).map(new MapFunction<Object[], Object[]>() {				
+			}).map(new MapFunction<Object[], Object[]>() {
 				private static final long serialVersionUID = -2439404591638356925L;
 				LogicalExpression[] lexpression = lexp;
 				List<String> aliascolumns = aliasorcolumns;
@@ -574,30 +555,30 @@ public class PigUtils {
 					}
 					return new Object[2];
 				}
-				});
-			if(!hasdescendants) {
-				return sp.map(obj->((Object[])obj[0]));
+			});
+			if (!hasdescendants) {
+				return sp.map(obj -> ((Object[]) obj[0]));
 			}
 			return sp;
 		} else {
-			
+
 			StreamPipeline<Object[]> pipelinemap = sp;
-			if(!CollectionUtils.isEmpty(nonaggfunctions)) {
+			if (!CollectionUtils.isEmpty(nonaggfunctions)) {
 				pipelinemap = pipelinemap.map(new MapFunction<Object[], Object[]>() {
 					private static final long serialVersionUID = 6329566708048046421L;
 					List<FunctionParams> nonagg = new ArrayList<>(nonaggfunctions);
 					LogicalExpression[] grpby = headers;
-					
+					List<String> aliasorcols = aliasorcolumns;
 					@Override
 					public Object[] apply(Object[] mapvalues) {
 						Object[] nonaggfnvalues = new Object[2];
-						Object[] grpbyfnvalues = new Object[(nonNull(grpby)?grpby.length:0) + nonagg.size()];
-						Object[] valuestoconsider = new Object[(nonNull(grpby)?grpby.length:0) + + nonagg.size()];
+						Object[] grpbyfnvalues = new Object[(nonNull(grpby) ? grpby.length : 0) + nonagg.size()];
+						Object[] valuestoconsider = new Object[(nonNull(grpby) ? grpby.length : 0) + +nonagg.size()];
 						int index = 0;
 						if (nonNull(grpby) && grpby.length > 0) {
 							for (LogicalExpression grpobj : grpby) {
 								try {
-									grpbyfnvalues[index] =  evaluateBinaryExpression(grpobj, mapvalues, null, aliasorcolumns);
+									grpbyfnvalues[index] = evaluateBinaryExpression(grpobj, mapvalues, null, aliasorcols);
 									valuestoconsider[index] = true;
 								} catch (Exception e) {
 									log.error(DataSamudayaConstants.EMPTY, e);
@@ -608,32 +589,32 @@ public class PigUtils {
 						for (FunctionParams fn : nonagg) {
 							Object value = null;
 							try {
-								value = evaluateBinaryExpression(fn.getParams(), mapvalues, fn.getFunctionName(), aliasorcolumns);
+								value = evaluateBinaryExpression(fn.getParams(), mapvalues, fn.getFunctionName(), aliasorcols);
 								valuestoconsider[index] = true;
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
-							grpbyfnvalues[index] =  value;
+							grpbyfnvalues[index] = value;
 							index++;
 						}
 						nonaggfnvalues[0] = grpbyfnvalues;
 						nonaggfnvalues[1] = valuestoconsider;
 						return nonaggfnvalues;
-	
+
 					}
 				});
 			}
-			if(!CollectionUtils.isEmpty(aggfunctions)) {
+			if (!CollectionUtils.isEmpty(aggfunctions)) {
 				List<List<String>> columnstoeval = new ArrayList<>();
 				for (FunctionParams fn : aggfunctions) {
 					LogicalExpression expression = fn.getParams();
-						if(nonNull(expression)) {
-							List<String> columnsfromexp = new ArrayList<>();
-							getColumnsFromExpressions(expression, columnsfromexp);
-							columnstoeval.add(columnsfromexp);
-						} else {
-							columnstoeval.add(new ArrayList<>());
-						}						
+					if (nonNull(expression)) {
+						List<String> columnsfromexp = new ArrayList<>();
+						getColumnsFromExpressions(expression, columnsfromexp);
+						columnstoeval.add(columnsfromexp);
+					} else {
+						columnstoeval.add(new ArrayList<>());
+					}
 				}
 				pipelinemap = pipelinemap.mapToPair(new MapToPairFunction<Object[], Tuple2<Tuple, Tuple>>() {
 					private static final long serialVersionUID = 8102198486566760753L;
@@ -671,7 +652,7 @@ public class PigUtils {
 									long cval = 1;
 									if (functionParam.getFunctionName().startsWith("avg")) {
 										for (String column : columnsevaluation.get(index)) {
-											boolean valuetocount = (boolean) ((Object[])mapvalues[1])[aliascolumns.indexOf(column)];
+											boolean valuetocount = (boolean) ((Object[]) mapvalues[1])[aliascolumns.indexOf(column)];
 											if (!valuetocount) {
 												cval = 0;
 												break;
@@ -708,7 +689,7 @@ public class PigUtils {
 						return evaluateTuple(tuple1, tuple2, functionParams);
 					}
 
-				}).map(new MapFunction<Tuple2<Tuple, Tuple>, Object[]>() {							
+				}).map(new MapFunction<Tuple2<Tuple, Tuple>, Object[]>() {
 					private static final long serialVersionUID = 9098846821052824347L;
 					List<FunctionParams> functionParam = aggfunctions;
 					List<String> grpby = new ArrayList<>(grpbyheader);
@@ -718,8 +699,8 @@ public class PigUtils {
 						Object[] valueobject = new Object[2];
 						valueobject[0] = new Object[alias.size()];
 						valueobject[1] = new Object[alias.size()];
-						for(int count=0;count<alias.size();count++) {
-							((Object[])valueobject[1])[count]=true;
+						for (int count = 0;count < alias.size();count++) {
+							((Object[]) valueobject[1])[count] = true;
 						}
 						try {
 							populateGroupByFunction((Object[]) valueobject[0], tuple2.v1, grpby, alias);
@@ -731,13 +712,13 @@ public class PigUtils {
 					}
 				});
 			}
-			if(!hasdescendants) {
-				return pipelinemap.map(obj->((Object[])obj[0]));
+			if (!hasdescendants) {
+				return pipelinemap.map(obj -> ((Object[]) obj[0]));
 			}
 			return pipelinemap;
 		}
 	}
-	
+
 	/**
 	 * This function populates group by value in value object
 	 * @param valueobject
@@ -752,13 +733,13 @@ public class PigUtils {
 	 */
 	protected static void populateGroupByFunction(Object[] valueobject, Tuple grpbyvalues, List<String> grpby, List<String> aliases) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		Class<?> cls = grpbyvalues.getClass();
-		for(int grpindex=1;grpindex<=grpby.size();grpindex++) {
-			java.lang.reflect.Method method = cls.getMethod("v"+grpindex);
+		for (int grpindex = 1;grpindex <= grpby.size();grpindex++) {
+			java.lang.reflect.Method method = cls.getMethod("v" + grpindex);
 			Object valuesum = method.invoke(grpbyvalues);
-			valueobject[aliases.indexOf(grpby.get(grpindex-1))] = valuesum;
+			valueobject[aliases.indexOf(grpby.get(grpindex - 1))] = valuesum;
 		}
 	}
-	
+
 	/**
 	 * Evaluates Binary Expression.
 	 * @param expression
@@ -767,117 +748,112 @@ public class PigUtils {
 	 * @throws Exception
 	 */
 	public static Object evaluateBinaryExpression(LogicalExpression expression, Object[] row, String name, List<String> aliasorcolname) throws Exception {
-		if(expression instanceof UserFuncExpression fn) {
+		if (expression instanceof UserFuncExpression fn) {
 			switch (name) {
 				case "sum":
-                // Get the absolute value of the first parameter	               
-                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "sum", fn.getEvalFunc());
+					// Get the absolute value of the first parameter	               
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "sum", fn.getEvalFunc());
 				case "count":
-	                // Get the absolute value of the first parameter	               
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "count", fn.getEvalFunc());
+					// Get the absolute value of the first parameter	               
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "count", fn.getEvalFunc());
 				case "avg":
-	                // Get the absolute value of the first parameter	               
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "avg", fn.getEvalFunc());
+					// Get the absolute value of the first parameter	               
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "avg", fn.getEvalFunc());
 				case "abs":
-	                // Get the absolute value of the first parameter	               
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "abs", fn.getEvalFunc());
+					// Get the absolute value of the first parameter	               
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "abs", fn.getEvalFunc());
 				case "length":
-	                // Get the length of string value	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "length", fn.getEvalFunc());
-	                
+					// Get the length of string value	                
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "length", fn.getEvalFunc());
 				case "round":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "round", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "round", fn.getEvalFunc());
 				case "ceil":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "ceil", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "ceil", fn.getEvalFunc());
 				case "floor":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "floor", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "floor", fn.getEvalFunc());
 				case "pow":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), evaluateBinaryExpression(fn.getArguments().get(1), row, name, aliasorcolname), "pow", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), evaluateBinaryExpression(fn.getArguments().get(1), row, name, aliasorcolname), "pow", fn.getEvalFunc());
 				case "sqrt":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "sqrt", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "sqrt", fn.getEvalFunc());
 				case "exp":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "exp", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "exp", fn.getEvalFunc());
 				case "loge":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "loge", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "loge", fn.getEvalFunc());
 				case "lowercase":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "lowercase", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "lowercase", fn.getEvalFunc());
 				case "uppercase":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "uppercase", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "uppercase", fn.getEvalFunc());
 				case "base64encode":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "base64encode", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "base64encode", fn.getEvalFunc());
 				case "base64decode":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "base64decode", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "base64decode", fn.getEvalFunc());
 				case "normalizespaces":
-	                // Get the absolute value of the first parameter
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "normalizespaces", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "normalizespaces", fn.getEvalFunc());
 				case "substring":
-	                // Get the absolute value of the first parameter
+					// Get the absolute value of the first parameter
 					ConstantExpression pos = (ConstantExpression) fn.getArguments().get(1);
 					ConstantExpression length = (ConstantExpression) fn.getArguments().get(2);
 					String val = (String) evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname);
-	                return val.substring((int) pos.getValue(), Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
+					return val.substring((int) pos.getValue(), Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
 			}
-		} else if(expression instanceof BinaryExpression bex) {
+		} else if (expression instanceof BinaryExpression bex) {
 			String operator = expression.getName();
 			LogicalExpression leftExpression = bex.getLhs();
 			LogicalExpression rightExpression = bex.getRhs();
-		    Object leftValue=null;
-		    Object rightValue=null;
-		    if(leftExpression instanceof UserFuncExpression fn) {
-		    	leftValue = evaluateBinaryExpression(leftExpression, row, null, aliasorcolname);
-		    }
-		    else if (leftExpression instanceof ConstantExpression lv) {
-		    	leftValue =  lv.getValue();
-		    } else if (leftExpression instanceof ProjectExpression pex) {
-		        String columnName = pex.getFieldSchema().alias;
-				Object value = ((Object[])row[0])[aliasorcolname.indexOf(columnName)];
-				leftValue =  value;
-		    } else if (leftExpression instanceof BinaryExpression) {
-		    	leftValue = evaluateBinaryExpression(leftExpression, row, null, aliasorcolname);
-		    }
-		    
-		    if(rightExpression instanceof UserFuncExpression fn) {
-		    	rightValue = evaluateBinaryExpression(rightExpression, row, null, aliasorcolname);
-		    }
-		    else if (rightExpression instanceof ConstantExpression lv) {
-		    	rightValue =  lv.getValue();
-		    } else if (rightExpression instanceof ProjectExpression pex) {
-		        String columnName = pex.getFieldSchema().alias;
-				Object value = ((Object[])row[0])[aliasorcolname.indexOf(columnName)];
-				rightValue =  value;
-		    } else if (rightExpression instanceof BinaryExpression) {
-		    	rightValue = evaluateBinaryExpression(rightExpression, row, null, aliasorcolname);
-		    }
-		    switch (operator) {
-		        case "Add":
-		            return evaluateValuesByOperator(leftValue, rightValue, "+");
-		        case "Subtract":
-		            return evaluateValuesByOperator(leftValue, rightValue, "-");
-		        case "Multiply":
-		            return evaluateValuesByOperator(leftValue, rightValue, "*");
-		        case "Divide":
-		            return evaluateValuesByOperator(leftValue, rightValue, "/");
-		        default:
-		            throw new IllegalArgumentException("Invalid operator: " + operator);
-		    }
-		} 
-		else if (expression instanceof ConstantExpression lv) {
-	    	return lv.getValue();
-	    } else if (expression instanceof ProjectExpression pex) {
-	        String columnName = pex.getFieldSchema().alias;
-			return ((Object[])row[0])[aliasorcolname.indexOf(columnName)];
-	    }
+			Object leftValue = null;
+			Object rightValue = null;
+			if (leftExpression instanceof UserFuncExpression fn) {
+				leftValue = evaluateBinaryExpression(leftExpression, row, null, aliasorcolname);
+			} else if (leftExpression instanceof ConstantExpression lv) {
+				leftValue = lv.getValue();
+			} else if (leftExpression instanceof ProjectExpression pex) {
+				String columnName = pex.getFieldSchema().alias;
+				Object value = ((Object[]) row[0])[aliasorcolname.indexOf(columnName)];
+				leftValue = value;
+			} else if (leftExpression instanceof BinaryExpression) {
+				leftValue = evaluateBinaryExpression(leftExpression, row, null, aliasorcolname);
+			}
+			if (rightExpression instanceof UserFuncExpression fn) {
+				rightValue = evaluateBinaryExpression(rightExpression, row, null, aliasorcolname);
+			} else if (rightExpression instanceof ConstantExpression lv) {
+				rightValue = lv.getValue();
+			} else if (rightExpression instanceof ProjectExpression pex) {
+				String columnName = pex.getFieldSchema().alias;
+				Object value = ((Object[]) row[0])[aliasorcolname.indexOf(columnName)];
+				rightValue = value;
+			} else if (rightExpression instanceof BinaryExpression) {
+				rightValue = evaluateBinaryExpression(rightExpression, row, null, aliasorcolname);
+			}
+			switch (operator) {
+				case "Add":
+					return evaluateValuesByOperator(leftValue, rightValue, "+");
+				case "Subtract":
+					return evaluateValuesByOperator(leftValue, rightValue, "-");
+				case "Multiply":
+					return evaluateValuesByOperator(leftValue, rightValue, "*");
+				case "Divide":
+					return evaluateValuesByOperator(leftValue, rightValue, "/");
+				default:
+					throw new IllegalArgumentException("Invalid operator: " + operator);
+			}
+		} else if (expression instanceof ConstantExpression lv) {
+			return lv.getValue();
+		} else if (expression instanceof ProjectExpression pex) {
+			String columnName = pex.getFieldSchema().alias;
+			return ((Object[]) row[0])[aliasorcolname.indexOf(columnName)];
+		}
 		return Double.valueOf(0.0d);
 	}
 
@@ -888,41 +864,40 @@ public class PigUtils {
 	 * @throws FrontendException 
 	 */
 	public static void getColumnsFromExpressions(LogicalExpression lexp, List<String> columns) throws FrontendException {
-		if(lexp instanceof BinaryExpression bex) {
+		if (lexp instanceof BinaryExpression bex) {
 			LogicalExpression leftExpression = bex.getLhs();
 			LogicalExpression rightExpression = bex.getRhs();
-		    if (leftExpression instanceof ProjectExpression pex) {
-		        columns.add(pex.getFieldSchema().alias);
-		    } else if (leftExpression instanceof BinaryExpression) {
-		    	getColumnsFromExpressions(leftExpression, columns);
-		    } else if (leftExpression instanceof UserFuncExpression) {
-		    	getColumnsFromExpressions(leftExpression, columns);
-		    }
-		    
-		    if (rightExpression instanceof ProjectExpression pex) {
-		    	 columns.add(pex.getFieldSchema().alias);
-		    } else if (rightExpression instanceof BinaryExpression) {
-		    	getColumnsFromExpressions(rightExpression, columns);
-		    } else if (leftExpression instanceof UserFuncExpression) {
-		    	getColumnsFromExpressions(leftExpression, columns);
-		    }	   
-		} else if(lexp instanceof ProjectExpression pex) {
+			if (leftExpression instanceof ProjectExpression pex) {
+				columns.add(pex.getFieldSchema().alias);
+			} else if (leftExpression instanceof BinaryExpression) {
+				getColumnsFromExpressions(leftExpression, columns);
+			} else if (leftExpression instanceof UserFuncExpression) {
+				getColumnsFromExpressions(leftExpression, columns);
+			}
+			if (rightExpression instanceof ProjectExpression pex) {
+				columns.add(pex.getFieldSchema().alias);
+			} else if (rightExpression instanceof BinaryExpression) {
+				getColumnsFromExpressions(rightExpression, columns);
+			} else if (leftExpression instanceof UserFuncExpression) {
+				getColumnsFromExpressions(leftExpression, columns);
+			}
+		} else if (lexp instanceof ProjectExpression pex) {
 			columns.add(pex.getFieldSchema().alias);
 		} else if (lexp instanceof UserFuncExpression userfuncexp) {
 			if (!"org.apache.pig.builtin.COUNT"
 					.equals(userfuncexp.getFuncSpec().getClassName())) {
 				Iterator<Operator> operators = lexp.getPlan().getOperators();
-				for (; operators.hasNext();) {
+				for (;operators.hasNext();) {
 					Object pexp = operators.next();
 					if (pexp instanceof ProjectExpression expression) {
 						getColumnsFromExpressions(expression, columns);
 					}
 				}
 			}
-	    }
+		}
 	}
-	
-	
+
+
 	/**
 	 * Evaluates value with for the function 
 	 * @param value
@@ -934,11 +909,11 @@ public class PigUtils {
 	 */
 	public static Object evaluateFunctionsWithType(Object value, Object powerval, String name, EvalFunc<?> evalfunc) throws Exception {
 		switch (name) {
-		case "sum":
-		case "avg":
-		case "count":
-			return value;
-		case "abs":
+			case "sum":
+			case "avg":
+			case "count":
+				return value;
+			case "abs":
 			// Get the absolute value of the first parameter			
 		case "length":
 			// Get the length of string value
@@ -963,60 +938,60 @@ public class PigUtils {
 		case "base64decode":
 			// Get the absolute value of the first parameter
 		case "normalizespaces":
-			// Get the absolute value of the first parameter
-			org.apache.pig.data.Tuple tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value));
-			return evalfunc.exec(tuple);
-		case "pow":
-			// Get the absolute value of the first parameter
-			tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value, powerval));
-			return evalfunc.exec(tuple);
+				// Get the absolute value of the first parameter
+				org.apache.pig.data.Tuple tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value));
+				return evalfunc.exec(tuple);
+			case "pow":
+				// Get the absolute value of the first parameter
+				tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value, powerval));
+				return evalfunc.exec(tuple);
 		}
 		return name;
 	}
-	
+
 	/**
 	 * Get Record Count from tuple
 	 * @param tuple
 	 * @return count in string format
 	 */
 	public static String getCountFromTuple(Tuple tuple) {
-		if(tuple instanceof Tuple1 tup) {
+		if (tuple instanceof Tuple1 tup) {
 			return String.valueOf(tup.v1);
-		} else if(tuple instanceof Tuple2 tup) {
+		} else if (tuple instanceof Tuple2 tup) {
 			return String.valueOf(tup.v2);
-		} else if(tuple instanceof Tuple3 tup) {
+		} else if (tuple instanceof Tuple3 tup) {
 			return String.valueOf(tup.v3);
-		} else if(tuple instanceof Tuple4 tup) {
+		} else if (tuple instanceof Tuple4 tup) {
 			return String.valueOf(tup.v4);
-		} else if(tuple instanceof Tuple5 tup) {
+		} else if (tuple instanceof Tuple5 tup) {
 			return String.valueOf(tup.v5);
-		} else if(tuple instanceof Tuple6 tup) {
+		} else if (tuple instanceof Tuple6 tup) {
 			return String.valueOf(tup.v6);
-		} else if(tuple instanceof Tuple7 tup) {
+		} else if (tuple instanceof Tuple7 tup) {
 			return String.valueOf(tup.v7);
-		} else if(tuple instanceof Tuple8 tup) {
+		} else if (tuple instanceof Tuple8 tup) {
 			return String.valueOf(tup.v8);
-		} else if(tuple instanceof Tuple9 tup) {
+		} else if (tuple instanceof Tuple9 tup) {
 			return String.valueOf(tup.v9);
-		} else if(tuple instanceof Tuple10 tup) {
+		} else if (tuple instanceof Tuple10 tup) {
 			return String.valueOf(tup.v10);
-		} else if(tuple instanceof Tuple11 tup) {
+		} else if (tuple instanceof Tuple11 tup) {
 			return String.valueOf(tup.v11);
-		} else if(tuple instanceof Tuple12 tup) {
+		} else if (tuple instanceof Tuple12 tup) {
 			return String.valueOf(tup.v12);
-		} else if(tuple instanceof Tuple13 tup) {
+		} else if (tuple instanceof Tuple13 tup) {
 			return String.valueOf(tup.v13);
-		} else if(tuple instanceof Tuple14 tup) {
+		} else if (tuple instanceof Tuple14 tup) {
 			return String.valueOf(tup.v14);
-		} else if(tuple instanceof Tuple15 tup) {
+		} else if (tuple instanceof Tuple15 tup) {
 			return String.valueOf(tup.v15);
-		} else if(tuple instanceof Tuple16 tup) {
+		} else if (tuple instanceof Tuple16 tup) {
 			return String.valueOf(tup.v16);
 		} else {
 			throw new UnsupportedOperationException("Max supported Column is 16");
 		}
 	}
-	
+
 	/**
 	 * Populate Map values from function.
 	 * @param mapvalues
@@ -1026,38 +1001,38 @@ public class PigUtils {
 	 */
 	public static void populateMapFromFunctions(Object[] values, Tuple tuple, List<FunctionParams> functions, List<String> aliasorcolname) {
 		try {
-		Class<?> cls = tuple.getClass();
-		for(int funcindex=0,valueindex=1;funcindex<functions.size();funcindex++) {
-			FunctionParams func = functions.get(funcindex);
-			String funname = func.getFunctionName();
-			if(funname.toLowerCase().startsWith("avg")) {
-				java.lang.reflect.Method method = cls.getMethod("v"+valueindex);
-				Object valuesum = method.invoke(tuple);
+			Class<?> cls = tuple.getClass();
+			for (int funcindex = 0,valueindex = 1;funcindex < functions.size();funcindex++) {
+				FunctionParams func = functions.get(funcindex);
+				String funname = func.getFunctionName();
+				if (funname.toLowerCase().startsWith("avg")) {
+					java.lang.reflect.Method method = cls.getMethod("v" + valueindex);
+					Object valuesum = method.invoke(tuple);
+					valueindex++;
+					method = cls.getMethod("v" + valueindex);
+					Object valuecount = method.invoke(tuple);
+					values[aliasorcolname.indexOf(getAliasForFunction(func))] = evaluateValuesByOperator(valuesum, valuecount, "/");
+				} else {
+					java.lang.reflect.Method method = cls.getMethod("v" + valueindex);
+					Object value = method.invoke(tuple);
+					values[aliasorcolname.indexOf(getAliasForFunction(func))] = value;
+				}
 				valueindex++;
-				method = cls.getMethod("v"+valueindex);
-				Object valuecount = method.invoke(tuple);
-				values[aliasorcolname.indexOf(getAliasForFunction(func))] = evaluateValuesByOperator(valuesum, valuecount, "/");
-			} else {
-				java.lang.reflect.Method method = cls.getMethod("v"+valueindex);
-				Object value = method.invoke(tuple);
-				values[aliasorcolname.indexOf(getAliasForFunction(func))] = value;				
 			}
-			valueindex++;
-		}
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
-	
+
 	/**
 	 * Get Alias For Function
 	 * @param functionParams
 	 * @return
 	 */
-	public static String getAliasForFunction(FunctionParams functionParams) {		
+	public static String getAliasForFunction(FunctionParams functionParams) {
 		return functionParams.getAlias();
 	}
-	
+
 	/**
 	 * Evaluate Tuple for functions
 	 * @param tuple1
@@ -1067,48 +1042,48 @@ public class PigUtils {
 	 */
 	public static Tuple evaluateTuple(Tuple tuple1, Tuple tuple2, List<FunctionParams> aggfunctions) {
 		try {
-            // Get the class of the Tuple
-            Class<?> tupleClass = tuple1.getClass();
-            // Create a new instance of the Tuple
-            Tuple result = (Tuple) tupleClass.getConstructor(tuple2.getClass()).newInstance(tuple1);
-            // Get all the fields of the Tuple class
-            java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
-            int index = 0;
-            boolean avgindex = false;
-            FunctionParams func = aggfunctions.get(index);
-            // Iterate over the fields and perform summation
-            for (java.lang.reflect.Field field : fields) {
-                // Make the field accessible, as it might be private
-                field.setAccessible(true);
+			// Get the class of the Tuple
+			Class<?> tupleClass = tuple1.getClass();
+			// Create a new instance of the Tuple
+			Tuple result = (Tuple) tupleClass.getConstructor(tuple2.getClass()).newInstance(tuple1);
+			// Get all the fields of the Tuple class
+			java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
+			int index = 0;
+			boolean avgindex = false;
+			FunctionParams func = aggfunctions.get(index);
+			// Iterate over the fields and perform summation
+			for (java.lang.reflect.Field field : fields) {
+				// Make the field accessible, as it might be private
+				field.setAccessible(true);
 
-                // Get the values of the fields from both tuples
-                Object value1 = field.get(tuple1);
-                Object value2 = field.get(tuple2);
-                field.set(result,evaluateFunction(value1, value2, func));
-                // Set the sum of the values in the result tuple                
-                if(index+1<aggfunctions.size()) {
-                	if(avgindex) {
-                		func = aggfunctions.get(index);
-                    	avgindex = false;
-                    	index++;
-                	} else if(!aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")) {
-                		func = aggfunctions.get(index+1);
-                		index++;
-                		avgindex = false;
-                	} else {
-                    	func = aggfunctions.get(index);
-                    	avgindex = true;
-                    }
-                } 
-            }
+				// Get the values of the fields from both tuples
+				Object value1 = field.get(tuple1);
+				Object value2 = field.get(tuple2);
+				field.set(result, evaluateFunction(value1, value2, func));
+				// Set the sum of the values in the result tuple                
+				if (index + 1 < aggfunctions.size()) {
+					if (avgindex) {
+						func = aggfunctions.get(index);
+						avgindex = false;
+						index++;
+					} else if (!aggfunctions.get(index).getFunctionName().equalsIgnoreCase("avg")) {
+						func = aggfunctions.get(index + 1);
+						index++;
+						avgindex = false;
+					} else {
+						func = aggfunctions.get(index);
+						avgindex = true;
+					}
+				}
+			}
 
-            return result;
-        } catch (Exception ex) {
-        	log.error(DataSamudayaConstants.EMPTY, ex);
-        }
+			return result;
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
 		return null;
 	}
-	
+
 	/**
 	 * Evaluate values based on functions
 	 * @param leftValue
@@ -1123,8 +1098,8 @@ public class PigUtils {
 		}
 		return null;
 	}
-	
-	
+
+
 	/**
 	 * Evaluates tuple using operator
 	 * @param leftValue
@@ -1134,98 +1109,98 @@ public class PigUtils {
 	 */
 	public static Object evaluateValuesByOperator(Object leftValue, Object rightValue, String operator) {
 		switch (operator) {
-		case "+":
-			if (leftValue instanceof String lv && rightValue instanceof Double rv) {
-				return lv + rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
-				return lv + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
-				return lv + rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
-				return lv + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
-				return lv + rv;
-			} else if(leftValue instanceof String lv && rightValue instanceof Long rv) {
-				return lv + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof String rv) {
-				return lv + rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof String rv) {
-				return lv + rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
-				return lv + rv;
-			} else if (leftValue instanceof String lv && rightValue instanceof String rv) {
-				return lv + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
-				return lv + rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
-				return lv + rv;
-			}
-		case "-":
-			if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
-				return lv - rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
-				return lv - rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
-				return lv - rv;
-			}  else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
-				return lv - rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
-				return lv - rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
-				return lv - rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
-				return lv - rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
-				return lv - rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
-				return lv - rv;
-			}
-		case "*":
-			if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
-				return lv * rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
-				return lv * rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Integer rv) {
-				return lv * rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Double rv) {
-				return lv * rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
-				return lv * rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
-				return lv * rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
-				return lv * rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
-				return lv * rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
-				return lv * rv;
-			}
-		case "/":
-			if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
-				return lv / rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
-				return lv / rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Integer rv) {
-				return lv / rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Double rv) {
-				return lv / rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
-				return lv / rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
-				return lv / (double) rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
-				return lv / (double) rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
-				return lv / (double) rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
-				return lv / (double) rv;
-			}
-		default:
-			throw new IllegalArgumentException("Invalid operator: " + operator);
+			case "+":
+				if (leftValue instanceof String lv && rightValue instanceof Double rv) {
+					return lv + rv;
+				} else if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
+					return lv + rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Double rv) {
+					return lv + rv;
+				} else if (leftValue instanceof Double lv && rightValue instanceof Long rv) {
+					return lv + rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
+					return lv + rv;
+				} else if (leftValue instanceof String lv && rightValue instanceof Long rv) {
+					return lv + rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof String rv) {
+					return lv + rv;
+				} else if (leftValue instanceof Double lv && rightValue instanceof String rv) {
+					return lv + rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+					return lv + rv;
+				} else if (leftValue instanceof String lv && rightValue instanceof String rv) {
+					return lv + rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+					return lv + rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+					return lv + rv;
+				}
+			case "-":
+				if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
+					return lv - rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Double rv) {
+					return lv - rv;
+				} else if (leftValue instanceof Double lv && rightValue instanceof Long rv) {
+					return lv - rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+					return lv - rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+					return lv - rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+					return lv - rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
+					return lv - rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+					return lv - rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+					return lv - rv;
+				}
+			case "*":
+				if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
+					return lv * rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Double rv) {
+					return lv * rv;
+				} else if (leftValue instanceof Double lv && rightValue instanceof Integer rv) {
+					return lv * rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Double rv) {
+					return lv * rv;
+				} else if (leftValue instanceof Double lv && rightValue instanceof Long rv) {
+					return lv * rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+					return lv * rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+					return lv * rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+					return lv * rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
+					return lv * rv;
+				}
+			case "/":
+				if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
+					return lv / rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Double rv) {
+					return lv / rv;
+				} else if (leftValue instanceof Double lv && rightValue instanceof Integer rv) {
+					return lv / rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Double rv) {
+					return lv / rv;
+				} else if (leftValue instanceof Double lv && rightValue instanceof Long rv) {
+					return lv / rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+					return lv / (double) rv;
+				} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+					return lv / (double) rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+					return lv / (double) rv;
+				} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
+					return lv / (double) rv;
+				}
+			default:
+				throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
-		
+
 	}
-	
+
 	/**
 	 * get headers by passing list of function params
 	 * @param functionparams
@@ -1233,12 +1208,13 @@ public class PigUtils {
 	 */
 	public static LogicalExpression[] getHeaders(List<FunctionParams> functionparams) {
 		List<LogicalExpression> headersl = functionparams.stream().filter(fp -> fp.getFunctionName() == null).map(fp -> fp.getParams()).collect(Collectors.toList());
-		if(headersl.size()>0) {
+		if (headersl.size() > 0) {
 			return headersl.toArray(new LogicalExpression[1]);
 		} else {
 			return null;
 		}
 	}
+
 	/**
 	 * This functions returns all the expressions including columns
 	 * @param functionparams
@@ -1246,22 +1222,22 @@ public class PigUtils {
 	 */
 	public static LogicalExpression[] getLogicalExpressions(List<FunctionParams> functionparams) {
 		List<LogicalExpression> headersl = functionparams.stream().map(fp -> fp.getParams()).collect(Collectors.toList());
-		if(headersl.size()>0) {
+		if (headersl.size() > 0) {
 			return headersl.toArray(new LogicalExpression[1]);
 		} else {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * get aliases by passing list of function params
 	 * @param functionparams
 	 * @return array of grpby aliases
 	 */
 	public static List<String> getAlias(List<FunctionParams> functionparams) {
-		return functionparams.stream().map(fp -> fp.getAlias()).collect(Collectors.toList());		
+		return functionparams.stream().map(fp -> fp.getAlias()).collect(Collectors.toList());
 	}
-	
+
 	/**
 	 * get functions by passing list of function params
 	 * @param functionparams
@@ -1274,7 +1250,7 @@ public class PigUtils {
 				|| fp.getFunctionName().equals("avg"))).collect(Collectors.toList());
 		return functions;
 	}
-	
+
 	/**
 	 * get functions by passing list of function params
 	 * @param functionparams
@@ -1296,10 +1272,10 @@ public class PigUtils {
 				|| fp.getFunctionName().equals("base64encode")
 				|| fp.getFunctionName().equals("base64decode")
 				|| fp.getFunctionName().equals("normalizespaces")
-				)).collect(Collectors.toList());
+		)).collect(Collectors.toList());
 		return functions;
 	}
-	
+
 	/**
 	 * Get Functions with params and grp by columns
 	 * @param loForEach
@@ -1324,7 +1300,7 @@ public class PigUtils {
 					schemaindex++;
 					functionParams.add(param);
 					while (funcoper.hasNext()) {
-						Operator operexp = funcoper.next();	
+						Operator operexp = funcoper.next();
 						if (operexp instanceof UserFuncExpression funcExpression) {
 							// Check if this is the function call with your custom function
 							if ("org.apache.pig.builtin.COUNT"
@@ -1386,19 +1362,19 @@ public class PigUtils {
 		}
 		return functionParams;
 	}
-	
+
 	/**
 	 * Stores the data to hdfs
 	 * @param sp
 	 * @param loStore
 	 * @throws Exception
 	 */
-	public static void executeLOStore(StreamPipeline<?> sp, LOStore loStore) throws Exception {		
+	public static void executeLOStore(StreamPipeline<?> sp, LOStore loStore) throws Exception {
 		sp.map(data -> data).saveAsTextFilePig(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)), DataSamudayaConstants.FORWARD_SLASH + loStore.getOutputSpec().getFileName()
 				+ DataSamudayaConstants.FORWARD_SLASH + "pig-" + System.currentTimeMillis());
 	}
-	
+
 	/**
 	 * Group by columns
 	 * @param sp
@@ -1410,10 +1386,10 @@ public class PigUtils {
 			List<String> columnoralias, List<String> outcols, boolean hasdescendants) throws Exception {
 		List<LogicalExpressionPlan> leps = loCogroup.getExpressionPlans().get(0);
 		List<String> groupcolumns = new ArrayList<>();
-		
-		for(LogicalExpressionPlan lep:leps) {
+
+		for (LogicalExpressionPlan lep :leps) {
 			Iterator<Operator> operators = lep.getOperators();
-			while(operators.hasNext()) {
+			while (operators.hasNext()) {
 				groupcolumns.add(((ProjectExpression) operators.next()).getColAlias());
 			}
 		}
@@ -1427,8 +1403,8 @@ public class PigUtils {
 			return groupmap;
 		});
 	}
-	
-	
+
+
 	/**
 	 * Collect the data from the alias
 	 * @param sp
@@ -1441,19 +1417,19 @@ public class PigUtils {
 	 */
 	public static void executeDump(StreamPipeline<?> sp, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
-		pipelineconfig.setUseglobaltaskexecutors(true);		
+		pipelineconfig.setUseglobaltaskexecutors(true);
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
-		sp.map(new MapFunction() {			
+		sp.map(new MapFunction() {
 			@Override
-			public Object apply(Object obj) {				
+			public Object apply(Object obj) {
 				return obj;
 			}
-			
+
 		}).dumpPigResults(true, null);
 	}
-	
+
 	/**
 	 * Collect Results
 	 * @param sp
@@ -1466,7 +1442,7 @@ public class PigUtils {
 	 */
 	public static Object executeCollect(LogicalPlan lp, String alias, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
-		pipelineconfig.setUseglobaltaskexecutors(true);		
+		pipelineconfig.setUseglobaltaskexecutors(true);
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
@@ -1474,9 +1450,9 @@ public class PigUtils {
 		Set<String> allcolumns = new LinkedHashSet<>();
 		List<String> aliascols = new ArrayList<>();
 		StreamPipeline<?> sp = PigQueryExecutor.traversePlan(lp, false, alias, user, jobid, tejobid, pipelineconfig, requiredcolumns, allcolumns, aliascols, alias);
-		return sp.map(val->val).collect(true, null);
+		return sp.map(val -> val).collect(true, null);
 	}
-	
+
 	/**
 	 * This function executes latest store pig query.
 	 * @param lp
@@ -1489,7 +1465,7 @@ public class PigUtils {
 	 */
 	public static void executeStore(LogicalPlan lp, String alias, String user, String jobid, String tejobid, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
-		pipelineconfig.setUseglobaltaskexecutors(true);		
+		pipelineconfig.setUseglobaltaskexecutors(true);
 		pipelineconfig.setUser(user);
 		pipelineconfig.setTejobid(tejobid);
 		pipelineconfig.setJobid(jobid);
@@ -1498,7 +1474,7 @@ public class PigUtils {
 		List<String> aliascols = new ArrayList<>();
 		PigQueryExecutor.traversePlan(lp, true, alias, user, jobid, tejobid, pipelineconfig, requiredcolumns, allcolumns, aliascols, alias);
 	}
-	
+
 	/**
 	 * Get Fields from Logical Schema
 	 * @param schema
@@ -1507,9 +1483,9 @@ public class PigUtils {
 	public static String[] getHeaderFromSchema(LogicalSchema schema) {
 		List<String> schemafields = schema.getFields().stream().map(loschemafields -> loschemafields.alias).collect(Collectors.toList());
 		return schemafields.toArray(new String[1]);
-		
+
 	}
-	
+
 	/**
 	 * Returns Data Types for given shema
 	 * @param schema
@@ -1521,13 +1497,13 @@ public class PigUtils {
 				return SqlTypeName.INTEGER;
 			} else if (loschemafields.type == 55) {
 				return SqlTypeName.VARCHAR;
-			} 
+			}
 			return SqlTypeName.VARCHAR;
 		}).collect(Collectors.toList());
 		return schemafields;
-		
+
 	}
-	
+
 	/**
 	 * Evaluates expression in filter
 	 * @param expression
@@ -1541,45 +1517,45 @@ public class PigUtils {
 			LogicalExpression leftExpression = binaryExpression.getLhs();
 			LogicalExpression rightExpression = binaryExpression.getRhs();
 			String operator = opType;
-			
+
 			switch (operator) {
-			case "And":
-				return evaluateExpression(leftExpression, row, coloraliasname) && evaluateExpression(rightExpression, row, coloraliasname);
-			case "Or":
-				return evaluateExpression(leftExpression, row , coloraliasname) || evaluateExpression(rightExpression, row, coloraliasname);
-			case "GreaterThan":
-				Object leftValue = getValueString(leftExpression, row, coloraliasname);
-				Object rightValue = getValueString(rightExpression, row, coloraliasname);
-				return evaluatePredicate(leftValue, rightValue, operator);
-			case "GreaterThanEqual":
-				leftValue = getValueString(leftExpression, row, coloraliasname);
-				rightValue = getValueString(rightExpression, row, coloraliasname);
-				return evaluatePredicate(leftValue, rightValue, operator);
-			case "LessThan":
-				leftValue = getValueString(leftExpression, row, coloraliasname);
-				rightValue = getValueString(rightExpression, row, coloraliasname);
-				return evaluatePredicate(leftValue, rightValue, operator);
-			case "LessThanEqual":
-				leftValue = getValueString(leftExpression, row, coloraliasname);
-				rightValue = getValueString(rightExpression, row, coloraliasname);
-				return evaluatePredicate(leftValue, rightValue, operator);
-			case "Equal":
-				leftValue = getValueString(leftExpression, row, coloraliasname);
-				rightValue = getValueString(rightExpression, row, coloraliasname);
-				return evaluatePredicate(leftValue, rightValue, operator);
-			case "NotEqual":
-				leftValue = getValueString(leftExpression, row, coloraliasname);
-				rightValue = getValueString(rightExpression, row, coloraliasname);
-				return evaluatePredicate(leftValue, rightValue, operator);			
-			default:
-				throw new UnsupportedOperationException("Unsupported operator: " + operator);
+				case "And":
+					return evaluateExpression(leftExpression, row, coloraliasname) && evaluateExpression(rightExpression, row, coloraliasname);
+				case "Or":
+					return evaluateExpression(leftExpression, row, coloraliasname) || evaluateExpression(rightExpression, row, coloraliasname);
+				case "GreaterThan":
+					Object leftValue = getValueString(leftExpression, row, coloraliasname);
+					Object rightValue = getValueString(rightExpression, row, coloraliasname);
+					return evaluatePredicate(leftValue, rightValue, operator);
+				case "GreaterThanEqual":
+					leftValue = getValueString(leftExpression, row, coloraliasname);
+					rightValue = getValueString(rightExpression, row, coloraliasname);
+					return evaluatePredicate(leftValue, rightValue, operator);
+				case "LessThan":
+					leftValue = getValueString(leftExpression, row, coloraliasname);
+					rightValue = getValueString(rightExpression, row, coloraliasname);
+					return evaluatePredicate(leftValue, rightValue, operator);
+				case "LessThanEqual":
+					leftValue = getValueString(leftExpression, row, coloraliasname);
+					rightValue = getValueString(rightExpression, row, coloraliasname);
+					return evaluatePredicate(leftValue, rightValue, operator);
+				case "Equal":
+					leftValue = getValueString(leftExpression, row, coloraliasname);
+					rightValue = getValueString(rightExpression, row, coloraliasname);
+					return evaluatePredicate(leftValue, rightValue, operator);
+				case "NotEqual":
+					leftValue = getValueString(leftExpression, row, coloraliasname);
+					rightValue = getValueString(rightExpression, row, coloraliasname);
+					return evaluatePredicate(leftValue, rightValue, operator);
+				default:
+					throw new UnsupportedOperationException("Unsupported operator: " + operator);
 			}
 		} else {
 			Object value = getValueString(expression, row, coloraliasname);
 			return Boolean.parseBoolean((String) value);
 		}
 	}
-	
+
 	/**
 	 * Returns value from expression
 	 * @param expression
@@ -1589,28 +1565,25 @@ public class PigUtils {
 	public static Object getValueString(LogicalExpression expression, Object[] row, List<String> coloralias) {
 		if (expression instanceof ConstantExpression constantexpression) {
 			return constantexpression.getValue();
-		}
-		else {
+		} else {
 			ProjectExpression column = (ProjectExpression) expression;
 			String columnName = column.getColAlias();
-			Object value = ((Object[])row[0])[coloralias.indexOf(columnName)];
-			if(value instanceof String stringval) {
+			Object value = ((Object[]) row[0])[coloralias.indexOf(columnName)];
+			if (value instanceof String stringval) {
 				return String.valueOf(stringval);
-			}
-			else if(value instanceof Double doubleval) {
+			} else if (value instanceof Double doubleval) {
 				return doubleval;
-			}
-			else if(value instanceof Integer intval) {
+			} else if (value instanceof Integer intval) {
 				return intval;
-			} else if(value instanceof Long longval) {
+			} else if (value instanceof Long longval) {
 				return longval;
-			}else if (value instanceof String stringval && NumberUtils.isParsable(stringval)) {
+			} else if (value instanceof String stringval && NumberUtils.isParsable(stringval)) {
 				return Double.valueOf(stringval);
 			}
 			return String.valueOf(value);
 		}
 	}
-	
+
 	/**
 	 * Evaluates the boolean condition
 	 * @param leftvalue
@@ -1620,147 +1593,148 @@ public class PigUtils {
 	 */
 	public static boolean evaluatePredicate(Object leftvalue, Object rightvalue, String operator) {
 		switch (operator.trim()) {
-		case "GreaterThan":
-			if(leftvalue instanceof Double lv && rightvalue instanceof Double rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Long lv && rightvalue instanceof Double rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Double lv && rightvalue instanceof Long rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Integer lv && rightvalue instanceof Double rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Double lv && rightvalue instanceof Integer rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Integer lv && rightvalue instanceof Integer rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Integer lv && rightvalue instanceof Long rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Long lv && rightvalue instanceof Integer rv) {
-				return lv > rv;
-			} else if(leftvalue instanceof Long lv && rightvalue instanceof Long rv) {
-				return lv > rv;
-			} else {
-				return false;
-			}
-		case "GreaterThanEqual":
-			if(leftvalue instanceof Double lvgt && rightvalue instanceof Double rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Long lvgt && rightvalue instanceof Double rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Double lvgt && rightvalue instanceof Long rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Integer lvgt && rightvalue instanceof Double rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Double lvgt && rightvalue instanceof Integer rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Integer lvgt && rightvalue instanceof Integer rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Integer lvgt && rightvalue instanceof Long rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Long lvgt && rightvalue instanceof Integer rvgt) {
-				return lvgt >= rvgt;
-			} else if(leftvalue instanceof Long lvgt && rightvalue instanceof Long rvgt) {
-				return lvgt >= rvgt;
-			} else {
-				return false;
-			}
-		case "LessThan":
-			if(leftvalue instanceof Double lvlt && rightvalue instanceof Double rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Long lvlt && rightvalue instanceof Double rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Double lvlt && rightvalue instanceof Long rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Integer lvlt && rightvalue instanceof Double rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Double lvlt && rightvalue instanceof Integer rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Integer lvlt && rightvalue instanceof Integer rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Integer lvlt && rightvalue instanceof Long rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Long lvlt && rightvalue instanceof Integer rvlt) {
-				return lvlt < rvlt;
-			} else if(leftvalue instanceof Long lvlt && rightvalue instanceof Long rvlt) {
-				return lvlt < rvlt;
-			} else {
-				return false;
-			}
-		case "LessThanEqual":
-			if(leftvalue instanceof Double lvle && rightvalue instanceof Double rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Long lvle && rightvalue instanceof Double rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Double lvle && rightvalue instanceof Long rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Integer lvle && rightvalue instanceof Double rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Double lvle && rightvalue instanceof Integer rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Integer lvle && rightvalue instanceof Integer rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Integer lvle && rightvalue instanceof Long rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Long lvle && rightvalue instanceof Integer rvle) {
-				return lvle <= rvle;
-			} else if(leftvalue instanceof Long lvle && rightvalue instanceof Long rvle) {
-				return lvle <= rvle;
-			} else {
-				return false;
-			}
-		case "Equal":
-			if(leftvalue instanceof Double lveq && rightvalue instanceof Double rveq) {
-				return lveq == rveq;
-			} else if(leftvalue instanceof Long lveq && rightvalue instanceof Double rveq) {
-				return lveq.doubleValue() == rveq.doubleValue();
-			} else if(leftvalue instanceof Double lveq && rightvalue instanceof Long rveq) {
-				return lveq.doubleValue() == rveq.doubleValue();
-			} else if(leftvalue instanceof Integer lveq && rightvalue instanceof Double rveq) {
-				return lveq.doubleValue() == rveq.doubleValue();
-			} else if(leftvalue instanceof Double lveq && rightvalue instanceof Integer rveq) {
-				return lveq.doubleValue() == rveq.doubleValue();
-			} else if(leftvalue instanceof Integer lveq && rightvalue instanceof Long rveq) {
-				return lveq.longValue() == rveq.longValue();
-			} else if(leftvalue instanceof Long lveq && rightvalue instanceof Integer rveq) {
-				return lveq.longValue() == rveq.longValue();
-			} else if(leftvalue instanceof Integer lveq && rightvalue instanceof Integer rveq) {
-				return lveq.intValue() == rveq.intValue();
-			} else if(leftvalue instanceof Long lveq && rightvalue instanceof Long rveq) {
-				return lveq.longValue() == rveq.longValue();
-			} else if(leftvalue instanceof String lveq && rightvalue instanceof String rveq) {
-				return lveq.equals(rveq);
-			} else {
-				return false;
-			}
-		case "NotEqual":
-			if(leftvalue instanceof Double lvne && rightvalue instanceof Double rvne) {
-				return lvne != rvne;
-			} else if(leftvalue instanceof Long lvne && rightvalue instanceof Double rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Double lvne && rightvalue instanceof Long rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Integer lvne && rightvalue instanceof Double rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Double lvne && rightvalue instanceof Integer rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Long lvne && rightvalue instanceof Integer rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Integer lvne && rightvalue instanceof Long rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Integer lvne && rightvalue instanceof Integer rvne) {
-				return lvne.longValue() != rvne.longValue();
-			} else if(leftvalue instanceof Long lvne && rightvalue instanceof Long rvne) {
-				return lvne != rvne;
-			} else if(leftvalue instanceof String lvne && rightvalue instanceof String rvne) {
-				return !lvne.equals(rvne);
-			} else {
-				return false;
-			}
-		default:
-			throw new UnsupportedOperationException("Unsupported operator: " + operator);
+			case "GreaterThan":
+				if (leftvalue instanceof Double lv && rightvalue instanceof Double rv) {
+					return lv > rv;
+				} else if (leftvalue instanceof Long lv && rightvalue instanceof Double rv) {
+					return lv > rv;
+				} else if (leftvalue instanceof Double lv && rightvalue instanceof Long rv) {
+					return lv > rv;
+				} else if (leftvalue instanceof Integer lv && rightvalue instanceof Double rv) {
+					return lv > rv;
+				} else if (leftvalue instanceof Double lv && rightvalue instanceof Integer rv) {
+					return lv > rv;
+				} else if (leftvalue instanceof Integer lv && rightvalue instanceof Integer rv) {
+					return lv > rv;
+				} else if (leftvalue instanceof Integer lv && rightvalue instanceof Long rv) {
+					return lv > rv;
+				} else if (leftvalue instanceof Long lv && rightvalue instanceof Integer rv) {
+					return lv > rv;
+				} else if (leftvalue instanceof Long lv && rightvalue instanceof Long rv) {
+					return lv > rv;
+				} else {
+					return false;
+				}
+			case "GreaterThanEqual":
+				if (leftvalue instanceof Double lvgt && rightvalue instanceof Double rvgt) {
+					return lvgt >= rvgt;
+				} else if (leftvalue instanceof Long lvgt && rightvalue instanceof Double rvgt) {
+					return lvgt >= rvgt;
+				} else if (leftvalue instanceof Double lvgt && rightvalue instanceof Long rvgt) {
+					return lvgt >= rvgt;
+				} else if (leftvalue instanceof Integer lvgt && rightvalue instanceof Double rvgt) {
+					return lvgt >= rvgt;
+				} else if (leftvalue instanceof Double lvgt && rightvalue instanceof Integer rvgt) {
+					return lvgt >= rvgt;
+				} else if (leftvalue instanceof Integer lvgt && rightvalue instanceof Integer rvgt) {
+					return lvgt >= rvgt;
+				} else if (leftvalue instanceof Integer lvgt && rightvalue instanceof Long rvgt) {
+					return lvgt >= rvgt;
+				} else if (leftvalue instanceof Long lvgt && rightvalue instanceof Integer rvgt) {
+					return lvgt >= rvgt;
+				} else if (leftvalue instanceof Long lvgt && rightvalue instanceof Long rvgt) {
+					return lvgt >= rvgt;
+				} else {
+					return false;
+				}
+			case "LessThan":
+				if (leftvalue instanceof Double lvlt && rightvalue instanceof Double rvlt) {
+					return lvlt < rvlt;
+				} else if (leftvalue instanceof Long lvlt && rightvalue instanceof Double rvlt) {
+					return lvlt < rvlt;
+				} else if (leftvalue instanceof Double lvlt && rightvalue instanceof Long rvlt) {
+					return lvlt < rvlt;
+				} else if (leftvalue instanceof Integer lvlt && rightvalue instanceof Double rvlt) {
+					return lvlt < rvlt;
+				} else if (leftvalue instanceof Double lvlt && rightvalue instanceof Integer rvlt) {
+					return lvlt < rvlt;
+				} else if (leftvalue instanceof Integer lvlt && rightvalue instanceof Integer rvlt) {
+					return lvlt < rvlt;
+				} else if (leftvalue instanceof Integer lvlt && rightvalue instanceof Long rvlt) {
+					return lvlt < rvlt;
+				} else if (leftvalue instanceof Long lvlt && rightvalue instanceof Integer rvlt) {
+					return lvlt < rvlt;
+				} else if (leftvalue instanceof Long lvlt && rightvalue instanceof Long rvlt) {
+					return lvlt < rvlt;
+				} else {
+					return false;
+				}
+			case "LessThanEqual":
+				if (leftvalue instanceof Double lvle && rightvalue instanceof Double rvle) {
+					return lvle <= rvle;
+				} else if (leftvalue instanceof Long lvle && rightvalue instanceof Double rvle) {
+					return lvle <= rvle;
+				} else if (leftvalue instanceof Double lvle && rightvalue instanceof Long rvle) {
+					return lvle <= rvle;
+				} else if (leftvalue instanceof Integer lvle && rightvalue instanceof Double rvle) {
+					return lvle <= rvle;
+				} else if (leftvalue instanceof Double lvle && rightvalue instanceof Integer rvle) {
+					return lvle <= rvle;
+				} else if (leftvalue instanceof Integer lvle && rightvalue instanceof Integer rvle) {
+					return lvle <= rvle;
+				} else if (leftvalue instanceof Integer lvle && rightvalue instanceof Long rvle) {
+					return lvle <= rvle;
+				} else if (leftvalue instanceof Long lvle && rightvalue instanceof Integer rvle) {
+					return lvle <= rvle;
+				} else if (leftvalue instanceof Long lvle && rightvalue instanceof Long rvle) {
+					return lvle <= rvle;
+				} else {
+					return false;
+				}
+			case "Equal":
+				if (leftvalue instanceof Double lveq && rightvalue instanceof Double rveq) {
+					return lveq == rveq;
+				} else if (leftvalue instanceof Long lveq && rightvalue instanceof Double rveq) {
+					return lveq.doubleValue() == rveq.doubleValue();
+				} else if (leftvalue instanceof Double lveq && rightvalue instanceof Long rveq) {
+					return lveq.doubleValue() == rveq.doubleValue();
+				} else if (leftvalue instanceof Integer lveq && rightvalue instanceof Double rveq) {
+					return lveq.doubleValue() == rveq.doubleValue();
+				} else if (leftvalue instanceof Double lveq && rightvalue instanceof Integer rveq) {
+					return lveq.doubleValue() == rveq.doubleValue();
+				} else if (leftvalue instanceof Integer lveq && rightvalue instanceof Long rveq) {
+					return lveq.longValue() == rveq.longValue();
+				} else if (leftvalue instanceof Long lveq && rightvalue instanceof Integer rveq) {
+					return lveq.longValue() == rveq.longValue();
+				} else if (leftvalue instanceof Integer lveq && rightvalue instanceof Integer rveq) {
+					return lveq.intValue() == rveq.intValue();
+				} else if (leftvalue instanceof Long lveq && rightvalue instanceof Long rveq) {
+					return lveq.longValue() == rveq.longValue();
+				} else if (leftvalue instanceof String lveq && rightvalue instanceof String rveq) {
+					return lveq.equals(rveq);
+				} else {
+					return false;
+				}
+			case "NotEqual":
+				if (leftvalue instanceof Double lvne && rightvalue instanceof Double rvne) {
+					return lvne != rvne;
+				} else if (leftvalue instanceof Long lvne && rightvalue instanceof Double rvne) {
+					return lvne.longValue() != rvne.longValue();
+				} else if (leftvalue instanceof Double lvne && rightvalue instanceof Long rvne) {
+					return lvne.longValue() != rvne.longValue();
+				} else if (leftvalue instanceof Integer lvne && rightvalue instanceof Double rvne) {
+					return lvne.longValue() != rvne.longValue();
+				} else if (leftvalue instanceof Double lvne && rightvalue instanceof Integer rvne) {
+					return lvne.longValue() != rvne.longValue();
+				} else if (leftvalue instanceof Long lvne && rightvalue instanceof Integer rvne) {
+					return lvne.longValue() != rvne.longValue();
+				} else if (leftvalue instanceof Integer lvne && rightvalue instanceof Long rvne) {
+					return lvne.longValue() != rvne.longValue();
+				} else if (leftvalue instanceof Integer lvne && rightvalue instanceof Integer rvne) {
+					return lvne.longValue() != rvne.longValue();
+				} else if (leftvalue instanceof Long lvne && rightvalue instanceof Long rvne) {
+					return lvne != rvne;
+				} else if (leftvalue instanceof String lvne && rightvalue instanceof String rvne) {
+					return !lvne.equals(rvne);
+				} else {
+					return false;
+				}
+			default:
+				throw new UnsupportedOperationException("Unsupported operator: " + operator);
 		}
-		
+
 	}
+
 	/**
 	 * Get Aliases of operator
 	 * @param operator
@@ -1769,9 +1743,9 @@ public class PigUtils {
 	 */
 	public static void getAliaseForJoin(Operator operator, List<String> aliases) throws Exception {
 		if (operator instanceof LOForEach loForEach) {
-			for(LogicalFieldSchema lfs : loForEach.getSchema().getFields()){
+			for (LogicalFieldSchema lfs : loForEach.getSchema().getFields()) {
 				aliases.add(lfs.alias);
 			}
 		}
-	}	
+	}
 }

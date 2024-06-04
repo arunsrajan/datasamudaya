@@ -18,5 +18,5 @@ import lombok.Getter;
 public class OrcReaderRecordReader {
 	private Reader reader;
 	private RecordReader rows;
-	private Stream<Map<String,Object>> valuesmapstream;
+	private Stream<Map<String, Object>> valuesmapstream;
 }

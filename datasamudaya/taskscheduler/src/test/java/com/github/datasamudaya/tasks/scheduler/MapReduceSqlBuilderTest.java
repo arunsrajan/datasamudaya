@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.tasks.scheduler.sql.MapReduceApplicationSqlBuilder;
 
-@SuppressWarnings({"unchecked","rawtypes"})
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
 			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime",
@@ -24,19 +24,19 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			"LateAircraftDelay");
 	List<SqlTypeName> airlineheadertypes = Arrays.asList(SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE);
 	static Logger log = LoggerFactory.getLogger(MapReduceSqlBuilderTest.class);
-	
+
 	@Test
 	public void testAllFunction() throws Exception {
 		log.info("In testAllFunction() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
-				.setHdfs(hdfsfilepath).setJobConfiguration(jc)				
-				.setSql(statement).build();		
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(4, values.size());
 					assertTrue(values.containsKey("sum(airline.ArrDelay)"));
@@ -46,9 +46,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllFunction() method Exit");		
+		log.info("In testAllFunction() method Exit");
 	}
-	
+
 	@Test
 	public void testAllFunctionsWithCarrier() throws Exception {
 		log.info("In testAllFunctionsWithCarrier() method Entry");
@@ -60,7 +60,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -71,9 +71,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllFunctionsWithCarrier() method Exit");		
+		log.info("In testAllFunctionsWithCarrier() method Exit");
 	}
-	
+
 	@Test
 	public void testAllFunctionsWithCarrierAbsValue() throws Exception {
 		log.info("In testAllFunctionsWithCarrierAbsValue() method Entry");
@@ -85,7 +85,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -96,9 +96,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllFunctionsWithCarrierAbsValue() method Exit");		
+		log.info("In testAllFunctionsWithCarrierAbsValue() method Exit");
 	}
-		
+
 	@Test
 	public void testAllFunctionsWithCarrierParameterAdd() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterAdd() method Entry");
@@ -110,7 +110,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -121,9 +121,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllFunctionsWithCarrierParameterAdd() method Exit");		
+		log.info("In testAllFunctionsWithCarrierParameterAdd() method Exit");
 	}
-	
+
 	@Test
 	public void testAllFunctionsWithCarrierParameterSub() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterSub() method Entry");
@@ -135,7 +135,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -146,10 +146,10 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllFunctionsWithCarrierParameterSub() method Exit");		
+		log.info("In testAllFunctionsWithCarrierParameterSub() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testAllFunctionsWithCarrierParameterMul() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterMul() method Entry");
@@ -161,7 +161,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -172,9 +172,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllFunctionsWithCarrierParameterMul() method Exit");		
+		log.info("In testAllFunctionsWithCarrierParameterMul() method Exit");
 	}
-	
+
 	@Test
 	public void testAllFunctionsWithCarrierParameterDiv() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterDiv() method Entry");
@@ -186,7 +186,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -197,10 +197,10 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllFunctionsWithCarrierParameterDiv() method Exit");		
+		log.info("In testAllFunctionsWithCarrierParameterDiv() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testAllFunctionsWithCarrierParameterDelay() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterDelay() method Entry");
@@ -212,7 +212,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -223,12 +223,10 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllFunctionsWithCarrierParameterDelay() method Exit");		
+		log.info("In testAllFunctionsWithCarrierParameterDelay() method Exit");
 	}
-	
-	
-	
-	
+
+
 	@Test
 	public void testAllFunctionsWithCarrierWithWhere() throws Exception {
 		log.info("In testAllFunctionsWithCarrierWithWhere() method Entry");
@@ -240,7 +238,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -248,9 +246,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllFunctionsWithCarrierWithWhere() method Exit");		
+		log.info("In testAllFunctionsWithCarrierWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testAllColumns() throws Exception {
 		log.info("In testAllColumns() method Entry");
@@ -262,15 +260,15 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(29l, values.size());
 				}
 			});
 		});
-		log.info("In testAllColumns() method Exit");		
+		log.info("In testAllColumns() method Exit");
 	}
-	
+
 	@Test
 	public void testRequiredColumns() throws Exception {
 		log.info("In testRequiredColumns() method Entry");
@@ -282,7 +280,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -290,9 +288,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testRequiredColumns() method Exit");		
+		log.info("In testRequiredColumns() method Exit");
 	}
-	
+
 	@Test
 	public void testRequiredColumnsWithWhereInOrder() throws Exception {
 		log.info("In testRequiredColumnsWithWhereInOrder() method Entry");
@@ -304,7 +302,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -315,9 +313,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testRequiredColumnsWithWhereInOrder() method Exit");		
+		log.info("In testRequiredColumnsWithWhereInOrder() method Exit");
 	}
-	
+
 	@Test
 	public void testAllColumnsWithWhere() throws Exception {
 		log.info("In testAllColumnsWithWhere() method Entry");
@@ -329,16 +327,16 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(29, values.size());
 					assertEquals(12.0, values.get("MonthOfYear"));
 				}
 			});
 		});
-		log.info("In testAllColumnsWithWhere() method Exit");		
+		log.info("In testAllColumnsWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testRequiredColumnsWithWhere() throws Exception {
 		log.info("In testRequiredColumnsWithWhere() method Entry");
@@ -350,7 +348,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -359,16 +357,16 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testRequiredColumnsWithWhere() method Exit");		
+		log.info("In testRequiredColumnsWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testAllColumnsJoin() throws Exception {
 		log.info("In testAllColumnsJoin() method Entry");
 		String statement = """
 				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Description \
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear\
-				""";				
+				""";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -376,7 +374,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(4, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -388,17 +386,17 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testAllColumnsJoin() method Exit");		
+		log.info("In testAllColumnsJoin() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testFunctionsJoin() throws Exception {
 		log.info("In testFunctionsJoin() method Entry");
 		String statement = """
 				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,sum(airline.ArrDelay) sumdelay \
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12 = airline.MonthOfYear\
-				""";				
+				""";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -406,7 +404,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(4, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -418,9 +416,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testFunctionsJoin() method Exit");		
+		log.info("In testFunctionsJoin() method Exit");
 	}
-	
+
 	@Test
 	public void testRequiredColumnsInOrder() throws Exception {
 		log.info("In testRequiredColumnsInOrder() method Entry");
@@ -432,7 +430,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -441,10 +439,10 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testRequiredColumnsInOrder() method Exit");		
+		log.info("In testRequiredColumnsInOrder() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testNonAggFunctionAbsWithWhere() throws Exception {
 		log.info("In testNonAggFunctionAbsWithWhere() method Entry");
@@ -456,19 +454,19 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
 					assertTrue(values.containsKey("abs(airline.ArrDelay)"));
-					assertTrue(((Double)values.get("abs(airline.ArrDelay)"))>=0);
+					assertTrue(((Double) values.get("abs(airline.ArrDelay)")) >= 0);
 				}
 			});
 		});
-		log.info("In testNonAggFunctionAbsWithWhere() method Exit");		
+		log.info("In testNonAggFunctionAbsWithWhere() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testNonAggFunctionAbsAddWithWhere() throws Exception {
 		log.info("In testNonAggFunctionAbsAddWithWhere() method Entry");
@@ -480,19 +478,19 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
 					assertTrue(values.containsKey("abs(airline.ArrDelay + 10)"));
-					assertTrue(((Double)values.get("abs(airline.ArrDelay + 10)"))>=0);
+					assertTrue(((Double) values.get("abs(airline.ArrDelay + 10)")) >= 0);
 				}
 			});
 		});
-		log.info("In testNonAggFunctionAbsAddWithWhere() method Exit");		
+		log.info("In testNonAggFunctionAbsAddWithWhere() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testNonAggFunctionLengthWithWhere() throws Exception {
 		log.info("In testNonAggFunctionLengthWithWhere() method Entry");
@@ -504,19 +502,19 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
 					assertTrue(values.containsKey("length(airline.UniqueCarrier)"));
-					assertTrue(((Long)values.get("length(airline.UniqueCarrier)"))>0);
+					assertTrue(((Long) values.get("length(airline.UniqueCarrier)")) > 0);
 				}
 			});
 		});
-		log.info("In testNonAggFunctionLengthWithWhere() method Exit");		
+		log.info("In testNonAggFunctionLengthWithWhere() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testNonAggFunctionRoundWithWhere() throws Exception {
 		log.info("In testNonAggFunctionRoundWithWhere() method Entry");
@@ -528,7 +526,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -537,9 +535,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionRoundWithWhere() method Exit");		
+		log.info("In testNonAggFunctionRoundWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionCeilWithWhere() throws Exception {
 		log.info("In testNonAggFunctionCeilWithWhere() method Entry");
@@ -551,7 +549,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -560,9 +558,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionCeilWithWhere() method Exit");		
+		log.info("In testNonAggFunctionCeilWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionFloorWithWhere() throws Exception {
 		log.info("In testNonAggFunctionFloorWithWhere() method Entry");
@@ -574,7 +572,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -583,9 +581,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionFloorWithWhere() method Exit");		
+		log.info("In testNonAggFunctionFloorWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionPowWithWhere() throws Exception {
 		log.info("In testNonAggFunctionPowWithWhere() method Entry");
@@ -597,7 +595,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -606,11 +604,10 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionPowWithWhere() method Exit");		
+		log.info("In testNonAggFunctionPowWithWhere() method Exit");
 	}
-	
-	
-	
+
+
 	@Test
 	public void testNonAggFunctionSqrtWithWhere() throws Exception {
 		log.info("In testNonAggFunctionSqrtWithWhere() method Entry");
@@ -622,7 +619,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -631,10 +628,10 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionSqrtWithWhere() method Exit");		
+		log.info("In testNonAggFunctionSqrtWithWhere() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testNonAggFunctionExpWithWhere() throws Exception {
 		log.info("In testNonAggFunctionExpWithWhere() method Entry");
@@ -646,7 +643,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -655,9 +652,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionExpWithWhere() method Exit");		
+		log.info("In testNonAggFunctionExpWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionLogeWithWhere() throws Exception {
 		log.info("In testNonAggFunctionLogeWithWhere() method Entry");
@@ -669,7 +666,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -678,9 +675,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionLogeWithWhere() method Exit");		
+		log.info("In testNonAggFunctionLogeWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionLowercaseWithWhere() throws Exception {
 		log.info("In testNonAggFunctionLowercaseWithWhere() method Entry");
@@ -692,7 +689,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -702,9 +699,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionLowercaseWithWhere() method Exit");		
+		log.info("In testNonAggFunctionLowercaseWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionUppercaseWithWhere() throws Exception {
 		log.info("In testNonAggFunctionUppercaseWithWhere() method Entry");
@@ -716,7 +713,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -726,10 +723,10 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionUppercaseWithWhere() method Exit");		
+		log.info("In testNonAggFunctionUppercaseWithWhere() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testNonAggFunctionBase64encodeWithWhere() throws Exception {
 		log.info("In testNonAggFunctionBase64encodeWithWhere() method Entry");
@@ -741,7 +738,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -750,9 +747,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionBase64encodeWithWhere() method Exit");		
+		log.info("In testNonAggFunctionBase64encodeWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionBase64decodeWithWhere() throws Exception {
 		log.info("In testNonAggFunctionBase64decodeWithWhere() method Entry");
@@ -764,19 +761,19 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
 					assertTrue(values.containsKey("ArrDelay"));
 					assertTrue(values.containsKey("base64decode(base64encode(airline.UniqueCarrier))"));
-					assertEquals("AQ",values.get("base64decode(base64encode(airline.UniqueCarrier))"));
+					assertEquals("AQ", values.get("base64decode(base64encode(airline.UniqueCarrier))"));
 				}
 			});
 		});
-		log.info("In testNonAggFunctionBase64decodeWithWhere() method Exit");		
+		log.info("In testNonAggFunctionBase64decodeWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionNormalizespaceWithWhere() throws Exception {
 		log.info("In testNonAggFunctionNormalizespaceWithWhere() method Entry");
@@ -788,7 +785,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -797,9 +794,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionNormalizespaceWithWhere() method Exit");		
+		log.info("In testNonAggFunctionNormalizespaceWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionTrimWithWhere() throws Exception {
 		log.info("In testNonAggFunctionTrimWithWhere() method Entry");
@@ -811,7 +808,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -820,10 +817,10 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionTrimWithWhere() method Exit");		
+		log.info("In testNonAggFunctionTrimWithWhere() method Exit");
 	}
-	
-	
+
+
 	@Test
 	public void testNonAggFunctionSubstringWithWhere() throws Exception {
 		log.info("In testNonAggFunctionSubstringWithWhere() method Entry");
@@ -835,7 +832,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
 				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for(Map<String, Object> values: valuesmap) {
+				for (Map<String, Object> values : valuesmap) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -844,8 +841,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				}
 			});
 		});
-		log.info("In testNonAggFunctionSubstringWithWhere() method Exit");		
+		log.info("In testNonAggFunctionSubstringWithWhere() method Exit");
 	}
-	
-	
+
+
 }

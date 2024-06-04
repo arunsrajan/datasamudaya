@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
@@ -32,10 +33,10 @@ import org.ehcache.Cache;
 
 import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
-import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetch;
 import com.github.datasamudaya.common.RemoteDataFetcher;
@@ -50,7 +51,7 @@ import com.github.datasamudaya.stream.PipelineException;
  * Task executors thread for standalone task executors daemon.  
  */
 @SuppressWarnings("rawtypes")
-public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor  {
+public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor {
 	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorLocal.class);
 	protected ConcurrentMap<String, OutputStream> resultstream;
 	public double timetaken = 0.0;
@@ -76,11 +77,9 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 		if (Objects.isNull(os)) {
 			log.info("Inadequate event stream for the trail: " + path);
 			return os;
-		}
-		else if (os instanceof ByteBufferOutputStream baos) {
+		} else if (os instanceof ByteBufferOutputStream baos) {
 			return os;
-		}
-		else {
+		} else {
 			throw new UnsupportedOperationException("Unknown I/O operation");
 		}
 	}
@@ -109,7 +108,7 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 		try {
 			var path = getIntermediateDataFSFilePath(task);
 			OutputStream os;
-			os = new ByteBufferOutputStream(ByteBufferPoolDirect.get(buffersize));
+			os = new ByteBufferOutputStream(ByteBufferPoolDirectOld.get(buffersize));
 			resultstream.put(path, os);
 			log.debug("Exiting StreamPipelineTaskExecutorLocal.createIntermediateDataToFS");
 			return os;
@@ -119,7 +118,6 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 		}
 	}
 
-	
 
 	/**
 	 * Creates the input stream from task object.
@@ -133,14 +131,14 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 		var path = getIntermediateDataFSFilePath(task);
 		log.debug("Exiting StreamPipelineTaskExecutorLocal.getIntermediateInputStreamFS");
 		OutputStream os = resultstream.get(path);
-		if(Objects.isNull(os)) {
+		if (Objects.isNull(os)) {
 			throw new NullPointerException("Unable to get Result Stream for path: " + path);
-		}else if(os instanceof ByteBufferOutputStream baos) {
+		} else if (os instanceof ByteBufferOutputStream baos) {
 			return new ByteBufferInputStream(baos.get().duplicate());
 		} else {
 			throw new UnsupportedOperationException("Unknown I/O operation");
 		}
-		
+
 	}
 
 
@@ -159,7 +157,7 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 			log.debug("Submitted Stage " + stageTasks);
 			log.debug("Running Stage " + stageTasks);
 			if (task.input != null && task.parentremotedatafetch != null) {
-				if(task.parentremotedatafetch!=null && task.parentremotedatafetch[0]!=null) {
+				if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
 					var numinputs = task.parentremotedatafetch.length;
 					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.parentremotedatafetch[inputindex];
@@ -176,7 +174,7 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 							}
 						}
 					}
-				} else if(task.input!=null && task.input[0]!=null) {
+				} else if (task.input != null && task.input[0] != null) {
 					var numinputs = task.input.length;
 					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 						var input = task.input[inputindex];
@@ -187,11 +185,11 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 							}
 						}
 					}
-				}				
-			} 
+				}
+			}
 			timetaken = computeTasks(task, hdfs);
 			log.debug("Completed Stage " + stageTasks);
-			completed=true;
+			completed = true;
 		} catch (Throwable ex) {
 			completed = false;
 			log.error("Failed Stage: " + task.stageid, ex);

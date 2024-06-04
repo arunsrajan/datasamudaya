@@ -9,14 +9,17 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,23 +54,27 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.fun.SqlFloorFunction;
+import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.Optionality;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.vector.BytesColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.ColumnVector;
@@ -80,6 +87,7 @@ import org.apache.orc.Reader;
 import org.apache.orc.RecordReader;
 import org.apache.orc.TypeDescription;
 import org.apache.orc.Writer;
+import org.ehcache.Cache;
 import org.jgroups.util.UUID;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple1;
@@ -102,10 +110,47 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyInputStream;
 
+import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.ExecuteTaskActor;
 import com.github.datasamudaya.common.FileSystemSupport;
+import com.github.datasamudaya.common.GetTaskActor;
+import com.github.datasamudaya.common.JobStage;
+import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.TaskStatus;
+import com.github.datasamudaya.common.TaskType;
+import com.github.datasamudaya.common.functions.Coalesce;
+import com.github.datasamudaya.common.functions.DistributedDistinct;
+import com.github.datasamudaya.common.functions.DistributedSort;
+import com.github.datasamudaya.common.functions.IntersectionFunction;
+import com.github.datasamudaya.common.functions.JoinPredicate;
+import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
+import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.ShuffleStage;
+import com.github.datasamudaya.common.functions.UnionFunction;
+import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.stream.CsvOptionsSQL;
+import com.github.datasamudaya.stream.executors.actors.ProcessCoalesce;
+import com.github.datasamudaya.stream.executors.actors.ProcessDistributedDistinct;
+import com.github.datasamudaya.stream.executors.actors.ProcessDistributedSort;
+import com.github.datasamudaya.stream.executors.actors.ProcessInnerJoin;
+import com.github.datasamudaya.stream.executors.actors.ProcessIntersection;
+import com.github.datasamudaya.stream.executors.actors.ProcessLeftOuterJoin;
+import com.github.datasamudaya.stream.executors.actors.ProcessMapperByBlocksLocation;
+import com.github.datasamudaya.stream.executors.actors.ProcessMapperByStream;
+import com.github.datasamudaya.stream.executors.actors.ProcessReduce;
+import com.github.datasamudaya.stream.executors.actors.ProcessRightOuterJoin;
+import com.github.datasamudaya.stream.executors.actors.ProcessShuffle;
+import com.github.datasamudaya.stream.executors.actors.ProcessUnion;
 
+import akka.actor.Actor;
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.cluster.Cluster;
 import jp.co.yahoo.yosegi.message.objects.BooleanObj;
 import jp.co.yahoo.yosegi.message.objects.DoubleObj;
 import jp.co.yahoo.yosegi.message.objects.FloatObj;
@@ -132,177 +177,181 @@ import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.expression.operators.relational.ItemsList;
 import net.sf.jsqlparser.expression.operators.relational.LikeExpression;
 import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.schema.Table;
-import net.sf.jsqlparser.statement.select.FromItem;
+import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.GroupByElement;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectBody;
-import net.sf.jsqlparser.statement.select.SubSelect;
 
 /**
  * This class is utility class for getting datatype of h2 to calcite format.
+ * 
  * @author arun
  *
  */
 public class SQLUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(SQLUtils.class);
-	
-	private SQLUtils() {}
+
+	private SQLUtils() {
+	}
 
 	/**
 	 * Static function H2 datatype to calcite format.
+	 * 
 	 * @param h2datatype
 	 * @return type in calcite format
 	 */
 	public static SqlTypeName getSQLTypeName(String h2datatype) {
-		if("4".equals(h2datatype)) {
+		if ("4".equals(h2datatype)) {
 			return SqlTypeName.INTEGER;
-		} else if("8".equals(h2datatype)) {
+		} else if ("8".equals(h2datatype)) {
 			return SqlTypeName.DOUBLE;
-		} else if("12".equals(h2datatype)) {
+		} else if ("12".equals(h2datatype)) {
 			return SqlTypeName.VARCHAR;
 		} else {
 			return SqlTypeName.VARCHAR;
 		}
 	}
-	
+
 	/**
 	 * Static function H2 datatype to calcite format.
+	 * 
 	 * @param h2datatype
 	 * @return type in calcite format
 	 */
 	public static SqlTypeName getSQLTypeNameMR(String h2datatype) {
-		if("4".equals(h2datatype)) {
+		if ("4".equals(h2datatype)) {
 			return SqlTypeName.DOUBLE;
-		} else if("12".equals(h2datatype)) {
+		} else if ("12".equals(h2datatype)) {
 			return SqlTypeName.VARCHAR;
 		} else {
 			return SqlTypeName.VARCHAR;
 		}
 	}
-	
+
 	/**
-	 * This static method converts the value to given format. 
+	 * This static method converts the value to given format.
+	 * 
 	 * @param value
 	 * @param type
 	 * @return value in given format.
 	 */
 	public static Object getValue(String value, SqlTypeName type) {
 		try {
-			if(type == SqlTypeName.INTEGER) {
+			if (type == SqlTypeName.INTEGER) {
 				return Integer.valueOf(value);
-			} else if(type == SqlTypeName.BIGINT) {
+			} else if (type == SqlTypeName.BIGINT) {
 				return Long.valueOf(value);
-			} else if(type == SqlTypeName.VARCHAR){
+			} else if (type == SqlTypeName.VARCHAR) {
 				return String.valueOf(value);
-			} else if(type == SqlTypeName.CHAR){
+			} else if (type == SqlTypeName.CHAR) {
 				return String.valueOf(value);
-			} else if(type == SqlTypeName.FLOAT) {
-				return Float.valueOf(value);			
-			} else if(type == SqlTypeName.DOUBLE) {
+			} else if (type == SqlTypeName.FLOAT) {
+				return Float.valueOf(value);
+			} else if (type == SqlTypeName.DOUBLE) {
 				return Double.valueOf(value);
-			} else if(type == SqlTypeName.DECIMAL) {
+			} else if (type == SqlTypeName.DECIMAL) {
 				return Double.valueOf(value);
 			} else {
 				return String.valueOf(value);
 			}
-		} catch(Exception ex) {
-			if(type == SqlTypeName.INTEGER) {
+		} catch (Exception ex) {
+			if (type == SqlTypeName.INTEGER) {
 				return Integer.valueOf(0);
-			} else if(type == SqlTypeName.BIGINT) {
+			} else if (type == SqlTypeName.BIGINT) {
 				return Long.valueOf(0);
-			} else if(type == SqlTypeName.VARCHAR){
+			} else if (type == SqlTypeName.VARCHAR) {
 				return String.valueOf(DataSamudayaConstants.EMPTY);
-			} else if(type == SqlTypeName.FLOAT) {
-				return Float.valueOf(0.0f);			
-			} else if(type == SqlTypeName.DOUBLE) {
+			} else if (type == SqlTypeName.FLOAT) {
+				return Float.valueOf(0.0f);
+			} else if (type == SqlTypeName.DOUBLE) {
 				return Double.valueOf(0.0d);
 			} else {
 				return String.valueOf(DataSamudayaConstants.EMPTY);
 			}
 		}
 	}
-	
+
 	/**
 	 * Get Column Index Map for columns in table
+	 * 
 	 * @param column
 	 * @return columnindexmap
 	 */
 	public static Map<String, Integer> getColumnIndexMap(List<String> column) {
 		Map<String, Integer> columnindexmap = new ConcurrentHashMap<>();
-		for (int originalcolumnindex = 0;originalcolumnindex < column.size();originalcolumnindex++) {
-			columnindexmap.put(column.get(originalcolumnindex),
-					Integer.valueOf(originalcolumnindex));
+		for (int originalcolumnindex = 0; originalcolumnindex < column.size(); originalcolumnindex++) {
+			columnindexmap.put(column.get(originalcolumnindex), Integer.valueOf(originalcolumnindex));
 		}
 		return columnindexmap;
 	}
-	
+
 	/**
-	 * This static method converts the mr values to given format. 
+	 * This static method converts the mr values to given format.
+	 * 
 	 * @param value
 	 * @param type
 	 * @return value in given format.
 	 */
 	public static Object getValueMR(String value, SqlTypeName type) {
 		try {
-			if(type == SqlTypeName.INTEGER) {
+			if (type == SqlTypeName.INTEGER) {
 				return Integer.valueOf(value);
-			} else if(type == SqlTypeName.BIGINT) {
+			} else if (type == SqlTypeName.BIGINT) {
 				return Long.valueOf(value);
-			} else if(type == SqlTypeName.VARCHAR){
+			} else if (type == SqlTypeName.VARCHAR) {
 				return String.valueOf(value);
-			} else if(type == SqlTypeName.FLOAT) {
-				return Float.valueOf(value);			
-			} else if(type == SqlTypeName.DOUBLE) {
+			} else if (type == SqlTypeName.FLOAT) {
+				return Float.valueOf(value);
+			} else if (type == SqlTypeName.DOUBLE) {
 				return Double.valueOf(value);
 			} else {
 				return String.valueOf(value);
 			}
-		} catch(Exception ex) {
-			if(type == SqlTypeName.INTEGER) {
+		} catch (Exception ex) {
+			if (type == SqlTypeName.INTEGER) {
 				return Integer.valueOf(0);
-			} else if(type == SqlTypeName.BIGINT) {
+			} else if (type == SqlTypeName.BIGINT) {
 				return Long.valueOf(0);
-			} else if(type == SqlTypeName.VARCHAR){
+			} else if (type == SqlTypeName.VARCHAR) {
 				return String.valueOf(DataSamudayaConstants.EMPTY);
-			} else if(type == SqlTypeName.FLOAT) {
-				return Float.valueOf(0.0f);			
-			} else if(type == SqlTypeName.DOUBLE) {
+			} else if (type == SqlTypeName.FLOAT) {
+				return Float.valueOf(0.0f);
+			} else if (type == SqlTypeName.DOUBLE) {
 				return Double.valueOf(0.0d);
 			} else {
 				return String.valueOf(DataSamudayaConstants.EMPTY);
 			}
 		}
 	}
-	
+
 	/**
 	 * Get arrow file to store columnar data
+	 * 
 	 * @return
 	 */
 	protected static String getArrowFilePath() {
-		String tmpdir = isNull(DataSamudayaProperties.get())?System.getProperty(DataSamudayaConstants.TMPDIR)
-			: DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR, System.getProperty(DataSamudayaConstants.TMPDIR));
-		new File(tmpdir + DataSamudayaConstants.FORWARD_SLASH 
-				+ FileSystemSupport.MDS).mkdirs();
-		return tmpdir + DataSamudayaConstants.FORWARD_SLASH 
-				+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + UUID.randomUUID().toString() 
+		String tmpdir = isNull(DataSamudayaProperties.get()) ? System.getProperty(DataSamudayaConstants.TMPDIR)
+				: DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR,
+						System.getProperty(DataSamudayaConstants.TMPDIR));
+		new File(tmpdir + DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS).mkdirs();
+		return tmpdir + DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS
+				+ DataSamudayaConstants.FORWARD_SLASH + UUID.randomUUID().toString()
 				+ DataSamudayaConstants.ARROWFILE_EXT;
 	}
-	
+
 	/**
 	 * Decompress VectorSchemaRoot from bytes
+	 * 
 	 * @param arrowfilewithpath
 	 * @return vector schema root
 	 * @throws Exception
 	 */
 	public static VectorSchemaRoot decompressVectorSchemaRootBytes(String arrowfilewithpath) throws Exception {
 		RootAllocator rootallocator = new RootAllocator(Long.MAX_VALUE);
-		try(FileInputStream in = new FileInputStream(arrowfilewithpath);
+		try (FileInputStream in = new FileInputStream(arrowfilewithpath);
 				SnappyInputStream snappyInputStream = new SnappyInputStream(in);
-				ArrowStreamReader reader = new ArrowStreamReader(snappyInputStream, rootallocator);) {			
+				ArrowStreamReader reader = new ArrowStreamReader(snappyInputStream, rootallocator);) {
 			reader.loadNextBatch();
 			// Initialize the VectorSchemaRoot
 			Schema schema = reader.getVectorSchemaRoot().getSchema();
@@ -310,87 +359,93 @@ public class SQLUtils {
 			long rowcount = 0;
 			// Iterate through record batches and merge data
 			do {
-				for (int i = 0;i < schema.getFields().size();i++) {
+				for (int i = 0; i < schema.getFields().size(); i++) {
 					// Get the source vector in the current batch
-					FieldVector sourceVector = reader.getVectorSchemaRoot().getVector(schema.getFields().get(i).getName());
+					FieldVector sourceVector = reader.getVectorSchemaRoot()
+							.getVector(schema.getFields().get(i).getName());
 
 					// Get the destination vector in the merged root
 					FieldVector destVector = mergedRoot.getVector(schema.getFields().get(i).getName());
 
-					//Transfer data from source to destination vector
+					// Transfer data from source to destination vector
 					accumulateVector(destVector, sourceVector);
-				}				
-				rowcount += reader.getVectorSchemaRoot().getRowCount();				
+				}
+				rowcount += reader.getVectorSchemaRoot().getRowCount();
 			} while (reader.loadNextBatch());
 			// Optionally adjust the valueCount and fieldNodeCount in mergedRoot
-			mergedRoot.setRowCount(Long.valueOf(rowcount).intValue());			
+			mergedRoot.setRowCount(Long.valueOf(rowcount).intValue());
 			return mergedRoot;
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 		return null;
-		
+
 	}
+
 	/**
 	 * Accumulate destination vector from source vector
+	 * 
 	 * @param destVector
 	 * @param sourceVector
 	 * @throws Exception
 	 */
 	private static void accumulateVector(FieldVector destVector, FieldVector sourceVector) throws Exception {
-        // Implement the accumulation logic based on the specific data types (e.g., addition for numeric types)
-        int valueCount = sourceVector.getValueCount();
-        for (int i = 0;i < valueCount;i++) {
-            if (!sourceVector.isNull(i)) {
-                setValue(destVector.getValueCount() + i, destVector, getVectorValue(i, sourceVector));
-            }
-        }
-        destVector.setValueCount(destVector.getValueCount() + valueCount);
-    }
-	
+		// Implement the accumulation logic based on the specific data types
+		// (e.g., addition for numeric types)
+		int valueCount = sourceVector.getValueCount();
+		for (int i = 0; i < valueCount; i++) {
+			if (!sourceVector.isNull(i)) {
+				setValue(destVector.getValueCount() + i, destVector, getVectorValue(i, sourceVector));
+			}
+		}
+		destVector.setValueCount(destVector.getValueCount() + valueCount);
+	}
+
 	/**
 	 * Gets Schema Field for given column and type.
+	 * 
 	 * @param column
 	 * @param type
 	 * @return Field
 	 */
 	protected static Field getSchemaField(String column, SqlTypeName type) {
-		if(type == SqlTypeName.INTEGER) {
+		if (type == SqlTypeName.INTEGER) {
 			return Field.nullable(column, new ArrowType.Int(32, true));
-		} else if(type == SqlTypeName.BIGINT) {
+		} else if (type == SqlTypeName.BIGINT) {
 			return Field.nullable(column, new ArrowType.Int(32, true));
-		} else if(type == SqlTypeName.VARCHAR){
+		} else if (type == SqlTypeName.VARCHAR) {
 			return Field.nullable(column, new ArrowType.Utf8());
-		} else if(type == SqlTypeName.FLOAT) {
+		} else if (type == SqlTypeName.FLOAT) {
 			return Field.nullable(column, new ArrowType.FloatingPoint(FloatingPointPrecision.SINGLE));
-		} else if(type == SqlTypeName.DOUBLE) {
+		} else if (type == SqlTypeName.DOUBLE) {
 			return Field.nullable(column, new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE));
 		} else {
 			return Field.nullable(column, new ArrowType.Utf8());
 		}
 	}
-	
+
 	/**
 	 * Get Vectors based on Column Type
+	 * 
 	 * @param column
 	 * @param type
 	 * @param allocator
 	 * @return vector of given sql types
 	 */
 	protected static Object getVector(String column, SqlTypeName type, BufferAllocator allocator) {
-		if(type == SqlTypeName.INTEGER) {
+		if (type == SqlTypeName.INTEGER) {
 			IntVector vector = new IntVector(column, allocator);
 			return vector;
-		} else if(type == SqlTypeName.BIGINT) {
+		} else if (type == SqlTypeName.BIGINT) {
 			IntVector vector = new IntVector(column, allocator);
 			return vector;
-		} else if(type == SqlTypeName.VARCHAR){
+		} else if (type == SqlTypeName.VARCHAR) {
 			VarCharVector vector = new VarCharVector(column, allocator);
 			return vector;
-		} else if(type == SqlTypeName.FLOAT) {
+		} else if (type == SqlTypeName.FLOAT) {
 			Float4Vector vector = new Float4Vector(column, allocator);
 			return vector;
-		} else if(type == SqlTypeName.DOUBLE) {
+		} else if (type == SqlTypeName.DOUBLE) {
 			Float8Vector vector = new Float8Vector(column, allocator);
 			return vector;
 		} else {
@@ -398,104 +453,112 @@ public class SQLUtils {
 			return vector;
 		}
 	}
-	
+
 	/**
 	 * Sets Value in Arrow Vector for given value and index
+	 * 
 	 * @param index
 	 * @param vector
 	 * @param value
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected static synchronized void setValue(int index, Object vector, Object value) throws Exception {
-		if(vector instanceof IntVector iv) {
+		if (vector instanceof IntVector iv) {
 			iv.setSafe(index, (int) value);
-		} else if(vector instanceof VarCharVector vcv) {
+		} else if (vector instanceof VarCharVector vcv) {
 			Text text = new Text();
 			text.set((String) value);
 			vcv.setSafe(index, text);
-		} else if(vector instanceof Float4Vector f4v) {			
+		} else if (vector instanceof Float4Vector f4v) {
 			f4v.setSafe(index, (float) value);
-		} else if(vector instanceof Float8Vector f8v) {			
+		} else if (vector instanceof Float8Vector f8v) {
 			f8v.setSafe(index, (double) value);
 		}
 	}
-	
+
 	/**
 	 * Allocates vector for capacity
+	 * 
 	 * @param vector
 	 * @param capacity
 	 */
 	protected static void allocateNewCapacity(Object vector) {
-		if(vector instanceof IntVector iv) {
+		if (vector instanceof IntVector iv) {
 			iv.allocateNew();
-		} else if(vector instanceof VarCharVector vcv) {
+		} else if (vector instanceof VarCharVector vcv) {
 			vcv.allocateNew();
-		} else if(vector instanceof Float4Vector f4v) {			
+		} else if (vector instanceof Float4Vector f4v) {
 			f4v.allocateNew();
-		} else if(vector instanceof Float8Vector f8v) {			
+		} else if (vector instanceof Float8Vector f8v) {
 			f8v.allocateNew();
 		}
 	}
-	
+
 	/**
 	 * Gets value from vector for given index.
+	 * 
 	 * @param index
 	 * @param vector
 	 * @return object value
 	 */
 	public static Object getVectorValue(int index, Object vector) {
 		try {
-			if(vector instanceof IntVector iv) {
+			if (vector instanceof IntVector iv) {
 				return iv.get(index);
-			} else if(vector instanceof VarCharVector vcv) {
+			} else if (vector instanceof VarCharVector vcv) {
 				return new String(vcv.get(index));
-			} else if(vector instanceof Float4Vector f4v) {			
+			} else if (vector instanceof Float4Vector f4v) {
 				return f4v.get(index);
-			} else if(vector instanceof Float8Vector f8v) {			
+			} else if (vector instanceof Float8Vector f8v) {
 				return f8v.get(index);
 			}
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.info("Error in Index: {}", index);
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 		return DataSamudayaConstants.EMPTY;
 	}
-	
+
 	/**
 	 * Get all columns from expression
+	 * 
 	 * @param expression
 	 * @param columns
 	 */
 	public static void getColumnsFromExpression(Expression expression, List<Column> columns) {
-		if(expression instanceof BinaryExpression bex) {
-		    Expression leftExpression = bex.getLeftExpression();
-		    Expression rightExpression = bex.getRightExpression();
-		    if (leftExpression instanceof BinaryExpression binaryExpression) {
-		    	getColumnsFromExpression(binaryExpression, columns);
-		    }else if(leftExpression instanceof Column column) {
+		if (expression instanceof BinaryExpression bex) {
+			Expression leftExpression = bex.getLeftExpression();
+			Expression rightExpression = bex.getRightExpression();
+			if (leftExpression instanceof BinaryExpression binaryExpression) {
+				getColumnsFromExpression(binaryExpression, columns);
+			} else if (leftExpression instanceof Column column) {
 				columns.add(column);
 			}
-		    if (rightExpression instanceof BinaryExpression binaryExpression) {
-		    	getColumnsFromExpression(binaryExpression, columns);
-		    } else if(rightExpression instanceof Column column) {
+			if (rightExpression instanceof BinaryExpression binaryExpression) {
+				getColumnsFromExpression(binaryExpression, columns);
+			} else if (rightExpression instanceof Column column) {
 				columns.add(column);
 			} else if (leftExpression instanceof Parenthesis parenthesis) {
 				Expression subExpression = parenthesis.getExpression();
 				getColumnsFromExpression(subExpression, columns);
 			}
-		    
-		} else if(expression instanceof Column column) {
+		} else if (expression instanceof Column column) {
 			columns.add(column);
 		} else if (expression instanceof Parenthesis parenthesis) {
 			Expression subExpression = parenthesis.getExpression();
 			getColumnsFromExpression(subExpression, columns);
 		}
 	}
+
 	static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-	public static Object evaluateFunctionsWithType(Object value, Object powerval, String name) {
+	static SimpleDateFormat dateExtract = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	static SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
+	static SimpleDateFormat time = new SimpleDateFormat("HH:mm:ss");
+
+	public static Object evaluateFunctionsWithType(Object value, Object extraval, String name) {
 		switch (name) {
 		case "abs":
-			
+
 			if (value instanceof Double dv) {
 				return Math.abs(dv);
 			} else if (value instanceof Long lv) {
@@ -518,7 +581,7 @@ public class SQLUtils {
 			// return the result to the stack
 			return val.trim();
 		case "round":
-			
+
 			if (value instanceof Double rdv) {
 				return Math.round(rdv);
 			} else if (value instanceof Long rlv) {
@@ -527,11 +590,11 @@ public class SQLUtils {
 				return Math.round(rfv);
 			} else if (value instanceof Integer riv) {
 				return Math.round(riv);
-			}else {
+			} else {
 				return 0;
 			}
 		case "ceil":
-			
+
 			if (value instanceof Double cdv) {
 				return Math.ceil(cdv);
 			} else if (value instanceof Long clv) {
@@ -544,7 +607,7 @@ public class SQLUtils {
 				return 0;
 			}
 		case "floor":
-			
+
 			if (value instanceof Double fdv) {
 				return Math.floor(fdv);
 			} else if (value instanceof Long flv) {
@@ -557,20 +620,44 @@ public class SQLUtils {
 				return 0;
 			}
 		case "pow":
-			
-			if (value instanceof Double pdv && powerval instanceof Integer powval) {
+
+			if (value instanceof Double pdv && extraval instanceof Integer powval) {
 				return Math.pow(pdv, powval);
-			} else if (value instanceof Long plv && powerval instanceof Integer powval) {
+			} else if (value instanceof Long plv && extraval instanceof Integer powval) {
 				return Math.pow(plv, powval);
-			} else if (value instanceof Float pfv && powerval instanceof Integer powval) {
+			} else if (value instanceof Float pfv && extraval instanceof Integer powval) {
 				return Math.pow(pfv, powval);
-			} else if (value instanceof Integer piv && powerval instanceof Integer powval) {
+			} else if (value instanceof Integer piv && extraval instanceof Integer powval) {
+				return Math.pow(piv, powval);
+			} else if (value instanceof Double pdv && extraval instanceof Double powval) {
+				return Math.pow(pdv, powval);
+			} else if (value instanceof Long plv && extraval instanceof Double powval) {
+				return Math.pow(plv, powval);
+			} else if (value instanceof Float pfv && extraval instanceof Double powval) {
+				return Math.pow(pfv, powval);
+			} else if (value instanceof Integer piv && extraval instanceof Double powval) {
+				return Math.pow(piv, powval);
+			} else if (value instanceof Double pdv && extraval instanceof Float powval) {
+				return Math.pow(pdv, powval);
+			} else if (value instanceof Long plv && extraval instanceof Float powval) {
+				return Math.pow(plv, powval);
+			} else if (value instanceof Float pfv && extraval instanceof Float powval) {
+				return Math.pow(pfv, powval);
+			} else if (value instanceof Integer piv && extraval instanceof Float powval) {
+				return Math.pow(piv, powval);
+			} else if (value instanceof Double pdv && extraval instanceof Long powval) {
+				return Math.pow(pdv, powval);
+			} else if (value instanceof Long plv && extraval instanceof Long powval) {
+				return Math.pow(plv, powval);
+			} else if (value instanceof Float pfv && extraval instanceof Long powval) {
+				return Math.pow(pfv, powval);
+			} else if (value instanceof Integer piv && extraval instanceof Long powval) {
 				return Math.pow(piv, powval);
 			} else {
 				return 0;
 			}
 		case "sqrt":
-			
+
 			if (value instanceof Double sdv) {
 				return Math.sqrt(sdv);
 			} else if (value instanceof Long slv) {
@@ -583,7 +670,7 @@ public class SQLUtils {
 				return 0;
 			}
 		case "exp":
-			
+
 			if (value instanceof Double edv) {
 				return Math.exp(edv);
 			} else if (value instanceof Long elv) {
@@ -594,7 +681,7 @@ public class SQLUtils {
 				return Math.exp(eiv);
 			}
 		case "loge":
-			
+
 			if (value instanceof Double ldv) {
 				return Math.log(ldv);
 			} else if (value instanceof Long llv) {
@@ -607,165 +694,79 @@ public class SQLUtils {
 				return 0;
 			}
 		case "lowercase":
-			
+
 			return ((String) value).toLowerCase();
 		case "uppercase":
-			
+
 			return ((String) value).toUpperCase();
 		case "base64encode":
-			
+
 			return Base64.getEncoder().encodeToString(((String) value).getBytes());
 		case "base64decode":
-			
+
 			return new String(Base64.getDecoder().decode(((String) value).getBytes()));
 		case "normalizespaces":
-			
+
 			return StringUtils.normalizeSpace((String) value);
 		case "currentisodate":
 			
 			return dateFormat.format(new Date(System.currentTimeMillis()));
+		case "currenttimemillis":
+			
+			return System.currentTimeMillis();
+		case "rand":
+			
+			return new Random((long)value).nextDouble();
+		case "randinteger":
+			
+			return new Random((long)value).nextInt((int)extraval);
+		case "acos":
+			
+			return Math.acos(Double.valueOf(String.valueOf(value)));
+		case "asin":
+			
+			return Math.asin(Double.valueOf(String.valueOf(value)));
+		case "atan":
+			
+			return Math.atan(Double.valueOf(String.valueOf(value)));
+			
+		case "cos":
+			
+			return Math.cos(Double.valueOf(String.valueOf(value)));
+		case "sin":
+			
+			return Math.sin(Double.valueOf(String.valueOf(value)));
+		case "tan":
+			
+			return Math.tan(Double.valueOf(String.valueOf(value)));
+		case "cosec":
+			
+			return 1.0/Math.sin(Double.valueOf(String.valueOf(value)));
+		case "sec":
+			
+			return 1.0/Math.cos(Double.valueOf(String.valueOf(value)));
+		case "cot":
+			
+			return 1.0/Math.tan(Double.valueOf(String.valueOf(value)));
+		case "cbrt":
+			
+			return Math.cbrt(Double.valueOf(String.valueOf(value)));
+		case "pii":
+			
+			return Math.PI;
+		case "radians":
+			
+			return Double.valueOf(String.valueOf(value))/180 * Math.PI;
+		case "degrees":
+			
+			return Double.valueOf(String.valueOf(value)) / Math.PI *180;
 		}
 		return name;
-	}
-	
-	/**
-	 * Evaluate non aggregate expression for addition, subtraction, multiplication and division 
-	 * and some math functions
-	 * @param expression
-	 * @param row
-	 * @return
-	 */
-	public static Object evaluateBinaryExpression(Expression expression, Map<String,Object> row) {
-		if(expression instanceof Function fn) {
-			String name = fn.getName().toLowerCase();
-			List<Expression> expfunc = fn.getParameters().getExpressions();
-			switch (name) {
-				case "abs":
-	                	               
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "abs");
-				case "length":
-	                // Get the length of string value	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "length");
-	                
-				case "round":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "round");
-				case "ceil":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "ceil");
-				case "floor":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "floor");
-				case "pow":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), evaluateBinaryExpression(expfunc.get(1), row), "pow");
-				case "sqrt":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "sqrt");
-				case "exp":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "exp");
-				case "loge":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "loge");
-				case "lowercase":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "lowercase");
-				case "uppercase":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "uppercase");
-				case "base64encode":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "base64encode");
-				case "base64decode":
-	                
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "base64decode");
-				case "normalizespaces":
-					
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "normalizespaces");
-				case "trim":
-					
-	                return evaluateFunctionsWithType(evaluateBinaryExpression(expfunc.get(0), row), null, "trim");
-				case "substring":
-	                
-					LongValue pos = (LongValue) expfunc.get(1);
-					LongValue length = (LongValue) expfunc.get(2);
-					String val = (String) evaluateBinaryExpression(expfunc.get(0), row);
-	                return val.substring((int) pos.getValue(), Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
-			}
-		} else if(expression instanceof BinaryExpression bex) {
-		    Expression leftExpression = bex.getLeftExpression();
-		    Expression rightExpression = bex.getRightExpression();
-		    String operator = bex.getStringExpression();
-		    Object leftValue=null;
-		    Object rightValue=null;
-		    if(leftExpression instanceof Function fn) {
-		    	leftValue = evaluateBinaryExpression(leftExpression, row);
-		    }
-		    else if (leftExpression instanceof LongValue lv) {
-		    	leftValue =  lv.getValue();
-		    } else if (leftExpression instanceof DoubleValue dv) {
-		    	leftValue =  dv.getValue();
-		    } else if (leftExpression instanceof StringValue sv) {
-		    	leftValue = sv.getValue();
-		    } else if (leftExpression instanceof Column column) {	        
-		        String columnName = column.getColumnName();
-				Object value = row.get(columnName);
-				leftValue =  value;
-		    } else if (leftExpression instanceof BinaryExpression) {
-		    	leftValue = evaluateBinaryExpression(leftExpression, row);
-		    } else if (leftExpression instanceof Parenthesis parenthesis) {
-				Expression subExpression = parenthesis.getExpression();
-				leftValue = evaluateBinaryExpression(subExpression, row);
-			}
-		    
-		    if(rightExpression instanceof Function fn) {
-		    	rightValue = evaluateBinaryExpression(rightExpression, row);
-		    } else if (rightExpression instanceof LongValue lv) {
-		    	rightValue = lv.getValue();
-		    }else if (rightExpression instanceof DoubleValue dv) {
-		    	rightValue = dv.getValue();
-		    } else if (rightExpression instanceof StringValue sv) {
-		    	rightValue = sv.getValue();
-		    } else if (rightExpression instanceof Column column) {
-		        Object value = row.get(column.getColumnName());
-		        rightValue = value;
-		    } else if (rightExpression instanceof BinaryExpression binaryExpression) {
-		    	rightValue = evaluateBinaryExpression(binaryExpression, row);
-		    } else if (rightExpression instanceof Parenthesis parenthesis) {
-				Expression subExpression = parenthesis.getExpression();
-				rightValue = evaluateBinaryExpression(subExpression, row);
-			}
-		    switch (operator) {
-		        case "+":
-		            return evaluateValuesByOperator(leftValue, rightValue, operator);
-		        case "-":
-		            return evaluateValuesByOperator(leftValue, rightValue, operator);
-		        case "*":
-		            return evaluateValuesByOperator(leftValue, rightValue, operator);
-		        case "/":
-		            return evaluateValuesByOperator(leftValue, rightValue, operator);
-		        default:
-		            throw new IllegalArgumentException("Invalid operator: " + operator);
-		    }
-		} 
-		else if (expression instanceof LongValue lv) {
-	        return Double.valueOf(lv.getValue());
-	    } else if (expression instanceof DoubleValue dv) {
-	        return dv.getValue();
-	    } else if (expression instanceof StringValue sv) {
-	        return sv.getValue();
-	    }  else if (expression instanceof Parenthesis parenthesis) {
-	        return evaluateBinaryExpression(parenthesis.getExpression(), row);
-	    } else if (expression instanceof Column column) {
-	        Object value = row.get(column.getColumnName());
-	        return value;
-	    }
-		return Double.valueOf(0.0d);
 	}
 
 	/**
 	 * Evaluates tuple using operator
+	 * 
 	 * @param leftValue
 	 * @param rightValue
 	 * @param operator
@@ -776,95 +777,95 @@ public class SQLUtils {
 		case "+":
 			if (leftValue instanceof String lv && rightValue instanceof Double rv) {
 				return lv + rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+			} else if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
 				return lv + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Double rv) {
 				return lv + rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Double lv && rightValue instanceof Long rv) {
 				return lv + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
 				return lv + rv;
-			} else if(leftValue instanceof String lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof String lv && rightValue instanceof Long rv) {
 				return lv + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof String rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof String rv) {
 				return lv + rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof String rv) {
+			} else if (leftValue instanceof Double lv && rightValue instanceof String rv) {
 				return lv + rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
 				return lv + rv;
 			} else if (leftValue instanceof String lv && rightValue instanceof String rv) {
 				return lv + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
 				return lv + rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
 				return lv + rv;
 			}
 		case "-":
-			if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+			if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
 				return lv - rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Double rv) {
 				return lv - rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Double lv && rightValue instanceof Long rv) {
 				return lv - rv;
-			}  else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
 				return lv - rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
 				return lv - rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
 				return lv - rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
 				return lv - rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
 				return lv - rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
 				return lv - rv;
 			}
 		case "*":
-			if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+			if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
 				return lv * rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Double rv) {
 				return lv * rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Double lv && rightValue instanceof Integer rv) {
 				return lv * rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Double rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Double rv) {
 				return lv * rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Double lv && rightValue instanceof Long rv) {
 				return lv * rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
 				return lv * rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
 				return lv * rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
 				return lv * rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
 				return lv * rv;
 			}
 		case "/":
-			if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+			if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
 				return lv / rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Double rv) {
 				return lv / rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Double lv && rightValue instanceof Integer rv) {
 				return lv / rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Double rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Double rv) {
 				return lv / rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Double lv && rightValue instanceof Long rv) {
 				return lv / rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
 				return lv / (double) rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
 				return lv / (double) rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
 				return lv / (double) rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+			} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
 				return lv / (double) rv;
 			}
 		default:
 			return 0;
 		}
-		
+
 	}
-	
+
 	/**
 	 * Get list of columns from list of functions.
 	 * 
@@ -878,30 +879,28 @@ public class SQLUtils {
 		return null;
 	}
 
-	
-	
 	public static Object evaluateValuesByFunctionMin(Object leftValue, Object rightValue) {
-		if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+		if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
 			return Math.min(lv, rv);
-		} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+		} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
 			return Math.min(lv, rv);
-		} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+		} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
 			return Math.min(lv, rv);
-		} else if(leftValue instanceof Float lv && rightValue instanceof Float rv) {
+		} else if (leftValue instanceof Float lv && rightValue instanceof Float rv) {
 			return Math.min(lv, rv);
 		} else {
 			throw new IllegalArgumentException("Unknown type: " + leftValue + " " + rightValue);
 		}
 	}
-	
+
 	public static Object evaluateValuesByFunctionMax(Object leftValue, Object rightValue) {
-		if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
+		if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
 			return Math.max(lv, rv);
-		} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
+		} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
 			return Math.max(lv, rv);
-		} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+		} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
 			return Math.max(lv, rv);
-		} else if(leftValue instanceof Float lv && rightValue instanceof Float rv) {
+		} else if (leftValue instanceof Float lv && rightValue instanceof Float rv) {
 			return Math.max(lv, rv);
 		} else {
 			throw new IllegalArgumentException("Unknown type: " + leftValue + " " + rightValue);
@@ -922,34 +921,31 @@ public class SQLUtils {
 			return value.getValue();
 		} else if (expression instanceof DoubleValue value) {
 			return Double.valueOf(value.getValue());
-		} else if(expression instanceof Addition addition){
+		} else if (expression instanceof Addition addition) {
 			return evaluateValuesByOperator(getValueString(addition.getLeftExpression(), row),
 					getValueString(addition.getRightExpression(), row), "+");
-		} else if(expression instanceof Subtraction subtraction){
+		} else if (expression instanceof Subtraction subtraction) {
 			return evaluateValuesByOperator(getValueString(subtraction.getLeftExpression(), row),
 					getValueString(subtraction.getRightExpression(), row), "-");
-		} else if(expression instanceof Multiplication multiplication){
+		} else if (expression instanceof Multiplication multiplication) {
 			return evaluateValuesByOperator(getValueString(multiplication.getLeftExpression(), row),
 					getValueString(multiplication.getRightExpression(), row), "*");
-		} else if(expression instanceof Division division){
+		} else if (expression instanceof Division division) {
 			return evaluateValuesByOperator(getValueString(division.getLeftExpression(), row),
 					getValueString(division.getRightExpression(), row), "/");
-		}
-		else {
+		} else {
 			Column column = (Column) expression;
 			String columnName = column.getColumnName();
 			Object value = row.get(columnName);
-			if(value instanceof String stringval) {
+			if (value instanceof String stringval) {
 				return String.valueOf(stringval);
-			}
-			else if(value instanceof Double doubleval) {
+			} else if (value instanceof Double doubleval) {
 				return doubleval;
-			}
-			else if(value instanceof Integer intval) {
+			} else if (value instanceof Integer intval) {
 				return intval;
-			} else if(value instanceof Long longval) {
+			} else if (value instanceof Long longval) {
 				return longval;
-			}else if (value instanceof String stringval && NumberUtils.isParsable(stringval)) {
+			} else if (value instanceof String stringval && NumberUtils.isParsable(stringval)) {
 				return Double.valueOf(stringval);
 			}
 			return String.valueOf(value);
@@ -961,55 +957,56 @@ public class SQLUtils {
 	 * 
 	 * @param expression
 	 * @param row
-	 * @return evaluates to true if expression satisfies the condition else false
+	 * @return evaluates to true if expression satisfies the condition else
+	 *         false
 	 */
-	public static boolean evaluateExpression(Expression expression, Map<String,Object> row) {
+	public static boolean evaluateExpression(Expression expression, Map<String, Object> row) {
 		if (expression instanceof Between betweenExpression) {
-	        Expression leftExpression = betweenExpression.getLeftExpression();
-	        Expression startExpression = betweenExpression.getBetweenExpressionStart();
-	        Expression endExpression = betweenExpression.getBetweenExpressionEnd();
-	        Object leftValue = getValueString(leftExpression, row);
-	        Object startExpressionValue = getValueString(startExpression, row);
-	        Object endExpressionValue = getValueString(endExpression, row);
-	        if(evaluatePredicate(leftValue, startExpressionValue, ">") && evaluatePredicate(leftValue, endExpressionValue, "<")) {
-	        	return true;
-	        }
-	        return false;
-		}
-		else if (expression instanceof InExpression inExpression) {
-	        Expression leftExpression = inExpression.getLeftExpression();
-	        ItemsList itemsList = inExpression.getRightItemsList();
+			Expression leftExpression = betweenExpression.getLeftExpression();
+			Expression startExpression = betweenExpression.getBetweenExpressionStart();
+			Expression endExpression = betweenExpression.getBetweenExpressionEnd();
+			Object leftValue = getValueString(leftExpression, row);
+			Object startExpressionValue = getValueString(startExpression, row);
+			Object endExpressionValue = getValueString(endExpression, row);
+			if (evaluatePredicate(leftValue, startExpressionValue, ">")
+					&& evaluatePredicate(leftValue, endExpressionValue, "<")) {
+				return true;
+			}
+			return false;
+		} else if (expression instanceof InExpression inExpression) {
+			Expression leftExpression = inExpression.getLeftExpression();
+			ItemsList itemsList = inExpression.getRightItemsList();
 
-	        // Handle the left expression
-	        Object leftValue = getValueString(leftExpression, row);
+			// Handle the left expression
+			Object leftValue = getValueString(leftExpression, row);
 
-	        // Handle the IN clause values
-	        if (itemsList instanceof ExpressionList expressionList) {
-	            List<Expression> inValues = expressionList.getExpressions();
+			// Handle the IN clause values
+			if (itemsList instanceof ExpressionList expressionList) {
+				List<Expression> inValues = expressionList.getExpressions();
 
-	            // Process each value in the IN clause
-	            for (Expression expressioninlist : inValues) {
-	            	Object rightValue = getValueString(expressioninlist, row);	            	
-	            	if(evaluatePredicate(leftValue, rightValue, "=")) {
-	            		return true;
-	            	}
-	            }	            
-	        }
-	        return false;
+				// Process each value in the IN clause
+				for (Expression expressioninlist : inValues) {
+					Object rightValue = getValueString(expressioninlist, row);
+					if (evaluatePredicate(leftValue, rightValue, "=")) {
+						return true;
+					}
+				}
+			}
+			return false;
 
-	    } else if (expression instanceof LikeExpression likeExpression) {
-	        Expression leftExpression = likeExpression.getLeftExpression();
-	        Expression rightExpression = likeExpression.getRightExpression();
+		} else if (expression instanceof LikeExpression likeExpression) {
+			Expression leftExpression = likeExpression.getLeftExpression();
+			Expression rightExpression = likeExpression.getRightExpression();
 
-	        // Handle the left expression
-	        String leftValue = (String) getValueString(leftExpression, row);
+			// Handle the left expression
+			String leftValue = (String) getValueString(leftExpression, row);
 
-	        // Handle the right expression (LIKE pattern)
-	        String rightValue = (String) getValueString(rightExpression, row);
-	        
-	        return leftValue.contains(rightValue);
+			// Handle the right expression (LIKE pattern)
+			String rightValue = (String) getValueString(rightExpression, row);
 
-	    } else if (expression instanceof BinaryExpression binaryExpression) {
+			return leftValue.contains(rightValue);
+
+		} else if (expression instanceof BinaryExpression binaryExpression) {
 			String operator = binaryExpression.getStringExpression();
 			Expression leftExpression = binaryExpression.getLeftExpression();
 			Expression rightExpression = binaryExpression.getRightExpression();
@@ -1042,7 +1039,7 @@ public class SQLUtils {
 			case "<>":
 				leftValue = getValueString(leftExpression, row);
 				rightValue = getValueString(rightExpression, row);
-				return evaluatePredicate(leftValue, rightValue, operator);			
+				return evaluatePredicate(leftValue, rightValue, operator);
 			default:
 				throw new UnsupportedOperationException("Unsupported operator: " + operator);
 			}
@@ -1073,43 +1070,44 @@ public class SQLUtils {
 			default:
 				throw new UnsupportedOperationException("Unsupported operator: " + operator);
 			}
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 		return false;
 	}
 
-	
 	/**
 	 * Performs the string comparison and returns true or false
+	 * 
 	 * @param str1
 	 * @param str2
 	 * @param operator
 	 * @return true or false
 	 */
 	private static boolean performStringComparison(String str1, String str2, ComparisonOperator operator) {
-        int comparisonResult = str1.compareTo(str2);
+		int comparisonResult = str1.compareTo(str2);
 
-        switch (operator) {
-            case EQUAL:
-                return comparisonResult == 0;
-            case NOT_EQUAL:
-                return comparisonResult != 0;
-            case GREATER_THAN:
-                return comparisonResult > 0;
-            case LESS_THAN:
-                return comparisonResult < 0;
-            case GREATER_THAN_OR_EQUAL:
-                return comparisonResult >= 0;
-            case LESS_THAN_OR_EQUAL:
-                return comparisonResult <= 0;
-            default:
-                throw new IllegalArgumentException("Unsupported comparison operator.");
-        }
-    }
-	
+		switch (operator) {
+		case EQUAL:
+			return comparisonResult == 0;
+		case NOT_EQUAL:
+			return comparisonResult != 0;
+		case GREATER_THAN:
+			return comparisonResult > 0;
+		case LESS_THAN:
+			return comparisonResult < 0;
+		case GREATER_THAN_OR_EQUAL:
+			return comparisonResult >= 0;
+		case LESS_THAN_OR_EQUAL:
+			return comparisonResult <= 0;
+		default:
+			throw new IllegalArgumentException("Unsupported comparison operator.");
+		}
+	}
+
 	/**
 	 * Compare two values using reflection
+	 * 
 	 * @param obj1
 	 * @param obj2
 	 * @param operator
@@ -1118,82 +1116,76 @@ public class SQLUtils {
 	 * @throws IllegalAccessException
 	 */
 	public static boolean compare(Object obj1, Object obj2, ComparisonOperator operator)
-            throws NoSuchFieldException, IllegalAccessException {
-        // Get the Class objects for the wrapper classes
-        Class<?> wrapperClass1 = obj1.getClass();
-        Class<?> wrapperClass2 = obj2.getClass();
+			throws NoSuchFieldException, IllegalAccessException {
+		// Get the Class objects for the wrapper classes
+		Class<?> wrapperClass1 = obj1.getClass();
+		Class<?> wrapperClass2 = obj2.getClass();
 
-        if (wrapperClass1 == String.class || wrapperClass2 == String.class) {
-            String str1 = String.valueOf(obj1);
-            String str2 = String.valueOf(obj2);
-            return performStringComparison(str1, str2, operator);
-        }
+		if (wrapperClass1 == String.class || wrapperClass2 == String.class) {
+			String str1 = String.valueOf(obj1);
+			String str2 = String.valueOf(obj2);
+			return performStringComparison(str1, str2, operator);
+		}
 
-        // Ensure that both objects are comparable
-        if (!(obj1 instanceof Comparable) || !(obj2 instanceof Comparable)) {
-            throw new IllegalArgumentException("Both objects must implement the Comparable interface.");
-        }
-        
-        // Ensure that both objects are instances of wrapper classes
-        if (!isWrapperClass(wrapperClass1) || !isWrapperClass(wrapperClass2)) {
-            throw new IllegalArgumentException("Both objects must be instances of wrapper classes.");
-        }
+		// Ensure that both objects are comparable
+		if (!(obj1 instanceof Comparable) || !(obj2 instanceof Comparable)) {
+			throw new IllegalArgumentException("Both objects must implement the Comparable interface.");
+		}
+		// Ensure that both objects are instances of wrapper classes
+		if (!isWrapperClass(wrapperClass1) || !isWrapperClass(wrapperClass2)) {
+			throw new IllegalArgumentException("Both objects must be instances of wrapper classes.");
+		}
 
-        // Perform the specified comparison
-        int comparisonResult = compareNumericValues((Number)obj1, (Number)obj2);
+		// Perform the specified comparison
+		int comparisonResult = compareNumericValues((Number) obj1, (Number) obj2);
 
-        switch (operator) {
-            case EQUAL:
-                return comparisonResult == 0;
-            case NOT_EQUAL:
-                return comparisonResult != 0;
-            case GREATER_THAN:
-                return comparisonResult > 0;
-            case LESS_THAN:
-                return comparisonResult < 0;
-            case GREATER_THAN_OR_EQUAL:
-                return comparisonResult >= 0;
-            case LESS_THAN_OR_EQUAL:
-                return comparisonResult <= 0;
-            default:
-                throw new IllegalArgumentException("Unsupported comparison operator.");
-        }
-    }
-	
+		switch (operator) {
+		case EQUAL:
+			return comparisonResult == 0;
+		case NOT_EQUAL:
+			return comparisonResult != 0;
+		case GREATER_THAN:
+			return comparisonResult > 0;
+		case LESS_THAN:
+			return comparisonResult < 0;
+		case GREATER_THAN_OR_EQUAL:
+			return comparisonResult >= 0;
+		case LESS_THAN_OR_EQUAL:
+			return comparisonResult <= 0;
+		default:
+			throw new IllegalArgumentException("Unsupported comparison operator.");
+		}
+	}
+
 	/**
-	 * Compares two primitive wrapper classes. 
+	 * Compares two primitive wrapper classes.
+	 * 
 	 * @param num1
 	 * @param num2
 	 * @return comparison value
 	 */
 	private static int compareNumericValues(Number num1, Number num2) {
-        double value1 = num1.doubleValue();
-        double value2 = num2.doubleValue();
+		double value1 = num1.doubleValue();
+		double value2 = num2.doubleValue();
 
-        return Double.compare(value1, value2);
-    }
+		return Double.compare(value1, value2);
+	}
 
 	/**
 	 * The function checks for the wrapper class
+	 * 
 	 * @param clazz
-	 * @return true if wrapper class 
+	 * @return true if wrapper class
 	 */
-    private static boolean isWrapperClass(Class<?> clazz) {
-        return clazz == Integer.class || clazz == Double.class
-               || clazz == Float.class || clazz == Long.class
-               || clazz == Short.class || clazz == Byte.class
-               || clazz == Character.class || clazz == Boolean.class;
-    }
+	private static boolean isWrapperClass(Class<?> clazz) {
+		return clazz == Integer.class || clazz == Double.class || clazz == Float.class || clazz == Long.class
+				|| clazz == Short.class || clazz == Byte.class || clazz == Character.class || clazz == Boolean.class;
+	}
 
-    private enum ComparisonOperator {
-        EQUAL,
-        NOT_EQUAL,
-        GREATER_THAN,
-        LESS_THAN,
-        GREATER_THAN_OR_EQUAL,
-        LESS_THAN_OR_EQUAL
-    }
-	
+	private enum ComparisonOperator {
+		EQUAL, NOT_EQUAL, GREATER_THAN, LESS_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN_OR_EQUAL
+	}
+
 	/**
 	 * Compare two objects to sort in order.
 	 * 
@@ -1271,8 +1263,6 @@ public class SQLUtils {
 		}));
 	}
 
-	
-
 	/**
 	 * Evaluates the expression of object array.
 	 * 
@@ -1281,53 +1271,54 @@ public class SQLUtils {
 	 * @param columnsforeachjoin
 	 * @return evaluates to true if expression succeeds and false if fails.
 	 */
-	public static boolean evaluateExpression(Expression expression, Map<String, Object> row, List<String> columnsforeachjoin) {
+	public static boolean evaluateExpression(Expression expression, Map<String, Object> row,
+			List<String> columnsforeachjoin) {
 		if (expression instanceof Between betweenExpression) {
-	        Expression leftExpression = betweenExpression.getLeftExpression();
-	        Expression startExpression = betweenExpression.getBetweenExpressionStart();
-	        Expression endExpression = betweenExpression.getBetweenExpressionEnd();
-	        Object leftValue = getValueString(leftExpression, row, columnsforeachjoin);
-	        Object startExpressionValue = getValueString(startExpression, row, columnsforeachjoin);
-	        Object endExpressionValue = getValueString(endExpression, row, columnsforeachjoin);
-	        if(evaluatePredicate(leftValue, startExpressionValue, ">") && evaluatePredicate(leftValue, endExpressionValue, "<")) {
-	        	return true;
-	        }
-	        return false;
-		}
-		else if (expression instanceof InExpression inExpression) {
-	        Expression leftExpression = inExpression.getLeftExpression();
-	        ItemsList itemsList = inExpression.getRightItemsList();
+			Expression leftExpression = betweenExpression.getLeftExpression();
+			Expression startExpression = betweenExpression.getBetweenExpressionStart();
+			Expression endExpression = betweenExpression.getBetweenExpressionEnd();
+			Object leftValue = getValueString(leftExpression, row, columnsforeachjoin);
+			Object startExpressionValue = getValueString(startExpression, row, columnsforeachjoin);
+			Object endExpressionValue = getValueString(endExpression, row, columnsforeachjoin);
+			if (evaluatePredicate(leftValue, startExpressionValue, ">")
+					&& evaluatePredicate(leftValue, endExpressionValue, "<")) {
+				return true;
+			}
+			return false;
+		} else if (expression instanceof InExpression inExpression) {
+			Expression leftExpression = inExpression.getLeftExpression();
+			ItemsList itemsList = inExpression.getRightItemsList();
 
-	        // Handle the left expression
-	        Object leftValue = getValueString(leftExpression, row, columnsforeachjoin);
+			// Handle the left expression
+			Object leftValue = getValueString(leftExpression, row, columnsforeachjoin);
 
-	        // Handle the IN clause values
-	        if (itemsList instanceof ExpressionList expressionList) {
-	            List<Expression> inValues = expressionList.getExpressions();
+			// Handle the IN clause values
+			if (itemsList instanceof ExpressionList expressionList) {
+				List<Expression> inValues = expressionList.getExpressions();
 
-	            // Process each value in the IN clause
-	            for (Expression expressioninlist : inValues) {
-	            	Object rightValue = getValueString(expressioninlist, row, columnsforeachjoin);
-	            	if(evaluatePredicate(leftValue, rightValue, "=")) {
-	            		return true;
-	            	}
-	            }	            
-	        }
-	        return false;
+				// Process each value in the IN clause
+				for (Expression expressioninlist : inValues) {
+					Object rightValue = getValueString(expressioninlist, row, columnsforeachjoin);
+					if (evaluatePredicate(leftValue, rightValue, "=")) {
+						return true;
+					}
+				}
+			}
+			return false;
 
-	    } else if (expression instanceof LikeExpression likeExpression) {
-	        Expression leftExpression = likeExpression.getLeftExpression();
-	        Expression rightExpression = likeExpression.getRightExpression();
+		} else if (expression instanceof LikeExpression likeExpression) {
+			Expression leftExpression = likeExpression.getLeftExpression();
+			Expression rightExpression = likeExpression.getRightExpression();
 
-	        // Handle the left expression
-	        String leftValue = (String) getValueString(leftExpression, row, columnsforeachjoin);
+			// Handle the left expression
+			String leftValue = (String) getValueString(leftExpression, row, columnsforeachjoin);
 
-	        // Handle the right expression (LIKE pattern)
-	        String rightValue = (String) getValueString(rightExpression, row, columnsforeachjoin);
-	        
-	        return leftValue.contains(rightValue);
+			// Handle the right expression (LIKE pattern)
+			String rightValue = (String) getValueString(rightExpression, row, columnsforeachjoin);
 
-	    } else if (expression instanceof BinaryExpression binaryExpression) {
+			return leftValue.contains(rightValue);
+
+		} else if (expression instanceof BinaryExpression binaryExpression) {
 			String operator = binaryExpression.getStringExpression();
 			Expression leftExpression = binaryExpression.getLeftExpression();
 			Expression rightExpression = binaryExpression.getRightExpression();
@@ -1386,8 +1377,8 @@ public class SQLUtils {
 	 * @param righttablecolumns
 	 * @return true or false
 	 */
-	public static boolean evaluateExpressionJoin(Expression expression, String jointable, Map<String, Object> row1, Map<String, Object> row2,
-			List<String> leftablecolumns, List<String> righttablecolumns) {
+	public static boolean evaluateExpressionJoin(Expression expression, String jointable, Map<String, Object> row1,
+			Map<String, Object> row2, List<String> leftablecolumns, List<String> righttablecolumns) {
 		if (expression instanceof BinaryExpression binaryExpression) {
 			String operator = binaryExpression.getStringExpression();
 			Expression leftExpression = binaryExpression.getLeftExpression();
@@ -1466,11 +1457,8 @@ public class SQLUtils {
 		}
 	}
 
-	
 	public static void getColumnsFromSelectItemsFunctions(Expression expression,
-			Map<String, Set<String>> tablerequiredcolumns,
-			List<String> columnsselect,
-			List<String> functioncols) {
+			Map<String, Set<String>> tablerequiredcolumns, List<String> columnsselect, List<String> functioncols) {
 		if (expression instanceof BinaryExpression binaryExpression) {
 			Expression leftExpression = binaryExpression.getLeftExpression();
 			Expression rightExpression = binaryExpression.getRightExpression();
@@ -1481,16 +1469,13 @@ public class SQLUtils {
 			if (nonNull(function.getParameters())) {
 				List<Expression> expressions = function.getParameters().getExpressions();
 				for (Expression exp : expressions) {
-					getColumnsFromSelectItemsFunctions(exp, tablerequiredcolumns,
-							columnsselect, functioncols);
+					getColumnsFromSelectItemsFunctions(exp, tablerequiredcolumns, columnsselect, functioncols);
 				}
 			}
-		}
-		else if (expression instanceof Parenthesis parenthesis) {
+		} else if (expression instanceof Parenthesis parenthesis) {
 			Expression subExpression = parenthesis.getExpression();
-			getColumnsFromSelectItemsFunctions(subExpression, tablerequiredcolumns,
-					columnsselect, functioncols);
-		} else if(expression instanceof Column column && nonNull(column.getTable())) {
+			getColumnsFromSelectItemsFunctions(subExpression, tablerequiredcolumns, columnsselect, functioncols);
+		} else if (expression instanceof Column column && nonNull(column.getTable())) {
 			Set<String> requiredcolumns = tablerequiredcolumns.get(column.getTable().getName());
 			if (isNull(requiredcolumns)) {
 				requiredcolumns = new LinkedHashSet<>();
@@ -1499,12 +1484,12 @@ public class SQLUtils {
 			requiredcolumns.add(column.getColumnName());
 			columnsselect.add(column.getColumnName());
 			functioncols.add(column.getColumnName());
-		} else if(expression instanceof Column column) {
+		} else if (expression instanceof Column column) {
 			columnsselect.add(column.getColumnName());
 			functioncols.add(column.getColumnName());
 		}
 	}
-	
+
 	/**
 	 * Gets the value of string given expression in column and records in object
 	 * array and column index.
@@ -1521,31 +1506,29 @@ public class SQLUtils {
 			return value.getValue();
 		} else if (expression instanceof DoubleValue value) {
 			return Double.valueOf(value.getValue());
-		} else if(expression instanceof Addition addition){
+		} else if (expression instanceof Addition addition) {
 			return evaluateValuesByOperator(getValueString(addition.getLeftExpression(), row),
 					getValueString(addition.getRightExpression(), row), "+");
-		} else if(expression instanceof Subtraction subtraction){
+		} else if (expression instanceof Subtraction subtraction) {
 			return evaluateValuesByOperator(getValueString(subtraction.getLeftExpression(), row),
 					getValueString(subtraction.getRightExpression(), row), "-");
-		} else if(expression instanceof Multiplication multiplication){
+		} else if (expression instanceof Multiplication multiplication) {
 			return evaluateValuesByOperator(getValueString(multiplication.getLeftExpression(), row),
 					getValueString(multiplication.getRightExpression(), row), "*");
-		} else if(expression instanceof Division division){
+		} else if (expression instanceof Division division) {
 			return evaluateValuesByOperator(getValueString(division.getLeftExpression(), row),
 					getValueString(division.getRightExpression(), row), "/");
 		} else {
 			Column column = (Column) expression;
 			String columnName = column.getColumnName();
 			Object value = row.get(columnName);
-			if(value instanceof String stringval) {
+			if (value instanceof String stringval) {
 				return String.valueOf(stringval);
-			}
-			else if(value instanceof Double doubleval) {
+			} else if (value instanceof Double doubleval) {
 				return doubleval;
-			}
-			else if(value instanceof Integer intval) {
+			} else if (value instanceof Integer intval) {
 				return intval;
-			} else if(value instanceof Long longval) {
+			} else if (value instanceof Long longval) {
 				return longval;
 			}
 			return String.valueOf(value);
@@ -1560,8 +1543,9 @@ public class SQLUtils {
 	 * @param expressionsTable
 	 * @param joinTableExpressions
 	 */
-	public static void getRequiredColumnsForAllTables(PlainSelect plainSelect, Map<String, Set<String>> tablerequiredcolumns,
-			Map<String, List<Expression>> expressionsTable, Map<String, List<Expression>> joinTableExpressions) {
+	public static void getRequiredColumnsForAllTables(PlainSelect plainSelect,
+			Map<String, Set<String>> tablerequiredcolumns, Map<String, List<Expression>> expressionsTable,
+			Map<String, List<Expression>> joinTableExpressions) {
 
 		List<Expression> expressions = new Vector<>();
 
@@ -1592,75 +1576,61 @@ public class SQLUtils {
 	 * @param expressions
 	 * @param joinTableExpressions
 	 */
-	public static void getColumnsFromBinaryExpression(Expression expression, Map<String, Set<String>> tablerequiredcolumns,
-			Map<String, List<Expression>> expressions, Map<String, List<Expression>> joinTableExpressions) {
+	public static void getColumnsFromBinaryExpression(Expression expression,
+			Map<String, Set<String>> tablerequiredcolumns, Map<String, List<Expression>> expressions,
+			Map<String, List<Expression>> joinTableExpressions) {
 		if (expression instanceof Parenthesis parenthesis) {
 			Expression subExpression = parenthesis.getExpression();
-			getColumnsFromBinaryExpression(subExpression, tablerequiredcolumns, expressions,
-					joinTableExpressions);
+			getColumnsFromBinaryExpression(subExpression, tablerequiredcolumns, expressions, joinTableExpressions);
 		} else if (expression instanceof Between betweenExpression) {
-	        Expression leftExpression = betweenExpression.getLeftExpression();
-	        Expression startExpression = betweenExpression.getBetweenExpressionStart();
-	        Expression endExpression = betweenExpression.getBetweenExpressionEnd();
-	        getColumnsFromBinaryExpression(leftExpression, tablerequiredcolumns, expressions,
-					joinTableExpressions);
-	        getColumnsFromBinaryExpression(startExpression, tablerequiredcolumns, expressions,
-					joinTableExpressions);
-	        getColumnsFromBinaryExpression(endExpression, tablerequiredcolumns, expressions,
-					joinTableExpressions);
-		}
-		else if (expression instanceof InExpression inExpression) {
-	        Expression leftExpression = inExpression.getLeftExpression();
-	        ItemsList itemsList = inExpression.getRightItemsList();
-
-	        // Handle the left expression
-	        getColumnsFromBinaryExpression(leftExpression, tablerequiredcolumns, expressions,
-					joinTableExpressions);
-
-	        // Handle the IN clause values
-	        if (itemsList instanceof ExpressionList expressionList) {
-	            List<Expression> inValues = expressionList.getExpressions();
-
-	            // Process each value in the IN clause
-	            for (Expression value : inValues) {
-	            	getColumnsFromBinaryExpression(value, tablerequiredcolumns, expressions,
-	    					joinTableExpressions);
-	            }
-	        }
-
-	    } else if (expression instanceof LikeExpression likeExpression) {
-	        Expression leftExpression = likeExpression.getLeftExpression();
-	        Expression rightExpression = likeExpression.getRightExpression();
-
-	        // Handle the left expression
-	        getColumnsFromBinaryExpression(leftExpression, tablerequiredcolumns, expressions,
-					joinTableExpressions);
-
-	        // Handle the right expression (LIKE pattern)
-	        getColumnsFromBinaryExpression(rightExpression, tablerequiredcolumns, expressions,
-					joinTableExpressions);
-
-	    } else if (expression instanceof BinaryExpression binaryExpression) {
-	    	
-	    	String operator = binaryExpression.getStringExpression();
-	    	
-			Expression leftExpression = binaryExpression.getLeftExpression();
-			
+			Expression leftExpression = betweenExpression.getLeftExpression();
+			Expression startExpression = betweenExpression.getBetweenExpressionStart();
+			Expression endExpression = betweenExpression.getBetweenExpressionEnd();
 			getColumnsFromBinaryExpression(leftExpression, tablerequiredcolumns, expressions, joinTableExpressions);
-			
+			getColumnsFromBinaryExpression(startExpression, tablerequiredcolumns, expressions, joinTableExpressions);
+			getColumnsFromBinaryExpression(endExpression, tablerequiredcolumns, expressions, joinTableExpressions);
+		} else if (expression instanceof InExpression inExpression) {
+			Expression leftExpression = inExpression.getLeftExpression();
+			ItemsList itemsList = inExpression.getRightItemsList();
+
+			// Handle the left expression
+			getColumnsFromBinaryExpression(leftExpression, tablerequiredcolumns, expressions, joinTableExpressions);
+
+			// Handle the IN clause values
+			if (itemsList instanceof ExpressionList expressionList) {
+				List<Expression> inValues = expressionList.getExpressions();
+
+				// Process each value in the IN clause
+				for (Expression value : inValues) {
+					getColumnsFromBinaryExpression(value, tablerequiredcolumns, expressions, joinTableExpressions);
+				}
+			}
+
+		} else if (expression instanceof LikeExpression likeExpression) {
+			Expression leftExpression = likeExpression.getLeftExpression();
+			Expression rightExpression = likeExpression.getRightExpression();
+
+			// Handle the left expression
+			getColumnsFromBinaryExpression(leftExpression, tablerequiredcolumns, expressions, joinTableExpressions);
+
+			// Handle the right expression (LIKE pattern)
+			getColumnsFromBinaryExpression(rightExpression, tablerequiredcolumns, expressions, joinTableExpressions);
+
+		} else if (expression instanceof BinaryExpression binaryExpression) {
+
+			String operator = binaryExpression.getStringExpression();
+
+			Expression leftExpression = binaryExpression.getLeftExpression();
+
+			getColumnsFromBinaryExpression(leftExpression, tablerequiredcolumns, expressions, joinTableExpressions);
+
 			Expression rightExpression = binaryExpression.getRightExpression();
-			
-			getColumnsFromBinaryExpression(rightExpression, tablerequiredcolumns, expressions,
-						joinTableExpressions);
-						
-			
+
+			getColumnsFromBinaryExpression(rightExpression, tablerequiredcolumns, expressions, joinTableExpressions);
+
 			if (leftExpression instanceof Column column1 && !(rightExpression instanceof Column)
-					&& ("=".equals(operator)
-							|| "<".equals(operator)
-							||"<=".equals(operator)
-							||">".equals(operator)
-							||">=".equals(operator)
-							||"<>".equals(operator))) {
+					&& ("=".equals(operator) || "<".equals(operator) || "<=".equals(operator) || ">".equals(operator)
+							|| ">=".equals(operator) || "<>".equals(operator))) {
 				if (nonNull(column1.getTable())) {
 					List<Expression> expressionsTable = expressions.get(column1.getTable().getName());
 					if (isNull(expressionsTable)) {
@@ -1670,12 +1640,8 @@ public class SQLUtils {
 					expressionsTable.add(binaryExpression);
 				}
 			} else if (!(leftExpression instanceof Column) && rightExpression instanceof Column column1
-					&& ("=".equals(operator)
-							|| "<".equals(operator)
-							||"<=".equals(operator)
-							||">".equals(operator)
-							||">=".equals(operator)
-							||"<>".equals(operator))) {
+					&& ("=".equals(operator) || "<".equals(operator) || "<=".equals(operator) || ">".equals(operator)
+							|| ">=".equals(operator) || "<>".equals(operator))) {
 				if (nonNull(column1.getTable())) {
 					List<Expression> expressionsTable = expressions.get(column1.getTable().getName());
 					if (isNull(expressionsTable)) {
@@ -1685,12 +1651,8 @@ public class SQLUtils {
 					expressionsTable.add(binaryExpression);
 				}
 			} else if (leftExpression instanceof Column col1 && rightExpression instanceof Column col2
-					&& ("=".equals(operator)
-							|| "<".equals(operator)
-							||"<=".equals(operator)
-							||">".equals(operator)
-							||">=".equals(operator)
-							||"<>".equals(operator))) {
+					&& ("=".equals(operator) || "<".equals(operator) || "<=".equals(operator) || ">".equals(operator)
+							|| ">=".equals(operator) || "<>".equals(operator))) {
 				List<Expression> expressionsTable = joinTableExpressions
 						.get(col1.getTable().getName() + "-" + col2.getTable().getName());
 				if (isNull(expressionsTable)) {
@@ -1700,15 +1662,11 @@ public class SQLUtils {
 				}
 				expressionsTable.add(binaryExpression);
 			} else if (leftExpression instanceof BinaryExpression expr && !(rightExpression instanceof Column)
-					&& ("=".equals(operator)
-							|| "<".equals(operator)
-							||"<=".equals(operator)
-							||">".equals(operator)
-							||">=".equals(operator)
-							||"<>".equals(operator))) {
-				List<Column> columnsFromExpression = new ArrayList<>(); 
+					&& ("=".equals(operator) || "<".equals(operator) || "<=".equals(operator) || ">".equals(operator)
+							|| ">=".equals(operator) || "<>".equals(operator))) {
+				List<Column> columnsFromExpression = new ArrayList<>();
 				getColumnsFromExpression(expr, columnsFromExpression);
-				for(Column column1:columnsFromExpression) {
+				for (Column column1 : columnsFromExpression) {
 					if (nonNull(column1.getTable())) {
 						List<Expression> expressionsTable = expressions.get(column1.getTable().getName());
 						if (isNull(expressionsTable)) {
@@ -1718,17 +1676,13 @@ public class SQLUtils {
 						expressionsTable.add(binaryExpression);
 					}
 				}
-				
+
 			} else if (!(leftExpression instanceof Column) && rightExpression instanceof BinaryExpression expr
-					&& ("=".equals(operator)
-							|| "<".equals(operator)
-							||"<=".equals(operator)
-							||">".equals(operator)
-							||">=".equals(operator)
-							||"<>".equals(operator))) {
-				List<Column> columnsFromExpression = new ArrayList<>(); 
+					&& ("=".equals(operator) || "<".equals(operator) || "<=".equals(operator) || ">".equals(operator)
+							|| ">=".equals(operator) || "<>".equals(operator))) {
+				List<Column> columnsFromExpression = new ArrayList<>();
 				getColumnsFromExpression(expr, columnsFromExpression);
-				for(Column column1:columnsFromExpression) {
+				for (Column column1 : columnsFromExpression) {
 					if (nonNull(column1.getTable())) {
 						List<Expression> expressionsTable = expressions.get(column1.getTable().getName());
 						if (isNull(expressionsTable)) {
@@ -1768,15 +1722,17 @@ public class SQLUtils {
 				tablerequiredcolumns.put(column.getTable().getName(), columns);
 			}
 			columns.add(column.getColumnName());
-		} 
+		}
 	}
-	
+
 	/**
 	 * Get columns from group by expression
+	 * 
 	 * @param gbe
 	 * @param tablerequiredcolumns
 	 */
-	public static void getColumnsFromGroupByExpression(GroupByElement gbe, Map<String, Set<String>> tablerequiredcolumns) {
+	public static void getColumnsFromGroupByExpression(GroupByElement gbe,
+			Map<String, Set<String>> tablerequiredcolumns) {
 		ExpressionList el = gbe.getGroupByExpressionList();
 		List<Expression> expressions = el.getExpressions();
 		for (Expression exp : expressions) {
@@ -1792,7 +1748,7 @@ public class SQLUtils {
 			}
 		}
 	}
-	
+
 	/**
 	 * This functions returns initial filter or expressions.
 	 * 
@@ -1803,7 +1759,7 @@ public class SQLUtils {
 		Expression expression = null;
 		if (CollectionUtils.isNotEmpty(leftTableExpressions)) {
 			expression = leftTableExpressions.get(0);
-			for (int expressioncount = 1;expressioncount < leftTableExpressions.size();expressioncount++) {
+			for (int expressioncount = 1; expressioncount < leftTableExpressions.size(); expressioncount++) {
 				expression = new OrExpression(expression, leftTableExpressions.get(expressioncount));
 			}
 			return expression;
@@ -1819,96 +1775,102 @@ public class SQLUtils {
 	 */
 	public static Map<String, Integer> getColumnsIndex(List<String> columns) {
 		Map<String, Integer> columnindexmap = new ConcurrentHashMap<>();
-		for (int columnindex = 0;columnindex < columns.size();columnindex++) {
+		for (int columnindex = 0; columnindex < columns.size(); columnindex++) {
 			columnindexmap.put(columns.get(columnindex), (int) columnindex);
 		}
 		return columnindexmap;
 	}
-	
+
 	/**
 	 * Converts Object array to Tuple
+	 * 
 	 * @param obj
 	 * @return Tuple
 	 */
 	public static Tuple convertObjectToTuple(Object[] obj) {
-		if(isNull(obj) || obj.length == 0) {
+		if (isNull(obj) || obj.length == 0) {
 			return Tuple.tuple(DataSamudayaConstants.EMPTY);
-		} else if(obj.length == 1) {
+		} else if (obj.length == 1) {
 			return Tuple.tuple(obj[0]);
-		} else if(obj.length == 2) {
+		} else if (obj.length == 2) {
 			return Tuple.tuple(obj[0], obj[1]);
-		} else if(obj.length == 3) {
+		} else if (obj.length == 3) {
 			return Tuple.tuple(obj[0], obj[1], obj[2]);
-		} else if(obj.length == 4) {
+		} else if (obj.length == 4) {
 			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3]);
-		} else if(obj.length == 5) {
+		} else if (obj.length == 5) {
 			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4]);
-		} else if(obj.length == 6) {
+		} else if (obj.length == 6) {
 			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5]);
-		} else if(obj.length == 7) {
+		} else if (obj.length == 7) {
 			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6]);
-		} else if(obj.length == 8) {
+		} else if (obj.length == 8) {
 			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7]);
-		} else if(obj.length == 9) {
+		} else if (obj.length == 9) {
 			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8]);
-		} else if(obj.length == 10) {
+		} else if (obj.length == 10) {
 			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9]);
-		} else if(obj.length == 11) {
+		} else if (obj.length == 11) {
 			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10]);
-		} else if(obj.length == 12) {
-			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10], obj[11]);
-		} else if(obj.length == 13) {
-			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10], obj[11], obj[12]);
-		} else if(obj.length == 14) {
-			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10], obj[11], obj[12], obj[13]);
-		} else if(obj.length == 15) {
-			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10], obj[11], obj[12], obj[13], obj[14]);
-		} else if(obj.length == 16) {
-			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10], obj[11], obj[12], obj[13], obj[14], obj[15]);
+		} else if (obj.length == 12) {
+			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10],
+					obj[11]);
+		} else if (obj.length == 13) {
+			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10],
+					obj[11], obj[12]);
+		} else if (obj.length == 14) {
+			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10],
+					obj[11], obj[12], obj[13]);
+		} else if (obj.length == 15) {
+			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10],
+					obj[11], obj[12], obj[13], obj[14]);
+		} else if (obj.length == 16) {
+			return Tuple.tuple(obj[0], obj[1], obj[2], obj[3], obj[4], obj[5], obj[6], obj[7], obj[8], obj[9], obj[10],
+					obj[11], obj[12], obj[13], obj[14], obj[15]);
 		} else {
 			throw new UnsupportedOperationException("Max supported Column is 16");
 		}
 	}
-	
-	
+
 	/**
-	 * Populates map from tuple for 
+	 * Populates map from tuple for
+	 * 
 	 * @param mapvalues
 	 * @param tuple
 	 * @param groupby
 	 */
 	public static void populateMapFromTuple(Map<String, Object> mapvalues, Tuple tuple, List<String> groupby) {
-		
-		if(groupby.isEmpty()) {
+
+		if (groupby.isEmpty()) {
 			return;
-		} else if(tuple instanceof Tuple1 tup) {
+		} else if (tuple instanceof Tuple1 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
-		} else if(tuple instanceof Tuple2 tup) {
+		} else if (tuple instanceof Tuple2 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
-		} else if(tuple instanceof Tuple3 tup) {
+		} else if (tuple instanceof Tuple3 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
-		} else if(tuple instanceof Tuple4 tup) {
+		} else if (tuple instanceof Tuple4 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
 			mapvalues.put(groupby.get(3), tup.v4());
-		}else if(tuple instanceof Tuple5 tup) {
+		} else if (tuple instanceof Tuple5 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
 			mapvalues.put(groupby.get(3), tup.v4());
 			mapvalues.put(groupby.get(4), tup.v5());
-		}else if(tuple instanceof Tuple6 tup) {
+		} else if (tuple instanceof Tuple6 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
 			mapvalues.put(groupby.get(3), tup.v4());
 			mapvalues.put(groupby.get(4), tup.v5());
 			mapvalues.put(groupby.get(5), tup.v6());
-		}else if(tuple instanceof Tuple7 tup) {
+		} else if (tuple instanceof Tuple7 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -1916,7 +1878,7 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(4), tup.v5());
 			mapvalues.put(groupby.get(5), tup.v6());
 			mapvalues.put(groupby.get(6), tup.v7());
-		}else if(tuple instanceof Tuple8 tup) {
+		} else if (tuple instanceof Tuple8 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -1925,7 +1887,7 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(5), tup.v6());
 			mapvalues.put(groupby.get(6), tup.v7());
 			mapvalues.put(groupby.get(7), tup.v8());
-		}else if(tuple instanceof Tuple9 tup) {
+		} else if (tuple instanceof Tuple9 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -1935,7 +1897,7 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(6), tup.v7());
 			mapvalues.put(groupby.get(7), tup.v8());
 			mapvalues.put(groupby.get(8), tup.v9());
-		}else if(tuple instanceof Tuple10 tup) {
+		} else if (tuple instanceof Tuple10 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -1946,7 +1908,7 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(7), tup.v8());
 			mapvalues.put(groupby.get(8), tup.v9());
 			mapvalues.put(groupby.get(9), tup.v10());
-		}else if(tuple instanceof Tuple11 tup) {
+		} else if (tuple instanceof Tuple11 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -1958,7 +1920,7 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(8), tup.v9());
 			mapvalues.put(groupby.get(9), tup.v10());
 			mapvalues.put(groupby.get(10), tup.v11());
-		}else if(tuple instanceof Tuple12 tup) {
+		} else if (tuple instanceof Tuple12 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -1971,7 +1933,7 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(9), tup.v10());
 			mapvalues.put(groupby.get(10), tup.v11());
 			mapvalues.put(groupby.get(11), tup.v12());
-		} else if(tuple instanceof Tuple13 tup) {
+		} else if (tuple instanceof Tuple13 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -1985,7 +1947,7 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(10), tup.v11());
 			mapvalues.put(groupby.get(11), tup.v12());
 			mapvalues.put(groupby.get(12), tup.v13());
-		} else if(tuple instanceof Tuple14 tup) {
+		} else if (tuple instanceof Tuple14 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -2000,7 +1962,7 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(11), tup.v12());
 			mapvalues.put(groupby.get(12), tup.v13());
 			mapvalues.put(groupby.get(13), tup.v14());
-		}else if(tuple instanceof Tuple15 tup) {
+		} else if (tuple instanceof Tuple15 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -2016,7 +1978,7 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(12), tup.v13());
 			mapvalues.put(groupby.get(13), tup.v14());
 			mapvalues.put(groupby.get(14), tup.v15());
-		}else if(tuple instanceof Tuple16 tup) {
+		} else if (tuple instanceof Tuple16 tup) {
 			mapvalues.put(groupby.get(0), tup.v1());
 			mapvalues.put(groupby.get(1), tup.v2());
 			mapvalues.put(groupby.get(2), tup.v3());
@@ -2033,154 +1995,158 @@ public class SQLUtils {
 			mapvalues.put(groupby.get(13), tup.v14());
 			mapvalues.put(groupby.get(14), tup.v15());
 			mapvalues.put(groupby.get(15), tup.v16());
-		}else {
+		} else {
 			throw new UnsupportedOperationException("Max supported Column is 16");
 		}
 	}
-	
+
 	public static Long getCountFromTuple(Tuple tuple) {
-		if(tuple instanceof Tuple1 tup) {
+		if (tuple instanceof Tuple1 tup) {
 			return (Long) tup.v1;
-		} else if(tuple instanceof Tuple2 tup) {
+		} else if (tuple instanceof Tuple2 tup) {
 			return (Long) tup.v2;
-		} else if(tuple instanceof Tuple3 tup) {
+		} else if (tuple instanceof Tuple3 tup) {
 			return (Long) tup.v3;
-		} else if(tuple instanceof Tuple4 tup) {
+		} else if (tuple instanceof Tuple4 tup) {
 			return (Long) tup.v4;
-		} else if(tuple instanceof Tuple5 tup) {
+		} else if (tuple instanceof Tuple5 tup) {
 			return (Long) tup.v5;
-		} else if(tuple instanceof Tuple6 tup) {
+		} else if (tuple instanceof Tuple6 tup) {
 			return (Long) tup.v6;
-		} else if(tuple instanceof Tuple7 tup) {
+		} else if (tuple instanceof Tuple7 tup) {
 			return (Long) tup.v7;
-		} else if(tuple instanceof Tuple8 tup) {
+		} else if (tuple instanceof Tuple8 tup) {
 			return (Long) tup.v8;
-		} else if(tuple instanceof Tuple9 tup) {
+		} else if (tuple instanceof Tuple9 tup) {
 			return (Long) tup.v9;
-		} else if(tuple instanceof Tuple10 tup) {
+		} else if (tuple instanceof Tuple10 tup) {
 			return (Long) tup.v10;
-		} else if(tuple instanceof Tuple11 tup) {
+		} else if (tuple instanceof Tuple11 tup) {
 			return (Long) tup.v11;
-		} else if(tuple instanceof Tuple12 tup) {
+		} else if (tuple instanceof Tuple12 tup) {
 			return (Long) tup.v12;
-		} else if(tuple instanceof Tuple13 tup) {
+		} else if (tuple instanceof Tuple13 tup) {
 			return (Long) tup.v13;
-		} else if(tuple instanceof Tuple14 tup) {
+		} else if (tuple instanceof Tuple14 tup) {
 			return (Long) tup.v14;
-		} else if(tuple instanceof Tuple15 tup) {
+		} else if (tuple instanceof Tuple15 tup) {
 			return (Long) tup.v15;
-		} else if(tuple instanceof Tuple16 tup) {
+		} else if (tuple instanceof Tuple16 tup) {
 			return (Long) tup.v16;
 		} else {
 			throw new UnsupportedOperationException("Max supported Column is 16");
 		}
 	}
-	
+
 	/**
 	 * Populate Map values from function.
+	 * 
 	 * @param mapvalues
 	 * @param tuple
 	 * @param functions
 	 * @param functionalias
-	 * @throws Exception 
-	 * @throws IllegalArgumentException 
-	 * @throws IllegalAccessException 
+	 * @throws Exception
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
 	 */
 	public static void populateMapFromFunctions(Map<String, Object> mapvalues, Tuple tuple, List<Function> functions,
 			Map<Function, String> functionalias) {
 		try {
-		Class<?> cls = tuple.getClass();
-		for(int funcindex=0,valueindex=1;funcindex<functions.size();funcindex++) {
-			Function func = functions.get(funcindex);
-			String funname = func.getName();
-			if(funname.toLowerCase().startsWith("avg")) {
-				java.lang.reflect.Method method = cls.getMethod("v"+valueindex);
-				Object valuesum = method.invoke(tuple);
+			Class<?> cls = tuple.getClass();
+			for (int funcindex = 0, valueindex = 1; funcindex < functions.size(); funcindex++) {
+				Function func = functions.get(funcindex);
+				String funname = func.getName();
+				if (funname.toLowerCase().startsWith("avg")) {
+					java.lang.reflect.Method method = cls.getMethod("v" + valueindex);
+					Object valuesum = method.invoke(tuple);
+					valueindex++;
+					method = cls.getMethod("v" + valueindex);
+					Object valuecount = method.invoke(tuple);
+					mapvalues.put(getAliasForFunction(func, functionalias),
+							evaluateValuesByOperator(valuesum, valuecount, "/"));
+				} else {
+					java.lang.reflect.Method method = cls.getMethod("v" + valueindex);
+					Object value = method.invoke(tuple);
+					mapvalues.put(getAliasForFunction(func, functionalias), value);
+				}
 				valueindex++;
-				method = cls.getMethod("v"+valueindex);
-				Object valuecount = method.invoke(tuple);
-				mapvalues.put(getAliasForFunction(func, functionalias), evaluateValuesByOperator(valuesum, valuecount, "/"));
-			} else {
-				java.lang.reflect.Method method = cls.getMethod("v"+valueindex);
-				Object value = method.invoke(tuple);
-				mapvalues.put(getAliasForFunction(func, functionalias), value);				
 			}
-			valueindex++;
-		}
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
-	
+
 	/**
 	 * This method returns function alias for a given function from map
+	 * 
 	 * @param function
 	 * @param functionalias
 	 * @return function alias
 	 */
 	public static String getAliasForFunction(Function function, Map<Function, String> functionalias) {
 		String aliasfunction = functionalias.get(function);
-		String alias = nonNull(aliasfunction) ? aliasfunction
-				: function.toString();
+		String alias = nonNull(aliasfunction) ? aliasfunction : function.toString();
 		return alias;
 	}
-	
+
 	/**
 	 * Evaluate Tuple for functions
+	 * 
 	 * @param tuple1
 	 * @param tuple2
 	 * @param aggfunctions
 	 * @return Tuple
-	 * @throws Exception 
-	 * @throws InvocationTargetException 
-	 * @throws IllegalArgumentException 
+	 * @throws Exception
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
 	 */
 	public static Tuple evaluateTuple(Tuple tuple1, Tuple tuple2, List<Function> aggfunctions) {
 		try {
-            // Get the class of the Tuple
-            Class<?> tupleClass = tuple1.getClass();
-            // Create a new instance of the Tuple
-            Tuple result = (Tuple) tupleClass.getConstructor(tuple2.getClass()).newInstance(tuple1);
-            // Get all the fields of the Tuple class
-            java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
-            int index = 0;
-            boolean avgindex = false;
-            Function func = aggfunctions.get(index);
-            // Iterate over the fields and perform summation
-            for (java.lang.reflect.Field field : fields) {
-                // Make the field accessible, as it might be private
-                field.setAccessible(true);
+			// Get the class of the Tuple
+			Class<?> tupleClass = tuple1.getClass();
+			// Create a new instance of the Tuple
+			Tuple result = (Tuple) tupleClass.getConstructor(tuple2.getClass()).newInstance(tuple1);
+			// Get all the fields of the Tuple class
+			java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
+			int index = 0;
+			boolean avgindex = false;
+			Function func = aggfunctions.get(index);
+			// Iterate over the fields and perform summation
+			for (java.lang.reflect.Field field : fields) {
+				// Make the field accessible, as it might be private
+				field.setAccessible(true);
 
-                // Get the values of the fields from both tuples
-                Object value1 = field.get(tuple1);
-                Object value2 = field.get(tuple2);
-                field.set(result,evaluateFunction(value1, value2, func));
-                // Set the sum of the values in the result tuple                
-                if(index+1<aggfunctions.size()) {
-                	if(avgindex) {
-                		func = aggfunctions.get(index);
-                    	avgindex = false;
-                    	index++;
-                	} else if(!aggfunctions.get(index).getName().equalsIgnoreCase("avg")) {
-                		func = aggfunctions.get(index+1);
-                		index++;
-                		avgindex = false;
-                	} else {
-                    	func = aggfunctions.get(index);
-                    	avgindex = true;
-                    }
-                } 
-            }
+				// Get the values of the fields from both tuples
+				Object value1 = field.get(tuple1);
+				Object value2 = field.get(tuple2);
+				field.set(result, evaluateFunction(value1, value2, func));
+				// Set the sum of the values in the result tuple
+				if (index + 1 < aggfunctions.size()) {
+					if (avgindex) {
+						func = aggfunctions.get(index);
+						avgindex = false;
+						index++;
+					} else if (!"avg".equalsIgnoreCase(aggfunctions.get(index).getName())) {
+						func = aggfunctions.get(index + 1);
+						index++;
+						avgindex = false;
+					} else {
+						func = aggfunctions.get(index);
+						avgindex = true;
+					}
+				}
+			}
 
-            return result;
-        } catch (Exception ex) {
-        	log.error(DataSamudayaConstants.EMPTY, ex);
-        }
+			return result;
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
 		return null;
 	}
-	
+
 	/**
 	 * Evaluate values based on functions
+	 * 
 	 * @param leftValue
 	 * @param rightValue
 	 * @param function
@@ -2200,95 +2166,89 @@ public class SQLUtils {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Evaluates group concat with append string
+	 * 
 	 * @param leftValue
 	 * @param rightValue
 	 * @param appendstring
 	 * @return concatenated string
 	 */
 	public static Object evaluateGroupConcat(Object leftValue, Object rightValue, String appendstring) {
-			if (leftValue instanceof String lv && rightValue instanceof Double rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Double rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Double rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof Long rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Long rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof String lv && rightValue instanceof Long rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof String rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof Double lv && rightValue instanceof String rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
-				return lv + appendstring + rv;
-			} else if (leftValue instanceof String lv && rightValue instanceof String rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof Long lv && rightValue instanceof Integer rv) {
-				return lv + appendstring + rv;
-			} else if(leftValue instanceof Integer lv && rightValue instanceof Long rv) {
-				return lv + appendstring + rv;
-			}
-			return leftValue + appendstring + rightValue;
+		if (leftValue instanceof String lv && rightValue instanceof Double rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof Double lv && rightValue instanceof Double rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof Long lv && rightValue instanceof Double rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof Double lv && rightValue instanceof Long rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof Long lv && rightValue instanceof Long rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof String lv && rightValue instanceof Long rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof Long lv && rightValue instanceof String rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof Double lv && rightValue instanceof String rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof Integer lv && rightValue instanceof Integer rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof String lv && rightValue instanceof String rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof Long lv && rightValue instanceof Integer rv) {
+			return lv + appendstring + rv;
+		} else if (leftValue instanceof Integer lv && rightValue instanceof Long rv) {
+			return lv + appendstring + rv;
+		}
+		return leftValue + appendstring + rightValue;
 	}
-	
-	
+
 	/**
 	 * Validates and optimizes sql query
+	 * 
 	 * @param tablecolumnsmap
 	 * @param tablecolumntypesmap
 	 * @param sql
 	 * @param db
-	 * @return 
+	 * @return
 	 * @return optimized query
 	 * @throws Exception
 	 */
 	public static RelNode validateSql(ConcurrentMap<String, List<String>> tablecolumnsmap,
-			ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap,
-			String sql,
-			String db,AtomicBoolean isDistinct) throws Exception {
+			ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap, String sql, String db,
+			AtomicBoolean isDistinct) throws Exception {
 		Set<String> tablesfromconfig = tablecolumnsmap.keySet();
 		SimpleSchema.Builder builder = SimpleSchema.newBuilder(db);
 		for (String table : tablesfromconfig) {
 			List<String> columns = tablecolumnsmap.get(table);
 			List<SqlTypeName> sqltypes = tablecolumntypesmap.get(table);
-			builder.addTable(getSimpleTable(table, columns.toArray(new String[columns.size()]), sqltypes.toArray(new SqlTypeName[sqltypes.size()])));
+			builder.addTable(getSimpleTable(table, columns.toArray(new String[columns.size()]),
+					sqltypes.toArray(new SqlTypeName[sqltypes.size()])));
 		}
 		SimpleSchema schema = builder.build();
 		Optimizer optimizer = Optimizer.create(schema);
 		SqlNode sqlTree = optimizer.parse(sql);
 		sqlTree = optimizer.validate(sqlTree);
 		if (sqlTree.getKind() == SqlKind.SELECT) {
-            SqlSelect selectNode = (SqlSelect) sqlTree;
-            isDistinct.set(selectNode.isDistinct());
+			SqlSelect selectNode = (SqlSelect) sqlTree;
+			isDistinct.set(selectNode.isDistinct());
 		}
 		RelNode relTree = optimizer.convert(sqlTree);
-		RuleSet rules = RuleSets.ofList(
-				CoreRules.FILTER_TO_CALC, 
-				CoreRules.PROJECT_TO_CALC,
-				CoreRules.FILTER_CALC_MERGE, 
-				CoreRules.PROJECT_CALC_MERGE, 
-				CoreRules.AGGREGATE_PROJECT_MERGE,
-				CoreRules.PROJECT_FILTER_VALUES_MERGE, 
-				EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
-				EnumerableRules.ENUMERABLE_PROJECT_RULE, 
-				EnumerableRules.ENUMERABLE_FILTER_RULE,
-				EnumerableRules.ENUMERABLE_AGGREGATE_RULE, 
-				EnumerableRules.ENUMERABLE_SORT_RULE,
-				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE,
-			    EnumerableRules.ENUMERABLE_JOIN_RULE);
+		RuleSet rules = RuleSets.ofList(CoreRules.FILTER_TO_CALC, CoreRules.PROJECT_TO_CALC, CoreRules.FILTER_MERGE,
+				CoreRules.FILTER_CALC_MERGE, CoreRules.PROJECT_CALC_MERGE,
+				CoreRules.PROJECT_FILTER_VALUES_MERGE, EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
+				EnumerableRules.ENUMERABLE_PROJECT_RULE, EnumerableRules.ENUMERABLE_FILTER_RULE,
+				EnumerableRules.ENUMERABLE_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_SORT_RULE,
+				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_JOIN_RULE,
+				EnumerableRules.ENUMERABLE_UNION_RULE, EnumerableRules.ENUMERABLE_INTERSECT_RULE);
 
-		return optimizer.optimize(relTree,
-				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		return optimizer.optimize(relTree, relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
 	}
-	
+
 	/**
 	 * Get simple table given the tablename, fields and types
+	 * 
 	 * @param tablename
 	 * @param fields
 	 * @param types
@@ -2303,83 +2263,64 @@ public class SQLUtils {
 		}
 		return builder.withRowCount(60000L).build();
 	}
-	
+
 	/**
 	 * Get All Tables from Statement Object
+	 * 
 	 * @param statement
 	 * @param tables
-	 * @param tmptables
 	 */
-	public static void getAllTables(Object statement, List<Table> tables, Set<String> tmptables) {
-		if ((statement instanceof Select select && select.getSelectBody() instanceof PlainSelect)
-				|| statement instanceof PlainSelect) {
-			var plainSelect = (PlainSelect) (statement instanceof PlainSelect ? statement
-					: ((Select) statement).getSelectBody());
-			FromItem fromItem = plainSelect.getFromItem();
-			if (fromItem instanceof SubSelect select) {
-				SelectBody subSelectBody = select.getSelectBody();
-				if (subSelectBody instanceof PlainSelect) {
-					getAllTables(subSelectBody, tables, tmptables);
-				}
-			} else if (fromItem instanceof Table table) {
-				if(!tmptables.contains(table.getName())) {
-					tables.add(table);
-					if (nonNull(plainSelect.getJoins())) {
-						for (Join join : plainSelect.getJoins()) {
-							tables.add(((Table) join.getRightItem()));
-							tmptables.add(((Table) join.getRightItem()).getName());
-						}
-					}
-				}
-				tmptables.add(table.getName());
-			}
-		}
+	public static void getAllTables(Statement statement, List<String> tables) {
+		net.sf.jsqlparser.util.TablesNamesFinder tablesNamesFinder = new net.sf.jsqlparser.util.TablesNamesFinder();
+		tables.addAll(tablesNamesFinder.getTableList(statement));
 	}
-	
+
 	/**
 	 * Get orc file to store columnar data
+	 * 
 	 * @return path
 	 */
 	protected static String getORCFilePath(String randomuuid) {
-		String tmpdir = isNull(DataSamudayaProperties.get())?System.getProperty(DataSamudayaConstants.TMPDIR)
-			: DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR, System.getProperty(DataSamudayaConstants.TMPDIR));
-		new File(tmpdir + DataSamudayaConstants.FORWARD_SLASH 
-				+ FileSystemSupport.MDS).mkdirs();
-		return tmpdir + DataSamudayaConstants.FORWARD_SLASH 
-				+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + randomuuid 
-				+ DataSamudayaConstants.ORCFILE_EXT;
+		String tmpdir = isNull(DataSamudayaProperties.get()) ? System.getProperty(DataSamudayaConstants.TMPDIR)
+				: DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR,
+						System.getProperty(DataSamudayaConstants.TMPDIR));
+		new File(tmpdir + DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS).mkdirs();
+		return tmpdir + DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS
+				+ DataSamudayaConstants.FORWARD_SLASH + randomuuid + DataSamudayaConstants.ORCFILE_EXT;
 	}
-	
+
 	/**
 	 * Get the orcs crc with path
+	 * 
 	 * @return crcpath
 	 */
 	protected static String getORCCRCFilePath(String uuid) {
-		String tmpdir = isNull(DataSamudayaProperties.get())?System.getProperty(DataSamudayaConstants.TMPDIR)
-			: DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR, System.getProperty(DataSamudayaConstants.TMPDIR));
-		new File(tmpdir + DataSamudayaConstants.FORWARD_SLASH 
-				+ FileSystemSupport.MDS).mkdirs();
-		return tmpdir + DataSamudayaConstants.FORWARD_SLASH 
-				+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DOT + uuid
-				+ DataSamudayaConstants.ORCFILE_EXT+DataSamudayaConstants.CRCFILE_EXT;
+		String tmpdir = isNull(DataSamudayaProperties.get()) ? System.getProperty(DataSamudayaConstants.TMPDIR)
+				: DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR,
+						System.getProperty(DataSamudayaConstants.TMPDIR));
+		new File(tmpdir + DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS).mkdirs();
+		return tmpdir + DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS
+				+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DOT + uuid
+				+ DataSamudayaConstants.ORCFILE_EXT + DataSamudayaConstants.CRCFILE_EXT;
 	}
-	
+
 	/**
 	 * Creates ORC file for given CSV Record and returns path
+	 * 
 	 * @param airlineheader
 	 * @param headertypes
 	 * @param records
 	 * @return filepath
 	 * @throws Exception
 	 */
-	public static String createORCFile(List<String> headers, 
-			List<SqlTypeName> headertypes, Stream<CSVRecord> records) throws Exception {
+	public static String createORCFile(List<String> headers, List<SqlTypeName> headertypes, Stream<CSVRecord> records)
+			throws Exception {
 		Configuration configuration = new Configuration();
 		TypeDescription schema = TypeDescription.fromString(convertFieldsToString(headers, headertypes));
 
 		// Create ORC WriterOptions
-		WriterOptions options = OrcFile.writerOptions(configuration).setSchema(schema)
-				.compress(CompressionKind.LZ4).blockPadding(true).blockSize(128 * DataSamudayaConstants.MB);
+		WriterOptions options = OrcFile.writerOptions(configuration).setSchema(schema).compress(CompressionKind.LZ4)
+				.blockPadding(true).blockSize(128 * DataSamudayaConstants.MB);
 		String fileuuid = UUID.randomUUID().toString();
 		String orcfilepath = getORCFilePath(fileuuid);
 		// Create an ORC file writer
@@ -2388,7 +2329,7 @@ public class SQLUtils {
 			records.forEach(csvrecord -> {
 				try {
 					// Create a row batch and populate it with data
-					for (int index = 0;index < headers.size();index++) {
+					for (int index = 0; index < headers.size(); index++) {
 						batch.cols[index].noNulls = true;
 						batch.cols[index].isNull[batch.size] = false;
 						writeValueToVector(batch.size, batch.cols[index], csvrecord.get(headers.get(index)));
@@ -2415,9 +2356,10 @@ public class SQLUtils {
 
 		}
 	}
-	
+
 	/**
 	 * Convert header and types to string in orc format
+	 * 
 	 * @param airlineheader
 	 * @param headertypes
 	 * @return String in struct format
@@ -2425,7 +2367,7 @@ public class SQLUtils {
 	public static String convertFieldsToString(List<String> airlineheader, List<SqlTypeName> headertypes) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("struct<");
-		for (int index = 0;index < airlineheader.size();index++) {
+		for (int index = 0; index < airlineheader.size(); index++) {
 			builder.append(airlineheader.get(index));
 			builder.append(":");
 			builder.append(convertSqlTypesToString(headertypes.get(index)));
@@ -2440,6 +2382,7 @@ public class SQLUtils {
 
 	/**
 	 * Converts SQL Types to string
+	 * 
 	 * @param sqltypename
 	 * @return string
 	 */
@@ -2456,6 +2399,7 @@ public class SQLUtils {
 
 	/**
 	 * Writes value to value vector for index
+	 * 
 	 * @param index
 	 * @param cv
 	 * @param value
@@ -2467,137 +2411,203 @@ public class SQLUtils {
 			} else {
 				lcv.vector[index] = 0l;
 			}
-		} else if (cv instanceof BytesColumnVector bcv) {			
+		} else if (cv instanceof BytesColumnVector bcv) {
 			byte[] values = ((String) value).getBytes();
-			bcv.setRef(index, values, 0, values.length);			
+			bcv.setRef(index, values, 0, values.length);
 		}
 	}
-	
+
 	/**
 	 * Loads the record reader object
+	 * 
 	 * @param orcfilepath
 	 * @return orc rrr object
 	 * @throws Exception
 	 */
-	public static OrcReaderRecordReader getOrcStreamRecords(String orcfilepath, String[] allcolumns, List<String> requiredcolumns, List<SqlTypeName> sqltypes) throws Exception {
+	public static OrcReaderRecordReader getOrcStreamRecords(String orcfilepath, String[] allcolumns,
+			List<String> requiredcolumns, List<SqlTypeName> sqltypes) throws Exception {
 		Configuration configuration = new Configuration();
-        Reader reader = OrcFile.createReader(new Path(orcfilepath),
-                OrcFile.readerOptions(configuration));
-        RecordReader rows = reader.rows();
-        VectorizedRowBatch batch = reader.getSchema().createRowBatch();
-        Map<String,Integer> colindex = getColumnIndex(allcolumns);
-        TypeDescription schema = TypeDescription.fromString(convertFieldsToString(requiredcolumns, 
-        		getRequiredColumnTypes(colindex, requiredcolumns, sqltypes)));
-        Stream<Map<String, Object>> mapStream = StreamSupport.stream(
-                new ORCRecordSpliterator(rows, schema, batch, colindex), false);
-        OrcReaderRecordReader orrr = new OrcReaderRecordReader(reader, rows, mapStream);
-        return orrr;
+		Reader reader = OrcFile.createReader(new Path(orcfilepath), OrcFile.readerOptions(configuration));
+		RecordReader rows = reader.rows();
+		VectorizedRowBatch batch = reader.getSchema().createRowBatch();
+		Map<String, Integer> colindex = getColumnIndex(allcolumns);
+		TypeDescription schema = TypeDescription.fromString(
+				convertFieldsToString(requiredcolumns, getRequiredColumnTypes(colindex, requiredcolumns, sqltypes)));
+		Stream<Map<String, Object>> mapStream = StreamSupport
+				.stream(new ORCRecordSpliterator(rows, schema, batch, colindex), false);
+		OrcReaderRecordReader orrr = new OrcReaderRecordReader(reader, rows, mapStream);
+		return orrr;
 	}
-	
-	
+
 	/**
 	 * This function returns required column types
+	 * 
 	 * @param colindex
 	 * @param requiredcolumns
 	 * @param sqltypes
 	 * @return get required column types
 	 */
-	public static List<SqlTypeName> getRequiredColumnTypes(Map<String, Integer> colindex, List<String> requiredcolumns, List<SqlTypeName> sqltypes) {
-    	List<SqlTypeName> sqltypesrequiredcolumns = new ArrayList<>();
-		if(CollectionUtils.isNotEmpty(requiredcolumns)) {
-			for (String reqcols:requiredcolumns) {
+	public static List<SqlTypeName> getRequiredColumnTypes(Map<String, Integer> colindex, List<String> requiredcolumns,
+			List<SqlTypeName> sqltypes) {
+		List<SqlTypeName> sqltypesrequiredcolumns = new ArrayList<>();
+		if (CollectionUtils.isNotEmpty(requiredcolumns)) {
+			for (String reqcols : requiredcolumns) {
 				sqltypesrequiredcolumns.add(sqltypes.get(colindex.get(reqcols).intValue()));
 			}
 		}
 		return sqltypesrequiredcolumns;
-    }
-	
+	}
+
 	/**
-	 * This function returns column with index in map 
+	 * This function returns column with index in map
+	 * 
 	 * @param tablecolumns
 	 * @return column with index
 	 */
 	public static Map<String, Integer> getColumnIndex(String[] tablecolumns) {
-    	Map<String, Integer> roottablecolumnindexmap = new ConcurrentHashMap<>();
-		if(nonNull(tablecolumns)) {
-			for (int originalcolumnindex = 0;originalcolumnindex < tablecolumns.length;originalcolumnindex++) {
-				roottablecolumnindexmap.put(tablecolumns[originalcolumnindex],
-						Integer.valueOf(originalcolumnindex));
+		Map<String, Integer> roottablecolumnindexmap = new ConcurrentHashMap<>();
+		if (nonNull(tablecolumns)) {
+			for (int originalcolumnindex = 0; originalcolumnindex < tablecolumns.length; originalcolumnindex++) {
+				roottablecolumnindexmap.put(tablecolumns[originalcolumnindex], Integer.valueOf(originalcolumnindex));
 			}
 		}
 		return roottablecolumnindexmap;
-    }
-	
+	}
+
 	/**
 	 * Converts sqltypes and colums to column map
+	 * 
 	 * @param sqltypes
 	 * @param cols
 	 * @return column types map
 	 */
 	public static Map<String, SqlTypeName> getColumnTypesByColumn(List<SqlTypeName> sqltypes, List<String> cols) {
-		Map<String,SqlTypeName> colsqltypenamemap = new ConcurrentHashMap<>();
-		for (int index = 0;index < cols.size();index++) {
+		Map<String, SqlTypeName> colsqltypenamemap = new ConcurrentHashMap<>();
+		for (int index = 0; index < cols.size(); index++) {
 			colsqltypenamemap.put(cols.get(index), sqltypes.get(index));
 		}
 		return colsqltypenamemap;
 	}
-	
+
 	/**
 	 * 
 	 * @param value
 	 * @param type
 	 * @return
 	 */
-	public static void setYosegiObjectByValue(String value, SqlTypeName type, Map<String,Object> mapvalues,String col) {
+	public static void setYosegiObjectByValue(String value, SqlTypeName type, Map<String, Object> mapvalues,
+			String col) {
 		try {
-			if(type == SqlTypeName.INTEGER) {
+			if (type == SqlTypeName.INTEGER) {
 				if (NumberUtils.isCreatable((String) value)) {
 					mapvalues.put(col, new IntegerObj(Integer.valueOf(value)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(true));
+					mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(true));
 				} else {
 					mapvalues.put(col, new IntegerObj(Integer.valueOf(0)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
+					mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
 				}
-			} else if(type == SqlTypeName.BIGINT) {
+			} else if (type == SqlTypeName.BIGINT) {
 				if (NumberUtils.isCreatable((String) value)) {
 					mapvalues.put(col, new LongObj(Long.valueOf(value)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
+					mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(true));
 				} else {
 					mapvalues.put(col, new LongObj(Long.valueOf(0l)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
+					mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
 				}
-			} else if(type == SqlTypeName.VARCHAR){
+			} else if (type == SqlTypeName.VARCHAR) {
 				mapvalues.put(col, new StringObj(value));
-			} else if(type == SqlTypeName.FLOAT) {
+			} else if (type == SqlTypeName.FLOAT) {
 				if (NumberUtils.isCreatable((String) value)) {
 					mapvalues.put(col, new FloatObj(Float.valueOf(value)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
+					mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(true));
 				} else {
 					mapvalues.put(col, new FloatObj(Float.valueOf(0.0f)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
+					mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
 				}
-			} else if(type == SqlTypeName.DOUBLE) {
+			} else if (type == SqlTypeName.DOUBLE) {
 				if (NumberUtils.isCreatable((String) value)) {
 					mapvalues.put(col, new DoubleObj(Double.valueOf(value)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
+					mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(true));
 				} else {
-					mapvalues.put(col,  new DoubleObj(Double.valueOf(0.0d)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(false));
+					mapvalues.put(col, new DoubleObj(Double.valueOf(0.0d)));
+					mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(false));
 				}
-			} else if(type == SqlTypeName.BOOLEAN) {
-					mapvalues.put(col,  new BooleanObj(Boolean.valueOf(value)));
-					mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
+			} else if (type == SqlTypeName.BOOLEAN) {
+				mapvalues.put(col, new BooleanObj(Boolean.valueOf(value)));
+				mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(true));
 			} else {
 				mapvalues.put(col, new StringObj(value));
-				mapvalues.put(col+DataSamudayaConstants.SQLCOUNTFORAVG,  new BooleanObj(true));
+				mapvalues.put(col + DataSamudayaConstants.SQLCOUNTFORAVG, new BooleanObj(true));
 			}
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			mapvalues.put(col, new StringObj(DataSamudayaConstants.EMPTY));
 		}
 	}
-	
+
 	/**
-	 * Converts yosegi bytes to stream of records 
+	 * The method populates the object and toconsider valueobject for the given
+	 * index
+	 * 
+	 * @param value
+	 * @param type
+	 * @param objvalues
+	 * @param valuestoconsider
+	 * @param index
+	 */
+	public static void getValueByIndex(String value, SqlTypeName type, Object[] objvalues, Object[] valuestoconsider,
+			int index) {
+		try {
+			if (type == SqlTypeName.INTEGER) {
+				if (NumberUtils.isCreatable((String) value)) {
+					objvalues[index] = Integer.valueOf(value);
+					valuestoconsider[index] = true;
+				} else {
+					objvalues[index] = 0;
+					valuestoconsider[index] = false;
+				}
+			} else if (type == SqlTypeName.BIGINT) {
+				if (NumberUtils.isCreatable((String) value)) {
+					objvalues[index] = Long.valueOf(value);
+					valuestoconsider[index] = true;
+				} else {
+					objvalues[index] = 0l;
+					valuestoconsider[index] = false;
+				}
+			} else if (type == SqlTypeName.VARCHAR) {
+				objvalues[index] = value;
+				valuestoconsider[index] = true;
+			} else if (type == SqlTypeName.FLOAT) {
+				if (NumberUtils.isCreatable((String) value)) {
+					objvalues[index] = Float.valueOf(value);
+					valuestoconsider[index] = true;
+				} else {
+					objvalues[index] = 0.0f;
+					valuestoconsider[index] = false;
+				}
+			} else if (type == SqlTypeName.DOUBLE) {
+				if (NumberUtils.isCreatable((String) value)) {
+					objvalues[index] = Double.valueOf(value);
+					valuestoconsider[index] = true;
+				} else {
+					objvalues[index] = 0.0d;
+					valuestoconsider[index] = false;
+				}
+			} else if (type == SqlTypeName.BOOLEAN) {
+				objvalues[index] = Boolean.valueOf(value);
+				valuestoconsider[index] = true;
+			} else {
+				objvalues[index] = value;
+				valuestoconsider[index] = true;
+			}
+		} catch (Exception ex) {
+			objvalues[index] = DataSamudayaConstants.EMPTY;
+			valuestoconsider[index] = false;
+		}
+	}
+
+	/**
+	 * Converts yosegi bytes to stream of records
+	 * 
 	 * @param yosegibytes
 	 * @param reqcols
 	 * @param allcols
@@ -2605,8 +2615,8 @@ public class SQLUtils {
 	 * @return stream of map
 	 * @throws Exception
 	 */
-	public static Stream<Object[]> getYosegiStreamRecords(byte[] yosegibytes, 
-			List<Integer> reqcols, List<String> allcols, List<SqlTypeName> sqltypes) throws Exception {
+	public static Stream<Object[]> getYosegiStreamRecords(byte[] yosegibytes, List<Integer> reqcols,
+			List<String> allcols, List<SqlTypeName> sqltypes) throws Exception {
 		InputStream in = new ByteArrayInputStream(yosegibytes);
 		YosegiSchemaReader reader = new YosegiSchemaReader();
 		reader.setNewStream(in, Long.valueOf(yosegibytes.length), new jp.co.yahoo.yosegi.config.Configuration());
@@ -2614,234 +2624,254 @@ public class SQLUtils {
 		return StreamSupport.stream(new YosegiRecordSpliterator(reader, reqcols, allcols, sqltypesallcols), false);
 
 	}
-	
+
 	/**
-	 * This function populates map from primitiveobject and 
+	 * This function populates map from primitiveobject and
+	 * 
 	 * @param map
 	 * @param col
 	 * @param po
 	 */
-	public static void getValueFromYosegiObject(Object[] valueobjects,Object[] toconsidervalueobjects, String col, Map<String, Object> mapforavg,
-			int index) {
+	public static void getValueFromYosegiObject(Object[] valueobjects, Object[] toconsidervalueobjects, String col,
+			Map<String, Object> mapforavg, int index) {
 		PrimitiveObject po = (PrimitiveObject) mapforavg.get(col);
-    	try {    		
-    		if(po instanceof IntegerObj iobj) {
-    			valueobjects[index]=iobj.getInt();
-    			toconsidervalueobjects[index]=((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean();
-    		} else if(po instanceof LongObj lobj) {
-    			valueobjects[index]=lobj.getLong();
-    			toconsidervalueobjects[index]=((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean();
-    		} else if(po instanceof FloatObj fobj) {
-    			valueobjects[index]=fobj.getFloat();
-    			toconsidervalueobjects[index]=((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean();
-    		} else if(po instanceof DoubleObj dobj) {
-    			valueobjects[index]=dobj.getDouble();
-    			toconsidervalueobjects[index]=((BooleanObj) mapforavg.get(col+DataSamudayaConstants.SQLCOUNTFORAVG)).getBoolean();
-    		} else if(po instanceof BooleanObj bobj) {
-    			valueobjects[index]=bobj.getBoolean();
-    			toconsidervalueobjects[index]=true;
-    		} else if(po instanceof StringObj sobj) {
-    			valueobjects[index]=sobj.getString();
-    			toconsidervalueobjects[index]=true;
-    		}
-    	} catch(Exception ex) {
-    		if(po instanceof StringObj sobj) {
-    			valueobjects[index]="";
-    			toconsidervalueobjects[index]=false;
-    		}
-    	}
+		try {
+			if (po instanceof IntegerObj iobj) {
+				valueobjects[index] = iobj.getInt();
+				toconsidervalueobjects[index] = ((BooleanObj) mapforavg.get(col + DataSamudayaConstants.SQLCOUNTFORAVG))
+						.getBoolean();
+			} else if (po instanceof LongObj lobj) {
+				valueobjects[index] = lobj.getLong();
+				toconsidervalueobjects[index] = ((BooleanObj) mapforavg.get(col + DataSamudayaConstants.SQLCOUNTFORAVG))
+						.getBoolean();
+			} else if (po instanceof FloatObj fobj) {
+				valueobjects[index] = fobj.getFloat();
+				toconsidervalueobjects[index] = ((BooleanObj) mapforavg.get(col + DataSamudayaConstants.SQLCOUNTFORAVG))
+						.getBoolean();
+			} else if (po instanceof DoubleObj dobj) {
+				valueobjects[index] = dobj.getDouble();
+				toconsidervalueobjects[index] = ((BooleanObj) mapforavg.get(col + DataSamudayaConstants.SQLCOUNTFORAVG))
+						.getBoolean();
+			} else if (po instanceof BooleanObj bobj) {
+				valueobjects[index] = bobj.getBoolean();
+				toconsidervalueobjects[index] = true;
+			} else if (po instanceof StringObj sobj) {
+				valueobjects[index] = sobj.getString();
+				toconsidervalueobjects[index] = true;
+			}
+		} catch (Exception ex) {
+			if (po instanceof StringObj sobj) {
+				valueobjects[index] = "";
+				toconsidervalueobjects[index] = false;
+			}
+		}
 	}
-	
+
 	/**
 	 * Evaluates expression
+	 * 
 	 * @param node
 	 * @param values
 	 * @return predicate as true or false
 	 */
 	public static boolean evaluateExpression(RexNode node, Object[] values) {
 		if (node.isA(SqlKind.AND)) {
-            // For AND nodes, recursively evaluate left and right children
-            RexCall call = (RexCall) node;
-            boolean initvalue = true;
-            for(int operandindex=0;operandindex<call.operands.size();operandindex++) {
-            	initvalue = initvalue && evaluateExpression(call.operands.get(operandindex), values);
-            	if(!initvalue) {
-            		break;
-            	}
-            }
-            return initvalue;
-        } else if (node.isA(SqlKind.OR)) {
-            // For OR nodes, recursively evaluate left and right children
-            RexCall call = (RexCall) node;
-            boolean initvalue = false;
-            for(int operandindex=0;operandindex<call.operands.size();operandindex++) {
-            	initvalue = initvalue || evaluateExpression(call.operands.get(operandindex), values);
-            	if(initvalue) {
-            		break;
-            	}
-            }
-            return initvalue;
-        } else if (node.isA(SqlKind.EQUALS)) {
-            // For EQUALS nodes, evaluate left and right children
-            RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values);
-            Object value2 = getValueObject(call.operands.get(1), values);
-            return  evaluatePredicate(value1, value2, "=");
-        } else if (node.isA(SqlKind.NOT_EQUALS)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values);
-            Object value2 = getValueObject(call.operands.get(1), values);
-            return  evaluatePredicate(value1, value2, "<>");
-        } else if (node.isA(SqlKind.GREATER_THAN)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values);
-            Object value2 = getValueObject(call.operands.get(1), values);
-            return  evaluatePredicate(value1, value2, ">");
-        } else if (node.isA(SqlKind.GREATER_THAN_OR_EQUAL)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values);
-            Object value2 = getValueObject(call.operands.get(1), values);
-            return  evaluatePredicate(value1, value2, ">=");
-        } else if (node.isA(SqlKind.LESS_THAN)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values);
-            Object value2 = getValueObject(call.operands.get(1), values);
-            return  evaluatePredicate(value1, value2, "<");
-        } else if (node.isA(SqlKind.LESS_THAN_OR_EQUAL)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values);
-            Object value2 = getValueObject(call.operands.get(1), values);
-            return  evaluatePredicate(value1, value2, "<=");
-        } else if (node.isA(SqlKind.LIKE)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values);
-            Object value2 = getValueObject(call.operands.get(1), values);
-            return  value1.equals(value2);
-        } else {
-        	return false;
-        }
-    }
-	
+			// For AND nodes, recursively evaluate left and right children
+			RexCall call = (RexCall) node;
+			boolean initvalue = true;
+			for (int operandindex = 0; operandindex < call.operands.size(); operandindex++) {
+				initvalue = initvalue && evaluateExpression(call.operands.get(operandindex), values);
+				if (!initvalue) {
+					break;
+				}
+			}
+			return initvalue;
+		} else if (node.isA(SqlKind.OR)) {
+			// For OR nodes, recursively evaluate left and right children
+			RexCall call = (RexCall) node;
+			boolean initvalue = false;
+			for (int operandindex = 0; operandindex < call.operands.size(); operandindex++) {
+				initvalue = initvalue || evaluateExpression(call.operands.get(operandindex), values);
+				if (initvalue) {
+					break;
+				}
+			}
+			return initvalue;
+		} else if (node.isA(SqlKind.EQUALS)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values);
+			Object value2 = getValueObject(call.operands.get(1), values);
+			return evaluatePredicate(value1, value2, "=");
+		} else if (node.isA(SqlKind.NOT_EQUALS)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values);
+			Object value2 = getValueObject(call.operands.get(1), values);
+			return evaluatePredicate(value1, value2, "<>");
+		} else if (node.isA(SqlKind.GREATER_THAN)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values);
+			Object value2 = getValueObject(call.operands.get(1), values);
+			return evaluatePredicate(value1, value2, ">");
+		} else if (node.isA(SqlKind.GREATER_THAN_OR_EQUAL)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values);
+			Object value2 = getValueObject(call.operands.get(1), values);
+			return evaluatePredicate(value1, value2, ">=");
+		} else if (node.isA(SqlKind.LESS_THAN)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values);
+			Object value2 = getValueObject(call.operands.get(1), values);
+			return evaluatePredicate(value1, value2, "<");
+		} else if (node.isA(SqlKind.LESS_THAN_OR_EQUAL)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values);
+			Object value2 = getValueObject(call.operands.get(1), values);
+			return evaluatePredicate(value1, value2, "<=");
+		} else if (node.isA(SqlKind.LIKE)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values);
+			Object value2 = getValueObject(call.operands.get(1), values);
+			return value1.equals(value2);
+		} else {
+			return false;
+		}
+	}
+
 	/**
 	 * Evaluate whether to consider for aggregate
+	 * 
 	 * @param rexnode
 	 * @param boolvalues
-	 * @return true or false 
+	 * @return true or false
 	 */
 	public static boolean toEvaluateRexNode(RexNode rexnode, Object[] boolvalues) {
-		if (rexnode.isA(SqlKind.PLUS) ||
-				rexnode.isA(SqlKind.MINUS)||
-				rexnode.isA(SqlKind.TIMES)||
-				rexnode.isA(SqlKind.DIVIDE)) {
-	        // For addition nodes, recursively evaluate left and right children
-	        RexCall call = (RexCall) rexnode;
-	        return toEvaluateRexNode(call.operands.get(0), boolvalues) && toEvaluateRexNode(call.operands.get(1), boolvalues);
-	    } else if (rexnode.isA(SqlKind.LITERAL)) {
-	        return true;
-	    } else if (rexnode instanceof RexInputRef inputRef) {
-            // Handle column references            
-            return (Boolean) boolvalues[inputRef.getIndex()];
-        } else if(rexnode instanceof RexCall call) {
+		if (rexnode.isA(SqlKind.PLUS) || rexnode.isA(SqlKind.MINUS) || rexnode.isA(SqlKind.TIMES)
+				|| rexnode.isA(SqlKind.DIVIDE)) {
+			// For addition nodes, recursively evaluate left and right children
+			RexCall call = (RexCall) rexnode;
+			return toEvaluateRexNode(call.operands.get(0), boolvalues)
+					&& toEvaluateRexNode(call.operands.get(1), boolvalues);
+		} else if (rexnode.isA(SqlKind.LITERAL)) {
+			return true;
+		} else if (rexnode instanceof RexInputRef inputRef) {
+			// Handle column references
+			if(boolvalues.length < inputRef.getIndex()) {
+				return true;
+			}
+			return (Boolean) boolvalues[inputRef.getIndex()];
+		} else if (rexnode instanceof RexCall call) {
 			String name = call.getOperator().getName().toLowerCase();
-			if(name.equals("pow")) {
-				return toEvaluateRexNode(call.operands.get(0), boolvalues) 
+			if ("pow".equals(name)) {
+				return toEvaluateRexNode(call.operands.get(0), boolvalues)
 						&& toEvaluateRexNode(call.operands.get(1), boolvalues);
-			} else if(name.equals("substring")){
-				return toEvaluateRexNode(call.operands.get(0), boolvalues) && toEvaluateRexNode(call.operands.get(1), boolvalues) && toEvaluateRexNode(call.operands.get(2), boolvalues);
+			} else if ("substring".equals(name)) {
+				boolean resultvalue = toEvaluateRexNode(call.operands.get(0), boolvalues)
+				&& toEvaluateRexNode(call.operands.get(1), boolvalues);
+				resultvalue = call.operands.size()>2?resultvalue && toEvaluateRexNode(call.operands.get(2), boolvalues):resultvalue;
+				return resultvalue;
 			} else {
 				for (RexNode opernode : call.operands) {
 					return toEvaluateRexNode(opernode, boolvalues);
 				}
 				return true;
 			}
-        } else {
-        	return false;
-        }
+		} else {
+			return false;
+		}
 	}
-	
-	
-	
+
 	/**
 	 * Gets value Object from RexNode and values
+	 * 
 	 * @param node
 	 * @param values
 	 * @return returns the values of RexNode
 	 */
 	public static Object getValueObject(RexNode node, Object[] values) {
 		if (node.isA(SqlKind.PLUS)) {
-	        // For addition nodes, recursively evaluate left and right children
-	        RexCall call = (RexCall) node;
-	        return evaluateValuesByOperator(getValueObject(call.operands.get(0), values) , getValueObject(call.operands.get(1), values), "+");
-	    } else if (node.isA(SqlKind.MINUS)) {
-	        // For subtraction nodes, recursively evaluate left and right children
-	        RexCall call = (RexCall) node;
-	        return evaluateValuesByOperator(getValueObject(call.operands.get(0),values), getValueObject(call.operands.get(1), values), "-");
-	    } else if (node.isA(SqlKind.TIMES)) {
-	        // For multiplication nodes, recursively evaluate left and right children
-	        RexCall call = (RexCall) node;
-	        return evaluateValuesByOperator(getValueObject(call.operands.get(0),values) , getValueObject(call.operands.get(1), values),"*");
-	    } else if (node.isA(SqlKind.DIVIDE)) {
-	        // For division nodes, recursively evaluate left and right children
-	        RexCall call = (RexCall) node;
-	        return evaluateValuesByOperator(getValueObject(call.operands.get(0), values) , getValueObject(call.operands.get(1), values), "/");
-	    } else if (node.isA(SqlKind.LITERAL)) {
-	        // For literals, return their value
-	        RexLiteral literal = (RexLiteral) node;	        
-	        return getValue(literal, literal.getType().getSqlTypeName());
-	    } else if (node.isA(SqlKind.FUNCTION)) {
-	        // For functions, return their value
-	        return evaluateRexNode(node, values);
-	    } else if (node instanceof RexInputRef inputRef) {
-            // Handle column references            
-            return values[inputRef.getIndex()];
-        } else {
-        	return null;
-        }
+			// For addition nodes, recursively evaluate left and right children
+			RexCall call = (RexCall) node;
+			return evaluateValuesByOperator(getValueObject(call.operands.get(0), values),
+					getValueObject(call.operands.get(1), values), "+");
+		} else if (node.isA(SqlKind.MINUS)) {
+			// For subtraction nodes, recursively evaluate left and right
+			// children
+			RexCall call = (RexCall) node;
+			return evaluateValuesByOperator(getValueObject(call.operands.get(0), values),
+					getValueObject(call.operands.get(1), values), "-");
+		} else if (node.isA(SqlKind.TIMES)) {
+			// For multiplication nodes, recursively evaluate left and right
+			// children
+			RexCall call = (RexCall) node;
+			return evaluateValuesByOperator(getValueObject(call.operands.get(0), values),
+					getValueObject(call.operands.get(1), values), "*");
+		} else if (node.isA(SqlKind.DIVIDE)) {
+			// For division nodes, recursively evaluate left and right children
+			RexCall call = (RexCall) node;
+			return evaluateValuesByOperator(getValueObject(call.operands.get(0), values),
+					getValueObject(call.operands.get(1), values), "/");
+		} else if (node.isA(SqlKind.LITERAL)) {
+			// For literals, return their value
+			RexLiteral literal = (RexLiteral) node;
+			return getValue(literal, literal.getType().getSqlTypeName());
+		} else if (node.isA(SqlKind.FUNCTION)) {
+			// For functions, return their value
+			return evaluateRexNode(node, values);
+		} else if (node instanceof RexInputRef inputRef) {
+			// Handle column references
+			return values[inputRef.getIndex()];
+		} else {
+			return null;
+		}
 	}
-	
+
 	public static Object getValue(RexLiteral value, SqlTypeName type) {
 		try {
-			if(type == SqlTypeName.INTEGER) {
+			if (type == SqlTypeName.INTEGER) {
 				return value.getValueAs(Integer.class);
-			} else if(type == SqlTypeName.BIGINT) {
+			} else if (type == SqlTypeName.BIGINT) {
 				return value.getValueAs(Long.class);
-			} else if(type == SqlTypeName.VARCHAR){
+			} else if (type == SqlTypeName.VARCHAR) {
 				return value.getValueAs(String.class);
-			} else if(type == SqlTypeName.CHAR){
+			} else if (type == SqlTypeName.CHAR) {
 				return value.getValueAs(String.class);
-			} else if(type == SqlTypeName.FLOAT) {
+			} else if (type == SqlTypeName.FLOAT) {
 				return value.getValueAs(Float.class);
-			} else if(type == SqlTypeName.DOUBLE) {
+			} else if (type == SqlTypeName.DOUBLE) {
 				return value.getValueAs(Double.class);
-			} else if(type == SqlTypeName.DECIMAL) {
+			} else if (type == SqlTypeName.DECIMAL) {
 				return value.getValueAs(Double.class);
+			} else if (type == SqlTypeName.BOOLEAN) {
+				return value.getValueAs(Boolean.class);
+			} else if (type == SqlTypeName.SYMBOL) {
+				return ((SqlTrimFunction.Flag)value.getValue4()).name();
 			} else {
 				return value.getValueAs(String.class);
 			}
-		} catch(Exception ex) {
-			if(type == SqlTypeName.INTEGER) {
+		} catch (Exception ex) {
+			if (type == SqlTypeName.INTEGER) {
 				return Integer.valueOf(0);
-			} else if(type == SqlTypeName.BIGINT) {
+			} else if (type == SqlTypeName.BIGINT) {
 				return Long.valueOf(0);
-			} else if(type == SqlTypeName.VARCHAR){
+			} else if (type == SqlTypeName.VARCHAR) {
 				return String.valueOf(DataSamudayaConstants.EMPTY);
-			} else if(type == SqlTypeName.FLOAT) {
-				return Float.valueOf(0.0f);			
-			} else if(type == SqlTypeName.DOUBLE) {
+			} else if (type == SqlTypeName.FLOAT) {
+				return Float.valueOf(0.0f);
+			} else if (type == SqlTypeName.DOUBLE) {
 				return Double.valueOf(0.0d);
 			} else {
 				return String.valueOf(DataSamudayaConstants.EMPTY);
 			}
 		}
 	}
-	
-	
+
 	/**
 	 * 
 	 * @param aggfunctions
@@ -2851,57 +2881,58 @@ public class SQLUtils {
 	 */
 	public static Tuple evaluateTuple(List<String> aggfunctions, Tuple tuple1, Tuple tuple2) {
 		try {
-            // Get the class of the Tuple
-            Class<?> tupleClass = tuple1.getClass();
-            // Create a new instance of the Tuple
-            Tuple result = (Tuple) tupleClass.getConstructor(tuple2.getClass()).newInstance(tuple1);
-            // Get all the fields of the Tuple class
-            java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
-            int index = 0;
-            boolean avgindex = false;
-            String func = aggfunctions.get(index);
-            // Iterate over the fields and perform summation
-            for (java.lang.reflect.Field field : fields) {
-                // Make the field accessible, as it might be private
-                field.setAccessible(true);
+			// Get the class of the Tuple
+			Class<?> tupleClass = tuple1.getClass();
+			// Create a new instance of the Tuple
+			Tuple result = (Tuple) tupleClass.getConstructor(tuple2.getClass()).newInstance(tuple1);
+			// Get all the fields of the Tuple class
+			java.lang.reflect.Field[] fields = tuple1.getClass().getFields();
+			int index = 0;
+			boolean avgindex = false;
+			String func = aggfunctions.get(index);
+			// Iterate over the fields and perform summation
+			for (java.lang.reflect.Field field : fields) {
+				// Make the field accessible, as it might be private
+				field.setAccessible(true);
 
-                // Get the values of the fields from both tuples
-                Object value1 = field.get(tuple1);
-                Object value2 = field.get(tuple2);
-                field.set(result,evaluateFunction(func, value1, value2));
-                // Set the sum of the values in the result tuple                
-                if(index+1<aggfunctions.size()) {
-                	if(avgindex) {
-                		func = aggfunctions.get(index);
-                    	avgindex = false;
-                    	index++;
-                	} else if(!aggfunctions.get(index).equalsIgnoreCase("avg")) {
-                		func = aggfunctions.get(index+1);
-                		index++;
-                		avgindex = false;
-                	} else {
-                    	func = aggfunctions.get(index);
-                    	avgindex = true;
-                    }
-                } 
-            }
+				// Get the values of the fields from both tuples
+				Object value1 = field.get(tuple1);
+				Object value2 = field.get(tuple2);
+				field.set(result, evaluateFunction(func, value1, value2));
+				// Set the sum of the values in the result tuple
+				if (index + 1 < aggfunctions.size()) {
+					if (avgindex) {
+						func = aggfunctions.get(index);
+						avgindex = false;
+						index++;
+					} else if (!"avg".equalsIgnoreCase(aggfunctions.get(index))) {
+						func = aggfunctions.get(index + 1);
+						index++;
+						avgindex = false;
+					} else {
+						func = aggfunctions.get(index);
+						avgindex = true;
+					}
+				}
+			}
 
-            return result;
-        } catch (Exception ex) {
-        	log.error(DataSamudayaConstants.EMPTY, ex);
-        }
+			return result;
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
 		return null;
 	}
-	
+
 	/**
 	 * Evaluates function By function name
+	 * 
 	 * @param func
 	 * @param leftValue
 	 * @param rightValue
 	 * @return evaluated values
 	 */
 	public static Object evaluateFunction(String functionname, Object leftValue, Object rightValue) {
-		if (functionname.startsWith("count") || functionname.startsWith("sum") || functionname.startsWith("avg")) {			
+		if (functionname.startsWith("count") || functionname.startsWith("sum") || functionname.startsWith("avg")) {
 			return evaluateValuesByOperator(leftValue, rightValue, "+");
 		} else if (functionname.startsWith("min")) {
 			return SQLUtils.evaluateValuesByFunctionMin(leftValue, rightValue);
@@ -2910,224 +2941,225 @@ public class SQLUtils {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Gets Object from tuple
+	 * 
 	 * @param tuple
 	 * @return values array
 	 */
 	public static Object[] populateObjectFromTuple(Tuple tuple) {
-		if(tuple instanceof Tuple1 tup && tup.v1().equals(DataSamudayaConstants.EMPTY)) {
+		if (tuple instanceof Tuple1 tup && tup.v1().equals(DataSamudayaConstants.EMPTY)) {
 			return null;
-		} else if(tuple instanceof Tuple1 tup) {
+		} else if (tuple instanceof Tuple1 tup) {
 			Object[] mapvalues = new Object[1];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			return mapvalues;
-		} else if(tuple instanceof Tuple2 tup) {
+		} else if (tuple instanceof Tuple2 tup) {
 			Object[] mapvalues = new Object[2];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			return mapvalues;
-		} else if(tuple instanceof Tuple3 tup) {
+		} else if (tuple instanceof Tuple3 tup) {
 			Object[] mapvalues = new Object[3];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			return mapvalues;
-		} else if(tuple instanceof Tuple4 tup) {
+		} else if (tuple instanceof Tuple4 tup) {
 			Object[] mapvalues = new Object[4];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
 			return mapvalues;
-		}else if(tuple instanceof Tuple5 tup) {
+		} else if (tuple instanceof Tuple5 tup) {
 			Object[] mapvalues = new Object[5];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
+			mapvalues[4] = tup.v5();
 			return mapvalues;
-		}else if(tuple instanceof Tuple6 tup) {
+		} else if (tuple instanceof Tuple6 tup) {
 			Object[] mapvalues = new Object[6];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
 			return mapvalues;
-		}else if(tuple instanceof Tuple7 tup) {
+		} else if (tuple instanceof Tuple7 tup) {
 			Object[] mapvalues = new Object[7];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
 			return mapvalues;
-		}else if(tuple instanceof Tuple8 tup) {
+		} else if (tuple instanceof Tuple8 tup) {
 			Object[] mapvalues = new Object[8];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
-			mapvalues[7] =  tup.v8();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
+			mapvalues[7] = tup.v8();
 			return mapvalues;
-		}else if(tuple instanceof Tuple9 tup) {
+		} else if (tuple instanceof Tuple9 tup) {
 			Object[] mapvalues = new Object[9];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
-			mapvalues[7] =  tup.v8();
-			mapvalues[8] =  tup.v9();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
+			mapvalues[7] = tup.v8();
+			mapvalues[8] = tup.v9();
 			return mapvalues;
-		}else if(tuple instanceof Tuple10 tup) {
+		} else if (tuple instanceof Tuple10 tup) {
 			Object[] mapvalues = new Object[10];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
-			mapvalues[7] =  tup.v8();
-			mapvalues[8] =  tup.v9();
-			mapvalues[9] =  tup.v10();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
+			mapvalues[7] = tup.v8();
+			mapvalues[8] = tup.v9();
+			mapvalues[9] = tup.v10();
 			return mapvalues;
-		}else if(tuple instanceof Tuple11 tup) {
+		} else if (tuple instanceof Tuple11 tup) {
 			Object[] mapvalues = new Object[11];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
-			mapvalues[7] =  tup.v8();
-			mapvalues[8] =  tup.v9();
-			mapvalues[9] =  tup.v10();
-			mapvalues[10] =  tup.v11();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
+			mapvalues[7] = tup.v8();
+			mapvalues[8] = tup.v9();
+			mapvalues[9] = tup.v10();
+			mapvalues[10] = tup.v11();
 			return mapvalues;
-		}else if(tuple instanceof Tuple12 tup) {
+		} else if (tuple instanceof Tuple12 tup) {
 			Object[] mapvalues = new Object[12];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
-			mapvalues[7] =  tup.v8();
-			mapvalues[8] =  tup.v9();
-			mapvalues[9] =  tup.v10();
-			mapvalues[10] =  tup.v11();
-			mapvalues[11] =  tup.v12();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
+			mapvalues[7] = tup.v8();
+			mapvalues[8] = tup.v9();
+			mapvalues[9] = tup.v10();
+			mapvalues[10] = tup.v11();
+			mapvalues[11] = tup.v12();
 			return mapvalues;
-		} else if(tuple instanceof Tuple13 tup) {
+		} else if (tuple instanceof Tuple13 tup) {
 			Object[] mapvalues = new Object[13];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
-			mapvalues[7] =  tup.v8();
-			mapvalues[8] =  tup.v9();
-			mapvalues[9] =  tup.v10();
-			mapvalues[10] =  tup.v11();
-			mapvalues[11] =  tup.v12();
-			mapvalues[12] =  tup.v13();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
+			mapvalues[7] = tup.v8();
+			mapvalues[8] = tup.v9();
+			mapvalues[9] = tup.v10();
+			mapvalues[10] = tup.v11();
+			mapvalues[11] = tup.v12();
+			mapvalues[12] = tup.v13();
 			return mapvalues;
-		} else if(tuple instanceof Tuple14 tup) {
+		} else if (tuple instanceof Tuple14 tup) {
 			Object[] mapvalues = new Object[14];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
-			mapvalues[7] =  tup.v8();
-			mapvalues[8] =  tup.v9();
-			mapvalues[9] =  tup.v10();
-			mapvalues[10] =  tup.v11();
-			mapvalues[11] =  tup.v12();
-			mapvalues[12] =  tup.v13();
-			mapvalues[13] =  tup.v14();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
+			mapvalues[7] = tup.v8();
+			mapvalues[8] = tup.v9();
+			mapvalues[9] = tup.v10();
+			mapvalues[10] = tup.v11();
+			mapvalues[11] = tup.v12();
+			mapvalues[12] = tup.v13();
+			mapvalues[13] = tup.v14();
 			return mapvalues;
-		}else if(tuple instanceof Tuple15 tup) {
+		} else if (tuple instanceof Tuple15 tup) {
 			Object[] mapvalues = new Object[15];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
-			mapvalues[7] =  tup.v8();
-			mapvalues[8] =  tup.v9();
-			mapvalues[9] =  tup.v10();
-			mapvalues[10] =  tup.v11();
-			mapvalues[11] =  tup.v12();
-			mapvalues[12] =  tup.v13();
-			mapvalues[13] =  tup.v14();
-			mapvalues[14] =  tup.v15();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
+			mapvalues[7] = tup.v8();
+			mapvalues[8] = tup.v9();
+			mapvalues[9] = tup.v10();
+			mapvalues[10] = tup.v11();
+			mapvalues[11] = tup.v12();
+			mapvalues[12] = tup.v13();
+			mapvalues[13] = tup.v14();
+			mapvalues[14] = tup.v15();
 			return mapvalues;
-		}else if(tuple instanceof Tuple16 tup) {
+		} else if (tuple instanceof Tuple16 tup) {
 			Object[] mapvalues = new Object[16];
-			mapvalues[0] =tup.v1();
+			mapvalues[0] = tup.v1();
 			mapvalues[1] = tup.v2();
 			mapvalues[2] = tup.v3();
 			mapvalues[3] = tup.v4();
-			mapvalues[4] =  tup.v5();
-			mapvalues[5] =  tup.v6();
-			mapvalues[6] =  tup.v7();
-			mapvalues[7] =  tup.v8();
-			mapvalues[8] =  tup.v9();
-			mapvalues[9] =  tup.v10();
-			mapvalues[10] =  tup.v11();
-			mapvalues[11] =  tup.v12();
-			mapvalues[12] =  tup.v13();
-			mapvalues[13] =  tup.v14();
-			mapvalues[14] =  tup.v15();
-			mapvalues[15] =  tup.v16();
+			mapvalues[4] = tup.v5();
+			mapvalues[5] = tup.v6();
+			mapvalues[6] = tup.v7();
+			mapvalues[7] = tup.v8();
+			mapvalues[8] = tup.v9();
+			mapvalues[9] = tup.v10();
+			mapvalues[10] = tup.v11();
+			mapvalues[11] = tup.v12();
+			mapvalues[12] = tup.v13();
+			mapvalues[13] = tup.v14();
+			mapvalues[14] = tup.v15();
+			mapvalues[15] = tup.v16();
 			return mapvalues;
-		}else {
+		} else {
 			throw new UnsupportedOperationException("Max supported Column is 16");
 		}
 	}
-	
+
 	/**
 	 * The function returns array of group by column indexes
+	 * 
 	 * @param aggregate
 	 * @return column indexes
 	 */
 	public static int[] getGroupByColumnIndexes(EnumerableAggregateBase aggregate) {
-        // Extract the BitSet representing the Group By columns
-        ImmutableBitSet groupSet = aggregate.getGroupSet();
+		// Extract the BitSet representing the Group By columns
+		ImmutableBitSet groupSet = aggregate.getGroupSet();
 
-        // Convert the BitSet to an array of integers
-        int[] groupByColumnIndexes = new int[groupSet.cardinality()];
-        int index = 0;
-        for (int i = groupSet.nextSetBit(0); i >= 0; i = groupSet.nextSetBit(i + 1)) {
-            groupByColumnIndexes[index++] = i;
-        }
+		// Convert the BitSet to an array of integers
+		int[] groupByColumnIndexes = new int[groupSet.cardinality()];
+		int index = 0;
+		for (int i = groupSet.nextSetBit(0); i >= 0; i = groupSet.nextSetBit(i + 1)) {
+			groupByColumnIndexes[index++] = i;
+		}
 
-        return groupByColumnIndexes;
-    }
-	
-	
+		return groupByColumnIndexes;
+	}
+
 	public static Object[] populateObjectFromFunctions(Tuple tuple, List<String> functions) {
 		try {
 			Class<?> cls = tuple.getClass();
@@ -3149,24 +3181,26 @@ public class SQLUtils {
 				valueindex++;
 			}
 			return processedvalues.toArray(new Object[0]);
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 		return null;
 	}
-	
+
 	/**
-	 * The functions checks whether the RelNode has decendants. 
+	 * The functions checks whether the RelNode has decendants.
+	 * 
 	 * @param relnode
 	 * @param descendants
 	 * @return true or false
 	 */
 	public static boolean hasDescendants(RelNode relnode, Map<RelNode, Boolean> descendants) {
 		return descendants.get(relnode);
-    }
-	
+	}
+
 	/**
 	 * This function evaluates expression.
+	 * 
 	 * @param node
 	 * @param values1
 	 * @param values2
@@ -3174,58 +3208,62 @@ public class SQLUtils {
 	 */
 	public static boolean evaluateExpression(RexNode node, Object[] values1, Object[] values2) {
 		if (node.isA(SqlKind.AND)) {
-            // For AND nodes, recursively evaluate left and right children
-            RexCall call = (RexCall) node;
-            return evaluateExpression(call.operands.get(0), values1, values2) 
-            		&& evaluateExpression(call.operands.get(1), values1, values2);
-        } else if (node.isA(SqlKind.OR)) {
-            // For OR nodes, recursively evaluate left and right children
-            RexCall call = (RexCall) node;
-            return evaluateExpression(call.operands.get(0), values1, values2) || 
-            		evaluateExpression(call.operands.get(1), values1, values2);
-        } else if (node.isA(SqlKind.EQUALS)) {
-            // For EQUALS nodes, evaluate left and right children
-            RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values1, values2);
-            Object value2 = getValueObject(call.operands.get(1), values1, values2);
-            return  evaluatePredicate(value1, value2, "=");
-        } else if (node.isA(SqlKind.NOT_EQUALS)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values1, values2);
-            Object value2 = getValueObject(call.operands.get(1), values1, values2);
-            return  evaluatePredicate(value1, value2, "<>");
-        } else if (node.isA(SqlKind.GREATER_THAN)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values1, values2);
-            Object value2 = getValueObject(call.operands.get(1), values1, values2);
-            return  evaluatePredicate(value1, value2, ">");
-        } else if (node.isA(SqlKind.GREATER_THAN_OR_EQUAL)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values1, values2);
-            Object value2 = getValueObject(call.operands.get(1), values1, values2);
-            return  evaluatePredicate(value1, value2, ">=");
-        } else if (node.isA(SqlKind.LESS_THAN)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values1, values2);
-            Object value2 = getValueObject(call.operands.get(1), values1, values2);
-            return  evaluatePredicate(value1, value2, "<");
-        } else if (node.isA(SqlKind.LESS_THAN_OR_EQUAL)) {
-            // For EQUALS nodes, evaluate left and right children
-        	RexCall call = (RexCall) node;
-            Object value1 = getValueObject(call.operands.get(0), values1, values2);
-            Object value2 = getValueObject(call.operands.get(1), values1, values2);
-            return  evaluatePredicate(value1, value2, "<=");
-        } else {
-        	return false;
-        }
-    }
-	
+			// For AND nodes, recursively evaluate left and right children
+			RexCall call = (RexCall) node;
+			return evaluateExpression(call.operands.get(0), values1, values2)
+					&& evaluateExpression(call.operands.get(1), values1, values2);
+		} else if (node.isA(SqlKind.OR)) {
+			// For OR nodes, recursively evaluate left and right children
+			RexCall call = (RexCall) node;
+			return evaluateExpression(call.operands.get(0), values1, values2)
+					|| evaluateExpression(call.operands.get(1), values1, values2);
+		} else if (node.isA(SqlKind.EQUALS)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values1, values2);
+			Object value2 = getValueObject(call.operands.get(1), values1, values2);
+			return evaluatePredicate(value1, value2, "=");
+		} else if (node.isA(SqlKind.NOT_EQUALS)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values1, values2);
+			Object value2 = getValueObject(call.operands.get(1), values1, values2);
+			return evaluatePredicate(value1, value2, "<>");
+		} else if (node.isA(SqlKind.GREATER_THAN)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values1, values2);
+			Object value2 = getValueObject(call.operands.get(1), values1, values2);
+			return evaluatePredicate(value1, value2, ">");
+		} else if (node.isA(SqlKind.GREATER_THAN_OR_EQUAL)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values1, values2);
+			Object value2 = getValueObject(call.operands.get(1), values1, values2);
+			return evaluatePredicate(value1, value2, ">=");
+		} else if (node.isA(SqlKind.LESS_THAN)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values1, values2);
+			Object value2 = getValueObject(call.operands.get(1), values1, values2);
+			return evaluatePredicate(value1, value2, "<");
+		} else if (node.isA(SqlKind.LESS_THAN_OR_EQUAL)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values1, values2);
+			Object value2 = getValueObject(call.operands.get(1), values1, values2);
+			return evaluatePredicate(value1, value2, "<=");
+		} else if (node instanceof RexLiteral rlit) {
+			// Boolean Value
+			return (boolean) getValue((RexLiteral)rlit, rlit.getType().getSqlTypeName());
+		} else {
+			return false;
+		}
+	}
+
 	/**
 	 * The function returns the values from value object for evaluation
+	 * 
 	 * @param node
 	 * @param values1
 	 * @param values2
@@ -3233,338 +3271,858 @@ public class SQLUtils {
 	 */
 	public static Object getValueObject(RexNode node, Object[] values1, Object[] values2) {
 		if (node.isA(SqlKind.PLUS)) {
-	        // For addition nodes, recursively evaluate left and right children
-	        RexCall call = (RexCall) node;
-	        return evaluateValuesByOperator(getValueObject(call.operands.get(0), values1, values2) , getValueObject(call.operands.get(1), values1, values2), "+");
-	    } else if (node.isA(SqlKind.MINUS)) {
-	        // For subtraction nodes, recursively evaluate left and right children
-	        RexCall call = (RexCall) node;
-	        return evaluateValuesByOperator(getValueObject(call.operands.get(0),values1, values2), getValueObject(call.operands.get(1), values1, values2), "-");
-	    } else if (node.isA(SqlKind.TIMES)) {
-	        // For multiplication nodes, recursively evaluate left and right children
-	        RexCall call = (RexCall) node;
-	        return evaluateValuesByOperator(getValueObject(call.operands.get(0),values1, values2) , getValueObject(call.operands.get(1), values1, values2),"*");
-	    } else if (node.isA(SqlKind.DIVIDE)) {
-	        // For division nodes, recursively evaluate left and right children
-	        RexCall call = (RexCall) node;
-	        return evaluateValuesByOperator(getValueObject(call.operands.get(0), values1, values2) , getValueObject(call.operands.get(1), values1, values2), "/");
-	    } else if (node.isA(SqlKind.LITERAL)) {
-	        // For literals, return their value
-	        RexLiteral literal = (RexLiteral) node;	        
-	        return literal.getValue2();
-	    } else if (node instanceof RexInputRef inputRef) {
-            // Handle column references
-	    	return inputRef.getIndex() < values1.length?values1[inputRef.getIndex()]:values2[inputRef.getIndex()-values1.length];
-        } else {
-        	return null;
-        }
+			// For addition nodes, recursively evaluate left and right children
+			RexCall call = (RexCall) node;
+			return evaluateValuesByOperator(getValueObject(call.operands.get(0), values1, values2),
+					getValueObject(call.operands.get(1), values1, values2), "+");
+		} else if (node.isA(SqlKind.MINUS)) {
+			// For subtraction nodes, recursively evaluate left and right
+			// children
+			RexCall call = (RexCall) node;
+			return evaluateValuesByOperator(getValueObject(call.operands.get(0), values1, values2),
+					getValueObject(call.operands.get(1), values1, values2), "-");
+		} else if (node.isA(SqlKind.TIMES)) {
+			// For multiplication nodes, recursively evaluate left and right
+			// children
+			RexCall call = (RexCall) node;
+			return evaluateValuesByOperator(getValueObject(call.operands.get(0), values1, values2),
+					getValueObject(call.operands.get(1), values1, values2), "*");
+		} else if (node.isA(SqlKind.DIVIDE)) {
+			// For division nodes, recursively evaluate left and right children
+			RexCall call = (RexCall) node;
+			return evaluateValuesByOperator(getValueObject(call.operands.get(0), values1, values2),
+					getValueObject(call.operands.get(1), values1, values2), "/");
+		} else if (node.isA(SqlKind.LITERAL)) {
+			// For literals, return their value
+			RexLiteral literal = (RexLiteral) node;
+			return literal.getValue2();
+		} else if (node instanceof RexInputRef inputRef) {
+			// Handle column references
+			return inputRef.getIndex() < values1.length ? values1[inputRef.getIndex()]
+					: values2[inputRef.getIndex() - values1.length];
+		} else {
+			return null;
+		}
 	}
-	
+
 	/**
-	 * Evaluates function RexNode with given values 
+	 * Evaluates function RexNode with given values
+	 * 
 	 * @param node
 	 * @param values
 	 * @return value processed
 	 */
 	public static Object evaluateRexNode(RexNode node, Object[] values) {
-		if(node.isA(SqlKind.FUNCTION) || node.isA(SqlKind.CASE)) {
+		if (node.isA(SqlKind.FUNCTION) || node.isA(SqlKind.CASE)) {
 			RexCall call = (RexCall) node;
-			RexNode expfunc = call.getOperands().size()>0?call.getOperands().get(0):null;
+			RexNode expfunc = call.getOperands().size() > 0 ? call.getOperands().get(0) : null;
 			String name = call.getOperator().getName().toLowerCase();
 			switch (name) {
-				case "abs":
-	                	               
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "abs");
-				case "length":
-	                // Get the length of string value	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "length");
-	                
-				case "round":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "round");
-				case "ceil":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "ceil");
-				case "floor":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "floor");
-				case "pow":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), evaluateRexNode(call.getOperands().get(1), values), "pow");
-				case "sqrt":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "sqrt");
-				case "exp":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "exp");
-				case "loge":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "loge");
-				case "lowercase":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "lowercase");
-				case "uppercase":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "uppercase");
-				case "base64encode":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "base64encode");
-				case "base64decode":
-	                
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "base64decode");
-				case "normalizespaces":
-					
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "normalizespaces");
-				case "currentisodate":
-					
-					return evaluateFunctionsWithType(null, null, "currentisodate");
-				case "trimstr":
-					
-	                return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "trim");
-				case "substring":
-	                
-					RexLiteral pos = (RexLiteral) call.getOperands().get(1);
-					RexLiteral length = (RexLiteral) call.getOperands().get(2);
-					String val = (String) evaluateRexNode(expfunc, values);
-	                return val.substring((Integer)getValue(pos, SqlTypeName.INTEGER), Math.min(((String) val).length(), (Integer)getValue(pos, SqlTypeName.INTEGER) + (Integer) getValue(length, SqlTypeName.INTEGER)));
-				case "cast":
-					return evaluateRexNode(expfunc, values);
-				case "grpconcat":
-					RexNode rexnode1 = call.getOperands().get(0);
-					RexNode  rexnode2 = call.getOperands().get(1);
-					return (String)evaluateRexNode(rexnode1, values) + evaluateRexNode(rexnode2, values);
-				case "case":
-					List<RexNode> rexnodes = call.getOperands();
-					for(int numnodes=0;numnodes<rexnodes.size();numnodes+=2) {
-						if(evaluateExpression(rexnodes.get(numnodes), values)) {
-							return evaluateRexNode(rexnodes.get(numnodes + 1), values);
-						} else if(numnodes+2 == rexnodes.size()-1) {
-							return evaluateRexNode(rexnodes.get(numnodes + 2), values);
-						}
+			case "abs":
+
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "abs");
+			case "length", "char_length", "character_length":
+				// Get the length of string value
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "length");
+			case "round":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "round");
+			case "ceil":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "ceil");
+			case "floor":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "floor");
+			case "power":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values),
+						evaluateRexNode(call.getOperands().get(1), values), "pow");
+			case "pow":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values),
+						evaluateRexNode(call.getOperands().get(1), values), "pow");
+			case "sqrt":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "sqrt");
+			case "exp":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "exp");
+			case "loge":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "loge");
+			case "lowercase", "lower", "lcase":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "lowercase");
+			case "uppercase", "upper", "ucase":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "uppercase");
+			case "base64encode":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "base64encode");
+			case "base64decode":
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "base64decode");
+			case "normalizespaces":
+
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "normalizespaces");
+			case "currentisodate":
+
+				return evaluateFunctionsWithType(null, null, "currentisodate");
+			case "current_timemillis":
+
+				return evaluateFunctionsWithType(null, null, "currenttimemillis");
+			case "rand":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "rand");
+			case "rand_integer":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), 
+						evaluateRexNode(call.getOperands().get(1), values), "randinteger");
+			case "acos":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "acos");
+			case "asin":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "asin");
+			case "atan":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "atan");
+			case "cos":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "cos");
+			case "sin":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "sin");
+			case "tan":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "tan");
+			case "cosec":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "cosec");
+			case "sec":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "sec");
+			case "cot":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "cot");
+			case "cbrt":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "cbrt");
+			case "pii":
+				
+				return evaluateFunctionsWithType(null, null, "pii");
+			case "degrees":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "degrees");
+			case "radians":
+				
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "radians");
+			case "trimstr":
+
+				return evaluateFunctionsWithType(evaluateRexNode(expfunc, values), null, "trim");
+			case "substring":
+				RexLiteral pos = (RexLiteral) call.getOperands().get(1);
+				RexLiteral length = (RexLiteral) (call.getOperands().size()>2? call.getOperands().get(2) : null);
+				String val = (String) evaluateRexNode(expfunc, values);
+				if(nonNull(length)) {
+					return val.substring((Integer) getValue(pos, SqlTypeName.INTEGER),
+						Math.min(((String) val).length(), (Integer) getValue(pos, SqlTypeName.INTEGER)
+								+ (Integer) getValue(length, SqlTypeName.INTEGER)));
+				}
+				return val.substring((Integer) getValue(pos, SqlTypeName.INTEGER));
+			case "overlay":
+				pos = (RexLiteral) call.getOperands().get(2);
+				length = (RexLiteral) (call.getOperands().size()>3? call.getOperands().get(3) : null);
+				String val1 = (String) evaluateRexNode(call.getOperands().get(0), values);
+				String val2 = (String) evaluateRexNode(call.getOperands().get(1), values);
+				if(nonNull(length)) {
+					return val1.replaceAll(val1.substring((Integer) getValue(pos, SqlTypeName.INTEGER),
+							Math.min(((String) val2).length(), (Integer) getValue(pos, SqlTypeName.INTEGER)
+									+ (Integer) getValue(length, SqlTypeName.INTEGER))), val2);
+				}
+				return val1.replaceAll(val1.substring((Integer) getValue(pos, SqlTypeName.INTEGER)),val2);
+			case "locate":				
+				val1 = (String) evaluateRexNode(call.getOperands().get(0), values);
+				val2 = (String) evaluateRexNode(call.getOperands().get(1), values);
+				pos = (RexLiteral) (call.getOperands().size()>2?call.getOperands().get(2): null);
+				if(nonNull(pos)) {
+					int positiontosearch = Math.min((Integer) getValue(pos, SqlTypeName.INTEGER),val2.length());
+					return positiontosearch + val2.substring(positiontosearch).indexOf(val1);
+				}
+				return val2.indexOf(val1);
+			case "cast":
+				return evaluateRexNode(expfunc, values);
+			case "group_concat":
+				RexNode rexnode1 = call.getOperands().get(0);
+				RexNode rexnode2 = call.getOperands().get(1);
+				return (String) evaluateRexNode(rexnode1, values) + evaluateRexNode(rexnode2, values);
+			case "concat":
+				rexnode1 = call.getOperands().get(0);
+				rexnode2 = call.getOperands().get(1);
+				return (String) evaluateRexNode(rexnode1, values) + evaluateRexNode(rexnode2, values);				
+			case "position":
+				rexnode1 = call.getOperands().get(0);
+				rexnode2 = call.getOperands().get(1);
+				RexNode rexnode3 = call.getOperands().size()>2?call.getOperands().get(2) : null;
+				if(nonNull(rexnode3)) {
+					return ((String)evaluateRexNode(rexnode2, values)).indexOf((String)evaluateRexNode(rexnode1, values), (Integer)evaluateRexNode(rexnode3, values));
+				}
+				return ((String)evaluateRexNode(rexnode2, values)).indexOf((String)evaluateRexNode(rexnode1, values));
+			case "initcap":
+				val = (String) evaluateRexNode(call.getOperands().get(0), values);
+				return val.length()>1?StringUtils.upperCase(""+val.charAt(0))+val.substring(1):val.length()==1?StringUtils.upperCase(""+val.charAt(0)):val;
+			case "ascii":
+				val = (String) evaluateRexNode(call.getOperands().get(0), values);
+				return (int)val.charAt(0);
+			case "charac":
+				Integer asciicode = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(0), values)));
+				return (char)(asciicode%256);
+			case "insertstr":
+				String value1= (String) evaluateRexNode(call.getOperands().get(0), values);
+				Integer postoinsert = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(2), values)));
+				Integer lengthtoinsert = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(3), values)));
+				String value2= (String) evaluateRexNode(call.getOperands().get(1), values);
+				value2 = value2.substring(0, Math.min(lengthtoinsert, value2.length()));
+				return value1.substring(0, Math.min(value1.length(), postoinsert))+value2+value1.substring(Math.min(value1.length(), postoinsert), value1.length());
+			case "leftchars":
+				value1= (String) evaluateRexNode(call.getOperands().get(0), values);
+				Integer lengthtoextract = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(1), values)));
+				return value1.substring(0, Math.min(lengthtoextract, value1.length()));
+			case "rightchars":
+				value1= (String) evaluateRexNode(call.getOperands().get(0), values);
+				lengthtoextract = Integer.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(1), values)));
+				return value1.substring(value1.length() - Math.min(lengthtoextract, value1.length()));
+			case "reverse":
+				value1= (String) evaluateRexNode(call.getOperands().get(0), values);
+				return StringUtils.reverse(value1);
+			case "trim":
+				rexnode1 = call.getOperands().get(0);
+				rexnode2 = call.getOperands().get(1);
+				rexnode3 = call.getOperands().get(2);
+				String leadtrailboth = (String)evaluateRexNode(rexnode1, values);
+				String str1 = (String)evaluateRexNode(rexnode2, values);
+				String str2 = (String)evaluateRexNode(rexnode3, values);
+				if(leadtrailboth.equalsIgnoreCase("leading")) {
+					while (str2.startsWith(str1)) {
+						str2 = str2.substring(str1.length());
+			        }
+					return str2;
+				}
+				if(leadtrailboth.equalsIgnoreCase("trailing")) {
+					while (str2.endsWith(str1)) {
+						str2 = str2.substring(0, str2.length() - str1.length());
+			        }
+					return str2;
+				}
+				while (str2.startsWith(str1)) {
+					str2 = str2.substring(str1.length());
+		        }
+				while (str2.endsWith(str1)) {
+					str2 = str2.substring(0, str2.length() - str1.length());
+		        }
+				return str2;
+				
+			case "ltrim":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);				
+				return StringUtils.stripStart(str1, null);
+			case "rtrim":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);				
+				return StringUtils.stripEnd(str1, null);
+			case "curdate":
+				return date.format(new Date(System.currentTimeMillis()));
+			case "curtime":
+				return time.format(new Date(System.currentTimeMillis()));
+			case "now":
+				return dateExtract.format(new Date(System.currentTimeMillis()));
+			case "year":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);		
+				java.util.Calendar calendar = new java.util.GregorianCalendar();
+				try {
+					calendar.setTime(dateExtract.parse(str1));
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}				
+				return calendar.get(Calendar.YEAR);
+			case "month":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);		
+				calendar = new java.util.GregorianCalendar();
+				try {
+					calendar.setTime(dateExtract.parse(str1));
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}				
+				return calendar.get(Calendar.MONTH);
+			case "day":
+				rexnode1 = call.getOperands().get(0);
+				str1 = (String)evaluateRexNode(rexnode1, values);		
+				calendar = new java.util.GregorianCalendar();
+				try {
+					calendar.setTime(dateExtract.parse(str1));
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}				
+				return calendar.get(Calendar.MONTH);
+			case "case":
+				List<RexNode> rexnodes = call.getOperands();
+				for (int numnodes = 0; numnodes < rexnodes.size(); numnodes += 2) {
+					if (evaluateExpression(rexnodes.get(numnodes), values)) {
+						return evaluateRexNode(rexnodes.get(numnodes + 1), values);
+					} else if (numnodes + 2 == rexnodes.size() - 1) {
+						return evaluateRexNode(rexnodes.get(numnodes + 2), values);
 					}
-					return "";
+				}
+				return "";
 			}
-		} else if(node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction){
-			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null, call.getOperator().getName().toLowerCase());
+		} else if (node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction) {
+			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null,
+					call.getOperator().getName().toLowerCase());
+		} else if(node instanceof RexLiteral) { 
+			return getValue((RexLiteral)node, ((RexLiteral)node).getType().getSqlTypeName());
 		} else {
 			return getValueObject(node, values);
 		}
-		return null; 
+		return null;
 	}
-	
-	
+
 	/**
 	 * This function gets the greatest type in RexNode expression
+	 * 
 	 * @param rexNode
 	 * @return greatest type
 	 */
 	public static SqlTypeName findGreatestType(RexNode rexNode) {
-        SqlTypeName greatestType = null;
+		SqlTypeName greatestType = null;
 
-        // Traverse the tree and compare types
-        switch (rexNode.getKind()) {
-            case INPUT_REF:
-            case LITERAL:
-                greatestType = rexNode.getType().getSqlTypeName();
-                break;
+		// Traverse the tree and compare types
+		switch (rexNode.getKind()) {
+		case INPUT_REF:
+		case LITERAL:
+			greatestType = rexNode.getType().getSqlTypeName();
+			break;
 
-            case PLUS:
-            case MINUS:
-            case TIMES:
-            // Add more cases for other node types as needed
+		case PLUS:
+		case MINUS:
+		case TIMES:
+			// Add more cases for other node types as needed
 
-            default:
-                // Traverse the children
-                for (RexNode operand : ((RexCall)rexNode).getOperands()) {
-                    SqlTypeName operandType = findGreatestType(operand);
+		default:
+			if(CollectionUtils.isEmpty(((RexCall) rexNode).getOperands())) {
+				if(((RexCall) rexNode).getOperator() instanceof SqlFunction sqlfunc) {
+					if(sqlfunc.getName().startsWith("currentisodate")) {
+						return SqlTypeName.CHAR;
+					} else if(sqlfunc.getName().startsWith("current_timemillis")) {
+						return rexNode.getType().getSqlTypeName();
+					}  else if(sqlfunc.getName().startsWith("curdate")) {
+						return rexNode.getType().getSqlTypeName();
+					} else if(sqlfunc.getName().startsWith("curtime")) {
+						return rexNode.getType().getSqlTypeName();
+					} else if(sqlfunc.getName().startsWith("now")) {
+						return rexNode.getType().getSqlTypeName();
+					} else if(sqlfunc.getName().startsWith("pii")) {
+						return rexNode.getType().getSqlTypeName();
+					}
+				}
+			}
+			// Traverse the children
+			for (RexNode operand : ((RexCall) rexNode).getOperands()) {
+				SqlTypeName operandType = findGreatestType(operand);
 
-                    // Compare types
-                    if (greatestType == null || operandType.compareTo(greatestType) > 0) {
-                        greatestType = operandType;
-                    }
-                }
-        }
+				// Compare types
+				if (greatestType == null || operandType.compareTo(greatestType) > 0) {
+					greatestType = operandType;
+				}
+			}
+		}
 
-        return greatestType;
+		return greatestType;
 	}
-	
+
 	/**
 	 * The function generates zero for literal
+	 * 
 	 * @param sqlTypeName
 	 * @return zero based on type
 	 */
 	public static Object generateZeroLiteral(SqlTypeName sqlTypeName) {
-        switch (sqlTypeName) {
-            case TINYINT:
-            case SMALLINT:
-            case INTEGER:
-            	return 0;
-            case BIGINT:
-                return 0L;
+		switch (sqlTypeName) {
+		case TINYINT:
+		case SMALLINT:
+		case INTEGER:
+			return 0;
+		case BIGINT:
+			return 0L;
 
-            case DECIMAL:
-            case FLOAT:
-                return 0.0;
+		case DECIMAL:
+		case FLOAT:
+			return 0.0;
 
-            case REAL:
-            case DOUBLE:
-                return 0.0d;
+		case REAL:
+		case DOUBLE:
+			return 0.0d;
 
-            case CHAR:
-            case VARCHAR:
-                return "";
+		case CHAR:
+		case VARCHAR:
+			return "";
 
-            // Add more cases for other data types as needed
+		// Add more cases for other data types as needed
 
-            default:
-                throw new UnsupportedOperationException("Unsupported SqlTypeName: " + sqlTypeName);
-        }
-    }
-	
+		default:
+			throw new UnsupportedOperationException("Unsupported SqlTypeName: " + sqlTypeName);
+		}
+	}
+
 	/**
 	 * The function returns all the supported sql functions
+	 * 
 	 * @return list of supported sql functions
 	 */
 	public static List<SqlFunction> getAllSqlFunctions() {
-		
-		SqlFunction sqrtFunction = new SqlFunction("sqrt",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.DOUBLE,
-                null,
-                OperandTypes.ANY,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction sqrtFunction = new SqlFunction("sqrt", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.ANY, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
 		
-		SqlFunction lengthFunction = new SqlFunction("length",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.INTEGER,
-                null,
-                OperandTypes.STRING,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction secantfunction = new SqlFunction("sec", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction trimFunction = new SqlFunction("trimstr",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.VARCHAR_4,
-                null,
-                OperandTypes.STRING,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction cosecantfunction = new SqlFunction("cosec", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
+		SqlFunction cotangentfunction = new SqlFunction("cot", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction lengthFunction = new SqlFunction("length", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction trimFunction = new SqlFunction("trimstr", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction normalizespaces = new SqlFunction("normalizespaces", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction base64encode = new SqlFunction("base64encode", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction base64decode = new SqlFunction("base64decode", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction uppercase = new SqlFunction("uppercase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction normalizespaces = new SqlFunction("normalizespaces",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.VARCHAR_4,
-                null,
-                OperandTypes.STRING,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction ucase = new SqlFunction("ucase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction substring = new SqlFunction("substring",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.VARCHAR_4,
-                null,
-                OperandTypes.and(OperandTypes.STRING,
-                		OperandTypes.INTEGER,
-                		OperandTypes.INTEGER),
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction reverse = new SqlFunction("reverse", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction lowercase = new SqlFunction("lowercase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction base64encode = new SqlFunction("base64encode",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.VARCHAR_4,
-                null,
-                OperandTypes.STRING,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction ltrim = new SqlFunction("ltrim", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction base64decode = new SqlFunction("base64decode",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.VARCHAR_4,
-                null,
-                OperandTypes.STRING,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction rtrim = new SqlFunction("rtrim", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction uppercase = new SqlFunction("uppercase",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.VARCHAR_4,
-                null,
-                OperandTypes.STRING,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction lcase = new SqlFunction("lcase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction loge = new SqlFunction("loge", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction pow = new SqlFunction("pow", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC_NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction exp = new SqlFunction("exp", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null, OperandTypes.NUMERIC,
+				SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction ceil = new SqlFunction("ceil", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction floor = new SqlFunction("floor", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction round = new SqlFunction("round", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction abs = new SqlFunction("abs", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction currentisodate = new SqlFunction("currentisodate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction lowercase = new SqlFunction("lowercase",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.VARCHAR_4,
-                null,
-                OperandTypes.STRING,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction curdate = new SqlFunction("curdate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction loge = new SqlFunction("loge",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.DOUBLE,
-                null,
-                OperandTypes.NUMERIC,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction curtime = new SqlFunction("curtime", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction pow = new SqlFunction("pow",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.DOUBLE,
-                null,
-                OperandTypes.NUMERIC_NUMERIC,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction now = new SqlFunction("now", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		SqlFunction exp = new SqlFunction("exp",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.DOUBLE,
-                null,
-                OperandTypes.NUMERIC,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction currenttimemillis = new SqlFunction("current_timemillis", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		
-		SqlFunction ceil = new SqlFunction("ceil",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.DOUBLE,
-                null,
-                OperandTypes.NUMERIC,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
-		SqlFunction floor = new SqlFunction("floor",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.DOUBLE,
-                null,
-                OperandTypes.NUMERIC,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
-		SqlFunction round = new SqlFunction("round",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.DOUBLE,
-                null,
-                OperandTypes.NUMERIC,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
-		SqlFunction abs = new SqlFunction("abs",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.INTEGER,
-                null,
-                OperandTypes.NUMERIC,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
-		SqlFunction current_iso_date = new SqlFunction("currentisodate",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.VARCHAR_4,
-                null,
-                OperandTypes.NILADIC,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction pii = new SqlFunction("pii", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE,
+				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+
+		SqlFunction concat = new SqlFunction("concat", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
 		
-		SqlFunction grp_concat = new SqlFunction("grpconcat",
-                SqlKind.OTHER_FUNCTION,
-                ReturnTypes.VARCHAR_4,
-                null,
-                OperandTypes.STRING_STRING,
-                SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		SqlFunction insertstr = new SqlFunction("insertstr", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING_INTEGER_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
-		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces,
-				substring, base64encode, base64decode,
-				uppercase, lowercase, loge, pow, exp,
-				ceil, floor, round, abs, current_iso_date, grp_concat,
-				trimFunction);
 		
+		SqlFunction leftchars = new SqlFunction("leftchars", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction rightchars = new SqlFunction("rightchars", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction locate = new SqlFunction("locate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction charfunction = new SqlFunction("charac", SqlKind.OTHER_FUNCTION, ReturnTypes.CHAR, null,
+				OperandTypes.INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlAggFunction groupconcat = new SqlAggFunction("group_concat",
+	            null,
+	            SqlKind.OTHER_FUNCTION,
+	            ReturnTypes.VARCHAR_4, 
+	            null,
+	            OperandTypes.STRING_STRING, 
+	            SqlFunctionCategory.USER_DEFINED_FUNCTION,
+	            false,
+	            false,
+	            Optionality.FORBIDDEN) {};	            
+
+		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, base64encode, base64decode,
+				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, currentisodate, concat,
+				trimFunction, groupconcat, currenttimemillis, pii, secantfunction, cosecantfunction, cotangentfunction,
+				charfunction, insertstr, ucase, lcase, leftchars, rightchars, reverse, locate,
+				ltrim, rtrim, curdate, now, curtime);
+
 	}
-	
+
+	/**
+	 * The function returns the current tasks operated with the actor selection
+	 * url or executes task
+	 * 
+	 * @param system
+	 * @param obj
+	 * @param jobidstageidjobstagemap
+	 * @param hdfs
+	 * @param inmemorycache
+	 * @param jobidstageidtaskidcompletedmap
+	 * @param actornameactorrefmap
+	 * @param actorsystemurl
+	 * @return currently task operated
+	 */
+	public static Task getAkkaActor(ActorSystem system, Object obj, Map<String, JobStage> jobidstageidjobstagemap,
+			FileSystem hdfs, Cache inmemorycache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+			String actorsystemurl, Cluster cluster, String teid, List<ActorRef> actors) {
+		if (obj instanceof GetTaskActor taskactor) {
+			String jobstageid = taskactor.getTask().getJobid() + taskactor.getTask().getStageid();
+			JobStage js = jobidstageidjobstagemap.get(jobstageid);
+			taskactor.getTask().setTeid(teid);
+			if (js.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {				
+				cluster.registerOnMemberUp(() -> {
+					log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+					actors.add(system.actorOf(
+							Props.create(ProcessMapperByBlocksLocation.class, jobidstageidjobstagemap.get(jobstageid),
+									hdfs, inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask()),
+							jobstageid + taskactor.getTask().getTaskid()));
+				});
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().tasks.get(0) instanceof ShuffleStage shuffle) {
+				List<ActorSelection> childactors = new ArrayList<>();
+				for (String actorselectionurl : taskactor.getChildtaskactors()) {
+					childactors.add(system.actorSelection(actorselectionurl));
+				}
+				cluster.registerOnMemberUp(() -> {
+					log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+					actors.add(system.actorOf(Props.create(ProcessShuffle.class, jobidstageidtaskidcompletedmap,
+							taskactor.getTask(), childactors), jobstageid + taskactor.getTask().getTaskid()));
+				});
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().tasks.get(0) instanceof DistributedDistinct dd) {
+				List<ActorSelection> childactors = new ArrayList<>();
+				for (String actorselectionurl : taskactor.getChildtaskactors()) {
+					childactors.add(system.actorSelection(actorselectionurl));
+				}
+				cluster.registerOnMemberUp(() -> {
+					log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+					actors.add(system.actorOf(
+							Props.create(ProcessDistributedDistinct.class, jobidstageidtaskidcompletedmap,
+									taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()),
+							jobstageid + taskactor.getTask().getTaskid()));
+				});
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().tasks.get(0) instanceof UnionFunction || 
+					js.getStage().tasks.get(0) instanceof IntersectionFunction) {
+				List<ActorSelection> childactors = new ArrayList<>();
+				for (String actorselectionurl : taskactor.getChildtaskactors()) {
+					childactors.add(system.actorSelection(actorselectionurl));
+				}
+				final Class<?> cls;
+				if(js.getStage().tasks.get(0) instanceof UnionFunction) {
+					cls = ProcessUnion.class;
+				} else {
+					cls = ProcessIntersection.class;
+				}
+				cluster.registerOnMemberUp(() -> {
+					log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+					actors.add(system.actorOf(
+							Props.create(cls, js, inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(),
+									childactors, taskactor.getTerminatingparentcount()),
+							jobstageid + taskactor.getTask().getTaskid()));
+				});
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().tasks.get(0) instanceof ReduceByKeyFunction rbkf) {
+				List<ActorSelection> childactors = new ArrayList<>();
+				for (String actorselectionurl : taskactor.getChildtaskactors()) {
+					childactors.add(system.actorSelection(actorselectionurl));
+				}
+				cluster.registerOnMemberUp(() -> {
+					log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+					actors.add(system.actorOf(
+							Props.create(ProcessReduce.class, jobidstageidjobstagemap.get(jobstageid), hdfs,
+									inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
+									taskactor.getTerminatingparentcount()),
+							jobstageid + taskactor.getTask().getTaskid()));
+				});
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().getTasks().get(0) instanceof Coalesce coalesce) {
+				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+					List<ActorSelection> childactors = new ArrayList<>();
+					for (String actorselectionurl : taskactor.getChildtaskactors()) {
+						childactors.add(system.actorSelection(actorselectionurl));
+					}
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessCoalesce.class, coalesce, childactors,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+				} else {
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessCoalesce.class, coalesce, null,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+				}
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().getTasks().get(0) instanceof DistributedSort ds) {
+				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+					List<ActorSelection> childactors = new ArrayList<>();
+					for (String actorselectionurl : taskactor.getChildtaskactors()) {
+						childactors.add(system.actorSelection(actorselectionurl));
+					}
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessDistributedSort.class, jobidstageidjobstagemap.get(jobstageid),
+										inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
+										taskactor.getTerminatingparentcount()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+					
+				} else {
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessDistributedSort.class, jobidstageidjobstagemap.get(jobstageid),
+										inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(), null,
+										taskactor.getTerminatingparentcount()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+					
+				}
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().getTasks().get(0) instanceof JoinPredicate joinpred) {
+				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+					List<ActorSelection> childactors = new ArrayList<>();
+					for (String actorselectionurl : taskactor.getChildtaskactors()) {
+						childactors.add(system.actorSelection(actorselectionurl));
+					}
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessInnerJoin.class, joinpred, childactors,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+					
+				} else {
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessInnerJoin.class, joinpred, null,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+					
+				}
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().getTasks().get(0) instanceof RightOuterJoinPredicate rojoinpred) {
+				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+					List<ActorSelection> childactors = new ArrayList<>();
+					for (String actorselectionurl : taskactor.getChildtaskactors()) {
+						childactors.add(system.actorSelection(actorselectionurl));
+					}
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessRightOuterJoin.class, rojoinpred, childactors,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+					
+				} else {
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessRightOuterJoin.class, rojoinpred, null,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+					
+				}
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().getTasks().get(0) instanceof LeftOuterJoinPredicate lojoinpred) {
+				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+					List<ActorSelection> childactors = new ArrayList<>();
+					for (String actorselectionurl : taskactor.getChildtaskactors()) {
+						childactors.add(system.actorSelection(actorselectionurl));
+					}
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessLeftOuterJoin.class, lojoinpred, childactors,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+				} else {
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessLeftOuterJoin.class, lojoinpred, null,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+					
+				}
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else {
+				List<ActorSelection> childactors = new ArrayList<>();
+				int totalfilepartspernode = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+						DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+				int indexfilepartpernode = 0;
+				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+					log.info("Mapper By Stream ChildActors {}", taskactor.getChildtaskactors());
+					for (String actorselectionurl : taskactor.getChildtaskactors()) {
+						ActorSelection actorselection = system.actorSelection(actorselectionurl);
+						childactors.add(actorselection);
+					}
+				}
+				final Map<Integer, ActorSelection> actorselections = new ConcurrentHashMap<>();
+				if (CollectionUtils.isNotEmpty(taskactor.getTask().getShufflechildactors())) {
+
+					log.info("Mapper By Stream ShuffleChildActors {}", taskactor.getTask().getShufflechildactors());
+					for (Task actortask : taskactor.getTask().getShufflechildactors()) {
+						log.info("Mapper By Stream Actors Selected {}", actortask.getActorselection());
+						ActorSelection actorselection = system.actorSelection(actortask.getActorselection());						
+						for (int filepartcount = 0; filepartcount < totalfilepartspernode; filepartcount++) {
+							actorselections.put(filepartcount + indexfilepartpernode, actorselection);
+						}
+						log.info("Mapper By Stream FilePartitions Selected {}", taskactor.getTask().getFilepartitionsid());
+						indexfilepartpernode += totalfilepartspernode;
+					}
+				}
+				log.info("Mapper By Stream Actor Creation Started {}...", childactors);
+				cluster.registerOnMemberUp(() -> {
+					log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+					actors.add(system.actorOf(
+							Props.create(ProcessMapperByStream.class, js, hdfs, inmemorycache,
+									jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
+									taskactor.getTask().getFilepartitionsid(), actorselections,
+									taskactor.getTerminatingparentcount()),
+							jobstageid + taskactor.getTask().getTaskid()));
+				});
+				log.info("Mapper By Stream Actor Creation Ended...");
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			}
+		} else if (obj instanceof ExecuteTaskActor exectaskactor) {
+			exectaskactor.getTask().setTeid(teid);			
+			int totalfilepartspernode = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+					DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+			int indexfilepartpernode = 0;
+			List<ActorSelection> childactors = new ArrayList<>();
+			if (CollectionUtils.isNotEmpty(exectaskactor.getChildtaskactors())) {
+				for (String actorselectionurl : exectaskactor.getChildtaskactors()) {
+					ActorSelection actorselection = system.actorSelection(actorselectionurl);
+					childactors.add(actorselection);
+				}
+			}
+			Map<Integer, ActorSelection> actorselections = null;
+			if (CollectionUtils.isNotEmpty(exectaskactor.getTask().getShufflechildactors())) {
+				actorselections = new ConcurrentHashMap<>();
+				for (Task actortask : exectaskactor.getTask().getShufflechildactors()) {
+					ActorSelection actorselection = system.actorSelection(actortask.getActorselection());
+					for (int filepartcount = 0; filepartcount < totalfilepartspernode; filepartcount++) {
+						actorselections.put(filepartcount + indexfilepartpernode, actorselection);
+					}
+					indexfilepartpernode += totalfilepartspernode;
+				}
+			}
+			ProcessMapperByBlocksLocation.BlocksLocationRecord blr = new ProcessMapperByBlocksLocation.BlocksLocationRecord(
+					(BlocksLocation) exectaskactor.getTask().getInput()[0], hdfs,
+					exectaskactor.getTask().getFilepartitionsid(), childactors, actorselections);
+			final ActorSelection mapreducetask = system.actorSelection(exectaskactor.getTask().getActorselection());
+			mapreducetask.tell(blr, Actor.noSender());
+			log.info("Processing Blocks {} actors {}", exectaskactor.getTask().getInput(),
+					exectaskactor.getTask().getActorselection());
+			var path = Utils.getIntermediateInputStreamTask(exectaskactor.getTask());
+			while (isNull(jobidstageidtaskidcompletedmap.get(path)) || !jobidstageidtaskidcompletedmap.get(path)) {
+				try {
+					Thread.sleep(1000);
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+			Task tasktoexecute = exectaskactor.getTask();
+			log.info("Task Executed {} with status {}", tasktoexecute, jobidstageidtaskidcompletedmap);
+			tasktoexecute.taskstatus = TaskStatus.COMPLETED;
+			tasktoexecute.tasktype = TaskType.EXECUTEUSERTASK;
+			return tasktoexecute;
+		}
+		return null;
+	}
+
 }

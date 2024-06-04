@@ -13,6 +13,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
  */
 public class DataFrameContext {
 	PipelineConfig pipelineconfig;
+
 	private DataFrameContext(PipelineConfig pipelineconfig) {
 		this.pipelineconfig = pipelineconfig;
 	}
@@ -23,38 +24,47 @@ public class DataFrameContext {
 	protected String db;
 	protected String fileformat;
 	protected String hdfs;
+
 	public static DataFrameContext newDataFrameContext(PipelineConfig pipelineconfig) {
 		return new DataFrameContext(pipelineconfig);
 	}
+
 	public DataFrameContext setFolder(String folder) {
 		this.folder = folder;
 		return this;
 	}
+
 	public DataFrameContext setColumns(String[] columns) {
 		this.columns = columns;
 		return this;
 	}
+
 	public DataFrameContext setTablename(String tablename) {
 		this.tablename = tablename;
 		return this;
 	}
+
 	public DataFrameContext setTypes(List<SqlTypeName> types) {
 		this.types = types;
 		return this;
 	}
+
 	public DataFrameContext setDb(String db) {
 		this.db = db;
 		return this;
 	}
+
 	public DataFrameContext setFileFormat(String fileformat) {
 		this.fileformat = fileformat;
 		return this;
 	}
+
 	public DataFrameContext setHdfs(String hdfs) {
 		this.hdfs = hdfs;
 		return this;
 	}
+
 	public DataFrame build() {
-		return new DataFrame(this); 
+		return new DataFrame(this);
 	}
 }

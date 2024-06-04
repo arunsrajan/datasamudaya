@@ -58,7 +58,7 @@ public class StreamPipelineTaskSchedulerRunner {
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {		
+	public static void main(String[] args) throws Exception {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 		// Load log4j properties.
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
@@ -75,7 +75,7 @@ public class StreamPipelineTaskSchedulerRunner {
 			Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
 		} else {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
 		StaticComponentContainer.Modules.exportAllToAll();
 		var zo = new ZookeeperOperations();
@@ -100,18 +100,18 @@ public class StreamPipelineTaskSchedulerRunner {
 			}
 
 			@Override
-			public void notLeader() {				
+			public void notLeader() {
 			}
-			
+
 		});
 		log.info("Streaming Scheduler Waiting to elect as a leader...");
 		cdlstream.await();
-		
+
 		String cacheid = DataSamudayaConstants.BLOCKCACHE;
-		CacheUtils.initCache(cacheid, 
+		CacheUtils.initCache(cacheid,
 				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-		                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-			            + DataSamudayaConstants.CACHEBLOCKS);
+						DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+						+ DataSamudayaConstants.CACHEBLOCKS);
 		CacheUtils.initBlockMetadataCache(cacheid);
 		var cdl = new CountDownLatch(1);
 		var lbq = new LinkedBlockingQueue<StreamPipelineTaskScheduler>(Integer.valueOf(DataSamudayaProperties
@@ -123,21 +123,18 @@ public class StreamPipelineTaskSchedulerRunner {
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_WEB_PORT)),
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
-						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
-						new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON,
-						new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH);
+				+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON,
+				new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH);
 		su.start();
-		
+
 		SQLServer.start();
-		
+
 		PigQueryServer.start();
-	    
-	    JShellServer.startJShell();
-	    
-	    var execkind = DataSamudayaProperties
+		JShellServer.startJShell();
+		var execkind = DataSamudayaProperties
 				.get().getProperty(DataSamudayaConstants.EXEC_KIND, DataSamudayaConstants.EXEC_KIND_DEFAULT);
-	    
-	    var isparallel = execkind.equals(DataSamudayaConstants.EXEC_KIND_PARALLEL);
+		var isparallel = execkind.equals(DataSamudayaConstants.EXEC_KIND_PARALLEL);
 
 		// Execute when request arrives.
 		esstream.execute(() -> {
@@ -178,18 +175,18 @@ public class StreamPipelineTaskSchedulerRunner {
 						if (!isparallel) {
 							lbq.put(spts);
 						} else {
-							 es.execute(spts);
+							es.execute(spts);
 						}
 					} catch (Exception ex) {
 						log.error("Launching Stream Task scheduler error, See cause below \n", ex);
 					}
 				}
-				
+
 			} catch (Exception ex) {
 
 			}
 		});
-		if(!isparallel) {
+		if (!isparallel) {
 			es.execute(() -> {
 				StreamPipelineTaskScheduler spts;
 				while (true) {

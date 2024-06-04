@@ -37,7 +37,7 @@ public class TaskSchedulerRunner {
 
 	static Logger log = LoggerFactory.getLogger(TaskSchedulerRunner.class);
 
-	public static void main(String[] args) throws Exception {		
+	public static void main(String[] args) throws Exception {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
@@ -53,14 +53,14 @@ public class TaskSchedulerRunner {
 			Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
 		} else {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
 		StaticComponentContainer.Modules.exportAllToAll();
 		var cdlmr = new CountDownLatch(1);
 		var zookeeperid = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_HOST))
 				+ DataSamudayaConstants.UNDERSCORE + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PORT);
-		
-		var zo = new ZookeeperOperations();			
+
+		var zo = new ZookeeperOperations();
 		zo.connect();
 		zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
 			log.info("Node Created");
@@ -79,31 +79,31 @@ public class TaskSchedulerRunner {
 			}
 
 			@Override
-			public void notLeader() {				
+			public void notLeader() {
 			}
-			
+
 		});
 		log.info("Scheduler Waiting to elect as a leader...");
 		cdlmr.await();
-		
+
 		String cacheid = DataSamudayaConstants.BLOCKCACHE;
-		CacheUtils.initCache(cacheid, 
+		CacheUtils.initCache(cacheid,
 				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-		                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-			            + DataSamudayaConstants.CACHEBLOCKS);
+						DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+						+ DataSamudayaConstants.CACHEBLOCKS);
 		CacheUtils.initBlockMetadataCache(cacheid);
 		var cdl = new CountDownLatch(1);
 		var su = new ServerUtils();
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_WEB_PORT)),
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
-						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
-						new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+				+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 		su.start();
 		SQLServerMR.start();
 		var es = Executors.newWorkStealingPool();
 		var essingle = Executors.newSingleThreadExecutor();
-		
+
 
 		var ss = new ServerSocket(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PORT)));
 		essingle.execute(() -> {

@@ -92,6 +92,9 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 			server = Utils.getRPCRegistry(30000 + nodeindex, new StreamDataCruncher() {
 				public Object postObject(Object object) throws RemoteException {
 					try {
+						if (object instanceof byte[] bytes) {
+							object = Utils.convertBytesToObjectCompressed(bytes, null);
+						}
 						var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER, containerprocesses, hdfs,
 								containeridthreads, containeridports, object, zo);
 						Future<Object> containerallocated = escontainer.submit(container);

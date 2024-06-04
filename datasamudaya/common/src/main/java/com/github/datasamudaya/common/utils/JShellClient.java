@@ -26,7 +26,8 @@ import static java.util.Objects.nonNull;
  *
  */
 public class JShellClient {
-	private static Logger log = LoggerFactory.getLogger(JShellClient.class);
+	private static final Logger log = LoggerFactory.getLogger(JShellClient.class);
+
 	public static void main(String[] args) throws Exception {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
@@ -111,6 +112,7 @@ public class JShellClient {
 	}
 	private static int historyIndex;
 	private static final List<String> history = new ArrayList<>();
+
 	/**
 	 * Histroy stored in file will be loaded and when keys are pressed will
 	 * be displayed to the user.
@@ -182,7 +184,7 @@ public class JShellClient {
 							reader.flush();
 						} else if (key == 51) {
 							int curPos = reader.getCursorBuffer().cursor;
-							if (curPos >= 0 && curPos<reader.getCursorBuffer().length()) {
+							if (curPos >= 0 && curPos < reader.getCursorBuffer().length()) {
 								reader.setCursorPosition(curPos + 1);
 								reader.backspace();
 								reader.flush();
@@ -222,7 +224,7 @@ public class JShellClient {
 					reader.setConsoleBuffer(sb.toString());
 					reader.setCursorPosition(curPos + 1);
 					reader.flush();
-					
+
 				}
 			}
 			line = sb.toString();

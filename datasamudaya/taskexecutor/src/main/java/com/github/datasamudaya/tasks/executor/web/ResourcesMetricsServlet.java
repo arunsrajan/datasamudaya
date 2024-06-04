@@ -32,44 +32,44 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
  */
 public class ResourcesMetricsServlet extends HttpServlet {
 
-  private static final long serialVersionUID = 8713220540678338208L;
+	private static final long serialVersionUID = 8713220540678338208L;
 	private static final Logger log = Logger.getLogger(ResourcesMetricsServlet.class);
 
-  protected void doGet(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
 
-    response.setStatus(HttpServletResponse.SC_OK);
-    response.setContentType("application/json");
-    try (PrintWriter writer = response.getWriter();) {
-      MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
-      double systemloadaverage = getProcessCpuLoad();
-      MemoryUsage heap = membean.getHeapMemoryUsage();
-      double heapusage = heap.getUsed() / (double) heap.getMax() * 100.0;
-      MemoryUsage nonheap = membean.getNonHeapMemoryUsage();
-      double nonheapusage = nonheap.getUsed() / (double) nonheap.getMax() * 100.0;
-      String[] cpuheap = {systemloadaverage + DataSamudayaConstants.EMPTY, heapusage + DataSamudayaConstants.EMPTY,
-          nonheapusage + DataSamudayaConstants.EMPTY};
+		response.setStatus(HttpServletResponse.SC_OK);
+		response.setContentType("application/json");
+		try (PrintWriter writer = response.getWriter();) {
+			MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
+			double systemloadaverage = getProcessCpuLoad();
+			MemoryUsage heap = membean.getHeapMemoryUsage();
+			double heapusage = heap.getUsed() / (double) heap.getMax() * 100.0;
+			MemoryUsage nonheap = membean.getNonHeapMemoryUsage();
+			double nonheapusage = nonheap.getUsed() / (double) nonheap.getMax() * 100.0;
+			String[] cpuheap = {systemloadaverage + DataSamudayaConstants.EMPTY, heapusage + DataSamudayaConstants.EMPTY,
+					nonheapusage + DataSamudayaConstants.EMPTY};
 
-      writer.write(new ObjectMapper().writeValueAsString(cpuheap));
-      writer.flush();
-    } catch (Exception ex) {
-      log.debug("TaskScheduler Web servlet error, See cause below \n", ex);
-    }
-  }
+			writer.write(new ObjectMapper().writeValueAsString(cpuheap));
+			writer.flush();
+		} catch (Exception ex) {
+			log.debug("TaskScheduler Web servlet error, See cause below \n", ex);
+		}
+	}
 
-  public static double getProcessCpuLoad() throws Exception {
+	public static double getProcessCpuLoad() throws Exception {
 
-    MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    ObjectName name = ObjectName.getInstance("java.lang:type=OperatingSystem");
-    AttributeList list = mbs.getAttributes(name, new String[]{"ProcessCpuLoad"});
-    if (list.isEmpty()) {
-      return Double.NaN;
-    }
-    Attribute att = (Attribute) list.get(0);
-    Double value = (Double) att.getValue();
-    if (value == -1.0) {
-      return Double.NaN;
-    }
-    return (int) (value * 1000) / 10.0;
-  }
+		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		ObjectName name = ObjectName.getInstance("java.lang:type=OperatingSystem");
+		AttributeList list = mbs.getAttributes(name, new String[]{"ProcessCpuLoad"});
+		if (list.isEmpty()) {
+			return Double.NaN;
+		}
+		Attribute att = (Attribute) list.get(0);
+		Double value = (Double) att.getValue();
+		if (value == -1.0) {
+			return Double.NaN;
+		}
+		return (int) (value * 1000) / 10.0;
+	}
 }

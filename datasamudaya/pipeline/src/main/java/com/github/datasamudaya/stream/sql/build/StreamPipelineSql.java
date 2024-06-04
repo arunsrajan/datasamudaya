@@ -30,13 +30,12 @@ public class StreamPipelineSql {
 	public Object collect(boolean toexecute, IntSupplier supplier) throws PipelineException {
 		if (mdpmp instanceof StreamPipeline mdp) {
 			return mdp.collect(toexecute, supplier);
-		}
-		else if (mdpmp instanceof MapPair mp) {
+		} else if (mdpmp instanceof MapPair mp) {
 			return mp.collect(toexecute, supplier);
 		}
 		return mdpmp;
 	}
-	
+
 	/**
 	 * Saves the output in text file.
 	 * @param uri
@@ -44,11 +43,10 @@ public class StreamPipelineSql {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("rawtypes")
-	public void  saveAsTextFile(URI uri, String path) throws Exception {
+	public void saveAsTextFile(URI uri, String path) throws Exception {
 		if (mdpmp instanceof StreamPipeline mdp) {
 			mdp.saveAsTextFile(uri, path);
-		}
-		else if (mdpmp instanceof MapPair mp) {
+		} else if (mdpmp instanceof MapPair mp) {
 			mp.saveAsTextFile(uri, path);
 		}
 

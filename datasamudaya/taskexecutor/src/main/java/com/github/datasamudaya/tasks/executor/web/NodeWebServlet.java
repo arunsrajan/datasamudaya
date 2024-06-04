@@ -26,24 +26,24 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
  * @author Arun
  */
 public class NodeWebServlet extends HttpServlet {
-  Map<String, Map<String, Process>> containersipport;
+	Map<String, Map<String, Process>> containersipport;
 
-  public NodeWebServlet(Map<String, Map<String, Process>> containersipport) {
-    this.containersipport = containersipport;
-  }
+	public NodeWebServlet(Map<String, Map<String, Process>> containersipport) {
+		this.containersipport = containersipport;
+	}
 
-  private static final long serialVersionUID = 8713220540678338208L;
+	private static final long serialVersionUID = 8713220540678338208L;
 	private static final Logger log = Logger.getLogger(NodeWebServlet.class);
 
-  protected void doGet(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    response.setContentType(DataSamudayaConstants.TEXTHTML);
-    response.setStatus(HttpServletResponse.SC_OK);
-    var writer = response.getWriter();
-    String contextpath = request.getScheme() + "://" + request.getServerName() + DataSamudayaConstants.COLON
-        + request.getLocalPort();
-    try {
-      writer.println(("""
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		response.setContentType(DataSamudayaConstants.TEXTHTML);
+		response.setStatus(HttpServletResponse.SC_OK);
+		var writer = response.getWriter();
+		String contextpath = request.getScheme() + "://" + request.getServerName() + DataSamudayaConstants.COLON
+				+ request.getLocalPort();
+		try {
+			writer.println(("""
           <!DOCTYPE HTML>
           <html>
           <head>
@@ -136,32 +136,32 @@ public class NodeWebServlet extends HttpServlet {
           </html>
           					""").formatted(contextpath, contextpath, contextpath, contextpath, contextpath,
 					request.getServerName() + DataSamudayaConstants.COLON + request.getLocalPort()));
-    } catch (Exception ex) {
-      log.debug("TaskScheduler Web servlet error, See cause below \n", ex);
-    }
-  }
+		} catch (Exception ex) {
+			log.debug("TaskScheduler Web servlet error, See cause below \n", ex);
+		}
+	}
 
-  public String getIframe() {
-    StringBuilder containersiframe = new StringBuilder();
-    containersiframe.append("""
+	public String getIframe() {
+		StringBuilder containersiframe = new StringBuilder();
+		containersiframe.append("""
         <H1>Containers</H1>
         <div>
         	<p>--------------------------------------------------------------------------</p>
         	</div>
         """);
-    containersipport.keySet().stream()
-        .flatMap(container -> containersipport.get(container).keySet().stream())
-        .map(port -> (DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
-            + DataSamudayaConstants.UNDERSCORE + (Integer.parseInt(port) + DataSamudayaConstants.PORT_OFFSET))
-            + "<BR/><iframe src=\"http://"
-            + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST) + DataSamudayaConstants.COLON
-            + (Integer.parseInt(port) + DataSamudayaConstants.PORT_OFFSET)
-            + "\" width=\"900px\" height=\"800px\" style=\"border:1px solid black;\">\r\n"
-            + "</iframe>")
-        .forEach(iframe -> {
-          containersiframe.append(iframe);
-          containersiframe.append("<BR/>");
-        });
-    return containersiframe.toString();
-  }
+		containersipport.keySet().stream()
+				.flatMap(container -> containersipport.get(container).keySet().stream())
+				.map(port -> (DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
+						+ DataSamudayaConstants.UNDERSCORE + (Integer.parseInt(port) + DataSamudayaConstants.PORT_OFFSET))
+						+ "<BR/><iframe src=\"http://"
+						+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST) + DataSamudayaConstants.COLON
+						+ (Integer.parseInt(port) + DataSamudayaConstants.PORT_OFFSET)
+						+ "\" width=\"900px\" height=\"800px\" style=\"border:1px solid black;\">\r\n"
+						+ "</iframe>")
+				.forEach(iframe -> {
+					containersiframe.append(iframe);
+					containersiframe.append("<BR/>");
+				});
+		return containersiframe.toString();
+	}
 }

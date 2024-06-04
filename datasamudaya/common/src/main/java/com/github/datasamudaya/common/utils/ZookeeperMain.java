@@ -36,7 +36,7 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 public class ZookeeperMain {
 	static Logger log = LoggerFactory.getLogger(ZookeeperMain.class);
 
-	public static void main(String[] args) throws Exception {		
+	public static void main(String[] args) throws Exception {
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
@@ -51,7 +51,7 @@ public class ZookeeperMain {
 			Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
 		} else {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
 		StaticComponentContainer.Modules.exportAllToAll();
 		var cdl = new CountDownLatch(1);

@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.rmi.RemoteException;
@@ -60,7 +61,7 @@ import net.sf.jsqlparser.parser.SimpleNode;
 import net.sf.jsqlparser.schema.Table;
 
 public class UtilsTest {
-	
+
 	@Before
 	public void startUp() {
 		StaticComponentContainer.Modules.exportAllToAll();
@@ -112,12 +113,12 @@ public class UtilsTest {
 
 	@Test
 	public void initializePropertiesValid() throws Exception {
-		String propertiesFilePath = System.getProperty("user.dir")+"/config/";
+		String propertiesFilePath = System.getProperty("user.dir") + "/config/";
 		File file = new File(propertiesFilePath);
-		if(!(file.isDirectory() && file.exists())) {
+		if (!(file.isDirectory() && file.exists())) {
 			propertiesFilePath = "../config/";
 			file = new File(propertiesFilePath);
-			if(!(file.isDirectory() && file.exists())) {
+			if (!(file.isDirectory() && file.exists())) {
 				throw new Exception();
 			}
 		}
@@ -130,81 +131,81 @@ public class UtilsTest {
 		assertEquals(Integer.valueOf(100), users.get("arun").getPercentage());
 		assertTrue(Objects.nonNull(DataSamudayaProperties.get()));
 		assertEquals("127.0.0.1:2181", DataSamudayaProperties.get().get("zookeeper.hostport"));
-		
+
 	}
-	
+
 	@Test
 	public void initializePropertiesNullPropertyFile() throws Exception {
 		try {
-			String propertiesFilePath = System.getProperty("user.dir")+"/config/";
+			String propertiesFilePath = System.getProperty("user.dir") + "/config/";
 			File file = new File(propertiesFilePath);
-			if(!(file.isDirectory() && file.exists())) {
+			if (!(file.isDirectory() && file.exists())) {
 				propertiesFilePath = "../config/";
 				file = new File(propertiesFilePath);
-				if(!(file.isDirectory() && file.exists())) {
+				if (!(file.isDirectory() && file.exists())) {
 					throw new Exception();
 				}
 			}
 			String propertyFile = null;
 			Utils.initializeProperties(propertiesFilePath, propertyFile);
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			Assert.assertEquals("Property File Name cannot be null", ex.getMessage());
 		}
 	}
-	
+
 	@Test
 	public void initializePropertiesNullPropertyFilePath() throws Exception {
 		try {
 			String propertiesFilePath = null;
 			String propertyFile = "datasamudaya.properties";
 			Utils.initializeProperties(propertiesFilePath, propertyFile);
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			Assert.assertEquals("Properties File Path cannot be null", ex.getMessage());
 		}
 	}
-	
+
 	@Test
 	public void initializePropertiesInvalidUsersShare() throws Exception {
 		try {
-		String propertiesFilePath = System.getProperty("user.dir")+"/config/";
-		File file = new File(propertiesFilePath);
-		if(!(file.isDirectory() && file.exists())) {
-			propertiesFilePath = "../config/";
-			file = new File(propertiesFilePath);
-			if(!(file.isDirectory() && file.exists())) {
-				throw new Exception();
+			String propertiesFilePath = System.getProperty("user.dir") + "/config/";
+			File file = new File(propertiesFilePath);
+			if (!(file.isDirectory() && file.exists())) {
+				propertiesFilePath = "../config/";
+				file = new File(propertiesFilePath);
+				if (!(file.isDirectory() && file.exists())) {
+					throw new Exception();
+				}
 			}
+			String propertyFile = "datasamudayainvalidusersshare.properties";
+			Utils.initializeProperties(propertiesFilePath, propertyFile);
 		}
-		String propertyFile = "datasamudayainvalidusersshare.properties";
-		Utils.initializeProperties(propertiesFilePath, propertyFile);
-		}
-		catch(Exception ex) {
+		catch (Exception ex) {
 			Assert.assertEquals("Users share total not tally and it should be less that or equal to 100.0", ex.getCause().getMessage());
 		}
-		
+
 	}
-	
+
 	@Test
 	public void initializePropertiesNonExistent() throws Exception {
 		try {
-		String propertiesFilePath = System.getProperty("user.dir")+"/config/";
-		File file = new File(propertiesFilePath);
-		if(!(file.isDirectory() && file.exists())) {
-			propertiesFilePath = "../config/";
-			file = new File(propertiesFilePath);
-			if(!(file.isDirectory() && file.exists())) {
-				throw new Exception();
+			String propertiesFilePath = System.getProperty("user.dir") + "/config/";
+			File file = new File(propertiesFilePath);
+			if (!(file.isDirectory() && file.exists())) {
+				propertiesFilePath = "../config/";
+				file = new File(propertiesFilePath);
+				if (!(file.isDirectory() && file.exists())) {
+					throw new Exception();
+				}
 			}
+			String propertyFile = "datasamudayanonexistent.properties";
+			Utils.initializeProperties(propertiesFilePath, propertyFile);
 		}
-		String propertyFile = "datasamudayanonexistent.properties";
-		Utils.initializeProperties(propertiesFilePath, propertyFile);
-		}
-		catch(Exception ex) {
+		catch (Exception ex) {
 			Assert.assertEquals("..\\config\\datasamudayanonexistent.properties (The system cannot find the file specified)", ex.getCause().getMessage());
 		}
-		
+
 	}
-	
+
 	@Test
 	public void kryoInstanceNotNull() {
 		Kryo kryo = Utils.getKryoInstance();
@@ -252,84 +253,84 @@ public class UtilsTest {
 		assert kryo.getSerializer(ClosureSerializer.Closure.class) != null;
 		assert kryo.getSerializer(JShell.class) != null;
 	}
-	
+
 	@Test
 	public void kryoInstanceTestSerializationDeserialization() {
 		Kryo kryo = Utils.getKryoInstance();
 		Integer originalObject = Integer.valueOf(25); // Create a test object
 		byte[] serializedData;
 		try (Output output = new Output(new ByteArrayOutputStream())) {
-		    kryo.writeObject(output, originalObject);
-		    serializedData = output.toBytes();
+			kryo.writeObject(output, originalObject);
+			serializedData = output.toBytes();
 		}
 		Object deserializedObject;
 		try (Input input = new Input(serializedData)) {
-		    deserializedObject = kryo.readObject(input, Integer.class);
+			deserializedObject = kryo.readObject(input, Integer.class);
 		}
 		// Assert that deserializedObject is not null
 		assertNotNull(deserializedObject);
 		assertTrue(deserializedObject.equals(originalObject));
 	}
-	
-	
+
+
 	@Test
 	public void kryoInstanceTestSerializationDeserializationTuple2() {
 		Kryo kryo = Utils.getKryoInstance();
 		Tuple2<String, Integer> originalTuple = Tuple.tuple("Hello", 42); // Create a test tuple
 		byte[] serializedData;
 		try (Output output = new Output(new ByteArrayOutputStream())) {
-		    kryo.writeObject(output, originalTuple);
-		    serializedData = output.toBytes();
+			kryo.writeObject(output, originalTuple);
+			serializedData = output.toBytes();
 		}
 		Tuple2<?, ?> deserializedTuple;
 		try (Input input = new Input(serializedData)) {
-		    deserializedTuple = kryo.readObject(input, Tuple2.class);
+			deserializedTuple = kryo.readObject(input, Tuple2.class);
 		}
 		// Assert that deserializedTuple is not null
 		// Assert that deserializedTuple is equal to originalTuple
 		assertNotNull(deserializedTuple);
 		assertTrue(deserializedTuple.equals(originalTuple));
 	}
-	
+
 	@Test
 	public void kryoInstanceTestSerializationDeserializationCustomClass() {
 		Kryo kryo = Utils.getKryoInstance();
 		JobStage originalCustom = new JobStage(); // Create a test custom object
 		byte[] serializedData;
 		try (Output output = new Output(new ByteArrayOutputStream())) {
-		    kryo.writeObject(output, originalCustom);
-		    serializedData = output.toBytes();
+			kryo.writeObject(output, originalCustom);
+			serializedData = output.toBytes();
 		}
 		JobStage deserializedCustom;
 		try (Input input = new Input(serializedData)) {
-		    deserializedCustom = kryo.readObject(input, JobStage.class);
+			deserializedCustom = kryo.readObject(input, JobStage.class);
 		}
 		// Assert that deserializedCustom is not null
 		// Assert that deserializedCustom is equal to originalCustom
 		assertNotNull(deserializedCustom);
 		assertTrue(deserializedCustom.equals(originalCustom));
 	}
-	
-	
+
+
 	@Test
 	public void kryoInstanceTestSerializationDeserializationEnum() {
 		Kryo kryo = Utils.getKryoInstance();
 		WhoIsResponse.STATUS originalStatus = WhoIsResponse.STATUS.COMPLETED; // Choose an enum value
 		byte[] serializedData;
 		try (Output output = new Output(new ByteArrayOutputStream())) {
-		    kryo.writeObject(output, originalStatus);
-		    serializedData = output.toBytes();
+			kryo.writeObject(output, originalStatus);
+			serializedData = output.toBytes();
 		}
 		WhoIsResponse.STATUS deserializedStatus;
 		try (Input input = new Input(serializedData)) {
-		    deserializedStatus = kryo.readObject(input, WhoIsResponse.STATUS.class);
+			deserializedStatus = kryo.readObject(input, WhoIsResponse.STATUS.class);
 		}
 		// Assert that deserializedStatus is not null
 		// Assert that deserializedStatus is equal to originalStatus
 		assertNotNull(originalStatus);
 		assertTrue(deserializedStatus.equals(originalStatus));
 	}
-	
+
 	@Test
 	public void testJGroupsValid() throws Exception {
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
@@ -345,38 +346,38 @@ public class UtilsTest {
 		Map<String, WhoIsResponse.STATUS> mapreqdest = new HashMap<>();
 		Map<String, WhoIsResponse.STATUS> maprespdest = new HashMap<>();
 		try {
-		    JChannel channelsrc = Utils.getChannelTaskExecutor(jobid, networkaddress1, port1, mapreqsrc, maprespsrc);
-		    JChannel channeldest = Utils.getChannelTaskExecutor(jobid, networkaddress2, port2, mapreqdest, maprespdest);
-		    // Send a message to the channel to trigger message reception
-		    mapreqdest.put("1", WhoIsResponse.STATUS.COMPLETED);
-		    var obj = new ObjectMessage();
-		    WhoIsRequest request = new WhoIsRequest();
-		    request.setStagepartitionid("1");		    
-		    var os = new ByteArrayOutputStream();
-		    var output = new Output(os);
-		    kryo.writeClassAndObject(output, request);
-		    output.flush();
-		    output.close();
-		    obj.setObject(os.toByteArray());
-		    channelsrc.send(obj);		    
-		    // For example, create a WhoIsRequest message and send it to the channel
+			JChannel channelsrc = Utils.getChannelTaskExecutor(jobid, networkaddress1, port1, mapreqsrc, maprespsrc);
+			JChannel channeldest = Utils.getChannelTaskExecutor(jobid, networkaddress2, port2, mapreqdest, maprespdest);
+			// Send a message to the channel to trigger message reception
+			mapreqdest.put("1", WhoIsResponse.STATUS.COMPLETED);
+			var obj = new ObjectMessage();
+			WhoIsRequest request = new WhoIsRequest();
+			request.setStagepartitionid("1");
+			var os = new ByteArrayOutputStream();
+			var output = new Output(os);
+			kryo.writeClassAndObject(output, request);
+			output.flush();
+			output.close();
+			obj.setObject(os.toByteArray());
+			channelsrc.send(obj);
+			// For example, create a WhoIsRequest message and send it to the channel
 
-		    // Assert that the response map has been updated as expected
-		    // Assert other expected behaviors or states
-		    while(!maprespsrc.containsKey("1")) {
-		    	Thread.sleep(1000);
-		    }
-		    assertNotNull(maprespsrc.get("1"));
-		    assertTrue(maprespsrc.get("1") == WhoIsResponse.STATUS.COMPLETED);
-		    channelsrc.close();
-		    channeldest.close();
+			// Assert that the response map has been updated as expected
+			// Assert other expected behaviors or states
+			while (!maprespsrc.containsKey("1")) {
+				Thread.sleep(1000);
+			}
+			assertNotNull(maprespsrc.get("1"));
+			assertTrue(maprespsrc.get("1") == WhoIsResponse.STATUS.COMPLETED);
+			channelsrc.close();
+			channeldest.close();
 		} catch (Exception ex) {
-		    // Handle any exceptions or failures
-		    // Fail the test if necessary
+			// Handle any exceptions or failures
+			// Fail the test if necessary
 		}
 
 	}
-	
+
 	@Test
 	public void testJGroupsNullJobId() throws Exception {
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
@@ -387,17 +388,17 @@ public class UtilsTest {
 		Map<String, WhoIsResponse.STATUS> mapreqsrc = new HashMap<>();
 		Map<String, WhoIsResponse.STATUS> maprespsrc = new HashMap<>();
 		try {
-		    JChannel channelsrc = Utils.getChannelTaskExecutor(jobid, networkaddress1, port1, mapreqsrc, maprespsrc);
-		    channelsrc.close();
+			JChannel channelsrc = Utils.getChannelTaskExecutor(jobid, networkaddress1, port1, mapreqsrc, maprespsrc);
+			channelsrc.close();
 		} catch (Exception ex) {
-		    // Handle any exceptions or failures
+			// Handle any exceptions or failures
 			assertEquals("cluster name cannot be null", ex.getMessage());
-		    // Fail the test if necessary
+			// Fail the test if necessary
 		}
 
 	}
-	
-	
+
+
 	@Test
 	public void testJGroupsWhois() throws Exception {
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
@@ -412,29 +413,29 @@ public class UtilsTest {
 		Map<String, WhoIsResponse.STATUS> mapreqdest = new HashMap<>();
 		Map<String, WhoIsResponse.STATUS> maprespdest = new HashMap<>();
 		try {
-		    JChannel channelsrc = Utils.getChannelTaskExecutor(jobid, networkaddress1, port1, mapreqsrc, maprespsrc);
-		    JChannel channeldest = Utils.getChannelTaskExecutor(jobid, networkaddress2, port2, mapreqdest, maprespdest);
-		    // Send a message to the channel to trigger message reception
-		    mapreqdest.put("1", WhoIsResponse.STATUS.COMPLETED);
-		    Utils.whois(channelsrc, "1");
-		    // For example, create a WhoIsRequest message and send it to the channel
+			JChannel channelsrc = Utils.getChannelTaskExecutor(jobid, networkaddress1, port1, mapreqsrc, maprespsrc);
+			JChannel channeldest = Utils.getChannelTaskExecutor(jobid, networkaddress2, port2, mapreqdest, maprespdest);
+			// Send a message to the channel to trigger message reception
+			mapreqdest.put("1", WhoIsResponse.STATUS.COMPLETED);
+			Utils.whois(channelsrc, "1");
+			// For example, create a WhoIsRequest message and send it to the channel
 
-		    // Assert that the response map has been updated as expected
-		    // Assert other expected behaviors or states
-		    while(!maprespsrc.containsKey("1")) {
-		    	Thread.sleep(1000);
-		    }
-		    assertNotNull(maprespsrc.get("1"));
-		    assertTrue(maprespsrc.get("1") == WhoIsResponse.STATUS.COMPLETED);
-		    channelsrc.close();
-		    channeldest.close();
+			// Assert that the response map has been updated as expected
+			// Assert other expected behaviors or states
+			while (!maprespsrc.containsKey("1")) {
+				Thread.sleep(1000);
+			}
+			assertNotNull(maprespsrc.get("1"));
+			assertTrue(maprespsrc.get("1") == WhoIsResponse.STATUS.COMPLETED);
+			channelsrc.close();
+			channeldest.close();
 		} catch (Exception ex) {
-		    // Handle any exceptions or failures
-		    // Fail the test if necessary
+			// Handle any exceptions or failures
+			// Fail the test if necessary
 		}
 
 	}
-	
+
 	@Test
 	public void testJGroupsWhoare() throws Exception {
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
@@ -449,88 +450,88 @@ public class UtilsTest {
 		Map<String, WhoIsResponse.STATUS> mapreqdest = new HashMap<>();
 		Map<String, WhoIsResponse.STATUS> maprespdest = new HashMap<>();
 		try {
-		    JChannel channelsrc = Utils.getChannelTaskExecutor(jobid, networkaddress1, port1, mapreqsrc, maprespsrc);
-		    JChannel channeldest = Utils.getChannelTaskExecutor(jobid, networkaddress2, port2, mapreqdest, maprespdest);
-		    // Send a message to the channel to trigger message reception
-		    mapreqdest.put("1", WhoIsResponse.STATUS.COMPLETED);
-		    mapreqdest.put("2", WhoIsResponse.STATUS.RUNNING);
-		    mapreqdest.put("3", WhoIsResponse.STATUS.YETTOSTART);
-		    Utils.whoare(channelsrc);
-		    // For example, create a WhoIsRequest message and send it to the channel
+			JChannel channelsrc = Utils.getChannelTaskExecutor(jobid, networkaddress1, port1, mapreqsrc, maprespsrc);
+			JChannel channeldest = Utils.getChannelTaskExecutor(jobid, networkaddress2, port2, mapreqdest, maprespdest);
+			// Send a message to the channel to trigger message reception
+			mapreqdest.put("1", WhoIsResponse.STATUS.COMPLETED);
+			mapreqdest.put("2", WhoIsResponse.STATUS.RUNNING);
+			mapreqdest.put("3", WhoIsResponse.STATUS.YETTOSTART);
+			Utils.whoare(channelsrc);
+			// For example, create a WhoIsRequest message and send it to the channel
 
-		    // Assert that the response map has been updated as expected
-		    // Assert other expected behaviors or states
-		    while(!maprespsrc.containsKey("1")) {
-		    	Thread.sleep(1000);
-		    }
-		    assertNotNull(maprespsrc.get("1"));
-		    assertTrue(maprespsrc.get("1") == WhoIsResponse.STATUS.COMPLETED);
-		    assertNotNull(maprespsrc.get("2"));
-		    assertTrue(maprespsrc.get("2") == WhoIsResponse.STATUS.RUNNING);
-		    assertNotNull(maprespsrc.get("3"));
-		    assertTrue(maprespsrc.get("3") == WhoIsResponse.STATUS.YETTOSTART);
-		    channelsrc.close();
-		    channeldest.close();
+			// Assert that the response map has been updated as expected
+			// Assert other expected behaviors or states
+			while (!maprespsrc.containsKey("1")) {
+				Thread.sleep(1000);
+			}
+			assertNotNull(maprespsrc.get("1"));
+			assertTrue(maprespsrc.get("1") == WhoIsResponse.STATUS.COMPLETED);
+			assertNotNull(maprespsrc.get("2"));
+			assertTrue(maprespsrc.get("2") == WhoIsResponse.STATUS.RUNNING);
+			assertNotNull(maprespsrc.get("3"));
+			assertTrue(maprespsrc.get("3") == WhoIsResponse.STATUS.YETTOSTART);
+			channelsrc.close();
+			channeldest.close();
 		} catch (Exception ex) {
-		    // Handle any exceptions or failures
-		    // Fail the test if necessary
+			// Handle any exceptions or failures
+			// Fail the test if necessary
 		}
 
 	}
-	
+
 	@Test
 	public void validGCStatus() {
 		// Simulate a garbage collection event by manually triggering it
 		System.gc();
 
 		try {
-		    String gcStats = Utils.getGCStats();
+			String gcStats = Utils.getGCStats();
 
-		    // Assert that the returned GC stats string contains valid information
-		    assertTrue(gcStats.contains("Garbage Collections: "));
-		    assertTrue(gcStats.contains("Garbage Collection Time (ms): "));
+			// Assert that the returned GC stats string contains valid information
+			assertTrue(gcStats.contains("Garbage Collections: "));
+			assertTrue(gcStats.contains("Garbage Collection Time (ms): "));
 		} catch (Exception ex) {
-		    // Handle any exceptions or failures
-		    // Fail the test if necessary
+			// Handle any exceptions or failures
+			// Fail the test if necessary
 		}
 
 	}
-	
+
 	@Test
 	public void validGCStatusWithoutGC() {
 		try {
-		    String gcStats = Utils.getGCStats();
+			String gcStats = Utils.getGCStats();
 
-		    // Assert that the returned GC stats string contains valid information
-		    assertTrue(gcStats.contains("Garbage Collections: "));
-		    assertTrue(gcStats.contains("Garbage Collection Time (ms): "));
+			// Assert that the returned GC stats string contains valid information
+			assertTrue(gcStats.contains("Garbage Collections: "));
+			assertTrue(gcStats.contains("Garbage Collection Time (ms): "));
 		} catch (Exception ex) {
-		    // Handle any exceptions or failures
-		    // Fail the test if necessary
+			// Handle any exceptions or failures
+			// Fail the test if necessary
 		}
 
 	}
-	
+
 	@Test
 	public void validGCStatusMultipleGCInvoke() {
 		// Simulate a garbage collection event by manually triggering it
 		for (int i = 0;i < 5;i++) {
-		    System.gc();
+			System.gc();
 		}
 
 		try {
-		    String gcStats = Utils.getGCStats();
+			String gcStats = Utils.getGCStats();
 
-		    // Assert that the returned GC stats string contains valid information
-		    assertTrue(gcStats.contains("Garbage Collections: "));
-		    assertTrue(gcStats.contains("Garbage Collection Time (ms): "));
+			// Assert that the returned GC stats string contains valid information
+			assertTrue(gcStats.contains("Garbage Collections: "));
+			assertTrue(gcStats.contains("Garbage Collection Time (ms): "));
 		} catch (Exception ex) {
-		    // Handle any exceptions or failures
-		    // Fail the test if necessary
+			// Handle any exceptions or failures
+			// Fail the test if necessary
 		}
 
 	}
-	
+
 	@Test
 	public void testGetResultObjectByInput() throws Exception {
 		String hostAndPort = "localhost_12345"; // Provide a valid host and port
@@ -541,20 +542,21 @@ public class UtilsTest {
 			@Override
 			public Object postObject(Object object) throws RemoteException {
 				return object;
-			}}, jobid);		
+			}
+		}, jobid);
 		try {
-		    Object resultObject = Utils.getResultObjectByInput(hostAndPort, inputObject, jobid);
+			Object resultObject = Utils.getResultObjectByInput(hostAndPort, inputObject, jobid);
 
-		    // Assert that the resultObject is not null and matches the expected result
-		    assertNotNull(resultObject);
-		    assertTrue(resultObject instanceof Coalesce);
+			// Assert that the resultObject is not null and matches the expected result
+			assertNotNull(resultObject);
+			assertTrue(resultObject instanceof Coalesce);
 		} catch (Exception ex) {
-		    // Handle any exceptions or failures
-		    // Fail the test if necessary
+			// Handle any exceptions or failures
+			// Fail the test if necessary
 		}
 
 	}
-	
+
 	@Test
 	public void testInvalidRemoteServer() {
 		String hostAndPort = "invalidhost_12346"; // Provide an invalid host and port
@@ -562,15 +564,15 @@ public class UtilsTest {
 		String jobid = "job123"; // Provide a valid job ID
 
 		try {
-		    Utils.getResultObjectByInput(hostAndPort, inputObject, jobid);
-		    // Fail the test if the code doesn't throw an exception as expected
+			Utils.getResultObjectByInput(hostAndPort, inputObject, jobid);
+			// Fail the test if the code doesn't throw an exception as expected
 		} catch (Exception ex) {
-		    // Assert that the exception message or type indicates the server is not available
+			// Assert that the exception message or type indicates the server is not available
 			assertTrue(ex.getMessage().contains("Unknown host: invalidhost"));
 		}
 
 	}
-	
+
 	@Test
 	public void testNullHostAndPort() {
 		String hostAndPort = null; // Provide an invalid host and port
@@ -578,15 +580,15 @@ public class UtilsTest {
 		String jobid = "job123"; // Provide a valid job ID
 
 		try {
-		    Utils.getResultObjectByInput(hostAndPort, inputObject, jobid);
-		    // Fail the test if the code doesn't throw an exception as expected
+			Utils.getResultObjectByInput(hostAndPort, inputObject, jobid);
+			// Fail the test if the code doesn't throw an exception as expected
 		} catch (Exception ex) {
-		    // Assert that the exception message or type indicates the server is not available
+			// Assert that the exception message or type indicates the server is not available
 			assertTrue(ex.getMessage().contains("because \"hp\" is null"));
 		}
 
 	}
-	
+
 	@Test
 	public void testNullInputObject() throws Exception {
 		String hostAndPort = "localhost_12344"; // Provide a valid host and port
@@ -597,17 +599,18 @@ public class UtilsTest {
 			@Override
 			public Object postObject(Object object) throws RemoteException {
 				return object;
-			}}, jobid);
+			}
+		}, jobid);
 
 		try {
-		    assertNull(Utils.getResultObjectByInput(hostAndPort, inputObject, jobid));
-		    // Fail the test if the code doesn't throw an exception as expected
+			assertNull(Utils.getResultObjectByInput(hostAndPort, inputObject, jobid));
+			// Fail the test if the code doesn't throw an exception as expected
 		} catch (Exception ex) {
-		    // Assert that the exception message or type indicates the server is not available
+			// Assert that the exception message or type indicates the server is not available
 		}
 
 	}
-	
+
 	@Test
 	public void testRPCEmptyJobId() throws Exception {
 		String hostAndPort = "localhost_12342"; // Provide a valid host and port
@@ -618,35 +621,36 @@ public class UtilsTest {
 			@Override
 			public Object postObject(Object object) throws RemoteException {
 				return object;
-			}}, jobid);
+			}
+		}, jobid);
 
 		try {
 			Object returnedObject = Utils.getResultObjectByInput(hostAndPort, inputObject, jobid);
-		    assertNotNull(returnedObject);
-		    assertTrue(returnedObject instanceof Coalesce);
-		    // Fail the test if the code doesn't throw an exception as expected
+			assertNotNull(returnedObject);
+			assertTrue(returnedObject instanceof Coalesce);
+			// Fail the test if the code doesn't throw an exception as expected
 		} catch (Exception ex) {
-		    // Assert that the exception message or type indicates the server is not available
+			// Assert that the exception message or type indicates the server is not available
 		}
 
 	}
-	
+
 	@Test
 	public void testKryoImmutableCollection() {
 		var baos = new ByteArrayOutputStream();
 		Output output = new Output(baos);
 		Kryo kryo = Utils.getKryoInstance();
-		ImmutableCollection<Integer> col = ImmutableList.copyOf(Arrays.asList(1,2,3,4));
+		ImmutableCollection<Integer> col = ImmutableList.copyOf(Arrays.asList(1, 2, 3, 4));
 		kryo.writeClassAndObject(output, col);
 		output.flush();
 		output.close();
 
 		// Example of deserialization
-		var bais = new java.io.ByteArrayInputStream(baos.toByteArray());
+		var bais = new ByteArrayInputStream(baos.toByteArray());
 		Input input = new Input(bais);
 		Object deserializedCollection = kryo.readClassAndObject(input);
 		assertNotNull(deserializedCollection);
 		input.close();
 	}
-	
+
 }

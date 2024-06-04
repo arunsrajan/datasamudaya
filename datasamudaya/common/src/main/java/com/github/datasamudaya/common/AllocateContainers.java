@@ -34,7 +34,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class AllocateContainers implements Serializable{
+public class AllocateContainers implements Serializable {
 	private static final long serialVersionUID = 5722412378550026294L;
 	private String jobid;
 	private int numberofcontainers;

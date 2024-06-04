@@ -77,11 +77,12 @@ public class EmbeddedSchedulersNodeLauncher {
 	public static final String STOPPINGANDCLOSECONNECTION = "Stopping and closes all the connections...";
 	private static final Semaphore lock = new Semaphore(1);
 	private static final CountDownLatch cdlcl = new CountDownLatch(1);
-	public static void main(String[] args) throws Exception {		
+
+	public static void main(String[] args) throws Exception {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);		
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
@@ -93,21 +94,21 @@ public class EmbeddedSchedulersNodeLauncher {
 			Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
 		} else {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
 		StaticComponentContainer.Modules.exportAllToAll();
 		var cdl = new CountDownLatch(3);
 		int metricsport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.METRICS_EXPORTER_PORT,
-                DataSamudayaConstants.METRICS_EXPORTER_PORT_DEFAULT));
+				DataSamudayaConstants.METRICS_EXPORTER_PORT_DEFAULT));
 		DefaultExports.initialize(); // Initialize JVM metrics    	 
-        PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT, CollectorRegistry.defaultRegistry, Clock.SYSTEM);
+		PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT, CollectorRegistry.defaultRegistry, Clock.SYSTEM);
 		meterRegistry.config().commonTags("application", DataSamudayaConstants.DATASAMUDAYA.toLowerCase());
 		// Bind JVM metrics to the registry
 		new JvmMemoryMetrics().bindTo(meterRegistry);
 		new JvmThreadMetrics().bindTo(meterRegistry);
-        // Start an HTTP server to expose metrics
+		// Start an HTTP server to expose metrics
 		try (var zo = new ZookeeperOperations();
-				HTTPServer server = new HTTPServer(new InetSocketAddress(metricsport), meterRegistry.getPrometheusRegistry());) {			
+				HTTPServer server = new HTTPServer(new InetSocketAddress(metricsport), meterRegistry.getPrometheusRegistry());) {
 			zo.connect();
 			zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
 				log.info("Node Created");
@@ -115,10 +116,10 @@ public class EmbeddedSchedulersNodeLauncher {
 			zo.watchNodes();
 			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			String cacheid = DataSamudayaConstants.BLOCKCACHE;
-			CacheUtils.initCache(cacheid, 
+			CacheUtils.initCache(cacheid,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-			                DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-				            + DataSamudayaConstants.CACHEBLOCKS);
+							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.CACHEBLOCKS);
 			CacheUtils.initBlockMetadataCache(cacheid);
 			ExecutorService es = Executors.newFixedThreadPool(3);
 			es.execute(new Runnable() {
@@ -206,6 +207,9 @@ public class EmbeddedSchedulersNodeLauncher {
 			datacruncher = new StreamDataCruncher() {
 				public Object postObject(Object object) {
 					try {
+						if (object instanceof byte[] bytes) {
+							object = Utils.convertBytesToObjectCompressed(bytes, null);
+						}
 						var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER, containerprocesses, hdfs,
 								containeridthreads, containeridports, object, zo);
 						Future<Object> containerallocated = escontainer.submit(container);
@@ -230,7 +234,7 @@ public class EmbeddedSchedulersNodeLauncher {
 				try {
 					containerprocesses
 							.keySet().stream().map(containerprocesses::get).flatMap(mapproc -> mapproc.keySet().stream()
-									.map(key -> mapproc.get(key)).collect(Collectors.toList()).stream())
+							.map(key -> mapproc.get(key)).collect(Collectors.toList()).stream())
 							.forEach(proc -> {
 								log.debug("Destroying the Container Process: " + proc);
 								proc.destroy();
@@ -280,9 +284,9 @@ public class EmbeddedSchedulersNodeLauncher {
 			}
 
 			@Override
-			public void notLeader() {				
+			public void notLeader() {
 			}
-			
+
 		});
 		log.info("Streaming Scheduler Waiting to elect as a leader...");
 		cdlstream.await();
@@ -295,9 +299,9 @@ public class EmbeddedSchedulersNodeLauncher {
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH, new SummaryWebServlet(),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.ASTERIX,
+						+ DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
-		su.start();				
+		su.start();
 		var lbq = new LinkedBlockingQueue<StreamPipelineTaskScheduler>(Integer.valueOf(
 				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE, DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE_DEFAULT)));
 
@@ -417,9 +421,9 @@ public class EmbeddedSchedulersNodeLauncher {
 			}
 
 			@Override
-			public void notLeader() {				
+			public void notLeader() {
 			}
-			
+
 		});
 		log.info("Scheduler Waiting to elect as a leader...");
 		cdlmr.await();
@@ -427,10 +431,10 @@ public class EmbeddedSchedulersNodeLauncher {
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_WEB_PORT)),
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
-						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new SummaryWebServlet(),
-						DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new SummaryWebServlet(),
+				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY + DataSamudayaConstants.FORWARD_SLASH
 						+ DataSamudayaConstants.ASTERIX,
-						new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 		su.start();
 		SQLServerMR.start();
 		var es = Executors.newWorkStealingPool();

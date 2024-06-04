@@ -14,14 +14,38 @@ public class PowerUDF extends EvalFunc<Object> {
 		}
 		Object value = (Object) input.get(0);
 		Object powerval = (Object) input.get(1);
-		if (value instanceof Double dv && powerval instanceof Integer powval) {
-			return Math.pow(dv, powval);
-		} else if (value instanceof Long lv && powerval instanceof Integer powval) {
-			return Math.pow(lv, powval);
-		} else if (value instanceof Float fv && powerval instanceof Integer powval) {
-			return Math.pow(fv, powval);
-		} else if (value instanceof Integer iv && powerval instanceof Integer powval) {
-			return Math.pow(iv, powval);
+		if (value instanceof Double pdv && powerval instanceof Integer powval) {
+			return Math.pow(pdv, powval);
+		} else if (value instanceof Long plv && powerval instanceof Integer powval) {
+			return Math.pow(plv, powval);
+		} else if (value instanceof Float pfv && powerval instanceof Integer powval) {
+			return Math.pow(pfv, powval);
+		} else if (value instanceof Integer piv && powerval instanceof Integer powval) {
+			return Math.pow(piv, powval);
+		} else if (value instanceof Double pdv && powerval instanceof Double powval) {
+			return Math.pow(pdv, powval);
+		} else if (value instanceof Long plv && powerval instanceof Double powval) {
+			return Math.pow(plv, powval);
+		} else if (value instanceof Float pfv && powerval instanceof Double powval) {
+			return Math.pow(pfv, powval);
+		} else if (value instanceof Integer piv && powerval instanceof Double powval) {
+			return Math.pow(piv, powval);
+		} else if (value instanceof Double pdv && powerval instanceof Float powval) {
+			return Math.pow(pdv, powval);
+		} else if (value instanceof Long plv && powerval instanceof Float powval) {
+			return Math.pow(plv, powval);
+		} else if (value instanceof Float pfv && powerval instanceof Float powval) {
+			return Math.pow(pfv, powval);
+		} else if (value instanceof Integer piv && powerval instanceof Float powval) {
+			return Math.pow(piv, powval);
+		} else if (value instanceof Double pdv && powerval instanceof Long powval) {
+			return Math.pow(pdv, powval);
+		} else if (value instanceof Long plv && powerval instanceof Long powval) {
+			return Math.pow(plv, powval);
+		} else if (value instanceof Float pfv && powerval instanceof Long powval) {
+			return Math.pow(pfv, powval);
+		} else if (value instanceof Integer piv && powerval instanceof Long powval) {
+			return Math.pow(piv, powval);
 		}
 		return value;
 	}

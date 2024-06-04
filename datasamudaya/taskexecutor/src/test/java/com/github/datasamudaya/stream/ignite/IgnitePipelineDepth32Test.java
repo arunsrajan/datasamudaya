@@ -40,6 +40,7 @@ public class IgnitePipelineDepth32Test extends StreamPipelineIgniteBase {
 	boolean toexecute = true;
 	int sum;
 	static Logger log = Logger.getLogger(IgnitePipelineDepth32Test.class);
+
 	@Test
 	public void testMapPeekSampleForEach() throws Throwable {
 		log.info("testMapPeekSample Before---------------------------------------");

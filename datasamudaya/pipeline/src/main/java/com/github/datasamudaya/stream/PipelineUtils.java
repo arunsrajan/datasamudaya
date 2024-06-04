@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.function.IntUnaryOperator;
 import java.util.function.ToIntFunction;
 
-import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.functions.AggregateFunction;
 import com.github.datasamudaya.common.functions.AggregateReduceFunction;
@@ -31,6 +31,8 @@ import com.github.datasamudaya.common.functions.CoalesceFunction;
 import com.github.datasamudaya.common.functions.CountByKeyFunction;
 import com.github.datasamudaya.common.functions.CountByValueFunction;
 import com.github.datasamudaya.common.functions.Distinct;
+import com.github.datasamudaya.common.functions.DistributedDistinct;
+import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.DoubleFlatMapFunction;
 import com.github.datasamudaya.common.functions.FlatMapFunction;
 import com.github.datasamudaya.common.functions.FoldByKey;
@@ -50,6 +52,7 @@ import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunctionValues;
 import com.github.datasamudaya.common.functions.ReduceFunction;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.SortedComparator;
 import com.github.datasamudaya.common.functions.StandardDeviation;
 import com.github.datasamudaya.common.functions.Sum;
@@ -155,6 +158,12 @@ public class PipelineUtils {
 			return DataSamudayaConstants.DUMMY;
 		} else if (obj instanceof Distinct) {
 			return DataSamudayaConstants.DISTINCT;
+		} else if (obj instanceof ShuffleStage) {
+			return DataSamudayaConstants.SHUFFLE;
+		} else if (obj instanceof DistributedSort) {
+			return DataSamudayaConstants.DISTRIBUTEDSORT;
+		} else if (obj instanceof DistributedDistinct) {
+			return DataSamudayaConstants.DISTRIBUTEDDISTINCT;
 		}
 		return DataSamudayaConstants.EMPTY;
 	}

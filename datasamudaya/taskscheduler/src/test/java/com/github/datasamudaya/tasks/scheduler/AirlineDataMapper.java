@@ -31,6 +31,7 @@ public class AirlineDataMapper implements Mapper<Long, String, Context>, Combine
 		Reducer<String, Long, Context>, Serializable {
 	private static final long serialVersionUID = 7385643416268861832L;
 	private static final Logger log = LoggerFactory.getLogger(AirlineDataMapper.class);
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public void combine(String key, List<Long> values, Context context) {
@@ -51,8 +52,8 @@ public class AirlineDataMapper implements Mapper<Long, String, Context>, Combine
 
 		String[] contents = line.split(",");
 		if (contents != null && contents.length > 14 && contents[0] != null && !"Year".equals(contents[0])
-				 && contents[14] != null && !"NA".equals(contents[14])) {
-				context.put(contents[8], Long.parseLong(contents[14]));
+				&& contents[14] != null && !"NA".equals(contents[14])) {
+			context.put(contents[8], Long.parseLong(contents[14]));
 		}
 
 

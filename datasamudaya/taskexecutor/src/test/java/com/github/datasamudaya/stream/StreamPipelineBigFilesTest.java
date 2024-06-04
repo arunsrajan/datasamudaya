@@ -44,7 +44,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 		pipelineconfig.setNumberofcontainers("1");
 		pipelineconfig.setBatchsize("5");
-		log.info("testMapValuesReduceByValues Before---------------------------------------");
+		log.info("{}","testMapValuesReduceByValues Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1989,
 				pipelineconfig);
 		List<List<Tuple2<String, Tuple2<Long, Long>>>> redByKeyList = (List) datastream.map(dat -> dat.split(","))
@@ -55,13 +55,13 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple2<String, Tuple2<Long, Long>>> tuples : redByKeyList) {
 			for (Tuple2<String, Tuple2<Long, Long>> pair : tuples) {
-				log.info(pair);
+				log.info("{}",pair);
 				sum += (Long) pair.v2.v1;
 			}
 		}
-		log.info(sum);
+		log.info("{}",sum);
 		assertEquals(41630119l, sum);
-		log.info("testMapValuesReduceByValues After---------------------------------------");
+		log.info("{}","testMapValuesReduceByValues After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -76,7 +76,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 		pipelineconfig.setNumberofcontainers("1");
 		pipelineconfig.setBatchsize("3");
-		log.info("testMapValuesReduceByValuesBigger Before---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesBigger Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1989,
 				pipelineconfig);
 		List<List<Tuple2<String, Tuple2<Long, Long>>>> redByKeyList = (List) datastream.map(dat -> dat.split(","))
@@ -87,19 +87,19 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple2<String, Tuple2<Long, Long>>> tuples : redByKeyList) {
 			for (Tuple2<String, Tuple2<Long, Long>> pair : tuples) {
-				log.info(pair);
+				log.info("{}",pair);
 				sum += (Long) pair.v2.v1;
 			}
 		}
-		log.info(sum);
+		log.info("{}",sum);
 		assertEquals(41630119l, sum);
-		log.info("testMapValuesReduceByValuesBigger After---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesBigger After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testMapValuesReduceByValuesCoalesce() throws Throwable {
-		log.info("testMapValuesReduceByValuesCoalesce Before---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesCoalesce Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
 		pipelineconfig.setIsblocksuserdefined("true");
@@ -121,20 +121,20 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple2<String, Tuple2<Long, Long>>> tuples : redByKeyList) {
 			for (Tuple2<String, Tuple2<Long, Long>> pair : tuples) {
-				log.info(pair);
+				log.info("{}",pair);
 				sum += (Long) pair.v2.v1;
 			}
 		}
-		log.info(sum);
+		log.info("{}",sum);
 		assertEquals(41630119l, sum);
 		pipelineconfig.setBlocksize("20");
-		log.info("testMapValuesReduceByValuesCoalesce After---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesCoalesce After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testMapValuesReduceByValuesJGroups() throws Throwable {
-		log.info("testMapValuesReduceByValuesJGroups Before---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesJGroups Before---------------------------------------");
 		pipelineconfig.setJgroups("true");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
@@ -156,19 +156,19 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple2<String, Tuple2<Long, Long>>> tuples : redByKeyList) {
 			for (Tuple2<String, Tuple2<Long, Long>> pair : tuples) {
-				log.info(pair);
+				log.info("{}",pair);
 				sum += (Long) pair.v2.v1;
 			}
 		}
-		log.info(sum);
+		log.info("{}",sum);
 		assertEquals(852674931, sum);
-		log.info("testMapValuesReduceByValuesJGroups After---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesJGroups After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testMapValuesReduceByValuesLocal() throws Throwable {
-		log.info("testMapValuesReduceByValuesJGroups Before---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesJGroups Before---------------------------------------");
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
 		pipelineconfig.setIsblocksuserdefined("true");
@@ -189,19 +189,19 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple2<String, Tuple2<Long, Long>>> tuples : redByKeyList) {
 			for (Tuple2<String, Tuple2<Long, Long>> pair : tuples) {
-				log.info(pair);
+				log.info("{}",pair);
 				sum += (Long) pair.v2.v1;
 			}
 		}
-		log.info(sum);
+		log.info("{}",sum);
 		assertEquals(852674931, sum);
-		log.info("testMapValuesReduceByValuesJGroups After---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesJGroups After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testMapValuesReduceByValuesCoalesceJGroups() throws Throwable {
-		log.info("testMapValuesReduceByValuesCoalesce Before---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesCoalesce Before---------------------------------------");
 		pipelineconfig.setBlocksize("64");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setJgroups("true");
@@ -217,20 +217,20 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple2<String, Tuple2<Long, Long>>> tuples : redByKeyList) {
 			for (Tuple2<String, Tuple2<Long, Long>> pair : tuples) {
-				log.info(pair);
+				log.info("{}",pair);
 				sum += (Long) pair.v2.v1;
 			}
 		}
-		log.info(sum);
+		log.info("{}",sum);
 		assertEquals(313881010, sum);
 		pipelineconfig.setBlocksize("20");
-		log.info("testMapValuesReduceByValuesCoalesce After---------------------------------------");
+		log.info("{}","testMapValuesReduceByValuesCoalesce After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void testReduceByKeyCoalesceJoinUserDefinedBlockSize() throws Throwable {
-		log.info("testReduceByKeyCoalesceJoinUserDefinedBlockSize Before---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinUserDefinedBlockSize Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("128");
@@ -252,13 +252,13 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 
 		carriers
 				.join(airlinesamples, (tuple1, tuple2) -> ((Tuple2) tuple1).v1.equals(((Tuple2) tuple2).v1)).saveAsTextFile(new URI(hdfsfilepath), "/coalesce/Coalesce-" + System.currentTimeMillis());
-		log.info("testReduceByKeyCoalesceJoinUserDefinedBlockSize After---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinUserDefinedBlockSize After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void testReduceByKeyCoalesceJoinUserDefinedBlockSizeCollect() throws Throwable {
-		log.info("testReduceByKeyCoalesceJoinUserDefinedBlockSizeCollect Before---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinUserDefinedBlockSizeCollect Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("128");
@@ -282,16 +282,16 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 				.collect(toexecute, null);
 		for (List<Tuple2> tuples :tuples2) {
 			for (Tuple2 tuple :tuples) {
-				log.info(tuple);
+				log.info("{}",tuple);
 			}
 		}
-		log.info("testReduceByKeyCoalesceJoinUserDefinedBlockSizeCollect After---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinUserDefinedBlockSizeCollect After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void testReduceByKeyCoalesceJoinUserDefinedBlockSizeJGroups() throws Throwable {
-		log.info("testReduceByKeyCoalesceJoinUserDefinedBlockSizeJGroups Before---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinUserDefinedBlockSizeJGroups Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setJgroups("true");
 		pipelineconfig.setIsblocksuserdefined("true");
@@ -314,14 +314,14 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 
 		carriers
 				.join(airlinesamples, (tuple1, tuple2) -> ((Tuple2) tuple1).v1.equals(((Tuple2) tuple2).v1)).saveAsTextFile(new URI(hdfsfilepath), "/coalesce/Coalesce-" + System.currentTimeMillis());
-		log.info("testReduceByKeyCoalesceJoinUserDefinedBlockSizeJGroups After---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinUserDefinedBlockSizeJGroups After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void testReduceByKeyCoalesceJoin() throws Throwable {
-		log.info("testReduceByKeyCoalesceJoin Before---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoin Before---------------------------------------");
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setIsblocksuserdefined("false");
 		pipelineconfig.setBlocksize("64");
@@ -342,14 +342,14 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 
 		carriers
 				.join(airlinesamples, (tuple1, tuple2) -> ((Tuple2) tuple1).v1.equals(((Tuple2) tuple2).v1)).saveAsTextFile(new URI(hdfsfilepath), "/coalesce/Coalesce-" + System.currentTimeMillis());
-		log.info("testReduceByKeyCoalesceJoin After---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoin After---------------------------------------");
 	}
 
 
 	@Test
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void testReduceByKeyCoalesceJoinJGroups() throws Throwable {
-		log.info("testReduceByKeyCoalesceJoinJGroups Before---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinJGroups Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setJgroups("true");
 		pipelineconfig.setIsblocksuserdefined("false");
@@ -371,13 +371,13 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 
 		carriers
 				.join(airlinesamples, (tuple1, tuple2) -> ((Tuple2) tuple1).v1.equals(((Tuple2) tuple2).v1)).saveAsTextFile(new URI(hdfsfilepath), "/coalesce/Coalesce-" + System.currentTimeMillis());
-		log.info("testReduceByKeyCoalesceJoinJGroups After---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinJGroups After---------------------------------------");
 	}
 
 	@Test
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void testReduceByKeyCoalesceJoinJGroupsCollect() throws Throwable {
-		log.info("testReduceByKeyCoalesceJoinJGroupsCollect Before---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinJGroupsCollect Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setJgroups("true");
 		pipelineconfig.setIsblocksuserdefined("false");
@@ -402,34 +402,34 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 				.collect(toexecute, null);
 		for (List<Tuple2> tuples :tuples2) {
 			for (Tuple2 tuple :tuples) {
-				log.info(tuple);
+				log.info("{}",tuple);
 			}
 		}
-		log.info("testReduceByKeyCoalesceJoinJGroupsCollect After---------------------------------------");
+		log.info("{}","testReduceByKeyCoalesceJoinJGroupsCollect After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testFilterCollect() throws Throwable {
-		log.info("testFilterCollect Before---------------------------------------");
+		log.info("{}","testFilterCollect Before---------------------------------------");
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlines, pipelineconfig);
 		List<List> data = (List) datapipeline
 				.filter(val -> "1987".equals(val.split(DataSamudayaConstants.COMMA)[0])).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
-			log.info(partitioneddata.size());
+			log.info("{}",partitioneddata.size());
 			sum += partitioneddata.size();
 		}
-		log.info(sum);
+		log.info("{}",sum);
 		assertEquals(1311826, sum);
-		log.info("testFilterCollect After---------------------------------------");
+		log.info("{}","testFilterCollect After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testResourcesAllocationBeforeAndAfterExecCombined() throws Throwable {
-		log.info("testResourcesAllocationBeforeAndAfterExecCombined Before---------------------------------------");
+		log.info("{}","testResourcesAllocationBeforeAndAfterExecCombined Before---------------------------------------");
 		PipelineConfig pipelineconfig = new PipelineConfig();
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
@@ -440,7 +440,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 		pipelineconfig.setNumberofcontainers("1");
 		pipelineconfig.setBatchsize("2");
-		log.info(DataSamudayaNodesResources.get());
+		log.info("{}",DataSamudayaNodesResources.get());
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlines,
 				pipelineconfig);
 		List<List<Tuple2<String, Tuple2<Long, Long>>>> redByKeyList = (List) datastream.map(dat -> dat.split(","))
@@ -453,19 +453,19 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple2<String, Tuple2<Long, Long>>> tuples : redByKeyList) {
 			for (Tuple2<String, Tuple2<Long, Long>> pair : tuples) {
-				log.info(pair);
+				log.info("{}",pair);
 				sum += (Long) pair.v2.v1;
 			}
 		}
-		log.info(sum);
-		log.info(DataSamudayaNodesResources.get());
-		log.info("testResourcesAllocationBeforeAndAfterExecCombined After---------------------------------------");
+		log.info("{}",sum);
+		log.info("{}",DataSamudayaNodesResources.get());
+		log.info("{}","testResourcesAllocationBeforeAndAfterExecCombined After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testResourcesAllocationBeforeAndAfterExecDivided() throws Throwable {
-		log.info("testResourcesAllocationBeforeAndAfterExecDivided Before---------------------------------------");
+		log.info("{}","testResourcesAllocationBeforeAndAfterExecDivided Before---------------------------------------");
 		PipelineConfig pipelineconfig = new PipelineConfig();
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
@@ -477,7 +477,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setNumberofcontainers("1");
 		pipelineconfig.setBatchsize("1");
 		pipelineconfig.setContaineralloc("DIVIDED");
-		log.info(DataSamudayaNodesResources.get());
+		log.info("{}",DataSamudayaNodesResources.get());
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, "/test3gb",
 				pipelineconfig);
 		List<List<Tuple2<String, Tuple2<Long, Long>>>> redByKeyList = (List) datastream.map(dat -> dat.split(","))
@@ -490,13 +490,13 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple2<String, Tuple2<Long, Long>>> tuples : redByKeyList) {
 			for (Tuple2<String, Tuple2<Long, Long>> pair : tuples) {
-				log.info(pair);
+				log.info("{}",pair);
 				sum += (Long) pair.v2.v1;
 			}
 		}
-		log.info(sum);
-		log.info(DataSamudayaNodesResources.get());
-		log.info("testResourcesAllocationBeforeAndAfterExecDivided After---------------------------------------");
+		log.info("{}",sum);
+		log.info("{}",DataSamudayaNodesResources.get());
+		log.info("{}","testResourcesAllocationBeforeAndAfterExecDivided After---------------------------------------");
 	}
 
 
@@ -530,7 +530,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testFilterFilterSaveAsTextFile() throws Exception {
-		log.info("testFilterFilterSaveAsTextFile Before---------------------------------------");
+		log.info("{}","testFilterFilterSaveAsTextFile Before---------------------------------------");
 		PipelineConfig pipelineconfig = new PipelineConfig();
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY);
@@ -548,14 +548,14 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 				.filter(value -> !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
 				.filter(value -> !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]))
 				.saveAsTextFile(new URI(hdfsfilepath), "/filtertest/FilterFilter-" + System.currentTimeMillis());
-		log.info("testFilterFilterSaveAsTextFile After---------------------------------------");
+		log.info("{}","testFilterFilterSaveAsTextFile After---------------------------------------");
 	}
 
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testResourcesAllocationCoalesceExecDivided() throws Throwable {
-		log.info("testResourcesAllocationCoalesceExecDivided Before---------------------------------------");
+		log.info("{}","testResourcesAllocationCoalesceExecDivided Before---------------------------------------");
 		PipelineConfig pipelineconfig = new PipelineConfig();
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
@@ -569,7 +569,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setNumberofcontainers("5");
 		pipelineconfig.setBatchsize("2");
 		pipelineconfig.setContaineralloc("DIVIDED");
-		log.info(DataSamudayaNodesResources.get());
+		log.info("{}",DataSamudayaNodesResources.get());
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlines,
 				pipelineconfig);
 		List<List<Tuple2<String, Tuple2<Long, Long>>>> redByKeyList = (List) datastream.map(dat -> dat.split(","))
@@ -582,12 +582,12 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple2<String, Tuple2<Long, Long>>> tuples : redByKeyList) {
 			for (Tuple2<String, Tuple2<Long, Long>> pair : tuples) {
-				log.info(pair);
+				log.info("{}",pair);
 				sum += (Long) pair.v2.v1;
 			}
 		}
-		log.info(sum);
-		log.info(DataSamudayaNodesResources.get());
-		log.info("testResourcesAllocationCoalesceExecDivided After---------------------------------------");
+		log.info("{}",sum);
+		log.info("{}",DataSamudayaNodesResources.get());
+		log.info("{}","testResourcesAllocationCoalesceExecDivided After---------------------------------------");
 	}
 }

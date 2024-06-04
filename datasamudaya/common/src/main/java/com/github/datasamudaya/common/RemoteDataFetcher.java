@@ -98,7 +98,7 @@ public class RemoteDataFetcher {
 		try (var fsdos = hdfs.create(filepathurl); 
 				var output = new Output(fsdos);) {
 
-			Utils.getKryo().writeClassAndObject(output, new LinkedHashSet<>(serobj.keys()));			
+			Utils.getKryo().writeClassAndObject(output, new LinkedHashSet<>(serobj.keys()));
 			Utils.getKryo().writeClassAndObject(output, serobj);
 			output.flush();
 		} catch (Exception ex) {
@@ -122,15 +122,15 @@ public class RemoteDataFetcher {
 				var output = new Output(fsdos);) {
 			Kryo kryo = Utils.getKryo();
 			ClassLoader clsloader = null;
-			if(config instanceof PipelineConfig pc) {
-				if(nonNull(pc.getClsloader())) {
+			if (config instanceof PipelineConfig pc) {
+				if (nonNull(pc.getClsloader())) {
 					kryo.setClassLoader(pc.getClsloader());
 				}
 				clsloader = pc.getClsloader();
 				pc.setClsloader(null);
 			}
 			kryo.writeClassAndObject(output, serobj);
-			if(config instanceof PipelineConfig pc) {
+			if (config instanceof PipelineConfig pc) {
 				pc.setClsloader(clsloader);
 			}
 			output.flush();
@@ -270,7 +270,7 @@ public class RemoteDataFetcher {
 			String jobid, String filename) throws RemoteDataFetcherException {
 		log.debug("Entered RemoteDataFetcher.readIntermediatePhaseOutputFromDFS");
 		try {
-			var path = DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + filename;			
+			var path = DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + filename;
 			File file = new File(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path);
 			log.debug("Exiting RemoteDataFetcher.readIntermediatePhaseOutputFromDFS");
 			if (file.isFile() && file.exists()) {

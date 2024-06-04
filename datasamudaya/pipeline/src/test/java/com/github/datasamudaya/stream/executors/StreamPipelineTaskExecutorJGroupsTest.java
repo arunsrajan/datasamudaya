@@ -88,7 +88,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task task = new Task(); task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task = new Task();
+		task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task.jobid = js.getJobid();
 		task.stageid = js.getStageid();
 		Object function = new IntersectionFunction();
@@ -104,13 +105,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths
-				, null);
+		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls, false);
 		mdsjte.setTask(task);
 		mdsjte.processBlockHDFSIntersection(bls.get(0), bls.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(task);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<String> intersectiondata = (List<String>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -128,7 +129,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task task = new Task(); task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task = new Task();
+		task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task.jobid = js.getJobid();
 		task.stageid = js.getStageid();
 		Object function = new IntersectionFunction();
@@ -149,16 +151,16 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task);
 		mdsjte.processBlockHDFSIntersection(bls1.get(0), bls2.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(task);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<String> intersectiondata = (List<String>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -176,7 +178,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task task = new Task(); task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task = new Task();
+		task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task.jobid = js.getJobid();
 		task.stageid = js.getStageid();
 		Object function = new IntersectionFunction();
@@ -197,20 +200,21 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task);
 		mdsjte.processBlockHDFSIntersection(bls1.get(0), bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(task);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		Set<InputStream> istreams = new LinkedHashSet<>(Arrays.asList(fsdis));
-		task = new Task(); task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		task = new Task();
+		task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task.jobid = js.getJobid();
 		task.stageid = js.getStageid();
 		function = new IntersectionFunction();
@@ -237,7 +241,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task task1 = new Task(); task1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task1 = new Task();
+		task1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task1.jobid = js.getJobid();
 		task1.stageid = js.getStageid();
 		Object function = new IntersectionFunction();
@@ -258,16 +263,17 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task1);
 		mdsjte.processBlockHDFSIntersection(bls1.get(0), bls1.get(0), hdfs);
-		Task task2 = new Task(); task2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task2 = new Task();
+		task2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task2.jobid = js.getJobid();
 		task2.stageid = js.getStageid();
 		function = new IntersectionFunction();
@@ -275,7 +281,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().tasks.add(function);
 		mdsjte.setTask(task2);
 		mdsjte.processBlockHDFSIntersection(bls2.get(0), bls2.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(task1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<InputStream> istreams1 = Arrays.asList(fsdis1);
@@ -283,7 +289,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		InputStream fsdis2 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<InputStream> istreams2 = Arrays.asList(fsdis2);
 
-		Task taskinter = new Task(); taskinter.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task taskinter = new Task();
+		taskinter.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		taskinter.jobid = js.getJobid();
 		taskinter.stageid = js.getStageid();
 		function = new IntersectionFunction();
@@ -311,7 +318,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task task = new Task(); task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task = new Task();
+		task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task.jobid = js.getJobid();
 		task.stageid = js.getStageid();
 		Object function = new UnionFunction();
@@ -327,13 +335,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths
-				, null);
+		List<BlocksLocation> bls = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls, false);
 		mdsjte.setTask(task);
 		mdsjte.processBlockHDFSUnion(bls.get(0), bls.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(task);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<String> uniondata = (List<String>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -351,7 +359,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task task = new Task(); task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task = new Task();
+		task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task.jobid = js.getJobid();
 		task.stageid = js.getStageid();
 		Object function = new UnionFunction();
@@ -372,16 +381,16 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task);
 		mdsjte.processBlockHDFSUnion(bls1.get(0), bls2.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(task);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<String> uniondata = (List<String>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -399,7 +408,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task task = new Task(); task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task = new Task();
+		task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task.jobid = js.getJobid();
 		task.stageid = js.getStageid();
 		Object function = new UnionFunction();
@@ -420,20 +430,21 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task);
 		mdsjte.processBlockHDFSUnion(bls1.get(0), bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(task);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		Set<InputStream> istreams = new LinkedHashSet<>(Arrays.asList(fsdis));
-		task = new Task(); task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		task = new Task();
+		task.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task.jobid = js.getJobid();
 		task.stageid = js.getStageid();
 		function = new UnionFunction();
@@ -459,7 +470,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task task1 = new Task(); task1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task1 = new Task();
+		task1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task1.jobid = js.getJobid();
 		task1.stageid = js.getStageid();
 		Object function = new UnionFunction();
@@ -480,16 +492,17 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(task1);
 		mdsjte.processBlockHDFSUnion(bls1.get(0), bls1.get(0), hdfs);
-		Task task2 = new Task(); task2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task task2 = new Task();
+		task2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		task2.jobid = js.getJobid();
 		task2.stageid = js.getStageid();
 		function = new UnionFunction();
@@ -497,7 +510,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().tasks.add(function);
 		mdsjte.setTask(task2);
 		mdsjte.processBlockHDFSUnion(bls2.get(0), bls2.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(task1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<InputStream> istreams1 = Arrays.asList(fsdis1);
@@ -506,7 +519,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		InputStream fsdis2 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<InputStream> istreams2 = Arrays.asList(fsdis2);
 
-		Task taskunion = new Task(); taskunion.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task taskunion = new Task();
+		taskunion.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		taskunion.jobid = js.getJobid();
 		taskunion.stageid = js.getStageid();
 		function = new UnionFunction();
@@ -534,7 +548,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -552,14 +567,14 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
 
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(filtertask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<String[]> mapfilterdata = (List<String[]>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -577,7 +592,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task calculatecounttask = new Task(); calculatecounttask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task calculatecounttask = new Task();
+		calculatecounttask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		calculatecounttask.jobid = js.getJobid();
 		calculatecounttask.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -596,13 +612,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(calculatecounttask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(calculatecounttask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Long> mapfiltercountdata = (List<Long>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -620,7 +636,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task sstask = new Task(); sstask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task sstask = new Task();
+		sstask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		sstask.jobid = js.getJobid();
 		sstask.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -641,15 +658,15 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(sstask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
 		String path = mdsjte.getIntermediateDataFSFilePath(sstask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
-		
+
 		List<IntSummaryStatistics> mapfilterssdata = (List<IntSummaryStatistics>) Utils.getKryo().readClassAndObject(new Input(fsdis));
 		assertEquals(1, (long) mapfilterssdata.size());
 		assertEquals(623, (long) mapfilterssdata.get(0).getMax());
@@ -670,7 +687,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 
-		Task maxtask = new Task(); maxtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task maxtask = new Task();
+		maxtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		maxtask.jobid = js.getJobid();
 		maxtask.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -691,13 +709,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(maxtask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(maxtask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfiltermaxdata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -715,7 +733,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task mintask = new Task(); mintask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task mintask = new Task();
+		mintask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		mintask.jobid = js.getJobid();
 		mintask.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -736,13 +755,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(mintask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(mintask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfiltermaxdata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -760,7 +779,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task sumtask = new Task(); sumtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task sumtask = new Task();
+		sumtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		sumtask.jobid = js.getJobid();
 		sumtask.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -781,13 +801,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(sumtask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(sumtask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfiltermaxdata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -805,7 +825,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task sdtask = new Task(); sdtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task sdtask = new Task();
+		sdtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		sdtask.jobid = js.getJobid();
 		sdtask.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -826,13 +847,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(sdtask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(sdtask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Double> mapfiltermaxdata = (List<Double>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -851,7 +872,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task calcultecounttask = new Task(); calcultecounttask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task calcultecounttask = new Task();
+		calcultecounttask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		calcultecounttask.jobid = js.getJobid();
 		calcultecounttask.stageid = js.getStageid();
 		PredicateSerializable<CSVRecord> filter = (CSVRecord csvrecord) -> !"ArrDelay".equals(csvrecord.get(14))
@@ -870,13 +892,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(calcultecounttask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(calcultecounttask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Long> mapfiltercountdata = (List<Long>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -895,7 +917,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 		PredicateSerializable<CSVRecord> filter = (CSVRecord csvrecord) -> !"ArrDelay".equals(csvrecord.get(14))
@@ -913,13 +936,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(filtertask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<CSVRecord> filterdata = (List<CSVRecord>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -938,7 +961,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task summarystaticstask = new Task(); summarystaticstask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task summarystaticstask = new Task();
+		summarystaticstask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		summarystaticstask.jobid = js.getJobid();
 		summarystaticstask.stageid = js.getStageid();
 		PredicateSerializable<CSVRecord> filter = (CSVRecord csvrecord) -> !"ArrDelay".equals(csvrecord.get(14))
@@ -959,13 +983,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(summarystaticstask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(summarystaticstask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<IntSummaryStatistics> mapfilterssdata = (List<IntSummaryStatistics>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -988,7 +1012,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task maxtask = new Task(); maxtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task maxtask = new Task();
+		maxtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		maxtask.jobid = js.getJobid();
 		maxtask.stageid = js.getStageid();
 		PredicateSerializable<CSVRecord> filter = (CSVRecord csvrecord) -> !"ArrDelay".equals(csvrecord.get(14))
@@ -1009,13 +1034,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(maxtask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(maxtask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfilterssdata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1034,7 +1059,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task mintask = new Task(); mintask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task mintask = new Task();
+		mintask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		mintask.jobid = js.getJobid();
 		mintask.stageid = js.getStageid();
 		PredicateSerializable<CSVRecord> filter = (CSVRecord csvrecord) -> !"ArrDelay".equals(csvrecord.get(14))
@@ -1055,13 +1081,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(mintask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(mintask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfilterssdata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1080,7 +1106,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task sumtask = new Task(); sumtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task sumtask = new Task();
+		sumtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		sumtask.jobid = js.getJobid();
 		sumtask.stageid = js.getStageid();
 		PredicateSerializable<CSVRecord> filter = (CSVRecord csvrecord) -> !"ArrDelay".equals(csvrecord.get(14))
@@ -1101,13 +1128,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(sumtask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(sumtask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfilterssdata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1126,7 +1153,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task sdtask = new Task(); sdtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task sdtask = new Task();
+		sdtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		sdtask.jobid = js.getJobid();
 		sdtask.stageid = js.getStageid();
 		PredicateSerializable<CSVRecord> filter = (CSVRecord csvrecord) -> !"ArrDelay".equals(csvrecord.get(14))
@@ -1147,13 +1175,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(sdtask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(sdtask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Double> mapfiltersddata = (List<Double>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1172,7 +1200,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 
@@ -1191,8 +1220,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
@@ -1200,7 +1229,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		String path = mdsjte.getIntermediateDataFSFilePath(filtertask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		Set<InputStream> inputtocount = new LinkedHashSet<>(Arrays.asList(fsdis));
-		Task calcultecounttask = new Task(); calcultecounttask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task calcultecounttask = new Task();
+		calcultecounttask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		calcultecounttask.jobid = js.getJobid();
 		calcultecounttask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1208,7 +1238,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(calcultecounttask);
 		mdsjte.processBlockHDFSMap(inputtocount);
 		fsdis.close();
-		
+
 		path = mdsjte.getIntermediateDataFSFilePath(calcultecounttask);
 		fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Long> csvreccount = (List<Long>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1227,7 +1257,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 
@@ -1246,8 +1277,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
@@ -1256,7 +1287,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		Set<InputStream> inputtocount = new LinkedHashSet<>(Arrays.asList(fsdis));
 		ToIntFunction<CSVRecord> csvint = (CSVRecord csvrecord) -> Integer.parseInt(csvrecord.get(14));
-		Task summarystaticstask = new Task(); summarystaticstask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task summarystaticstask = new Task();
+		summarystaticstask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		summarystaticstask.jobid = js.getJobid();
 		summarystaticstask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1265,7 +1297,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(summarystaticstask);
 		mdsjte.processBlockHDFSMap(inputtocount);
 		fsdis.close();
-		
+
 		path = mdsjte.getIntermediateDataFSFilePath(summarystaticstask);
 		fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<IntSummaryStatistics> mapfilterssdata = (List<IntSummaryStatistics>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1288,7 +1320,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 
@@ -1307,8 +1340,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
@@ -1317,7 +1350,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		Set<InputStream> inputtocount = new LinkedHashSet<>(Arrays.asList(fsdis));
 		ToIntFunction<CSVRecord> csvint = (CSVRecord csvrecord) -> Integer.parseInt(csvrecord.get(14));
-		Task maxtask = new Task(); maxtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task maxtask = new Task();
+		maxtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		maxtask.jobid = js.getJobid();
 		maxtask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1326,7 +1360,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(maxtask);
 		mdsjte.processBlockHDFSMap(inputtocount);
 		fsdis.close();
-		
+
 		path = mdsjte.getIntermediateDataFSFilePath(maxtask);
 		fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfiltermaxdata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1345,7 +1379,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 		PredicateSerializable<CSVRecord> filter = (CSVRecord csvrecord) -> !"ArrDelay".equals(csvrecord.get(14))
@@ -1363,8 +1398,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
@@ -1373,7 +1408,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		Set<InputStream> inputtocount = new LinkedHashSet<>(Arrays.asList(fsdis));
 		ToIntFunction<CSVRecord> csvint = (CSVRecord csvrecord) -> Integer.parseInt(csvrecord.get(14));
-		Task mintask = new Task(); mintask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task mintask = new Task();
+		mintask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		mintask.jobid = js.getJobid();
 		mintask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1382,7 +1418,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(mintask);
 		mdsjte.processBlockHDFSMap(inputtocount);
 		fsdis.close();
-		
+
 		path = mdsjte.getIntermediateDataFSFilePath(mintask);
 		fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfiltermindata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1401,7 +1437,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 
@@ -1420,8 +1457,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
@@ -1430,7 +1467,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		Set<InputStream> inputtocount = new LinkedHashSet<>(Arrays.asList(fsdis));
 		ToIntFunction<CSVRecord> csvint = (CSVRecord csvrecord) -> Integer.parseInt(csvrecord.get(14));
-		Task sumtask = new Task(); sumtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task sumtask = new Task();
+		sumtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		sumtask.jobid = js.getJobid();
 		sumtask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1439,7 +1477,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(sumtask);
 		mdsjte.processBlockHDFSMap(inputtocount);
 		fsdis.close();
-		
+
 		path = mdsjte.getIntermediateDataFSFilePath(sumtask);
 		fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfiltersumdata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1458,7 +1496,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 
@@ -1477,8 +1516,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
@@ -1487,7 +1526,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		Set<InputStream> inputtocount = new LinkedHashSet<>(Arrays.asList(fsdis));
 		ToIntFunction<CSVRecord> csvint = (CSVRecord csvrecord) -> Integer.parseInt(csvrecord.get(14));
-		Task sdtask = new Task(); sdtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task sdtask = new Task();
+		sdtask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		sdtask.jobid = js.getJobid();
 		sdtask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1496,7 +1536,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(sdtask);
 		mdsjte.processBlockHDFSMap(inputtocount);
 		fsdis.close();
-		
+
 		path = mdsjte.getIntermediateDataFSFilePath(sdtask);
 		fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfiltersddata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1515,7 +1555,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 
@@ -1534,14 +1575,14 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
 		mdsjte.processSamplesBlocks(100, bls1.get(0), hdfs);
 		String path = mdsjte.getIntermediateDataFSFilePath(filtertask);
-		
+
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Long> csvreccount = (List<Long>) Utils.getKryo().readClassAndObject(new Input(fsdis));
 		assertEquals(100, (long) csvreccount.size());
@@ -1558,7 +1599,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task counttask = new Task(); counttask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task counttask = new Task();
+		counttask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		counttask.jobid = js.getJobid();
 		counttask.stageid = js.getStageid();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
@@ -1577,14 +1619,14 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(counttask);
 		mdsjte.processSamplesBlocks(150, bls1.get(0), hdfs);
 		String path = mdsjte.getIntermediateDataFSFilePath(counttask);
-		
+
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Long> csvreccount = (List<Long>) Utils.getKryo().readClassAndObject(new Input(fsdis));
 		assertEquals(150l, (long) csvreccount.get(0));
@@ -1602,7 +1644,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 
@@ -1621,8 +1664,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
@@ -1630,7 +1673,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		String path = mdsjte.getIntermediateDataFSFilePath(filtertask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<InputStream> inputtocount = Arrays.asList(fsdis);
-		Task sample = new Task(); sample.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task sample = new Task();
+		sample.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		sample.jobid = js.getJobid();
 		sample.stageid = js.getStageid();
 		Function samplefn = val -> val;
@@ -1639,7 +1683,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(sample);
 		mdsjte.processSamplesObjects(150, inputtocount);
 		fsdis.close();
-		
+
 		path = mdsjte.getIntermediateDataFSFilePath(sample);
 		fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Integer> mapfiltersddata = (List<Integer>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1658,7 +1702,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		CsvOptions csvoptions = new CsvOptions(airlineheader);
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 
@@ -1677,8 +1722,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
@@ -1686,7 +1731,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		String path = mdsjte.getIntermediateDataFSFilePath(filtertask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<InputStream> inputtocount = Arrays.asList(fsdis);
-		Task count = new Task(); count.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task count = new Task();
+		count.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		count.jobid = js.getJobid();
 		count.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1694,7 +1740,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(count);
 		mdsjte.processSamplesObjects(150, inputtocount);
 		fsdis.close();
-		
+
 		path = mdsjte.getIntermediateDataFSFilePath(count);
 		fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Long> mapfiltersddata = (List<Long>) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1712,7 +1758,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task reducebykeytask1 = new Task(); reducebykeytask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task reducebykeytask1 = new Task();
+		reducebykeytask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		reducebykeytask1.jobid = js.getJobid();
 		reducebykeytask1.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -1740,17 +1787,18 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(reducebykeytask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
 
-		Task reducebykeytask2 = new Task(); reducebykeytask2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task reducebykeytask2 = new Task();
+		reducebykeytask2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		reducebykeytask2.jobid = js.getJobid();
 		reducebykeytask2.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1761,12 +1809,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(reducebykeytask2);
 		mdsjte.processBlockHDFSMap(bls2.get(0), hdfs);
 
-		
+
 		String path1 = mdsjte.getIntermediateDataFSFilePath(reducebykeytask1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path1 ));
 		String path2 = mdsjte.getIntermediateDataFSFilePath(reducebykeytask2);
 		InputStream fsdis2 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path2 ));
-		Task jointask = new Task(); jointask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task jointask = new Task();
+		jointask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		jointask.jobid = js.getJobid();
 		jointask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1780,7 +1829,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		fsdis1.close();
 		fsdis2.close();
 
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(jointask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Tuple2<Tuple2<String, Integer>, Tuple2<String, Integer>>> mapfiltersddata = (List) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1800,7 +1849,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task reducebykeytask1 = new Task(); reducebykeytask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task reducebykeytask1 = new Task();
+		reducebykeytask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		reducebykeytask1.jobid = js.getJobid();
 		reducebykeytask1.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -1828,17 +1878,18 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(reducebykeytask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
 
-		Task reducebykeytask2 = new Task(); reducebykeytask2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task reducebykeytask2 = new Task();
+		reducebykeytask2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		reducebykeytask2.jobid = js.getJobid();
 		reducebykeytask2.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1849,12 +1900,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(reducebykeytask2);
 		mdsjte.processBlockHDFSMap(bls2.get(0), hdfs);
 
-		
+
 		String path1 = mdsjte.getIntermediateDataFSFilePath(reducebykeytask1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path1 ));
 		String path2 = mdsjte.getIntermediateDataFSFilePath(reducebykeytask2);
 		InputStream fsdis2 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path2 ));
-		Task jointask = new Task(); jointask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task jointask = new Task();
+		jointask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		jointask.jobid = js.getJobid();
 		jointask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1869,7 +1921,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		fsdis1.close();
 		fsdis2.close();
 
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(jointask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Tuple2<Tuple2<String, Integer>, Tuple2<String, Integer>>> mapfiltersddata = (List) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1893,7 +1945,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task reducebykeytask1 = new Task(); reducebykeytask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task reducebykeytask1 = new Task();
+		reducebykeytask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		reducebykeytask1.jobid = js.getJobid();
 		reducebykeytask1.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -1921,17 +1974,18 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(reducebykeytask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
 
-		Task reducebykeytask2 = new Task(); reducebykeytask2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task reducebykeytask2 = new Task();
+		reducebykeytask2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		reducebykeytask2.jobid = js.getJobid();
 		reducebykeytask2.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1942,12 +1996,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(reducebykeytask2);
 		mdsjte.processBlockHDFSMap(bls2.get(0), hdfs);
 
-		
+
 		String path1 = mdsjte.getIntermediateDataFSFilePath(reducebykeytask1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path1 ));
 		String path2 = mdsjte.getIntermediateDataFSFilePath(reducebykeytask2);
 		InputStream fsdis2 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path2 ));
-		Task jointask = new Task(); jointask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task jointask = new Task();
+		jointask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		jointask.jobid = js.getJobid();
 		jointask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -1962,7 +2017,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		fsdis1.close();
 		fsdis2.close();
 
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(jointask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Tuple2<Tuple2<String, Integer>, Tuple2<String, Integer>>> mapfiltersddata = (List) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -1986,7 +2041,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task mappairtask1 = new Task(); mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task mappairtask1 = new Task();
+		mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		mappairtask1.jobid = js.getJobid();
 		mappairtask1.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -2007,17 +2063,18 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(mappairtask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
 
-		
+
 		String path1 = mdsjte.getIntermediateDataFSFilePath(mappairtask1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path1 ));
-		Task gbktask = new Task(); gbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task gbktask = new Task();
+		gbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		gbktask.jobid = js.getJobid();
 		gbktask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -2029,7 +2086,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.processGroupByKeyTuple2();
 		fsdis1.close();
 
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(gbktask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Tuple2<String, List<Integer>>> mapfiltersddata = (List) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -2049,7 +2106,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task mappairtask1 = new Task(); mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task mappairtask1 = new Task();
+		mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		mappairtask1.jobid = js.getJobid();
 		mappairtask1.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -2070,17 +2128,18 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(mappairtask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
 
-		
+
 		String path1 = mdsjte.getIntermediateDataFSFilePath(mappairtask1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path1 ));
-		Task fbktask = new Task(); fbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task fbktask = new Task();
+		fbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		fbktask.jobid = js.getJobid();
 		fbktask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -2092,7 +2151,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.processFoldByKeyTuple2();
 		fsdis1.close();
 
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(fbktask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Tuple2<String, Long>> mapfiltersddata = (List) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -2112,7 +2171,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task mappairtask1 = new Task(); mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task mappairtask1 = new Task();
+		mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		mappairtask1.jobid = js.getJobid();
 		mappairtask1.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -2133,16 +2193,17 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(mappairtask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path1 = mdsjte.getIntermediateDataFSFilePath(mappairtask1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path1 ));
-		Task fbktask = new Task(); fbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task fbktask = new Task();
+		fbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		fbktask.jobid = js.getJobid();
 		fbktask.stageid = js.getStageid();
 		ReduceByKeyFunction<Long> redfunc = (a, b) -> a + b;
@@ -2155,7 +2216,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.processFoldByKeyTuple2();
 		fsdis1.close();
 
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(fbktask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Tuple2<String, Long>> mapfiltersddata = (List) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -2175,7 +2236,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task mappairtask1 = new Task(); mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task mappairtask1 = new Task();
+		mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		mappairtask1.jobid = js.getJobid();
 		mappairtask1.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -2196,17 +2258,18 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(mappairtask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
 
-		
+
 		String path1 = mdsjte.getIntermediateDataFSFilePath(mappairtask1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path1 ));
-		Task cbktask = new Task(); cbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task cbktask = new Task();
+		cbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		cbktask.jobid = js.getJobid();
 		cbktask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -2216,7 +2279,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.processCountByKeyTuple2();
 		fsdis1.close();
 
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(cbktask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Tuple2<String, Long>> mapfiltersddata = (List) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -2236,7 +2299,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task mappairtask1 = new Task(); mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task mappairtask1 = new Task();
+		mappairtask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		mappairtask1.jobid = js.getJobid();
 		mappairtask1.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -2257,16 +2321,17 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(mappairtask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path1 = mdsjte.getIntermediateDataFSFilePath(mappairtask1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path1 ));
-		Task cbktask = new Task(); cbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task cbktask = new Task();
+		cbktask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		cbktask.jobid = js.getJobid();
 		cbktask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -2276,7 +2341,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.processCountByValueTuple2();
 		fsdis1.close();
 
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(cbktask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Tuple2<Tuple2<String, Long>, Long>> mapfiltersddata = (List) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -2299,7 +2364,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		js.getStage().id = js.getStageid();
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
-		Task reducebykeytask1 = new Task(); reducebykeytask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task reducebykeytask1 = new Task();
+		reducebykeytask1.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		reducebykeytask1.jobid = js.getJobid();
 		reducebykeytask1.stageid = js.getStageid();
 		MapFunction<String, String[]> map = (String str) -> str.split(DataSamudayaConstants.COMMA);
@@ -2327,17 +2393,17 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths2.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
-		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths2
-				, null);
+		List<BlocksLocation> bls2 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths2
+		, null);
 		fbp.getDnXref(bls2, false);
 		mdsjte.setTask(reducebykeytask1);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
 
-		Task reducebykeytask2 = new Task(); 
+		Task reducebykeytask2 = new Task();
 		reducebykeytask2.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		reducebykeytask2.jobid = js.getJobid();
 		reducebykeytask2.stageid = js.getStageid();
@@ -2349,13 +2415,14 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		mdsjte.setTask(reducebykeytask2);
 		mdsjte.processBlockHDFSMap(bls2.get(0), hdfs);
 
-		
+
 		String path1 = mdsjte.getIntermediateDataFSFilePath(reducebykeytask1);
 		InputStream fsdis1 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path1 ));
 		String path2 = mdsjte.getIntermediateDataFSFilePath(reducebykeytask2);
 		InputStream fsdis2 = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path2 ));
 		reducebykeytask2.input = new Object[]{fsdis1, fsdis2};
-		Task coalescetask = new Task(); coalescetask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task coalescetask = new Task();
+		coalescetask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		coalescetask.jobid = js.getJobid();
 		coalescetask.stageid = js.getStageid();
 		js.getStage().tasks.clear();
@@ -2369,7 +2436,7 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		fsdis1.close();
 		fsdis2.close();
 
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(coalescetask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<Tuple2<String, Integer>> mapfiltersddata = (List) Utils.getKryo().readClassAndObject(new Input(fsdis));
@@ -2394,7 +2461,8 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 		jsidjsmap.put(js.getJobid() + js.getStageid(), js);
 		js.getStage().tasks = new ArrayList<>();
 		Json json = new Json();
-		Task filtertask = new Task(); filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+		Task filtertask = new Task();
+		filtertask.setTaskid(DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
 		filtertask.jobid = js.getJobid();
 		filtertask.stageid = js.getStageid();
 		PredicateSerializable<JSONObject> filter = jsonobj -> jsonobj != null
@@ -2412,13 +2480,13 @@ public class StreamPipelineTaskExecutorJGroupsTest extends StreamPipelineTestCom
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
 			filepaths1.addAll(Arrays.asList(paths));
 		}
-		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocationByFixedBlockSizeAuto(hdfs, filepaths1
-				, null);
+		List<BlocksLocation> bls1 = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths1
+		, null);
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.getDnXref(bls1, false);
 		mdsjte.setTask(filtertask);
 		mdsjte.processBlockHDFSMap(bls1.get(0), hdfs);
-		
+
 		String path = mdsjte.getIntermediateDataFSFilePath(filtertask);
 		InputStream fsdis = new BufferedInputStream(new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path ));
 		List<JSONObject> jsonfilterdata = (List<JSONObject>) Utils.getKryo().readClassAndObject(new Input(fsdis));

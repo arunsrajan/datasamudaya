@@ -36,7 +36,7 @@ import org.springframework.yarn.integration.container.AbstractIntegrationYarnCon
 import org.springframework.yarn.integration.ip.mind.MindAppmasterServiceClient;
 
 import com.esotericsoftware.kryo.io.Input;
-import com.github.datasamudaya.common.ByteBufferPoolDirect;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
@@ -80,7 +80,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 		try {
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
+			ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
 			while (true) {
 				request = new JobRequest();
 				request.setState(JobRequest.State.WHATTODO);
@@ -151,8 +151,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 							for (var apptaskids : (Collection<String>) tuple2.v2) {
 								if (apptaskcontextmap.get(apptaskids) != null) {
 									currentctx = apptaskcontextmap.get(apptaskids);
-								}
-								else {
+								} else {
 									currentctx = (Context) RemoteDataFetcher.readIntermediatePhaseOutputFromDFS(red.apptask.getApplicationid(),
 											apptaskids, false);
 									apptaskcontextmap.put(apptaskids, currentctx);
@@ -186,7 +185,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 
 			}
 			log.info(containerid + ": Completed Job Exiting with status 0...");
-			ByteBufferPoolDirect.destroy();
+			ByteBufferPoolDirectOld.destroy();
 			System.exit(0);
 		} catch (Exception ex) {
 			request = new JobRequest();
@@ -197,7 +196,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 				JobResponse response = (JobResponse) client.doMindRequest(request);
 				log.info("Job Completion Error..." + response.getState() + "..., See cause below \n", ex);
 			}
-			ByteBufferPoolDirect.destroy();
+			ByteBufferPoolDirectOld.destroy();
 			System.exit(-1);
 		}
 	}

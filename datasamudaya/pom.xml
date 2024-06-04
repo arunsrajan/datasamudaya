@@ -6,13 +6,12 @@
 
 	<groupId>com.github.datasamudaya</groupId>
 	<artifactId>datasamudaya</artifactId>
-	<version>${datasamudaya.version}</version>
+	<version>3.0</version>
 	<packaging>pom</packaging>
 
 	<name>datasamudaya</name>
 
 	<properties>
-		<datasamudaya.version>2.0</datasamudaya.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<skip.assemblyxml>true</skip.assemblyxml>
 		<ignite.version>2.16.0</ignite.version>
@@ -24,6 +23,7 @@
 			${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml
 		</sonar.coverage.jacoco.xmlReportPaths>
 		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
+		<akka.version>2.9.1</akka.version>     
 	</properties>
 
 	<dependencies>
@@ -39,6 +39,13 @@
 			<artifactId>calcite-core</artifactId>
 			<version>${calcite.version}</version>
 		</dependency>
+
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-pool2</artifactId>
+		    <version>2.12.0</version>
+		</dependency>
+
 
 		<dependency>
 			<groupId>com.github.jsqlparser</groupId>
@@ -299,6 +306,11 @@
 		    <version>2.9.1</version>
 		</dependency>
 		<dependency>
+			<groupId>de.siegmar</groupId>
+			<artifactId>fastcsv</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+		<dependency>
 			<groupId>com.github.dexecutor</groupId>
 			<artifactId>dexecutor-core</artifactId>
 			<version>2.1.4</version>
@@ -324,6 +336,12 @@
 			<groupId>org.xerial.snappy</groupId>
 			<artifactId>snappy-java</artifactId>
 			<version>1.1.8.4</version>
+		</dependency>
+
+		<dependency>
+		    <groupId>org.lz4</groupId>
+		    <artifactId>lz4-java</artifactId>
+		    <version>1.8.0</version>
 		</dependency>
 
 		<dependency>
@@ -459,6 +477,32 @@
 		    <artifactId>ea-agent-loader</artifactId>
 		    <version>1.0.3</version>
 		</dependency>
+
+		<!-- Akka Actors -->
+		<dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor-typed_2.13</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+		
+		<dependency>
+		    <groupId>com.typesafe.akka</groupId>
+		    <artifactId>akka-cluster-typed_2.13</artifactId>
+		    <version>${akka.version}</version>
+		</dependency>
+		
+		<dependency>
+	        <groupId>io.altoo</groupId>
+	        <artifactId>akka-kryo-serialization_2.13</artifactId>
+	        <version>2.5.2</version>
+	    </dependency>
+		
+		<dependency>
+		    <groupId>ch.qos.logback</groupId>
+		    <artifactId>logback-core</artifactId>
+		    <version>1.5.3</version>
+		</dependency>		
+
 	</dependencies>
 	<reporting>
     <plugins>
@@ -514,7 +558,7 @@
 					<activeRecipes>
 						<recipe>org.openrewrite.staticanalysis.CodeCleanup</recipe>
 						<receipe>org.openrewrite.java.RemoveUnusedImports</receipe>
-						<recipe>org.openrewrite.java.migrate.UpgradeToJava17</recipe>
+						<recipe>org.openrewrite.java.format.AutoFormat</recipe>
 					</activeRecipes>
 					<checkstyleConfigFile>checkstyle.xml</checkstyleConfigFile>
 				</configuration>
@@ -699,7 +743,7 @@
 							<argLine>
 								${argLine}
 								-Xms256m -Xmx2g
-								-javaagent:../lib/dsagent-2.0.jar
+								-javaagent:../lib/dsagent-3.0.jar
 								--add-opens
 								java.base/java.math=ALL-UNNAMED
 								--add-opens
@@ -1062,15 +1106,16 @@
 		<repository>
 			<id>mavenrepo</id>
 			<url>https://repo1.maven.org/maven2</url>
-		</repository>
-		<repository>
-			<id>hortonworks</id>
-			<url>https://repo.hortonworks.com/content/repositories/releases/</url>
-		</repository>
+		</repository>		
 		<repository>
 			<id>clojars</id>
 			<url>http://clojars.org/repo/</url>
 		</repository>
+		<repository>
+            <id>akka-repository</id>
+            <name>Akka library repository</name>
+            <url>https://repo.akka.io/maven</url>
+        </repository>
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>

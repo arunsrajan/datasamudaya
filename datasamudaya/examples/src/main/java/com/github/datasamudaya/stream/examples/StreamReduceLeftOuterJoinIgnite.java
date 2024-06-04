@@ -43,7 +43,7 @@ public class StreamReduceLeftOuterJoinIgnite implements Pipeline {
 			throws Exception {
 		log.info("StreamReduceLeftOuterJoinIgnite.testMassiveDataCollectExampleLeftOuterJoin Before---------------------------------------");
 		var datastream = StreamPipeline.newStreamHDFS(args[0], args[1], pipelineconfig);
-		var mappair1 =  datastream.map(dat -> dat.split(","))
+		var mappair1 = datastream.map(dat -> dat.split(","))
 				.filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14]))
 				.mapToPair(dat -> Tuple.tuple(dat[8], Long.parseLong(dat[14])));
 

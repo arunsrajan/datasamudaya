@@ -17,16 +17,11 @@ package com.github.datasamudaya.stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import java.util.function.ToIntFunction;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.Test;
 
 import com.github.datasamudaya.common.DAGEdge;
-import com.github.datasamudaya.common.Job;
-import com.github.datasamudaya.common.JobMetrics;
 import com.github.datasamudaya.common.PipelineConfig;
-import com.github.datasamudaya.common.functions.Distinct;
-import com.github.datasamudaya.common.functions.IntersectionFunction;
 import com.github.datasamudaya.common.functions.KeyByFunction;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.MapFunction;
@@ -36,7 +31,6 @@ import com.github.datasamudaya.common.functions.PredicateSerializable;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.SToIntFunction;
 import com.github.datasamudaya.common.functions.SortedComparator;
-import com.github.datasamudaya.common.functions.UnionFunction;
 
 public class StreamPipelineTransformationFunctionsTest extends StreamPipelineBaseTestCommon {
 	PipelineConfig pipelineconfig = new PipelineConfig();

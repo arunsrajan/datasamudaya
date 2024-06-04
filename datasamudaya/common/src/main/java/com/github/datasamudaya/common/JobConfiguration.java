@@ -17,6 +17,7 @@ package com.github.datasamudaya.common;
 
 import java.io.OutputStream;
 import java.util.Objects;
+
 /**
  * Map Reduce Job configuration
  * @author arun
@@ -406,5 +407,5 @@ public class JobConfiguration {
 	public void setIgnitehp(String ignitehp) {
 		this.ignitehp = ignitehp;
 	}
-	
+
 }

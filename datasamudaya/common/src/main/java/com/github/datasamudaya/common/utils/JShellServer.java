@@ -95,7 +95,7 @@ public class JShellServer {
 								if ("quit".equalsIgnoreCase(line)) {
 									out.println("Quit");
 									break;
-								}								
+								}
 								List<SnippetEvent> events = jshell.eval(line);
 								for (SnippetEvent event : events) {
 									if (event.status() == Snippet.Status.REJECTED && nonNull(event.exception())) {

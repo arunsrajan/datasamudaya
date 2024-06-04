@@ -38,7 +38,7 @@ import lombok.Setter;
 @EqualsAndHashCode
 @AllArgsConstructor
 @NoArgsConstructor
-public class TasksGraphExecutor implements Serializable{
+public class TasksGraphExecutor implements Serializable {
 	private static final long serialVersionUID = -4313323243733293259L;
 	private List<Task> tasks;
 	private String hostport;
@@ -46,7 +46,7 @@ public class TasksGraphExecutor implements Serializable{
 
 	@Override
 	public String toString() {
-		return "TasksGraphExecutor [tasks=" + tasks  + ", hostport=" + hostport + "]";
+		return "TasksGraphExecutor [tasks=" + tasks + ", hostport=" + hostport + "]";
 	}
 
 }

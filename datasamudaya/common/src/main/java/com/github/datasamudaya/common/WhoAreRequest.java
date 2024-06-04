@@ -22,7 +22,7 @@ import java.io.Serializable;
  * @author arun
  * This class is request class used to get information on the tasks.
  */
-public class WhoAreRequest implements Serializable{
+public class WhoAreRequest implements Serializable {
 
 	private static final long serialVersionUID = -1434238237829504153L;
 

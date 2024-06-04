@@ -14,16 +14,16 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class ColumnMetadata {
 
-    private String columnName;
-    private String dataType;
-    private int columnSize;
-    private String columnDefault;
+	private String columnName;
+	private String dataType;
+	private int columnSize;
+	private String columnDefault;
 
-    public ColumnMetadata(String columnName, String dataType, int columnSize, String columnDefault) {
-        this.columnName = columnName;
-        this.dataType = dataType;
-        this.columnSize = columnSize;
-        this.columnDefault = columnDefault;
-    }
-	
+	public ColumnMetadata(String columnName, String dataType, int columnSize, String columnDefault) {
+		this.columnName = columnName;
+		this.dataType = dataType;
+		this.columnSize = columnSize;
+		this.columnDefault = columnDefault;
+	}
+
 }
