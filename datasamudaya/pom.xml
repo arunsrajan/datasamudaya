@@ -6,13 +6,12 @@
 
 	<groupId>com.github.datasamudaya</groupId>
 	<artifactId>datasamudaya</artifactId>
-	<version>${datasamudaya.version}</version>
+	<version>3.0</version>
 	<packaging>pom</packaging>
 
 	<name>datasamudaya</name>
 
 	<properties>
-		<datasamudaya.version>2.0</datasamudaya.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<skip.assemblyxml>true</skip.assemblyxml>
 		<ignite.version>2.16.0</ignite.version>
@@ -744,7 +743,7 @@
 							<argLine>
 								${argLine}
 								-Xms256m -Xmx2g
-								-javaagent:../lib/dsagent-2.0.jar
+								-javaagent:../lib/dsagent-3.0.jar
 								--add-opens
 								java.base/java.math=ALL-UNNAMED
 								--add-opens
@@ -1107,11 +1106,7 @@
 		<repository>
 			<id>mavenrepo</id>
 			<url>https://repo1.maven.org/maven2</url>
-		</repository>
-		<repository>
-			<id>hortonworks</id>
-			<url>https://repo.hortonworks.com/content/repositories/releases/</url>
-		</repository>
+		</repository>		
 		<repository>
 			<id>clojars</id>
 			<url>http://clojars.org/repo/</url>
