@@ -104,6 +104,8 @@ To run standalone in network datasamudaya
 ------------------------------------------- 
 docker network create --driver=bridge --subnet=172.30.0.0/16 --ip-range=172.30.0.0/16 datasamudaya --attachable
 
+docker run --network datasamudaya --name zoo -p 2181:2181 --hostname zoo -d arunsrajan/datasamudayazk
+
 docker run --network datasamudaya --name namenode --hostname namenode -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" -e "CORE_CONF_fs_defaultFS=hdfs://namenode:9000" -e "HDFS_CONF_dfs_namenode_name_dir=file:///opt/dockershare/name" -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -e "CLUSTER_NAME=hadooptest" -p 9870:9870 -p 9000:9000 -d bde2020/hadoop-namenode
 
 docker run --network datasamudaya -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data" --name datasamudayastandalone --hostname datasamudayastandalone --ip 172.30.0.10 -e ZKHOSTPORT=zoo:2181 -e TEHOST=172.30.0.10 -e TEPORT=10101 -e NODEPORT=12121 -e TSSHOST=172.30.0.10 --link namenode:namenode -e TSSPORT=22222 -e TSHOST=172.30.0.10 -e TSPORT=11111 -p 22222:22222 -p 22223:22223 -p 11111:11111 -p 11112:11112 -p 12123:12123 -p 11123:11123 -p 12124:12124 -e DPORT=*:4000 -p 4000:4000 --memory 12g -e MEMCONFIGLOW=-Xms512m -e MEMCONFIGHIGH=-Xmx512m -e DATASAMUDAYA_HOME=/opt/datasamudaya -d arunsrajan/datasamudayastandalone
