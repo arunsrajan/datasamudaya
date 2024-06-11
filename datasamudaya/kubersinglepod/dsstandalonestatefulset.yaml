@@ -55,10 +55,10 @@ spec:
           resources:
               requests:
                 memory: "64Mi"
-                cpu: "6"
+                cpu: "4"
               limits:
                 memory: "7168Mi"
-                cpu: "8"
+                cpu: "4"
           env:
             - name: DATASAMUDAYA_HOME
               value: /opt/datasamudaya

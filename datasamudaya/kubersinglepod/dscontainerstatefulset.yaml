@@ -17,6 +17,13 @@ spec:
       containers:
         - name: datasamudayacontainer
           image: arunsrajan/datasamudayacontainer:latest
+          resources:
+              requests:
+                memory: "64Mi"
+                cpu: "4"
+              limits:
+                memory: "5120Mi"
+                cpu: "4"
           env:
             - name: DATASAMUDAYA_HOME
               value: /opt/datasamudaya

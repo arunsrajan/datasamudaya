@@ -224,12 +224,17 @@ scope launch
 
 To run on kubernetes 
 --------------------
-minikube start -p datasamudaya --driver docker --mount=true --mount-string=C:\DEVELOPMENT\datasamudayakube:/minikube-host --cpus 4
+minikube start -p datasamudaya --driver docker --mount=true --mount-string=C:\DEVELOPMENT\datasamudayakube:/minikube-host --cpus 11 --memory 12g
 echo "10.244.0.7      datasamudayastandalone-0" >> /etc/hosts
 echo "10.244.0.8      datasamudayacontainer-0" >> /etc/hosts
 
-minikube service datasamudayastandalone
+minikube service datasamudayastandalone -p datasamudaya
 kubectl port-forward --address "0.0.0.0" svc/namenode 9870:9870
+
+kubectl cp 1987.csv datasamudayanamenode-0:/tmp/1987.csv -c datasamudayanamenode
+kubectl cp 1988.csv datasamudayanamenode-0:/tmp/1988.csv -c datasamudayanamenode
+kubectl cp 1989.csv datasamudayanamenode-0:/tmp/1989.csv -c datasamudayanamenode
+kubectl cp 1990.csv datasamudayanamenode-0:/tmp/1990.csv -c datasamudayanamenode
 
 To run the project in openshift
 -------------------------------
