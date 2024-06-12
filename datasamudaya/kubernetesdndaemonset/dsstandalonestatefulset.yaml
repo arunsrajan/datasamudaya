@@ -51,23 +51,19 @@ spec:
     spec:
       containers:
         - name: datasamudayastandalone
-          image: arunsrajan/datasamudayastandalonedn:latest
+          image: arunsrajan/datasamudayastandalone:latest
           resources:
               requests:
                 memory: "64Mi"
-                cpu: "4"
+                cpu: "3"
               limits:
-                memory: "7168Mi"
-                cpu: "4"
+                memory: "2048Mi"
+                cpu: "3"
           env:
             - name: PODCIDRNODEMAPPINGENABLED
-              value: "false"
+              value: "true"
             - name: DATASAMUDAYA_HOME
               value: /opt/datasamudaya
-            - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
-              value: 'false'
-            - name: HDFS_CONF_dfs_datanode_data_dir
-              value: /opt/dockershare/data
             - name: ZKHOSTPORT
               value: zoo:2181
             - name: TEHOST

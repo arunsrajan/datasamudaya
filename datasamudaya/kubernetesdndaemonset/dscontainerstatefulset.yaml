@@ -26,7 +26,7 @@ spec:
                 cpu: "4"
           env:
             - name: PODCIDRNODEMAPPINGENABLED
-              value: "false"
+              value: "true"
             - name: DATASAMUDAYA_HOME
               value: /opt/datasamudaya
             - name: CORE_CONF_fs_defaultFS

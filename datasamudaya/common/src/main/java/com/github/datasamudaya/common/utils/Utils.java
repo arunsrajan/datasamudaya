@@ -64,6 +64,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -246,6 +247,10 @@ import de.javakaffee.kryoserializers.jodatime.JodaLocalDateSerializer;
 import de.javakaffee.kryoserializers.jodatime.JodaLocalDateTimeSerializer;
 import de.javakaffee.kryoserializers.jodatime.JodaLocalTimeSerializer;
 import io.altoo.akka.serialization.kryo.serializer.scala.ScalaKryo;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import net.sf.jsqlparser.parser.SimpleNode;
@@ -3788,5 +3793,30 @@ public class Utils {
 		}
 		return builder.toString();
 	}
+	
+	/**
+	 * The function returns node ip for a given pod ip
+	 * @param podIP
+	 * @return NodeIp
+	 */
+	public static Optional<String> getNodeIPByPodIP(String podIP) {
+        try {
+        	String nodeip = null;
+        	KubernetesClient kubeclient = new DefaultKubernetesClient();
+            List<Pod> podsWithIPAddress = kubeclient.pods().inAnyNamespace().withField(DataSamudayaConstants.PODIP_STATUS, podIP)
+                    .list().getItems();
+            if (podsWithIPAddress.size() > 0) {
+            	String nodename = podsWithIPAddress.get(0).getSpec().getNodeName();
+            	log.info("Using Pod Ip {} To Node Name: {}", podIP, nodename);
+            	nodeip = kubeclient.nodes().withName(nodename).get().getStatus().getAddresses().get(0).getAddress().split(":")[0];
+            	log.info("Using Pod Ip {} To Node Address: {}", podIP, nodeip);
+            }
+
+            return Optional.ofNullable(nodeip);
+        } catch (KubernetesClientException e) {
+            log.warn("Couldn't resolve Node by Pod IP " + podIP, e);
+            return Optional.empty();
+        }
+    }
 	
 }

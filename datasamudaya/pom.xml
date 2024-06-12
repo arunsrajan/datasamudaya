@@ -502,6 +502,12 @@
 		    <artifactId>logback-core</artifactId>
 		    <version>1.5.3</version>
 		</dependency>		
+		
+		<dependency>
+	      <groupId>io.fabric8</groupId>
+	      <artifactId>kubernetes-client</artifactId>
+	      <version>4.11.1</version>
+	    </dependency>
 
 	</dependencies>
 	<reporting>

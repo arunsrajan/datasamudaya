@@ -86,7 +86,8 @@ public class PipelineConfig implements Serializable, Cloneable {
 	private boolean topersistcolumnar;
 	private transient PrintWriter writer;
 	private Boolean windowspushnotification;
-
+	private Boolean ispodcidrtonodemappingenabled;
+	
 	public void setOutput(OutputStream  output) {
 		this.output = output;
 	}
@@ -469,6 +470,17 @@ public class PipelineConfig implements Serializable, Cloneable {
 
 	public void setWindowspushnotification(boolean windowspushnotification) {
 		this.windowspushnotification = windowspushnotification;
+	}
+	
+	public Boolean getIspodcidrtonodemappingenabled() {
+		if (nonNull(ispodcidrtonodemappingenabled)) {
+			return ispodcidrtonodemappingenabled;
+		}
+		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.PODCIDR_TO_NODE_MAPPING_ENABLED, DataSamudayaConstants.PODCIDR_TO_NODE_MAPPING_ENABLED_DEFAULT) : DataSamudayaConstants.PODCIDR_TO_NODE_MAPPING_ENABLED_DEFAULT);
+	}
+
+	public void setIspodcidrtonodemappingenabled(Boolean ispodcidrtonodemappingenabled) {
+		this.ispodcidrtonodemappingenabled = ispodcidrtonodemappingenabled;
 	}
 
 	public void setTopersistcolumnar(boolean topersistcolumnar) {

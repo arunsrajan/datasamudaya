@@ -616,4 +616,8 @@ public class DataSamudayaConstants {
 	public static final String DEFAULTASKEXECUTORRUNNER = "com.github.datasamudaya.tasks.executor.TaskExecutorRunner";
 	
 	public static final String NM_HOST = "NM_HOST";
+	
+	public static final String PODCIDR_TO_NODE_MAPPING_ENABLED = "podcidr.node.mapping.enabled";
+	public static final String PODCIDR_TO_NODE_MAPPING_ENABLED_DEFAULT = "false";
+	public static final String PODIP_STATUS = "status.podIP";
 }

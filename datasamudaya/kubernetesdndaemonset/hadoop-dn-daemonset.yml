@@ -1,0 +1,126 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: namenode
+  labels:
+    app: hadoop-hdfs-namenode
+spec:
+  selector:
+    app: hadoop-hdfs-namenode
+  clusterIP: None
+  ports:
+    - protocol: TCP
+      name: namenode-ui
+      port: 9870
+      targetPort: 9870
+    - protocol: TCP
+      name: namenode-protocol
+      port: 9000
+      targetPort: 9000
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+    name: hadoop-cluster-role
+rules:
+    - apiGroups: [""]
+      resources: ["nodes"]
+      verbs: ["get", "watch", "list"]
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["create","delete","deletecollection","get","list","patch","update","watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+    name: hadoop-hdfs-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: default
+roleRef:
+    kind: ClusterRole
+    name: hadoop-cluster-role
+    apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hadoop-hdfs-namenode
+  labels:
+    app: hadoop-hdfs-namenode
+spec:
+  selector:
+    matchLabels:
+      app: hadoop-hdfs-namenode
+  serviceName: namenode
+  template:
+    metadata:
+      labels:
+        app: hadoop-hdfs-namenode
+    spec:
+      nodeSelector:
+        namenode: "true"
+      containers:
+        - name: hadoop-hdfs-namenode-container
+          image: arunsrajan/hadoop-namenode:2.0.0-hadoop3.1.3-java8
+          imagePullPolicy: Always
+          env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: CORE_CONF_fs_defaultFS
+              value: hdfs://192.168.67.3:9000
+            - name: CLUSTER_NAME
+              value: hadoopcluster
+            - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
+              value: "false"
+            - name: HDFS_CONF_dfs_datanode_use_datanode_hostname
+              value: "false"
+            - name: HDFS_CONF_dfs_client_use_datanode_hostname
+              value: "false"
+            - name: HDFS_CONF_dfs_permissions_enabled
+              value: "false"
+      hostNetwork: true
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hadoop-hdfs-datanode
+  labels:
+    app: hadoop-hdfs-datanode
+spec:
+  selector:
+    matchLabels:
+      app: hadoop-hdfs-datanode
+  template:
+    metadata:
+      labels:
+        app: hadoop-hdfs-datanode
+    spec:
+      nodeSelector:
+        datanode: "true"
+      containers:
+        - name: hadoop-hdfs-datanode-container
+          image: arunsrajan/hadoop-datanode:2.0.0-hadoop3.1.3-java8
+          imagePullPolicy: Always
+          env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: CORE_CONF_fs_defaultFS
+              value: hdfs://192.168.67.3:9000
+            - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
+              value: "false"
+            - name: HDFS_CONF_dfs_datanode_use_datanode_hostname
+              value: "false"
+            - name: HDFS_CONF_dfs_client_use_datanode_hostname
+              value: "false"
+            - name: HDFS_CONF_dfs_datanode_address
+              value: 0.0.0.0:9866
+            - name: HDFS_CONF_dfs_permissions_enabled
+              value: "false"
+      hostNetwork: true

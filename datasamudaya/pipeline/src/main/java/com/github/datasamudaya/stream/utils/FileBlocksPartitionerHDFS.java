@@ -553,7 +553,8 @@ public class FileBlocksPartitionerHDFS {
 		if (issa) {
 			resources = DataSamudayaNodesResources.get();
 			// Obtain all the nodes.
-			var computingnodes = resources.keySet().stream().map(node -> node.split(DataSamudayaConstants.UNDERSCORE)[0])
+			var computingnodes = resources.keySet().stream().map(node -> pipelineconfig.getIspodcidrtonodemappingenabled()?Utils.getNodeIPByPodIP(node.split(DataSamudayaConstants.UNDERSCORE)[0]).get():
+					node.split(DataSamudayaConstants.UNDERSCORE)[0])
 					.collect(Collectors.toList());
 			// Iterate the blocks location and assigned the balanced allocated datanode
 			// hostport to blocks
