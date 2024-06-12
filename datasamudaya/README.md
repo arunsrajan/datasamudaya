@@ -248,9 +248,9 @@ kubectl label nodes datasamudayadaemons datasamudayadaemons-m02 datasamudayadaem
 
 minikube dashboard --url -p datasamudayadaemons
 
-kubectl cp 1987.csv hadoop-hdfs-namenode-lx56b:/tmp/1987.csv -c hadoop-hdfs-namenode-container
-kubectl cp 1988.csv hadoop-hdfs-namenode-lx56b:/tmp/1988.csv -c hadoop-hdfs-namenode-container
-kubectl cp 1989.csv hadoop-hdfs-namenode-lx56b:/tmp/1989.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1987.csv hadoop-hdfs-namenode-hqdvl:/tmp/1987.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1988.csv hadoop-hdfs-namenode-hqdvl:/tmp/1988.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1989.csv hadoop-hdfs-namenode-hqdvl:/tmp/1989.csv -c hadoop-hdfs-namenode-container
 
 hadoop dfs -mkdir /airlines
 hadoop dfs -put /tmp/1987.csv /airlines
@@ -258,6 +258,7 @@ hadoop dfs -put /tmp/1988.csv /airlines
 hadoop dfs -put /tmp/1989.csv /airlines
 
 minikube service datasamudayastandalone -p datasamudayadaemons
+kubectl port-forward --address "0.0.0.0" svc/namenode 9870:9870
 
 To run the project in openshift
 -------------------------------

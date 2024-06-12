@@ -490,7 +490,9 @@ public class FileBlocksPartitionerHDFS {
 	protected void allocateContainersLoadBalanced(List<BlocksLocation> bls) throws PipelineException {
 		log.debug("Entered FileBlocksPartitionerHDFS.getContainersBalanced");
 		var hostcontainermap = containers.stream()
-				.collect(Collectors.groupingBy(key -> key.split(DataSamudayaConstants.UNDERSCORE)[0],
+				.collect(Collectors.groupingBy(key -> pipelineconfig.getIspodcidrtonodemappingenabled()?
+						Utils.getNodeIPByPodIP(key.split(DataSamudayaConstants.UNDERSCORE)[0]).get()
+						:key.split(DataSamudayaConstants.UNDERSCORE)[0],
 						Collectors.mapping(container -> container, Collectors.toCollection(ArrayList::new))));
 		var containerallocatecount = (Map<String, Long>) containers.stream()
 				.collect(Collectors.toMap(container -> container, container -> 0l, (val1, val2)->val1+val2));
