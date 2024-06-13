@@ -65,6 +65,11 @@ spec:
       containers:
         - name: hadoop-hdfs-namenode-container
           image: arunsrajan/hadoop-namenode:2.0.0-hadoop3.1.3-java8
+          resources:
+              requests:
+                cpu: "250m"
+              limits:
+                cpu: "500m"
           imagePullPolicy: Always
           env:
             - name: HOST_IP
@@ -105,6 +110,11 @@ spec:
       containers:
         - name: hadoop-hdfs-datanode-container
           image: arunsrajan/hadoop-datanode:2.0.0-hadoop3.1.3-java8
+          resources:
+              requests:
+                cpu: "250m"
+              limits:
+                cpu: "500m"
           imagePullPolicy: Always
           env:
             - name: HOST_IP

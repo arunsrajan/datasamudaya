@@ -16,7 +16,14 @@ spec:
     spec:
       containers:
         - name: datasamudayazk
-          image: arunsrajan/datasamudayazk:latest          
+          image: arunsrajan/datasamudayazk:latest  
+          resources:
+              requests:
+                memory: "64Mi"
+                cpu: "1"
+              limits:
+                memory: "1024Mi"
+                cpu: "1"          
           ports:
             - containerPort: 2181
               name: zkport

@@ -241,21 +241,23 @@ kubectl cp 1990.csv datasamudayanamenode-0:/tmp/1990.csv -c datasamudayanamenode
 To run on kubernetes on separate nodes
 --------------------------------------
 
-minikube start -p datasamudayadaemons --driver docker --mount=true --mount-string=C:\DEVELOPMENT\datasamudayakube:/minikube-host --cpus 3 --memory 4g --nodes=3
+minikube start -p datasamudayadaemons --driver docker --mount=true --mount-string=C:\DEVELOPMENT\datasamudayakube:/minikube-host --cpus 4 --memory 4g --nodes=3
 
 kubectl label nodes datasamudayadaemons-m02 namenode=true
 kubectl label nodes datasamudayadaemons datasamudayadaemons-m02 datasamudayadaemons-m03 datanode=true
 
 minikube dashboard --url -p datasamudayadaemons
 
-kubectl cp 1987.csv hadoop-hdfs-namenode-hqdvl:/tmp/1987.csv -c hadoop-hdfs-namenode-container
-kubectl cp 1988.csv hadoop-hdfs-namenode-hqdvl:/tmp/1988.csv -c hadoop-hdfs-namenode-container
-kubectl cp 1989.csv hadoop-hdfs-namenode-hqdvl:/tmp/1989.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1987.csv hadoop-hdfs-namenode-swr86:/tmp/1987.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1988.csv hadoop-hdfs-namenode-swr86:/tmp/1988.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1989.csv hadoop-hdfs-namenode-swr86:/tmp/1989.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1990.csv hadoop-hdfs-namenode-swr86:/tmp/1990.csv -c hadoop-hdfs-namenode-container
 
 hadoop dfs -mkdir /airlines
 hadoop dfs -put /tmp/1987.csv /airlines
 hadoop dfs -put /tmp/1988.csv /airlines
 hadoop dfs -put /tmp/1989.csv /airlines
+hadoop dfs -put /tmp/1990.csv /airlines
 
 minikube service datasamudayastandalone -p datasamudayadaemons
 kubectl port-forward --address "0.0.0.0" svc/namenode 9870:9870
