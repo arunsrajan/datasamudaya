@@ -23,6 +23,8 @@ import org.apache.log4j.Logger;
 
 import static java.util.Objects.isNull;
 
+import java.util.ArrayList;
+
 /**
  * Holds LaunchContainer object globally.
  * @author arun
@@ -76,7 +78,7 @@ public class GlobalContainerLaunchers {
 	 * @return list of LaunchContainers object.
 	 */
 	public static List<LaunchContainers> get(String userid, String jobid) {
-		return lcsmap.get(userid).get(jobid);
+		return new ArrayList<>(lcsmap.get(userid).get(jobid));
 	}
 
 	/**
