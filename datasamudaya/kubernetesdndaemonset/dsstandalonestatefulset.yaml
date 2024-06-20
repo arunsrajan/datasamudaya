@@ -67,6 +67,8 @@ spec:
                 memory: "2048Mi"
                 cpu: "3"
           env:
+            - name: NAMENODEURL
+              value: hdfs://namenode:9000
             - name: PODCIDRNODEMAPPINGENABLED
               value: "true"
             - name: DATASAMUDAYA_HOME
