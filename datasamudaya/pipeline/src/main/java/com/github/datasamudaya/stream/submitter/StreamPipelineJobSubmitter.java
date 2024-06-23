@@ -145,7 +145,7 @@ public class StreamPipelineJobSubmitter {
 		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isdriverrequired) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUDRIVER);
 			cpudriver = Integer.valueOf(cpu);
-		} if(!isdriverrequired){
+		} else if(!isdriverrequired){
 			cpudriver = 0;
 		}
 		int memorydriver = 1024;
@@ -181,7 +181,7 @@ public class StreamPipelineJobSubmitter {
 				var mrjarpath = args[0];
 				var ts = currenttaskscheduler.split(DataSamudayaConstants.UNDERSCORE);
 				writeToTaskScheduler(ts, jarpath, classtoexecute, argumentsarray, user, 
-						cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver);
+						cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver, isdriverrequired);
 			}
 		} catch (Exception ex) {
 			log.error("Exception in submit Jar to Task Scheduler", ex);
@@ -198,8 +198,11 @@ public class StreamPipelineJobSubmitter {
 			,String classname, String[] args,
 			String user,
 			int cpupercontainer, 
-			int memorypercontainer, int numberofcontainers, int cpudriver, 
-			int memorydriver) {
+			int memorypercontainer, 
+			int numberofcontainers, 
+			int cpudriver, 
+			int memorydriver,
+			boolean isdriverrequired) {
 		try (var s = new Socket(ts[0], Integer.parseInt(ts[1]));
 				var is = s.getInputStream();
 				var os = s.getOutputStream();
@@ -221,6 +224,7 @@ public class StreamPipelineJobSubmitter {
 			Utils.writeDataStream(os, (cpudriver+"").getBytes());
 			Utils.writeDataStream(os, (memorydriver+"").getBytes());
 			Utils.writeDataStream(os, (user+"").getBytes());
+			Utils.writeDataStream(os, (isdriverrequired+"").getBytes());
 			if (args.length > 0) {
 				for (var argsindex = 0;argsindex < args.length;argsindex++) {
 					var arg = args[argsindex];

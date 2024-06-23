@@ -243,9 +243,7 @@ public class StreamJobScheduler {
 				// Initialize the heart beat for gathering the resources
 				// Initialize the heart beat for gathering the task executors
 				// task statuses information.
-				if (job.getPipelineconfig().getIsremotescheduler()
-						&& pipelineconfig.getCpudriver()>0
-						&& pipelineconfig.getMemorydriver()>0) {
+				if (job.getPipelineconfig().getIsremotescheduler() || job.getPipelineconfig().getStorage() == STORAGE.COLUMNARSQL) {
 					taskexecutors = new LinkedHashSet<>(job.getTaskexecutors());
 				} else {
 					getTaskExecutorsHostPort();
@@ -278,9 +276,7 @@ public class StreamJobScheduler {
 					ping(job);
 				}
 			} else if (Boolean.TRUE.equals(isjgroups) && !isignite) {
-				if (job.getPipelineconfig().getIsremotescheduler()
-						&& pipelineconfig.getCpudriver()>0
-						&& pipelineconfig.getMemorydriver()>0) {
+				if (job.getPipelineconfig().getIsremotescheduler() || job.getPipelineconfig().getStorage() == STORAGE.COLUMNARSQL) {
 					taskexecutors = new LinkedHashSet<>(job.getTaskexecutors());
 				} else {
 					getTaskExecutorsHostPort();
@@ -566,10 +562,12 @@ public class StreamJobScheduler {
 						}
 					}
 					zo.deleteJob(job.getId());
-					if (job.getTrigger() != TRIGGER.FOREACH && !job.getPipelineconfig().getIsremotescheduler()) {
-						Utils.destroyTaskExecutors(job);
+					if (job.getTrigger() != TRIGGER.FOREACH && !job.getPipelineconfig().getIsremotescheduler() 
+							&& job.getPipelineconfig().getStorage() != STORAGE.COLUMNARSQL) {
+						Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
 					}
-				} else {
+				} else if(!job.getPipelineconfig().getIsremotescheduler()
+						&& job.getPipelineconfig().getStorage() != STORAGE.COLUMNARSQL){
 					Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
 				}
 			}
@@ -680,7 +678,7 @@ public class StreamJobScheduler {
 			Map<String, List<Integer>> nodehostportteports = new ConcurrentHashMap<>();
 			for (var lc : job.getLcs()) {
 				List<Integer> ports = null;
-				if (pipelineconfig.getUseglobaltaskexecutors()) {
+				if (pipelineconfig.getUseglobaltaskexecutors() && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
 					ports = lc.getCla().getCr().stream().map(cr -> {
 						return cr.getPort();
 					}).collect(Collectors.toList());

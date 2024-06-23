@@ -85,11 +85,12 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			var numberofexecutors = Integer.parseInt(args[3]);
 			var cpudriver = Integer.parseInt(args[4]);
 			var memorydriver = Integer.parseInt(args[5]);
-			var user = args[6];
+			var user = args[6];	
+			var isdriverrequired = Boolean.parseBoolean(args[7]);
 			var main = Class.forName(mainclass, true, clsloader);
 			Thread.currentThread().setContextClassLoader(clsloader);
-			if (args.length>7) {
-				args = Arrays.copyOfRange(args, 7, args.length);				
+			if (args.length>8) {
+				args = Arrays.copyOfRange(args, 8, args.length);				
 			} else {
 				args = new String[]{};
 			}
@@ -111,6 +112,7 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			pipelineconfig.setNumtaskexecutors(numberofexecutors);
 			pipelineconfig.setCputaskexecutor(cpuexecutors);
 			pipelineconfig.setMemorytaskexceutor(memoryexecutors);
+			pipelineconfig.setIsremotescheduler(isdriverrequired);
 			pipeline.runPipeline(args, pipelineconfig);
 			message = "Successfully Completed executing the Job from main class " + mainclass;
 			Utils.writeToOstream(tss.getOutputStream(), message);

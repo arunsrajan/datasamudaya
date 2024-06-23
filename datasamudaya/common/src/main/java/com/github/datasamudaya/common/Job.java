@@ -59,6 +59,7 @@ public class Job implements Serializable {
 	private ConcurrentMap<String, String> allstageshostport;
 	private List<Stage> topostages = new Vector<>();
 	private Long noofpartitions;
+	private LaunchContainers driver;
 	private List<String> taskexecutors;
 	private Set<String> nodes;
 	private IgniteCache<Object, byte[]> igcache;

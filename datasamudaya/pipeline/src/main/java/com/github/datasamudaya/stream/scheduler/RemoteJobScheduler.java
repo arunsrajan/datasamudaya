@@ -18,6 +18,7 @@ import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.exceptions.RpcRegistryException;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
@@ -55,7 +56,7 @@ public class RemoteJobScheduler {
 			}
 			for (var lc : job.getLcs()) {
 				List<Integer> ports = null;
-				if (pipelineconfig.getUseglobaltaskexecutors()) {
+				if (pipelineconfig.getUseglobaltaskexecutors() || pipelineconfig.getStorage() == STORAGE.COLUMNARSQL ) {
 					ports = lc.getCla().getCr().stream().map(cr -> {
 						return cr.getPort();
 					}).collect(Collectors.toList());
@@ -79,8 +80,26 @@ public class RemoteJobScheduler {
 					index++;
 				}
 			}			
-			var tes = zo.getTaskExectorsByJobId(jobid);
-			taskexecutors = new LinkedHashSet<>();
+			var tes = zo.getTaskExectorsByJobId(jobid);	
+			if(pipelineconfig.getStorage() != STORAGE.COLUMNARSQL) {
+				List<Integer> driverports = (List<Integer>) Utils.getResultObjectByInput(job.getDriver().getNodehostport(), job.getDriver(), DataSamudayaConstants.EMPTY);
+				int index = 0;
+				String tehost = job.getDriver().getNodehostport().split("_")[0];
+				while (index < driverports.size()) {
+					while (true) {
+						try (Socket sock = new Socket(tehost, driverports.get(index))) {
+							break;
+						} catch (Exception ex) {
+							Thread.sleep(200);
+						}
+					}
+					if (nonNull(loadjar.getMrjar())) {
+						log.debug("{}", Utils.getResultObjectByInput(
+								tehost + DataSamudayaConstants.UNDERSCORE + driverports.get(index), loadjar, jobid));
+					}
+					index++;
+				}
+			}
 			List<String> drivers = zo.getDriversByJobId(jobid);
 			final String finaljobid = jobid;
 			if (nonNull(loadjar.getMrjar())) {
@@ -95,6 +114,7 @@ public class RemoteJobScheduler {
 				});
 			}
 			job.getTaskexecutors().addAll(0, drivers);
+			taskexecutors = new LinkedHashSet<>();
 			taskexecutors.addAll(drivers);
 			taskexecutors.addAll(tes);
 			while (taskexecutors.size() != job.getTaskexecutors().size()) {
@@ -149,9 +169,7 @@ public class RemoteJobScheduler {
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		} finally {
-			if (!job.getPipelineconfig().getUseglobaltaskexecutors()) {
-				Utils.destroyTaskExecutors(job);
-			} else {
+			if(job.getPipelineconfig().getStorage() != STORAGE.COLUMNARSQL) {
 				Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
 			}
 		}

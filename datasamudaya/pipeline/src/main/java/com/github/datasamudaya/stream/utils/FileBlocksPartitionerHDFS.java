@@ -295,11 +295,11 @@ public class FileBlocksPartitionerHDFS {
 				getDnXref(totalblockslocation, true);
 				if (!pc.getUseglobaltaskexecutors()) {
 					if(isNull(pc.getTejobid())) {
-						pipelineconfig.setTejobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
+						pipelineconfig.setTejobid(job.getId());
 						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),pipelineconfig.getTejobid()
 								, pipelineconfig.getCputaskexecutor(), pipelineconfig.getMemorytaskexceutor(),
 								pipelineconfig.getNumtaskexecutors(), pipelineconfig.getCpudriver(),
-								pipelineconfig.getMemorydriver());
+								pipelineconfig.getMemorydriver(), false);
 					}					
 					getContainersGlobal();
 					allocateContainersLoadBalanced(totalblockslocation);
@@ -311,7 +311,7 @@ public class FileBlocksPartitionerHDFS {
 						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),pipelineconfig.getTejobid()
 								, pipelineconfig.getCputaskexecutor(), pipelineconfig.getMemorytaskexceutor(),
 								pipelineconfig.getNumtaskexecutors(), pipelineconfig.getCpudriver(),
-								pipelineconfig.getMemorydriver());
+								pipelineconfig.getMemorydriver(), false);
 					}
 					getContainersGlobal();
 					for (String foldertolb : folderstolbcontainers) {
@@ -804,15 +804,24 @@ public class FileBlocksPartitionerHDFS {
 	 */
 	protected void getContainersGlobal() {
 		job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser(), pipelineconfig.getTejobid()));
-		job.setId(pipelineconfig.getJobid());
 		// Get containers
 		LaunchContainers launchcontainer = job.getLcs().get(0);
 		ContainerResources continerresources = launchcontainer.getCla().getCr().get(0);
 		if(continerresources.getExecutortype() == EXECUTORTYPE.DRIVER) {
 			if(launchcontainer.getCla().getCr().size()>1) {
-				launchcontainer.getCla().getCr().remove(0);
+				LaunchContainers lcs = new LaunchContainers();
+				lcs.setAppid(launchcontainer.getAppid());
+				lcs.setJobid(launchcontainer.getJobid());
+				lcs.setMode(launchcontainer.getMode());
+				ContainerLaunchAttributes cla = new ContainerLaunchAttributes();
+				cla.setNumberofcontainers(1);
+				cla.setCr(Arrays.asList(launchcontainer.getCla().getCr().remove(0)));
+				lcs.setCla(cla);
+				lcs.setNodehostport(launchcontainer.getNodehostport());
+				job.setDriver(lcs);
 			} else {
-				job.getLcs().remove(0);
+				launchcontainer = job.getLcs().remove(0);
+				job.setDriver(launchcontainer);
 			}
 		}
 		containers = job.getLcs().stream().flatMap(lc -> {

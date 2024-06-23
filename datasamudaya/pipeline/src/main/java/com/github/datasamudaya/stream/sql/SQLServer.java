@@ -82,7 +82,7 @@ public class SQLServer {
 							Map<String, Object> cpumemory = null;
 							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT)
 									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
-								containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver);
+								containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver, true);
 								cpumemory = Utils.getAllocatedContainersResources(containers);
 								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 								Utils.printNodesAndContainers(containers, out);
@@ -143,7 +143,7 @@ public class SQLServer {
 													}
 													if (!iscontainerlaunched) {
 														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver);
+														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver, true);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
@@ -208,7 +208,7 @@ public class SQLServer {
 													}
 													if (!iscontainerlaunched) {
 														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver);
+														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver, true);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
 														out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");

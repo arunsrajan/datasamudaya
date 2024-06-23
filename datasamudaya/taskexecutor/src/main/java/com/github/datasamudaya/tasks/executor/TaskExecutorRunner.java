@@ -18,6 +18,7 @@ import java.net.URI;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -177,8 +178,11 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			log.info("Reckoning stoppage holder...");
 			shutdown.await();
 			log.info("Ceasing the connections...");
-			server.close();
-			ter.destroy();
+			if(nonNull(serverRegistry)) {
+				serverRegistry.unbind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + jobid);
+				UnicastRemoteObject.unexportObject(serverRegistry, true);
+			}
+			server.close();			
 			ByteBufferPoolDirect.destroyPool();
 			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v1)) {
 				shuffleFileServer.v1.close();
@@ -186,15 +190,20 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v2)) {
 				shuffleFileServer.v2.shutdown();
 			}
-			if(nonNull(sortServer)) {
+			if(nonNull(sortServer) && nonNull(sortServer.v1)) {
 				sortServer.v1.close();
+			}
+			if(nonNull(sortServer) && nonNull(sortServer.v2)) {
 				sortServer.v2.shutdown();
 			}
-			log.info("Freed the assets...");
+			ter.destroy();
+			log.info("Freed the assets for task executor {}...", System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 			System.exit(0);
 		} catch (Throwable e) {
 			log.error("Error in starting Task Executor: ", e);
 		}
+		log.info("Exiting Task Executor {} ...", System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
+		return;
 	}
 
 	/**
@@ -222,7 +231,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	}
 
 	ClassLoader cl;
-	static Registry server;
+	static Registry serverRegistry;
 
 	/**
 	 * Starts and executes the tasks from scheduler via rpc registry.
@@ -343,7 +352,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			}
 		};
 		log.info("Getting RPC Registry for port: {}", port);
-		server = Utils.getRPCRegistry(port, dataCruncher, jobid);
+		serverRegistry = Utils.getRPCRegistry(port, dataCruncher, jobid);
 		log.info("RPC Registry for port: {} Obtained", port);
 	}
 
@@ -356,12 +365,10 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	@Override
 	public void destroy() throws Exception {
 		if (estask != null) {
-			estask.shutdownNow();
-			estask.awaitTermination(1, TimeUnit.SECONDS);
+			estask.shutdown();
 		}
 		if (escompute != null) {
-			escompute.shutdownNow();
-			escompute.awaitTermination(1, TimeUnit.SECONDS);
+			escompute.shutdown();
 		}
 	}
 

@@ -1594,7 +1594,7 @@ public class Utils {
 	 * @throws RpcRegistryException
 	 */
 	public static List<LaunchContainers> launchContainersExecutorSpecWithDriverSpec(String user, String jobid, int cpuuser,
-			int memoryexecutor, int numberofcontainers, int cpudriver, int memorydriver)
+			int memoryexecutor, int numberofcontainers, int cpudriver, int memorydriver, boolean tolaunchcontainer)
 			throws ContainerException, InterruptedException, RpcRegistryException {
 		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
 		long memoryuserbytes = Long.valueOf(memoryexecutor) * DataSamudayaConstants.MB;
@@ -1621,43 +1621,44 @@ public class Utils {
 				numberofcontainers, cpuuser, memoryuserbytes, jobid,
 				pc, globallaunchcontainers, launchedcontainerhostports, 
 				EXECUTORTYPE.EXECUTOR);
-		for (LaunchContainers lc : globallaunchcontainers) {
-			List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
-					lc, DataSamudayaConstants.EMPTY);
-			String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
-			launchedcontainerports.stream().map(port -> containerhost + DataSamudayaConstants.UNDERSCORE + port)
-					.forEach(launchedcontainerhostports::add);
-			if (Objects.isNull(launchedcontainerports)) {
-				throw new ContainerException("Task Executor Launch Error From Container");
-			}
-		}		
-		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
-		int index = 0;
-		while (index < launchedcontainerhostports.size()) {
-			while (true) {
-				String tehostport = launchedcontainerhostports.get(index);
-				String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
-				try (var sock = new Socket(tehp[0], Integer.parseInt(tehp[1]));) {
-					break;
-				} catch (Exception ex) {
-					try {
-						log.info("Waiting for chamber {} to replete dispatch....",
-								tehp[0] + DataSamudayaConstants.UNDERSCORE + tehp[1]);
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						log.warn(DataSamudayaConstants.INTERRUPTED, e);
-						// Restore interrupted state...
-						Thread.currentThread().interrupt();
-					} catch (Exception e) {
-						log.error(DataSamudayaConstants.EMPTY, e);
+		if(tolaunchcontainer) {
+			for (LaunchContainers lc : globallaunchcontainers) {
+				List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
+						lc, DataSamudayaConstants.EMPTY);
+				String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
+				launchedcontainerports.stream().map(port -> containerhost + DataSamudayaConstants.UNDERSCORE + port)
+						.forEach(launchedcontainerhostports::add);
+				if (Objects.isNull(launchedcontainerports)) {
+					throw new ContainerException("Task Executor Launch Error From Container");
+				}
+			}			
+			int index = 0;
+			while (index < launchedcontainerhostports.size()) {
+				while (true) {
+					String tehostport = launchedcontainerhostports.get(index);
+					String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
+					try (var sock = new Socket(tehp[0], Integer.parseInt(tehp[1]));) {
+						break;
+					} catch (Exception ex) {
+						try {
+							log.info("Waiting for chamber {} to replete dispatch....",
+									tehp[0] + DataSamudayaConstants.UNDERSCORE + tehp[1]);
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							log.warn(DataSamudayaConstants.INTERRUPTED, e);
+							// Restore interrupted state...
+							Thread.currentThread().interrupt();
+						} catch (Exception e) {
+							log.error(DataSamudayaConstants.EMPTY, e);
+						}
 					}
 				}
+				index++;
 			}
-			index++;
 		}
-
 		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsAllocatedCounter().inc(globallaunchcontainers.size());
 		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
+		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		return globallaunchcontainers;
 	}
 	
@@ -2115,8 +2116,6 @@ public class Utils {
 		}
 	}
 
-	static List<Object> objects = new ArrayList<>();
-
 	/**
 	 * Gets the rpc registry for the given port, class which implements
 	 * StreamDataCruncher and id.
@@ -2130,9 +2129,8 @@ public class Utils {
 	public static Registry getRPCRegistry(int port, final StreamDataCruncher streamdatacruncher, String id)
 			throws RpcRegistryException {
 		try {
-			objects.add(streamdatacruncher);
-			Registry registry = LocateRegistry.createRegistry(port);
 			StreamDataCruncher stub = (StreamDataCruncher) UnicastRemoteObject.exportObject(streamdatacruncher, port);
+			Registry registry = LocateRegistry.createRegistry(port);
 			registry.rebind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + id, stub);
 			return registry;
 		} catch (Exception ex) {
