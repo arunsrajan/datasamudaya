@@ -136,7 +136,6 @@ public class MassiveDataMRJobBase {
 			executorpool = Executors.newWorkStealingPool();
 			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.rescheduledelay"));
 			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.initialdelay"));
-			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.pingdelay"));
 			String host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskscheduler.host"));
 			port = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.port"));
 			Configuration configuration = new Configuration();

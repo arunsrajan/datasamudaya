@@ -18,6 +18,7 @@ import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
+import com.github.datasamudaya.common.exceptions.RpcRegistryException;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.PipelineException;
@@ -48,6 +49,10 @@ public class RemoteJobScheduler {
 				loadjar.setClasses(pipelineconfig.getCustomclasses().stream().map(clz -> clz.getName())
 						.collect(Collectors.toCollection(LinkedHashSet::new)));
 			}
+			String jobid = job.getId();
+			if (pipelineconfig.getUseglobaltaskexecutors() && nonNull(pipelineconfig.getTejobid())) {
+				jobid = pipelineconfig.getTejobid();
+			}
 			for (var lc : job.getLcs()) {
 				List<Integer> ports = null;
 				if (pipelineconfig.getUseglobaltaskexecutors()) {
@@ -69,18 +74,26 @@ public class RemoteJobScheduler {
 					}
 					if (nonNull(loadjar.getMrjar())) {
 						log.debug("{}", Utils.getResultObjectByInput(
-								tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar, job.getId()));
+								tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar, jobid));
 					}
 					index++;
 				}
-			}
-			String jobid = job.getId();
-			if (pipelineconfig.getUseglobaltaskexecutors()) {
-				jobid = pipelineconfig.getTejobid();
-			}
+			}			
 			var tes = zo.getTaskExectorsByJobId(jobid);
 			taskexecutors = new LinkedHashSet<>();
 			List<String> drivers = zo.getDriversByJobId(jobid);
+			final String finaljobid = jobid;
+			if (nonNull(loadjar.getMrjar())) {
+				drivers.stream().forEach(driver -> {
+					String[] driverhp = driver.split(DataSamudayaConstants.UNDERSCORE);
+					try {
+						log.debug("{}", Utils.getResultObjectByInput(
+								driverhp[0] + DataSamudayaConstants.UNDERSCORE + driverhp[1], loadjar, finaljobid));
+					} catch (RpcRegistryException e) {
+						log.error(DataSamudayaConstants.EMPTY, e);
+					}
+				});
+			}
 			job.getTaskexecutors().addAll(0, drivers);
 			taskexecutors.addAll(drivers);
 			taskexecutors.addAll(tes);
@@ -138,6 +151,8 @@ public class RemoteJobScheduler {
 		} finally {
 			if (!job.getPipelineconfig().getUseglobaltaskexecutors()) {
 				Utils.destroyTaskExecutors(job);
+			} else {
+				Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
 			}
 		}
 		return null;

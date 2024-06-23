@@ -34,7 +34,7 @@ public class StreamFilterFilterCollectArrDelayInMemory implements Serializable, 
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize(args[5]);
 		pipelineconfig.setMaxmem(args[3]);
 		pipelineconfig.setMinmem("512");

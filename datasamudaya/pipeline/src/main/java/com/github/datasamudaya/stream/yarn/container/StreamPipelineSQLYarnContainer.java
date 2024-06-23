@@ -16,7 +16,6 @@
 package com.github.datasamudaya.stream.yarn.container;
 
 import java.lang.reflect.Method;
-import java.net.InetAddress;
 import java.util.Map;
 
 import org.burningwave.core.assembler.StaticComponentContainer;

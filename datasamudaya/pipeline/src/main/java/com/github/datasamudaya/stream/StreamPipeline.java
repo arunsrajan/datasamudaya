@@ -121,7 +121,6 @@ import com.github.datasamudaya.stream.utils.PipelineConfigValidator;
 public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStream,JsonStream, PipelineIntStream {
 	private List<Path> filepaths = new ArrayList<>();
 	protected String protocol;
-	private int blocksize;
 	IntSupplier supplier;
 	private String hdfspath;
 	private String folder;
@@ -151,7 +150,6 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		this.hdfspath = hdfspath;
 		this.folder = folder;
 		this.protocol = FileSystemSupport.HDFS;
-		blocksize = Integer.parseInt(pipelineconfig.getBlocksize()) * 1024 * 1024;
 	}
 
 	/**
@@ -998,7 +996,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 				job.setStageoutputmap(stageoutputmap);
 				if (CollectionUtils.isNotEmpty(abspipeline)) {
 					var dbPartitioner = new FileBlocksPartitionerHDFS();
-					dbPartitioner.getJobStageBlocks(job, supplier, "hdfs", stagesblocks, abspipeline, ((StreamPipeline) this).blocksize, ((StreamPipeline) this).pipelineconfig);
+					dbPartitioner.getJobStageBlocks(job, supplier, "hdfs", stagesblocks, abspipeline, ((StreamPipeline) this).pipelineconfig);
 				}
 				PipelineConfig pipeconf = ((StreamPipeline) this).pipelineconfig;
 				if (pipeconf.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
@@ -1023,7 +1021,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 				}
 			} else {
 				var dbPartitioner = new FileBlocksPartitionerHDFS();
-				dbPartitioner.getJobStageBlocks(job, supplier, "hdfs", rootstages, mdsroots, this.blocksize, this.pipelineconfig);
+				dbPartitioner.getJobStageBlocks(job, supplier, "hdfs", rootstages, mdsroots, this.pipelineconfig);
 			}
 			var writer = new StringWriter();
 			if (Boolean.parseBoolean((String) DataSamudayaProperties.get().get(DataSamudayaConstants.GRAPHSTOREENABLE))) {
@@ -1189,10 +1187,10 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			// If ignite mode is choosen
 			boolean isignite = Objects.isNull(pipelineconfig.getMode()) ? false
 					: pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_DEFAULT) ? true : false;
-			if (nonNull(pipelineconfig.getUseglobaltaskexecutors())
-					&& pipelineconfig.getUseglobaltaskexecutors()
-					&& nonNull(pipelineconfig.getIsremotescheduler())
-					&& pipelineconfig.getIsremotescheduler() 
+			if (nonNull(pipelineconfig.getIsremotescheduler())
+					&& pipelineconfig.getIsremotescheduler()
+					&& pipelineconfig.getCpudriver()>0
+					&& pipelineconfig.getMemorydriver()>0
 					&& Boolean.FALSE.equals(ismesos) 
 					&& Boolean.FALSE.equals(isyarn) 
 					&& Boolean.FALSE.equals(islocal)

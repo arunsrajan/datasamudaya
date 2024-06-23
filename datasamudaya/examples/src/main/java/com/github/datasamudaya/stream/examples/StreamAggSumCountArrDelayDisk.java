@@ -36,7 +36,7 @@ public class StreamAggSumCountArrDelayDisk implements Serializable, Pipeline {
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem(args[3]);
 		pipelineconfig.setMinmem("512");

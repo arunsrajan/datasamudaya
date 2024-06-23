@@ -37,7 +37,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 	public void testMapValuesReduceByValues() throws Throwable {
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem("3072");
 		pipelineconfig.setMinmem("512");
@@ -69,7 +69,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 	public void testMapValuesReduceByValuesBigger() throws Throwable {
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem("3072");
 		pipelineconfig.setMinmem("512");
@@ -102,7 +102,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		log.info("{}","testMapValuesReduceByValuesCoalesce Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem("3072");
 		pipelineconfig.setMinmem("512");
@@ -138,7 +138,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setJgroups("true");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem("3072");
 		pipelineconfig.setMinmem("512");
@@ -171,7 +171,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		log.info("{}","testMapValuesReduceByValuesJGroups Before---------------------------------------");
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem("3072");
 		pipelineconfig.setMinmem("512");
@@ -232,7 +232,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 	public void testReduceByKeyCoalesceJoinUserDefinedBlockSize() throws Throwable {
 		log.info("{}","testReduceByKeyCoalesceJoinUserDefinedBlockSize Before---------------------------------------");
 		pipelineconfig.setLocal("false");
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setStorage(STORAGE.INMEMORY_DISK);
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1989,
@@ -260,7 +260,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 	public void testReduceByKeyCoalesceJoinUserDefinedBlockSizeCollect() throws Throwable {
 		log.info("{}","testReduceByKeyCoalesceJoinUserDefinedBlockSizeCollect Before---------------------------------------");
 		pipelineconfig.setLocal("false");
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setStorage(STORAGE.INMEMORY_DISK);
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1989,
@@ -294,7 +294,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		log.info("{}","testReduceByKeyCoalesceJoinUserDefinedBlockSizeJGroups Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setJgroups("true");
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setStorage(STORAGE.DISK);
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlines,
@@ -323,7 +323,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 	public void testReduceByKeyCoalesceJoin() throws Throwable {
 		log.info("{}","testReduceByKeyCoalesceJoin Before---------------------------------------");
 		pipelineconfig.setLocal("true");
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setBlocksize("64");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, "/1987",
 				pipelineconfig);
@@ -352,7 +352,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		log.info("{}","testReduceByKeyCoalesceJoinJGroups Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setJgroups("true");
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setBlocksize("128");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1989,
 				pipelineconfig);
@@ -380,7 +380,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		log.info("{}","testReduceByKeyCoalesceJoinJGroupsCollect Before---------------------------------------");
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setJgroups("true");
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setBlocksize("128");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airline1989,
 				pipelineconfig);
@@ -433,7 +433,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		PipelineConfig pipelineconfig = new PipelineConfig();
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem("3072");
 		pipelineconfig.setMinmem("512");
@@ -469,7 +469,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		PipelineConfig pipelineconfig = new PipelineConfig();
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("64");
 		pipelineconfig.setMaxmem("3072");
 		pipelineconfig.setMinmem("512");
@@ -534,7 +534,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		PipelineConfig pipelineconfig = new PipelineConfig();
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem("3072");
 		pipelineconfig.setMinmem("512");
@@ -562,7 +562,7 @@ public class StreamPipelineBigFilesTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 		pipelineconfig.setMode(DataSamudayaConstants.NORMAL);

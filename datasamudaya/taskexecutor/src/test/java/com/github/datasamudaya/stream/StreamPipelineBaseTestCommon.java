@@ -104,7 +104,6 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			zo = new ZookeeperOperations();
 			zo.connect();
 			zo.watchNodes();
-			Boolean ishdfs = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty("taskexecutor.ishdfs"));
 			Configuration configuration = new Configuration();
 			hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);

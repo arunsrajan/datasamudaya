@@ -123,9 +123,7 @@ public class StreamPipelineIgniteBase {
 				log.error("Error In creating hdfs cluster:", e);
 			}
 			pipelineconfig.setLocal("false");
-			pipelineconfig.setIsblocksuserdefined("false");
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
-			Boolean ishdfs = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty("taskexecutor.ishdfs"));
 			Configuration configuration = new Configuration();
 			hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);

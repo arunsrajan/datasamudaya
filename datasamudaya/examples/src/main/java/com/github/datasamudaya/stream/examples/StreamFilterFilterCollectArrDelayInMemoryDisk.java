@@ -34,7 +34,7 @@ public class StreamFilterFilterCollectArrDelayInMemoryDisk implements Serializab
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize(args[5]);
 		pipelineconfig.setMaxmem(args[3]);
 		pipelineconfig.setMinmem("512");

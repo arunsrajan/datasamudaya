@@ -31,7 +31,7 @@ public class StreamReduceNormalInMemoryUserAllocation implements Serializable, P
 	private final Logger log = Logger.getLogger(StreamReduceNormalInMemoryUserAllocation.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");

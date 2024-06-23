@@ -36,7 +36,7 @@ public class StreamAggSumCountArrDelayJGroupsDivided implements Serializable, Pi
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("true");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem(args[3]);
 		pipelineconfig.setMinmem("512");

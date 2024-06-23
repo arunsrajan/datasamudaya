@@ -59,7 +59,6 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@BeforeClass
 	public static void pipelineSetup() throws Exception, Throwable {
 		pipelineconfig.setLocal("false");
-		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
 		if ("false".equals(pipelineconfig.getLocal())) {
@@ -4987,7 +4986,6 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setStorage(STORAGE.INMEMORY);
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setBlocksize("20");
-		pipelineconfig.setIsblocksuserdefined("false");
 	}
 
 }

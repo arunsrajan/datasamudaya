@@ -32,7 +32,6 @@ public class MrJobArrivalDelayIGNITE implements Application {
 		jobconfiguration.setBatchsize("2");
 		jobconfiguration.setNumofreducers("1");
 		jobconfiguration.setGctype(DataSamudayaConstants.ZGC);
-		jobconfiguration.setIsblocksuserdefined("false");
 		jobconfiguration.setExecmode(DataSamudayaConstants.EXECMODE_IGNITE);
 		var datasamudayajob = (MapReduceApplicationIgnite) MapReduceApplicationBuilder.newBuilder()
 				.addMapper(new CarriersDataMapper(), args[1])

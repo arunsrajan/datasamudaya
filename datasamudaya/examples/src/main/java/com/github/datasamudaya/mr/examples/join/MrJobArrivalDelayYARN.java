@@ -35,7 +35,6 @@ public class MrJobArrivalDelayYARN implements Application {
 		jobconfiguration.setGctype(DataSamudayaConstants.ZGC);
 		jobconfiguration.setNumberofcontainers(args[3]);
 		jobconfiguration.setMaxmem(args[4]);
-		jobconfiguration.setIsblocksuserdefined("false");
 		jobconfiguration.setExecmode(DataSamudayaConstants.EXECMODE_YARN);
 		var datasamudayajob = (MapReduceApplicationYarn) MapReduceApplicationBuilder.newBuilder()
 				.addMapper(new CarriersDataMapper(), args[1])

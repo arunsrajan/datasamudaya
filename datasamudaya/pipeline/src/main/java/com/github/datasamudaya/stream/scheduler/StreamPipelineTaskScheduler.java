@@ -80,12 +80,18 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			}
 			//Get the main class to execute.
 			var mainclass = args[0];
+			var cpuexecutors = Integer.parseInt(args[1]);
+			var memoryexecutors = Integer.parseInt(args[2]);
+			var numberofexecutors = Integer.parseInt(args[3]);
+			var cpudriver = Integer.parseInt(args[4]);
+			var memorydriver = Integer.parseInt(args[5]);
+			var user = args[6];
 			var main = Class.forName(mainclass, true, clsloader);
 			Thread.currentThread().setContextClassLoader(clsloader);
-			if (args == null) {
-				args = new String[]{};
+			if (args.length>7) {
+				args = Arrays.copyOfRange(args, 7, args.length);				
 			} else {
-				args = Arrays.copyOfRange(args, 1, args.length);
+				args = new String[]{};
 			}
 			//Invoke the runPipeline method via reflection.
 			var pipelineconfig = new PipelineConfig();
@@ -99,6 +105,12 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			if (isNull(pipelineconfig.getJobname())) {
 				pipelineconfig.setJobname(main.getSimpleName());
 			}
+			pipelineconfig.setUser(user);
+			pipelineconfig.setCpudriver(cpudriver);
+			pipelineconfig.setMemorydriver(memorydriver);
+			pipelineconfig.setNumtaskexecutors(numberofexecutors);
+			pipelineconfig.setCputaskexecutor(cpuexecutors);
+			pipelineconfig.setMemorytaskexceutor(memoryexecutors);
 			pipeline.runPipeline(args, pipelineconfig);
 			message = "Successfully Completed executing the Job from main class " + mainclass;
 			Utils.writeToOstream(tss.getOutputStream(), message);

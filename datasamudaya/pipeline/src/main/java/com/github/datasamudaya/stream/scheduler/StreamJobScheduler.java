@@ -243,7 +243,9 @@ public class StreamJobScheduler {
 				// Initialize the heart beat for gathering the resources
 				// Initialize the heart beat for gathering the task executors
 				// task statuses information.
-				if (job.getPipelineconfig().getIsremotescheduler()) {
+				if (job.getPipelineconfig().getIsremotescheduler()
+						&& pipelineconfig.getCpudriver()>0
+						&& pipelineconfig.getMemorydriver()>0) {
 					taskexecutors = new LinkedHashSet<>(job.getTaskexecutors());
 				} else {
 					getTaskExecutorsHostPort();
@@ -276,7 +278,9 @@ public class StreamJobScheduler {
 					ping(job);
 				}
 			} else if (Boolean.TRUE.equals(isjgroups) && !isignite) {
-				if (job.getPipelineconfig().getIsremotescheduler()) {
+				if (job.getPipelineconfig().getIsremotescheduler()
+						&& pipelineconfig.getCpudriver()>0
+						&& pipelineconfig.getMemorydriver()>0) {
 					taskexecutors = new LinkedHashSet<>(job.getTaskexecutors());
 				} else {
 					getTaskExecutorsHostPort();
@@ -565,6 +569,8 @@ public class StreamJobScheduler {
 					if (job.getTrigger() != TRIGGER.FOREACH && !job.getPipelineconfig().getIsremotescheduler()) {
 						Utils.destroyTaskExecutors(job);
 					}
+				} else {
+					Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
 				}
 			}
 			if (zo != null) {

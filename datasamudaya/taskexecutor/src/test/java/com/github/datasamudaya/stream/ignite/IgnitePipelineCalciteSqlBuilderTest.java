@@ -57,7 +57,6 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 	@BeforeClass
 	public static void pipelineSetup() {
 		pipelineconfig.setLocal("true");
-		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
 	}
@@ -3649,7 +3648,6 @@ public class IgnitePipelineCalciteSqlBuilderTest extends StreamPipelineIgniteBas
 		pipelineconfig.setStorage(STORAGE.INMEMORY);
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setBlocksize("20");
-		pipelineconfig.setIsblocksuserdefined("false");
 	}
 
 }

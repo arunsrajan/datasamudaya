@@ -32,8 +32,7 @@ public class MrJobArrivalDelayNormal implements Application {
 		jobconfiguration.setNumofreducers("1");
 		jobconfiguration.setGctype(DataSamudayaConstants.ZGC);
 		jobconfiguration.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT);
-		jobconfiguration.setIsblocksuserdefined("true");
-		jobconfiguration.setBlocksize(args[3]);
+		
 		var datasamudayajob = (MapReduceApplication) MapReduceApplicationBuilder.newBuilder()
 				.addMapper(new CarriersDataMapper(), args[1])
 				.addMapper(new AirlineArrDelayDataMapper(), args[0])

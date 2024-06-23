@@ -92,7 +92,7 @@ public class FileBlocksPartitionerHDFS {
 	List<String> containerswithhostport;
 	ZookeeperOperations zookeeperoperations = new ZookeeperOperations();
 
-	Boolean ismesos, isyarn, islocal, isjgroups, isblocksuserdefined, isignite;
+	Boolean ismesos, isyarn, islocal, isjgroups, isignite;
 	List<Integer> ports;
 
 	public List<ContainerResources> getTotalMemoryContainersReuseAllocation(String nodehp, int containerstoallocate) {
@@ -146,7 +146,7 @@ public class FileBlocksPartitionerHDFS {
 	 */
 	@SuppressWarnings({"rawtypes"})
 	public void getJobStageBlocks(Job job, IntSupplier supplier, String protocol, Set<Stage> rootstages,
-			Collection<AbstractPipeline> mdsroots, int blocksize, PipelineConfig pc)
+			Collection<AbstractPipeline> mdsroots, PipelineConfig pc)
 			throws PipelineException, IOException, URISyntaxException {
 		try {
 			log.debug("Partitioning of Blocks started...");
@@ -158,7 +158,6 @@ public class FileBlocksPartitionerHDFS {
 			isyarn = Boolean.parseBoolean(pc.getYarn());
 			islocal = Boolean.parseBoolean(pc.getLocal());
 			isjgroups = Boolean.parseBoolean(pc.getJgroups());
-			isblocksuserdefined = Boolean.parseBoolean(pc.getIsblocksusedefined()) || supplier != null;
 			isignite = Objects.isNull(pc.getMode()) ? false
 					: pc.getMode().equals(DataSamudayaConstants.MODE_DEFAULT) ? true : false;
 			if (Boolean.TRUE.equals(islocal) || Boolean.TRUE.equals(ismesos) || Boolean.TRUE.equals(isyarn)
@@ -197,7 +196,8 @@ public class FileBlocksPartitionerHDFS {
 					this.filepaths.addAll(newpaths);
 					job.getJm().setTotalfilesize(
 							job.getJm().getTotalfilesize() + Utils.getTotalLengthByFiles(hdfs, filepaths));
-					if (pc.getUseglobaltaskexecutors()
+					if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors() 
+							&& nonNull(pc.getTejobid())
 							&& nonNull(GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder))) {
 						Set<Path> pathtoprocess = GlobalJobFolderBlockLocations.compareCurrentPathsNewPathsAndStore(pc.getTejobid(), folder, newpaths, hdfs);
 						List<BlocksLocation> bls = GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder);
@@ -248,17 +248,25 @@ public class FileBlocksPartitionerHDFS {
 							if (supplier instanceof IntSupplier) {
 								this.supplier = supplier;
 								blocks = getHDFSParitions();
-								if (pc.getUseglobaltaskexecutors()) {
+								if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors() 
+										&& nonNull(pc.getTejobid())) {
 									GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
 									GlobalJobFolderBlockLocations.putPaths(pc.getTejobid(), folder, newpaths, hdfs);
+								} else {
+									GlobalJobFolderBlockLocations.put(job.getId(), folder, blocks);
+									GlobalJobFolderBlockLocations.putPaths(job.getId(), folder, newpaths, hdfs);
 								}
 								totalblockslocation.addAll(blocks);
 							} else {
 								// Get block if HDFS protocol.
 								blocks = getBlocks(columns);
-								if (pc.getUseglobaltaskexecutors()) {
+								if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors() 
+										&& nonNull(pc.getTejobid())) {
 									GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
 									GlobalJobFolderBlockLocations.putPaths(pc.getTejobid(), folder, newpaths, hdfs);
+								} else {
+									GlobalJobFolderBlockLocations.put(job.getId(), folder, blocks);
+									GlobalJobFolderBlockLocations.putPaths(job.getId(), folder, newpaths, hdfs);
 								}
 								totalblockslocation.addAll(blocks);
 							}
@@ -286,12 +294,29 @@ public class FileBlocksPartitionerHDFS {
 			} else if (isjgroups || !islocal && !isyarn && !ismesos) {
 				getDnXref(totalblockslocation, true);
 				if (!pc.getUseglobaltaskexecutors()) {
-					allocateContainersByResources(totalblockslocation);
+					if(isNull(pc.getTejobid())) {
+						pipelineconfig.setTejobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
+						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),pipelineconfig.getTejobid()
+								, pipelineconfig.getCputaskexecutor(), pipelineconfig.getMemorytaskexceutor(),
+								pipelineconfig.getNumtaskexecutors(), pipelineconfig.getCpudriver(),
+								pipelineconfig.getMemorydriver());
+					}					
+					getContainersGlobal();
 					allocateContainersLoadBalanced(totalblockslocation);
 				} else {
+					boolean isteidnull = false;
+					if(isNull(pc.getTejobid())) {
+						isteidnull = true;
+						pipelineconfig.setTejobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
+						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),pipelineconfig.getTejobid()
+								, pipelineconfig.getCputaskexecutor(), pipelineconfig.getMemorytaskexceutor(),
+								pipelineconfig.getNumtaskexecutors(), pipelineconfig.getCpudriver(),
+								pipelineconfig.getMemorydriver());
+					}
 					getContainersGlobal();
-					for (String foldertolb :folderstolbcontainers) {
-						allocateContainersLoadBalanced(GlobalJobFolderBlockLocations.get(pc.getTejobid(), foldertolb));
+					for (String foldertolb : folderstolbcontainers) {
+						allocateContainersLoadBalanced(GlobalJobFolderBlockLocations.get(isteidnull?job.getId():pc.getTejobid()
+								,foldertolb));
 					}
 				}
 				job.getJm().setNodes(nodeschoosen);
