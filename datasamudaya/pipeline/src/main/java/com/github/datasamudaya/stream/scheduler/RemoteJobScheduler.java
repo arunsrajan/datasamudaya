@@ -56,7 +56,7 @@ public class RemoteJobScheduler {
 			}
 			for (var lc : job.getLcs()) {
 				List<Integer> ports = null;
-				if (pipelineconfig.getUseglobaltaskexecutors() || pipelineconfig.getStorage() == STORAGE.COLUMNARSQL ) {
+				if (pipelineconfig.getUseglobaltaskexecutors() && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL ) {
 					ports = lc.getCla().getCr().stream().map(cr -> {
 						return cr.getPort();
 					}).collect(Collectors.toList());
