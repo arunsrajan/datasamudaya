@@ -63,9 +63,9 @@ public class StreamPipelineTaskScheduler implements Runnable {
 	public void run() {
 
 		var message = "";
+		ClassLoader ctxcl = Thread.currentThread().getContextClassLoader();
 		try {
-			//ClassLoader to load the jar file.
-			ClassLoader ctxcl = Thread.currentThread().getContextClassLoader();
+			//ClassLoader to load the jar file.			
 			var clsloader = DataSamudayaMapReducePhaseClassLoader.newInstance(mrjar, ctxcl);
 			Thread.currentThread().setContextClassLoader(clsloader);
 			var ismesos = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_ISMESOS));
@@ -131,6 +131,7 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			try {
 				Utils.writeToOstream(tss.getOutputStream(), "quit");
 				tss.close();
+				Thread.currentThread().setContextClassLoader(ctxcl);
 			} catch (Exception ex) {
 				log.error("Socket Stream close error, See cause below \n", ex);
 			}

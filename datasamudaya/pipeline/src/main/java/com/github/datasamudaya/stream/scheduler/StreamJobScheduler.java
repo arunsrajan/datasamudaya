@@ -1551,6 +1551,7 @@ public class StreamJobScheduler {
 					StreamPipelineTaskExecutorIgnite mdste = null;
 					try {
 						Kryo kryo = Utils.getKryoInstance();
+						kryo.setClassLoader(Thread.currentThread().getContextClassLoader());
 						ByteArrayOutputStream baos = new ByteArrayOutputStream();
 						Output out = new Output(baos);
 						kryo.writeClassAndObject(out, jsidjsmap.get(task.jobid + task.stageid));

@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
+import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
 import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.DataSamudayaCacheManager;
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -114,6 +115,7 @@ public class EmbeddedSchedulersNodeLauncher {
 				log.info("Node Created");
 			});
 			zo.watchNodes();
+			ByteBufferPoolDirectOld.init(1 * DataSamudayaConstants.GB);
 			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			String cacheid = DataSamudayaConstants.BLOCKCACHE;
 			CacheUtils.initCache(cacheid,
