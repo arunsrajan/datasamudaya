@@ -61,6 +61,7 @@ public class StreamPipelineBase {
 	protected static String airlinesample = "/airlinesample";
 	public static String airportssample = "/airports";
 	protected static String airlinesamplesql = "/airlinesamplesql";
+	protected static String airlinesamplesqlucs = "/airlinesamplesqlucs";
 	static String airlinesamplejoin = "/airlinesamplejoin";
 	static String airlinesamplecsv = "/airlinesamplecsv";
 	static String csvfileextn = ".csv";

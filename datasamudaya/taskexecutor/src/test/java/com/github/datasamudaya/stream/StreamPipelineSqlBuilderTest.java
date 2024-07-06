@@ -63,8 +63,9 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
 		if ("false".equals(pipelineconfig.getLocal())) {
 			pipelineconfig.setUseglobaltaskexecutors(true);
+			pipelineconfig.setIsremotescheduler(true);
 			String teid = Utils.getUUID();
-			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 3, 6000, 2, 6, 6000, true);
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 3, 3000, 2, 2, 3000, true);
 			pipelineconfig.setTejobid(teid);
 			pipelineconfig.setUser("arun");
 		}
@@ -943,6 +944,35 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertEquals(131, total);
 
 		log.info("In testPrintAllColumnsCountWithWhereAndJoin() method Exit");
+	}
+	
+	@Test
+	public void testPrintAvgDelayWithDelayPercentageByUniqueCarrier() throws Exception {
+		log.info("In testPrintAvgDelayWithDelayPercentageByUniqueCarrier() method Entry");
+
+		String statement = """
+				select uniquecarrier,avg(arrdelay),
+				sum(arrdelay)*100.0/(select sum(arrdelay+depdelay) 
+				from airline) 
+				from airline_1 group by uniquecarrier order by uniquecarrier
+				""";
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesqlucs, "airline", airlineheader, airlineheadertypes)
+				.add(airlinesamplesqlucs, "airline_1", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		int total = 0;
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				total++;
+				assertTrue(rec.length == 3);
+				log.info(Arrays.toString(rec));
+			}
+		}
+		assertEquals(2, total);
+
+		log.info("In testPrintAvgDelayWithDelayPercentageByUniqueCarrier() method Exit");
 	}
 
 	@SuppressWarnings({"unchecked"})

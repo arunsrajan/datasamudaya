@@ -544,6 +544,19 @@ public class StreamPipelineSqlBuilder implements Serializable {
 							}
 						}
 
+					}).coalesce(1, new CoalesceFunction<Tuple>() {						
+						private static final long serialVersionUID = 2619838814099405841L;
+						final List<String> functions = functionnames;
+						final Boolean isnotempty = CollectionUtils.isNotEmpty(functions);
+						@Override
+						public Tuple apply(Tuple tuple1, Tuple tuple2) {
+							if(isnotempty) {
+								return SQLUtils.evaluateTuple(functions, tuple1, tuple2);
+							} else {
+								return tuple1;
+							}
+						}
+
 					}).map(new MapFunction<Tuple2<Tuple, Tuple>, Object[]>() {
 						private static final long serialVersionUID = 8056744594467835712L;
 						final List<String> functions = functionnames;
@@ -649,6 +662,8 @@ public class StreamPipelineSqlBuilder implements Serializable {
 							return SQLUtils.evaluateExpression(expr, ((Object[]) rowleft[0]), ((Object[]) rowright[0]));
 						}
 					});
+		} else if (jointype == JoinRelType.FULL) {
+			return pipeline1.fullJoin(pipeline2);
 		}
 		return null;
 	}

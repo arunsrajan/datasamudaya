@@ -117,6 +117,7 @@ import com.github.datasamudaya.common.functions.AggregateReduceFunction;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.DistributedDistinct;
 import com.github.datasamudaya.common.functions.DistributedSort;
+import com.github.datasamudaya.common.functions.FullOuterJoin;
 import com.github.datasamudaya.common.functions.GroupByFunction;
 import com.github.datasamudaya.common.functions.HashPartitioner;
 import com.github.datasamudaya.common.functions.IntersectionFunction;
@@ -1880,7 +1881,8 @@ public class StreamJobScheduler {
 				}
 			} else if (function instanceof JoinPredicate || function instanceof LeftOuterJoinPredicate
 					|| function instanceof RightOuterJoinPredicate || function instanceof Join
-					|| function instanceof LeftJoin || function instanceof RightJoin) {
+					|| function instanceof LeftJoin || function instanceof RightJoin 
+					|| function instanceof FullOuterJoin) {
 				for (var inputparent1 : outputparent1) {
 					for (var inputparent2 : outputparent2) {
 						partitionindex++;
@@ -1956,17 +1958,18 @@ public class StreamJobScheduler {
 					Map<String, List<StreamPipelineTaskSubmitter>> hpspts = parentpartitioned.stream()
 							.collect(Collectors.groupingBy(sptsmap -> sptsmap.getHostPort(), HashMap::new,
 									Collectors.mapping(sptsmap -> sptsmap, Collectors.toList())));
-
+					List<StreamPipelineTaskSubmitter> sptss = new ArrayList<>();
 					for (Entry<String, List<StreamPipelineTaskSubmitter>> entry : hpspts.entrySet()) {
 						var partkeys = Iterables.partition(entry.getValue(),
 								(entry.getValue().size()) / coalesce.getCoalescepartition()).iterator();
 						for (; partkeys.hasNext();) {
 							partitionindex++;
+							log.info("Coalesce Parent::: {} with partition index {}",entry.getValue(), partitionindex);
 							var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
 									(List) entry.getValue());
 							tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid,
 									spts);
-							tasks.add(spts);
+							sptss.add(spts);
 							graph.addVertex(spts);
 							taskgraph.addVertex(spts.getTask());
 							for (var input : partkeys.next()) {
@@ -1981,6 +1984,29 @@ public class StreamJobScheduler {
 								taskgraph.addEdge(parentthread.getTask(), spts.getTask());
 							}
 						}
+					}
+					var partkeys = Iterables.partition(sptss,
+							(sptss.size()) / coalesce.getCoalescepartition()).iterator();
+					for (; partkeys.hasNext();) {
+						partitionindex++;
+						List<Object> finaltaskscoalesce = (List) partkeys.next();
+						var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
+								finaltaskscoalesce);
+						tasks.add(spts);
+						graph.addVertex(spts);
+						taskgraph.addVertex(spts.getTask());
+						for (var input : finaltaskscoalesce) {
+							var parentthread = (StreamPipelineTaskSubmitter) input;
+							if (!graph.containsVertex(parentthread)) {
+								graph.addVertex(parentthread);
+							}
+							if (!taskgraph.containsVertex(parentthread.getTask())) {
+								taskgraph.addVertex(parentthread.getTask());
+							}
+							graph.addEdge(parentthread, spts);
+							taskgraph.addEdge(parentthread.getTask(), spts.getTask());
+						}
+						tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid, spts);
 					}
 				}
 			} else if (function instanceof AggregateReduceFunction) {

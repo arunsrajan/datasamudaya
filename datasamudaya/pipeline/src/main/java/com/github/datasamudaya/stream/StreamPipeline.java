@@ -81,6 +81,7 @@ import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.DoubleFlatMapFunction;
 import com.github.datasamudaya.common.functions.FlatMapFunction;
 import com.github.datasamudaya.common.functions.FoldByKey;
+import com.github.datasamudaya.common.functions.FullOuterJoin;
 import com.github.datasamudaya.common.functions.GroupByFunction;
 import com.github.datasamudaya.common.functions.GroupByKeyFunction;
 import com.github.datasamudaya.common.functions.HashPartitioner;
@@ -440,11 +441,19 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	}
 
 	/**
-	 * StreamPipeline constructor for FlatMap function.
-	 * @param <T>
-	 * @param root
-	 * @param fmf
+	 * StreamPipeline accepts the outer join function.
+	 * @param <I2>
+	 * @param mappair
+	 * @return StreamPipeline object.
+	 * @throws PipelineException
 	 */
+	public <I2> StreamPipeline<Tuple2<I1, I2>> fullJoin(StreamPipeline<I2> mappair) throws PipelineException {
+		if (Objects.isNull(mappair)) {
+			throw new PipelineException(PipelineConstants.OUTERJOIN);
+		}		
+		StreamPipeline<Tuple2<I1, I2>> sp = new StreamPipeline(this, mappair, new FullOuterJoin());
+		return sp;
+	}
 	
 	/**
 	 * StreamPipeline accepts the FlatMap function.

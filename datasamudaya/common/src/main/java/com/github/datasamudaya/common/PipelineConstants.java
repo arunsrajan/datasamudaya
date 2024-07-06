@@ -58,6 +58,7 @@ public class PipelineConstants {
 	public static final String LEFTOUTERJOINCONDITION = "Left Outer Join condition cannot be null";
 	public static final String INNERJOIN = "Inner Join cannot be null";
 	public static final String INNERJOINCONDITION = "Inner Join condition cannot be null";
+	public static final String OUTERJOIN = "Full Outer Join cannot be null";
 	public static final String FLATMAPNULL = "FlatMap cannt be null";
 	public static final String FLATMAPPAIRNULL = "FlatMap Pair cannot be null";
 	public static final String LONGFLATMAPNULL = "Long FlatMap cannt be null";

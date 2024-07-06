@@ -9,7 +9,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -123,6 +122,7 @@ import com.github.datasamudaya.common.TaskType;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.DistributedDistinct;
 import com.github.datasamudaya.common.functions.DistributedSort;
+import com.github.datasamudaya.common.functions.FullOuterJoin;
 import com.github.datasamudaya.common.functions.IntersectionFunction;
 import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
@@ -135,6 +135,7 @@ import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.executors.actors.ProcessCoalesce;
 import com.github.datasamudaya.stream.executors.actors.ProcessDistributedDistinct;
 import com.github.datasamudaya.stream.executors.actors.ProcessDistributedSort;
+import com.github.datasamudaya.stream.executors.actors.ProcessFullOuterJoin;
 import com.github.datasamudaya.stream.executors.actors.ProcessInnerJoin;
 import com.github.datasamudaya.stream.executors.actors.ProcessIntersection;
 import com.github.datasamudaya.stream.executors.actors.ProcessLeftOuterJoin;
@@ -4028,6 +4029,34 @@ public class SQLUtils {
 						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
 						actors.add(system.actorOf(
 								Props.create(ProcessLeftOuterJoin.class, lojoinpred, null,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+					
+				}
+				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid
+						+ taskactor.getTask().getTaskid());
+				return taskactor.getTask();
+			} else if (js.getStage().getTasks().get(0) instanceof FullOuterJoin) {
+				if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+					List<ActorSelection> childactors = new ArrayList<>();
+					for (String actorselectionurl : taskactor.getChildtaskactors()) {
+						childactors.add(system.actorSelection(actorselectionurl));
+					}
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessFullOuterJoin.class, childactors,
+										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+										inmemorycache, taskactor.getTask()),
+								jobstageid + taskactor.getTask().getTaskid()));
+					});
+				} else {
+					cluster.registerOnMemberUp(() -> {
+						log.info("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						actors.add(system.actorOf(
+								Props.create(ProcessFullOuterJoin.class, null,
 										taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 										inmemorycache, taskactor.getTask()),
 								jobstageid + taskactor.getTask().getTaskid()));
