@@ -147,10 +147,18 @@ public class RequiredColumnsExtractor {
 		}
     }
 
+    
+    private void createHashSetInList(List<Set<Integer>> lst, int numberofsetstocreate) {
+    	for(int index=0;index<numberofsetstocreate; index++) {
+    		lst.add(new LinkedHashSet<>());
+    	}
+    }
+    
     private void handleAggregate(Aggregate aggregate, List<Set<Integer>> parentindexes) {    	
     	List<Set<Integer>> lRequiredColumns = new ArrayList<>();
     	List<Set<Integer>> lparentindexes = new ArrayList<>(parentindexes);
-    	Set<Integer> requiredColumns = new LinkedHashSet<>();
+    	List<Set<Integer>> requiredColumns = new ArrayList<>();
+    	createHashSetInList(requiredColumns, parentindexes.size());
         // Add grouping columns
         aggregate.getGroupSet().asList().stream().forEach(colIndex->{
             addColumnToMap(aggregate, colIndex, requiredColumns, lparentindexes);
@@ -162,7 +170,7 @@ public class RequiredColumnsExtractor {
             	 addColumnToMap(aggregate, colIndex, requiredColumns, lparentindexes);            	
             });
         }
-        lRequiredColumns.add(requiredColumns);
+        lRequiredColumns.addAll(requiredColumns);
         nodeColumnIndexSet.put(aggregate, lRequiredColumns); 
     }
     
@@ -193,22 +201,26 @@ public class RequiredColumnsExtractor {
     }
     
     private void handleProject(Project project, List<Set<Integer>> parentindexes) {
-    	Set<Integer> requiredColumns = new LinkedHashSet<>();
+    	List<Set<Integer>> requiredColumns = new ArrayList<>();
+    	createHashSetInList(requiredColumns, parentindexes.size());
     	ColumnIndexVisitor civ = new ColumnIndexVisitor(project, requiredColumns, parentindexes);
         project.getProjects().forEach(expr -> expr.accept(civ));
         List<Set<Integer>> lRequiredColumns = new ArrayList<>();
-        lRequiredColumns.add(requiredColumns);
+        lRequiredColumns.addAll(requiredColumns);
         nodeColumnIndexSet.put(project, lRequiredColumns); 
     }
 
-    private void handleFilter(Filter filter, List<Set<Integer>> requiredColumns) {
-    	filter.getCondition().accept(new ColumnIndexVisitor(filter, new LinkedHashSet<>(), requiredColumns));
-        nodeColumnIndexSet.put(filter, requiredColumns); 
+    private void handleFilter(Filter filter, List<Set<Integer>> parent) {
+    	List<Set<Integer>> requiredColumns = new ArrayList<>();
+    	createHashSetInList(requiredColumns, parent.size());
+    	filter.getCondition().accept(new ColumnIndexVisitor(filter, requiredColumns, parent));
+        nodeColumnIndexSet.put(filter, parent); 
     }
 
     private void handleJoin(Join join, List<Set<Integer>> parentindexes1, List<Set<Integer>> parentindexes2) {
         // Recursively handle both sides of the join       
-        Set<Integer> requiredColumns = new LinkedHashSet<>();
+        List<Set<Integer>> requiredColumns = new ArrayList<>();
+        createHashSetInList(requiredColumns, parentindexes1.size()+parentindexes2.size());
         List<Set<Integer>> parents = new ArrayList<>();
         parents.addAll(parentindexes1);
         parents.addAll(parentindexes2);
@@ -232,10 +244,10 @@ public class RequiredColumnsExtractor {
     }
     
     private class JoinConditionColumnVisitor extends RexVisitorImpl<Void> {
-    	Set<Integer> requiredColumns;
+    	List<Set<Integer>> requiredColumns;
     	List<Set<Integer>> parents;
     	Join join;
-        protected JoinConditionColumnVisitor(Join join, Set<Integer> requiredColumns, List<Set<Integer>> parents) {
+        protected JoinConditionColumnVisitor(Join join, List<Set<Integer>> requiredColumns, List<Set<Integer>> parents) {
             super(true);
             this.join = join;
             this.requiredColumns = requiredColumns;
@@ -257,10 +269,10 @@ public class RequiredColumnsExtractor {
         }
     }
     private class ColumnIndexVisitor extends RexVisitorImpl<Void> {
-        Set<Integer> requiredColumns;
+    	List<Set<Integer>> requiredColumns;
         List<Set<Integer>> parentindexes;
         RelNode relNode;
-        protected ColumnIndexVisitor(RelNode relNode, Set<Integer> requiredColumns, List<Set<Integer>> parentindexes) {
+        protected ColumnIndexVisitor(RelNode relNode, List<Set<Integer>> requiredColumns, List<Set<Integer>> parentindexes) {
             super(true);
             this.relNode = relNode;
             this.requiredColumns = requiredColumns;
@@ -285,7 +297,7 @@ public class RequiredColumnsExtractor {
 	 * The function analyzes the condition from join or filter
 	 * @param condition
 	 */
-	private void analyzeCondition(RelNode relNode, RexNode condition, Set<Integer> requiredColumns, List<Set<Integer>> parentindexes) {
+	private void analyzeCondition(RelNode relNode, RexNode condition, List<Set<Integer>> requiredColumns, List<Set<Integer>> parentindexes) {
 		if (condition.isA(SqlKind.AND) || condition.isA(SqlKind.OR)
 				|| condition.isA(SqlKind.EQUALS) || condition.isA(SqlKind.NOT_EQUALS)
 				|| condition.isA(SqlKind.GREATER_THAN) || condition.isA(SqlKind.GREATER_THAN_OR_EQUAL)
@@ -311,16 +323,18 @@ public class RequiredColumnsExtractor {
 	}
 	
 	
-	public void addColumnToMap(RelNode node, int index,Set<Integer> requiredColumns, List<Set<Integer>> parentindexes) {
+	public void addColumnToMap(RelNode node, int index,List<Set<Integer>> requiredColumns, List<Set<Integer>> parentindexes) {
 		int totalcolcount = 0;
 		int prevtotalcolcount = 0;
 		Set<Integer> currparent = null;
 		int indextable = 0;
 		String tablename = null;
+		int requiredcolumnsindex = indextable;
 		for(Set<Integer> parent:parentindexes) {
 			prevtotalcolcount = totalcolcount;
 			totalcolcount += parent.size();
 			if(index<totalcolcount) {
+				requiredcolumnsindex = indextable;
 				tablename = relNodeTablesMap.get(node).get(indextable);
 				currparent = parent;
 				break;					
@@ -329,7 +343,7 @@ public class RequiredColumnsExtractor {
 		}				
 		if(nonNull(currparent)) {
 			List<Integer> lcurrparent = new ArrayList<>(currparent);
-			requiredColumns.add(lcurrparent.get(index-prevtotalcolcount));
+			requiredColumns.get(requiredcolumnsindex).add(index-prevtotalcolcount);
 			if(nonNull(tablename)) {
 				Set<String> columnstable = requiredColumnsByTableCondition.get(tablename);
 				if(isNull(columnstable)) {

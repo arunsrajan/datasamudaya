@@ -1903,7 +1903,7 @@ public class StreamJobScheduler {
 							graph.addEdge(input1, spts);
 							taskgraph.addEdge(input1.getTask(), spts.getTask());
 						} else if (inputparent1 instanceof Task task) {
-							spts.getTask().setJoinpos("left");
+							task.setJoinpos("left");
 							taskgraph.addVertex(task);
 							taskgraph.addVertex(spts.getTask());
 							taskgraph.addEdge(task, spts.getTask());
@@ -2044,6 +2044,7 @@ public class StreamJobScheduler {
 						Map<String, List<Object>> hpsptsl = parents.stream()
 								.collect(Collectors.groupingBy(StreamPipelineTaskSubmitter::getHostPort,
 										Collectors.mapping(spts -> spts, Collectors.toList())));
+						log.info("Reduce:::HostPort spts List {}", hpsptsl);
 						for (Entry<String, List<Object>> entry : hpsptsl.entrySet()) {
 							int initialrange = startrange;
 							for (; initialrange < endrange; initialrange++) {
@@ -2181,6 +2182,7 @@ public class StreamJobScheduler {
 				}
 			} else {
 				// Form the nodes and edges for map stage.
+				log.info("Map Stage Graph Parent::: {} for stage {}",outputparent1, currentstage.number);
 				for (var input : outputparent1) {
 					partitionindex++;
 					StreamPipelineTaskSubmitter spts;
@@ -2214,6 +2216,7 @@ public class StreamJobScheduler {
 					}
 					tasks.add(spts);
 				}
+				log.info("Map Stage Graph Child::: {} for parent {} with stage {}",tasks, outputparent1, currentstage.number);
 			}
 			stageoutputs.put(currentstage, tasks);
 		} catch (Exception ex) {

@@ -5010,6 +5010,36 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 
 		log.info("In testRequiredColumnsWithWhereRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Exit");
 	}
+	
+	@Test
+	public void testJoinWithCount() throws Exception {
+		log.info("In testJoinWithCount() method Entry");
+		String statement = """
+				select airline.origin,airports.airport,count(*) FROM airline 
+				inner join airports on airports.iata = airline.origin 
+				GROUP BY airline.origin,airports.airport
+				""";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+				.add(airportssample, "airports", airportsheader, airportstype)
+				.setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 3);				
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertEquals(11, total);
+
+		log.info("In testJoinWithCount() method Exit");
+	}
+	
 
 	@AfterClass
 	public static void pipelineConfigReset() throws Exception {
