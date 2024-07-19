@@ -20,10 +20,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,6 +52,7 @@ import com.github.datasamudaya.common.ContainerLaunchAttributes;
 import com.github.datasamudaya.common.ContainerResources;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.LaunchContainers.MODE;
 import com.github.datasamudaya.common.DataSamudayaIgniteClient;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -68,6 +72,7 @@ import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.Stage;
+import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.AbstractPipeline;
@@ -328,7 +333,7 @@ public class FileBlocksPartitionerHDFS {
 				if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
 					try(ZookeeperOperations zo=new ZookeeperOperations();){
 						zo.connect();
-						containers = zo.getTaskExectorsByJobId(pipelineconfig.getTejobid());
+						getYarnContainers(zo);
 						allocateContainersLoadBalanced(totalblockslocation);
 					}
 				}
@@ -348,6 +353,150 @@ public class FileBlocksPartitionerHDFS {
 		}
 	}
 
+	/**
+	 * Get Yarn Containers Launched through YARN Node Manager
+	 * @param zo
+	 * @throws Exception
+	 */
+	public void getYarnContainers(ZookeeperOperations zo) throws Exception {
+		containers = zo.getTaskExectorsByJobId(pipelineconfig.getTejobid());
+		List<LaunchContainers> lcsl = new ArrayList<>();
+		if (pipelineconfig.getIsremotescheduler()) {			
+			List<String> drivers = zo.getDriversByJobId(pipelineconfig.getTejobid());
+			containers.add(0, drivers.get(0));
+			Map<String, Set<String>> hosthpsmap = containers.stream()
+					.collect(Collectors.groupingBy(crhp -> crhp.split(DataSamudayaConstants.UNDERSCORE)[0],
+							() -> new LinkedHashMap<>(),
+							Collectors.mapping(crhp -> crhp, Collectors.toCollection(LinkedHashSet::new))));
+			List<Integer> portnodeselected = new ArrayList<>();
+			Random rand = new Random(System.currentTimeMillis());
+			Boolean isdriverselected = false;
+			for (Entry<String, Set<String>> hosthpsentry : hosthpsmap.entrySet()) {
+				int nodeportselected = rand.nextInt(65534);
+				while (portnodeselected.contains(nodeportselected)) {
+					nodeportselected = rand.nextInt(65534);
+				}
+				portnodeselected.add(nodeportselected);
+				if (!isdriverselected) {
+					LaunchContainers lcs = new LaunchContainers();
+					lcs.setJobid(job.getId());
+					lcs.setMode(MODE.NORMAL);
+					ContainerLaunchAttributes cla = new ContainerLaunchAttributes();
+					cla.setNumberofcontainers(1);
+					Iterator<String> ports = hosthpsentry.getValue().iterator();
+					ContainerResources crs = new ContainerResources();
+					String hp = ports.next();
+					String[] hpa = hp.split(DataSamudayaConstants.UNDERSCORE);
+					crs.setCpu(2);
+					crs.setPort(Integer.parseInt(hpa[1]));
+					crs.setGctype(pipelineconfig.getGctype());
+					crs.setExecutortype(EXECUTORTYPE.DRIVER);
+					cla.setCr(Arrays.asList(crs));
+					lcs.setCla(cla);
+					lcs.setNodehostport(hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
+					job.setDriver(lcs);
+					isdriverselected = true;
+					if (ports.hasNext()) {
+						lcs = new LaunchContainers();
+						lcsl.add(lcs);
+						lcs.setJobid(job.getId());
+						lcs.setMode(MODE.NORMAL);
+						cla = new ContainerLaunchAttributes();
+						cla.setNumberofcontainers(hosthpsentry.getValue().size() - 1);
+						lcs.setCla(cla);
+						cla.setCr(new ArrayList<>());
+						lcs.setNodehostport(
+								hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
+						for (; ports.hasNext();) {
+							crs = new ContainerResources();
+							hp = ports.next();
+							hpa = hp.split(DataSamudayaConstants.UNDERSCORE);
+							crs.setCpu(2);
+							crs.setPort(Integer.parseInt(hpa[1]));
+							crs.setGctype(pipelineconfig.getGctype());
+							crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
+							cla.getCr().add(crs);
+						}
+					}
+				} else {
+					Iterator<String> ports = hosthpsentry.getValue().iterator();
+					if (ports.hasNext()) {
+						LaunchContainers lcs = new LaunchContainers();
+						lcsl.add(lcs);
+						lcs.setJobid(job.getId());
+						lcs.setMode(MODE.NORMAL);
+						ContainerLaunchAttributes cla = new ContainerLaunchAttributes();
+						cla.setNumberofcontainers(hosthpsentry.getValue().size());
+						lcs.setCla(cla);
+						cla.setCr(new ArrayList<>());
+						lcs.setNodehostport(
+								hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
+						for (; ports.hasNext();) {
+							ContainerResources crs = new ContainerResources();
+							String hp = ports.next();
+							String[] hpa = hp.split(DataSamudayaConstants.UNDERSCORE);
+							crs.setCpu(2);
+							crs.setPort(Integer.parseInt(hpa[1]));
+							crs.setGctype(pipelineconfig.getGctype());
+							crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
+							cla.getCr().add(crs);
+						}
+					}					
+				}
+			}
+			job.setLcs(lcsl);
+			// Get containers
+			containers = job.getLcs().stream().flatMap(lc -> {
+				var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
+				return lc.getCla().getCr().stream().map(cr -> {
+					return host[0] + DataSamudayaConstants.UNDERSCORE + cr.getPort();
+				}).collect(Collectors.toList()).stream();
+			}).collect(Collectors.toList());
+		} else {
+			Map<String, Set<String>> hosthpsmap = containers.stream()
+					.collect(Collectors.groupingBy(crhp -> crhp.split(DataSamudayaConstants.UNDERSCORE)[0],
+							() -> new LinkedHashMap<>(),
+							Collectors.mapping(crhp -> crhp, Collectors.toCollection(LinkedHashSet::new))));
+			List<Integer> portnodeselected = new ArrayList<>();
+			Random rand = new Random(System.currentTimeMillis());
+			for (Entry<String, Set<String>> hosthpsentry : hosthpsmap.entrySet()) {
+				Iterator<String> ports = hosthpsentry.getValue().iterator();
+				if (ports.hasNext()) {
+					LaunchContainers lcs = new LaunchContainers();
+					lcsl.add(lcs);
+					lcs.setJobid(job.getId());
+					lcs.setMode(MODE.NORMAL);
+					ContainerLaunchAttributes cla = new ContainerLaunchAttributes();
+					cla.setNumberofcontainers(hosthpsentry.getValue().size());
+					lcs.setCla(cla);
+					cla.setCr(new ArrayList<>());
+					int nodeportselected = rand.nextInt(65534);
+					while (portnodeselected.contains(nodeportselected)) {
+						nodeportselected = rand.nextInt(65534);
+					}
+					portnodeselected.add(nodeportselected);
+					lcs.setNodehostport(
+							hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
+					for (; ports.hasNext();) {
+						ContainerResources crs = new ContainerResources();
+						String hp = ports.next();
+						String[] hpa = hp.split(DataSamudayaConstants.UNDERSCORE);
+						crs.setCpu(2);
+						crs.setPort(Integer.parseInt(hpa[1]));
+						crs.setGctype(pipelineconfig.getGctype());
+						crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
+						cla.getCr().add(crs);
+					}
+				}
+			}
+			job.setLcs(lcsl);
+		}
+		job.setTaskexecutors(containers);
+		// Get nodes
+		job.setNodes(job.getLcs().stream().map(lc -> lc.getNodehostport()).collect(Collectors.toSet()));
+		setContainerResources();
+
+	}
 
 	/**
 	 * The blocks data is fetched from hdfs and caches in Ignite Server

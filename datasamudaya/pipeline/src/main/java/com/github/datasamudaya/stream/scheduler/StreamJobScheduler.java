@@ -308,9 +308,17 @@ public class StreamJobScheduler {
 				job.setVertices(new LinkedHashSet<>(graph.vertexSet()));
 				job.setEdges(new LinkedHashSet<>(graph.edgeSet()));
 			} else {
-				job.getVertices().stream().forEach(vertex -> graph.addVertex((StreamPipelineTaskSubmitter) vertex));
-				job.getEdges().stream().forEach(edge -> graph.addEdge((StreamPipelineTaskSubmitter) edge.getSource(),
-						(StreamPipelineTaskSubmitter) edge.getTarget()));
+				job.getVertices().stream().forEach(vertex -> {
+					graph.addVertex((StreamPipelineTaskSubmitter) vertex);
+					taskgraph.addVertex(((StreamPipelineTaskSubmitter) vertex).getTask());
+				});
+				job.getEdges().stream().forEach(edge -> {
+					graph.addEdge((StreamPipelineTaskSubmitter) edge.getSource(),
+							(StreamPipelineTaskSubmitter) edge.getTarget());
+					taskgraph.addEdge(((StreamPipelineTaskSubmitter) edge.getSource()).getTask(),
+							((StreamPipelineTaskSubmitter) edge.getTarget()).getTask());
+				});
+				jsidjsmap.putAll(job.getJsidjsmap());
 			}
 			batchsize = Integer.parseInt(pipelineconfig.getBatchsize());
 			semaphore = new Semaphore(batchsize);
@@ -382,7 +390,7 @@ public class StreamJobScheduler {
 				if (!pipelineconfig.getUseglobaltaskexecutors()) {
 					yarnmutex.acquire();
 					pipelineconfig.setJobid(job.getId());
-					Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
+					Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap, job);
 					decideContainerCountAndPhysicalMemoryByBlockSize(sptsl.size(),
 							Integer.parseInt(pipelineconfig.getBlocksize()));
 					ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
@@ -408,7 +416,7 @@ public class StreamJobScheduler {
 					log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
 							job.getId().equals(tinfoyarn.getJobid()));
 				} else {
-					Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap);
+					Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap, job);
 					Utils.sendJobToYARNDistributedQueue(pipelineconfig.getTejobid(), job.getId());
 					TaskInfoYARN tinfoyarn = Utils
 							.getJobOutputStatusYARNDistributedQueueBlocking(pipelineconfig.getTejobid());
@@ -639,9 +647,11 @@ public class StreamJobScheduler {
 			jobid = pipelineconfig.getTejobid();
 		}
 		final String finaljobid = jobid;
+		log.info("Tasks To Broadcast for job id::{} {}", finaljobid, tasks);
 		Map<String, Set<String>> jobexecutorsmap = tasks.stream()
 				.collect(Collectors.groupingBy(task -> task.jobid + task.stageid, HashMap::new,
 						Collectors.mapping(task -> task.hostport, Collectors.toSet())));
+		log.info("Job Executors Map::{} jsjidmap {}", jobexecutorsmap, jsidjsmap);
 		jobexecutorsmap.keySet().stream().forEach(key -> {
 			try {
 				JobStage js = (JobStage) jsidjsmap.get(key);

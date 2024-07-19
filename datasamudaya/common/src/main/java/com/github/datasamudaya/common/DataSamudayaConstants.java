@@ -217,6 +217,7 @@ public class DataSamudayaConstants {
 	public static final String MASSIVEDATA_YARNINPUT_GRAPH_FILE = "graph.dat";
 	public static final String MASSIVEDATA_YARNINPUT_TASK_FILE = "taskmdsthread.dat";
 	public static final String MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE = "jobstagemapfile.dat";
+	public static final String MASSIVEDATA_YARNINPUT_JOB_FILE = "job.dat";
 	public static final String YARN_CLIENT = "yarnClient";
 	public static final String SQL_YARN_DEFAULT_APP_CONTEXT_FILE = "sql-application-context.xml";
 
@@ -306,6 +307,8 @@ public class DataSamudayaConstants {
 
 	public static final String YARNDATASAMUDAYAJOBID = "YARNDATASAMUDAYAJOBID";
 
+	public static final String ISDRIVERREQUIREDYARN = "ISDRIVERREQUIREDYARN";
+	
 	public static final String SHDP_CONTAINERID = "SHDP_CONTAINERID";
 
 	public static final String PARTITION = "Partition-";

@@ -99,7 +99,7 @@ public class SQLServer {
 								isjgroups = false;
 								isignite = false;
 								isyarn = true;
-								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE);
+								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
 								isyarncontainerlaunched = true;
 							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
 								isjgroups = false;
@@ -187,7 +187,7 @@ public class SQLServer {
 													if (!isyarncontainerlaunched) {
 														try {
 															tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE);
+															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
 														} catch (Exception ex) {
 															log.error(DataSamudayaConstants.EMPTY, ex);
 														}

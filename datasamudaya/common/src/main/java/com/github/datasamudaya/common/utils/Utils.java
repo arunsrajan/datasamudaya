@@ -1797,12 +1797,15 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void launchYARNExecutors(String teid, int cpuuser, int memoryuser, int numberofcontainers,
-			String yarnappcontextfile) throws YarnLaunchException {
+			String yarnappcontextfile, boolean isyarndriverrequired) throws YarnLaunchException {
 		try {
 			yarnmutex.acquire();
 			new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
 			Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
 					DataSamudayaConstants.YARNOUTJAR);
+			if(isyarndriverrequired) {
+				numberofcontainers++;
+			}
 			System.setProperty("jobcount", "1");
 			System.setProperty("containercount", "" + numberofcontainers);
 			System.setProperty("containermemory", "" + memoryuser);
@@ -1812,6 +1815,7 @@ public class Utils {
 			var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
 			client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
 			client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, teid);
+			client.getEnvironment().put(DataSamudayaConstants.ISDRIVERREQUIREDYARN, isyarndriverrequired+DataSamudayaConstants.EMPTY);
 			ApplicationId appid = client.submitApplication(true);
 			var zo = new ZookeeperOperations();
 			zo.connect();
@@ -1853,7 +1857,8 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void createJobInHDFS(PipelineConfig pipelineconfig, List<?> sptsl,
-			SimpleDirectedGraph<?, DAGEdge> graph, Map<String, ?> tasksptsthread, Map<String, JobStage> jsidjsmap)
+			SimpleDirectedGraph<?, DAGEdge> graph, Map<String, ?> tasksptsthread, Map<String, JobStage> jsidjsmap,
+			Job job)
 			throws JobException {
 		try {
 			OutputStream os = pipelineconfig.getOutput();
@@ -1873,6 +1878,8 @@ public class Utils {
 					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE, pipelineconfig);
 			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jsidjsmap, yarninputfolder,
 					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE, pipelineconfig);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(job, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOB_FILE, pipelineconfig);
 			pipelineconfig.setOutput(os);
 		} catch (Exception ex) {
 			throw new JobException(JobException.JOBCREATIONEXCEPTION_MESSAGE, ex);
