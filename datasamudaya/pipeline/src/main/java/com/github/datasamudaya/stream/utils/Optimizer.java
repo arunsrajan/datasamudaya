@@ -15,6 +15,11 @@
  */
 package com.github.datasamudaya.stream.utils;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
@@ -38,7 +43,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
+import org.apache.calcite.sql.util.SqlOperatorTables;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
@@ -47,10 +52,6 @@ import org.apache.calcite.tools.Program;
 import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
 
 public class Optimizer {
 
@@ -93,15 +94,12 @@ public class Optimizer {
 		SqlStdOperatorTable sqlStdOperatorTable = SqlStdOperatorTable.instance();
 		List<SqlFunction> sqlFunctions = SQLUtils.getAllSqlFunctions();
 
-		sqlFunctions.stream().forEach(sqlFunction -> sqlStdOperatorTable.register(sqlFunction));
-
-
-		SqlOperatorTable operatorTable = ChainedSqlOperatorTable.of(sqlStdOperatorTable);
+		SqlOperatorTable customSqlOperatorTable = SqlOperatorTables.of(sqlFunctions);
+		SqlOperatorTable operatorTable = new SqlFunctionsChainedOperatorTable(Arrays.asList(sqlStdOperatorTable,customSqlOperatorTable));
 
 
 		SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
 				.withLenientOperatorLookup(config.lenientOperatorLookup())
-				.withSqlConformance(config.conformance())
 				.withDefaultNullCollation(config.defaultNullCollation())
 				.withIdentifierExpansion(true);
 
@@ -112,10 +110,9 @@ public class Optimizer {
 
 		RelOptCluster cluster = RelOptCluster.create(planner, new RexBuilder(typeFactory));
 
-		SqlToRelConverter.Config converterConfig = SqlToRelConverter.configBuilder()
-				.withTrimUnusedFields(true)
-				.withExpand(true)
-				.build();
+		SqlToRelConverter.Config converterConfig = SqlToRelConverter.config();
+		converterConfig = converterConfig.withTrimUnusedFields(true)
+				.withExpand(true);
 
 		SqlToRelConverter converter = new SqlToRelConverter(
 				null,
@@ -130,13 +127,13 @@ public class Optimizer {
 	}
 
 	public SqlNode parse(String sql) throws Exception {
-		SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
-		parserConfig.setCaseSensitive(config.caseSensitive());
-		parserConfig.setUnquotedCasing(config.unquotedCasing());
-		parserConfig.setQuotedCasing(config.quotedCasing());
-		parserConfig.setConformance(config.conformance());
+		SqlParser.Config parserConfig = SqlParser.config();
+		parserConfig = parserConfig.withCaseSensitive(config.caseSensitive()).
+		withUnquotedCasing(config.unquotedCasing()).
+		withQuotedCasing(config.quotedCasing()).
+		withConformance(config.conformance());
 
-		SqlParser parser = SqlParser.create(sql, parserConfig.build());
+		SqlParser parser = SqlParser.create(sql, parserConfig);
 
 		return parser.parseStmt();
 	}
@@ -146,7 +143,7 @@ public class Optimizer {
 	}
 
 	public RelNode convert(SqlNode node) {
-		RelRoot root = converter.convertQuery(node, true, true);
+		RelRoot root = converter.convertQuery(node, false, true);
 
 		return root.rel;
 	}
