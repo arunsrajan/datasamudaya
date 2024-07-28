@@ -147,6 +147,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 									if (object instanceof byte[] bytes) {
 										object = Utils.convertBytesToObjectCompressed(bytes, null);
 									}
+									log.info("Allocate Or Launch: object {}",object);
 									var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
 											containerprocesses, hdfs, containeridthreads, containeridports, object, zo);
 									Future<Object> containerallocated = threadpool.submit(container);
