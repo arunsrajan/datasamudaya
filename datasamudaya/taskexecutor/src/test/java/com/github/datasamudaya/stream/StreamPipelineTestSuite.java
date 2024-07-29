@@ -18,6 +18,7 @@ import com.github.datasamudaya.tasks.executor.MassiveDataCruncherMRApiTest;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 		FileBlocksPartitionerHDFSTest.class, LaunchContainersTest.class,
+		PigCommandsLocalModeTest.class,
 		PigCommandsNoDriverTest.class,
 		PigCommandsTest.class, RemoteJobSchedulerTest.class,
 		HDFSBlockUtilsTest.class, StreamPipeline1Test.class,
@@ -30,6 +31,7 @@ import com.github.datasamudaya.tasks.executor.MassiveDataCruncherMRApiTest;
 		StreamPipelineTransformationFunctionsTest.class,
 		StreamPipelineStatisticsTest.class,
 		MassiveDataCruncherMRApiTest.class,
+		StreamPipelineSqlBuilderLocalModeTest.class,
 		StreamPipelineSqlBuilderNoDriverTest.class,
 		StreamPipelineSqlBuilderTest.class,
 		FileBlocksPartitionerHDFSMultipleNodesTest.class,

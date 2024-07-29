@@ -10,10 +10,9 @@ import org.junit.BeforeClass;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
-import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.pig.PigUtils;
 
-public class PigCommandsNoDriverTest extends PigCommandsTest {
+public class PigCommandsLocalModeTest extends PigCommandsTest {
 
 	String[] airlinehead = {"AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime",
 			"ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime",
@@ -35,17 +34,9 @@ public class PigCommandsNoDriverTest extends PigCommandsTest {
 		islocal = pipelineconfig.getLocal();
 		user = pipelineconfig.getUser();
 		queryParserDriver = PigUtils.getQueryParserDriver("pig");
-		pipelineconfig.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE);
-		pipelineconfig.setUseglobaltaskexecutors(true);
-		pipelineconfig.setLocal("false");
-		pipelineconfig.setUser("arun");
-		pipelineconfig.setTejobid(tejobid);
+		pipelineconfig.setLocal("true");
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
-		if ("false".equals(pipelineconfig.getLocal())) {
-			pipelineconfig.setIsremotescheduler(false);
-			Utils.launchContainersExecutorSpecWithDriverSpec("arun", tejobid, 6, 3000, 1, 0, 0, true);
-		}
+		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);		
 	}
 
 	@AfterClass
@@ -54,7 +45,6 @@ public class PigCommandsNoDriverTest extends PigCommandsTest {
 		pipelineconfig.setUseglobaltaskexecutors(isuseglobaltaskexecutors);
 		pipelineconfig.setLocal(islocal);
 		pipelineconfig.setUser(user);
-		pipelineconfig.setTejobid(tejobid);
 	}
 
 }

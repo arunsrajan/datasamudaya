@@ -2294,9 +2294,11 @@ public class StreamJobScheduler {
 				}
 			} else if (Boolean.TRUE.equals(islocal)) {
 				if (job.getTrigger() != job.getTrigger().SAVERESULTSTOFILE) {
+					long totalrecords = 0;
 					if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
 						for (var spts : sptss) {
-							var key = getIntermediateResultFS(spts.getTask());
+							Task task = spts.getTask();
+							var key = getIntermediateResultFS(task);
 							while (isNull(jobidstageidtaskidcompletedmap.get(key))
 									|| !jobidstageidtaskidcompletedmap.get(key)) {
 								Thread.sleep(1000);
@@ -2305,21 +2307,77 @@ public class StreamJobScheduler {
 							try (var bais = new ByteArrayInputStream(databytes);
 									var sis = new SnappyInputStream(bais);
 									var input = new Input(sis);) {
-								var obj = Utils.getKryo().readClassAndObject(input);
-								if(obj instanceof List lst && CollectionUtils.isNotEmpty(lst) && lst.get(0) instanceof NodeIndexKey) {
-									List larrayobj = new ArrayList<>();
-									Stream stream = Utils.getStreamData(lst, cache);
-									stream.map(new MapFunction<Object[], Object[]>(){
-										private static final long serialVersionUID = 4827381029527934511L;
-
-										public Object[] apply(Object[] values) {
-											return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+								var result = Utils.getKryo().readClassAndObject(input);
+								if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && (job.getJobtype() == JOBTYPE.NORMAL 
+										|| job.getJobtype() == JOBTYPE.PIG										
+										)) {
+									PrintWriter out = pipelineconfig.getWriter();
+									if(result instanceof List lst && CollectionUtils.isNotEmpty(lst) && lst.get(0) instanceof NodeIndexKey) {
+										if(task.isIsunion() || task.isIsintersection()) {
+											int diskexceedpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+													DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
+											DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false,false ,false, null, null, 1);
+											for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
+												log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
+												try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(),null, false, false, false, nik.getTask().getFcsc(),
+														RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
+													while (client.hasNext()) {
+														log.info("Getting Next List From Remote Server");
+														List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
+																.convertBytesToObjectCompressed((byte[]) client.next(), null);
+														log.info("Next List From Remote Server with size {}", niks.size());
+														niks.stream().parallel().forEach(diskspillset::add);
+													}
+												}
+											}
+											List larrayobj = new ArrayList<>();										
+											if(diskspillset.isSpilled()) {
+												diskspillset.close();
+											}
+											Stream<NodeIndexKey> datastream = diskspillset.isSpilled()
+													? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
+													Utils.getLocalFilePathForTask(diskspillset.getTask(), null, false, false, false)))
+													: diskspillset.getData().stream();
+											datastream.map(nik->nik.getKey()).map(new MapFunction<Object[], Object[]>(){
+												private static final long serialVersionUID = -6478016520828716284L;
+		
+												public Object[] apply(Object[] values) {
+													return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+												}
+											}).forEach(larrayobj::add);
+											diskspillset.clear();
+											if(nonNull(out)) {
+												totalrecords += Utils.printTableOrError((List) larrayobj, out, JOBTYPE.PIG);
+											} else {
+												stageoutput.add(larrayobj);
+											}
+										} else if(task.isTosort()) {
+											List<NodeIndexKey> rootniks = lst;
+											List larrayobj = new ArrayList<>();
+											Stream<NodeIndexKey> stream = rootniks.stream();
+											stream.map(nik-> (Object[])nik.getValue()).map(new MapFunction<Object[], Object[]>(){
+												private static final long serialVersionUID = -6478016520828716284L;
+		
+												public Object[] apply(Object[] values) {
+													return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+												}
+											}).forEach(larrayobj::add);									
+											if(nonNull(out)) {
+												totalrecords += Utils.printTableOrError((List) larrayobj, out, JOBTYPE.PIG);
+											} else {
+												stageoutput.add(larrayobj);
+											}
 										}
-									}).forEach(larrayobj::add);
-									stageoutput.add(larrayobj);
-								} else {
+									} else {
+										if(nonNull(out)) {
+											totalrecords += Utils.printTableOrError((List) result, out, JOBTYPE.PIG);
+										} else {
+											stageoutput.add(result);
+										}
+									}								
+								}else {
 									resultstream.remove(key);
-									stageoutput.add(obj);
+									stageoutput.add(result);
 								}
 							} catch (Exception ex) {
 								log.error(PipelineConstants.JOBSCHEDULERFINALSTAGERESULTSERROR, ex);
