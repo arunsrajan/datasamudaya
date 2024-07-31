@@ -2086,44 +2086,6 @@ public class Utils {
 	}
 
 	/**
-	 * This method destroys containers for the given user and jobid.
-	 * 
-	 * @param user
-	 * @param jobid
-	 * @throws Exception
-	 */
-	public static synchronized void destroyContainers(String user, String jobid) throws ContainerException {
-		var dc = new DestroyContainers();
-		dc.setJobid(jobid);
-		var usersshare = DataSamudayaUsers.get();
-		if (isNull(usersshare)) {
-			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
-		}
-		var lcs = GlobalContainerLaunchers.get(user, jobid);
-		lcs.stream().forEach(lc -> {
-			try {
-				ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources.getAllocatedResources()
-						.get(lc.getNodehostport());
-				Resources resallocated = nodesresallocated.get(user);
-				Utils.getResultObjectByInput(lc.getNodehostport(), dc, DataSamudayaConstants.EMPTY);
-				lc.getCla().getCr().stream().forEach(cr -> {
-					resallocated.setFreememory(resallocated.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
-					resallocated.setNumberofprocessors(resallocated.getNumberofprocessors() + cr.getCpu());
-				});
-			} catch (Exception e) {
-				log.error(DataSamudayaConstants.EMPTY, e);
-			}
-		});
-		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsDeAllocatedCounter().inc(lcs.size());
-		GlobalContainerLaunchers.remove(user, jobid);
-		GlobalJobFolderBlockLocations.remove(jobid);
-		Map<String, List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);
-		if (MapUtils.isEmpty(jobcontainermap)) {
-			GlobalContainerLaunchers.remove(user);
-		}
-	}
-
-	/**
 	 * Gets the rpc registry for the given port, class which implements
 	 * StreamDataCruncher and id.
 	 * 
@@ -2464,6 +2426,48 @@ public class Utils {
 			throw new TaskExecutorException(TaskExecutorException.TASKEXECUTORDESTROYEXCEPTION_MESSAGE, ex);
 		} finally {
 			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
+		}
+	}
+	
+	/**
+	 * This method destroys containers for the given user and jobid.
+	 * 
+	 * @param user
+	 * @param jobid
+	 * @throws Exception
+	 */
+	public static synchronized void destroyContainers(String user, String jobid) throws ContainerException {
+		var dcs = new DestroyContainers();
+		dcs.setJobid(jobid);
+		var usersshare = DataSamudayaUsers.get();
+		if (isNull(usersshare)) {
+			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+		}
+		var lcs = GlobalContainerLaunchers.get(user, jobid);
+		lcs.stream().forEach(lc -> {
+			try {
+				ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources.getAllocatedResources()
+						.get(lc.getNodehostport());
+				Resources resallocated = nodesresallocated.get(user);
+				Utils.getResultObjectByInput(lc.getNodehostport(), dcs, DataSamudayaConstants.EMPTY);
+				lc.getCla().getCr().stream().forEach(cr -> {
+					try {
+						resallocated.setFreememory(resallocated.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
+						resallocated.setNumberofprocessors(resallocated.getNumberofprocessors() + cr.getCpu());
+					} catch (Exception e) {
+						log.error(DataSamudayaConstants.EMPTY, e);
+					}
+				});
+			} catch (Exception e) {
+				log.error(DataSamudayaConstants.EMPTY, e);
+			}
+		});
+		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsDeAllocatedCounter().inc(lcs.size());
+		GlobalContainerLaunchers.remove(user, jobid);
+		GlobalJobFolderBlockLocations.remove(jobid);
+		Map<String, List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);
+		if (MapUtils.isEmpty(jobcontainermap)) {
+			GlobalContainerLaunchers.remove(user);
 		}
 	}
 

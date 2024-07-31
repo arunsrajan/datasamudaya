@@ -335,7 +335,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					} else if (deserobj instanceof SorterPort) {						
 						return sortServer.v1().getLocalPort();
 					} else if (!Objects.isNull(deserobj)) {
-						log.info("Deserialized object:{} ", deserobj);
+						log.info("Deserialized object:{} ", deserobj.getClass().getName());
 						TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,
 								apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
 								jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap,
