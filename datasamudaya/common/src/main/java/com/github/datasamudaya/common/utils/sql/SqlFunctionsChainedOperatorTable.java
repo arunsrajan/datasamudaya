@@ -1,4 +1,4 @@
-package com.github.datasamudaya.stream.utils;
+package com.github.datasamudaya.common.utils.sql;
 
 import java.util.List;
 

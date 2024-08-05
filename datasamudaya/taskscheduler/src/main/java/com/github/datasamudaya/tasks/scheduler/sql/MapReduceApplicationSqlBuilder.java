@@ -8,7 +8,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,10 +16,21 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.apache.calcite.adapter.enumerable.EnumerableAggregate;
+import org.apache.calcite.adapter.enumerable.EnumerableFilter;
+import org.apache.calcite.adapter.enumerable.EnumerableHashJoin;
+import org.apache.calcite.adapter.enumerable.EnumerableIntersect;
+import org.apache.calcite.adapter.enumerable.EnumerableNestedLoopJoin;
+import org.apache.calcite.adapter.enumerable.EnumerableProject;
+import org.apache.calcite.adapter.enumerable.EnumerableSort;
+import org.apache.calcite.adapter.enumerable.EnumerableSortedAggregate;
+import org.apache.calcite.adapter.enumerable.EnumerableTableScan;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVFormat;
@@ -34,9 +44,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.Context;
-import com.github.datasamudaya.common.DataCruncherContext;
-import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.stream.StreamPipeline;
+import com.github.datasamudaya.stream.sql.RequiredColumnsExtractor;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.tasks.executor.Combiner;
 import com.github.datasamudaya.tasks.executor.Mapper;
@@ -46,7 +57,6 @@ import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationBuilder;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.Parenthesis;
@@ -54,14 +64,8 @@ import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserManager;
 import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.schema.Table;
-import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.Join;
-import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectExpressionItem;
-import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.util.validation.Validation;
 import net.sf.jsqlparser.util.validation.ValidationError;
 import net.sf.jsqlparser.util.validation.feature.DatabaseType;
@@ -75,6 +79,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap = new ConcurrentHashMap<>();
 	String hdfs;
 	transient JobConfiguration jc;
+	String db;
 
 	private MapReduceApplicationSqlBuilder() {
 
@@ -139,6 +144,17 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		this.sql = sql;
 		return this;
 	}
+	
+	
+	/**
+	 * database schema
+	 * @param db
+	 * @return database schema
+	 */
+	public MapReduceApplicationSqlBuilder setDb(String db) {
+		this.db = db;
+		return this;
+	}
 
 	/**
 	 * The build method to create sql pipeline object.
@@ -156,488 +172,213 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			log.error("Syntax error in SQL {}", errors);
 			throw new Exception("Syntax error in SQL");
 		}
-		Statement statement = parserManager.parse(new StringReader(sql));
-
-		return getMapperCombinerReducer(statement);
+		RelNode relnode = SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
+		descendants.put(relnode, false);
+		requiredcolumnindex = new RequiredColumnsExtractor().getRequiredColumnsByTable(relnode);
+		log.info("Required Columns: {}", requiredcolumnindex);
+		mrab = MapReduceApplicationBuilder.newBuilder();
+		mrab.setJobConf(jc).setOutputfolder("/aircararrivaldelay");		
+		execute(relnode, 0);
+		return mrab.build();
 	}
+	
+	private final Map<RelNode, Boolean> descendants = new ConcurrentHashMap<>();
+	AtomicBoolean isDistinct = new AtomicBoolean(false);
+	private Map<String, Set<String>> requiredcolumnindex;
+	MapReduceApplicationBuilder mrab;
+	
+	protected void execute(RelNode relNode, int depth) throws Exception {
 
-	protected Object getMapperCombinerReducer(Object statement) {
-		if (!(statement instanceof Select)) {
-			throw new IllegalArgumentException("Only SELECT statements are supported");
-		}
-		Select select = (Select) statement;
-		String tablename = ((Table) ((PlainSelect) select.getSelectBody()).getFromItem()).getName();
-		List<SelectItem> selectItems = ((PlainSelect) select.getSelectBody()).getSelectItems();
-		Expression whereexp = ((PlainSelect) select.getSelectBody()).getWhere();
-		List<String> functioncols = new ArrayList<>();
-		List<FunctionWithCols> functionwithcolumns = new ArrayList<>();
-		boolean isonlycolumns = false;
-		PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
-
-		List<Function> functions = new ArrayList<>();
-		Map<String, Set<String>> tablerequiredcolumns = new ConcurrentHashMap<>();
-		Set<String> columnsselect = new LinkedHashSet<>();
-		Set<String> selectcolumnsresult = new LinkedHashSet<>();
-		boolean isdistinct = nonNull(plainSelect.getDistinct());
-		boolean isaggfunc = false;
-		Table table = (Table) plainSelect.getFromItem();
-		if ("*".equals(plainSelect.getSelectItems().get(0).toString())) {
-			tablerequiredcolumns.put(table.getName(), new LinkedHashSet<>(tablecolumnsmap.get(table.getName())));
-			columnsselect.addAll(tablecolumnsmap.get(table.getName()));
-			selectcolumnsresult.addAll(tablecolumnsmap.get(table.getName()));
-			List<Join> joins = plainSelect.getJoins();
-			if (CollectionUtils.isNotEmpty(joins)) {
-				joins.parallelStream().forEach((Serializable & Consumer<Join>) (join -> {
-					String jointablename = ((Table) join.getRightItem()).getName();
-					tablerequiredcolumns.put(tablename, new LinkedHashSet<>(tablecolumnsmap.get(jointablename)));
-					columnsselect.addAll(tablecolumnsmap.get(jointablename));
-					selectcolumnsresult.addAll(tablecolumnsmap.get(jointablename));
-				}));
+		if (relNode instanceof EnumerableTableScan ets) {
+			String table = ets.getTable().getQualifiedName().get(1);
+			List<String> reqcolindex = nonNull(requiredcolumnindex.get(table)) ? 	new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>();
+			List<String> columns = tablecolumnsmap.get(table);
+			Set<String> reqcolumns = reqcolindex.stream().map(index->columns.get(Integer.parseInt(index))).collect(Collectors.toCollection(LinkedHashSet::new));
+			Map<String, Long> tablecolindex = new ConcurrentHashMap<>();
+			for(int colindex=0;colindex<columns.size();colindex++) {
+				tablecolindex.put(columns.get(colindex), Long.valueOf(colindex));
 			}
-		} else {
-			for (SelectItem selectItem : selectItems) {
-				if (selectItem instanceof SelectExpressionItem selectExpressionItem) {
-					if (selectExpressionItem.getExpression() instanceof Column column) {
-						if (nonNull(column.getTable())) {
-							Set<String> requiredcolumns = tablerequiredcolumns.get(column.getTable().getName());
-							if (isNull(requiredcolumns)) {
-								requiredcolumns = new LinkedHashSet<>();
-								tablerequiredcolumns.put(column.getTable().getName(), requiredcolumns);
-							}
-							requiredcolumns.add(column.getColumnName());
-							columnsselect.add(column.getColumnName());
-							selectcolumnsresult.add(column.getColumnName());
-						}
-					} else if (selectExpressionItem.getExpression() instanceof Function function) {
-						functions.add(function);
-						String functionname = function.getName().toLowerCase();
-						if (functionname.startsWith("count") || functionname.startsWith("sum")
-								|| functionname.startsWith("min")
-								|| functionname.startsWith("max")) {
-							isaggfunc = true;
-						}
-						if (nonNull(function.getParameters())) {
-							Expression exp = function.getParameters().getExpressions().get(0);
-							if (exp instanceof Column column) {
-								Set<String> requiredcolumns = tablerequiredcolumns.get(column.getTable().getName());
-								if (isNull(requiredcolumns)) {
-									requiredcolumns = new LinkedHashSet<>();
-									tablerequiredcolumns.put(column.getTable().getName(), requiredcolumns);
-								}
-								requiredcolumns.add(column.getColumnName());
-								columnsselect.add(column.getColumnName());
-								var functionwithcolsobj = new FunctionWithCols();
-								functionwithcolsobj.setName(function.getName().toLowerCase());
-								var params = function.getParameters().getExpressions().stream()
-										.map(col -> ((Column) col).getColumnName()).collect(Collectors.toList());
-								functionwithcolsobj.setAlias(
-										nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
-												: function.toString());
-								functionwithcolsobj.setTablename(column.getTable().getName());
-								functionwithcolumns.add(functionwithcolsobj);
-								functioncols.add(column.getColumnName());
-								functionwithcolsobj.setFunction(function);
-							} else {
-								var functionwithcolsobj = new FunctionWithCols();
-								functionwithcolsobj.setName(function.getName().toLowerCase());
-								Set<String> tablenames = new LinkedHashSet<>();
-								getColumnsFromBinaryExpression(function, tablenames);
-								functionwithcolsobj.setTablename(tablenames.iterator().next());
-								functionwithcolsobj.setAlias(
-										nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
-												: function.toString());
-								functionwithcolsobj.setFunction(function);
-								functionwithcolumns.add(functionwithcolsobj);
-							}
-							selectcolumnsresult.add(nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
-									: function.toString());
-						} else {
-							var functionwithcolsobj = new FunctionWithCols();
-							functionwithcolsobj.setName(function.getName().toLowerCase());
-							functionwithcolumns.add(functionwithcolsobj);
-							functionwithcolsobj.setAlias(
-									nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
-											: null);
-							functionwithcolsobj.setFunction(function);
-							selectcolumnsresult.add(nonNull(selectExpressionItem.getAlias()) ? selectExpressionItem.getAlias().getName()
-									: function.getName() + "()");
-						}
-					}
-				}
+			mrab.addMapper(new MapperReducerSqlMapper(table, reqcolumns,					
+					tablecolumntypesmap.get(table),tablecolindex),
+					tablefoldermap.get(table));
+
+		} else if (relNode instanceof EnumerableFilter ef) {
+			RexNode condit = ef.getCondition();
+			
+		} else if (relNode instanceof EnumerableSort es) {
+			
+		} else if (relNode instanceof EnumerableHashJoin ehj) {
+			
+		} else if(relNode instanceof EnumerableNestedLoopJoin enlj) {
+			
+		} else if (relNode instanceof EnumerableIntersect) {
+			
+		} else if (relNode instanceof EnumerableProject ep) {
+			mrab.addReducer(new MapperReducerSqlReducer());
+		} else if (relNode instanceof EnumerableAggregate || relNode instanceof EnumerableSortedAggregate) {
+			
+			if (isDistinct.get()) {
 			}
 		}
-		Map<String, List<Expression>> expressionsTable = new ConcurrentHashMap<>();
-		Map<String, Set<String>> tablerequiredAllcolumns = new ConcurrentHashMap<>();
-		Map<String, List<Expression>> joinTableExpressions = new ConcurrentHashMap<>();
-		getRequiredColumnsForAllTables(plainSelect, tablerequiredAllcolumns, expressionsTable,
-				joinTableExpressions);
-		addAllRequiredColumnsFromSelectItems(tablerequiredAllcolumns, tablerequiredcolumns);
-		Set<String> columnsRootTable = isNull(tablerequiredAllcolumns.get(table.getName())) ? new LinkedHashSet<>()
-				: tablerequiredAllcolumns.get(table.getName());
-		Expression expressionRootTable = getFilterExpression(expressionsTable.get(table.getName()));
-
-		Set<String> selectcolumns = new LinkedHashSet<>(columnsRootTable);
-		boolean isfunctions = !functionwithcolumns.isEmpty();
-		for (String col :functioncols) {
-			selectcolumns.remove(col);
-			selectcolumnsresult.remove(col);
-		}
-		class MapperReducerSqlMapper implements Mapper<Long, String, Context> {
-			private static final long serialVersionUID = 3328584603251312114L;
-			ConcurrentMap<String, List<String>> tablecolumns = new ConcurrentHashMap<>(tablecolumnsmap);
-			String maintablename;
-			Set<String> selectcols;
-			List<FunctionWithCols> functionwithcols;
-			Expression where;
-			List<SqlTypeName> tablecolumntypes;
-			Map<String, Long> tablecolindexmap;
-			boolean isaggfunc;
-
-			public MapperReducerSqlMapper(String maintablename, Set<String> selectcols,
-					List<FunctionWithCols> functionwithcols, Expression where,
-					List<SqlTypeName> tablecolumntypes, Map<String, Long> tablecolindexmap,
-					boolean isaggfunc) {
-				this.maintablename = maintablename;
-				this.selectcols = selectcols;
-				this.functionwithcols = functionwithcols;
-				this.where = where;
-				this.tablecolumntypes = tablecolumntypes;
-				this.tablecolindexmap = tablecolindexmap;
-				this.isaggfunc = isaggfunc;
+		
+		List<RelNode> inputs = relNode.getInputs();
+		if (CollectionUtils.isNotEmpty(inputs)) {
+			StreamPipeline<?> sp = null;
+			List<StreamPipeline<Object[]>> childs = new ArrayList<>();
+			for (RelNode child : inputs) {
+				descendants.put(child, true);
+				execute(child, depth + 1);
 			}
+		}
+	}
+	
+	class MapperReducerSqlMapper implements Mapper<Long, String, Context> {
+		private static final long serialVersionUID = 3328584603251312114L;
+		ConcurrentMap<String, List<String>> tablecolumns = new ConcurrentHashMap<>(tablecolumnsmap);
+		String maintablename;
+		Set<String> selectcols;
+		List<SqlTypeName> tablecolumntypes;
+		Map<String, Long> tablecolindexmap;
 
-			@SuppressWarnings("unchecked")
-			@Override
-			public void map(Long index, String line, Context context) {
-				try {
-					var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
-					List<String> columns = tablecolumns.get(maintablename);
-					csvformat = csvformat.withDelimiter(',').withHeader(columns.toArray(new String[columns.size()]))
-							.withIgnoreHeaderCase().withIgnoreEmptyLines(true).withTrim();
-					CSVParser parser = csvformat.parse(new StringReader(line));
-					parser.forEach(csvrecord -> {
-						if (isNull(where) || nonNull(where) && evaluateExpression(where, csvrecord)) {
-							// Extract relevant columns
-							Map<String, Object> valuemap = null;
-							if (CollectionUtils.isNotEmpty(selectcols)) {
-								valuemap = new HashMap<String, Object>();
-								for (String column : selectcols) {
-									// Output as key-value pair
-									valuemap.put(column, SQLUtils.getValueMR(csvrecord.get(column),
-											tablecolumntypes.get(tablecolindexmap.get(column).intValue())));
-								}
-							}
-							if (!functionwithcols.isEmpty()) {
-								var functionvaluesmap = new HashMap<>();
-								for (FunctionWithCols functionwithcols :functionwithcols) {
-									if (isaggfunc) {
-										String funcname = functionwithcols.getName();
-										String matchingtablename = functionwithcols.getTablename();
-										boolean istablenamematches = nonNull(matchingtablename) ? matchingtablename.equalsIgnoreCase(maintablename) : false;
-										if (istablenamematches) {
-											Object evaluatevalue = evaluateBinaryExpression(functionwithcols.getFunction().getParameters().getExpressions().get(0), csvrecord, tablecolumntypes, tablecolindexmap);
-											if (funcname.startsWith("sum")) {
-												functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
-												continue;
-											}
-											if (funcname.startsWith("max")) {
-												functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
-												continue;
-											}
-											if (funcname.startsWith("min")) {
-												functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
-												continue;
-											}
-										} else if (funcname.startsWith("count")) {
-											functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : "count()", 1.0d);
-											continue;
-										}
-									} else {
-										Object evaluatevalue = evaluateBinaryExpression(functionwithcols.getFunction(), csvrecord, tablecolumntypes, tablecolindexmap);
-										functionvaluesmap.put(nonNull(functionwithcols.getAlias()) ? functionwithcols.getAlias() : functionwithcols.getFunction().toString(), evaluatevalue);
-									}
-								}
-								if (nonNull(valuemap)) {
-									if (isaggfunc) {
-										context.put(maintablename, Tuple.tuple(valuemap, functionvaluesmap));
-									} else {
-										functionvaluesmap.putAll(valuemap);
-										context.put(maintablename, Tuple.tuple(functionvaluesmap));
-									}
-								} else {
-									context.put(maintablename, Tuple.tuple(functionvaluesmap));
-								}
-							} else {
+		public MapperReducerSqlMapper(String maintablename, Set<String> selectcols,
+				List<SqlTypeName> tablecolumntypes, Map<String, Long> tablecolindexmap) {
+			this.maintablename = maintablename;
+			this.selectcols = selectcols;
+			this.tablecolindexmap = tablecolindexmap;
+			this.tablecolumntypes = tablecolumntypes;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void map(Long index, String line, Context context) {
+			try {
+				var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
+				List<String> columns = tablecolumns.get(maintablename);
+				csvformat = csvformat.withDelimiter(',').withHeader(columns.toArray(new String[columns.size()]))
+						.withIgnoreHeaderCase().withIgnoreEmptyLines(true).withTrim();
+				CSVParser parser = csvformat.parse(new StringReader(line));
+				parser.forEach(csvrecord -> {					
+						// Extract relevant columns
+						Map<String, Object> valuemap = null;
+						if (CollectionUtils.isNotEmpty(selectcols)) {
+							valuemap = new HashMap<String, Object>();
+							for (String column : selectcols) {
+								// Output as key-value pair
+								valuemap.put(column, SQLUtils.getValueMR(csvrecord.get(column),
+										tablecolumntypes.get(tablecolindexmap.get(column).intValue())));
 								context.put(maintablename, Tuple.tuple(valuemap));
 							}
 						}
-					});
-				}
-				catch (Exception ex) {
-					log.error(DataSamudayaConstants.EMPTY, ex);
-				}
-			}
-
-		}
-		class MapperReducerSqlCombinerReducer implements Combiner<String, Tuple, Context>,
-				Reducer<String, Tuple, Context> {
-			private static final long serialVersionUID = 3328584603251312114L;
-			List<FunctionWithCols> functionwithcols = functionwithcolumns;
-			boolean isaggfunction;
-
-			public MapperReducerSqlCombinerReducer(List<FunctionWithCols> functionwithcols, boolean isaggfunction) {
-				this.functionwithcols = functionwithcols;
-				this.isaggfunction = isaggfunction;
-			}
-
-			@SuppressWarnings("unchecked")
-			@Override
-			public void combine(String key, List<Tuple> tuples, Context context) {
-				boolean isnotempty = CollectionUtils.isNotEmpty(functionwithcols);
-				boolean istuple2 = tuples.get(0) instanceof Tuple2;
-				if (!istuple2) {
-					Map<String, Double> valuesaggregate = (Map<String, Double>) ((Tuple1) tuples.remove(0)).v1;
-					for (Tuple tuple : tuples) {
-						if (isnotempty && isaggfunction) {
-							if (tuple instanceof Tuple1 tuple1) {
-								Map<String, Double> fnvalues = (Map<String, Double>) tuple1.v1();
-								fnvalues.keySet().forEach(fnkey -> {
-									if (fnkey.startsWith("min")) {
-										valuesaggregate.put(fnkey, Math.min(valuesaggregate.get(fnkey), fnvalues.get(fnkey)));
-									}
-									if (fnkey.startsWith("max")) {
-										valuesaggregate.put(fnkey, Math.max(valuesaggregate.get(fnkey), fnvalues.get(fnkey)));
-									} else {
-										valuesaggregate.put(fnkey, valuesaggregate.get(fnkey) + fnvalues.get(fnkey));
-									}
-								});
-							}
-						} else {
-							context.put("Reducer", Tuple.tuple(key, tuple));
-						}
-					}
-					if (isnotempty && isaggfunction) {
-						context.put("Reducer", Tuple.tuple(key, Tuple.tuple(valuesaggregate)));
-					}
-				} else {
-					List<Tuple2<Map<String, Object>, Map<String, Double>>> tuplesgrpby = (List) tuples;
-					Map<Map<String, Object>, Map<String, Double>> valuesagg = tuplesgrpby.stream()
-							.collect(Collectors.toMap(tuplekey -> tuplekey.v1,
-									tuplevalue -> tuplevalue.v2, (values1, values2) -> {
-										values1.keySet().forEach(fnkey -> {
-											if (fnkey.startsWith("min")) {
-												values1.put(fnkey, Math.min(values1.get(fnkey), values2.get(fnkey)));
-											} else if (fnkey.startsWith("max")) {
-												values1.put(fnkey, Math.max(values1.get(fnkey), values2.get(fnkey)));
-											} else {
-												values1.put(fnkey, values1.get(fnkey) + values2.get(fnkey));
-											}
-										});
-										return values1;
-									}));
-					valuesagg.entrySet().stream()
-							.map(entry -> Tuple.tuple(entry.getKey(), entry.getValue()))
-							.forEach(value -> context.put("Reducer", Tuple.tuple(key, value)));
-				}
-			}
-			PlainSelect ps = plainSelect;
-			Set<String> finalselectcolumns = selectcolumnsresult;
-
-			@Override
-			public void reduce(String key, List<Tuple> values, Context context) {
-				Map<String, List<Tuple>> mapListMap = new HashMap<>();
-
-				for (Tuple tup : values) {
-					String groupByValue = "";
-					if (tup instanceof Tuple2 tup2) {
-						groupByValue = (String) tup2.v1;
-						List<Tuple> groupList = mapListMap.getOrDefault(groupByValue, new ArrayList<>());
-						groupList.add((Tuple) tup2.v2);
-						mapListMap.put(groupByValue, groupList);
-					}
-				}
-				Map<String, List<Map<String, Object>>> processedmap = new HashMap<>();
-				mapListMap.keySet().forEach(keytoproc -> {
-					Context ctx = new DataCruncherContext<>();
-					combine("Reducer", mapListMap.get(keytoproc), ctx);
-					List<Tuple> tupletomerge = (List<Tuple>) ctx.get("Reducer");
-					List<Map<String, Object>> objects = (List) tupletomerge.stream().map(t -> {
-						if (t instanceof Tuple2 tuple2) {
-							Object tup2val = tuple2.v2;
-							if (tup2val instanceof Tuple2 value) {
-								Map<String, Object> val1 = (Map<String, Object>) value.v1;
-								Map<String, Object> val2 = (Map<String, Object>) value.v2;
-								val1.putAll(val2);
-								return val1;
-							} else if (tup2val instanceof Tuple1 value1) {
-								return (Map<String, Object>) value1.v1;
-							}
-						}
-						return (Map<String, Object>) null;
-					}).collect(Collectors.toList());
-					processedmap.put(keytoproc, objects);
 				});
-				String tablename = ((Table) ps.getFromItem()).getName();
-				List<Map<String, Object>> maintableoutput = new ArrayList<>();
-				maintableoutput.addAll(processedmap.get(tablename));
-				List<Map<String, Object>> mergedoutput = new ArrayList<>();
-				if (nonNull(ps.getJoins())) {
-					List<Join> joins = ps.getJoins();
-					for (Join join : joins) {
-						String jointable = ((Table) join.getRightItem()).getName();
-						List<Map<String, Object>> joinoutput = processedmap.get(jointable);
-						if (join.isInner()) {
-							for (Map<String, Object> mainmap :maintableoutput) {
-								for (Map<String, Object> joinmap :joinoutput) {
-									if (evaluateExpressionJoin(join.getOnExpression(), jointable, mainmap, joinmap)) {
-										Map<String, Object> mergedOut = new HashMap<>();
-										mergedOut.putAll(mainmap);
-										mergedOut.putAll(joinmap);
-										mergedoutput.add(mergedOut);
-									}
+			}
+			catch (Exception ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
+			}
+		}
+
+	}
+	
+	
+	class MapperReducerSqlReducer implements Reducer<String, Tuple, Context> {
+		@Override
+		public void reduce(String key, List<Tuple> values, Context context) {
+			for(Tuple tuple: values) {
+				if(tuple instanceof Tuple1 maptup)
+				context.put(key, maptup.v1);
+			}
+			log.info("In Reduce Output Values {}", context.keys().size());
+		}
+	}
+	
+	class MapperReducerSqlCombiner implements Combiner<String, Tuple, Context>{
+		private static final long serialVersionUID = 3328584603251312114L;
+		List<FunctionWithCols> functionwithcols = new ArrayList<>();
+		boolean isaggfunction;
+
+		public MapperReducerSqlCombiner(List<FunctionWithCols> functionwithcols, boolean isaggfunction) {
+			this.functionwithcols = functionwithcols;
+			this.isaggfunction = isaggfunction;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void combine(String key, List<Tuple> tuples, Context context) {
+			boolean isnotempty = CollectionUtils.isNotEmpty(functionwithcols);
+			boolean istuple2 = tuples.get(0) instanceof Tuple2;
+			if (!istuple2) {
+				Map<String, Double> valuesaggregate = (Map<String, Double>) ((Tuple1) tuples.remove(0)).v1;
+				for (Tuple tuple : tuples) {
+					if (isnotempty && isaggfunction) {
+						if (tuple instanceof Tuple1 tuple1) {
+							Map<String, Double> fnvalues = (Map<String, Double>) tuple1.v1();
+							fnvalues.keySet().forEach(fnkey -> {
+								if (fnkey.startsWith("min")) {
+									valuesaggregate.put(fnkey,
+											Math.min(valuesaggregate.get(fnkey), fnvalues.get(fnkey)));
 								}
-							}
-							maintableoutput = mergedoutput;
-						} else if (join.isLeft()) {
-							for (Map<String, Object> mainmap :maintableoutput) {
-								for (Map<String, Object> joinmap :joinoutput) {
-									if (evaluateExpressionJoin(join.getOnExpression(), jointable, mainmap, joinmap)) {
-										Map<String, Object> mergedOut = new HashMap<>();
-										mergedOut.putAll(mainmap);
-										mergedOut.putAll(joinmap);
-										mergedoutput.add(mergedOut);
-									} else {
-										Map<String, Object> mergedOut = new HashMap<>();
-										mergedOut.putAll(mainmap);
-										mergedOut.keySet().addAll(joinmap.keySet());
-										mergedoutput.add(mergedOut);
-									}
-								}
-							}
-							maintableoutput = mergedoutput;
-						} else if (join.isRight()) {
-							for (Map<String, Object> mainmap :maintableoutput) {
-								for (Map<String, Object> joinmap :joinoutput) {
-									if (evaluateExpressionJoin(join.getOnExpression(), jointable, mainmap, joinmap)) {
-										Map<String, Object> mergedOut = new HashMap<>();
-										mergedOut.putAll(mainmap);
-										mergedOut.putAll(joinmap);
-										mergedoutput.add(mergedOut);
-									} else {
-										Map<String, Object> mergedOut = new HashMap<>();
-										mergedOut.putAll(joinmap);
-										mergedOut.keySet().addAll(mainmap.keySet());
-										mergedoutput.add(mergedOut);
-									}
-								}
-							}
-							maintableoutput = mergedoutput;
-						}
-					}
-				}
-				if (nonNull(ps.getWhere())) {
-					Expression where = ps.getWhere();
-					maintableoutput = maintableoutput.stream().filter(val ->
-							evaluateExpression(where, val)).collect(Collectors.toList());
-				}
-				maintableoutput = maintableoutput.stream().map(val -> {
-					val.keySet().retainAll(finalselectcolumns);
-					return val;
-				}).collect(Collectors.toList());
-				if (CollectionUtils.isNotEmpty(ps.getOrderByElements())) {
-					var orderbyelements = ps.getOrderByElements();
-					List<Column> columns = new ArrayList<>();
-					List<String> directions = new ArrayList<>();
-					if (orderbyelements != null) {
-						for (OrderByElement orderByElement : orderbyelements) {
-							orderByElement.getExpression().accept(new ExpressionVisitorAdapter() {
-								@Override
-								public void visit(Column column) {
-									columns.add(column);
+								if (fnkey.startsWith("max")) {
+									valuesaggregate.put(fnkey,
+											Math.max(valuesaggregate.get(fnkey), fnvalues.get(fnkey)));
+								} else {
+									valuesaggregate.put(fnkey, valuesaggregate.get(fnkey) + fnvalues.get(fnkey));
 								}
 							});
-
-							String direction = orderByElement.isAsc() ? "ASC" : "DESC";
-							directions.add(direction);
 						}
+					} else {
+						context.put("Reducer", Tuple.tuple(key, tuple));
 					}
-					log.info("Order by {} {}", columns, directions);
-					Collections.sort(maintableoutput, (map1, map2) -> {
-
-						for (int i = 0;i < columns.size();i++) {
-							String columnName = columns.get(i).getColumnName();
-							String sortOrder = directions.get(i);
-							Object value1 = map1.get(columnName);
-							Object value2 = map2.get(columnName);
-							int result = compareTo(value1, value2);
-							if ("DESC".equals(sortOrder)) {
-								result = -result;
-							}
-							if (result != 0) {
-								return result;
-							}
-						}
-						return 0;
-					});
 				}
-				context.addAll(key, maintableoutput);
-				log.info("In Reduce Output Values {}", maintableoutput.size());
-			}
-
-			/**
-			 * Compare two objects to sort in order.
-			 * @param obj1
-			 * @param obj2
-			 * @return value in Long for sorting.
-			 */
-			public int compareTo(Object obj1, Object obj2) {
-				if (obj1 instanceof Integer val1 && obj2 instanceof Integer val2) {
-					return val1.compareTo(val2);
-				} else if (obj1 instanceof Long val1 && obj2 instanceof Long val2) {
-					return val1.compareTo(val2);
-				} else if (obj1 instanceof Double val1 && obj2 instanceof Double val2) {
-					return val1.compareTo(val2);
-				} else if (obj1 instanceof Float val1 && obj2 instanceof Float val2) {
-					return val1.compareTo(val2);
-				} else if (obj1 instanceof String val1 && obj2 instanceof String val2) {
-					return val1.compareTo(val2);
+				if (isnotempty && isaggfunction) {
+					context.put("Reducer", Tuple.tuple(key, Tuple.tuple(valuesaggregate)));
 				}
-				return 0;
+			} else {
+				List<Tuple2<Map<String, Object>, Map<String, Double>>> tuplesgrpby = (List) tuples;
+				Map<Map<String, Object>, Map<String, Double>> valuesagg = tuplesgrpby.stream().collect(
+						Collectors.toMap(tuplekey -> tuplekey.v1, tuplevalue -> tuplevalue.v2, (values1, values2) -> {
+							values1.keySet().forEach(fnkey -> {
+								if (fnkey.startsWith("min")) {
+									values1.put(fnkey, Math.min(values1.get(fnkey), values2.get(fnkey)));
+								} else if (fnkey.startsWith("max")) {
+									values1.put(fnkey, Math.max(values1.get(fnkey), values2.get(fnkey)));
+								} else {
+									values1.put(fnkey, values1.get(fnkey) + values2.get(fnkey));
+								}
+							});
+							return values1;
+						}));
+				valuesagg.entrySet().stream().map(entry -> Tuple.tuple(entry.getKey(), entry.getValue()))
+						.forEach(value -> context.put("Reducer", Tuple.tuple(key, value)));
 			}
 		}
+
+		PlainSelect ps = null;
+		Set<String> finalselectcolumns = null;		
+
+		/**
+		 * Compare two objects to sort in order.
+		 * 
+		 * @param obj1
+		 * @param obj2
+		 * @return value in Long for sorting.
+		 */
+		public int compareTo(Object obj1, Object obj2) {
+			if (obj1 instanceof Integer val1 && obj2 instanceof Integer val2) {
+				return val1.compareTo(val2);
+			} else if (obj1 instanceof Long val1 && obj2 instanceof Long val2) {
+				return val1.compareTo(val2);
+			} else if (obj1 instanceof Double val1 && obj2 instanceof Double val2) {
+				return val1.compareTo(val2);
+			} else if (obj1 instanceof Float val1 && obj2 instanceof Float val2) {
+				return val1.compareTo(val2);
+			} else if (obj1 instanceof String val1 && obj2 instanceof String val2) {
+				return val1.compareTo(val2);
+			}
+			return 0;
+		}
+	}
+	
+	protected Object getMapperCombinerReducer(Object statement) {
 		Map<String, Long> columnindexmap = new ConcurrentHashMap<>();
-		List<String> columnsfortable = tablecolumnsmap.get(tablename);
-		for (int originalcolumnindex = 0;originalcolumnindex < columnsfortable
-				.size();originalcolumnindex++) {
-			columnindexmap.put(columnsfortable.get(originalcolumnindex), Long.valueOf(originalcolumnindex));
-		}
-		MapReduceApplicationBuilder mrab = MapReduceApplicationBuilder.newBuilder()
-				.addMapper(new MapperReducerSqlMapper(tablename, selectcolumns, functionwithcolumns, expressionRootTable,
-						tablecolumntypesmap.get(tablename), columnindexmap, isaggfunc), tablefoldermap.get(tablename));
-		if (CollectionUtils.isNotEmpty(plainSelect.getJoins())) {
-			List<Join> joins = plainSelect.getJoins();
-			for (Join join : joins) {
-				Table rightItem = (Table) join.getRightItem();
-				Expression expressionJoinTable = getFilterExpression(expressionsTable.get(rightItem.getName()));
-				Set<String> columnsJoinTable = isNull(tablerequiredAllcolumns.get(table.getName())) ? new LinkedHashSet<>()
-						: tablerequiredAllcolumns.get(rightItem.getName());
-				selectcolumns = new LinkedHashSet<>(columnsJoinTable);
-				for (String col :functioncols) {
-					selectcolumns.remove(col);
-				}
-				columnindexmap = new ConcurrentHashMap<>();
-				columnsfortable = tablecolumnsmap.get(rightItem.getName());
-				for (int originalcolumnindex = 0;originalcolumnindex < columnsfortable
-					.size();originalcolumnindex++) {
-					columnindexmap.put(columnsfortable.get(originalcolumnindex), Long.valueOf(originalcolumnindex));
-				}
-				mrab = mrab.addMapper(new MapperReducerSqlMapper(rightItem.getName(), selectcolumns, functionwithcolumns, expressionJoinTable,
-						tablecolumntypesmap.get(rightItem.getName()), columnindexmap,
-						isaggfunc), tablefoldermap.get(rightItem.getName()));
-			}
-		}
-		mrab = mrab.addCombiner(new MapperReducerSqlCombinerReducer(functionwithcolumns, isaggfunc))
-				.addReducer(new MapperReducerSqlCombinerReducer(functionwithcolumns, isaggfunc));
 		return mrab.setJobConf(jc)
 				.setOutputfolder("/aircararrivaldelay").build();
 	}

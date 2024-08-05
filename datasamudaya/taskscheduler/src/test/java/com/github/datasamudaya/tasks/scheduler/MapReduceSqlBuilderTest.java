@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.Context;
+import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.tasks.scheduler.sql.MapReduceApplicationSqlBuilder;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -255,6 +256,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		String statement = "SELECT * FROM airline";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
@@ -275,6 +277,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		String statement = "SELECT airline.UniqueCarrier,airline.MonthOfYear FROM airline";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {

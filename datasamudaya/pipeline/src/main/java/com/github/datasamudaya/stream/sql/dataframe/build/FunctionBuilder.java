@@ -1,5 +1,7 @@
 package com.github.datasamudaya.stream.sql.dataframe.build;
 
+import static java.util.Objects.nonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,9 +9,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.tools.RelBuilder;
 
-import com.github.datasamudaya.stream.utils.SQLUtils;
-
-import static java.util.Objects.nonNull;
+import com.github.datasamudaya.common.utils.sql.Functions;
 
 /**
  * The class builds the non-aggregate function
@@ -60,7 +60,7 @@ public class FunctionBuilder {
 	 */
 	protected List<RexNode> build(RelBuilder builder) {
 		List<RexNode> functiontocall = new ArrayList<>();
-		List<SqlFunction> sqlfunctions = SQLUtils.getAllSqlFunctions();
+		List<SqlFunction> sqlfunctions = Functions.getAllSqlFunctions();
 		for (Function function : functioncalls) {
 			if (nonNull(function.getName())) {
 				switch (function.getName()) {
