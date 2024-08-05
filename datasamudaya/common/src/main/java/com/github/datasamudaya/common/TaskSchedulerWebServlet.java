@@ -8,6 +8,7 @@
  */
 package com.github.datasamudaya.common;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.IOException;
@@ -331,8 +332,17 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					builder.append("</td>");
 
 					builder.append("<td>");
+					if(isNull(jm.getDriverhp())) {
 					builder.append("<a href=\"" + contextpath + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.SUMMARY + "?jobId=" + jm.getJobid() + "\">SUMMARY</a>");
+					} else {
+						String[] driverhp = jm.getDriverhp().split(DataSamudayaConstants.UNDERSCORE);
+						String drivercontextpath = request.getScheme() + "://" + driverhp[0] + 
+								DataSamudayaConstants.COLON + 
+								(Integer.parseInt(driverhp[1]) + DataSamudayaConstants.PORT_OFFSET);
+						builder.append("<a href=\"" + drivercontextpath + DataSamudayaConstants.FORWARD_SLASH
+								+ DataSamudayaConstants.SUMMARY_DRIVER + "?jobId=" + jm.getJobid() + "\">SUMMARY</a>");						
+					}
 					builder.append("</td>");
 					builder.append("</tr>");
 				}

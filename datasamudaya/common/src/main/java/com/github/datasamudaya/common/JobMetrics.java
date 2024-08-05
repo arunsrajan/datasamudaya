@@ -60,4 +60,5 @@ public class JobMetrics implements Serializable {
 	private Graph stageGraphs;
 	private Graph taskGraphs;
 	private String sqlpigquery;
+	private String driverhp;
 }

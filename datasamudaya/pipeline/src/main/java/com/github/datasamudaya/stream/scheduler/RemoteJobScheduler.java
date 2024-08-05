@@ -156,6 +156,7 @@ public class RemoteJobScheduler {
 				jobid = job.getPipelineconfig().getTejobid();
 			};
 			String choosente = getDriverNode(zo, jobid);
+			job.getJm().setDriverhp(choosente);
 			log.info("Choosen Task Executor Host Port {}", choosente);			
 			Object output = null;
 			if(nonNull(job.getPipelineconfig().getJar())) {

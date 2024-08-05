@@ -61,6 +61,7 @@ import com.github.datasamudaya.common.ServerUtils;
 import com.github.datasamudaya.common.ShufflePort;
 import com.github.datasamudaya.common.SorterPort;
 import com.github.datasamudaya.common.StreamDataCruncher;
+import com.github.datasamudaya.common.SummaryWebServlet;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskExecutorShutdown;
 import com.github.datasamudaya.common.WebResourcesServlet;
@@ -243,7 +244,9 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		log.info("TaskExecutor Port: {}", port);
 		var su = new ServerUtils();
 		log.info("Initializing Server at: {}", port);
-		su.init(port + DataSamudayaConstants.PORT_OFFSET,
+		if(executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
+			log.info("Executor WebUI initialized at: {}", port + DataSamudayaConstants.PORT_OFFSET);
+			su.init(port + DataSamudayaConstants.PORT_OFFSET,
 				new NodeWebServlet(new ConcurrentHashMap<String, Map<String, Process>>()),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
@@ -252,6 +255,20 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH
 						+ DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+		} else {
+			log.info("Driver WebUI initialized at: {}", port + DataSamudayaConstants.PORT_OFFSET);
+			su.init(port + DataSamudayaConstants.PORT_OFFSET,
+					new NodeWebServlet(new ConcurrentHashMap<String, Map<String, Process>>()),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
+							+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+					new ResourcesMetricsServlet(),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.ASTERIX, new SummaryWebServlet(),
+							DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY_DRIVER 
+							+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+		}
 		log.info("Jetty Server initialized at: {}", port);
 		su.start();
 		log.info("Jetty Server started and listening: {}", port);
