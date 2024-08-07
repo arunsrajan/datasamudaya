@@ -38,18 +38,15 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		String statement = "SELECT sum(airline.ArrDelay),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : rec) {
-					log.info("{}", values);
-					assertEquals(4, values.size());
-					assertTrue(values.containsKey("sum(airline.ArrDelay)"));
-					assertTrue(values.containsKey("max(airline.ArrDelay)"));
-					assertTrue(values.containsKey("min(airline.ArrDelay)"));
-					assertTrue(values.containsKey("count()"));
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);
 				}
 			});
 		});
@@ -62,19 +59,15 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : rec) {
-					log.info("{}", values);
-					assertEquals(5, values.size());
-					assertTrue(values.containsKey("UniqueCarrier"));
-					assertTrue(values.containsKey("sum(airline.ArrDelay)"));
-					assertTrue(values.containsKey("max(airline.ArrDelay)"));
-					assertTrue(values.containsKey("min(airline.ArrDelay)"));
-					assertTrue(values.containsKey("count()"));
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+					log.info("{}", Arrays.toString(values));
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -87,19 +80,15 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		String statement = "SELECT airline.UniqueCarrier,sum(abs(airline.ArrDelay)),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : rec) {
-					log.info("{}", values);
-					assertEquals(5, values.size());
-					assertTrue(values.containsKey("UniqueCarrier"));
-					assertTrue(values.containsKey("sum(abs(airline.ArrDelay))"));
-					assertTrue(values.containsKey("max(airline.ArrDelay)"));
-					assertTrue(values.containsKey("min(airline.ArrDelay)"));
-					assertTrue(values.containsKey("count()"));
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+					log.info("{}", Arrays.toString(values));
+					assertEquals(5, values.length);					
 				}
 			});
 		});
