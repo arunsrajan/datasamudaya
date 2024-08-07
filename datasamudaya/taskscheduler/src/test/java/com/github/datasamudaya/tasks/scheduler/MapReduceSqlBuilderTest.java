@@ -23,7 +23,13 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
 			"Cancelled", "CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
 			"LateAircraftDelay");
-	List<SqlTypeName> airlineheadertypes = Arrays.asList(SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.VARCHAR, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE, SqlTypeName.DOUBLE);
+	List<SqlTypeName> airlineheadertypes = Arrays.asList(SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT,
+			SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT,
+			SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.BIGINT, SqlTypeName.BIGINT,
+			SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
+			SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.VARCHAR,
+			SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT,
+			SqlTypeName.BIGINT);
 	static Logger log = LoggerFactory.getLogger(MapReduceSqlBuilderTest.class);
 
 	@Test
@@ -36,8 +42,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(4, values.size());
 					assertTrue(values.containsKey("sum(airline.ArrDelay)"));
@@ -60,8 +66,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -85,8 +91,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -110,8 +116,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -135,8 +141,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -161,8 +167,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -186,8 +192,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -212,8 +218,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(5, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -238,8 +244,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -261,10 +267,10 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
-					log.info("{}", values);
-					assertEquals(29l, values.size());
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+					log.info("{}", Arrays.toString(values));
+					assertEquals(29l, values.length);
 				}
 			});
 		});
@@ -282,16 +288,281 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
-					log.info("{}", values);
-					assertEquals(2, values.size());
-					assertTrue(values.containsKey("UniqueCarrier"));
-					assertTrue(values.containsKey("MonthOfYear"));
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
 				}
 			});
 		});
 		log.info("In testRequiredColumns() method Exit");
+	}
+	
+	@Test
+	public void testNonAggFunctionRound() throws Exception {
+		log.info("In testNonAggFunctionRound() method Entry");
+		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,round(airline.ArrDelay + 3.14) FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+					log.info("{}", Arrays.toString(values));
+					assertEquals(3, values.length);					
+				}
+			});
+		});
+		log.info("In testNonAggFunctionRound() method Exit");
+	}
+	
+	@Test
+	public void testColumnLength() throws Exception {
+		log.info("In testColumnLength() method Entry");
+
+		String statement = "SELECT length(airline.Origin)  FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(1, values.length);
+			}
+			});
+		});
+		log.info("In testColumnLength() method Exit");
+	}
+
+	
+	@Test
+	public void testRequiredColumnWithLength() throws Exception {
+		log.info("In testRequiredColumnWithLength() method Entry");
+
+		String statement = "SELECT airline.Origin,length(airline.Origin)  FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(2, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnWithLength() method Exit");
+	}
+
+	
+	@Test
+	public void testRequiredColumnWithMultipleLengths() throws Exception {
+		log.info("In testRequiredColumnWithMultipleLengths() method Entry");
+
+		String statement = "SELECT airline.Origin,length(airline.Origin),length(airline.Dest)  FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(3, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnWithMultipleLengths() method Exit");
+	}
+
+	
+	@Test
+	public void testRequiredColumnWithLengthsAndLowercase() throws Exception {
+		log.info("In testRequiredColumnWithLengthsAndLowercase() method Entry");
+
+		String statement = "SELECT lowercase(airline.Origin),lowercase(airline.Dest),length(airline.Origin),length(airline.Dest)  FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(4, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnWithLengthsAndLowercase() method Exit");
+	}
+
+	@Test
+	public void testRequiredColumnWithLengthsAndUppercase() throws Exception {
+		log.info("In testRequiredColumnWithLengthsAndUppercase() method Entry");
+
+		String statement = "SELECT uppercase(airline.Origin),uppercase(airline.Dest),length(airline.Origin),length(airline.Dest)  FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(4, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnWithLengthsAndUppercase() method Exit");
+	}
+
+	@Test
+	public void testRequiredColumnTrim() throws Exception {
+		log.info("In testRequiredColumnTrim() method Entry");
+
+		String statement = "SELECT trimstr(concat(airline.Origin , ' ')) trmorig ,trimstr(concat(' ' , airline.Dest)) trimdest FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(2, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnTrim() method Exit");
+	}
+
+	@Test
+	public void testRequiredColumnBase64Encode() throws Exception {
+		log.info("In testRequiredColumnBase64Encode() method Entry");
+
+		String statement = "SELECT base64encode(airline.Origin),base64encode(airline.Dest)  FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(2, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnBase64Encode() method Exit");
+	}
+
+	@Test
+	public void testRequiredColumnSubStringAlias() throws Exception {
+		log.info("In testRequiredColumnSubStringAlias() method Entry");
+
+		String statement = "SELECT airline.Origin,substring(airline.Origin from 0 for 1) as substr  FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(2, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnSubStringAlias() method Exit");
+	}
+
+	@Test
+	public void testRequiredColumnSubStringPos() throws Exception {
+		log.info("In testRequiredColumnSubStringPos() method Entry");
+
+		String statement = "SELECT airline.Origin,substring(airline.Origin from 1),airline.Dest,substring(airline.Dest from 2) FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(4, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnSubStringPos() method Exit");
+	}
+
+	
+	@Test
+	public void testRequiredColumnSubStringPosLength() throws Exception {
+		log.info("In testRequiredColumnSubString() method Entry");
+
+		String statement = "SELECT airline.Origin,substring(airline.Origin from 0 for 1),airline.Dest,substring(airline.Dest from 0 for 2) FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(4, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnSubString() method Exit");
+	}
+
+	@Test
+	public void testRequiredColumnNormailizeSpaces() throws Exception {
+		log.info("In testRequiredColumnNormailizeSpaces() method Entry");
+
+		String statement = "SELECT normalizespaces(airline.Dest),normalizespaces(' This is   good  work') eg FROM airline";
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
+				.setSql(statement).build();
+		List<Context> records = (List) mra.call();
+		records.stream().forEach(context -> {
+			context.keys().stream().forEach(key -> {
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+				log.info("{}",Arrays.toString(values));
+				assertEquals(2, values.length);
+			}
+			});
+		});
+		log.info("In testRequiredColumnNormailizeSpaces() method Exit");
 	}
 
 	@Test
@@ -304,8 +575,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -329,8 +600,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(29, values.size());
 					assertEquals(12.0, values.get("MonthOfYear"));
@@ -350,8 +621,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -376,8 +647,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(4, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -406,8 +677,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(4, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -432,8 +703,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -456,8 +727,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -480,8 +751,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("UniqueCarrier"));
@@ -504,8 +775,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(2, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -528,8 +799,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -551,8 +822,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -574,8 +845,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -597,8 +868,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -621,8 +892,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -645,8 +916,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -668,8 +939,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -691,8 +962,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -715,8 +986,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -740,8 +1011,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -763,8 +1034,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -787,8 +1058,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -810,8 +1081,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
@@ -834,8 +1105,8 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> valuesmap = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : valuesmap) {
+				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
+				for (Map<String, Object> values : rec) {
 					log.info("{}", values);
 					assertEquals(3, values.size());
 					assertTrue(values.containsKey("MonthOfYear"));
