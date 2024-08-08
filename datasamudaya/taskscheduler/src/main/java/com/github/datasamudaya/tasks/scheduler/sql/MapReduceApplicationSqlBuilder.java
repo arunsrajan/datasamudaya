@@ -1,5 +1,6 @@
 package com.github.datasamudaya.tasks.scheduler.sql;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.Serializable;
@@ -8,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -31,6 +33,7 @@ import org.apache.calcite.adapter.enumerable.EnumerableSort;
 import org.apache.calcite.adapter.enumerable.EnumerableSortedAggregate;
 import org.apache.calcite.adapter.enumerable.EnumerableTableScan;
 import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexCall;
@@ -56,6 +59,7 @@ import org.slf4j.LoggerFactory;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.sql.RequiredColumnsExtractor;
 import com.github.datasamudaya.stream.utils.SQLUtils;
@@ -193,6 +197,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	Map<Integer, Integer> origcolreqcolmap = null;
 	boolean isprojectiondescendtablescan;
 	boolean isagg = false;
+	RexNode filtercondition = null;
+	List<RelFieldCollation> rfc = null;
 	protected void execute(RelNode relNode, int depth) throws Exception {
 
 		if (relNode instanceof EnumerableTableScan ets) {
@@ -206,24 +212,31 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			for(int colindex=0;colindex<columns.size();colindex++) {
 				tablecolindex.put(columns.get(colindex), Long.valueOf(colindex));
 			}
+			if(CollectionUtils.isNotEmpty(reqcolindex)) {
+				origcolreqcolmap = new ConcurrentHashMap<>();
+				for(int colindex=0;colindex<reqcolindex.size();colindex++) {
+					origcolreqcolmap.put(Integer.valueOf(reqcolindex.get(colindex)), colindex);
+				}
+			}
 			mrab.addMapper(new MapperReducerSqlMapper(table, reqcolumns,					
 					tablecolumntypesmap.get(table),tablecolindex,
 					functions,
 					colindexes,
 					grpcolindexes,
 					isprojectiondescendtablescan?columnsp:null,
-					origcolreqcolmap),
+					origcolreqcolmap,
+					filtercondition),
 					tablefoldermap.get(table));
 			mrab.addCombiner(new MapperReducerSqlCombiner(CollectionUtils.isNotEmpty(functions), functions));
 			mrab.addReducer(new MapperReducerSqlReducer(togeneratezerobytype, columnsp, 
-					isprojectiondescendtablescan && !isagg?origcolreqcolmap:null, 
-					CollectionUtils.isNotEmpty(functions), functions));
+					isprojectiondescendtablescan && !isagg || nonNull(rfc)?origcolreqcolmap:null, 
+					CollectionUtils.isNotEmpty(functions), functions, rfc));
 
 		} else if (relNode instanceof EnumerableFilter ef) {
-			RexNode condit = ef.getCondition();
+			filtercondition = ef.getCondition();
 			
 		} else if (relNode instanceof EnumerableSort es) {
-			
+			rfc = es.getCollation().getFieldCollations();
 		} else if (relNode instanceof EnumerableHashJoin ehj) {
 			
 		} else if(relNode instanceof EnumerableNestedLoopJoin enlj) {
@@ -234,22 +247,12 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			togeneratezerobytype = ep.getProjects().stream().map(rexnode -> 
 			SQLUtils.findGreatestType(rexnode)).toList();
 			columnsp = new ArrayList<>(ep.getProjects());
-			String table = null;
 			if(CollectionUtils.isNotEmpty(ep.getInputs())) {
 				RelNode node = ep.getInputs().get(0);
-				if(node instanceof EnumerableTableScan etsnode) {
+				if(node instanceof EnumerableTableScan etsnode || node instanceof EnumerableFilter ef) {
 					isprojectiondescendtablescan = true;
-					table = etsnode.getTable().getQualifiedName().get(1);
 				}
-			}
-			List<String> reqcolindex = nonNull(table) && nonNull(requiredcolumnindex.get(table)) 
-					? 	new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>();			
-			if(CollectionUtils.isNotEmpty(reqcolindex)) {
-				origcolreqcolmap = new ConcurrentHashMap<>();
-				for(int colindex=0;colindex<reqcolindex.size();colindex++) {
-					origcolreqcolmap.put(Integer.valueOf(reqcolindex.get(colindex)), colindex);
-				}
-			}
+			}			
 		} else if (relNode instanceof EnumerableAggregate || relNode instanceof EnumerableSortedAggregate) {
 			isagg = true;
 			if (isDistinct.get()) {
@@ -292,6 +295,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		int[] grpcolindex;
 		List<RexNode> columnsprojection;
 		Map<Integer, Integer> origcolreqcolmap;
+		RexNode filtercondition;
 		public MapperReducerSqlMapper(String maintablename, 
 				Set<String> selectcols,
 				List<SqlTypeName> tablecolumntypes, 
@@ -300,7 +304,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				List<Integer> colindex,
 				int[] grpcolindex,
 				List<RexNode> columnsprojection,
-				Map<Integer, Integer> origcolreqcolmap) {
+				Map<Integer, Integer> origcolreqcolmap,
+				RexNode filtercondition) {
 			this.maintablename = maintablename;
 			this.selectcols = selectcols;
 			this.tablecolindexmap = tablecolindexmap;
@@ -310,6 +315,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			this.grpcolindex = grpcolindex;
 			this.columnsprojection = columnsprojection;
 			this.origcolreqcolmap = origcolreqcolmap;
+			this.filtercondition = filtercondition;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -321,40 +327,44 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				csvformat = csvformat.withDelimiter(',').withHeader(columns.toArray(new String[columns.size()]))
 						.withIgnoreHeaderCase().withIgnoreEmptyLines(true).withTrim();
 				CSVParser parser = csvformat.parse(new StringReader(line));
-				parser.forEach(csvrecord -> {					
-						// Extract relevant columns
-						Object[] valueobject = null;
-						List<Object> values = null;
-						int totalrecords = csvrecord.size();
-						Object[] rec = new Object[totalrecords];
-						int recindex=0;
-						for(Iterator<String> records = csvrecord.iterator();records.hasNext();) {
-							rec[recindex] = SQLUtils.getValueMR((String)records.next(),tablecolumntypes.get(recindex));
-							recindex++;
-						}
-						values = nonNull(columnsprojection)?columnsprojection.stream()
-								 .map(rexnode->evaluateRexNode(rexnode, rec, null))
-								 .collect(Collectors.toList()): null;
-						log.info("values Map {}", values);
-						if(nonNull(grpcolindex)) {
+				parser.forEach(csvrecord -> {
+					// Extract relevant columns
+					Object[] valueobject = null;
+					List<Object> values = null;
+					int totalrecords = csvrecord.size();
+					Object[] rec = new Object[totalrecords];
+					int recindex = 0;
+					for (Iterator<String> records = csvrecord.iterator(); records.hasNext();) {
+						rec[recindex] = SQLUtils.getValueMR((String) records.next(), tablecolumntypes.get(recindex));
+						recindex++;
+					}
+					if (isNull(filtercondition) || nonNull(filtercondition)
+							&& SQLUtils.evaluateExpression(filtercondition, (Object[]) rec)) {
+						values = nonNull(columnsprojection)
+								? columnsprojection.stream().map(rexnode -> evaluateRexNode(rexnode, rec, null))
+										.collect(Collectors.toList())
+								: null;
+						if (nonNull(grpcolindex)) {
 							List<Object> fnobj = new ArrayList<>();
-							Object[] grpbyobj = {DataSamudayaConstants.EMPTY};
-							int index = 0;							
+							Object[] grpbyobj = { DataSamudayaConstants.EMPTY };
+							int index = 0;
 							if (nonNull(grpcolindex) && grpcolindex.length > 0) {
 								grpbyobj = new Object[grpcolindex.length];
-								for (;index < grpcolindex.length;index++) {
-									grpbyobj[index] = nonNull(values)?values.get(grpcolindex[index])
-											:SQLUtils.getValueMR(csvrecord.get(grpcolindex[index]), tablecolumntypes.get(grpcolindex[index]));
+								for (; index < grpcolindex.length; index++) {
+									grpbyobj[index] = nonNull(values) ? values.get(grpcolindex[index])
+											: SQLUtils.getValueMR(csvrecord.get(grpcolindex[index]),
+													tablecolumntypes.get(grpcolindex[index]));
 								}
 							}
 							index = 0;
-							for (;index < functions.size();index++) {
+							for (; index < functions.size(); index++) {
 								String functionname = functions.get(index);
 								if ("count".equalsIgnoreCase(functionname)) {
 									fnobj.add(1l);
 								} else {
-									fnobj.add( nonNull(values)?values.get(colindex.get(index))
-											:SQLUtils.getValueMR(csvrecord.get(colindex.get(index)), tablecolumntypes.get(colindex.get(index))));
+									fnobj.add(nonNull(values) ? values.get(colindex.get(index))
+											: SQLUtils.getValueMR(csvrecord.get(colindex.get(index)),
+													tablecolumntypes.get(colindex.get(index))));
 									long cval = 0l;
 									boolean toconsider = true;
 									if (toconsider) {
@@ -367,18 +377,18 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							}
 							context.put(maintablename, Tuple.tuple(SQLUtils.convertObjectToTuple(grpbyobj),
 									SQLUtils.convertObjectToTuple(fnobj.toArray(new Object[0]))));
-						}
-						else if (CollectionUtils.isNotEmpty(selectcols)) {
+						} else if (CollectionUtils.isNotEmpty(selectcols)) {
 							valueobject = new Object[selectcols.size()];
 							int selectcolindex = 0;
 							for (String column : selectcols) {
 								// Output as key-value pair
-								valueobject[selectcolindex]=(SQLUtils.getValueMR(csvrecord.get(column),
+								valueobject[selectcolindex] = (SQLUtils.getValueMR(csvrecord.get(column),
 										tablecolumntypes.get(tablecolindexmap.get(column).intValue())));
 								selectcolindex++;
 							}
 							context.put(maintablename, Tuple.tuple(valueobject));
 						}
+					}
 				});
 			}
 			catch (Exception ex) {
@@ -395,14 +405,17 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		Map<Integer, Integer> origcolreqcolmap;
 		Boolean isnotempty;
 		List<String> functions;
+		List<RelFieldCollation> rfc;
 		public MapperReducerSqlReducer(final List<SqlTypeName> sqltypes, final List<RexNode> columns, 
 				final Map<Integer, Integer> origcolreqcolmap, final Boolean isnotempty,
-				List<String> functions) {
+				List<String> functions,
+				List<RelFieldCollation> rfc) {
 			this.sqltypes = sqltypes;
 			this.columns = columns;
 			this.origcolreqcolmap = origcolreqcolmap;
 			this.isnotempty = isnotempty;
 			this.functions = functions;
+			this.rfc = rfc;
 		}
 		@Override
 		public void reduce(Tuple key, List<Tuple> tuples, Context context) {
@@ -411,10 +424,14 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				if(isnotempty) {
 					List<Tuple2> tuples2 = (List)tuples;
 					Map<Object, Optional<Tuple>> tuplekeyvaluemap = tuples2.stream().collect(Collectors.groupingBy(tuple2->tuple2.v1,  Collectors.reducing((t1, t2) -> SQLUtils.evaluateTuple(functions, (Tuple)t1, (Tuple)t2))));
+					List<Object[]>  finaloutputs = null;
+					if(nonNull(rfc)) {
+						finaloutputs = new ArrayList<>();
+					}
+					final List<Object[]>  finaloutputsobjects = finaloutputs;
 					tuplekeyvaluemap.entrySet().stream().forEach(entry->{
 						Object[] valuesgrpby = SQLUtils.populateObjectFromTuple((Tuple)entry.getKey());
 						Tuple2<Tuple,Tuple> grpbyfunctions = (Tuple2<Tuple, Tuple>) entry.getValue().get();
-						log.info("reducer {}", grpbyfunctions);
 						Object[] valuesfromfunctions = SQLUtils.populateObjectFromFunctions(grpbyfunctions.v2, functions);
 						Object[] mergeobject = null;
 						if (nonNull(valuesgrpby)) {
@@ -433,29 +450,58 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							mergeobject[valuecount] = value;						
 							valuecount++;
 						}
-						if(nonNull(origcolreqcolmap)) {
+						if(nonNull(origcolreqcolmap) && CollectionUtils.isNotEmpty(columns)) {
 							Object[] finaloutput = new Object[columns.size()];
 							for (int valueindex = 0;valueindex < columns.size();valueindex++) {
 								RexNode cols = columns.get(valueindex);
 								finaloutput[valueindex]= evaluateRexNode(cols, (Object[]) mergeobject, origcolreqcolmap);						
 							}
-							context.put("reducer", finaloutput);
+							if(isNull(rfc)) {
+								context.put("reducer", finaloutput);
+							} else {
+								finaloutputsobjects.add(finaloutput);
+							}
 						} else {
-							context.put("reducer", mergeobject);
+							if(isNull(rfc)) {
+								context.put("reducer", mergeobject);
+							} else {
+								finaloutputsobjects.add(mergeobject);
+							}
 						}
 						
-					});	
+					});
+					if(nonNull(rfc)) {
+						Collections.sort(finaloutputs, new ObjectArrayComparator(rfc));
+						finaloutputs.stream().forEach(valuearray->context.put("reducer", valuearray));
+					}
 				}
 			} else {
+				List<Object[]>  finaloutputs = null;
+				if(nonNull(rfc)) {
+					finaloutputs = new ArrayList<>();
+				}
 				for(Tuple tuple: tuples) {
 					if(tuple instanceof Tuple1 maptup) {
-						Object[] finaloutput = new Object[columns.size()];
-						for (int valueindex = 0;valueindex < columns.size();valueindex++) {
-							RexNode cols = columns.get(valueindex);
-							finaloutput[valueindex]= evaluateRexNode(cols, (Object[]) maptup.v1, origcolreqcolmap);						
+						Object[] finaloutput = null;
+						if(nonNull(columns)) {
+							finaloutput = new Object[columns.size()];
+							for (int valueindex = 0;valueindex < columns.size();valueindex++) {
+								RexNode cols = columns.get(valueindex);
+								finaloutput[valueindex]= evaluateRexNode(cols, (Object[]) maptup.v1, origcolreqcolmap);						
+							}
+						} else {
+							finaloutput = (Object[]) maptup.v1;
 						}
-						context.put("reducer", finaloutput);
-					}
+						if(isNull(rfc)) {
+							context.put("reducer", finaloutput);
+						} else {
+							finaloutputs.add(finaloutput);
+						}
+					}					
+				}
+				if(nonNull(rfc)) {
+					Collections.sort(finaloutputs, new ObjectArrayComparator(rfc));
+					finaloutputs.stream().forEach(valuearray->context.put("reducer", valuearray));
 				}
 			}
 				
@@ -481,14 +527,11 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			if (istuple2) {
 				Tuple2<Tuple,Tuple> tup2 = (Tuple2<Tuple, Tuple>) tuples.remove(0);
 				if(isnotempty) {
-					List<Tuple2> tuples2 = (List)tuples;
-					log.info("combiner functions {}", functions);
+					List<Tuple2> tuples2 = (List)tuples;					
 					Map<Object, Optional<Tuple>> tuplekeyvaluemap = tuples2.stream()
 							.collect(Collectors.groupingBy(tuple2 -> tuple2.v1, Collectors.reducing((t1, t2) -> {
-								log.info("{} , {}", t1, t2);
 								return Tuple.tuple((Tuple) ((Tuple2)t1).v1, SQLUtils.evaluateTuple(functions, (Tuple) ((Tuple2)t1).v2, (Tuple) ((Tuple2)t2).v2));
 							})));
-					log.info("combiner {}", tuplekeyvaluemap.entrySet().iterator().next().getValue());
 					tuplekeyvaluemap.entrySet().stream().forEach(entry->context.put(entry.getKey(), entry.getValue().get()));
 				}
 			} else {				

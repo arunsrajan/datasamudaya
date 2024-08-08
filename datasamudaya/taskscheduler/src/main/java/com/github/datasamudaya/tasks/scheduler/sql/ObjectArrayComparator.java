@@ -1,23 +1,22 @@
-package com.github.datasamudaya.common.utils;
+package com.github.datasamudaya.tasks.scheduler.sql;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.calcite.rel.RelFieldCollation;
-
-import com.github.datasamudaya.common.functions.SortedComparator;
 
 /**
  * Comparator for Objects
  * @author arun
  *
  */
-public class FieldCollatedSortedComparator implements SortedComparator<Object[]>,Serializable {
+public class ObjectArrayComparator implements Comparator<Object[]>,Serializable {
 
 	private static final long serialVersionUID = -934060963733653946L;
 	List<RelFieldCollation> rfcs;
 
-	public FieldCollatedSortedComparator(List<RelFieldCollation> rfcs) {
+	public ObjectArrayComparator(List<RelFieldCollation> rfcs) {
 		this.rfcs = rfcs;
 	}
 
@@ -62,3 +61,4 @@ public class FieldCollatedSortedComparator implements SortedComparator<Object[]>
 	}
 	
 }
+
