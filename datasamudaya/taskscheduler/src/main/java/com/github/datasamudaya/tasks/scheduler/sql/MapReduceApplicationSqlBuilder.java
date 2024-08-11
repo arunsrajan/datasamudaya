@@ -59,8 +59,6 @@ import org.slf4j.LoggerFactory;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobConfiguration;
-import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
-import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.sql.RequiredColumnsExtractor;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.tasks.executor.Combiner;
@@ -181,7 +179,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		log.info("Required Columns: {}", requiredcolumnindex);
 		mrab = MapReduceApplicationBuilder.newBuilder();
 		mrab.setJobConf(jc).setOutputfolder("/aircararrivaldelay");		
-		execute(relnode, 0);
+		traverse(relnode, 0);
+		formMetadataRelNodeMapReduce(relnode);
 		return mrab.build();
 	}
 	
@@ -196,10 +195,27 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	List<RexNode> columnsp = null;
 	Map<Integer, Integer> origcolreqcolmap = null;
 	boolean isprojectiondescendtablescan;
-	boolean isagg = false;
-	RexNode filtercondition = null;
+	boolean isagg = false;	
 	List<RelFieldCollation> rfc = null;
-	protected void execute(RelNode relNode, int depth) throws Exception {
+	Map<RelNode,RelNode> childnoderelnodeparentsmap = new ConcurrentHashMap<>();
+	Map<RelNode,Map<String,Map<Integer, Integer>>> jointableorigcolreqcolmap = new ConcurrentHashMap<>();
+	Map<RelNode,Integer> relnodetotalinputsizemap = new ConcurrentHashMap<>();
+	protected void traverse(RelNode relNode, int depth) throws Exception {
+		List<RelNode> inputs = relNode.getInputs();
+		if (relNode instanceof EnumerableTableScan ets) {
+			relnodetotalinputsizemap.put(relNode, ets.getTable().getRowType().getFieldCount());
+		}
+		if (CollectionUtils.isNotEmpty(inputs)) {
+			for (RelNode child : inputs) {
+				descendants.put(child, true);
+				childnoderelnodeparentsmap.put(child, relNode);
+				traverse(child, depth + 1);
+				relnodetotalinputsizemap.put(relNode, relnodetotalinputsizemap.getOrDefault(relNode, 0)+relnodetotalinputsizemap.get(child));
+			}
+		}
+	}
+	
+	protected void formMetadataRelNodeMapReduce(RelNode relNode) {
 
 		if (relNode instanceof EnumerableTableScan ets) {
 			String table = ets.getTable().getQualifiedName().get(1);
@@ -218,6 +234,11 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 					origcolreqcolmap.put(Integer.valueOf(reqcolindex.get(colindex)), colindex);
 				}
 			}
+			RexNode filtercondition = null;
+			RelNode relnodeparent = childnoderelnodeparentsmap.get(ets);
+			if(nonNull(relnodeparent) && relnodeparent instanceof EnumerableFilter ef) {
+				filtercondition = ef.getCondition();
+			}
 			mrab.addMapper(new MapperReducerSqlMapper(table, reqcolumns,					
 					tablecolumntypesmap.get(table),tablecolindex,
 					functions,
@@ -232,13 +253,62 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 					isprojectiondescendtablescan && !isagg || nonNull(rfc)?origcolreqcolmap:null, 
 					CollectionUtils.isNotEmpty(functions), functions, rfc));
 
-		} else if (relNode instanceof EnumerableFilter ef) {
-			filtercondition = ef.getCondition();
-			
+		} else if (relNode instanceof EnumerableFilter ef) {			
+			RelNode parentnode = childnoderelnodeparentsmap.get(ef);
+			RelNode childnode = ef.getInput(0);
+			if(parentnode instanceof EnumerableHashJoin ehj) {
+				if(ehj.getLeft() == relNode && childnode instanceof EnumerableTableScan ets) {
+					String table = ets.getTable().getQualifiedName().get(1);
+					Map<String,Map<Integer, Integer>> tableorigcolreqcolmap = jointableorigcolreqcolmap.get(ehj);
+					if(isNull(tableorigcolreqcolmap)) {
+						tableorigcolreqcolmap = new ConcurrentHashMap<>();
+						jointableorigcolreqcolmap.put(ehj, tableorigcolreqcolmap);
+					}
+					Set<String> reqcols = requiredcolumnindex.get(table);
+					int index = 0;
+					tableorigcolreqcolmap.put(table, formOrigColumnsReqColumnsMap(reqcols, index));
+				} else if(ehj.getRight() == relNode && childnode instanceof EnumerableTableScan ets) {
+					String table = ets.getTable().getQualifiedName().get(1);
+					Map<String,Map<Integer, Integer>> tableorigcolreqcolmap = jointableorigcolreqcolmap.get(ehj);
+					if(isNull(tableorigcolreqcolmap)) {
+						tableorigcolreqcolmap = new ConcurrentHashMap<>();
+						jointableorigcolreqcolmap.put(ehj, tableorigcolreqcolmap);
+					}
+					Set<String> reqcols = requiredcolumnindex.get(table);
+					int index = relnodetotalinputsizemap.get(ehj.getLeft());
+					tableorigcolreqcolmap.put(table, formOrigColumnsReqColumnsMap(reqcols, index));
+				}
+			}
 		} else if (relNode instanceof EnumerableSort es) {
 			rfc = es.getCollation().getFieldCollations();
 		} else if (relNode instanceof EnumerableHashJoin ehj) {
-			
+			List<RelNode> relnodes = new ArrayList<>();
+			relnodes.add(ehj.getLeft());
+			relnodes.add(ehj.getRight());
+			for(RelNode childnode: relnodes) {
+				if (childnode == ehj.getLeft() && childnode instanceof EnumerableTableScan ets) {
+					String table = ets.getTable().getQualifiedName().get(1);
+					Map<String, Map<Integer, Integer>> tableorigcolreqcolmap = jointableorigcolreqcolmap.get(ehj);
+					if (isNull(tableorigcolreqcolmap)) {
+						tableorigcolreqcolmap = new ConcurrentHashMap<>();
+						jointableorigcolreqcolmap.put(ehj, tableorigcolreqcolmap);
+					}
+					Set<String> reqcols = requiredcolumnindex.get(table);
+					int index = 0;
+					tableorigcolreqcolmap.put(table, formOrigColumnsReqColumnsMap(reqcols, index));
+				} else if (childnode == ehj.getRight() && childnode instanceof EnumerableTableScan ets) {
+					String table = ets.getTable().getQualifiedName().get(1);
+					Map<String, Map<Integer, Integer>> tableorigcolreqcolmap = jointableorigcolreqcolmap.get(ehj);
+					if (isNull(tableorigcolreqcolmap)) {
+						tableorigcolreqcolmap = new ConcurrentHashMap<>();
+						jointableorigcolreqcolmap.put(ehj, tableorigcolreqcolmap);
+					}
+					Set<String> reqcols = requiredcolumnindex.get(table);
+					int index = relnodetotalinputsizemap.get(ehj.getLeft());
+					tableorigcolreqcolmap.put(table, formOrigColumnsReqColumnsMap(reqcols, index));
+				}
+			}
+
 		} else if(relNode instanceof EnumerableNestedLoopJoin enlj) {
 			
 		} else if (relNode instanceof EnumerableIntersect) {
@@ -271,16 +341,27 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				}
 			}
 		}
-		
 		List<RelNode> inputs = relNode.getInputs();
 		if (CollectionUtils.isNotEmpty(inputs)) {
-			StreamPipeline<?> sp = null;
-			List<StreamPipeline<Object[]>> childs = new ArrayList<>();
 			for (RelNode child : inputs) {
-				descendants.put(child, true);
-				execute(child, depth + 1);
+				formMetadataRelNodeMapReduce(child);
 			}
 		}
+	}
+	
+	/**
+	 * The method returns orig col and req col indexes map
+	 * @param reqcols
+	 * @param index
+	 * @return map
+	 */
+	public Map<Integer, Integer> formOrigColumnsReqColumnsMap(Set<String> reqcols, int index) {
+		Map<Integer, Integer> origcolreqcolmap = new ConcurrentHashMap<>();
+		for(String reqcol:reqcols) {
+			Integer colindex = Integer.parseInt(reqcol); 
+			origcolreqcolmap.put(index+colindex, colindex);
+		}
+		return origcolreqcolmap;
 	}
 	
 	class MapperReducerSqlMapper implements Mapper<Long, String, Context> {
@@ -423,7 +504,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			if (istuple2) {
 				if(isnotempty) {
 					List<Tuple2> tuples2 = (List)tuples;
-					Map<Object, Optional<Tuple>> tuplekeyvaluemap = tuples2.stream().collect(Collectors.groupingBy(tuple2->tuple2.v1,  Collectors.reducing((t1, t2) -> SQLUtils.evaluateTuple(functions, (Tuple)t1, (Tuple)t2))));
+					log.info("In Reduce Tuples = {}",tuples2);
+					Map<Object, Optional<Tuple>> tuplekeyvaluemap = tuples2.stream().collect(Collectors.groupingBy(tuple2->tuple2.v1,  Collectors.reducing((t1, t2) -> Tuple.tuple(((Tuple2)t1).v1,SQLUtils.evaluateTuple(functions, (Tuple)((Tuple2)t1).v2, (Tuple)((Tuple2)t2).v2)))));
 					List<Object[]>  finaloutputs = null;
 					if(nonNull(rfc)) {
 						finaloutputs = new ArrayList<>();
@@ -432,6 +514,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 					tuplekeyvaluemap.entrySet().stream().forEach(entry->{
 						Object[] valuesgrpby = SQLUtils.populateObjectFromTuple((Tuple)entry.getKey());
 						Tuple2<Tuple,Tuple> grpbyfunctions = (Tuple2<Tuple, Tuple>) entry.getValue().get();
+						log.info("In Reduce Group By Key = {}",Arrays.toString(valuesgrpby));
+						log.info("In Reduce {} v2={}",grpbyfunctions, grpbyfunctions.v2);
 						Object[] valuesfromfunctions = SQLUtils.populateObjectFromFunctions(grpbyfunctions.v2, functions);
 						Object[] mergeobject = null;
 						if (nonNull(valuesgrpby)) {
@@ -533,6 +617,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 								return Tuple.tuple((Tuple) ((Tuple2)t1).v1, SQLUtils.evaluateTuple(functions, (Tuple) ((Tuple2)t1).v2, (Tuple) ((Tuple2)t2).v2));
 							})));
 					tuplekeyvaluemap.entrySet().stream().forEach(entry->context.put(entry.getKey(), entry.getValue().get()));
+					log.info("Combiner Result = {}", tuplekeyvaluemap);
 				}
 			} else {				
 				for(Tuple tuple1: tuples) {

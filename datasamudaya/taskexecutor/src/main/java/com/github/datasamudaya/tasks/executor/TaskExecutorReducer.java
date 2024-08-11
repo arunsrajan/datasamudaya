@@ -18,7 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+
 import org.apache.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple3;
 
@@ -71,12 +75,15 @@ public class TaskExecutorReducer implements Callable<Context> {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Override
 	public Context call() {
-		var es = Executors.newSingleThreadExecutor();
+		var es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		var esresult = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
 			log.debug("Submitted Reducer:" + applicationid + taskid);
 			var complete = new DataCruncherContext();
 			var apptaskcontextmap = new ConcurrentHashMap<String, Context>();
 			Context currentctx;
+			var cdl = new CountDownLatch(rv.getTuples().size());
 			for (var tuple3 : (List<Tuple3>) rv.getTuples()) {
 				var ctx = new DataCruncherContext();
 				int hpcount = 0;
@@ -102,10 +109,22 @@ public class TaskExecutorReducer implements Callable<Context> {
 					hpcount++;
 				}
 				var datasamudayar = new ReducerExecutor((DataCruncherContext) ctx, cr, tuple3.v1);
-				var fc = es.submit(datasamudayar);
-				var results = fc.get();
-				complete.add(results);
+				final var fc = es.submit(datasamudayar);
+				esresult.execute(() -> {
+					Context results;
+					try {
+						lock.acquire();
+						results = fc.get();
+						complete.add(results);						
+					} catch (Exception e) {
+						log.error("Send Message Error For Task Failed: ", e);
+					} finally {
+						cdl.countDown();
+						lock.release();
+					}
+				});
 			}
+			cdl.await();
 			ctx = complete;
 			log.debug("Submitted Reducer Completed:" + applicationid + taskid);
 		} catch (Throwable ex) {
@@ -120,6 +139,9 @@ public class TaskExecutorReducer implements Callable<Context> {
 		} finally {
 			if (es != null) {
 				es.shutdown();
+			}
+			if(esresult != null) {
+				esresult.shutdown();
 			}
 		}
 		return ctx;

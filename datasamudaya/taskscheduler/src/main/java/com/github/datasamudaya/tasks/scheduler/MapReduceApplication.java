@@ -33,6 +33,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -492,7 +493,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		return appidtaskids.stream().map(apptaskid -> apptaskhp.get(apptaskid))
 				.collect(Collectors.toList());
 	}
-
+	ExecutorService esmap = null;
 	@SuppressWarnings({"unchecked"})
 	public List<DataCruncherContext> call() {
 		var applicationid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
@@ -635,7 +636,9 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					}
 				});
 			}
+			esmap = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 			while (!completed && numexecute < taskexeccount) {
+				var cdl = new CountDownLatch(containermappercombinermap.size());
 				for (var containerkey : containermappercombinermap.keySet()) {
 					var dccmapphase = new DataCruncherContext();
 					dccmapphases.add(dccmapphase);
@@ -646,10 +649,13 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					DefaultDexecutor<TaskSchedulerMapperCombinerSubmitter, Boolean> dexecutor = new DefaultDexecutor<>(
 							configexec);
 					tasks.stream().forEach(task -> dexecutor.addIndependent(task));
-
-					erroredresult.add(dexecutor.execute(ExecutionConfig.NON_TERMINATING));
+					esmap.submit(() -> {
+						erroredresult.add(dexecutor.execute(ExecutionConfig.NON_TERMINATING));
+						cdl.countDown();
+					});
 				}
 				completed = true;
+				cdl.await();
 				for (ExecutionResults<TaskSchedulerMapperCombinerSubmitter, Boolean> execs : erroredresult) {
 					if (execs.getErrored().size() > 0) {
 						completed = false;
@@ -764,6 +770,9 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			log.error("Unable To Execute Job, See Cause Below:", ex);
 		} finally {
 			try {
+				if(nonNull(esmap)) {
+					esmap.shutdown();
+				}
 				if (isNull(jobconf.isIsuseglobalte())
 						|| (nonNull(jobconf.isIsuseglobalte())
 						&& !jobconf.isIsuseglobalte())) {
@@ -848,15 +857,14 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		}
 
 	}
-
+	private Semaphore resultmerge = new Semaphore(1);
 	private class MapCombinerTaskExecutor implements
 			TaskProvider<TaskSchedulerMapperCombinerSubmitter, Boolean> {
 
 		Semaphore semaphorebatch;
 		DataCruncherContext dccmapphase;
 		int totaltasks;
-		int taskexecuted;
-		private Semaphore resultmerge = new Semaphore(1);
+		int taskexecuted;		
 
 		public MapCombinerTaskExecutor(Semaphore semaphore, DataCruncherContext dccmapphase,
 				int totaltasks) {
@@ -879,9 +887,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						resultmerge.acquire();
 						taskexecuted++;
 						double percentagecompleted = Math.floor(((float) taskexecuted) / totaltasks * 100.0);
+						log.info("\nPercentage Completed TE("
+								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						Utils.writeToOstream(jobconf.getOutput(), "\nPercentage Completed TE("
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						dccmapphase.putAll(rk.keys, rk.applicationid + rk.taskid);
+						log.info(rk);
 						resultmerge.release();
 						semaphorebatch.release();
 						return true;

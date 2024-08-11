@@ -197,7 +197,7 @@ public class MassiveDataMRJobBase {
 				}
 			}
 			teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
-			Utils.launchContainersUserSpec("arun", teappid, 1, 1024, 1);
+			Utils.launchContainersUserSpec("arun", teappid, 4, 4096, 3);
 			jc = JobConfigurationBuilder.newBuilder()
 					.setIsuseglobalte(true)
 					.setUser("arun")

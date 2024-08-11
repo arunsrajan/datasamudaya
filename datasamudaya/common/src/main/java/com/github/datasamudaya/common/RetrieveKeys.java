@@ -18,12 +18,15 @@ package com.github.datasamudaya.common;
 import java.io.Serializable;
 import java.util.Set;
 
+import lombok.ToString;
+
 /**
  * 
  * @author arun
  * This class holds the data storing the keys in the HDFS for
  *  the MR Job APi.
  */
+@ToString
 public class RetrieveKeys implements Serializable {
 
 	private static final long serialVersionUID = -100582342914768069L;

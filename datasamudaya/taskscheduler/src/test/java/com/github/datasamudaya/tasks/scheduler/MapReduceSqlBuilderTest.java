@@ -609,20 +609,17 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				""";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : rec) {
-					log.info("{}", values);
-					assertEquals(4, values.size());
-					assertTrue(values.containsKey("UniqueCarrier"));
-					assertTrue(values.containsKey("DayofMonth"));
-					assertTrue(values.containsKey("MonthOfYear"));
-					assertTrue(values.containsKey("Description"));
-					assertEquals(12.0, values.get("MonthOfYear"));
-					assertEquals(8.0, values.get("DayofMonth"));
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);					
+					assertEquals(12.0, values[1]);
+					assertEquals(8.0, values[0]);
 				}
 			});
 		});
@@ -634,25 +631,24 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testFunctionsJoin() throws Exception {
 		log.info("In testFunctionsJoin() method Entry");
 		String statement = """
-				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,sum(airline.ArrDelay) sumdelay \
-				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12 = airline.MonthOfYear\
+				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,sum(airline.ArrDelay) sumdelay
+				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12 = airline.MonthOfYear or carriers.Code = 'AQ'
+				group by airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier
 				""";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
-				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.add(carriers, "carriers", carrierheader, carrierheadertypes)
+				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
 		List<Context> records = (List) mra.call();
 		records.stream().forEach(context -> {
 			context.keys().stream().forEach(key -> {
-				List<Map<String, Object>> rec = (List<Map<String, Object>>) context.get(key);
-				for (Map<String, Object> values : rec) {
-					log.info("{}", values);
-					assertEquals(4, values.size());
-					assertTrue(values.containsKey("UniqueCarrier"));
-					assertTrue(values.containsKey("DayofMonth"));
-					assertTrue(values.containsKey("MonthOfYear"));
-					assertTrue(values.containsKey("sumdelay"));
-					assertEquals(12.0, values.get("MonthOfYear"));
-					assertEquals(8.0, values.get("DayofMonth"));
+				List<Object[]> rec = (List<Object[]>) context.get(key);
+				for (Object[] values : rec) {
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);					
+					assertEquals(12, values[1]);
+					assertEquals(8, values[0]);
 				}
 			});
 		});
