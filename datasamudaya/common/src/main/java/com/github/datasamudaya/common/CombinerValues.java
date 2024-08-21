@@ -15,17 +15,31 @@
  */
 package com.github.datasamudaya.common;
 
-import org.apache.curator.framework.CuratorFramework;
+import java.io.Serializable;
+import java.util.List;
+import org.jooq.lambda.tuple.Tuple3;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * Interface for the TaskScheduler combiner submitter.
- * @author arun
- *
+ * 
+ * @author Arun
+ * Holder of ombiner information for running 
+ * the combiner tasks in the task executor daemon.
  */
-public interface TaskSchedulerCombinerSubmitterMBean {
-	public abstract void setHostPort(String hp);
-
-	public abstract String getHostPort();
-
-	public abstract long getCombinerSubmittedCount();
+@Getter
+@Setter
+@EqualsAndHashCode
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
+public class CombinerValues implements Serializable {
+	private static final long serialVersionUID = -8329337737535175061L;
+	private List<Tuple3> tuples;
+	private Object combiner;
+	private String appid;
 }

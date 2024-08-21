@@ -35,13 +35,11 @@ import com.github.datasamudaya.common.Context;
  * @author arun
  *
  */
-public class TaskExecutorMapperCombiner implements Callable {
-	static Logger log = Logger.getLogger(TaskExecutorMapperCombiner.class);
+public class TaskExecutorMapper implements Callable {
+	static Logger log = Logger.getLogger(TaskExecutorMapper.class);
 	BlocksLocation blockslocation;
 	@SuppressWarnings("rawtypes")
 	List<Mapper> cm = new ArrayList<>();
-	@SuppressWarnings("rawtypes")
-	List<Combiner> cc = new ArrayList<>();
 	@SuppressWarnings("rawtypes")
 	Context ctx;
 	File file;
@@ -51,7 +49,7 @@ public class TaskExecutorMapperCombiner implements Callable {
 	int port;
 
 	@SuppressWarnings({"rawtypes"})
-	public TaskExecutorMapperCombiner(BlocksLocation blockslocation, InputStream datastream, String applicationid, String taskid,
+	public TaskExecutorMapper(BlocksLocation blockslocation, InputStream datastream, String applicationid, String taskid,
 			ClassLoader cl, int port) throws Exception {
 		this.blockslocation = blockslocation;
 		this.datastream = datastream;
@@ -61,11 +59,6 @@ public class TaskExecutorMapperCombiner implements Callable {
 			if (blockslocation.getMapperclasses() != null) {
 				for (var mapperinstance :blockslocation.getMapperclasses()) {
 					cm.add((Mapper) mapperinstance);
-				}
-			}
-			if (blockslocation.getCombinerclasses() != null) {
-				for (var combinerInstance :blockslocation.getCombinerclasses()) {
-					cc.add((Combiner) combinerInstance);
 				}
 			}
 		}
@@ -84,7 +77,7 @@ public class TaskExecutorMapperCombiner implements Callable {
 
 		try {
 
-			var datasamudayamc = new MapperCombinerExecutor(blockslocation, datastream, cm, cc);
+			var datasamudayamc = new MapperExecutor(blockslocation, datastream, cm);
 			var fc = es.submit(datasamudayamc);
 			ctx = fc.get();
 			return ctx;

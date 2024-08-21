@@ -8,6 +8,8 @@
  */
 package com.github.datasamudaya.tasks.executor;
 
+import static java.util.Objects.isNull;
+
 import java.io.File;
 import java.io.OutputStream;
 import java.net.URI;
@@ -31,6 +33,7 @@ import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferInputStream;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
 import com.github.datasamudaya.common.CloseStagesGraphExecutor;
+import com.github.datasamudaya.common.CombinerValues;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
@@ -39,7 +42,6 @@ import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.FreeResourcesCompletedJob;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.ReducerValues;
 import com.github.datasamudaya.common.RemoteDataFetch;
 import com.github.datasamudaya.common.RemoteDataFetcher;
@@ -57,8 +59,6 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemo
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorInMemoryDiskSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroups;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorJGroupsSQL;
-
-import static java.util.Objects.isNull;
 
 /**
  * The executor that executes task executor tasks. 
@@ -301,13 +301,13 @@ public class TaskExecutor implements Callable<Object> {
 					var apptaskid = applicationid + taskid;
 					var taskexecutor = apptaskexecutormap.get(apptaskid);
 					if (object instanceof BlocksLocation blockslocation) {
-						var mdtemc = (TaskExecutorMapperCombiner) taskexecutor;
+						var mdtemc = (TaskExecutorMapper) taskexecutor;
 						if (taskexecutor == null) {
 							try (var hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get()
 											.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)),
 									configuration)) {
 								log.info("Application Submitted:" + applicationid + "-" + taskid);
-								mdtemc = new TaskExecutorMapperCombiner(blockslocation,
+								mdtemc = new TaskExecutorMapper(blockslocation,
 										HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs), applicationid,
 										taskid, cl, port);
 								apptaskexecutormap.put(apptaskid, mdtemc);
@@ -321,6 +321,24 @@ public class TaskExecutor implements Callable<Object> {
 								log.info("destroying MapperCombiner {}", apptaskid);
 								return rk;
 							}
+						}
+					} else if (object instanceof CombinerValues cv) {
+						var executorid = (String) objects.get(3);
+						var tec = (TaskExecutorCombiner) taskexecutor;
+						if (taskexecutor == null) {
+							tec =
+									new TaskExecutorCombiner(cv, applicationid, taskid, cl, port, apptaskexecutormap, executorid);
+							apptaskexecutormap.put(apptaskid, tec);
+							log.info("Combiner submission:" + apptaskid);
+							tec.call();
+							var keys = tec.ctx.keys();
+							RetrieveKeys rk = new RetrieveKeys();
+							rk.keys = new LinkedHashSet<>(keys);
+							rk.applicationid = applicationid;
+							rk.taskid = taskid;
+							rk.response = true;
+							log.info("destroying Combiner {}", apptaskid);
+							return rk;
 						}
 					} else if (object instanceof ReducerValues rv) {
 						var executorid = (String) objects.get(3);
@@ -337,14 +355,17 @@ public class TaskExecutor implements Callable<Object> {
 						if (taskexecutor instanceof TaskExecutorReducer ter) {
 							log.info("Gathering reducer context: " + apptaskid);
 							ctx = ter.ctx;
-						} else if (taskexecutor instanceof TaskExecutorMapperCombiner temc) {
+						} else if (taskexecutor instanceof TaskExecutorCombiner tec) {
+							log.info("Gathering combiner context: " + apptaskid);
+							ctx = tec.ctx;
+						} else if (taskexecutor instanceof TaskExecutorMapper temc) {
 							log.info("Gathering reducer context: " + apptaskid);
 							ctx = temc.ctx;
 						}
 						apptaskexecutormap.remove(apptaskid);
 						return ctx;
 					} else if (object instanceof RetrieveKeys rk) {
-						var mdtemc = (TaskExecutorMapperCombiner) taskexecutor;
+						var mdtemc = (TaskExecutorMapper) taskexecutor;
 						var keys = mdtemc.ctx.keys();
 						rk.keys = new LinkedHashSet<>(keys);
 						rk.applicationid = applicationid;

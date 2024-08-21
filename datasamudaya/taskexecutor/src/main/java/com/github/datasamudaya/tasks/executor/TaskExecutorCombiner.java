@@ -19,17 +19,16 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 import org.apache.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple3;
 
+import com.github.datasamudaya.common.CombinerValues;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.ReducerValues;
 import com.github.datasamudaya.common.RetrieveData;
 import com.github.datasamudaya.common.utils.Utils;
 
@@ -38,11 +37,11 @@ import com.github.datasamudaya.common.utils.Utils;
  * @author arun
  *
  */
-public class TaskExecutorReducer implements Callable<Context> {
-	static Logger log = Logger.getLogger(TaskExecutorReducer.class);
+public class TaskExecutorCombiner implements Callable<Context> {
+	static Logger log = Logger.getLogger(TaskExecutorCombiner.class);
 	@SuppressWarnings("rawtypes")
-	Reducer cr;
-	ReducerValues rv;
+	Combiner combiner;
+	CombinerValues cv;
 	File file;
 	@SuppressWarnings("rawtypes")
 	Context ctx;
@@ -53,13 +52,13 @@ public class TaskExecutorReducer implements Callable<Context> {
 	Map<String, Object> apptaskexecutormap;
 
 	@SuppressWarnings({"rawtypes"})
-	public TaskExecutorReducer(ReducerValues rv, String applicationid, String taskid, ClassLoader cl,
+	public TaskExecutorCombiner(CombinerValues cv, String applicationid, String taskid, ClassLoader cl,
 			int port, Map<String, Object> apptaskexecutormap, String executorid) throws Exception {
-		this.rv = rv;
+		this.cv = cv;
 		Class<?> clz = null;
 		this.port = port;
 		try {
-			cr = (Reducer) rv.getReducer();
+			combiner = (Combiner) cv.getCombiner();
 			this.applicationid = applicationid;
 			this.executorid = executorid;
 			this.taskid = taskid;
@@ -83,8 +82,8 @@ public class TaskExecutorReducer implements Callable<Context> {
 			var complete = new DataCruncherContext();
 			var apptaskcontextmap = new ConcurrentHashMap<String, Context>();
 			Context currentctx;
-			var cdl = new CountDownLatch(rv.getTuples().size());
-			for (var tuple3 : (List<Tuple3>) rv.getTuples()) {
+			var cdl = new CountDownLatch(cv.getTuples().size());
+			for (var tuple3 : (List<Tuple3>) cv.getTuples()) {
 				var ctx = new DataCruncherContext();
 				int hpcount = 0;
 				for (var apptaskids : (Collection<String>) tuple3.v2) {
@@ -108,7 +107,7 @@ public class TaskExecutorReducer implements Callable<Context> {
 					ctx.addAll(tuple3.v1, currentctx.get(tuple3.v1));
 					hpcount++;
 				}
-				var datasamudayar = new ReducerExecutor((DataCruncherContext) ctx, cr, tuple3.v1);
+				var datasamudayar = new CombinerExecutor((DataCruncherContext) ctx, combiner);
 				final var fc = es.submit(datasamudayar);
 				esresult.execute(() -> {
 					Context results;

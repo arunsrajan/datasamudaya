@@ -46,7 +46,7 @@ import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.executor.Combiner;
 import com.github.datasamudaya.tasks.executor.Mapper;
-import com.github.datasamudaya.tasks.executor.MapperCombinerExecutor;
+import com.github.datasamudaya.tasks.executor.MapperExecutor;
 import com.github.datasamudaya.tasks.executor.Reducer;
 import com.github.datasamudaya.tasks.executor.ReducerExecutor;
 
@@ -124,8 +124,8 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 							}
 
 							var es = Executors.newWorkStealingPool();
-							var datasamudayamc = new MapperCombinerExecutor(
-									mc.blockslocation, CacheUtils.getBlockData(mc.blockslocation, hdfs), cm, cc);
+							var datasamudayamc = new MapperExecutor(
+									mc.blockslocation, CacheUtils.getBlockData(mc.blockslocation, hdfs), cm);
 							var fc = (Future<Context>) es.submit(datasamudayamc);
 							var ctx = fc.get();
 							es.shutdown();

@@ -631,9 +631,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testFunctionsJoin() throws Exception {
 		log.info("In testFunctionsJoin() method Entry");
 		String statement = """
-				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,sum(airline.ArrDelay) sumdelay
+				SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,sum(airline.ArrDelay) sumdelay,concat(carriers.Code,airline.UniqueCarrier)
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12 = airline.MonthOfYear or carriers.Code = 'AQ'
-				group by airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier
+				group by airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code
 				""";
 		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)

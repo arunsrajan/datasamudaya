@@ -20,67 +20,69 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import org.apache.curator.framework.CuratorFramework;
 
 import com.github.datasamudaya.common.ApplicationTask;
 import com.github.datasamudaya.common.BlocksLocation;
+import com.github.datasamudaya.common.CombinerValues;
 import com.github.datasamudaya.common.RetrieveKeys;
-import com.github.datasamudaya.common.TaskSchedulerMapperSubmitterMBean;
+import com.github.datasamudaya.common.TaskSchedulerMapperCombinerSubmitterMBean;
 import com.github.datasamudaya.common.utils.Utils;
 
 /**
- * Task scheduler for mapper.
+ * Task scheduler for mapper combiner.
  * @author arun
  *
  */
-public class TaskSchedulerMapperSubmitter implements TaskSchedulerMapperSubmitterMBean {
-	BlocksLocation blockslocation;
-	boolean mapper;
-	Set<Object> mapperclasses;
-	ApplicationTask apptask;
-	String executorid;
-	Boolean iscompleted;
+public class TaskSchedulerCombinerSubmitter implements TaskSchedulerMapperCombinerSubmitterMBean {
 
-	TaskSchedulerMapperSubmitter(Object blockslocation, boolean mapper, Set<Object> mapperclasses,
+	private ApplicationTask apptask;
+	private String executorid;
+	private CombinerValues cv;
+	TaskSchedulerCombinerSubmitter(CombinerValues cv,
 			ApplicationTask apptask, String executorid) {
-		this.blockslocation = (BlocksLocation) blockslocation;
-		this.mapper = mapper;
-		this.mapperclasses = mapperclasses;
+		this.cv = cv;
 		this.apptask = apptask;
 		this.executorid = executorid;
-		this.blockslocation.setMapperclasses(mapperclasses);
 	}
 
 	public RetrieveKeys execute() throws Exception {
 		try {
 			var objects = new ArrayList<>();
-			objects.add(blockslocation);
+			objects.add(cv);
 			objects.add(apptask.getApplicationid());
 			objects.add(apptask.getTaskid());
-			return (RetrieveKeys) Utils.getResultObjectByInput(blockslocation.getExecutorhp(), objects, executorid);
+			objects.add(executorid);
+			return (RetrieveKeys) Utils.getResultObjectByInput(apptask.getHp(), objects, executorid);
 		}
 		catch (Exception ex) {
 			var baos = new ByteArrayOutputStream();
 			var failuremessage = new PrintWriter(baos, true, StandardCharsets.UTF_8);
 			ex.printStackTrace(failuremessage);
-			this.iscompleted = false;
 		}
 		return null;
 	}
 
 	@Override
 	public void setHostPort(String hp) {
-		blockslocation.setExecutorhp(hp);
+		apptask.setHp(hp);
 	}
 
 	@Override
 	public String getHostPort() {
-		return blockslocation.getExecutorhp();
+		return apptask.getHp();
 	}
 
 	@Override
 	public String getExecutorid() {
 		return executorid;
 	}
+
+	@Override
+	public long getCombinerSubmittedCount() {
+		return 0;
+	}
+
 }

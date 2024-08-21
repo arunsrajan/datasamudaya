@@ -121,8 +121,8 @@ public class MassiveDataCruncherMRApiTest extends StreamPipelineBaseTestCommon {
 		ExecutorService es = Executors.newWorkStealingPool();
 		String app = DataSamudayaConstants.DATASAMUDAYAAPPLICATION;
 		String task = DataSamudayaConstants.TASK;
-		TaskExecutorMapperCombiner mdtemc = new
-				TaskExecutorMapperCombiner(bls, lzis, app, task, Thread.currentThread().getContextClassLoader(), 12121);
+		TaskExecutorMapper mdtemc = new
+				TaskExecutorMapper(bls, lzis, app, task, Thread.currentThread().getContextClassLoader(), 12121);
 		Context ctx = (Context) mdtemc.call();
 		es.shutdown();
 		assertEquals(-63278, (long) (ctx.get("AQ").iterator().next()));
@@ -142,8 +142,8 @@ public class MassiveDataCruncherMRApiTest extends StreamPipelineBaseTestCommon {
 		ExecutorService es = Executors.newWorkStealingPool();
 		String app = DataSamudayaConstants.DATASAMUDAYAAPPLICATION;
 		String task = DataSamudayaConstants.TASK;
-		TaskExecutorMapperCombiner mdtemc = new
-				TaskExecutorMapperCombiner(bls, lzis, app, task, Thread.currentThread().getContextClassLoader(), 12121);
+		TaskExecutorMapper mdtemc = new
+				TaskExecutorMapper(bls, lzis, app, task, Thread.currentThread().getContextClassLoader(), 12121);
 		mdtemc.call();
 		Map<String, Object> apptaskexecutormap = new ConcurrentHashMap<>();
 		apptaskexecutormap.put(app + task, mdtemc);
