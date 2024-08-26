@@ -701,7 +701,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				int numpartition = keyapptasks.size()>containers.size()?containers.size():keyapptasks.size();
 				var partkeys = Iterables
 						.partition(keyapptasks, (keyapptasks.size()) / numpartition).iterator();
-				log.info("Keys For Shuffling:" + keyapptasks.size());
+				log.info("Combiner Keys For Shuffling:" + keyapptasks.size());
 				
 				var dcccombinerphasecollate = new DataCruncherContext();
 				dccombinerphases.add(dcccombinerphasecollate);
@@ -727,7 +727,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					var tscs = new TaskSchedulerCombinerSubmitter(
 							cv, apptask, teappid);
 					apptaskhp.put(applicationid + taskid, apptask.getHp());
-					log.debug("Combiner: Submitting " + mrtaskcount + " App And Task:"
+					log.info("Combiner: Submitting " + mrtaskcount + " App And Task:"
 							+ applicationid + taskid + cv.getTuples());
 					if (!Objects.isNull(jobconf.getOutput())) {
 						Utils.writeToOstream(jobconf.getOutput(), "Initial Combiner: Submitting " + mrtaskcount + " App And Task:"
@@ -781,7 +781,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						.collect(Collectors.toCollection(ArrayList::new));
 				var partkeys = Iterables
 						.partition(keyapptasks, (keyapptasks.size()) / numreducers).iterator();
-				log.info("Keys For Shuffling:" + keyapptasks.size());
+				log.info("Reducer Keys For Shuffling:" + keyapptasks.size());
 
 				DexecutorConfig<TaskSchedulerReducerSubmitter, Boolean> redconfig = new DexecutorConfig(newExecutor(), new ReducerTaskExecutor(batchsize, applicationid, dccred));
 				DefaultDexecutor<TaskSchedulerReducerSubmitter, Boolean> executorred = new DefaultDexecutor<>(redconfig);
