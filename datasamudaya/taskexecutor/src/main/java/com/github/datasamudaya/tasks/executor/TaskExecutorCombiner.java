@@ -24,6 +24,7 @@ import java.util.concurrent.Semaphore;
 
 import org.apache.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple3;
+import org.jooq.lambda.tuple.Tuple4;
 
 import com.github.datasamudaya.common.CombinerValues;
 import com.github.datasamudaya.common.Context;
@@ -83,7 +84,7 @@ public class TaskExecutorCombiner implements Callable<Context> {
 			var apptaskcontextmap = new ConcurrentHashMap<String, Context>();
 			Context currentctx;
 			var cdl = new CountDownLatch(cv.getTuples().size());
-			for (var tuple3 : (List<Tuple3>) cv.getTuples()) {
+			for (var tuple3 : (List<Tuple4>) cv.getTuples()) {
 				var ctx = new DataCruncherContext();
 				int hpcount = 0;
 				for (var apptaskids : (Collection<String>) tuple3.v2) {

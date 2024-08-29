@@ -21,6 +21,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.Vector;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -36,6 +37,8 @@ import lombok.ToString;
 @ToString
 public class DataCruncherContext<K, V> implements Context<K, V>, Serializable {
 
+	private String contextid = UUID.randomUUID().toString();
+	
 	private Map<K, Collection<V>> htkv = new Hashtable<>();
 
 	@Override
@@ -83,4 +86,9 @@ public class DataCruncherContext<K, V> implements Context<K, V>, Serializable {
 		ctx.keys().stream().forEach(key -> addAll(key, ctx.get(key)));
 
 	}
+
+	public String getContextid() {
+		return contextid;
+	}
+	
 }

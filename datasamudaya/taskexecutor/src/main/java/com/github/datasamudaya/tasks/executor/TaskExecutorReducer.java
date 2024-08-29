@@ -8,6 +8,8 @@
  */
 package com.github.datasamudaya.tasks.executor;
 
+import static java.util.Objects.isNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintWriter;
@@ -19,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
@@ -91,17 +92,21 @@ public class TaskExecutorReducer implements Callable<Context> {
 					if (apptaskcontextmap.get(apptaskids) != null) {
 						currentctx = apptaskcontextmap.get(apptaskids);
 					} else {
-						TaskExecutorMapper temc =
-								(TaskExecutorMapper) apptaskexecutormap.get(apptaskids);
-						if (temc == null) {
+						Object object = apptaskexecutormap.get(apptaskids);
+						if(isNull(object)) {
 							var objects = new ArrayList<>();
 							objects.add(new RetrieveData());
 							objects.add(applicationid);
 							objects.add(apptaskids.replace(applicationid, DataSamudayaConstants.EMPTY));
 							currentctx = (Context) Utils
 									.getResultObjectByInput((String) ((List) tuple3.v3).get(hpcount), objects, executorid);
+						}
+						else if(object instanceof TaskExecutorMapper tem) {
+							currentctx = (Context) tem.ctx;
+						} else if(object instanceof TaskExecutorCombiner tec){
+							currentctx = (Context) tec.ctx;
 						} else {
-							currentctx = (Context) temc.ctx;
+							currentctx = null;
 						}
 						apptaskcontextmap.put(apptaskids, currentctx);
 					}
