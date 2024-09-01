@@ -32,8 +32,7 @@ public class MrJobArrivalDelayResourceDividedNormal implements Application {
 		jobconfiguration.setNumofreducers("1");
 		jobconfiguration.setGctype(DataSamudayaConstants.ZGC);
 		jobconfiguration.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT);
-		jobconfiguration.setIsblocksuserdefined("true");
-		jobconfiguration.setBlocksize(args[3]);
+		
 		jobconfiguration.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_DIVIDED);
 		var datasamudayajob = (MapReduceApplication) MapReduceApplicationBuilder.newBuilder()
 				.addMapper(CarriersDataMapper.class, args[1])

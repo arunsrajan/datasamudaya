@@ -71,12 +71,7 @@ public class TaskSchedulerMapperSubmitter implements TaskSchedulerMapperSubmitte
 			objects.add(blockslocation);
 			objects.add(apptask.getApplicationid());
 			objects.add(apptask.getTaskid());
-			var baos = new ByteArrayOutputStream();
-			var output = new Output(baos);
-			Utils.getKryoInstance().writeClassAndObject(output, objects);
-			output.flush();
-			output.close();
-			return (RetrieveKeys) Utils.getResultObjectByInput(blockslocation.getExecutorhp(), baos.toByteArray(), executorid);
+			return (RetrieveKeys) Utils.getResultObjectByInput(blockslocation.getExecutorhp(), objects, executorid);
 		}
 		catch (Exception ex) {
 			var baos = new ByteArrayOutputStream();

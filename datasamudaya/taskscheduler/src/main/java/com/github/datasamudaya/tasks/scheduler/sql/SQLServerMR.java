@@ -94,7 +94,7 @@ public class SQLServerMR {
 								if (!isyarncontainerlaunched) {
 									try {
 										teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
-										Utils.launchYARNExecutors(teappid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.CONTEXT_FILE_CLIENT);
+										Utils.launchYARNExecutors(teappid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.CONTEXT_FILE_CLIENT, false);
 									} catch (Exception ex) {
 										log.error(DataSamudayaConstants.EMPTY, ex);
 									}
@@ -154,7 +154,7 @@ public class SQLServerMR {
 													if (!isyarncontainerlaunched) {
 														try {
 															teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
-															Utils.launchYARNExecutors(teappid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.CONTEXT_FILE_CLIENT);
+															Utils.launchYARNExecutors(teappid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.CONTEXT_FILE_CLIENT, false);
 														} catch (Exception ex) {
 															log.error(DataSamudayaConstants.EMPTY, ex);
 														}

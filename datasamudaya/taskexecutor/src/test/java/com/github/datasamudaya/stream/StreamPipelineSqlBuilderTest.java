@@ -59,14 +59,13 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	@BeforeClass
 	public static void pipelineSetup() throws Exception, Throwable {
 		pipelineconfig.setLocal("false");
-		pipelineconfig.setIsblocksuserdefined("true");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
 		if ("false".equals(pipelineconfig.getLocal())) {
 			pipelineconfig.setUseglobaltaskexecutors(true);
-			String teid = Utils.getUUID();
-			Utils.launchContainersExecutorSpecWithDriverSpec("arun", teid, 3, 6000, 2, 6, 6000);
-			pipelineconfig.setTejobid(teid);
+			pipelineconfig.setIsremotescheduler(true);
+			pipelineconfig.setTejobid(tejobid);
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", tejobid, 3, 3000, 2, 3, 3000, true);			
 			pipelineconfig.setUser("arun");
 		}
 	}
@@ -944,6 +943,35 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertEquals(131, total);
 
 		log.info("In testPrintAllColumnsCountWithWhereAndJoin() method Exit");
+	}
+	
+	@Test
+	public void testPrintAvgDelayWithDelayPercentageByUniqueCarrier() throws Exception {
+		log.info("In testPrintAvgDelayWithDelayPercentageByUniqueCarrier() method Entry");
+
+		String statement = """
+				select uniquecarrier,avg(arrdelay),
+				sum(arrdelay)*100.0/(select sum(arrdelay+depdelay) 
+				from airline) 
+				from airline_1 group by uniquecarrier order by uniquecarrier
+				""";
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesqlucs, "airline", airlineheader, airlineheadertypes)
+				.add(airlinesamplesqlucs, "airline_1", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		int total = 0;
+		for (List<Object[]> recs : records) {
+			for (Object[] rec : recs) {
+				total++;
+				assertTrue(rec.length == 3);
+				log.info(Arrays.toString(rec));
+			}
+		}
+		assertEquals(2, total);
+
+		log.info("In testPrintAvgDelayWithDelayPercentageByUniqueCarrier() method Exit");
 	}
 
 	@SuppressWarnings({"unchecked"})
@@ -4981,13 +5009,42 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 
 		log.info("In testRequiredColumnsWithWhereRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Exit");
 	}
+	
+	@Test
+	public void testJoinWithCount() throws Exception {
+		log.info("In testJoinWithCount() method Entry");
+		String statement = """
+				select airline.origin,airports.airport,count(*) FROM airline 
+				inner join airports on airports.iata = airline.origin 
+				GROUP BY airline.origin,airports.airport
+				""";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+				.add(airportssample, "airports", airportsheader, airportstype)
+				.setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 3);				
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertEquals(11, total);
+
+		log.info("In testJoinWithCount() method Exit");
+	}
+	
 
 	@AfterClass
 	public static void pipelineConfigReset() throws Exception {
 		pipelineconfig.setStorage(STORAGE.INMEMORY);
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setBlocksize("20");
-		pipelineconfig.setIsblocksuserdefined("false");
 	}
 
 }

@@ -51,15 +51,19 @@ spec:
     spec:
       containers:
         - name: datasamudayastandalone
-          image: arunsrajan/datasamudayastandalone:latest
+          image: arunsrajan/datasamudayastandalonedn:latest
           resources:
               requests:
                 memory: "64Mi"
-                cpu: "6"
+                cpu: "4"
               limits:
                 memory: "7168Mi"
-                cpu: "8"
+                cpu: "4"
           env:
+            - name: NAMENODEURL
+              value: hdfs://namenode:9000
+            - name: PODCIDRNODEMAPPINGENABLED
+              value: "false"
             - name: DATASAMUDAYA_HOME
               value: /opt/datasamudaya
             - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check

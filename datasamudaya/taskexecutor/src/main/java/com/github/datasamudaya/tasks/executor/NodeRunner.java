@@ -173,13 +173,6 @@ public class NodeRunner implements Callable<Object> {
 				return rsc;
 			} else if (deserobj instanceof DestroyContainers dc) {
 				log.debug("Destroying the Containers with job id: " + dc.getJobid());
-				Map<String, Process> processes = containerprocesses.remove(dc.getJobid());
-				if (!Objects.isNull(processes)) {
-					processes.entrySet().stream().forEach(entry -> {
-						log.info("Eradicate the chamber case: " + entry);
-						destroyProcess(entry.getKey(), entry.getValue(), dc.getJobid());
-					});
-				}
 				Map<String, List<Thread>> threads = containeridcontainerthreads.remove(dc.getJobid());
 				if (!Objects.isNull(threads)) {
 					threads.keySet().stream().map(threads::get).flatMap(thrlist -> thrlist.stream())
@@ -191,6 +184,13 @@ public class NodeRunner implements Callable<Object> {
 								}
 							});
 				}
+				Map<String, Process> processes = containerprocesses.remove(dc.getJobid());
+				if (!Objects.isNull(processes)) {
+					processes.entrySet().stream().forEach(entry -> {
+						log.info("Eradicate the chamber case: " + entry);
+						destroyProcess(entry.getKey(), entry.getValue(), dc.getJobid());
+					});
+				}				
 			} else if (deserobj instanceof DestroyContainer dc) {
 				log.debug("Destroying the Container with id: " + dc.getJobid());
 				Map<String, Process> processes = containerprocesses.get(dc.getJobid());
@@ -219,7 +219,14 @@ public class NodeRunner implements Callable<Object> {
 				if (!Objects.isNull(threads)) {
 					threads.keySet().stream()
 							.filter(key -> key.equals(dc.getContainerhp().split(DataSamudayaConstants.UNDERSCORE)[1]))
-							.map(threads::get).flatMap(thrlist -> thrlist.stream()).forEach(thr -> thr.stop());
+							.map(threads::get).flatMap(thrlist -> thrlist.stream())
+							.forEach(thr -> {
+								try {
+									thr.stop();
+								} catch (Exception e) {
+									log.warn(DataSamudayaConstants.EMPTY, e);
+								}
+							});
 					threads.remove(dc.getContainerhp().split(DataSamudayaConstants.UNDERSCORE)[1]);
 				}
 			} else if (deserobj instanceof SkipToNewLine stnl) {

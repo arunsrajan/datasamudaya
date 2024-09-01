@@ -31,7 +31,7 @@ public class StreamReducePairMultipleJoinsCoalesceReductionLocal implements Seri
 	private final Logger log = Logger.getLogger(StreamReducePairMultipleJoinsCoalesceReductionLocal.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");

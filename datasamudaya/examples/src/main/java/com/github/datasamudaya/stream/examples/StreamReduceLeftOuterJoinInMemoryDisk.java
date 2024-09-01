@@ -34,7 +34,7 @@ public class StreamReduceLeftOuterJoinInMemoryDisk implements Pipeline {
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize(args[6]);
 		pipelineconfig.setMaxmem(args[4]);
 		pipelineconfig.setMinmem("512");

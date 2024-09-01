@@ -129,7 +129,6 @@ public class StreamPipelineBaseException {
 			testingserver.start();
 			zo = new ZookeeperOperations();
 			zo.connect();
-			Boolean ishdfs = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty("taskexecutor.ishdfs"));
 			Configuration configuration = new Configuration();
 			hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);

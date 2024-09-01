@@ -104,17 +104,11 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			zo = new ZookeeperOperations();
 			zo.connect();
 			zo.watchNodes();
-			Boolean ishdfs = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty("taskexecutor.ishdfs"));
 			Configuration configuration = new Configuration();
 			hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
 			Boolean islocal = Boolean.parseBoolean(pipelineconfig.getLocal());
 			if (numberofnodes > 0) {
-				int rescheduledelay = Integer
-						.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.rescheduledelay"));
-				int initialdelay = Integer
-						.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.initialdelay"));
-				int pingdelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.pingdelay"));
 				host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskschedulerstream.host"));
 				port = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.port"));
 				int nodeport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
@@ -153,6 +147,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 									if (object instanceof byte[] bytes) {
 										object = Utils.convertBytesToObjectCompressed(bytes, null);
 									}
+									log.info("Allocate Or Launch: object {}",object);
 									var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
 											containerprocesses, hdfs, containeridthreads, containeridports, object, zo);
 									Future<Object> containerallocated = threadpool.submit(container);
@@ -179,6 +174,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			uploadfile(hdfs, airportssample, airportssample + csvfileextn);
 			uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
 			uploadfile(hdfs, airlinesamplesql, airlinesamplesql + csvfileextn);
+			uploadfile(hdfs, airlinesamplesqlucs, airlinesamplesqlucs + csvfileextn);
 			uploadfile(hdfs, airlinesamplejoin, airlinesamplejoin + csvfileextn);
 			uploadfile(hdfs, carriers, carriers + csvfileextn);
 			uploadfile(hdfs, airline1987, airline1987 + csvfileextn);

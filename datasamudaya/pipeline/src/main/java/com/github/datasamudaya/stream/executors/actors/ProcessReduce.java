@@ -60,6 +60,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 	private final boolean topersist = false;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	List<ActorSelection> childpipes;
+	int dummysize;
 	int terminatingsize;
 	int initialshufflesize;
 	DiskSpillingList diskspilllist;
@@ -103,9 +104,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 
 	private void processReduce(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			if (object.getValue() instanceof TerminatingActorValue tav) {
-				this.terminatingsize = tav.getTerminatingval();
-			} else if (object.getValue() instanceof ShuffleBlock sb) {								
+			if (object.getValue() instanceof ShuffleBlock sb) {								
 				try {
 					Object obj = sb.getData();					
 					if (obj instanceof DiskSpillingList dsl) {
@@ -126,16 +125,19 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
 			} 
-			if (object.getTerminiatingclass() == DiskSpillingList.class
-					|| object.getTerminiatingclass() == Dummy.class
+			if(object.getTerminiatingclass() == Dummy.class) {
+				dummysize++;
+				log.info("ProcessReduce::ShuffleSize {} , Terminating Dummy Size {}", terminatingsize, dummysize);
+			}
+			else if (object.getTerminiatingclass() == DiskSpillingList.class
 					|| object.getTerminiatingclass() == ShuffleBlock.class
 					|| object.getTerminiatingclass() == NodeIndexKey.class
 					|| object.getTerminiatingclass() == DiskSpillingSet.class
 					|| object.getTerminiatingclass() == TreeSet.class) {
-				initialshufflesize++;
+				initialshufflesize++;				
 				log.info("ProcessReduce::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
 			}
-			if (initialshufflesize == terminatingsize) {
+			if (dummysize == terminatingsize || initialshufflesize == terminatingsize) {
 				if(diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
@@ -163,8 +165,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 							DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
 						try {
 							Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
-									? (Stream<Tuple2>) Utils.getStreamData(
-									new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
+									? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
 											diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
 									: diskspilllistinterm.getData().stream();
 							try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {

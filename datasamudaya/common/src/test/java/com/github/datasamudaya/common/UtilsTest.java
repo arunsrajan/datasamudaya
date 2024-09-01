@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -653,4 +654,13 @@ public class UtilsTest {
 		input.close();
 	}
 
+	@Test
+	public void testPODCIDRToNodeMapping() {
+		Optional<String> nodeip = Utils.getNodeIPByPodIP("10.244.0.15");
+		assertNotNull(nodeip);
+		assertTrue(nodeip.isPresent());
+		assertNotNull(nodeip.get());
+	}
+	
+	
 }

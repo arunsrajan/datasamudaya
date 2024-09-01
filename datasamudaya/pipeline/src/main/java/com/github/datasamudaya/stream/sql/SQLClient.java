@@ -115,7 +115,7 @@ public class SQLClient {
 		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isdriverrequired) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUDRIVER);
 			cpudriver = Integer.valueOf(cpu);
-		} if(!isdriverrequired){
+		} else if(!isdriverrequired){
 			cpudriver = 0;
 		}
 		int memorydriver = 1024;

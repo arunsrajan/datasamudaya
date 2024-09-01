@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: datasamudayanamenode
   labels:
-    app: datasamudaya
+    app: datasamudayanamenode
 spec:
   replicas: 1
   selector:

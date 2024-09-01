@@ -42,7 +42,6 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@BeforeClass
 	public static void initConfig() {
 		pipelineconfig.setLocal("false");
-		pipelineconfig.setIsblocksuserdefined("false");
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
 		pipelineconfig.setStorage(STORAGE.INMEMORY);
 	}

@@ -18,8 +18,10 @@ package com.github.datasamudaya.common;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -59,6 +61,7 @@ public class Job implements Serializable {
 	private ConcurrentMap<String, String> allstageshostport;
 	private List<Stage> topostages = new Vector<>();
 	private Long noofpartitions;
+	private LaunchContainers driver;
 	private List<String> taskexecutors;
 	private Set<String> nodes;
 	private IgniteCache<Object, byte[]> igcache;
@@ -80,4 +83,5 @@ public class Job implements Serializable {
 	private AtomicInteger taskidgenerator = new AtomicInteger(1);
 	transient ConcurrentMap<String, OutputStream> resultstream;
 	private JOBTYPE jobtype = JOBTYPE.NORMAL;
+	private Map<String, JobStage> jsidjsmap = new ConcurrentHashMap<>();
 }

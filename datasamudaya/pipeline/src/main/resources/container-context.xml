@@ -4,10 +4,10 @@
 	xmlns:yarn="http://www.springframework.org/schema/yarn"
 	xmlns:yarn-int="http://www.springframework.org/schema/yarn/integration"
 	xmlns:context="http://www.springframework.org/schema/context"
-	xsi:schemaLocation="http://www.springframework.org/schema/yarn jar:file:./pipeline-2.0.jar!/xsd/spring-yarn-2.0.xsd
-		http://www.springframework.org/schema/yarn/integration jar:file:./pipeline-2.0.jar!/xsd/spring-yarn-integration-2.0.xsd
-		http://www.springframework.org/schema/beans jar:file:./pipeline-2.0.jar!/xsd/spring-beans-4.2.xsd
-		http://www.springframework.org/schema/context jar:file:./pipeline-2.0.jar!/xsd/spring-context-4.2.xsd">
+	xsi:schemaLocation="http://www.springframework.org/schema/yarn jar:file:./pipeline-3.0.jar!/xsd/spring-yarn-2.0.xsd
+		http://www.springframework.org/schema/yarn/integration jar:file:./pipeline-3.0.jar!/xsd/spring-yarn-integration-2.0.xsd
+		http://www.springframework.org/schema/beans jar:file:./pipeline-3.0.jar!/xsd/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context jar:file:./pipeline-3.0.jar!/xsd/spring-context-4.2.xsd">
 
 	<context:property-placeholder
 		location="classpath*:/datasamudayahadoop.properties"

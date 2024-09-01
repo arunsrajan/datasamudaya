@@ -6,11 +6,11 @@ mvn -Dmaven.antrun.skip=true -Dmaven.test.skip.exec=true -DskipMavenParsing=true
 
 To Build Only Requires Containers
 ---------------------------------
-mvn -f pomjar.xml -Pdatasamudaya exec:exec antrun:run@prepare compile jib:dockerBuild@buildstandalone jib:dockerBuild@buildcontainer jib:dockerBuild@buildzookeeper
+mvn -f pomjar.xml -Pdatasamudaya exec:exec antrun:run@prepare compile jib:dockerBuild@buildstandalone jib:dockerBuild@buildcontainer jib:dockerBuild@buildzookeeper jib:dockerBuild@buildstandalonewithdatanode jib:dockerBuild@buildcontainerwithdatanode
 
 To Build All Containers
 -----------------------
-mvn -f pomjar.xml -Pdatasamudaya exec:exec antrun:run@prepare compile jib:dockerBuild@buildstandalone jib:dockerBuild@buildcontainer jib:dockerBuild@buildzookeeper jib:dockerBuild@buildtaskschedulerstream jib:dockerBuild@buildtaskscheduler
+mvn -f pomjar.xml -Pdatasamudaya exec:exec antrun:run@prepare compile jib:dockerBuild@buildstandalone jib:dockerBuild@buildcontainer jib:dockerBuild@buildzookeeper jib:dockerBuild@buildtaskschedulerstream jib:dockerBuild@buildtaskscheduler jib:dockerBuild@buildstandalonewithdatanode jib:dockerBuild@buildcontainerwithdatanode
 
 In order to skip tests the following needs to be set in MAVEN_OPTS
 ------------------------------------------------------------------
@@ -49,13 +49,10 @@ In order to build docker images please execute the following maven goals
 
 In order to build docker images using docker commands
 -----------------------------------------------------
-docker build -t arunsrajan/datasamudayacontainer .
+docker push arunsrajan/datasamudayacontainerdn
+docker push arunsrajan/datasamudayastandalonedn
+docker push arunsrajan/datasamudayazk
 docker push arunsrajan/datasamudayacontainer
-docker build -t arunsrajan/datasamudayataskschedulerstream .
-docker push arunsrajan/datasamudayataskschedulerstream
-docker build -t arunsrajan/datasamudayataskscheduler .
-docker push arunsrajan/datasamudayataskscheduler
-docker build -t arunsrajan/datasamudayastandalone .
 docker push arunsrajan/datasamudayastandalone
 
 
@@ -104,11 +101,17 @@ To run standalone in network datasamudaya
 ------------------------------------------- 
 docker network create --driver=bridge --subnet=172.30.0.0/16 --ip-range=172.30.0.0/16 datasamudaya --attachable
 
+docker run --network datasamudaya --name zoo -p 2181:2181 --hostname zoo -d arunsrajan/datasamudayazk
+
 docker run --network datasamudaya --name namenode --hostname namenode -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" -e "CORE_CONF_fs_defaultFS=hdfs://namenode:9000" -e "HDFS_CONF_dfs_namenode_name_dir=file:///opt/dockershare/name" -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -e "CLUSTER_NAME=hadooptest" -p 9870:9870 -p 9000:9000 -d bde2020/hadoop-namenode
 
-docker run --network datasamudaya -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data" --name datasamudayastandalone --hostname datasamudayastandalone --ip 172.30.0.10 -e ZKHOSTPORT=zoo:2181 -e TEHOST=172.30.0.10 -e TEPORT=10101 -e NODEPORT=12121 -e TSSHOST=172.30.0.10 --link namenode:namenode -e TSSPORT=22222 -e TSHOST=172.30.0.10 -e TSPORT=11111 -p 22222:22222 -p 22223:22223 -p 11111:11111 -p 11112:11112 -p 12123:12123 -p 11123:11123 -p 12124:12124 -e DPORT=*:4000 -p 4000:4000 --memory 12g -e MEMCONFIGLOW=-Xms512m -e MEMCONFIGHIGH=-Xmx512m -e DATASAMUDAYA_HOME=/opt/datasamudaya -d arunsrajan/datasamudayastandalone
+docker run --network datasamudaya -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data" --name datasamudayastandalonedn --hostname datasamudayastandalone --ip 172.30.0.10 -e ZKHOSTPORT=zoo:2181 -e TEHOST=172.30.0.10 -e TEPORT=10101 -e NODEPORT=12121 -e TSSHOST=172.30.0.10 --link namenode:namenode -e TSSPORT=22222 -e TSHOST=172.30.0.10 -e TSPORT=11111 -p 22222:22222 -p 22223:22223 -p 11111:11111 -p 11112:11112 -p 12123:12123 -p 11123:11123 -p 12124:12124 -e DPORT=*:4000 -p 4000:4000 --memory 12g -e MEMCONFIGLOW=-Xms512m -e MEMCONFIGHIGH=-Xmx512m -e PODCIDRNODEMAPPINGENABLED=false -e NAMENODEURL=hdfs://namenode:9000 -e DATASAMUDAYA_HOME=/opt/datasamudaya -d arunsrajan/datasamudayastandalonedn
 
-docker run --network datasamudaya -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" --hostname dnte --link namenode:namenode --link zoo:zoo -e "CORE_CONF_fs_defaultFS=hdfs://namenode:9000" -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data1" --name datasamudayacontainer --ip 172.30.0.20 -e ZKHOSTPORT=zoo:2181 -e HOST=172.30.0.20 -e PORT=10101 -e NODEPORT=12121 -p 12121:12121 --memory 4g -e MEMCONFIGLOW=-Xms512M -e MEMCONFIGHIGH=-Xmx512M -e DATASAMUDAYA_HOME=/opt/datasamudaya -d arunsrajan/datasamudayacontainer
+docker run --network datasamudaya -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" --hostname dnte --link namenode:namenode --link zoo:zoo -e "CORE_CONF_fs_defaultFS=hdfs://namenode:9000" -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data1" --name datasamudayacontainerdn --ip 172.30.0.20 -e ZKHOSTPORT=zoo:2181 -e HOST=172.30.0.20 -e PORT=10101 -e NODEPORT=12121 -p 12121:12121 --memory 4g -e MEMCONFIGLOW=-Xms512M -e MEMCONFIGHIGH=-Xmx512M -e PODCIDRNODEMAPPINGENABLED=false -e NAMENODEURL=hdfs://namenode:9000 -e DATASAMUDAYA_HOME=/opt/datasamudaya -d arunsrajan/datasamudayacontainerdn
+
+docker run --network datasamudaya -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data" --name datasamudayastandalone --hostname datasamudayastandalone --ip 172.30.0.10 -e ZKHOSTPORT=zoo:2181 -e TEHOST=172.30.0.10 -e TEPORT=10101 -e NODEPORT=12121 -e TSSHOST=172.30.0.10 --link namenode:namenode -e TSSPORT=22222 -e TSHOST=172.30.0.10 -e TSPORT=11111 -p 22222:22222 -p 22223:22223 -p 11111:11111 -p 11112:11112 -p 12123:12123 -p 11123:11123 -p 12124:12124 -e DPORT=*:4000 -p 4000:4000 --memory 12g -e MEMCONFIGLOW=-Xms512m -e MEMCONFIGHIGH=-Xmx512m -e PODCIDRNODEMAPPINGENABLED=false -e NAMENODEURL=hdfs://namenode:9000 -e DATASAMUDAYA_HOME=/opt/datasamudaya -d arunsrajan/datasamudayastandalone
+
+docker run --network datasamudaya -v "C:/DEVELOPMENT/dockershare:/opt/dockershare" --hostname dnte --link namenode:namenode --link zoo:zoo -e "CORE_CONF_fs_defaultFS=hdfs://namenode:9000" -e "HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false" -e "HDFS_CONF_dfs_datanode_data_dir=/opt/dockershare/data1" --name datasamudayacontainer --ip 172.30.0.20 -e ZKHOSTPORT=zoo:2181 -e HOST=172.30.0.20 -e PORT=10101 -e NODEPORT=12121 -p 12121:12121 --memory 4g -e MEMCONFIGLOW=-Xms512M -e MEMCONFIGHIGH=-Xmx512M -e PODCIDRNODEMAPPINGENABLED=false -e NAMENODEURL=hdfs://namenode:9000 -e DATASAMUDAYA_HOME=/opt/datasamudaya -d arunsrajan/datasamudayacontainer
 
 To run docker container as separate service in swarm using weave networks to support multicasting
 ----------------------------------------------------
@@ -222,11 +225,41 @@ scope launch
 
 To run on kubernetes 
 --------------------
-minikube start -p datasamudaya --driver docker --mount=true --mount-string=C:\DEVELOPMENT\datasamudayakube:/minikube-host --cpus 4
+minikube start -p datasamudaya --driver docker --mount=true --mount-string=C:\DEVELOPMENT\datasamudayakube:/minikube-host --cpus 11 --memory 12g
+
 echo "10.244.0.7      datasamudayastandalone-0" >> /etc/hosts
 echo "10.244.0.8      datasamudayacontainer-0" >> /etc/hosts
 
-minikube service datasamudayastandalone
+minikube service datasamudayastandalone -p datasamudaya
+kubectl port-forward --address "0.0.0.0" svc/namenode 9870:9870
+
+kubectl cp 1987.csv datasamudayanamenode-0:/tmp/1987.csv -c datasamudayanamenode
+kubectl cp 1988.csv datasamudayanamenode-0:/tmp/1988.csv -c datasamudayanamenode
+kubectl cp 1989.csv datasamudayanamenode-0:/tmp/1989.csv -c datasamudayanamenode
+kubectl cp 1990.csv datasamudayanamenode-0:/tmp/1990.csv -c datasamudayanamenode
+
+To run on kubernetes on separate nodes
+--------------------------------------
+
+minikube start -p datasamudayadaemons --driver docker --mount=true --mount-string=C:\DEVELOPMENT\datasamudayakube:/minikube-host --cpus 4 --memory 4g --nodes=3
+
+kubectl label nodes datasamudayadaemons-m02 namenode=true
+kubectl label nodes datasamudayadaemons datasamudayadaemons-m02 datasamudayadaemons-m03 datanode=true
+
+minikube dashboard --url -p datasamudayadaemons
+
+kubectl cp 1987.csv hadoop-hdfs-namenode-swr86:/tmp/1987.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1988.csv hadoop-hdfs-namenode-swr86:/tmp/1988.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1989.csv hadoop-hdfs-namenode-swr86:/tmp/1989.csv -c hadoop-hdfs-namenode-container
+kubectl cp 1990.csv hadoop-hdfs-namenode-swr86:/tmp/1990.csv -c hadoop-hdfs-namenode-container
+
+hadoop dfs -mkdir /airlines
+hadoop dfs -put /tmp/1987.csv /airlines
+hadoop dfs -put /tmp/1988.csv /airlines
+hadoop dfs -put /tmp/1989.csv /airlines
+hadoop dfs -put /tmp/1990.csv /airlines
+
+minikube service datasamudayastandalone -p datasamudayadaemons
 kubectl port-forward --address "0.0.0.0" svc/namenode 9870:9870
 
 To run the project in openshift

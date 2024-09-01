@@ -20,6 +20,7 @@ import static java.util.Objects.nonNull;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,7 +41,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
+import org.apache.hadoop.yarn.api.records.ContainerState;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.apache.hadoop.yarn.api.records.ContainerSubState;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
@@ -57,14 +60,14 @@ import org.springframework.yarn.am.container.AbstractLauncher;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.EXECUTORTYPE;
 import com.github.datasamudaya.common.GetTaskActor;
-import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
+import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
@@ -73,10 +76,10 @@ import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskExecutorShutdown;
 import com.github.datasamudaya.common.TaskInfoYARN;
 import com.github.datasamudaya.common.TaskStatus;
-import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.PipelineException;
+import com.github.datasamudaya.stream.scheduler.RemoteJobScheduler;
 import com.github.datasamudaya.stream.scheduler.StreamPipelineTaskSubmitter;
 import com.github.dexecutor.core.DefaultDexecutor;
 import com.github.dexecutor.core.DexecutorConfig;
@@ -108,7 +111,6 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	private final Object lock = new Object();
 	SimpleDistributedQueue outputqueue;
 	private PipelineConfig pipelineconfig = null;
-	private long taskidcounter;
 	private long taskcompleted;
 	private boolean tokillcontainers;
 	private boolean isreadytoexecute;
@@ -118,6 +120,9 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	private ZookeeperOperations zoglobal;
 	private Map<String, StreamPipelineTaskSubmitter> taskmdsthread;
 	List<String> tes;
+	boolean isdriverallocated = false;
+	boolean isdriverrequired = false;
+	Semaphore executoralloclock = new Semaphore(1);
 	/**
 	 * Container initialization.
 	 */
@@ -140,6 +145,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 		try {
 			es = Executors.newFixedThreadPool(1);
 			teid = getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
+			isdriverrequired = Boolean.parseBoolean(getEnvironment().get(DataSamudayaConstants.ISDRIVERREQUIREDYARN));
 			es.execute(() -> pollQueue());
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
@@ -165,8 +171,8 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 
 	@SuppressWarnings("unchecked")
 	protected void pollQueue() {
-		log.info("Task Id Counter: " + taskidcounter);
 		log.info("Environment: " + getEnvironment());
+		Job job;
 		try (var zo = new ZookeeperOperations();) {
 			zo.connect();		
 			zoglobal = zo;
@@ -184,7 +190,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 					pendingsubmittedtasks.clear();
 					containertaskmap.clear();
 					sentjobstages.clear();
-					taskidcounter = 0;
+					taskcompleted = 0;
 					tinfo = objectMapper.readValue(inputqueue.poll(), TaskInfoYARN.class);
 					tokillcontainers = tinfo.isTokillcontainer();
 					if (Objects.isNull(tinfo.getJobid())) {
@@ -214,11 +220,24 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 					pipelineconfig = (PipelineConfig) RemoteDataFetcher
 							.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
 									DataSamudayaConstants.MASSIVEDATA_YARNINPUT_CONFIGFILE);
+					job = (Job) RemoteDataFetcher
+							.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
+									DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOB_FILE);
 					
 					tasks = graph.vertexSet().stream().map(StreamPipelineTaskSubmitter::getTask).collect(Collectors.toCollection(Vector::new));
-					broadcastJobStageToTaskExecutors(tasks);
-					parallelExecutionAkkaActors(graph);
+					if(isdriverallocated) {
+						RemoteJobScheduler rjs = new RemoteJobScheduler();
+						job.setVertices(new LinkedHashSet<>(graph.vertexSet()));
+						job.setEdges(new LinkedHashSet<>(graph.edgeSet()));
+						job.setJsidjsmap(jsidjsmap);
+						rjs.scheduleJob(job);
+					}
+					else {
+						broadcastJobStageToTaskExecutors(tasks);
+						parallelExecutionAkkaActors(graph);
+					}
 					log.info("tasks size:" + tasks.size());
+					tasks.clear();
 					ObjectMapper objMapper = new ObjectMapper();
 					tinfo.setIsresultavailable(true);
 					outputqueue.offer(objMapper.writeValueAsBytes(tinfo));
@@ -226,8 +245,11 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 					Thread.sleep(1000);
 				}
 			}
-			tes = zo.getTaskExectorsByJobId(teid);
-			tes.stream().forEach(hp->destroyTaskExecutors(hp, teid));
+			tes = zo.getTaskExectorsByJobId(teid);			
+			if(isdriverallocated) {
+				tes.addAll(zo.getDriversByJobId(teid));
+			}
+			tes.stream().forEach(hp->destroyTaskExecutors(hp, teid));			
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
@@ -493,15 +515,15 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	@Override
 	protected void onContainerCompleted(ContainerStatus status) {
 		synchronized (lock) {
+			log.info("Before Container {} completed: {} {} {}", status.getContainerId(), status.getContainerSubState(), status.getExitStatus(), status.getState());
+			status.setState(ContainerState.COMPLETE);
+			status.setContainerSubState(ContainerSubState.DONE);
+			status.setExitStatus(0);
 			super.onContainerCompleted(status);
 			log.info("Container completed: " + status.getContainerId());
 			if (containertaskmap.get(status.getContainerId().toString()) != null) {
 				var jobidstageidjs = containertaskmap.get(status.getContainerId().toString());
 				pendingtasks.keySet().removeAll(jobidstageidjs.keySet());
-			}
-			if (hasJobs()) {
-				log.info("Container completed: " + "Has jobs reallocating container for: " + status.getContainerId());
-				getAllocator().allocateContainers(1);
 			}
 		}
 	}
@@ -531,7 +553,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	 */
 	@Override
 	protected boolean isComplete() {
-		return completedJobs() && super.isComplete();
+		return completedJobs();
 	}
 
 	/**
@@ -540,22 +562,10 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	 * @return true when jobs available and container not to kill
 	 */
 	public boolean hasJobs() {
-		synchronized (lock) {
-			log.info("Has Jobs: " + (taskidcounter < tasks.size()) + ", Task Counter:" + taskidcounter);
+		synchronized (lock) {			
 			boolean hasJobs = isreadytoexecute
-					&& (taskidcounter < tasks.size() || pendingtasks.size() > 0 || taskcompleted < tasks.size());
-			try {
-				if (tasks.size() > 0 && taskcompleted >= tasks.size()) {
-					tasks.clear();
-					ObjectMapper objMapper = new ObjectMapper();
-					tinfo.setIsresultavailable(true);
-					outputqueue.offer(objMapper.writeValueAsBytes(tinfo));
-					taskcompleted = 0;
-					isreadytoexecute = false;
-				}
-			} catch (Exception ex) {
-				log.error(DataSamudayaConstants.EMPTY, ex);
-			}
+					&& (tasks.size() > 0);
+			log.info("Has Jobs: {}",hasJobs);
 			return hasJobs || !tokillcontainers;
 
 		}
@@ -567,6 +577,26 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	 */
 	public String getTaskExecutorId() {
 		return teid;
+	}
+	
+	/**
+	 * Get executor type as driver or executor 
+	 * @return executor type
+	 */
+	public EXECUTORTYPE getExecutorType() {
+		try {
+			executoralloclock.acquire();
+			if(isdriverrequired && !isdriverallocated) {
+				isdriverallocated = true;
+				return EXECUTORTYPE.DRIVER;
+			}
+			return EXECUTORTYPE.EXECUTOR;
+		} catch (Exception e) {
+			log.error("", e);
+		} finally {
+			executoralloclock.release();
+		}
+		return EXECUTORTYPE.EXECUTOR;
 	}
 	
 	/**

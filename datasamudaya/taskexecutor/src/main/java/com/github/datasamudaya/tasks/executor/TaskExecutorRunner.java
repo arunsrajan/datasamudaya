@@ -18,6 +18,7 @@ import java.net.URI;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,7 @@ import com.github.datasamudaya.common.ServerUtils;
 import com.github.datasamudaya.common.ShufflePort;
 import com.github.datasamudaya.common.SorterPort;
 import com.github.datasamudaya.common.StreamDataCruncher;
+import com.github.datasamudaya.common.SummaryWebServlet;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskExecutorShutdown;
 import com.github.datasamudaya.common.WebResourcesServlet;
@@ -177,8 +179,11 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			log.info("Reckoning stoppage holder...");
 			shutdown.await();
 			log.info("Ceasing the connections...");
-			server.close();
-			ter.destroy();
+			if(nonNull(serverRegistry)) {
+				serverRegistry.unbind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + jobid);
+				UnicastRemoteObject.unexportObject(serverRegistry, true);
+			}
+			server.close();			
 			ByteBufferPoolDirect.destroyPool();
 			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v1)) {
 				shuffleFileServer.v1.close();
@@ -186,15 +191,20 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v2)) {
 				shuffleFileServer.v2.shutdown();
 			}
-			if(nonNull(sortServer)) {
+			if(nonNull(sortServer) && nonNull(sortServer.v1)) {
 				sortServer.v1.close();
+			}
+			if(nonNull(sortServer) && nonNull(sortServer.v2)) {
 				sortServer.v2.shutdown();
 			}
-			log.info("Freed the assets...");
+			ter.destroy();
+			log.info("Freed the assets for task executor {}...", System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 			System.exit(0);
 		} catch (Throwable e) {
 			log.error("Error in starting Task Executor: ", e);
 		}
+		log.info("Exiting Task Executor {} ...", System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
+		return;
 	}
 
 	/**
@@ -222,7 +232,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	}
 
 	ClassLoader cl;
-	static Registry server;
+	static Registry serverRegistry;
 
 	/**
 	 * Starts and executes the tasks from scheduler via rpc registry.
@@ -234,7 +244,9 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		log.info("TaskExecutor Port: {}", port);
 		var su = new ServerUtils();
 		log.info("Initializing Server at: {}", port);
-		su.init(port + DataSamudayaConstants.PORT_OFFSET,
+		if(executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
+			log.info("Executor WebUI initialized at: {}", port + DataSamudayaConstants.PORT_OFFSET);
+			su.init(port + DataSamudayaConstants.PORT_OFFSET,
 				new NodeWebServlet(new ConcurrentHashMap<String, Map<String, Process>>()),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
@@ -243,6 +255,20 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH
 						+ DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+		} else {
+			log.info("Driver WebUI initialized at: {}", port + DataSamudayaConstants.PORT_OFFSET);
+			su.init(port + DataSamudayaConstants.PORT_OFFSET,
+					new NodeWebServlet(new ConcurrentHashMap<String, Map<String, Process>>()),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
+							+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+					new ResourcesMetricsServlet(),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.ASTERIX, new SummaryWebServlet(),
+							DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY_DRIVER 
+							+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+		}
 		log.info("Jetty Server initialized at: {}", port);
 		su.start();
 		log.info("Jetty Server started and listening: {}", port);
@@ -326,7 +352,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					} else if (deserobj instanceof SorterPort) {						
 						return sortServer.v1().getLocalPort();
 					} else if (!Objects.isNull(deserobj)) {
-						log.info("Deserialized object:{} ", deserobj);
+						log.info("Deserialized object:{} ", deserobj.getClass().getName());
 						TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,
 								apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
 								jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap,
@@ -343,7 +369,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			}
 		};
 		log.info("Getting RPC Registry for port: {}", port);
-		server = Utils.getRPCRegistry(port, dataCruncher, jobid);
+		serverRegistry = Utils.getRPCRegistry(port, dataCruncher, jobid);
 		log.info("RPC Registry for port: {} Obtained", port);
 	}
 
@@ -356,12 +382,10 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	@Override
 	public void destroy() throws Exception {
 		if (estask != null) {
-			estask.shutdownNow();
-			estask.awaitTermination(1, TimeUnit.SECONDS);
+			estask.shutdown();
 		}
 		if (escompute != null) {
-			escompute.shutdownNow();
-			escompute.awaitTermination(1, TimeUnit.SECONDS);
+			escompute.shutdown();
 		}
 	}
 

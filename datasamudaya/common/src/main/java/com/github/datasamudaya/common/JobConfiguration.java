@@ -31,12 +31,6 @@ public class JobConfiguration {
 	String tsport;
 	String zkport;
 	String zkretrydelay;
-	String tspingdelay;
-	String tsrescheduledelay;
-	String tsinitialdelay;
-	String tepingdelay;
-	Boolean hdfs;
-	String blocksize;
 	String batchsize;
 	String numofreducers;
 	byte[] mrjar;
@@ -44,7 +38,6 @@ public class JobConfiguration {
 	String maxmem;
 	String gctype;
 	String numberofcontainers;
-	String isblocksuserdefined;
 	String execmode;
 	String outputfolder;
 	String taskexeccount;
@@ -70,19 +63,12 @@ public class JobConfiguration {
 		this.tsport = builder.tsport;
 		this.zkport = builder.zkport;
 		this.zkretrydelay = builder.zkretrydelay;
-		this.tspingdelay = builder.tspingdelay;
-		this.tsrescheduledelay = builder.tsrescheduledelay;
-		this.tsinitialdelay = builder.tsinitialdelay;
-		this.tepingdelay = builder.tepingdelay;
-		this.hdfs = builder.hdfs;
-		this.blocksize = builder.blocksize;
 		this.batchsize = builder.batchsize;
 		this.numofreducers = builder.numofreducers;
 		this.minmem = builder.minmem;
 		this.maxmem = builder.maxmem;
 		this.gctype = builder.gctype;
 		this.numberofcontainers = builder.numberofcontainers;
-		this.isblocksuserdefined = builder.isblocksuserdefined;
 		this.execmode = builder.execmode;
 		this.taskexeccount = builder.taskexeccount;
 		this.ignitehp = builder.ignitehp;
@@ -123,30 +109,6 @@ public class JobConfiguration {
 
 	public String getZkretrydelay() {
 		return zkretrydelay;
-	}
-
-	public String getTspingdelay() {
-		return tspingdelay;
-	}
-
-	public String getTsrescheduledelay() {
-		return tsrescheduledelay;
-	}
-
-	public String getTsinitialdelay() {
-		return tsinitialdelay;
-	}
-
-	public String getTepingdelay() {
-		return tepingdelay;
-	}
-
-	public Boolean getHdfs() {
-		return hdfs;
-	}
-
-	public String getBlocksize() {
-		return blocksize;
 	}
 
 	public String getBatchsize() {
@@ -228,30 +190,6 @@ public class JobConfiguration {
 		this.zkretrydelay = zkretrydelay;
 	}
 
-	public void setTspingdelay(String tspingdelay) {
-		this.tspingdelay = tspingdelay;
-	}
-
-	public void setTsrescheduledelay(String tsrescheduledelay) {
-		this.tsrescheduledelay = tsrescheduledelay;
-	}
-
-	public void setTsinitialdelay(String tsinitialdelay) {
-		this.tsinitialdelay = tsinitialdelay;
-	}
-
-	public void setTepingdelay(String tepingdelay) {
-		this.tepingdelay = tepingdelay;
-	}
-
-	public void setHdfs(Boolean hdfs) {
-		this.hdfs = hdfs;
-	}
-
-	public void setBlocksize(String blocksize) {
-		this.blocksize = blocksize;
-	}
-
 	public void setBatchsize(String batchsize) {
 		this.batchsize = batchsize;
 	}
@@ -262,14 +200,6 @@ public class JobConfiguration {
 
 	public void setOutput(OutputStream output) {
 		this.output = output;
-	}
-
-	public String getIsblocksuserdefined() {
-		return isblocksuserdefined;
-	}
-
-	public void setIsblocksuserdefined(String isblocksuserdefined) {
-		this.isblocksuserdefined = isblocksuserdefined;
 	}
 
 	public String getExecmode() {

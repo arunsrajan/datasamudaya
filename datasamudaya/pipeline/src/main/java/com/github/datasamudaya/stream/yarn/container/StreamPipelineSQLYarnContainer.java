@@ -16,7 +16,6 @@
 package com.github.datasamudaya.stream.yarn.container;
 
 import java.lang.reflect.Method;
-import java.net.InetAddress;
 import java.util.Map;
 
 import org.burningwave.core.assembler.StaticComponentContainer;
@@ -26,7 +25,6 @@ import org.springframework.yarn.integration.container.AbstractIntegrationYarnCon
 import org.springframework.yarn.integration.ip.mind.MindAppmasterServiceClient;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.EXECUTORTYPE;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.yarn.appmaster.JobRequest;
 import com.github.datasamudaya.stream.yarn.appmaster.JobResponse;
@@ -67,14 +65,15 @@ public class StreamPipelineSQLYarnContainer extends AbstractIntegrationYarnConta
 			log.info("In Client Response Obtained");
 			String jobid = response.getContainerid();
 			log.info("JobId {}", jobid);
-			String[] args = new String[]{DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG, ((int)(Utils.mpBeanLocalToJVM.getUsage().getMax() * 0.4)) +"", jobid, EXECUTORTYPE.EXECUTOR.name()};  
+			String[] args = new String[]{DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG, ((int)(Utils.mpBeanLocalToJVM.getUsage().getMax() * 0.4)) +"", jobid, response.getExecutorordriver().name()};  
 			method.invoke(null, (Object) args);
 			log.info("Executing TaskExecutor For JobId {}", jobid);
 			log.info("In runInternal method Ended");
-			System.exit(-1);
+			System.exit(0);
 		}
 		catch (Throwable ex) {
 			log.error("In runInternal method Ended", ex);
+			System.exit(-1);
 		}
 	}
 	

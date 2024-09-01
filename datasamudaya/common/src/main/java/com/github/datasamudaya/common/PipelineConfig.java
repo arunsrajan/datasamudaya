@@ -45,17 +45,12 @@ public class PipelineConfig implements Serializable, Cloneable {
 	private transient OutputStream output;
 	private transient OutputStream pigoutput;
 	private String blocksize;
-	private String isblocksuserdefined;
-	private String pingdelay;
-	private String rescheduledelay;
-	private String initialdelay;
 	private String batchsize;
 	private String mesos;
 	private String mesosmaster;
 	private String yarn;
 	private String local;
 	private String jgroups;
-	private String randomte;
 	private String minmem;
 	private String maxmem;
 	private String gctype;
@@ -86,7 +81,13 @@ public class PipelineConfig implements Serializable, Cloneable {
 	private boolean topersistcolumnar;
 	private transient PrintWriter writer;
 	private Boolean windowspushnotification;
-
+	private Boolean ispodcidrtonodemappingenabled;
+	private Integer cpudriver;
+	private Integer memorydriver;
+	private Integer cputaskexecutor;
+	private Integer memorytaskexceutor;
+	private Integer numtaskexecutors;
+	
 	public void setOutput(OutputStream  output) {
 		this.output = output;
 	}
@@ -112,39 +113,6 @@ public class PipelineConfig implements Serializable, Cloneable {
 
 	public void setBlocksize(String blocksize) {
 		this.blocksize = blocksize;
-	}
-
-	public String getPingdelay() {
-		if (nonNull(pingdelay)) {
-			return pingdelay;
-		}
-		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_PINGDELAY, DataSamudayaConstants.TASKSCHEDULERSTREAM_PINGDELAY_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_PINGDELAY_DEFAULT;
-	}
-
-	public void setPingdelay(String pingdelay) {
-		this.pingdelay = pingdelay;
-	}
-
-	public String getRescheduledelay() {
-		if (nonNull(rescheduledelay)) {
-			return rescheduledelay;
-		}
-		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_RESCHEDULEDELAY, DataSamudayaConstants.TASKSCHEDULERSTREAM_RESCHEDULEDELAY_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_RESCHEDULEDELAY_DEFAULT;
-	}
-
-	public void setRescheduledelay(String rescheduledelay) {
-		this.rescheduledelay = rescheduledelay;
-	}
-
-	public String getInitialdelay() {
-		if (nonNull(initialdelay)) {
-			return initialdelay;
-		}
-		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_INITIALDELAY, DataSamudayaConstants.TASKSCHEDULERSTREAM_INITIALDELAY_DEFAULT) : DataSamudayaConstants.TASKSCHEDULERSTREAM_INITIALDELAY_DEFAULT;
-	}
-
-	public void setInitialdelay(String initialdelay) {
-		this.initialdelay = initialdelay;
 	}
 
 	public String getBatchsize() {
@@ -213,17 +181,6 @@ public class PipelineConfig implements Serializable, Cloneable {
 		this.jgroups = jgroups;
 	}
 
-	public String getRandomte() {
-		if (nonNull(randomte)) {
-			return randomte;
-		}
-		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_RANDTE, DataSamudayaConstants.TASKSCHEDULER_RANDTE_DEFAULT) : DataSamudayaConstants.TASKSCHEDULER_RANDTE_DEFAULT;
-	}
-
-	public void setRandomte(String randomte) {
-		this.randomte = randomte;
-	}
-
 	public String getMinmem() {
 		if (nonNull(minmem)) {
 			return minmem;
@@ -289,18 +246,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	public Set<Class<?>> getCustomclasses() {
 		return customclasses;
 	}
-
-	public String getIsblocksusedefined() {
-		if (nonNull(isblocksuserdefined)) {
-			return isblocksuserdefined;
-		}
-		return nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ISUSERDEFINEDBLOCKSIZE, DataSamudayaConstants.ISUSERDEFINEDBLOCKSIZE_DEFAULT) : DataSamudayaConstants.ISUSERDEFINEDBLOCKSIZE_DEFAULT;
-	}
-
-	public void setIsblocksuserdefined(String isblocksuserdefined) {
-		this.isblocksuserdefined = isblocksuserdefined;
-	}
-
+	
 	public String getMode() {
 		if (nonNull(mode)) {
 			return mode;
@@ -469,6 +415,69 @@ public class PipelineConfig implements Serializable, Cloneable {
 
 	public void setWindowspushnotification(boolean windowspushnotification) {
 		this.windowspushnotification = windowspushnotification;
+	}
+	
+	public Boolean getIspodcidrtonodemappingenabled() {
+		if (nonNull(ispodcidrtonodemappingenabled)) {
+			return ispodcidrtonodemappingenabled;
+		}
+		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.PODCIDR_TO_NODE_MAPPING_ENABLED, DataSamudayaConstants.PODCIDR_TO_NODE_MAPPING_ENABLED_DEFAULT) : DataSamudayaConstants.PODCIDR_TO_NODE_MAPPING_ENABLED_DEFAULT);
+	}
+
+	public void setIspodcidrtonodemappingenabled(Boolean ispodcidrtonodemappingenabled) {
+		this.ispodcidrtonodemappingenabled = ispodcidrtonodemappingenabled;
+	}
+	
+	public int getCpudriver() {
+		if (nonNull(cpudriver)) {
+			return cpudriver;
+		}
+		return 1;
+	}
+
+	public void setCpudriver(int cpudriver) {
+		this.cpudriver = cpudriver;
+	}
+
+	public Integer getMemorydriver() {
+		if (nonNull(memorydriver)) {
+			return memorydriver;
+		}
+		return DataSamudayaConstants.DRIVERMEMORY_DEFAULT;
+	}
+
+	public void setMemorydriver(int memorydriver) {
+		this.memorydriver = memorydriver;
+	}
+
+	public int getCputaskexecutor() {
+		if (nonNull(cputaskexecutor)) {
+			return cputaskexecutor;
+		}
+		return 1;
+	}
+
+	public void setCputaskexecutor(int cputaskexecutor) {
+		this.cputaskexecutor = cputaskexecutor;
+	}
+
+	public int getMemorytaskexceutor() {
+		if (nonNull(memorytaskexceutor)) {
+			return memorytaskexceutor;
+		}
+		return DataSamudayaConstants.EXECUTORMEMORY_DEFAULT;
+	}
+
+	public void setMemorytaskexceutor(int memorytaskexceutor) {
+		this.memorytaskexceutor = memorytaskexceutor;
+	}
+
+	public int getNumtaskexecutors() {
+		return numtaskexecutors;
+	}
+
+	public void setNumtaskexecutors(int numtaskexecutors) {
+		this.numtaskexecutors = numtaskexecutors;
 	}
 
 	public void setTopersistcolumnar(boolean topersistcolumnar) {

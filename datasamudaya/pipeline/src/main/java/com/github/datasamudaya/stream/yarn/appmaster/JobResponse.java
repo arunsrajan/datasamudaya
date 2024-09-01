@@ -17,6 +17,8 @@ package com.github.datasamudaya.stream.yarn.appmaster;
 
 import org.springframework.yarn.integration.ip.mind.binding.BaseResponseObject;
 
+import com.github.datasamudaya.common.EXECUTORTYPE;
+
 /**
  * 
  * @author Arun
@@ -27,6 +29,7 @@ public class JobResponse extends BaseResponseObject {
 	private State state;
 	private byte[] job;
 	private String containerid;
+	private EXECUTORTYPE executorordriver;
 
 	public JobResponse() {
 	}
@@ -61,6 +64,15 @@ public class JobResponse extends BaseResponseObject {
 	public void setContainerid(String containerid) {
 		this.containerid = containerid;
 	}
+
+	public EXECUTORTYPE getExecutorordriver() {
+		return executorordriver;
+	}
+
+	public void setExecutorordriver(EXECUTORTYPE executorordriver) {
+		this.executorordriver = executorordriver;
+	}
+
 
 
 	public enum State {

@@ -31,7 +31,7 @@ public class StreamReduceNormalInMemorySortByDelayResourceDivided implements Ser
 	private final Logger log = Logger.getLogger(StreamReduceNormalInMemorySortByDelayResourceDivided.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");

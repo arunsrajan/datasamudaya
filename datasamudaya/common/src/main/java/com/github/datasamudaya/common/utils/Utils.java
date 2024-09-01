@@ -64,6 +64,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -246,6 +247,10 @@ import de.javakaffee.kryoserializers.jodatime.JodaLocalDateSerializer;
 import de.javakaffee.kryoserializers.jodatime.JodaLocalDateTimeSerializer;
 import de.javakaffee.kryoserializers.jodatime.JodaLocalTimeSerializer;
 import io.altoo.akka.serialization.kryo.serializer.scala.ScalaKryo;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import net.sf.jsqlparser.parser.SimpleNode;
@@ -1589,7 +1594,7 @@ public class Utils {
 	 * @throws RpcRegistryException
 	 */
 	public static List<LaunchContainers> launchContainersExecutorSpecWithDriverSpec(String user, String jobid, int cpuuser,
-			int memoryexecutor, int numberofcontainers, int cpudriver, int memorydriver)
+			int memoryexecutor, int numberofcontainers, int cpudriver, int memorydriver, boolean tolaunchcontainer)
 			throws ContainerException, InterruptedException, RpcRegistryException {
 		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
 		long memoryuserbytes = Long.valueOf(memoryexecutor) * DataSamudayaConstants.MB;
@@ -1616,43 +1621,44 @@ public class Utils {
 				numberofcontainers, cpuuser, memoryuserbytes, jobid,
 				pc, globallaunchcontainers, launchedcontainerhostports, 
 				EXECUTORTYPE.EXECUTOR);
-		for (LaunchContainers lc : globallaunchcontainers) {
-			List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
-					lc, DataSamudayaConstants.EMPTY);
-			String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
-			launchedcontainerports.stream().map(port -> containerhost + DataSamudayaConstants.UNDERSCORE + port)
-					.forEach(launchedcontainerhostports::add);
-			if (Objects.isNull(launchedcontainerports)) {
-				throw new ContainerException("Task Executor Launch Error From Container");
-			}
-		}		
-		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
-		int index = 0;
-		while (index < launchedcontainerhostports.size()) {
-			while (true) {
-				String tehostport = launchedcontainerhostports.get(index);
-				String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
-				try (var sock = new Socket(tehp[0], Integer.parseInt(tehp[1]));) {
-					break;
-				} catch (Exception ex) {
-					try {
-						log.info("Waiting for chamber {} to replete dispatch....",
-								tehp[0] + DataSamudayaConstants.UNDERSCORE + tehp[1]);
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						log.warn(DataSamudayaConstants.INTERRUPTED, e);
-						// Restore interrupted state...
-						Thread.currentThread().interrupt();
-					} catch (Exception e) {
-						log.error(DataSamudayaConstants.EMPTY, e);
+		if(tolaunchcontainer) {
+			for (LaunchContainers lc : globallaunchcontainers) {
+				List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
+						lc, DataSamudayaConstants.EMPTY);
+				String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
+				launchedcontainerports.stream().map(port -> containerhost + DataSamudayaConstants.UNDERSCORE + port)
+						.forEach(launchedcontainerhostports::add);
+				if (Objects.isNull(launchedcontainerports)) {
+					throw new ContainerException("Task Executor Launch Error From Container");
+				}
+			}			
+			int index = 0;
+			while (index < launchedcontainerhostports.size()) {
+				while (true) {
+					String tehostport = launchedcontainerhostports.get(index);
+					String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
+					try (var sock = new Socket(tehp[0], Integer.parseInt(tehp[1]));) {
+						break;
+					} catch (Exception ex) {
+						try {
+							log.info("Waiting for chamber {} to replete dispatch....",
+									tehp[0] + DataSamudayaConstants.UNDERSCORE + tehp[1]);
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							log.warn(DataSamudayaConstants.INTERRUPTED, e);
+							// Restore interrupted state...
+							Thread.currentThread().interrupt();
+						} catch (Exception e) {
+							log.error(DataSamudayaConstants.EMPTY, e);
+						}
 					}
 				}
+				index++;
 			}
-			index++;
 		}
-
 		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsAllocatedCounter().inc(globallaunchcontainers.size());
 		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
+		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		return globallaunchcontainers;
 	}
 	
@@ -1791,12 +1797,15 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void launchYARNExecutors(String teid, int cpuuser, int memoryuser, int numberofcontainers,
-			String yarnappcontextfile) throws YarnLaunchException {
+			String yarnappcontextfile, boolean isyarndriverrequired) throws YarnLaunchException {
 		try {
 			yarnmutex.acquire();
 			new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
 			Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
 					DataSamudayaConstants.YARNOUTJAR);
+			if(isyarndriverrequired) {
+				numberofcontainers++;
+			}
 			System.setProperty("jobcount", "1");
 			System.setProperty("containercount", "" + numberofcontainers);
 			System.setProperty("containermemory", "" + memoryuser);
@@ -1806,6 +1815,7 @@ public class Utils {
 			var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
 			client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
 			client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, teid);
+			client.getEnvironment().put(DataSamudayaConstants.ISDRIVERREQUIREDYARN, isyarndriverrequired+DataSamudayaConstants.EMPTY);
 			ApplicationId appid = client.submitApplication(true);
 			var zo = new ZookeeperOperations();
 			zo.connect();
@@ -1847,7 +1857,8 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void createJobInHDFS(PipelineConfig pipelineconfig, List<?> sptsl,
-			SimpleDirectedGraph<?, DAGEdge> graph, Map<String, ?> tasksptsthread, Map<String, JobStage> jsidjsmap)
+			SimpleDirectedGraph<?, DAGEdge> graph, Map<String, ?> tasksptsthread, Map<String, JobStage> jsidjsmap,
+			Job job)
 			throws JobException {
 		try {
 			OutputStream os = pipelineconfig.getOutput();
@@ -1867,6 +1878,8 @@ public class Utils {
 					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE, pipelineconfig);
 			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(jsidjsmap, yarninputfolder,
 					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE, pipelineconfig);
+			RemoteDataFetcher.writerYarnAppmasterServiceDataToDFS(job, yarninputfolder,
+					DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOB_FILE, pipelineconfig);
 			pipelineconfig.setOutput(os);
 		} catch (Exception ex) {
 			throw new JobException(JobException.JOBCREATIONEXCEPTION_MESSAGE, ex);
@@ -2073,46 +2086,6 @@ public class Utils {
 	}
 
 	/**
-	 * This method destroys containers for the given user and jobid.
-	 * 
-	 * @param user
-	 * @param jobid
-	 * @throws Exception
-	 */
-	public static synchronized void destroyContainers(String user, String jobid) throws ContainerException {
-		var dc = new DestroyContainers();
-		dc.setJobid(jobid);
-		var usersshare = DataSamudayaUsers.get();
-		if (isNull(usersshare)) {
-			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
-		}
-		var lcs = GlobalContainerLaunchers.get(user, jobid);
-		lcs.stream().forEach(lc -> {
-			try {
-				ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources.getAllocatedResources()
-						.get(lc.getNodehostport());
-				Resources resallocated = nodesresallocated.get(user);
-				Utils.getResultObjectByInput(lc.getNodehostport(), dc, DataSamudayaConstants.EMPTY);
-				lc.getCla().getCr().stream().forEach(cr -> {
-					resallocated.setFreememory(resallocated.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
-					resallocated.setNumberofprocessors(resallocated.getNumberofprocessors() + cr.getCpu());
-				});
-			} catch (Exception e) {
-				log.error(DataSamudayaConstants.EMPTY, e);
-			}
-		});
-		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsDeAllocatedCounter().inc(lcs.size());
-		GlobalContainerLaunchers.remove(user, jobid);
-		GlobalJobFolderBlockLocations.remove(jobid);
-		Map<String, List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);
-		if (MapUtils.isEmpty(jobcontainermap)) {
-			GlobalContainerLaunchers.remove(user);
-		}
-	}
-
-	static List<Object> objects = new ArrayList<>();
-
-	/**
 	 * Gets the rpc registry for the given port, class which implements
 	 * StreamDataCruncher and id.
 	 * 
@@ -2125,9 +2098,8 @@ public class Utils {
 	public static Registry getRPCRegistry(int port, final StreamDataCruncher streamdatacruncher, String id)
 			throws RpcRegistryException {
 		try {
-			objects.add(streamdatacruncher);
-			Registry registry = LocateRegistry.createRegistry(port);
 			StreamDataCruncher stub = (StreamDataCruncher) UnicastRemoteObject.exportObject(streamdatacruncher, port);
+			Registry registry = LocateRegistry.createRegistry(port);
 			registry.rebind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + id, stub);
 			return registry;
 		} catch (Exception ex) {
@@ -2454,6 +2426,48 @@ public class Utils {
 			throw new TaskExecutorException(TaskExecutorException.TASKEXECUTORDESTROYEXCEPTION_MESSAGE, ex);
 		} finally {
 			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
+		}
+	}
+	
+	/**
+	 * This method destroys containers for the given user and jobid.
+	 * 
+	 * @param user
+	 * @param jobid
+	 * @throws Exception
+	 */
+	public static synchronized void destroyContainers(String user, String jobid) throws ContainerException {
+		var dcs = new DestroyContainers();
+		dcs.setJobid(jobid);
+		var usersshare = DataSamudayaUsers.get();
+		if (isNull(usersshare)) {
+			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+		}
+		var lcs = GlobalContainerLaunchers.get(user, jobid);
+		lcs.stream().forEach(lc -> {
+			try {
+				ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources.getAllocatedResources()
+						.get(lc.getNodehostport());
+				Resources resallocated = nodesresallocated.get(user);
+				Utils.getResultObjectByInput(lc.getNodehostport(), dcs, DataSamudayaConstants.EMPTY);
+				lc.getCla().getCr().stream().forEach(cr -> {
+					try {
+						resallocated.setFreememory(resallocated.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
+						resallocated.setNumberofprocessors(resallocated.getNumberofprocessors() + cr.getCpu());
+					} catch (Exception e) {
+						log.error(DataSamudayaConstants.EMPTY, e);
+					}
+				});
+			} catch (Exception e) {
+				log.error(DataSamudayaConstants.EMPTY, e);
+			}
+		});
+		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsDeAllocatedCounter().inc(lcs.size());
+		GlobalContainerLaunchers.remove(user, jobid);
+		GlobalJobFolderBlockLocations.remove(jobid);
+		Map<String, List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);
+		if (MapUtils.isEmpty(jobcontainermap)) {
+			GlobalContainerLaunchers.remove(user);
 		}
 	}
 
@@ -3788,5 +3802,30 @@ public class Utils {
 		}
 		return builder.toString();
 	}
+	
+	/**
+	 * The function returns node ip for a given pod ip
+	 * @param podIP
+	 * @return NodeIp
+	 */
+	public static Optional<String> getNodeIPByPodIP(String podIP) {
+        try {
+        	String nodeip = null;
+        	KubernetesClient kubeclient = new DefaultKubernetesClient();
+            List<Pod> podsWithIPAddress = kubeclient.pods().inAnyNamespace().withField(DataSamudayaConstants.PODIP_STATUS, podIP)
+                    .list().getItems();
+            if (podsWithIPAddress.size() > 0) {
+            	String nodename = podsWithIPAddress.get(0).getSpec().getNodeName();
+            	log.info("Using Pod Ip {} To Node Name: {}", podIP, nodename);
+            	nodeip = kubeclient.nodes().withName(nodename).get().getStatus().getAddresses().get(0).getAddress().split(":")[0];
+            	log.info("Using Pod Ip {} To Node Address: {}", podIP, nodeip);
+            }
+
+            return Optional.ofNullable(nodeip);
+        } catch (KubernetesClientException e) {
+            log.warn("Couldn't resolve Node by Pod IP " + podIP, e);
+            return Optional.empty();
+        }
+    }
 	
 }

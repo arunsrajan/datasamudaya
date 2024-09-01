@@ -81,6 +81,7 @@ import com.github.datasamudaya.common.functions.DistributedSort;
 import com.github.datasamudaya.common.functions.DoubleFlatMapFunction;
 import com.github.datasamudaya.common.functions.FlatMapFunction;
 import com.github.datasamudaya.common.functions.FoldByKey;
+import com.github.datasamudaya.common.functions.FullOuterJoin;
 import com.github.datasamudaya.common.functions.GroupByFunction;
 import com.github.datasamudaya.common.functions.GroupByKeyFunction;
 import com.github.datasamudaya.common.functions.HashPartitioner;
@@ -102,7 +103,6 @@ import com.github.datasamudaya.common.functions.ReduceFunction;
 import com.github.datasamudaya.common.functions.RightJoin;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.SToIntFunction;
-import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.SortedComparator;
 import com.github.datasamudaya.common.functions.TupleFlatMapFunction;
 import com.github.datasamudaya.common.functions.UnionFunction;
@@ -122,7 +122,6 @@ import com.github.datasamudaya.stream.utils.PipelineConfigValidator;
 public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStream,JsonStream, PipelineIntStream {
 	private List<Path> filepaths = new ArrayList<>();
 	protected String protocol;
-	private int blocksize;
 	IntSupplier supplier;
 	private String hdfspath;
 	private String folder;
@@ -152,7 +151,6 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		this.hdfspath = hdfspath;
 		this.folder = folder;
 		this.protocol = FileSystemSupport.HDFS;
-		blocksize = Integer.parseInt(pipelineconfig.getBlocksize()) * 1024 * 1024;
 	}
 
 	/**
@@ -443,11 +441,19 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	}
 
 	/**
-	 * StreamPipeline constructor for FlatMap function.
-	 * @param <T>
-	 * @param root
-	 * @param fmf
+	 * StreamPipeline accepts the outer join function.
+	 * @param <I2>
+	 * @param mappair
+	 * @return StreamPipeline object.
+	 * @throws PipelineException
 	 */
+	public <I2> StreamPipeline<Tuple2<I1, I2>> fullJoin(StreamPipeline<I2> mappair) throws PipelineException {
+		if (Objects.isNull(mappair)) {
+			throw new PipelineException(PipelineConstants.OUTERJOIN);
+		}		
+		StreamPipeline<Tuple2<I1, I2>> sp = new StreamPipeline(this, mappair, new FullOuterJoin());
+		return sp;
+	}
 	
 	/**
 	 * StreamPipeline accepts the FlatMap function.
@@ -999,7 +1005,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 				job.setStageoutputmap(stageoutputmap);
 				if (CollectionUtils.isNotEmpty(abspipeline)) {
 					var dbPartitioner = new FileBlocksPartitionerHDFS();
-					dbPartitioner.getJobStageBlocks(job, supplier, "hdfs", stagesblocks, abspipeline, ((StreamPipeline) this).blocksize, ((StreamPipeline) this).pipelineconfig);
+					dbPartitioner.getJobStageBlocks(job, supplier, "hdfs", stagesblocks, abspipeline, ((StreamPipeline) this).pipelineconfig);
 				}
 				PipelineConfig pipeconf = ((StreamPipeline) this).pipelineconfig;
 				if (pipeconf.getMode().equalsIgnoreCase(DataSamudayaConstants.MODE_DEFAULT)) {
@@ -1024,7 +1030,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 				}
 			} else {
 				var dbPartitioner = new FileBlocksPartitionerHDFS();
-				dbPartitioner.getJobStageBlocks(job, supplier, "hdfs", rootstages, mdsroots, this.blocksize, this.pipelineconfig);
+				dbPartitioner.getJobStageBlocks(job, supplier, "hdfs", rootstages, mdsroots, this.pipelineconfig);
 			}
 			var writer = new StringWriter();
 			if (Boolean.parseBoolean((String) DataSamudayaProperties.get().get(DataSamudayaConstants.GRAPHSTOREENABLE))) {
@@ -1190,13 +1196,14 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			// If ignite mode is choosen
 			boolean isignite = Objects.isNull(pipelineconfig.getMode()) ? false
 					: pipelineconfig.getMode().equals(DataSamudayaConstants.MODE_DEFAULT) ? true : false;
-			if (nonNull(pipelineconfig.getUseglobaltaskexecutors())
-					&& pipelineconfig.getUseglobaltaskexecutors()
-					&& nonNull(pipelineconfig.getIsremotescheduler())
-					&& pipelineconfig.getIsremotescheduler() 
-					&& Boolean.FALSE.equals(ismesos) 
+			boolean isjgroups = Boolean.parseBoolean(pipelineconfig.getJgroups());
+			if (nonNull(pipelineconfig.getIsremotescheduler())
+					&& pipelineconfig.getIsremotescheduler()
+					&& pipelineconfig.getCpudriver()>0
+					&& pipelineconfig.getMemorydriver()>0
+					&& ((Boolean.FALSE.equals(ismesos) 
 					&& Boolean.FALSE.equals(isyarn) 
-					&& Boolean.FALSE.equals(islocal)
+					&& Boolean.FALSE.equals(islocal)) || isjgroups)
 					&& !isignite) {
 				RemoteJobScheduler rjs = new RemoteJobScheduler();
 				return rjs.scheduleJob(job);
