@@ -2202,24 +2202,14 @@ public class Utils {
 			}
 			return 0;
 		} else if (data.get(0) instanceof DataCruncherContext dcc) {
-			Map<String, Object> mapheadervalue = (Map<String, Object>) dcc.get("Reducer").iterator().next();
-			String[] headers = mapheadervalue.keySet().toArray(new String[0]);
-			// Initialize a two-dimensional array to hold the data
-
-			// Print the table headers
-			for (String header : headers) {
-				out.printf("%-20s", header); // adjust width as needed
-			}
-			out.println();
-			Iterator<Map<String, Object>> ite = dcc.get("Reducer").iterator();
-			for (; ite.hasNext();) {
-				Map<String, Object> row = (Map<String, Object>) ite.next();
-				for (String header : headers) {
-					out.printf("%-20s", row.get(header));
-				}
-				out.println();
-			}
-			return dcc.get("Reducer").size();
+			var contexts = (List<DataCruncherContext>) data;
+			contexts.stream().forEach(context -> {
+				context.keys().stream().forEach(key -> {
+					List<Object[]> rec = (List<Object[]>) context.get(key);
+					printTable(rec, out);
+				});
+			});
+			return 1;
 		} else if (data.get(0) instanceof Double value) {
 			out.println(value);
 			return 1;

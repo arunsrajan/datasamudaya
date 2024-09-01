@@ -80,6 +80,7 @@ public class SelectQueryExecutorMR {
 
 				var builder = MapReduceApplicationSqlBuilder.newBuilder().setHdfs(DataSamudayaProperties.get()
 						.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
+						.setDb(defaultdb)
 						.setJobConfiguration(jc).setSql(selectquery);
 				for (Table table : tables) {
 					var columnMetadatas = new ArrayList<ColumnMetadata>();
