@@ -81,7 +81,6 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 	List<Path> blockpath = new ArrayList<>();
 	int totalreadsize;
 	byte[] read1byt = new byte[1];
-	int blocksize;
 	Path currentfilepath;
 	int blocklocationindex;
 	long redcount;
@@ -160,7 +159,6 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 			batchsize = Integer.parseInt(jobconf.getBatchsize());
 			numreducers = Integer.parseInt(jobconf.getNumofreducers());
 			var configuration = new Configuration();
-			blocksize = Integer.parseInt(jobconf.getBlocksize());
 			var jm = new JobMetrics();
 			jm.setJobstarttime(System.currentTimeMillis());
 			jm.setJobid(applicationid);
@@ -187,7 +185,6 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 			var mrtaskcount = 0;
 			var folderfileblocksmap = new ConcurrentHashMap<>();
 			var allfiles = new ArrayList<String>();
-			boolean isblocksuserdefined = Boolean.parseBoolean(jobconf.getIsblocksuserdefined());
 			for (var hdfsdir : hdfsdirpaths) {
 				var fileStatus = hdfs.listStatus(
 						new Path(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + hdfsdir));

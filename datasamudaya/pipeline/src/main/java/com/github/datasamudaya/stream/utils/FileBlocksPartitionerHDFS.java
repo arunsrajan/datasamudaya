@@ -20,10 +20,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,6 +52,7 @@ import com.github.datasamudaya.common.ContainerLaunchAttributes;
 import com.github.datasamudaya.common.ContainerResources;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.LaunchContainers.MODE;
 import com.github.datasamudaya.common.DataSamudayaIgniteClient;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -68,6 +72,7 @@ import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.Stage;
+import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.AbstractPipeline;
@@ -92,7 +97,7 @@ public class FileBlocksPartitionerHDFS {
 	List<String> containerswithhostport;
 	ZookeeperOperations zookeeperoperations = new ZookeeperOperations();
 
-	Boolean ismesos, isyarn, islocal, isjgroups, isblocksuserdefined, isignite;
+	Boolean ismesos, isyarn, islocal, isjgroups, isignite;
 	List<Integer> ports;
 
 	public List<ContainerResources> getTotalMemoryContainersReuseAllocation(String nodehp, int containerstoallocate) {
@@ -146,7 +151,7 @@ public class FileBlocksPartitionerHDFS {
 	 */
 	@SuppressWarnings({"rawtypes"})
 	public void getJobStageBlocks(Job job, IntSupplier supplier, String protocol, Set<Stage> rootstages,
-			Collection<AbstractPipeline> mdsroots, int blocksize, PipelineConfig pc)
+			Collection<AbstractPipeline> mdsroots, PipelineConfig pc)
 			throws PipelineException, IOException, URISyntaxException {
 		try {
 			log.debug("Partitioning of Blocks started...");
@@ -158,7 +163,6 @@ public class FileBlocksPartitionerHDFS {
 			isyarn = Boolean.parseBoolean(pc.getYarn());
 			islocal = Boolean.parseBoolean(pc.getLocal());
 			isjgroups = Boolean.parseBoolean(pc.getJgroups());
-			isblocksuserdefined = Boolean.parseBoolean(pc.getIsblocksusedefined()) || supplier != null;
 			isignite = Objects.isNull(pc.getMode()) ? false
 					: pc.getMode().equals(DataSamudayaConstants.MODE_DEFAULT) ? true : false;
 			if (Boolean.TRUE.equals(islocal) || Boolean.TRUE.equals(ismesos) || Boolean.TRUE.equals(isyarn)
@@ -197,7 +201,8 @@ public class FileBlocksPartitionerHDFS {
 					this.filepaths.addAll(newpaths);
 					job.getJm().setTotalfilesize(
 							job.getJm().getTotalfilesize() + Utils.getTotalLengthByFiles(hdfs, filepaths));
-					if (pc.getUseglobaltaskexecutors()
+					if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors() 
+							&& nonNull(pc.getTejobid())
 							&& nonNull(GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder))) {
 						Set<Path> pathtoprocess = GlobalJobFolderBlockLocations.compareCurrentPathsNewPathsAndStore(pc.getTejobid(), folder, newpaths, hdfs);
 						List<BlocksLocation> bls = GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder);
@@ -248,17 +253,25 @@ public class FileBlocksPartitionerHDFS {
 							if (supplier instanceof IntSupplier) {
 								this.supplier = supplier;
 								blocks = getHDFSParitions();
-								if (pc.getUseglobaltaskexecutors()) {
+								if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors() 
+										&& nonNull(pc.getTejobid())) {
 									GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
 									GlobalJobFolderBlockLocations.putPaths(pc.getTejobid(), folder, newpaths, hdfs);
+								} else {
+									GlobalJobFolderBlockLocations.put(job.getId(), folder, blocks);
+									GlobalJobFolderBlockLocations.putPaths(job.getId(), folder, newpaths, hdfs);
 								}
 								totalblockslocation.addAll(blocks);
 							} else {
 								// Get block if HDFS protocol.
 								blocks = getBlocks(columns);
-								if (pc.getUseglobaltaskexecutors()) {
+								if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors() 
+										&& nonNull(pc.getTejobid())) {
 									GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
 									GlobalJobFolderBlockLocations.putPaths(pc.getTejobid(), folder, newpaths, hdfs);
+								} else {
+									GlobalJobFolderBlockLocations.put(job.getId(), folder, blocks);
+									GlobalJobFolderBlockLocations.putPaths(job.getId(), folder, newpaths, hdfs);
 								}
 								totalblockslocation.addAll(blocks);
 							}
@@ -286,12 +299,29 @@ public class FileBlocksPartitionerHDFS {
 			} else if (isjgroups || !islocal && !isyarn && !ismesos) {
 				getDnXref(totalblockslocation, true);
 				if (!pc.getUseglobaltaskexecutors()) {
-					allocateContainersByResources(totalblockslocation);
+					if(isNull(pc.getTejobid())) {
+						pipelineconfig.setTejobid(job.getId());
+						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),pipelineconfig.getTejobid()
+								, pipelineconfig.getCputaskexecutor(), pipelineconfig.getMemorytaskexceutor(),
+								pipelineconfig.getNumtaskexecutors(), pipelineconfig.getCpudriver(),
+								pipelineconfig.getMemorydriver(), false);
+					}					
+					getContainersGlobal();
 					allocateContainersLoadBalanced(totalblockslocation);
 				} else {
+					boolean isteidnull = false;
+					if(isNull(pc.getTejobid())) {
+						isteidnull = true;
+						pipelineconfig.setTejobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
+						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),pipelineconfig.getTejobid()
+								, pipelineconfig.getCputaskexecutor(), pipelineconfig.getMemorytaskexceutor(),
+								pipelineconfig.getNumtaskexecutors(), pipelineconfig.getCpudriver(),
+								pipelineconfig.getMemorydriver(), false);
+					}
 					getContainersGlobal();
-					for (String foldertolb :folderstolbcontainers) {
-						allocateContainersLoadBalanced(GlobalJobFolderBlockLocations.get(pc.getTejobid(), foldertolb));
+					for (String foldertolb : folderstolbcontainers) {
+						allocateContainersLoadBalanced(GlobalJobFolderBlockLocations.get(isteidnull?job.getId():pc.getTejobid()
+								,foldertolb));
 					}
 				}
 				job.getJm().setNodes(nodeschoosen);
@@ -303,7 +333,7 @@ public class FileBlocksPartitionerHDFS {
 				if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
 					try(ZookeeperOperations zo=new ZookeeperOperations();){
 						zo.connect();
-						containers = zo.getTaskExectorsByJobId(pipelineconfig.getTejobid());
+						getYarnContainers(zo);
 						allocateContainersLoadBalanced(totalblockslocation);
 					}
 				}
@@ -323,6 +353,150 @@ public class FileBlocksPartitionerHDFS {
 		}
 	}
 
+	/**
+	 * Get Yarn Containers Launched through YARN Node Manager
+	 * @param zo
+	 * @throws Exception
+	 */
+	public void getYarnContainers(ZookeeperOperations zo) throws Exception {
+		containers = zo.getTaskExectorsByJobId(pipelineconfig.getTejobid());
+		List<LaunchContainers> lcsl = new ArrayList<>();
+		if (pipelineconfig.getIsremotescheduler()) {			
+			List<String> drivers = zo.getDriversByJobId(pipelineconfig.getTejobid());
+			containers.add(0, drivers.get(0));
+			Map<String, Set<String>> hosthpsmap = containers.stream()
+					.collect(Collectors.groupingBy(crhp -> crhp.split(DataSamudayaConstants.UNDERSCORE)[0],
+							() -> new LinkedHashMap<>(),
+							Collectors.mapping(crhp -> crhp, Collectors.toCollection(LinkedHashSet::new))));
+			List<Integer> portnodeselected = new ArrayList<>();
+			Random rand = new Random(System.currentTimeMillis());
+			Boolean isdriverselected = false;
+			for (Entry<String, Set<String>> hosthpsentry : hosthpsmap.entrySet()) {
+				int nodeportselected = rand.nextInt(65534);
+				while (portnodeselected.contains(nodeportselected)) {
+					nodeportselected = rand.nextInt(65534);
+				}
+				portnodeselected.add(nodeportselected);
+				if (!isdriverselected) {
+					LaunchContainers lcs = new LaunchContainers();
+					lcs.setJobid(job.getId());
+					lcs.setMode(MODE.NORMAL);
+					ContainerLaunchAttributes cla = new ContainerLaunchAttributes();
+					cla.setNumberofcontainers(1);
+					Iterator<String> ports = hosthpsentry.getValue().iterator();
+					ContainerResources crs = new ContainerResources();
+					String hp = ports.next();
+					String[] hpa = hp.split(DataSamudayaConstants.UNDERSCORE);
+					crs.setCpu(2);
+					crs.setPort(Integer.parseInt(hpa[1]));
+					crs.setGctype(pipelineconfig.getGctype());
+					crs.setExecutortype(EXECUTORTYPE.DRIVER);
+					cla.setCr(Arrays.asList(crs));
+					lcs.setCla(cla);
+					lcs.setNodehostport(hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
+					job.setDriver(lcs);
+					isdriverselected = true;
+					if (ports.hasNext()) {
+						lcs = new LaunchContainers();
+						lcsl.add(lcs);
+						lcs.setJobid(job.getId());
+						lcs.setMode(MODE.NORMAL);
+						cla = new ContainerLaunchAttributes();
+						cla.setNumberofcontainers(hosthpsentry.getValue().size() - 1);
+						lcs.setCla(cla);
+						cla.setCr(new ArrayList<>());
+						lcs.setNodehostport(
+								hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
+						for (; ports.hasNext();) {
+							crs = new ContainerResources();
+							hp = ports.next();
+							hpa = hp.split(DataSamudayaConstants.UNDERSCORE);
+							crs.setCpu(2);
+							crs.setPort(Integer.parseInt(hpa[1]));
+							crs.setGctype(pipelineconfig.getGctype());
+							crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
+							cla.getCr().add(crs);
+						}
+					}
+				} else {
+					Iterator<String> ports = hosthpsentry.getValue().iterator();
+					if (ports.hasNext()) {
+						LaunchContainers lcs = new LaunchContainers();
+						lcsl.add(lcs);
+						lcs.setJobid(job.getId());
+						lcs.setMode(MODE.NORMAL);
+						ContainerLaunchAttributes cla = new ContainerLaunchAttributes();
+						cla.setNumberofcontainers(hosthpsentry.getValue().size());
+						lcs.setCla(cla);
+						cla.setCr(new ArrayList<>());
+						lcs.setNodehostport(
+								hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
+						for (; ports.hasNext();) {
+							ContainerResources crs = new ContainerResources();
+							String hp = ports.next();
+							String[] hpa = hp.split(DataSamudayaConstants.UNDERSCORE);
+							crs.setCpu(2);
+							crs.setPort(Integer.parseInt(hpa[1]));
+							crs.setGctype(pipelineconfig.getGctype());
+							crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
+							cla.getCr().add(crs);
+						}
+					}					
+				}
+			}
+			job.setLcs(lcsl);
+			// Get containers
+			containers = job.getLcs().stream().flatMap(lc -> {
+				var host = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);
+				return lc.getCla().getCr().stream().map(cr -> {
+					return host[0] + DataSamudayaConstants.UNDERSCORE + cr.getPort();
+				}).collect(Collectors.toList()).stream();
+			}).collect(Collectors.toList());
+		} else {
+			Map<String, Set<String>> hosthpsmap = containers.stream()
+					.collect(Collectors.groupingBy(crhp -> crhp.split(DataSamudayaConstants.UNDERSCORE)[0],
+							() -> new LinkedHashMap<>(),
+							Collectors.mapping(crhp -> crhp, Collectors.toCollection(LinkedHashSet::new))));
+			List<Integer> portnodeselected = new ArrayList<>();
+			Random rand = new Random(System.currentTimeMillis());
+			for (Entry<String, Set<String>> hosthpsentry : hosthpsmap.entrySet()) {
+				Iterator<String> ports = hosthpsentry.getValue().iterator();
+				if (ports.hasNext()) {
+					LaunchContainers lcs = new LaunchContainers();
+					lcsl.add(lcs);
+					lcs.setJobid(job.getId());
+					lcs.setMode(MODE.NORMAL);
+					ContainerLaunchAttributes cla = new ContainerLaunchAttributes();
+					cla.setNumberofcontainers(hosthpsentry.getValue().size());
+					lcs.setCla(cla);
+					cla.setCr(new ArrayList<>());
+					int nodeportselected = rand.nextInt(65534);
+					while (portnodeselected.contains(nodeportselected)) {
+						nodeportselected = rand.nextInt(65534);
+					}
+					portnodeselected.add(nodeportselected);
+					lcs.setNodehostport(
+							hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
+					for (; ports.hasNext();) {
+						ContainerResources crs = new ContainerResources();
+						String hp = ports.next();
+						String[] hpa = hp.split(DataSamudayaConstants.UNDERSCORE);
+						crs.setCpu(2);
+						crs.setPort(Integer.parseInt(hpa[1]));
+						crs.setGctype(pipelineconfig.getGctype());
+						crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
+						cla.getCr().add(crs);
+					}
+				}
+			}
+			job.setLcs(lcsl);
+		}
+		job.setTaskexecutors(containers);
+		// Get nodes
+		job.setNodes(job.getLcs().stream().map(lc -> lc.getNodehostport()).collect(Collectors.toSet()));
+		setContainerResources();
+
+	}
 
 	/**
 	 * The blocks data is fetched from hdfs and caches in Ignite Server
@@ -490,7 +664,9 @@ public class FileBlocksPartitionerHDFS {
 	protected void allocateContainersLoadBalanced(List<BlocksLocation> bls) throws PipelineException {
 		log.debug("Entered FileBlocksPartitionerHDFS.getContainersBalanced");
 		var hostcontainermap = containers.stream()
-				.collect(Collectors.groupingBy(key -> key.split(DataSamudayaConstants.UNDERSCORE)[0],
+				.collect(Collectors.groupingBy(key -> pipelineconfig.getIspodcidrtonodemappingenabled()?
+						Utils.getNodeIPByPodIP(key.split(DataSamudayaConstants.UNDERSCORE)[0]).get()
+						:key.split(DataSamudayaConstants.UNDERSCORE)[0],
 						Collectors.mapping(container -> container, Collectors.toCollection(ArrayList::new))));
 		var containerallocatecount = (Map<String, Long>) containers.stream()
 				.collect(Collectors.toMap(container -> container, container -> 0l, (val1, val2)->val1+val2));
@@ -553,7 +729,8 @@ public class FileBlocksPartitionerHDFS {
 		if (issa) {
 			resources = DataSamudayaNodesResources.get();
 			// Obtain all the nodes.
-			var computingnodes = resources.keySet().stream().map(node -> node.split(DataSamudayaConstants.UNDERSCORE)[0])
+			var computingnodes = resources.keySet().stream().map(node -> pipelineconfig.getIspodcidrtonodemappingenabled()?Utils.getNodeIPByPodIP(node.split(DataSamudayaConstants.UNDERSCORE)[0]).get():
+					node.split(DataSamudayaConstants.UNDERSCORE)[0])
 					.collect(Collectors.toList());
 			// Iterate the blocks location and assigned the balanced allocated datanode
 			// hostport to blocks
@@ -776,15 +953,24 @@ public class FileBlocksPartitionerHDFS {
 	 */
 	protected void getContainersGlobal() {
 		job.setLcs(GlobalContainerLaunchers.get(pipelineconfig.getUser(), pipelineconfig.getTejobid()));
-		job.setId(pipelineconfig.getJobid());
 		// Get containers
 		LaunchContainers launchcontainer = job.getLcs().get(0);
 		ContainerResources continerresources = launchcontainer.getCla().getCr().get(0);
 		if(continerresources.getExecutortype() == EXECUTORTYPE.DRIVER) {
 			if(launchcontainer.getCla().getCr().size()>1) {
-				launchcontainer.getCla().getCr().remove(0);
+				LaunchContainers lcs = new LaunchContainers();
+				lcs.setAppid(launchcontainer.getAppid());
+				lcs.setJobid(launchcontainer.getJobid());
+				lcs.setMode(launchcontainer.getMode());
+				ContainerLaunchAttributes cla = new ContainerLaunchAttributes();
+				cla.setNumberofcontainers(1);
+				cla.setCr(Arrays.asList(launchcontainer.getCla().getCr().remove(0)));
+				lcs.setCla(cla);
+				lcs.setNodehostport(launchcontainer.getNodehostport());
+				job.setDriver(lcs);
 			} else {
-				job.getLcs().remove(0);
+				launchcontainer = job.getLcs().remove(0);
+				job.setDriver(launchcontainer);
 			}
 		}
 		containers = job.getLcs().stream().flatMap(lc -> {

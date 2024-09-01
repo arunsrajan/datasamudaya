@@ -70,14 +70,9 @@ public class TaskSchedulerReducerSubmitter
 		objects.add(rv);
 		objects.add(applicationid);
 		objects.add(taskid);
-		objects.add(executorid);
-		var baos = new ByteArrayOutputStream();
-		var output = new Output(baos);
-		Utils.getKryoInstance().writeClassAndObject(output, objects);
-		output.flush();
-		output.close();
+		objects.add(executorid);		
 		log.debug("Submitting Reducer Task: " + objects);
-		return (Context) Utils.getResultObjectByInput(hp, baos.toByteArray(), executorid);
+		return (Context) Utils.getResultObjectByInput(hp, objects, executorid);
 
 	}
 

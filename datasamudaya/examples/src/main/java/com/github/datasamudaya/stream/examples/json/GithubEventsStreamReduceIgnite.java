@@ -16,7 +16,7 @@ public class GithubEventsStreamReduceIgnite implements Serializable, Pipeline {
 	private final Logger log = Logger.getLogger(GithubEventsStreamReduceIgnite.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");

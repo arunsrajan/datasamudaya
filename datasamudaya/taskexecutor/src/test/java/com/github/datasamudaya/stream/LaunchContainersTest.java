@@ -64,7 +64,6 @@ public class LaunchContainersTest extends StreamPipelineBaseTestCommon {
 		pc.setYarn("false");
 		pc.setIsremotescheduler(false);
 		pc.setOutput(System.out);
-		pc.setIsblocksuserdefined("true");
 		pc.setBlocksize("64");
 		pc.setMode(DataSamudayaConstants.MODE_NORMAL);
 		pc.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
@@ -92,7 +91,6 @@ public class LaunchContainersTest extends StreamPipelineBaseTestCommon {
 		pc.setMesos("false");
 		pc.setYarn("false");
 		pc.setOutput(System.out);
-		pc.setIsblocksuserdefined("true");
 		pc.setIsremotescheduler(false);
 		pc.setBlocksize("64");
 		pc.setMode(DataSamudayaConstants.MODE_NORMAL);

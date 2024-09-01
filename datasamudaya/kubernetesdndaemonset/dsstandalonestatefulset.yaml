@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: datasamudayazk
+  labels:
+    app: datasamudayazk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datasamudayazk
+  template:
+    metadata:
+      labels:
+        app: datasamudayazk
+    spec:
+      containers:
+        - name: datasamudayazk
+          image: arunsrajan/datasamudayazk:latest  
+          resources:
+              requests:
+                memory: "64Mi"
+                cpu: "1"
+              limits:
+                memory: "1024Mi"
+                cpu: "1"          
+          ports:
+            - containerPort: 2181
+              name: zkport
+          volumeMounts:
+            - name: hdfsdatanode
+              mountPath: /opt/dockershare/data
+  volumeClaimTemplates:
+        - metadata:
+            name: hdfsdatanode
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: datasamudayastandalone
+  labels:
+    app: datasamudayastandalone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datasamudayastandalone
+  template:
+    metadata:
+      labels:
+        app: datasamudayastandalone
+    spec:
+      containers:
+        - name: datasamudayastandalone
+          image: arunsrajan/datasamudayastandalone:latest
+          resources:
+              requests:
+                memory: "64Mi"
+                cpu: "3"
+              limits:
+                memory: "2048Mi"
+                cpu: "3"
+          env:
+            - name: NAMENODEURL
+              value: hdfs://namenode:9000
+            - name: PODCIDRNODEMAPPINGENABLED
+              value: "true"
+            - name: DATASAMUDAYA_HOME
+              value: /opt/datasamudaya
+            - name: ZKHOSTPORT
+              value: zoo:2181
+            - name: TEHOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: TEPORT
+              value: "10101"
+            - name: NODEPORT
+              value: "12121"
+            - name: TSSHOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: TSSPORT
+              value: "22222"
+            - name: TSHOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: TSPORT
+              value: "11111"
+          ports:
+            - containerPort: 22222
+              name: streamproto
+            - containerPort: 22223
+              name: streamweb
+            - containerPort: 11111
+              name: mrproto
+            - containerPort: 11112
+              name: mrweb
+            - containerPort: 12123
+              name: sqlstream
+            - containerPort: 12124
+              name: sqlshell
+            - containerPort: 11123
+              name: pigshell
+          volumeMounts:
+            - name: hdfsdatanode
+              mountPath: /opt/dockershare/data
+  volumeClaimTemplates:
+        - metadata:
+            name: hdfsdatanode
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi

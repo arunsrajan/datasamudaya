@@ -25,6 +25,7 @@ import java.rmi.registry.Registry;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,7 +42,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -56,13 +56,14 @@ import com.github.datasamudaya.common.JobConfigurationBuilder;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.StreamDataCruncher;
+import com.github.datasamudaya.common.TaskExecutorShutdown;
 import com.github.datasamudaya.common.utils.HadoopTestUtilities;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.tasks.executor.NodeRunner;
 
 public class MassiveDataMRJobBase {
-
+	static ConcurrentMap<String, Map<String, Process>> containerprocesses = new ConcurrentHashMap<>();
 	static Logger log = Logger.getLogger(MassiveDataMRJobBase.class);
 	static String teappid;
 	static String appid;
@@ -117,7 +118,6 @@ public class MassiveDataMRJobBase {
 		try {
 			System.setProperty("HIBCFG", "../config/datasamudayahibernate.cfg.xml");
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
-			PropertyConfigurator.configure("./config/log4j.properties");
 			Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
 			StaticComponentContainer.Modules.exportAllToAll();
@@ -136,7 +136,6 @@ public class MassiveDataMRJobBase {
 			executorpool = Executors.newWorkStealingPool();
 			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.rescheduledelay"));
 			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.initialdelay"));
-			Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.pingdelay"));
 			String host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskscheduler.host"));
 			port = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskscheduler.port"));
 			Configuration configuration = new Configuration();
@@ -145,8 +144,7 @@ public class MassiveDataMRJobBase {
 			log.info("HDFS FileSystem Object: " + hdfs);
 			if (numberofnodes > 0 && !issetupdone) {
 				port = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
-				int executorsindex = 0;
-				ConcurrentMap<String, Map<String, Process>> containerprocesses = new ConcurrentHashMap<>();
+				int executorsindex = 0;				
 				ConcurrentMap<String, Map<String, List<Thread>>> containeridthreads = new ConcurrentHashMap<>();
 				ExecutorService es = Executors.newWorkStealingPool();
 				var containeridports = new ConcurrentHashMap<String, List<Integer>>();
@@ -174,6 +172,9 @@ public class MassiveDataMRJobBase {
 							new StreamDataCruncher() {
 								public Object postObject(Object object) throws RemoteException {
 									try {
+										if(object instanceof byte[] bytdata) {
+											object = Utils.convertBytesToObjectCompressed(bytdata, null);
+										}										
 										var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
 												containerprocesses, hdfs, containeridthreads, containeridports,
 												object, zo);
@@ -244,9 +245,37 @@ public class MassiveDataMRJobBase {
 		if (nonNull(hdfsLocalCluster)) {
 			hdfsLocalCluster.close();
 		}
-		Utils.destroyContainers("arun", teappid);
 		executorpool.shutdown();
 		testingserver.stop();
 		testingserver.close();
+		containerprocesses.keySet().stream().forEach(key -> {
+			containerprocesses.get(key).keySet().stream().forEach(port -> {
+				Process proc = containerprocesses.get(key).get(port);
+				if (Objects.nonNull(proc)) {
+					log.info("In DC else Destroying the Container Process: " + proc);
+					try {
+						TaskExecutorShutdown taskExecutorshutdown = new TaskExecutorShutdown();
+						log.info("Destroying the TaskExecutor: "
+								+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
+								+ DataSamudayaConstants.UNDERSCORE + port);
+						Utils.getResultObjectByInput(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
+								+ DataSamudayaConstants.UNDERSCORE + port, taskExecutorshutdown, key);
+						log.info("Checking the Process is Alive for: "
+								+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
+								+ DataSamudayaConstants.UNDERSCORE + port);
+						while (proc.isAlive()) {
+							log.info("Destroying the TaskExecutor: "
+									+ DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
+									+ DataSamudayaConstants.UNDERSCORE + port);
+							Thread.sleep(500);
+						}
+						log.info("Process Destroyed: " + proc + " for the port " + port);
+					} catch (Exception ex) {
+						log.error("Destroy failed for the process: " + proc);
+					}
+				}
+			});
+		});
+		ByteBufferPoolDirect.destroyPool();
 	}
 }

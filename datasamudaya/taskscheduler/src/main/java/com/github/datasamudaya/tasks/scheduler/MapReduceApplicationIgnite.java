@@ -89,7 +89,6 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 	List<Path> blockpath = new ArrayList<>();
 	int totalreadsize;
 	byte[] read1byt = new byte[1];
-	int blocksize;
 	Path currentfilepath;
 	int blocklocationindex;
 	long redcount;
@@ -128,7 +127,6 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			batchsize = Integer.parseInt(jobconf.getBatchsize());
 			numreducers = Integer.parseInt(jobconf.getNumofreducers());
 			var configuration = new Configuration();
-			blocksize = Integer.parseInt(jobconf.getBlocksize());
 			hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
 
@@ -161,7 +159,6 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			var datasamudayamcs = new ArrayList<IgniteMapperCombiner>();
 			var allfiles = new ArrayList<String>();
 			var folderfileblocksmap = new ConcurrentHashMap<>();
-			boolean isblocksuserdefined = Boolean.parseBoolean(jobconf.getIsblocksuserdefined());
 			for (var hdfsdir : hdfsdirpaths) {
 				var fileStatus = hdfs.listStatus(
 						new Path(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + hdfsdir));

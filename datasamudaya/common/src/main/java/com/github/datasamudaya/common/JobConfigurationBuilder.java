@@ -27,19 +27,12 @@ public class JobConfigurationBuilder {
 	String tsport;
 	String zkport;
 	String zkretrydelay;
-	String tspingdelay;
-	String tsrescheduledelay;
-	String tsinitialdelay;
-	String tepingdelay;
-	Boolean hdfs;
-	String blocksize;
 	String batchsize;
 	String numofreducers;
 	String minmem;
 	String maxmem;
 	String gctype;
 	String numberofcontainers;
-	String isblocksuserdefined;
 	String execmode;
 	String taskexeccount;
 	String ignitehp;
@@ -64,12 +57,6 @@ public class JobConfigurationBuilder {
 		tsport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PORT);
 		zkport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_HOSTPORT);
 		zkretrydelay = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_RETRYDELAY);
-		tspingdelay = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PINGDELAY);
-		tsrescheduledelay = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_RESCHEDULEDELAY);
-		tsinitialdelay = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_INITIALDELAY);
-		tepingdelay = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_PINGDELAY);
-		hdfs = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_ISHDFS));
-		blocksize = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_BLOCKSIZE);
 		batchsize = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_BATCHSIZE);
 		numofreducers = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_NUMREDUCERS);
 		maxmem = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.MAXMEMORY, DataSamudayaConstants.CONTAINER_MAXMEMORY_DEFAULT);
@@ -77,7 +64,6 @@ public class JobConfigurationBuilder {
 		gctype = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.GCCONFIG, DataSamudayaConstants.GCCONFIG_DEFAULT);
 		numberofcontainers = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS,
 				DataSamudayaConstants.NUMBEROFCONTAINERS_DEFAULT);
-		isblocksuserdefined = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ISUSERDEFINEDBLOCKSIZE, DataSamudayaConstants.ISUSERDEFINEDBLOCKSIZE_DEFAULT);
 		execmode = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.EXECMODE, DataSamudayaConstants.EXECMODE_DEFAULT);
 		taskexeccount = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.EXECUTIONCOUNT, DataSamudayaConstants.EXECUTIONCOUNT_DEFAULT);
 		ignitehp = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.IGNITEHOSTPORT, DataSamudayaConstants.IGNITEHOSTPORT_DEFAULT);
@@ -127,36 +113,6 @@ public class JobConfigurationBuilder {
 		return this;
 	}
 
-	public JobConfigurationBuilder setTspingdelay(String tspingdelay) {
-		this.tspingdelay = tspingdelay;
-		return this;
-	}
-
-	public JobConfigurationBuilder setTsrescheduledelay(String tsrescheduledelay) {
-		this.tsrescheduledelay = tsrescheduledelay;
-		return this;
-	}
-
-	public JobConfigurationBuilder setTsinitialdelay(String tsinitialdelay) {
-		this.tsinitialdelay = tsinitialdelay;
-		return this;
-	}
-
-	public JobConfigurationBuilder setTepingdelay(String tepingdelay) {
-		this.tepingdelay = tepingdelay;
-		return this;
-	}
-
-	public JobConfigurationBuilder setHdfs(Boolean hdfs) {
-		this.hdfs = hdfs;
-		return this;
-	}
-
-	public JobConfigurationBuilder setBlocksize(String blocksize) {
-		this.blocksize = blocksize;
-		return this;
-	}
-
 	public JobConfigurationBuilder setBatchsize(String batchsize) {
 		this.batchsize = batchsize;
 		return this;
@@ -201,12 +157,6 @@ public class JobConfigurationBuilder {
 
 	public String getNumberofcontainers() {
 		return numberofcontainers;
-	}
-
-
-	public JobConfigurationBuilder setIsblocksuserdefined(String isblocksuserdefined) {
-		this.isblocksuserdefined = isblocksuserdefined;
-		return this;
 	}
 
 	public JobConfigurationBuilder setNumberofcontainers(String numberofcontainers) {

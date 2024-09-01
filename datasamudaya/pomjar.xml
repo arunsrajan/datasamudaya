@@ -497,6 +497,11 @@
 		    <version>1.5.3</version>
 		</dependency>
 
+		<dependency>
+	      <groupId>io.fabric8</groupId>
+	      <artifactId>kubernetes-client</artifactId>
+	      <version>4.11.1</version>
+	    </dependency>
 
 	</dependencies>
 	<build>
@@ -547,11 +552,15 @@
 									<fileset dir="dockerdatasamudayastandalone" includes="entry.sh" />
 									<fileset dir="dockerdatasamudayastandalone"
 										includes="standalone.sh" />
+									<fileset dir="dockerdatasamudayastandalone"
+										includes="entrywithoutdn.sh" />
 								</copy>
 								<copy todir="target/datasamudayacontainer">
 									<fileset dir="dockerdatasamudayacontainer" includes="entry.sh" />
 									<fileset dir="dockerdatasamudayacontainer"
 										includes="container.sh" />
+									<fileset dir="dockerdatasamudayacontainer"
+										includes="entrywithoutdn.sh" />
 								</copy>
 								<fixcrlf srcdir="target/unpack/opt/datasamudaya" eol="unix"
 									includes="**/*.sh" />
@@ -765,7 +774,7 @@
 						<version>3.2.0</version>
 						<executions>
 							<execution>
-								<id>buildstandalone</id>
+								<id>buildstandalonewithdatanode</id>
 								<phase>package</phase>
 								<goals>
 									<goal>dockerBuild</goal>
@@ -776,7 +785,7 @@
 										<image>bde2020/hadoop-datanode</image>
 									</from>
 									<to>
-										<image>arunsrajan/datasamudayastandalone</image>
+										<image>arunsrajan/datasamudayastandalonedn</image>
 										<tags>
 											<tag>latest</tag>
 										</tags>
@@ -851,10 +860,82 @@
 									</container>
 								</configuration>
 							</execution>
+							
+							<execution>
+								<id>buildstandalone</id>
+								<phase>package</phase>
+								<goals>
+									<goal>dockerBuild</goal>
+								</goals>
+								<configuration>
+									<containerizingMode>exploded</containerizingMode>
+									<from>
+										<image>centos:latest</image>
+									</from>
+									<to>
+										<image>arunsrajan/datasamudayastandalone</image>
+										<tags>
+											<tag>latest</tag>
+										</tags>
+									</to>
+									<extraDirectories>
+										<paths>
+											<path>
+												<from>target/unpack</from>
+												<into>/</into>
+											</path>
+											<path>
+												<from>target/datasamudayastandalone</from>
+												<into>/</into>
+												<includes>entrywithoutdn.sh</includes>
+											</path>
+											<path>
+												<from>dockerdatasamudayastandalone</from>
+												<into>/opt/datasamudaya/config</into>
+												<includes>datasamudaya.properties</includes>
+											</path>											
+											<path>
+												<from>target/datasamudayastandalone</from>
+												<into>/opt/datasamudaya/sbin</into>
+												<includes>standalone.sh</includes>
+											</path>
+										</paths>
+										<permissions>
+											<permission>
+												<file>/opt/datasamudaya/sbin/*</file>
+												<mode>777</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+											</permission>
+											<permission>
+												<file>/entrywithoutdn.sh</file>
+												<mode>777</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+											</permission>
+											<permission>
+												<file>/usr/local/java/jdk-21.0.2/**/**</file>
+												<mode>755</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+											</permission>											
+										</permissions>
+									</extraDirectories>
+									<container>
+										<environment>
+											<CORE_CONF_fs_defaultFS>hdfs://namenode:9000</CORE_CONF_fs_defaultFS>
+											<HDFS_CONF_dfs_datanode_data_dir>file:///opt/dockershare/data</HDFS_CONF_dfs_datanode_data_dir>
+										</environment>
+										<volumes>
+											/opt/dockershare/data
+										</volumes>
+										<entrypoint>
+										    <arg>bash</arg>
+										    <arg>-ex</arg>
+											<arg>/entrywithoutdn.sh</arg>
+										</entrypoint>
+										<format>Docker</format>
+									</container>
+								</configuration>
+							</execution>
 
 
 							<execution>
-								<id>buildcontainer</id>
+								<id>buildcontainerwithdatanode</id>
 								<phase>package</phase>
 								<goals>
 									<goal>dockerBuild</goal>
@@ -865,7 +946,7 @@
 										<image>bde2020/hadoop-datanode</image>
 									</from>
 									<to>
-										<image>arunsrajan/datasamudayacontainer</image>
+										<image>arunsrajan/datasamudayacontainerdn</image>
 										<tags>
 											<tag>latest</tag>
 										</tags>
@@ -935,6 +1016,86 @@
 											<arg>bash</arg>
 										    <arg>-ex</arg>
 											<arg>/entry.sh</arg>
+										</entrypoint>
+										<format>Docker</format>
+									</container>
+								</configuration>
+							</execution>
+							
+							<execution>
+								<id>buildcontainer</id>
+								<phase>package</phase>
+								<goals>
+									<goal>dockerBuild</goal>
+								</goals>
+								<configuration>
+									<containerizingMode>exploded</containerizingMode>
+									<from>
+										<image>centos:latest</image>
+									</from>
+									<to>
+										<image>arunsrajan/datasamudayacontainer</image>
+										<tags>
+											<tag>latest</tag>
+										</tags>
+									</to>
+									<extraDirectories>
+										<paths>
+											<path>
+												<from>target/unpack</from>
+												<into>/</into>
+											</path>
+											<path>
+												<from>dockerdatasamudayacontainer</from>
+												<into>/opt/datasamudaya/config</into>
+												<includes>datasamudaya.properties</includes>
+											</path>
+											<path>
+												<from>target/datasamudayacontainer</from>
+												<into>/</into>
+												<includes>entrywithoutdn.sh</includes>
+											</path>
+											<path>
+												<from>target/datasamudayacontainer</from>
+												<into>/opt/datasamudaya/sbin</into>
+												<includes>container.sh</includes>
+											</path>
+										</paths>
+										<permissions>
+											<permission>
+												<file>/opt/datasamudaya/sbin/*</file>
+												<mode>777</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+											</permission>
+											<permission>
+												<file>/entrywithoutdn.sh</file>
+												<mode>777</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+											</permission>
+											<permission>
+												<file>/usr/local/java/jdk-21.0.2/**/**</file>
+												<mode>755</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+											</permission>
+											<permission>
+												<file>/etc/hadoop/**/**</file>
+												<mode>777</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+											</permission>
+											<permission>
+												<file>/opt/hadoop-3.2.1/**/**</file>
+												<mode>777</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+											</permission>
+										</permissions>
+									</extraDirectories>
+									<container>
+										<environment>
+											<CORE_CONF_fs_defaultFS>hdfs://namenode:9000</CORE_CONF_fs_defaultFS>
+											<HDFS_CONF_dfs_datanode_data_dir>file:///opt/dockershare/data</HDFS_CONF_dfs_datanode_data_dir>
+										</environment>
+										<volumes>
+											/opt/dockershare/data
+										</volumes>
+										<entrypoint>
+											<arg>bash</arg>
+										    <arg>-ex</arg>
+											<arg>/entrywithoutdn.sh</arg>
 										</entrypoint>
 										<format>Docker</format>
 									</container>

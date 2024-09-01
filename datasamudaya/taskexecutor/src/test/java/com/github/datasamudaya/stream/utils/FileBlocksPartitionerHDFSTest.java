@@ -141,7 +141,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		fbp.isblocksuserdefined = true;
+		
 		fbp.isyarn = false;
 		fbp.ismesos = false;
 		fbp.islocal = false;
@@ -168,7 +168,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		fbp.isblocksuserdefined = true;
+		
 		fbp.isyarn = false;
 		fbp.ismesos = false;
 		fbp.islocal = false;
@@ -193,7 +193,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		fbp.isblocksuserdefined = true;
+		
 		fbp.isyarn = false;
 		fbp.ismesos = false;
 		fbp.islocal = false;
@@ -214,7 +214,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		fbp.isblocksuserdefined = false;
+		
 		List<BlocksLocation> bls = fbp.getBlocks(null);
 		ConcurrentMap<String, Resources> noderesourcesmap = new ConcurrentHashMap<>();
 		Resources resource = new Resources();
@@ -242,7 +242,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		fbp.isblocksuserdefined = false;
+		
 		List<BlocksLocation> bls = fbp.getBlocks(null);
 		ConcurrentMap<String, Resources> noderesourcesmap = new ConcurrentHashMap<>();
 		Resources resource = new Resources();
@@ -286,7 +286,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		fbp.isblocksuserdefined = false;
+		
 		fbp.hdfs = hdfs;
 		List<BlocksLocation> bls = fbp.getBlocks(null);
 		fbp.getDnXref(bls, false);
@@ -317,7 +317,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 			fbp.hdfs = hdfs;
 			FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
-			fbp.isblocksuserdefined = false;
+			
 			fbp.hdfs = hdfs;
 			fbp.filepaths = Arrays.asList(paths);
 			List<BlocksLocation> bls = fbp.getBlocks(null);
@@ -355,7 +355,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.hdfs = hdfs;
-		fbp.isblocksuserdefined = true;
+		
 		fbp.filepaths = Arrays.asList(paths);
 		List<BlocksLocation> bls = fbp.getBlocks(null);
 		fbp.getDnXref(bls, false);

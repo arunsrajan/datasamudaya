@@ -149,7 +149,6 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		log.info("FileBlocksPartitionerHDFSMultipleNodesTest.testGetNodesResourcesSortedAuto() Entered------------------------------");
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.hdfs = hdfs;
-		fbp.isblocksuserdefined = false;
 		fbp.job = new Job();
 		Map<String, Long> nodestotalblockmem = new ConcurrentHashMap<>();
 		fbp.getDnXref(bls, false);
@@ -165,7 +164,6 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 		fbp.hdfs = hdfs;
 		fbp.filepaths = Arrays.asList(paths);
-		fbp.isblocksuserdefined = false;
 		fbp.pipelineconfig = new PipelineConfig();
 		fbp.pipelineconfig.setMaxmem("2048");
 		fbp.pipelineconfig.setNumberofcontainers("2");
@@ -200,7 +198,6 @@ public class FileBlocksPartitionerHDFSMultipleNodesTest extends StreamPipelineBa
 		fbp.job.setJm(new JobMetrics());
 		fbp.isignite = false;
 		fbp.filepaths = Arrays.asList(paths);
-		fbp.isblocksuserdefined = false;
 		fbp.hdfs = hdfs;
 		fbp.getDnXref(bls, false);
 		fbp.allocateContainersByResources(bls);

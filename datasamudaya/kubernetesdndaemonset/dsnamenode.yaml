@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: datasamudayanamenode
+  labels:
+    app: datasamudaya
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datasamudayanamenode
+  template:
+    metadata:
+      labels:
+        app: datasamudayanamenode
+    spec:
+      containers:
+        - name: datasamudayanamenode
+          image: bde2020/hadoop-namenode:latest
+          env:
+            - name: CORE_CONF_fs_defaultFS
+              value: hdfs://namenode:9000
+            - name: HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check
+              value: "false"
+            - name: HDFS_CONF_dfs_namenode_name_dir
+              value: /opt/dockershare/name
+            - name: CLUSTER_NAME
+              value: hadooptest
+          ports:
+            - containerPort: 9870
+              name: web
+            - containerPort: 9000
+              name: namenode
+          volumeMounts:
+            - name: hdfsnamenode
+              mountPath: /opt/dockershare/name
+  volumeClaimTemplates:
+        - metadata:
+            name: hdfsnamenode
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi

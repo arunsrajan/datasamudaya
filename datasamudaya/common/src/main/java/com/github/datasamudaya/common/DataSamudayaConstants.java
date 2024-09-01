@@ -38,7 +38,7 @@ public class DataSamudayaConstants {
 	public static final String COMMA = ",";
 	public static final String SINGLE_QUOTES = "'";
 	public static final String SINGLESPACE = " ";
-	static final String CLASS = "class";
+	public static final String CLASS = "class";
 	public static final String NULL = "null";
 	public static final String NULLSTRING = null;
 
@@ -116,22 +116,12 @@ public class DataSamudayaConstants {
 	public static final String DATABLOCK_EXCEPTION = "Unable to get Next Located Block";
 	public static final String TSEXCEEDEDEXECUTIONCOUNT =
 			"Tasks Execution Count Exceeded (Max Execution Count = 3)";
-
-	public static final String TASKSCHEDULER_INITIALDELAY = "taskscheduler.initialdelay";
-	public static final String TASKSCHEDULER_RESCHEDULEDELAY = "taskscheduler.rescheduledelay";
-	public static final String TASKSCHEDULER_PINGDELAY = "taskscheduler.pingdelay";
+	
 	public static final String TASKSCHEDULER_HOST = "taskscheduler.host";
 	public static final String TASKSCHEDULER_PORT = "taskscheduler.port";
-	public static final String TASKSCHEDULER_ISHDFS = "taskscheduler.ishdfs";
-	public static final String TASKSCHEDULER_BLOCKSIZE = "taskscheduler.blocksize";
 	public static final String TASKSCHEDULER_BATCHSIZE = "taskscheduler.batchsize";
 	public static final String TASKSCHEDULER_NUMREDUCERS = "taskscheduler.numreducers";
 	public static final String TASKSCHEDULER_TMP_DIR = "taskscheduler.temp.dir";
-	public static final String TASKSCHEDULERSTREAM_INITIALDELAY = "taskschedulerstream.initialdelay";
-	public static final String TASKSCHEDULERSTREAM_INITIALDELAY_DEFAULT = "1000";
-	public static final String TASKSCHEDULERSTREAM_RESCHEDULEDELAY =
-			"taskschedulerstream.rescheduledelay";
-	public static final String TASKSCHEDULERSTREAM_RESCHEDULEDELAY_DEFAULT = "10000";
 	public static final String TASKSCHEDULERSTREAM_ISMESOS = "taskschedulerstream.ismesos";
 	public static final String TASKSCHEDULERSTREAM_ISMESOS_DEFAULT = "false";
 	public static final String TASKSCHEDULERSTREAM_ISYARN = "taskschedulerstream.isyarn";
@@ -140,8 +130,6 @@ public class DataSamudayaConstants {
 	public static final String TASKSCHEDULERSTREAM_ISLOCAL_DEFAULT = "false";
 	public static final String TASKSCHEDULERSTREAM_ISJGROUPS = "taskschedulerstream.isjgroups";
 	public static final String TASKSCHEDULERSTREAM_ISJGROUPS_DEFAULT = "false";
-	public static final String TASKSCHEDULERSTREAM_PINGDELAY = "taskschedulerstream.pingdelay";
-	public static final String TASKSCHEDULERSTREAM_PINGDELAY_DEFAULT = "1000";
 	public static final String TASKSCHEDULERSTREAM_PORT = "taskschedulerstream.port";
 	public static final String TASKSCHEDULERSTREAM_HOST = "taskschedulerstream.host";
 	public static final String TASKSCHEDULERSTREAM_HOSTPORT = "taskschedulerstream.hostport";
@@ -182,9 +170,6 @@ public class DataSamudayaConstants {
 	static final String JOBSTAGE = "JobStage";
 	static final String JOBPOOL = "JobPool";
 	static final String THREAD = "Thread";
-	public static final String TASKEXECUTOR_PROCESSORS = "taskexecutor.numprocessors";
-	public static final String TASKSCHEDULER_RANDTE = "taskscheduler.randomte";
-	public static final String TASKSCHEDULER_RANDTE_DEFAULT = "false";
 	public static final String MINMEMORY = "container.minmem";
 	public static final String MAXMEMORY = "container.maxmem";
 	public static final String GCCONFIG = "container.gcconfig";
@@ -232,6 +217,7 @@ public class DataSamudayaConstants {
 	public static final String MASSIVEDATA_YARNINPUT_GRAPH_FILE = "graph.dat";
 	public static final String MASSIVEDATA_YARNINPUT_TASK_FILE = "taskmdsthread.dat";
 	public static final String MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE = "jobstagemapfile.dat";
+	public static final String MASSIVEDATA_YARNINPUT_JOB_FILE = "job.dat";
 	public static final String YARN_CLIENT = "yarnClient";
 	public static final String SQL_YARN_DEFAULT_APP_CONTEXT_FILE = "sql-application-context.xml";
 
@@ -303,7 +289,6 @@ public class DataSamudayaConstants {
 	public static final String DATAREPLICATOR_OFFSET = "datareplicator.offset";
 	public static final String DATAREPLICATOR_PINGDELAY = "datareplicator.pingdelay";
 	public static final String DATAREPLICATOR_HOST = "datareplicator.host";
-	public static final String ISUSERDEFINEDBLOCKSIZE = "block.isuserdefined";
 
 	public static final String DATAREPLICATOR_PATH = "datareplicator.path";
 	public static final String TEXTHTML = "text/html";
@@ -315,6 +300,7 @@ public class DataSamudayaConstants {
 	public static final String RESOURCES = "resources";
 	public static final String GRAPH = "graph";
 	public static final String SUMMARY = "summary";
+	public static final String SUMMARY_DRIVER = "summarydriver";
 	public static final String DATA = "data";
 
 	static final String THISHOST = "0.0.0.0";
@@ -322,6 +308,8 @@ public class DataSamudayaConstants {
 
 	public static final String YARNDATASAMUDAYAJOBID = "YARNDATASAMUDAYAJOBID";
 
+	public static final String ISDRIVERREQUIREDYARN = "ISDRIVERREQUIREDYARN";
+	
 	public static final String SHDP_CONTAINERID = "SHDP_CONTAINERID";
 
 	public static final String PARTITION = "Partition-";
@@ -469,11 +457,6 @@ public class DataSamudayaConstants {
 	public static final String TSSHA = "TSSHA";
 	public static final String JARLOADED = "Jar Loaded";
 
-	public static final String BYTEBUFFERPOOL_MAX = "bytebufferpool.size";
-	public static final String BYTEBUFFERPOOL_MAX_DEFAULT = "3";
-	public static final String BYTEBUFFERPOOL_BLOCK = "bytebufferpool.blockwhenexhausted";
-	public static final String BYTEBUFFERPOOL_BLOCK_DEFAULT = "true";
-
 	public enum STORAGE {
 		INMEMORY, DISK, INMEMORY_DISK, COLUMNARSQL
 	}
@@ -616,4 +599,15 @@ public class DataSamudayaConstants {
 	public static final String DEFAULTASKEXECUTORRUNNER = "com.github.datasamudaya.tasks.executor.TaskExecutorRunner";
 	
 	public static final String NM_HOST = "NM_HOST";
+	
+	public static final String PODCIDR_TO_NODE_MAPPING_ENABLED = "podcidr.node.mapping.enabled";
+	public static final String PODCIDR_TO_NODE_MAPPING_ENABLED_DEFAULT = "false";
+	public static final String PODIP_STATUS = "status.podIP";
+	
+	public static final Integer DRIVERMEMORY_DEFAULT = 1024;
+	public static final Integer EXECUTORMEMORY_DEFAULT = 1024;
+	public static final String USERJAR = "jars";
+	public static final String USERJOB = "user";
+	public static final String USERJOBREQUIRED = "User required for executing job";
+	public static final String NUMBERCONTAINERS = "numbercontainers";
 }

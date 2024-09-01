@@ -236,8 +236,10 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 															leftvalue, rightvalue, null),
 													ActorRef.noSender());
 								});
-								pipeline.entrySet().stream()
-										.forEach(entry -> entry.getValue().tell(
+								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+										DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+								pipeline.keySet().stream().filter(key->key%numfileperexec==0)
+										.forEach(key -> pipeline.get(key).tell(
 												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class),
 												ActorRef.noSender()));
 							} else {
@@ -332,8 +334,10 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 															leftvalue, rightvalue, null),
 													ActorRef.noSender());
 								});
-								pipeline.entrySet().stream()
-										.forEach(entry -> entry.getValue().tell(
+								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+										DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+								pipeline.keySet().stream().filter(key->key%numfileperexec==0)
+										.forEach(key -> pipeline.get(key).tell(
 												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class),
 												ActorRef.noSender()));
 							} else {

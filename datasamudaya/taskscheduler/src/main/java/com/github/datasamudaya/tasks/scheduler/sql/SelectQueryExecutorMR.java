@@ -85,11 +85,14 @@ public class SelectQueryExecutorMR {
 					var columnMetadatas = new ArrayList<ColumnMetadata>();
 					TableCreator.getColumnMetadataFromTable(defaultdb, table.getName(), columnMetadatas);
 					String hdfslocation = null;
+					String filetype = null;
 					List<String> tablecolumn = new ArrayList<>();
 					List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 					for (ColumnMetadata columnMetadata : columnMetadatas) {
 						if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 							hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
+						} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
+							filetype = columnMetadata.getColumnDefault().replace("'", "").trim();
 						} else {
 							tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 							tablecolumnDataType.add(SQLUtils.getSQLTypeNameMR(columnMetadata.getDataType()));
@@ -108,9 +111,7 @@ public class SelectQueryExecutorMR {
 			}
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
-			List error = new ArrayList<>();
-			error.add(ExceptionUtils.getRootCauseMessage(ex));
-			errors.add(error);
+			errors.add(ExceptionUtils.getRootCauseMessage(ex));
 			return errors;
 		}
 		return new ArrayList<>();

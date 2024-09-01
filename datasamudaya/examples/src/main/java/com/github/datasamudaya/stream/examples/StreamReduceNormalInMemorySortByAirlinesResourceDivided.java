@@ -31,7 +31,7 @@ public class StreamReduceNormalInMemorySortByAirlinesResourceDivided implements 
 	private final Logger log = Logger.getLogger(StreamReduceNormalInMemorySortByAirlinesResourceDivided.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");

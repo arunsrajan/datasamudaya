@@ -63,8 +63,25 @@ spec:
   ports:
     - name: hdfsname
       protocol: TCP
-      port: 9864
-      targetPort: 9864
+      port: 9866
+      targetPort: 9866
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datasamudayacontainer-0
+  labels:
+    app: datasamudayacontainer
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: datasamudayacontainer
+  ports:
+    - name: hdfsname
+      protocol: TCP
+      port: 9866
+      targetPort: 9866
 ---
 apiVersion: v1
 kind: Service

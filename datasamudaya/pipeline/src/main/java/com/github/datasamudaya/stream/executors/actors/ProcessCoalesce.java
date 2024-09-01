@@ -125,7 +125,7 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 				final boolean right = isNull(task.joinpos) ? false
 						: nonNull(task.joinpos) && "right".equals(task.joinpos) ? true : false;
 				if (CollectionUtils.isNotEmpty(pipelines)) {
-					log.info("Process Coalesce To Pipeline Started {} IsSpilled {} {}", pipelines, diskspilllist.isSpilled(), diskspilllist.getBytes());
+					log.info("Process Coalesce To Pipeline Started {} IsSpilled {} {}", pipelines, diskspilllist.isSpilled(), diskspilllist.getData());
 					pipelines.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspilllist, left, right, DiskSpillingList.class), ActorRef.noSender());
 					});

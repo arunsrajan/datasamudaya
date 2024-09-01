@@ -232,6 +232,45 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 	}
 	
+	@Test
+	public void testJoin() throws Exception {
+		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
+				.getRequiredColumnsByTable(buildSqlRelNode("""
+						select airline.origin,airports.airport,count(*) FROM airline inner join airports on airports.iata = airline.origin GROUP BY airline.origin,airports.airport
+						"""));
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airports"));		
+		Set<String> columns = tablereqcolumnsmap.get("airline");
+		assertEquals(1, columns.size());
+		assertEquals(Boolean.TRUE, columns.contains("16"));
+		columns = tablereqcolumnsmap.get("airports");
+		assertEquals(2, columns.size());
+		assertEquals(Boolean.TRUE, columns.contains("0"));
+		assertEquals(Boolean.TRUE, columns.contains("1"));
+	}
+	
+	@Test
+	public void testMultiJoin() throws Exception {
+		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
+				.getRequiredColumnsByTable(buildSqlRelNode("""
+						select airline.origin,airports.airport,count(*) FROM airline inner join airports on airports.iata = airline.origin left join carriers on carriers.code=airline.uniquecarrier GROUP BY airline.origin,airports.airport
+						"""));
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airports"));
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("carriers"));		
+		Set<String> columns = tablereqcolumnsmap.get("airline");
+		assertEquals(2, columns.size());
+		assertEquals(Boolean.TRUE, columns.contains("16"));
+		assertEquals(Boolean.TRUE, columns.contains("8"));
+		columns = tablereqcolumnsmap.get("airports");
+		assertEquals(2, columns.size());
+		assertEquals(Boolean.TRUE, columns.contains("0"));
+		assertEquals(Boolean.TRUE, columns.contains("1"));
+		columns = tablereqcolumnsmap.get("carriers");
+		assertEquals(1, columns.size());
+		assertEquals(Boolean.TRUE, columns.contains("0"));
+	}
+	
 	private static SimpleTable getSimpleTable(String tablename, String[] fields, SqlTypeName[] types) {
 		SimpleTable.Builder builder = SimpleTable.newBuilder(tablename);
 		int typecount = 0;

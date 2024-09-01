@@ -16,8 +16,19 @@ spec:
     spec:
       containers:
         - name: datasamudayacontainer
-          image: arunsrajan/datasamudayacontainer:latest
+          image: arunsrajan/datasamudayacontainerdn:latest
+          resources:
+              requests:
+                memory: "64Mi"
+                cpu: "4"
+              limits:
+                memory: "5120Mi"
+                cpu: "4"
           env:
+            - name: NAMENODEURL
+              value: hdfs://namenode:9000
+            - name: PODCIDRNODEMAPPINGENABLED
+              value: "false"
             - name: DATASAMUDAYA_HOME
               value: /opt/datasamudaya
             - name: CORE_CONF_fs_defaultFS

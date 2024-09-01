@@ -30,7 +30,7 @@ public class StreamReduceLeftOuterJoinYARN implements Pipeline {
 	private final Logger log = Logger.getLogger(StreamReduceLeftOuterJoinYARN.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("true");

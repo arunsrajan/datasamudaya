@@ -107,7 +107,6 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	List<Path> blockpath = new ArrayList<>();
 	int totalreadsize;
 	byte[] read1byt = new byte[1];
-	int blocksize;
 	Path currentfilepath;
 	int blocklocationindex;
 	long redcount;
@@ -507,13 +506,11 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			cf.start();
 
 			jm.setJobstarttime(System.currentTimeMillis());
-			var isblocksuserdefined = Boolean.parseBoolean(jobconf.getIsblocksuserdefined());
 			jm.setJobid(applicationid);
 			DataSamudayaJobMetrics.put(jm);
 			batchsize = Integer.parseInt(jobconf.getBatchsize());
 			numreducers = Integer.parseInt(jobconf.getNumofreducers());
 			var configuration = new Configuration();
-			blocksize = Integer.parseInt(jobconf.getBlocksize());
 			hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
 

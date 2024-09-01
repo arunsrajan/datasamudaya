@@ -28,23 +28,16 @@ public class JobConfigurationBuilderTest extends TaskSchedulerCommon {
 	public void testJobConfigurationBuilder() {
 		JobConfiguration jc = JobConfigurationBuilder.newBuilder().build();
 		assertEquals("2", jc.getBatchsize());
-		assertEquals("64", jc.getBlocksize());
 		assertEquals(DataSamudayaConstants.GCCONFIG_DEFAULT, jc.getGctype());
-		assertEquals(Boolean.valueOf("true"), jc.getHdfs());
 		assertEquals("hdfs://127.0.0.1:9000", jc.getHdfsurl());
-		assertEquals("false", jc.getIsblocksuserdefined());
 		assertEquals("1024", jc.getMaxmem());
 		assertEquals("1024", jc.getMinmem());
 		assertEquals(null, jc.getMrjar());
 		assertEquals(DataSamudayaConstants.NUMBEROFCONTAINERS_DEFAULT, jc.getNumberofcontainers());
 		assertEquals("1", jc.getNumofreducers());
 		assertEquals(null, jc.getOutput());
-		assertEquals("4000", jc.getTepingdelay());
 		assertEquals("127.0.0.1", jc.getTshost());
-		assertEquals("30000", jc.getTsinitialdelay());
-		assertEquals("2000", jc.getTspingdelay());
 		assertEquals("11111", jc.getTsport());
-		assertEquals("10000", jc.getTsrescheduledelay());
 		assertEquals(null, jc.getTstempdir());
 		assertEquals("127.0.0.1:2181", jc.getZkport());
 		assertEquals("2000", jc.getZkretrydelay());

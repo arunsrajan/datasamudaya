@@ -33,7 +33,7 @@ public class StreamAggSumCountArrDelayIgnite implements Serializable, Pipeline {
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem(args[3]);
 		pipelineconfig.setMinmem("512");

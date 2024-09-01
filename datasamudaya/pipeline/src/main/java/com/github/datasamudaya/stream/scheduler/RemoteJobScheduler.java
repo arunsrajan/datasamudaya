@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +19,8 @@ import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
+import com.github.datasamudaya.common.exceptions.RpcRegistryException;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.PipelineException;
@@ -48,20 +51,46 @@ public class RemoteJobScheduler {
 				loadjar.setClasses(pipelineconfig.getCustomclasses().stream().map(clz -> clz.getName())
 						.collect(Collectors.toCollection(LinkedHashSet::new)));
 			}
-			for (var lc : job.getLcs()) {
-				List<Integer> ports = null;
-				if (pipelineconfig.getUseglobaltaskexecutors()) {
-					ports = lc.getCla().getCr().stream().map(cr -> {
-						return cr.getPort();
-					}).collect(Collectors.toList());
-				} else {
-					ports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(), lc, DataSamudayaConstants.EMPTY);
+			String jobid = job.getId();
+			if (pipelineconfig.getUseglobaltaskexecutors() && nonNull(pipelineconfig.getTejobid())) {
+				jobid = pipelineconfig.getTejobid();
+			}
+			if(!Boolean.parseBoolean(pipelineconfig.getYarn())) {
+				for (var lc : job.getLcs()) {
+					List<Integer> ports = null;
+					if (pipelineconfig.getUseglobaltaskexecutors() && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL ) {
+						ports = lc.getCla().getCr().stream().map(cr -> {
+							return cr.getPort();
+						}).collect(Collectors.toList());
+					} else {
+						ports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(), lc, DataSamudayaConstants.EMPTY);
+					}
+					int index = 0;
+					String tehost = lc.getNodehostport().split("_")[0];
+					while (index < ports.size()) {
+						while (true) {
+							try (Socket sock = new Socket(tehost, ports.get(index))) {
+								break;
+							} catch (Exception ex) {
+								Thread.sleep(200);
+							}
+						}
+						if (nonNull(loadjar.getMrjar())) {
+							log.debug("{}", Utils.getResultObjectByInput(
+									tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar, jobid));
+						}
+						index++;
+					}
 				}
+			}
+			var tes = zo.getTaskExectorsByJobId(jobid);	
+			if(pipelineconfig.getStorage() != STORAGE.COLUMNARSQL) {
+				List<Integer> driverports = (List<Integer>) Utils.getResultObjectByInput(job.getDriver().getNodehostport(), job.getDriver(), DataSamudayaConstants.EMPTY);
 				int index = 0;
-				String tehost = lc.getNodehostport().split("_")[0];
-				while (index < ports.size()) {
+				String tehost = job.getDriver().getNodehostport().split("_")[0];
+				while (index < driverports.size()) {
 					while (true) {
-						try (Socket sock = new Socket(tehost, ports.get(index))) {
+						try (Socket sock = new Socket(tehost, driverports.get(index))) {
 							break;
 						} catch (Exception ex) {
 							Thread.sleep(200);
@@ -69,19 +98,29 @@ public class RemoteJobScheduler {
 					}
 					if (nonNull(loadjar.getMrjar())) {
 						log.debug("{}", Utils.getResultObjectByInput(
-								tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar, job.getId()));
+								tehost + DataSamudayaConstants.UNDERSCORE + driverports.get(index), loadjar, jobid));
 					}
 					index++;
 				}
 			}
-			String jobid = job.getId();
-			if (pipelineconfig.getUseglobaltaskexecutors()) {
-				jobid = pipelineconfig.getTejobid();
-			}
-			var tes = zo.getTaskExectorsByJobId(jobid);
-			taskexecutors = new LinkedHashSet<>();
 			List<String> drivers = zo.getDriversByJobId(jobid);
+			final String finaljobid = jobid;
+			if (nonNull(loadjar.getMrjar())) {
+				drivers.stream().forEach(driver -> {
+					String[] driverhp = driver.split(DataSamudayaConstants.UNDERSCORE);
+					try {
+						log.debug("{}", Utils.getResultObjectByInput(
+								driverhp[0] + DataSamudayaConstants.UNDERSCORE + driverhp[1], loadjar, finaljobid));
+					} catch (RpcRegistryException e) {
+						log.error(DataSamudayaConstants.EMPTY, e);
+					}
+				});
+			}
+			if(CollectionUtils.isEmpty(job.getTaskexecutors())) {
+				job.setTaskexecutors(tes);
+			}
 			job.getTaskexecutors().addAll(0, drivers);
+			taskexecutors = new LinkedHashSet<>();
 			taskexecutors.addAll(drivers);
 			taskexecutors.addAll(tes);
 			while (taskexecutors.size() != job.getTaskexecutors().size()) {
@@ -117,11 +156,15 @@ public class RemoteJobScheduler {
 				jobid = job.getPipelineconfig().getTejobid();
 			};
 			String choosente = getDriverNode(zo, jobid);
+			job.getJm().setDriverhp(choosente);
 			log.info("Choosen Task Executor Host Port {}", choosente);			
 			Object output = null;
 			if(nonNull(job.getPipelineconfig().getJar())) {
 				output = Utils.getResultObjectByInput(choosente, job, jobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
 			} else {
+				if(Boolean.parseBoolean(job.getPipelineconfig().getYarn())) {
+					job.getPipelineconfig().setYarn(Boolean.FALSE+DataSamudayaConstants.EMPTY);
+				}
 				output = Utils.getResultObjectByInput(choosente, job, jobid);
 			}
 			job.getJm().setJobcompletiontime(System.currentTimeMillis());
@@ -136,8 +179,8 @@ public class RemoteJobScheduler {
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		} finally {
-			if (!job.getPipelineconfig().getUseglobaltaskexecutors()) {
-				Utils.destroyTaskExecutors(job);
+			if(job.getPipelineconfig().getStorage() != STORAGE.COLUMNARSQL) {
+				Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
 			}
 		}
 		return null;

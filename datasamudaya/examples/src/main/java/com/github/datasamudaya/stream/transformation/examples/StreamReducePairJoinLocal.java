@@ -31,7 +31,7 @@ public class StreamReducePairJoinLocal implements Serializable, Pipeline {
 	private final Logger log = Logger.getLogger(StreamReducePairJoinLocal.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		pipelineconfig.setIsblocksuserdefined("false");
+		
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");

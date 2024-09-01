@@ -36,7 +36,7 @@ public class StreamCoalesceNormalInMemoryDiskContainerDivided implements Seriali
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		pipelineconfig.setIsblocksuserdefined("true");
+		
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 		pipelineconfig.setMode(DataSamudayaConstants.NORMAL);

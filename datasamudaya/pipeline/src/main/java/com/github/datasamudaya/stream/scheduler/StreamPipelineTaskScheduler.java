@@ -63,9 +63,9 @@ public class StreamPipelineTaskScheduler implements Runnable {
 	public void run() {
 
 		var message = "";
+		ClassLoader ctxcl = Thread.currentThread().getContextClassLoader();
 		try {
-			//ClassLoader to load the jar file.
-			ClassLoader ctxcl = Thread.currentThread().getContextClassLoader();
+			//ClassLoader to load the jar file.			
 			var clsloader = DataSamudayaMapReducePhaseClassLoader.newInstance(mrjar, ctxcl);
 			Thread.currentThread().setContextClassLoader(clsloader);
 			var ismesos = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_ISMESOS));
@@ -80,12 +80,19 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			}
 			//Get the main class to execute.
 			var mainclass = args[0];
+			var cpuexecutors = Integer.parseInt(args[1]);
+			var memoryexecutors = Integer.parseInt(args[2]);
+			var numberofexecutors = Integer.parseInt(args[3]);
+			var cpudriver = Integer.parseInt(args[4]);
+			var memorydriver = Integer.parseInt(args[5]);
+			var user = args[6];	
+			var isdriverrequired = Boolean.parseBoolean(args[7]);
 			var main = Class.forName(mainclass, true, clsloader);
 			Thread.currentThread().setContextClassLoader(clsloader);
-			if (args == null) {
-				args = new String[]{};
+			if (args.length>8) {
+				args = Arrays.copyOfRange(args, 8, args.length);				
 			} else {
-				args = Arrays.copyOfRange(args, 1, args.length);
+				args = new String[]{};
 			}
 			//Invoke the runPipeline method via reflection.
 			var pipelineconfig = new PipelineConfig();
@@ -99,6 +106,13 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			if (isNull(pipelineconfig.getJobname())) {
 				pipelineconfig.setJobname(main.getSimpleName());
 			}
+			pipelineconfig.setUser(user);
+			pipelineconfig.setCpudriver(cpudriver);
+			pipelineconfig.setMemorydriver(memorydriver);
+			pipelineconfig.setNumtaskexecutors(numberofexecutors);
+			pipelineconfig.setCputaskexecutor(cpuexecutors);
+			pipelineconfig.setMemorytaskexceutor(memoryexecutors);
+			pipelineconfig.setIsremotescheduler(isdriverrequired);
 			pipeline.runPipeline(args, pipelineconfig);
 			message = "Successfully Completed executing the Job from main class " + mainclass;
 			Utils.writeToOstream(tss.getOutputStream(), message);
@@ -117,6 +131,7 @@ public class StreamPipelineTaskScheduler implements Runnable {
 			try {
 				Utils.writeToOstream(tss.getOutputStream(), "quit");
 				tss.close();
+				Thread.currentThread().setContextClassLoader(ctxcl);
 			} catch (Exception ex) {
 				log.error("Socket Stream close error, See cause below \n", ex);
 			}
