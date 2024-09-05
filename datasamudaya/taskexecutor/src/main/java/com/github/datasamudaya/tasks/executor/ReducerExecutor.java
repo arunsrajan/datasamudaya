@@ -31,11 +31,11 @@ import com.github.datasamudaya.common.DataCruncherContext;
 public class ReducerExecutor implements Callable<Context> {
 
 	static Logger log = Logger.getLogger(ReducerExecutor.class);
-	DataCruncherContext dcc;
+	Context dcc;
 	Reducer cr;
 	Object key;
 
-	public ReducerExecutor(DataCruncherContext dcc, Reducer cr, Object key) {
+	public ReducerExecutor(Context dcc, Reducer cr, Object key) {
 		this.dcc = dcc;
 		this.cr = cr;
 		this.key = key;

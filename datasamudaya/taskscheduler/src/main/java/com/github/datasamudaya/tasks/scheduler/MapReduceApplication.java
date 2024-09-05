@@ -55,6 +55,7 @@ import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.jooq.lambda.tuple.Tuple4;
+import org.jooq.lambda.tuple.Tuple5;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.AllocateContainers;
@@ -494,10 +495,32 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	boolean isexception;
 	String exceptionmsg = DataSamudayaConstants.EMPTY;
 
-	protected List<String> getHostPort(Collection<String> appidtaskids) {
-		return appidtaskids.stream().map(apptaskid -> apptaskhp.get(apptaskid))
-				.collect(Collectors.toList());
+	protected List<String> getHostPort(Collection<String> appidstgidtaskids) {
+		return appidstgidtaskids.stream().map(appstagtaskid -> {
+			String[] appstgtaskids = appstagtaskid.split(DataSamudayaConstants.UNDERSCORE);
+			return apptaskhp.get(appstgtaskids[0]+appstgtaskids[1]+appstgtaskids[2]);
+			}).collect(Collectors.toList());
 	}
+	
+	protected List<String> getAppIdStgIdTaskId(Collection<String> appidstgidtaskids) {
+		return appidstgidtaskids.stream().map(appstagtaskid -> {
+			String[] appstgtaskids = appstagtaskid.split(DataSamudayaConstants.UNDERSCORE);
+			return appstgtaskids[0]+appstgtaskids[1]+appstgtaskids[2];
+			}).collect(Collectors.toList());
+	}
+	
+	
+	protected List<com.github.datasamudaya.common.Task> getTasks(Collection<String> appidstgidtaskids) {
+		return appidstgidtaskids.stream().map(appstagtaskid -> {
+			com.github.datasamudaya.common.Task task = new com.github.datasamudaya.common.Task();
+			String[] appstgtaskids = appstagtaskid.split(DataSamudayaConstants.UNDERSCORE);
+			task.setJobid(appstgtaskids[0]);
+			task.setStageid(appstgtaskids[1]);
+			task.setTaskid(appstgtaskids[2]);
+			return task;
+			}).collect(Collectors.toList());
+	}
+	
 	ExecutorService esmap = null;
 	@SuppressWarnings({"unchecked"})
 	public List<DataCruncherContext> call() {
@@ -582,7 +605,6 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			jm.setFiles(allfiles);
 			jm.setNodes(new LinkedHashSet<>(nodessorted));
 			jm.setContainersallocated(containers.stream().collect(Collectors.toMap(key -> key, value -> 0d)));
-			;
 			jm.setMode(jobconf.getExecmode());
 			jm.setTotalblocks(allfilebls.size());
 			for (var obj : combiners) {
@@ -604,6 +626,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + (mrtaskcount + 1);
 					var apptask = new ApplicationTask();
 					apptask.setApplicationid(applicationid);
+					apptask.setStageid("Stage-1");
 					apptask.setTaskid(taskid);
 					var mdtstm = (TaskSchedulerMapperSubmitter) getMassiveDataTaskSchedulerThreadMapper(
 							mapclznames, combiner, bl, apptask, applicationid);
@@ -611,12 +634,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						containermappermap.put(mdtstm.getHostPort(), new ArrayList<>());
 					}
 					containermappermap.get(mdtstm.getHostPort()).add(mdtstm);
-					apptaskhp.put(applicationid + taskid, mdtstm.getHostPort());
+					apptaskhp.put(apptask.getApplicationid() + apptask.getStageid() + apptask.getTaskid(), mdtstm.getHostPort());
 					List<String> apptasks = folderapptasksmap.getOrDefault(folder, new ArrayList<>());
 					folderapptasksmap.put(folder, apptasks);
 					apptasks.add(applicationid + taskid);
 					var dcc = new DataCruncherContext();
-					dccmapphases.put(applicationid + taskid, dcc);
+					dccmapphases.put(apptask.getApplicationid() + apptask.getStageid() + apptask.getTaskid(), dcc);
 					globaldccport.put(dcc.getContextid(), mdtstm.getHostPort());
 					mrtaskcount++;
 				}
@@ -657,7 +680,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					List<TaskSchedulerMapperSubmitter> tasks = containermappermap.get(containerkey);
 					DexecutorConfig<TaskSchedulerMapperSubmitter, Boolean> configexec = new DexecutorConfig(
 							newExecutor(),
-							new MapperTaskExecutor(semaphores.get(containerkey), dccmapphases, tasks.size()));
+							new MapperTaskScheduler(semaphores.get(containerkey), dccmapphases, tasks.size()));
 					DefaultDexecutor<TaskSchedulerMapperSubmitter, Boolean> dexecutor = new DefaultDexecutor<>(
 							configexec);
 					tasks.stream().forEach(task -> dexecutor.addIndependent(task));		
@@ -720,13 +743,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					}
 				} else {					
 					dccombiners.addAll(dccombinerphases);
-					
 				}
-				List<Tuple4> keyapptaskshp = (List<Tuple4>) dccombiners.parallelStream()
+				List<Tuple5> keyapptaskshp = (List<Tuple5>) dccombiners.parallelStream()
 						.filter(dcc->CollectionUtils.isNotEmpty(dcc.keys()))
 						.flatMap(dcc -> {
-							List<Tuple4> tuples = (List<Tuple4>) dcc.keys().parallelStream()
-									.map(key -> Tuple.tuple(key, dcc.get(key), getHostPort(dcc.get(key)), globaldccport.get(dcc.getContextid())))
+							List<Tuple5> tuples = (List<Tuple5>) dcc.keys().parallelStream()
+									.map(key -> Tuple.tuple(key, getAppIdStgIdTaskId(dcc.get(key)), getHostPort(dcc.get(key)), globaldccport.get(dcc.getContextid()), getTasks(dcc.get(key))))
 									.collect(Collectors.toList());
 							return tuples.stream();})
 						.collect(Collectors.toCollection(ArrayList::new));
@@ -734,15 +756,15 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				log.info("Combiner Keys For Shuffling:" + keyapptaskshp.size());	
 				dccombinerphases.clear();
 				dccombinerphases.add(new DataCruncherContext<>());
-				DexecutorConfig<TaskSchedulerCombinerSubmitter, Boolean> redconfig = new DexecutorConfig(newExecutor(), new CombinerTaskExecutor(new Semaphore(numpartition), dccombinerphases.get(0), 1));
+				DexecutorConfig<TaskSchedulerCombinerSubmitter, Boolean> redconfig = new DexecutorConfig(newExecutor(), new CombinerTaskScheduler(new Semaphore(numpartition), dccombinerphases.get(0), 1));
 				DefaultDexecutor<TaskSchedulerCombinerSubmitter, Boolean> executorcomb = new DefaultDexecutor<>(redconfig);
 				var cdl = new CountDownLatch(1);
-				for (Tuple4 tuple4: keyapptaskshp) {
+				for (Tuple5 tuple5: keyapptaskshp) {
 					mrtaskcount++;					
-					var currentexecutor = tuple4.v4;
+					var currentexecutor = tuple5.v4;
 					var cv = new CombinerValues();
 					cv.setAppid(applicationid);
-					cv.setTuples(Arrays.asList(tuple4));
+					cv.setTuples(Arrays.asList(tuple5));
 					cv.setCombiner(combiner.iterator().next());
 					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + mrtaskcount;
 					var teappid = applicationid;
@@ -751,11 +773,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					}
 					var apptask = new ApplicationTask();
 					apptask.setApplicationid(applicationid);
+					apptask.setStageid("Stage-2");
 					apptask.setTaskid(taskid);
 					apptask.setHp((String) currentexecutor);
 					var tscs = new TaskSchedulerCombinerSubmitter(
 							cv, apptask, teappid);
-					apptaskhp.put(applicationid + taskid, apptask.getHp());
+					apptaskhp.put(apptask.getApplicationid() + apptask.getStageid() + apptask.getTaskid(), apptask.getHp());
 					log.info("Combiner: Submitting " + mrtaskcount + " App And Task:"
 							+ applicationid + taskid + cv.getTuples());
 					if (!Objects.isNull(jobconf.getOutput())) {
@@ -796,7 +819,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			var dccred = dccombinerphases;
 			if (!reducer.isEmpty()) {
 				dccred = new ArrayList<DataCruncherContext>();
-				List<Tuple3Serializable> keyapptasks;
+				List<Tuple4> keyapptasks;
 				var dcccombinerphase = new DataCruncherContext();
 				for (var dcc : dccombinerphases) {
 					dcc.keys().stream().forEach(dcckey -> {
@@ -805,8 +828,8 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						});
 					});
 				}
-				keyapptasks = (List<Tuple3Serializable>) dcccombinerphase.keys().parallelStream()
-						.map(key -> new Tuple3Serializable(key, dcccombinerphase.get(key), getHostPort(dcccombinerphase.get(key))))
+				keyapptasks = (List<Tuple4>) dcccombinerphase.keys().parallelStream()
+						.map(key -> Tuple.tuple(key, getAppIdStgIdTaskId(dcccombinerphase.get(key)), getHostPort(dcccombinerphase.get(key)), getTasks(dcccombinerphase.get(key))))
 						.collect(Collectors.toCollection(ArrayList::new));
 				var partkeys = Iterables
 						.partition(keyapptasks, (keyapptasks.size()) / numreducers).iterator();
@@ -827,7 +850,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						teappid = jobconf.getTeappid();
 					}
 					var mdtstr = new TaskSchedulerReducerSubmitter(
-							currentexecutor, rv, applicationid, taskid, redcount, cf, teappid);
+							currentexecutor, rv, applicationid, "Stage-3", taskid, redcount, cf, teappid);
 
 					log.debug("Reducer: Submitting " + mrtaskcount + " App And Task:"
 							+ applicationid + taskid + rv.getTuples());
@@ -978,14 +1001,14 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 
 	}
 	private Semaphore resultmerge = new Semaphore(1);
-	private class MapperTaskExecutor implements
+	private class MapperTaskScheduler implements
 			TaskProvider<TaskSchedulerMapperSubmitter, Boolean> {
 
 		Semaphore semaphorebatch;
 		int totaltasks;
 		int taskexecuted;		
 		Map<String, DataCruncherContext> dccmapphase;
-		public MapperTaskExecutor(Semaphore semaphore, Map<String, DataCruncherContext> dccmapphase,
+		public MapperTaskScheduler(Semaphore semaphore, Map<String, DataCruncherContext> dccmapphase,
 				int totaltasks) {
 			this.semaphorebatch = semaphore;
 			this.totaltasks = totaltasks;
@@ -1010,7 +1033,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						Utils.writeToOstream(jobconf.getOutput(), "\nPercentage Completed TE("
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
-						dccmapphase.get(rk.applicationid + rk.taskid).putAll(rk.keys, rk.applicationid + rk.taskid);
+						dccmapphase.get(rk.applicationid + rk.stageid + rk.taskid).putAll(rk.keys, rk.applicationid + DataSamudayaConstants.UNDERSCORE + rk.stageid + DataSamudayaConstants.UNDERSCORE + rk.taskid);
 						log.info("Combiner Keys: {}", rk);
 						resultmerge.release();
 						semaphorebatch.release();
@@ -1030,13 +1053,13 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	}
 	
 	
-	private class CombinerTaskExecutor implements TaskProvider<TaskSchedulerCombinerSubmitter, Boolean> {
+	private class CombinerTaskScheduler implements TaskProvider<TaskSchedulerCombinerSubmitter, Boolean> {
 		Semaphore semaphorebatch;
 		DataCruncherContext dcccombinerphase;
 		int totaltasks;
 		int taskexecuted;		
 		
-		public CombinerTaskExecutor(Semaphore semaphore, DataCruncherContext dcccombinerphase,
+		public CombinerTaskScheduler(Semaphore semaphore, DataCruncherContext dcccombinerphase,
 				int totaltasks) {
 			this.semaphorebatch = semaphore;
 			this.dcccombinerphase = dcccombinerphase;
@@ -1061,7 +1084,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						Utils.writeToOstream(jobconf.getOutput(), "\nPercentage Completed TE("
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
-						dcccombinerphase.putAll(rk.keys, rk.applicationid + rk.taskid);
+						dcccombinerphase.putAll(rk.keys, rk.applicationid + DataSamudayaConstants.UNDERSCORE + rk.stageid + DataSamudayaConstants.UNDERSCORE + rk.taskid);
 						log.info("Combiner Keys: {}", rk);
 						resultmerge.release();
 						semaphorebatch.release();

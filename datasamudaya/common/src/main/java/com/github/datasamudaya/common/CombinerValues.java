@@ -18,7 +18,7 @@ package com.github.datasamudaya.common;
 import java.io.Serializable;
 import java.util.List;
 
-import org.jooq.lambda.tuple.Tuple4;
+import org.jooq.lambda.tuple.Tuple5;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -41,7 +41,7 @@ import lombok.ToString;
 @AllArgsConstructor
 public class CombinerValues implements Serializable {
 	private static final long serialVersionUID = -8329337737535175061L;
-	private List<Tuple4> tuples;
+	private List<Tuple5> tuples;
 	private Object combiner;
 	private String appid;
 }

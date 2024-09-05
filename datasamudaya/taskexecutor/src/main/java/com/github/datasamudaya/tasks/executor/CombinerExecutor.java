@@ -18,10 +18,12 @@ package com.github.datasamudaya.tasks.executor;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
 import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.Context;
-import com.github.datasamudaya.common.DataCruncherContext;
+import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.utils.DiskSpillingContext;
 
 /**
  * Executor for combiner.
@@ -33,17 +35,18 @@ public class CombinerExecutor implements Callable<Context> {
 	static Logger log = Logger.getLogger(CombinerExecutor.class);
 	Context dcc;
 	Combiner cc;
-
-	public CombinerExecutor(Context dcc, Combiner cc) {
+	Task task;
+	public CombinerExecutor(Context dcc, Combiner cc, Task task) {
 		this.dcc = dcc;
 		this.cc = cc;
+		this.task = task;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public Context call() throws Exception {
 		Set<Object> keys = dcc.keys();
-		var ctx = new DataCruncherContext();
+		var ctx = new DiskSpillingContext(task, null);
 		keys.stream().parallel().forEach(key -> cc.combine(key, (List) dcc.get(key), ctx));
 		return ctx;
 	}

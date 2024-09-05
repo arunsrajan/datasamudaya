@@ -2320,7 +2320,7 @@ public class StreamJobScheduler {
 											for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
 												log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 												try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(),null, false, false, false, nik.getTask().getFcsc(),
-														RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
+														RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION,false, null)) {
 													while (client.hasNext()) {
 														log.info("Getting Next List From Remote Server");
 														List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
@@ -2470,7 +2470,7 @@ public class StreamJobScheduler {
 										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
 											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(),null, false, false, false, nik.getTask().getFcsc(),
-													RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION)) {
+													RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION, false, null)) {
 												while (client.hasNext()) {
 													log.info("Getting Next List From Remote Server");
 													List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils

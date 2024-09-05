@@ -1,5 +1,5 @@
 package com.github.datasamudaya.common.utils;
 
 public enum RequestType {
-	    LIST, ELEMENT
+	    LIST, ELEMENT, CONTEXT
 }

@@ -125,7 +125,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 
 							var es = Executors.newWorkStealingPool();
 							var datasamudayamc = new MapperExecutor(
-									mc.blockslocation, CacheUtils.getBlockData(mc.blockslocation, hdfs), cm);
+									mc.blockslocation, CacheUtils.getBlockData(mc.blockslocation, hdfs), cm, null);
 							var fc = (Future<Context>) es.submit(datasamudayamc);
 							var ctx = fc.get();
 							es.shutdown();

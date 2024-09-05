@@ -21,11 +21,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Set;
 
-import org.apache.curator.framework.CuratorFramework;
-
 import com.github.datasamudaya.common.ApplicationTask;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.RetrieveKeys;
+import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskSchedulerMapperSubmitterMBean;
 import com.github.datasamudaya.common.utils.Utils;
 
@@ -56,8 +55,14 @@ public class TaskSchedulerMapperSubmitter implements TaskSchedulerMapperSubmitte
 		try {
 			var objects = new ArrayList<>();
 			objects.add(blockslocation);
-			objects.add(apptask.getApplicationid());
-			objects.add(apptask.getTaskid());
+			Task task = new Task();
+			task.setJobid(apptask.getApplicationid());
+			task.setStageid(apptask.getStageid());
+			task.setTaskid(apptask.getTaskid());
+			task.setHostport(apptask.getHp());
+			task.setTeid(executorid);
+			objects.add(task);
+			objects.add(executorid);
 			return (RetrieveKeys) Utils.getResultObjectByInput(blockslocation.getExecutorhp(), objects, executorid);
 		}
 		catch (Exception ex) {

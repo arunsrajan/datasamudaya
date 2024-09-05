@@ -20,9 +20,12 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicLong;
+
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
@@ -41,12 +44,15 @@ public class DataCruncherContext<K, V> implements Context<K, V>, Serializable {
 	
 	private Map<K, Collection<V>> htkv = new Hashtable<>();
 
+	private AtomicLong valuescounter = new AtomicLong(0);
+	
 	@Override
 	public void put(K k, V v) {
 		if (htkv.get(k) == null) {
 			htkv.put(k, new Vector<>());
 		}
 		htkv.get(k).add(v);
+		valuescounter.incrementAndGet();
 	}
 
 	@Override
@@ -68,7 +74,7 @@ public class DataCruncherContext<K, V> implements Context<K, V>, Serializable {
 		} else {
 			htkv.put(k, v);
 		}
-
+		valuescounter.addAndGet(v.size());
 	}
 
 	@Override
@@ -89,6 +95,26 @@ public class DataCruncherContext<K, V> implements Context<K, V>, Serializable {
 
 	public String getContextid() {
 		return contextid;
+	}
+	
+	@Override
+	public long size() {
+		return htkv.size();
+	}
+	
+	@Override
+	public long valuesSize() {
+		return valuescounter.get();
+	}
+
+	@Override
+	public void clear() {		
+		htkv.clear();
+	}
+
+	@Override
+	public Set<Entry<K, Collection<V>>> entries() {		
+		return htkv.entrySet();
 	}
 	
 }

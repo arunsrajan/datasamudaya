@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
+import com.github.datasamudaya.common.Task;
 
 /**
  * Executor for Mapper and combiner.
@@ -43,13 +44,12 @@ public class TaskExecutorMapper implements Callable {
 	@SuppressWarnings("rawtypes")
 	Context ctx;
 	File file;
-	String applicationid;
-	String taskid;
+	Task task;
 	InputStream datastream;
 	int port;
 
 	@SuppressWarnings({"rawtypes"})
-	public TaskExecutorMapper(BlocksLocation blockslocation, InputStream datastream, String applicationid, String taskid,
+	public TaskExecutorMapper(BlocksLocation blockslocation, InputStream datastream, Task task,
 			ClassLoader cl, int port) throws Exception {
 		this.blockslocation = blockslocation;
 		this.datastream = datastream;
@@ -65,8 +65,7 @@ public class TaskExecutorMapper implements Callable {
 		catch (Throwable ex) {
 			log.error("Exception in loading class:", ex);
 		}
-		this.applicationid = applicationid;
-		this.taskid = taskid;
+		this.task = task;
 	}
 
 	/**
@@ -77,7 +76,7 @@ public class TaskExecutorMapper implements Callable {
 
 		try {
 
-			var datasamudayamc = new MapperExecutor(blockslocation, datastream, cm);
+			var datasamudayamc = new MapperExecutor(blockslocation, datastream, cm, task);
 			var fc = es.submit(datasamudayamc);
 			ctx = fc.get();
 			return ctx;

@@ -19,15 +19,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
-import org.apache.curator.framework.CuratorFramework;
 
 import com.github.datasamudaya.common.ApplicationTask;
-import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.CombinerValues;
 import com.github.datasamudaya.common.RetrieveKeys;
+import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskSchedulerMapperCombinerSubmitterMBean;
 import com.github.datasamudaya.common.utils.Utils;
 
@@ -52,8 +48,13 @@ public class TaskSchedulerCombinerSubmitter implements TaskSchedulerMapperCombin
 		try {
 			var objects = new ArrayList<>();
 			objects.add(cv);
-			objects.add(apptask.getApplicationid());
-			objects.add(apptask.getTaskid());
+			Task task = new Task();
+			task.setJobid(apptask.getApplicationid());
+			task.setStageid(apptask.getStageid());
+			task.setTaskid(apptask.getTaskid());
+			task.setHostport(apptask.getHp());
+			task.setTeid(executorid);
+			objects.add(task);
 			objects.add(executorid);
 			return (RetrieveKeys) Utils.getResultObjectByInput(apptask.getHp(), objects, executorid);
 		}
