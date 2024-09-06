@@ -317,7 +317,7 @@ public class TaskExecutor implements Callable<Object> {
 								rk.stageid = task.getStageid();
 								rk.taskid = task.getTaskid();
 								rk.response = true;
-								log.info("destroying MapperCombiner {}", appstgtaskid);
+								log.info("destroying Mapper {}", appstgtaskid);
 								return rk;
 							}
 						}

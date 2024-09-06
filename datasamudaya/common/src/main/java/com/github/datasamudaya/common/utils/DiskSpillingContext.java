@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
+import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
@@ -38,7 +40,6 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	private static final Logger log = LoggerFactory.getLogger(DiskSpillingContext.class);
 
 	private DataCruncherContext<T, U> context;
-	private byte[] bytes;
 	private Set keys;
 	private String diskfilepath;
 	private boolean isspilled;
@@ -49,23 +50,22 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	private transient Output op;
 	private transient SnappyOutputStream sos;
 	private Semaphore lock;
-	private Semaphore filelock;
 	private String appendwithpath;
+	private Kryo kryo;
 	public DiskSpillingContext() {
 		lock = new Semaphore(1);
-		filelock = new Semaphore(1);
 	}
 
 	public DiskSpillingContext(Task task, String appendwithpath) {
 		this.task = task;
-		this.appendwithpath = appendwithpath;		
+		this.appendwithpath = appendwithpath;
+		this.kryo = Utils.getKryoInstance();
 		diskfilepath = Utils.getLocalFilePathForMRTask(task, appendwithpath);
 		context = new DataCruncherContext<T, U>();
-		this.keys = new HashSet();
+		this.keys = new LinkedHashSet<>();
 		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT))) / 100.0)));
 		this.lock = new Semaphore(1);
-		this.filelock = new Semaphore(1);
 		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE, 
 				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
 		this.isclosed = false;
@@ -125,9 +125,8 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	 * @param value
 	 */
 	public void addKeyCollection(T key, Collection<U> values) {
-		if (nonNull(key)&&CollectionUtils.isNotEmpty(values)) {
-			keys.add(key);
-			values.parallelStream().forEach(value->put(key, value));
+		if (nonNull(key)&&CollectionUtils.isNotEmpty(values)) {			
+			values.stream().forEach(value->put(key, value));
 		}
 	}
 
@@ -140,20 +139,12 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	}
 
 	/**
-	 * The function returns List into compressed bytes
-	 * @return compressed bytes
-	 */
-	public byte[] getBytes() {
-		return bytes;
-	}
-
-	/**
 	 * The function reads compresseed bytes to List 
 	 * @return
 	 */
-	public DataCruncherContext<T, U> readContextFromBytes() {
-		if (nonNull(bytes)) {
-			return (DataCruncherContext<T, U>) Utils.convertBytesToObjectCompressed(bytes, null);
+	public DataCruncherContext<T, U> getContext() {
+		if (!isspilled) {
+			return context;
 		}
 		return new DataCruncherContext<>();
 	}
@@ -168,19 +159,17 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
+			lock.acquire();
 			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
 					&& context.valuesSize()>0) {
-				filelock.acquire();
 				if (isNull(ostream)) {					
 					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
 					op = new Output(sos);
 					isspilled = true;
 				}
-				filelock.release();
-				lock.acquire();
-				if (isspilled && (context.valuesSize() >= batchsize) || isfstoclose && context.valuesSize()>0) {					
-					Utils.getKryoInstance().writeClassAndObject(op, context);
+				if (isspilled && (context.valuesSize() >= batchsize) || isfstoclose && context.valuesSize()>0) {
+					kryo.writeClassAndObject(op, context);
 					op.flush();
 					context.clear();
 				}
@@ -189,10 +178,7 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		} finally {
-			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
-					&& context.valuesSize()>0) {
-				lock.release();
-			}
+			lock.release();
 		}
 	}
 
@@ -217,11 +203,6 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 				op = null;
 				sos = null;
 				ostream = null;
-			} else {
-				if (isNull(bytes)) {
-					bytes = Utils.convertObjectToBytesCompressed(context, null);
-					context = null;
-				}
 			}
 			this.isclosed = true;
 		} catch (Exception ex) {
@@ -231,9 +212,7 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 
 	@Override
 	public void clear() {
-		if (nonNull(bytes)) {
-			bytes = null;
-		} else if (context.valuesSize()>0) {
+		if (context.valuesSize()>0) {
 			context.clear();
 			context = null;
 		}
@@ -241,35 +220,26 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	
 	@Override
 	public long size() {
-		if (nonNull(bytes) && isNull(context)) {
-			context = (DataCruncherContext<T, U>) Utils.convertBytesToObjectCompressed(bytes, null);
-			return (int) (isNull(context) ? 0 : context.valuesSize());
-		} else if(nonNull(context)){
+		if(!isspilled && nonNull(context)){
 			return (int) (isNull(context) ? 0 : context.valuesSize());
 		}
-		throw new UnsupportedOperationException();
+		return 0;
 	}
 
 	@Override
 	public Collection<U> get(T key) {
-		if(nonNull(bytes) && isNull(context)) {
-			context = (DataCruncherContext<T, U>) Utils.convertBytesToObjectCompressed(bytes, null);
-			return context.get(key);
-		} else if(nonNull(context)) {
+		if(!isspilled && nonNull(context)) {
 			return context.get(key);
 		}
-		throw new UnsupportedOperationException();
+		return new ArrayList<>();
 	}
 	
 	@Override
 	public Set<Entry<T, Collection<U>>> entries() {
-		if (nonNull(bytes) && isNull(context)) {
-			context = (DataCruncherContext<T, U>) Utils.convertBytesToObjectCompressed(bytes, null);
-			return context.entries();
-		} else if(nonNull(context)) {
+		if(!isspilled && nonNull(context)) {
 			return context.entries();
 		}
-		throw new UnsupportedOperationException();
+		return new LinkedHashSet<>();
 	}
 
 	public void putCollectionValue(Set<T> k, U v) {
@@ -280,62 +250,36 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	
 	@Override
 	public void putAll(Set<T> k, U v) {		
-		if (nonNull(bytes) && isNull(context)) {
-			context = (DataCruncherContext<T, U>) Utils.convertBytesToObjectCompressed(bytes, null);
-			putCollectionValue(k, v);			
-		} else if(nonNull(context)) {
+		if(nonNull(context)) {
 			putCollectionValue(k, v);
-		} else {
-			throw new UnsupportedOperationException();
 		}
 	}
 
 	@Override
 	public Set<T> keys() {
-		if (nonNull(bytes) && isNull(context)) {
-			context = (DataCruncherContext<T, U>) Utils.convertBytesToObjectCompressed(bytes, null);
-			return context.keys();
-		} else if(!isspilled && nonNull(context)) {
-			return context.keys();
-		} else {
-			return new LinkedHashSet<>(keys);
-		}
+		return new LinkedHashSet<>(keys);
 	}
 
 	@Override
 	public void addAll(T k, Collection<U> v) {
-		if (nonNull(bytes) && isNull(context)) {
-			context = (DataCruncherContext<T, U>) Utils.convertBytesToObjectCompressed(bytes, null);
+		if(nonNull(context)) {
 			addKeyCollection(k, v);
-		} else if(nonNull(context)) {
-			addKeyCollection(k, v);
-		} else {
-			throw new UnsupportedOperationException();
 		}
 	}
 
 	@Override
 	public void add(Context<T, U> ctx) {
-		if (nonNull(bytes) && isNull(context)) {
-			context = (DataCruncherContext<T, U>) Utils.convertBytesToObjectCompressed(bytes, null);
+		if(nonNull(context)) {
 			ctx.keys().stream().forEach(key -> addAll(key, ctx.get(key)));
-		} else if(nonNull(context)) {
-			ctx.keys().stream().forEach(key -> addAll(key, ctx.get(key)));
-		} else {
-			throw new UnsupportedOperationException();
 		}
 	}
 
 	@Override
 	public long valuesSize() {
-		if (nonNull(bytes) && isNull(context)) {
-			context = (DataCruncherContext<T, U>) Utils.convertBytesToObjectCompressed(bytes, null);
+		if(nonNull(context)) {
 			return context.valuesSize();
-		} else if(nonNull(context)) {
-			return context.valuesSize();
-		} else {
-			throw new UnsupportedOperationException();
 		}
+		return 0;
 	}
 
 }

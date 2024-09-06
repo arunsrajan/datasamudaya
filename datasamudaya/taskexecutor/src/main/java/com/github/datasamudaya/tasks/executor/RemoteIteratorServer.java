@@ -75,7 +75,7 @@ public class RemoteIteratorServer<T> {
 				}
 				log.info("Client connected");
 				es.execute(() -> {
-					Kryo kryo = Utils.getKryo();
+					Kryo kryo = Utils.getKryoInstance();
 					InputStream baistream = null;
 					SnappyInputStream sis = null;
 					Input inputfile = null;
@@ -96,7 +96,7 @@ public class RemoteIteratorServer<T> {
 							if(socket.isClosed()) {
 								break;
 							}
-							Object deserobj = Utils.getKryo().readClassAndObject(input);
+							Object deserobj = kryo.readClassAndObject(input);
 							if(deserobj instanceof RemoteIteratorClose) {
 								break;
 							} else if (deserobj instanceof RemoteIteratorTask rlit) {
@@ -116,10 +116,13 @@ public class RemoteIteratorServer<T> {
 											dsc = (DiskSpillingContext) ter.ctx;
 										}
 										if(dsc.isSpilled()) {
-											baistream = new FileInputStream(Utils.getLocalFilePathForMRTask(dsc.getTask(), rlit.getAppendwithpath()));
+											String filepath = Utils.getLocalFilePathForMRTask(dsc.getTask(), DataSamudayaConstants.EMPTY);
+											log.info("Obtaining input file {}", filepath);
+											baistream = new FileInputStream(filepath);
 											sis = new SnappyInputStream(baistream);
 											inputfile = new Input(sis);
-											log.info("Obtaining Input {}", baistream);
+											dsc = null;
+											log.info("Obtaining Input {} for input file {}", baistream, filepath);
 										}
 									} else {
 										baistream = new FileInputStream(Utils.getLocalFilePathForTask(task, rlit.getAppendwithpath(), rlit.isAppendintermediate(), rlit.isLeft(), rlit.isRight()));
@@ -144,12 +147,12 @@ public class RemoteIteratorServer<T> {
 							} else if (deserobj instanceof RemoteIteratorNext rlin) {
 								if (rlin.getRequestType() == RequestType.CONTEXT) {
 									if(nonNull(dsc) && !dsc.isSpilled()) {
-										DataCruncherContext ctx = dsc.readContextFromBytes();
+										DataCruncherContext ctx = dsc.getContext();
 										kryo.writeClassAndObject(output, Utils.convertObjectToBytesCompressed(ctx.get(rlin.getKey()), null));
 										dsc = null;
 									}
 									else if(iteratortype == IteratorType.DISKSPILLITERATOR) {
-							        	DataCruncherContext ctx = (DataCruncherContext) kryo.readClassAndObject(inputfile);
+										DataCruncherContext ctx = (DataCruncherContext) Utils.getKryoInstance().readClassAndObject(inputfile);
 										kryo.writeClassAndObject(output, Utils.convertObjectToBytesCompressed(ctx.get(rlin.getKey()), null));
 									}
 							        output.flush();

@@ -53,11 +53,10 @@ public class MapperExecutor implements Callable<Context> {
 	 */
 	@Override
 	public Context call() throws Exception {
+		var ctx = new DiskSpillingContext(task, DataSamudayaConstants.EMPTY);
 		try (var compstream = datastream;
 				var br =
-						new BufferedReader(new InputStreamReader(compstream));
-				var ctx = new DiskSpillingContext(task, DataSamudayaConstants.EMPTY);) {
-			
+						new BufferedReader(new InputStreamReader(compstream));) {			
 			br.lines().forEach(line -> {
 				for (var crunchmapper : crunchmappers) {
 					crunchmapper.map(0l, line, ctx);
@@ -68,8 +67,12 @@ public class MapperExecutor implements Callable<Context> {
 		catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 			throw ex;
+		} finally {
+			if(ctx.isSpilled()) {
+				ctx.close();
+			}
 		}
-
+		
 	}
 
 

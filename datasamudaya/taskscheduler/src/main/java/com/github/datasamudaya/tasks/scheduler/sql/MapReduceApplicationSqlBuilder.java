@@ -507,7 +507,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		@SuppressWarnings("unchecked")
 		@Override
 		public void combine(String key, List<Tuple> tuples, Context context) {
-			boolean istuple2 = tuples.get(0) instanceof Tuple2;
+			boolean istuple2 = CollectionUtils.isNotEmpty(tuples)?tuples.get(0) instanceof Tuple2:false;
 			if (istuple2) {
 				if (isnotempty) {
 					List<Tuple2> tuples2 = (List) tuples;

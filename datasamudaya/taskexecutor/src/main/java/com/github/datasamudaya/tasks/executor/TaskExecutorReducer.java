@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -84,49 +85,59 @@ public class TaskExecutorReducer implements Callable<Context> {
 			DiskSpillingContext currentctx;
 			var cdl = new CountDownLatch(rv.getTuples().size());
 			for (var tuple4 : (List<Tuple4>) rv.getTuples()) {
-				var ctx = new DiskSpillingContext(task, tuple4.v1.toString());
+				var ctx = new DataCruncherContext();				
 				int index = 0;
 				for (var appstgtaskids : (Collection<String>) tuple4.v2) {
+					Task remotetask = ((List<Task>)tuple4.v4).get(index);
+					remotetask.setHostport((String) ((List)tuple4.v3).get(index));
 					if (apptaskcontextmap.get(tuple4.v1.toString() + appstgtaskids) != null) {
 						currentctx = apptaskcontextmap.get(tuple4.v1.toString() + appstgtaskids);
+						if(currentctx.isSpilled()) {
+							Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple4.v1, remotetask, false);
+						} else {
+							ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
+						}
 					} else {
 						Object object =
 								(Object) apptaskexecutormap.get(appstgtaskids);
 						if (object == null) {
 							currentctx = new DiskSpillingContext(task, tuple4.v1.toString() + appstgtaskids);
-							Task remotetask = ((List<Task>)tuple4.v4).get(index);
-							remotetask.setHostport((String) ((List)tuple4.v3).get(index));
-							try(RemoteIteratorClient<Context> ric = new RemoteIteratorClient<Context>(remotetask, null, false, false, false, null, RequestType.CONTEXT, IteratorType.DISKSPILLITERATOR, true, tuple4.v1);){
-								while(ric.hasNext()) {
-									Collection values = (Collection) ric.next();
-									currentctx.addAll(tuple4.v1, values);
-								}
-							}
+							Utils.copySpilledContextToDestination(null, Arrays.asList(ctx,currentctx), tuple4.v1, remotetask, true);													
 						}
 						else if(object instanceof TaskExecutorMapper tem) {
 							currentctx = (DiskSpillingContext) tem.ctx;
+							if(currentctx.isSpilled()) {
+								Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple4.v1, remotetask, false);
+							} else {
+								ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
+							}
 						} else if(object instanceof TaskExecutorCombiner tec){
 							currentctx = (DiskSpillingContext) tec.ctx;
+							if(currentctx.isSpilled()) {
+								Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple4.v1, remotetask, false);
+							} else {
+								ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
+							}
 						} else {
 							currentctx = null;
 						}
 						apptaskcontextmap.put(tuple4.v1.toString() + appstgtaskids, currentctx);
-					}
-					if(currentctx.isSpilled()) {
-						Utils.copySpilledContextToDestination(currentctx, ctx, tuple4.v1);
-					} else {
-						ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
-					}
+					}					
 					index++;
 				}
-				var datasamudayar = new ReducerExecutor(ctx, cr, tuple4.v1);
+				var datasamudayar = new ReducerExecutor(ctx, cr, tuple4.v1, task);
 				final var fc = es.submit(datasamudayar);
 				esresult.execute(() -> {
-					Context results;
+					DiskSpillingContext results;
 					try {
 						lock.acquire();
-						results = fc.get();
-						complete.add(results);						
+						results = (DiskSpillingContext) fc.get();
+						if(results.isSpilled()) {
+							results.keys().forEach(key->
+							Utils.copySpilledContextToDestination(results, Arrays.asList(complete), key, task, false));
+						} else {
+							complete.add(results);
+						}
 					} catch (Exception e) {
 						log.error("Send Message Error For Task Failed: ", e);
 					} finally {

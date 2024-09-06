@@ -16,11 +16,15 @@
 package com.github.datasamudaya.tasks.executor;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.utils.DiskSpillingContext;
 
 /**
  * Executor for the reducer.
@@ -34,11 +38,12 @@ public class ReducerExecutor implements Callable<Context> {
 	Context dcc;
 	Reducer cr;
 	Object key;
-
-	public ReducerExecutor(Context dcc, Reducer cr, Object key) {
+	Task task;
+	public ReducerExecutor(Context dcc, Reducer cr, Object key, Task task) {
 		this.dcc = dcc;
 		this.cr = cr;
 		this.key = key;
+		this.task = task;
 	}
 
 	/**
@@ -47,8 +52,9 @@ public class ReducerExecutor implements Callable<Context> {
 	@SuppressWarnings({"unchecked"})
 	@Override
 	public Context call() throws Exception {
-		var ctx = new DataCruncherContext();
-		dcc.keys().parallelStream().forEachOrdered(key -> {
+		Set<Object> keys = dcc.keys();
+		var ctx = new DiskSpillingContext(task, DataSamudayaConstants.EMPTY+System.currentTimeMillis());
+		keys.stream().forEachOrdered(key -> {
 			cr.reduce(key, (List) dcc.get(key), ctx);
 		});
 		return ctx;

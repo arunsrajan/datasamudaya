@@ -159,6 +159,7 @@ import com.github.datasamudaya.common.Block;
 import com.github.datasamudaya.common.ContainerException;
 import com.github.datasamudaya.common.ContainerLaunchAttributes;
 import com.github.datasamudaya.common.ContainerResources;
+import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -3731,23 +3732,49 @@ public class Utils {
 	 * @param dslinput
 	 * @param dslout
 	 */
-	public static void copySpilledContextToDestination(DiskSpillingContext dscinput, DiskSpillingContext dscout, Object key) {
-		if (isNull(dscinput.getTask().getHostport()) || dscinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
-				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+	public static void copySpilledContextToDestination(DiskSpillingContext dscinput, List<Context> dscouts, Object key, Task remotetask, boolean isremote) {
+		if (!isremote && ((nonNull(dscinput) &&
+				dscinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) ||
+				remotetask.getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+						.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)))) {			
 			Kryo kryo = Utils.getKryoInstance();
-			try (FileInputStream istream = new FileInputStream(Utils.getLocalFilePathForMRTask(dscinput.getTask(), dscinput.getAppendwithpath()));
-					var sis = new SnappyInputStream(istream);
-					Input input = new Input(sis);) {
-				while (input.available() > 0) {
-					DataCruncherContext ctx = (DataCruncherContext) kryo.readClassAndObject(input);
-					if(nonNull(ctx)) {
-						dscout.addAll(key, ctx.get(key));
+			String filepath = nonNull(dscinput)?Utils.getLocalFilePathForMRTask(dscinput.getTask(), dscinput.getAppendwithpath()):
+				Utils.getLocalFilePathForMRTask(remotetask, null);
+			if(new File(filepath).exists()) {
+				log.info("In Fetching Local DiskSpilled with file path {}", filepath);
+				try (FileInputStream istream = new FileInputStream(filepath);
+						var sis = new SnappyInputStream(istream);
+						Input input = new Input(sis);) {
+					while (input.available() > 0) {
+						DataCruncherContext ctx = (DataCruncherContext) kryo.readClassAndObject(input);
+						if(nonNull(ctx)) {
+							for(Context dscout:dscouts) {
+								dscout.addAll(key, ctx.get(key));
+							}
+						}
 					}
+				} catch (Exception ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
-			} catch (Exception ex) {
-				log.error(DataSamudayaConstants.EMPTY, ex);
+				return;
 			}
+		} 
+		log.info("In Fetching Remote DiskSpilled");
+		try (RemoteIteratorClient client = new RemoteIteratorClient<byte[]>(remotetask, null, false, false, false, null,
+				RequestType.CONTEXT, IteratorType.DISKSPILLITERATOR, true, key)) {
+			while (client.hasNext()) {
+
+				Collection values = (Collection) Utils.convertBytesToObjectCompressed((byte[]) client.next(), null);
+
+				for (Context dscout : dscouts) {
+					dscout.addAll(key, values);
+				}
+			}
+		} catch (Exception e) {
+			log.error(DataSamudayaConstants.EMPTY, e);
 		}
+		
 	}
 	
 	/**

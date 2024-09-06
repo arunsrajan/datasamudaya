@@ -510,13 +510,14 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	}
 	
 	
-	protected List<com.github.datasamudaya.common.Task> getTasks(Collection<String> appidstgidtaskids) {
+	protected List<com.github.datasamudaya.common.Task> getTasks(Collection<String> appidstgidtaskids, String teid) {
 		return appidstgidtaskids.stream().map(appstagtaskid -> {
 			com.github.datasamudaya.common.Task task = new com.github.datasamudaya.common.Task();
 			String[] appstgtaskids = appstagtaskid.split(DataSamudayaConstants.UNDERSCORE);
 			task.setJobid(appstgtaskids[0]);
 			task.setStageid(appstgtaskids[1]);
 			task.setTaskid(appstgtaskids[2]);
+			task.setTeid(teid);
 			return task;
 			}).collect(Collectors.toList());
 	}
@@ -744,11 +745,16 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				} else {					
 					dccombiners.addAll(dccombinerphases);
 				}
+				var appid = applicationid;
+				if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
+					appid = jobconf.getTeappid();
+				}
+				final var teappid = appid;
 				List<Tuple5> keyapptaskshp = (List<Tuple5>) dccombiners.parallelStream()
 						.filter(dcc->CollectionUtils.isNotEmpty(dcc.keys()))
 						.flatMap(dcc -> {
 							List<Tuple5> tuples = (List<Tuple5>) dcc.keys().parallelStream()
-									.map(key -> Tuple.tuple(key, getAppIdStgIdTaskId(dcc.get(key)), getHostPort(dcc.get(key)), globaldccport.get(dcc.getContextid()), getTasks(dcc.get(key))))
+									.map(key -> Tuple.tuple(key, getAppIdStgIdTaskId(dcc.get(key)), getHostPort(dcc.get(key)), globaldccport.get(dcc.getContextid()), getTasks(dcc.get(key), teappid)))
 									.collect(Collectors.toList());
 							return tuples.stream();})
 						.collect(Collectors.toCollection(ArrayList::new));
@@ -766,11 +772,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					cv.setAppid(applicationid);
 					cv.setTuples(Arrays.asList(tuple5));
 					cv.setCombiner(combiner.iterator().next());
-					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + mrtaskcount;
-					var teappid = applicationid;
-					if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
-						teappid = jobconf.getTeappid();
-					}
+					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + mrtaskcount;					
 					var apptask = new ApplicationTask();
 					apptask.setApplicationid(applicationid);
 					apptask.setStageid("Stage-2");
@@ -828,8 +830,13 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						});
 					});
 				}
+				var appid = applicationid;
+				if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
+					appid = jobconf.getTeappid();
+				}
+				final var teappid = appid;
 				keyapptasks = (List<Tuple4>) dcccombinerphase.keys().parallelStream()
-						.map(key -> Tuple.tuple(key, getAppIdStgIdTaskId(dcccombinerphase.get(key)), getHostPort(dcccombinerphase.get(key)), getTasks(dcccombinerphase.get(key))))
+						.map(key -> Tuple.tuple(key, getAppIdStgIdTaskId(dcccombinerphase.get(key)), getHostPort(dcccombinerphase.get(key)), getTasks(dcccombinerphase.get(key), teappid)))
 						.collect(Collectors.toCollection(ArrayList::new));
 				var partkeys = Iterables
 						.partition(keyapptasks, (keyapptasks.size()) / numreducers).iterator();
@@ -844,11 +851,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					rv.setAppid(applicationid);
 					rv.setTuples(new ArrayList<>(partkeys.next()));
 					rv.setReducer(reducer.iterator().next());
-					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + mrtaskcount;
-					var teappid = applicationid;
-					if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
-						teappid = jobconf.getTeappid();
-					}
+					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + mrtaskcount;					
 					var mdtstr = new TaskSchedulerReducerSubmitter(
 							currentexecutor, rv, applicationid, "Stage-3", taskid, redcount, cf, teappid);
 
