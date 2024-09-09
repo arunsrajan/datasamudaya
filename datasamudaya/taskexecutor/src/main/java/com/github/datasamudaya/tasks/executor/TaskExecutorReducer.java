@@ -133,6 +133,7 @@ public class TaskExecutorReducer implements Callable<Context> {
 						lock.acquire();
 						results = (DiskSpillingContext) fc.get();
 						if(results.isSpilled()) {
+							results.close();
 							results.keys().forEach(key->
 							Utils.copySpilledContextToDestination(results, Arrays.asList(complete), key, task, false));
 						} else {

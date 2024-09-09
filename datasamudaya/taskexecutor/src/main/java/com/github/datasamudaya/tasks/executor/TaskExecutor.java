@@ -38,6 +38,7 @@ import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.DeleteTemporaryApplicationDir;
 import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.FreeResourcesCompletedJob;
 import com.github.datasamudaya.common.HdfsBlockReader;
@@ -294,85 +295,98 @@ public class TaskExecutor implements Callable<Object> {
 					}
 				}
 			} else if (deserobj instanceof List objects) {
-				var object = objects.get(0);				
-				var task = (Task) objects.get(1);
-				{
-					var appstgtaskid = task.getJobid() + task.getStageid() + task.getTaskid();
-					var taskexecutor = apptaskexecutormap.get(appstgtaskid);
-					if (object instanceof BlocksLocation blockslocation) {
-						var mdtemc = (TaskExecutorMapper) taskexecutor;
-						if (taskexecutor == null) {
-							try (var hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get()
-											.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)),
-									configuration)) {
-								log.info("Application Submitted:" + task.getJobid() + "-" + task.getTaskid());
-								mdtemc = new TaskExecutorMapper(blockslocation,
-										HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs), task, cl, port);
-								apptaskexecutormap.put(appstgtaskid, mdtemc);
-								mdtemc.call();
-								var keys = mdtemc.ctx.keys();
+				var object = objects.get(0);
+				if (object instanceof FreeResourcesCompletedJob) {
+					for(int taskindex=1;taskindex<objects.size()-1;taskindex++) {
+						Task task = (Task) objects.get(1);
+						var appstgtaskid = task.getJobid() + task.getStageid() + task.getTaskid();
+						apptaskexecutormap.remove(appstgtaskid);
+					}
+					return TaskStatus.COMPLETED;
+				} if (object instanceof DeleteTemporaryApplicationDir deletedir) {
+					var appid = (String) objects.get(1);
+					Utils.deleteJobDir(appid);
+					return TaskStatus.COMPLETED;
+				} else {
+					var task = (Task) objects.get(1);
+					{
+						var appstgtaskid = task.getJobid() + task.getStageid() + task.getTaskid();
+						var taskexecutor = apptaskexecutormap.get(appstgtaskid);
+						if (object instanceof BlocksLocation blockslocation) {
+							var mdtemc = (TaskExecutorMapper) taskexecutor;
+							if (taskexecutor == null) {
+								try (var hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get()
+												.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)),
+										configuration)) {
+									log.info("Application Submitted:" + task.getJobid() + "-" + task.getTaskid());
+									mdtemc = new TaskExecutorMapper(blockslocation,
+											HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs), task, cl, port);
+									apptaskexecutormap.put(appstgtaskid, mdtemc);
+									mdtemc.call();
+									var keys = mdtemc.ctx.keys();
+									RetrieveKeys rk = new RetrieveKeys();
+									rk.keys = new LinkedHashSet<>(keys);
+									rk.applicationid = task.getJobid();
+									rk.stageid = task.getStageid();
+									rk.taskid = task.getTaskid();
+									rk.response = true;
+									log.info("destroying Mapper {}", appstgtaskid);
+									return rk;
+								}
+							}
+						} else if (object instanceof CombinerValues cv) {
+							var executorid = (String) objects.get(2);
+							var tec = (TaskExecutorCombiner) taskexecutor;
+							if (taskexecutor == null) {
+								tec =
+										new TaskExecutorCombiner(cv, task, cl, port, apptaskexecutormap, executorid);
+								apptaskexecutormap.put(appstgtaskid, tec);
+								log.info("Combiner submission:" + appstgtaskid);
+								tec.call();
+								var keys = tec.ctx.keys();
 								RetrieveKeys rk = new RetrieveKeys();
 								rk.keys = new LinkedHashSet<>(keys);
 								rk.applicationid = task.getJobid();
 								rk.stageid = task.getStageid();
 								rk.taskid = task.getTaskid();
 								rk.response = true;
-								log.info("destroying Mapper {}", appstgtaskid);
+								log.info("destroying Combiner {}", appstgtaskid);
 								return rk;
 							}
-						}
-					} else if (object instanceof CombinerValues cv) {
-						var executorid = (String) objects.get(2);
-						var tec = (TaskExecutorCombiner) taskexecutor;
-						if (taskexecutor == null) {
-							tec =
-									new TaskExecutorCombiner(cv, task, cl, port, apptaskexecutormap, executorid);
-							apptaskexecutormap.put(appstgtaskid, tec);
-							log.info("Combiner submission:" + appstgtaskid);
-							tec.call();
-							var keys = tec.ctx.keys();
-							RetrieveKeys rk = new RetrieveKeys();
+						} else if (object instanceof ReducerValues rv) {
+							var executorid = (String) objects.get(2);
+							var mdter = (TaskExecutorReducer) taskexecutor;
+							if (taskexecutor == null) {
+								mdter =
+										new TaskExecutorReducer(rv, task, cl, port, apptaskexecutormap, executorid);
+								apptaskexecutormap.put(appstgtaskid, mdter);
+								log.debug("Reducer submission:" + appstgtaskid);
+								return mdter.call();
+							}
+						} else if (object instanceof RetrieveData) {
+							Context ctx = null;
+							if (taskexecutor instanceof TaskExecutorReducer ter) {
+								log.info("Gathering reducer context: " + appstgtaskid);
+								ctx = ter.ctx;
+							} else if (taskexecutor instanceof TaskExecutorCombiner tec) {
+								log.info("Gathering combiner context: " + appstgtaskid);
+								ctx = tec.ctx;
+							} else if (taskexecutor instanceof TaskExecutorMapper temc) {
+								log.info("Gathering reducer context: " + appstgtaskid);
+								ctx = temc.ctx;
+							}
+							apptaskexecutormap.remove(appstgtaskid);
+							return ctx;
+						} else if (object instanceof RetrieveKeys rk) {
+							var mdtemc = (TaskExecutorMapper) taskexecutor;
+							var keys = mdtemc.ctx.keys();
 							rk.keys = new LinkedHashSet<>(keys);
 							rk.applicationid = task.getJobid();
-							rk.stageid = task.getStageid();
 							rk.taskid = task.getTaskid();
 							rk.response = true;
-							log.info("destroying Combiner {}", appstgtaskid);
+							log.debug("destroying MapperCombiner HeartBeat: " + appstgtaskid);
 							return rk;
 						}
-					} else if (object instanceof ReducerValues rv) {
-						var executorid = (String) objects.get(2);
-						var mdter = (TaskExecutorReducer) taskexecutor;
-						if (taskexecutor == null) {
-							mdter =
-									new TaskExecutorReducer(rv, task, cl, port, apptaskexecutormap, executorid);
-							apptaskexecutormap.put(appstgtaskid, mdter);
-							log.debug("Reducer submission:" + appstgtaskid);
-							return mdter.call();
-						}
-					} else if (object instanceof RetrieveData) {
-						Context ctx = null;
-						if (taskexecutor instanceof TaskExecutorReducer ter) {
-							log.info("Gathering reducer context: " + appstgtaskid);
-							ctx = ter.ctx;
-						} else if (taskexecutor instanceof TaskExecutorCombiner tec) {
-							log.info("Gathering combiner context: " + appstgtaskid);
-							ctx = tec.ctx;
-						} else if (taskexecutor instanceof TaskExecutorMapper temc) {
-							log.info("Gathering reducer context: " + appstgtaskid);
-							ctx = temc.ctx;
-						}
-						apptaskexecutormap.remove(appstgtaskid);
-						return ctx;
-					} else if (object instanceof RetrieveKeys rk) {
-						var mdtemc = (TaskExecutorMapper) taskexecutor;
-						var keys = mdtemc.ctx.keys();
-						rk.keys = new LinkedHashSet<>(keys);
-						rk.applicationid = task.getJobid();
-						rk.taskid = task.getTaskid();
-						rk.response = true;
-						log.debug("destroying MapperCombiner HeartBeat: " + appstgtaskid);
-						return rk;
 					}
 				}
 			}

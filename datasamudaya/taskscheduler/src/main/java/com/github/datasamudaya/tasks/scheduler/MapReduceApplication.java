@@ -42,6 +42,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryForever;
@@ -70,7 +71,9 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaJobMetrics;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.DeleteTemporaryApplicationDir;
 import com.github.datasamudaya.common.DestroyContainers;
+import com.github.datasamudaya.common.FreeResourcesCompletedJob;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
 import com.github.datasamudaya.common.HDFSBlockUtils;
 import com.github.datasamudaya.common.JobConfiguration;
@@ -526,6 +529,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	@SuppressWarnings({"unchecked"})
 	public List<DataCruncherContext> call() {
 		var applicationid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
+		var appid = applicationid;
+		if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
+			appid = jobconf.getTeappid();
+		}
+		final var teappid = appid;
+		Map<String, List<com.github.datasamudaya.common.Task>> taskexecutortasks = new ConcurrentHashMap<>();
 		try {
 			var starttime = System.currentTimeMillis();
 			var containerscount = 0;
@@ -619,7 +628,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				}
 			}
 			var dccmapphases = new ConcurrentHashMap<String, DataCruncherContext>();
-			var globaldccport = new ConcurrentHashMap<String, String>();
+			var globaldccport = new ConcurrentHashMap<String, String>();			
 			for (var folder : hdfsdirpath) {
 				var mapclznames = mapclz.get(folder);
 				var bls = folderblocks.get(folder);
@@ -635,6 +644,14 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						containermappermap.put(mdtstm.getHostPort(), new ArrayList<>());
 					}
 					containermappermap.get(mdtstm.getHostPort()).add(mdtstm);
+					List<com.github.datasamudaya.common.Task> tasks = taskexecutortasks.getOrDefault(mdtstm.getHostPort(), new ArrayList<>());
+					com.github.datasamudaya.common.Task task = new com.github.datasamudaya.common.Task();
+					task.setJobid(applicationid);
+					task.setStageid("Stage-1");
+					task.setTaskid(taskid);
+					tasks.add(task);
+					taskexecutortasks.putIfAbsent(mdtstm.getHostPort(), tasks);
+					
 					apptaskhp.put(apptask.getApplicationid() + apptask.getStageid() + apptask.getTaskid(), mdtstm.getHostPort());
 					List<String> apptasks = folderapptasksmap.getOrDefault(folder, new ArrayList<>());
 					folderapptasksmap.put(folder, apptasks);
@@ -745,11 +762,6 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				} else {					
 					dccombiners.addAll(dccombinerphases);
 				}
-				var appid = applicationid;
-				if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
-					appid = jobconf.getTeappid();
-				}
-				final var teappid = appid;
 				List<Tuple5> keyapptaskshp = (List<Tuple5>) dccombiners.parallelStream()
 						.filter(dcc->CollectionUtils.isNotEmpty(dcc.keys()))
 						.flatMap(dcc -> {
@@ -778,6 +790,13 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					apptask.setStageid("Stage-2");
 					apptask.setTaskid(taskid);
 					apptask.setHp((String) currentexecutor);
+					List<com.github.datasamudaya.common.Task> tasks = taskexecutortasks.getOrDefault(currentexecutor, new ArrayList<>());
+					com.github.datasamudaya.common.Task task = new com.github.datasamudaya.common.Task();
+					task.setJobid(applicationid);
+					task.setStageid("Stage-1");
+					task.setTaskid(taskid);
+					tasks.add(task);
+					taskexecutortasks.putIfAbsent((String) currentexecutor, tasks);
 					var tscs = new TaskSchedulerCombinerSubmitter(
 							cv, apptask, teappid);
 					apptaskhp.put(apptask.getApplicationid() + apptask.getStageid() + apptask.getTaskid(), apptask.getHp());
@@ -829,12 +848,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 							dcccombinerphase.put(dcckey, dccval);
 						});
 					});
-				}
-				var appid = applicationid;
-				if (nonNull(jobconf.isIsuseglobalte()) && jobconf.isIsuseglobalte()) {
-					appid = jobconf.getTeappid();
-				}
-				final var teappid = appid;
+				}				
 				keyapptasks = (List<Tuple4>) dcccombinerphase.keys().parallelStream()
 						.map(key -> Tuple.tuple(key, getAppIdStgIdTaskId(dcccombinerphase.get(key)), getHostPort(dcccombinerphase.get(key)), getTasks(dcccombinerphase.get(key), teappid)))
 						.collect(Collectors.toCollection(ArrayList::new));
@@ -854,7 +868,13 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					var taskid = DataSamudayaConstants.TASK + DataSamudayaConstants.HYPHEN + mrtaskcount;					
 					var mdtstr = new TaskSchedulerReducerSubmitter(
 							currentexecutor, rv, applicationid, "Stage-3", taskid, redcount, cf, teappid);
-
+					List<com.github.datasamudaya.common.Task> tasks = taskexecutortasks.getOrDefault(currentexecutor, new ArrayList<>());
+					com.github.datasamudaya.common.Task task = new com.github.datasamudaya.common.Task();
+					task.setJobid(applicationid);
+					task.setStageid("Stage-1");
+					task.setTaskid(taskid);
+					tasks.add(task);
+					taskexecutortasks.putIfAbsent((String) currentexecutor, tasks);
 					log.debug("Reducer: Submitting " + mrtaskcount + " App And Task:"
 							+ applicationid + taskid + rv.getTuples());
 					if (!Objects.isNull(jobconf.getOutput())) {
@@ -929,6 +949,22 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 				}
 				if (!Objects.isNull(es)) {
 					es.shutdown();
+				}
+				if(MapUtils.isNotEmpty(taskexecutortasks)) {
+					taskexecutortasks.entrySet().stream().forEach(entry->{
+						try {
+							String te = entry.getKey();
+							List objects = entry.getValue();
+							objects.add(0, new FreeResourcesCompletedJob());
+							Utils.getResultObjectByInput(te, objects, teappid);
+							objects.clear();
+							objects.add(new DeleteTemporaryApplicationDir());
+							objects.add(applicationid);
+							Utils.getResultObjectByInput(te, objects, teappid);
+						} catch(Exception ex) {
+							log.error(DataSamudayaConstants.EMPTY, ex);
+						}						
+					});
 				}
 			} catch (Exception ex) {
 				log.debug("Resource Release Error", ex);

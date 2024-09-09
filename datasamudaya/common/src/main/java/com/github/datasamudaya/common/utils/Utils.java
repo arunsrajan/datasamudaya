@@ -3564,13 +3564,22 @@ public class Utils {
 		for(ActorRef actor:actors) {
 			actorsystem.stop(actor);
 		}
+		deleteJobDir(jobid);
+		actors.clear();
+		return true;
+	}
+	
+	/**
+	 * The method deletes temporary job folder
+	 * @param jobid
+	 * @throws Exception
+	 */
+	public static void deleteJobDir(String jobid) throws Exception {
 		File deletefolder = new File(System.getProperty(DataSamudayaConstants.TMPDIR)+
 				DataSamudayaConstants.FORWARD_SLASH+jobid);
 		if(deletefolder.exists()) {
 			FileUtils.deleteDirectory(deletefolder);
 		}
-		actors.clear();
-		return true;
 	}
 	
 	/**

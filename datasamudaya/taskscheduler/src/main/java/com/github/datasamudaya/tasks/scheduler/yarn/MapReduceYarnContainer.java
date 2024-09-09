@@ -43,6 +43,7 @@ import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.RemoteDataFetcher;
+import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.executor.Combiner;
 import com.github.datasamudaya.tasks.executor.Mapper;
@@ -160,7 +161,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 							}
 							log.info("In Reducer ctx: " + ctx);
 							var datasamudayar = new ReducerExecutor((DataCruncherContext) ctx, cr,
-									tuple2.v1);
+									tuple2.v1, new Task());
 							var fc = (Future<Context>) es.submit(datasamudayar);
 							Context results = fc.get();
 							complete.add(results);
