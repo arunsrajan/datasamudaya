@@ -15,6 +15,8 @@
  */
 package com.github.datasamudaya.tasks.scheduler;
 
+import static java.util.Objects.nonNull;
+
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -39,7 +42,6 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.protocol.LocatedBlock;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
-import org.apache.log4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.yarn.client.CommandYarnClient;
@@ -47,19 +49,17 @@ import org.springframework.yarn.client.CommandYarnClient;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
-import com.github.datasamudaya.common.HDFSBlockUtils;
-import com.github.datasamudaya.common.JobConfiguration;
-import com.github.datasamudaya.common.JobMetrics;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaJobMetrics;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.HDFSBlockUtils;
+import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.common.JobMetrics;
 import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.TaskInfoYARN;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.tasks.scheduler.yarn.YarnReducer;
-
-import static java.util.Objects.*;
 
 /**
  * Map reduce application runs in hadoop yarn.

@@ -36,20 +36,19 @@ import org.springframework.yarn.integration.container.AbstractIntegrationYarnCon
 import org.springframework.yarn.integration.ip.mind.MindAppmasterServiceClient;
 
 import com.esotericsoftware.kryo.io.Input;
-import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
+import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.CacheUtils;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.RemoteDataFetcher;
-import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.executor.Combiner;
 import com.github.datasamudaya.tasks.executor.Mapper;
-import com.github.datasamudaya.tasks.executor.MapperExecutor;
 import com.github.datasamudaya.tasks.executor.Reducer;
-import com.github.datasamudaya.tasks.executor.ReducerExecutor;
+import com.github.datasamudaya.tasks.yarn.executor.MapperCombinerExecutor;
+import com.github.datasamudaya.tasks.yarn.executor.ReducerExecutor;
 
 /**
  * 
@@ -81,7 +80,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 		try {
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
-			ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
+			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			while (true) {
 				request = new JobRequest();
 				request.setState(JobRequest.State.WHATTODO);
@@ -125,8 +124,8 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 							}
 
 							var es = Executors.newWorkStealingPool();
-							var datasamudayamc = new MapperExecutor(
-									mc.blockslocation, CacheUtils.getBlockData(mc.blockslocation, hdfs), cm, null);
+							var datasamudayamc = new MapperCombinerExecutor(
+									mc.blockslocation, CacheUtils.getBlockData(mc.blockslocation, hdfs), cm, cc);
 							var fc = (Future<Context>) es.submit(datasamudayamc);
 							var ctx = fc.get();
 							es.shutdown();
@@ -161,7 +160,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 							}
 							log.info("In Reducer ctx: " + ctx);
 							var datasamudayar = new ReducerExecutor((DataCruncherContext) ctx, cr,
-									tuple2.v1, new Task());
+									tuple2.v1);
 							var fc = (Future<Context>) es.submit(datasamudayar);
 							Context results = fc.get();
 							complete.add(results);
@@ -186,7 +185,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 
 			}
 			log.info(containerid + ": Completed Job Exiting with status 0...");
-			ByteBufferPoolDirectOld.destroy();
+			ByteBufferPoolDirect.destroyPool();
 			System.exit(0);
 		} catch (Exception ex) {
 			request = new JobRequest();
@@ -197,7 +196,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 				JobResponse response = (JobResponse) client.doMindRequest(request);
 				log.info("Job Completion Error..." + response.getState() + "..., See cause below \n", ex);
 			}
-			ByteBufferPoolDirectOld.destroy();
+			ByteBufferPoolDirect.destroyPool();
 			System.exit(-1);
 		}
 	}
