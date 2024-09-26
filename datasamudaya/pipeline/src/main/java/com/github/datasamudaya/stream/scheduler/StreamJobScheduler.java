@@ -1569,7 +1569,7 @@ public class StreamJobScheduler {
 						out.flush();
 						if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
 							mdste = new StreamPipelineTaskExecutorIgniteSQL(baos.toByteArray(), task,
-									pipelineconfig.isTopersistcolumnar());
+									pipelineconfig.isTopersistcolumnar(), pipelineconfig.getMaxmem());
 						} else {
 							mdste = new StreamPipelineTaskExecutorIgnite(baos.toByteArray(), task);
 						}

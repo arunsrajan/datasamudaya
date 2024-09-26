@@ -249,7 +249,16 @@ public class StreamPipelineSqlBuilder implements Serializable {
 			}
 			return spfilter;
 		} else if (relNode instanceof EnumerableSort es) {
-			StreamPipeline<Object[]>  sporder = orderBy(sp.get(0), es);			
+			StreamPipeline<Object[]>  sporder = orderBy(sp.get(0), es);	
+			if (!SQLUtils.hasDescendants(relNode, descendants)) {
+				return sporder.map(new MapFunction<Object[], Object[]>(){
+					private static final long serialVersionUID = -6637558158680271724L;
+
+					public Object[] apply(Object[] values) {
+						return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+					}
+				});
+			}
 			return sporder;
 		} else if (relNode instanceof EnumerableHashJoin ehj) {
 			StreamPipeline<Object[]> spjoin = (StreamPipeline<Object[]>) buildJoinPredicate((StreamPipeline<Object[]>) sp.get(0)

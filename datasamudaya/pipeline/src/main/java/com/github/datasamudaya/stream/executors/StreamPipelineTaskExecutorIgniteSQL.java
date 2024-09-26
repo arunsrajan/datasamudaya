@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Vector;
+import java.util.concurrent.Semaphore;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -48,9 +49,9 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
+import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.HdfsBlockReader;
-import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.functions.CalculateCount;
@@ -72,7 +73,6 @@ import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.ResultIterator;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
-import com.univocity.parsers.csv.CsvWriter;
 
 import jp.co.yahoo.yosegi.config.Configuration;
 import jp.co.yahoo.yosegi.writer.YosegiRecordWriter;
@@ -87,12 +87,15 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 
 	private static final long serialVersionUID = -3824414146677196362L;
 	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorIgniteSQL.class);
-
+	private static Semaphore bytebufferpoollock = new Semaphore(1);
+	private String maxmem; 
+	
 	boolean topersist;
 
-	public StreamPipelineTaskExecutorIgniteSQL(byte[] jobstage, Task task, boolean topersist) {
+	public StreamPipelineTaskExecutorIgniteSQL(byte[] jobstage, Task task, boolean topersist, String maxmem) {
 		super(jobstage, task);
 		this.topersist = topersist;
+		this.maxmem = maxmem;
 	}
 
 	/**
@@ -105,6 +108,16 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 	 */
 	@SuppressWarnings("unchecked")
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
+		try {
+			bytebufferpoollock.acquire();
+			if(!ByteBufferPoolDirect.isInitialized()) {
+				ByteBufferPoolDirect.init(Long.parseLong(maxmem));
+			}
+		} catch (Exception e) {			
+		} finally {
+			bytebufferpoollock.release();
+		}
+		
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
 		log.info("BlocksLocation Columns: {}" + blockslocation.getColumns());
@@ -114,7 +127,6 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 		ByteArrayOutputStream baos = null;
 		BufferedReader buffer = null;
 		InputStream bais = null;
-		CsvWriter writercsv = null;
 		List<String> reqcols = null;
 		List<String> originalcolsorder = null;
 		List<SqlTypeName> sqltypenamel = null;

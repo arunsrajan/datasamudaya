@@ -16,12 +16,10 @@
 package com.github.datasamudaya.common;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.Semaphore;
 
 import org.apache.commons.pool2.impl.AbandonedConfig;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +35,8 @@ public class ByteBufferPoolDirect {
 	private static final Logger log = LoggerFactory.getLogger(ByteBufferPoolDirect.class);
 
 	private static transient GenericObjectPool<ByteBuffer> pool;
-	static long directmemory;
-	static long totalmemoryallocated;
-	static Semaphore lock = new Semaphore(1);
+	static long directmemory = 0;
+	private static boolean initialized = false;
 
 	/**
 	 * Initialize the bytebuffer heapsize and direct memory size
@@ -55,6 +52,7 @@ public class ByteBufferPoolDirect {
         var abandoned = new AbandonedConfig();
         abandoned.setRemoveAbandonedOnBorrow(false);
         pool.setAbandonedConfig(abandoned);
+        initialized = true;
 	}
 
 	/**
@@ -98,4 +96,9 @@ public class ByteBufferPoolDirect {
 
 	private ByteBufferPoolDirect() {
 	}
+
+	public static boolean isInitialized() {
+		return initialized;
+	}
+	
 }
