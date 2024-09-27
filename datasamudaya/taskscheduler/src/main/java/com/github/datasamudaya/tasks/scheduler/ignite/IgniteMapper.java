@@ -42,10 +42,10 @@ public class IgniteMapper {
 	static Logger log = Logger.getLogger(IgniteMapper.class);
 	BlocksLocation blockslocation;
 	List<Mapper> crunchmappers;
-
-	public IgniteMapper(BlocksLocation blockslocation, List<Mapper> crunchmappers) {
+	byte[] mapperbytes;
+	public IgniteMapper(BlocksLocation blockslocation, byte[] mapperbytes) {
 		this.blockslocation = blockslocation;
-		this.crunchmappers = crunchmappers;
+		this.mapperbytes = mapperbytes;
 	}
 
 	public Context execute() throws Exception {

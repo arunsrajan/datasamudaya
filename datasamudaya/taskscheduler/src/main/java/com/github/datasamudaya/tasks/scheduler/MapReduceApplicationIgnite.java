@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -44,22 +45,23 @@ import org.apache.ignite.IgniteCache;
 import org.apache.log4j.Logger;
 import org.xerial.snappy.SnappyOutputStream;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
-import com.github.datasamudaya.common.HDFSBlockUtils;
-import com.github.datasamudaya.common.HdfsBlockReader;
-import com.github.datasamudaya.common.JobConfiguration;
-import com.github.datasamudaya.common.JobMetrics;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaIgniteClient;
 import com.github.datasamudaya.common.DataSamudayaJobMetrics;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.HDFSBlockUtils;
+import com.github.datasamudaya.common.HdfsBlockReader;
+import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.common.JobMetrics;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.utils.FileBlocksPartitionerHDFS;
 import com.github.datasamudaya.tasks.executor.Combiner;
 import com.github.datasamudaya.tasks.executor.Mapper;
-import com.github.datasamudaya.tasks.executor.Reducer;
 import com.github.datasamudaya.tasks.scheduler.ignite.IgniteMapperCombiner;
 import com.github.datasamudaya.tasks.scheduler.ignite.IgniteReducer;
 import com.github.datasamudaya.tasks.scheduler.ignite.MapReduceResult;
@@ -122,16 +124,16 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 
 	@SuppressWarnings("unchecked")
 	public List<DataCruncherContext> call() {
-		try {
-			var starttime = System.currentTimeMillis();
+		try (var ostream = new ByteArrayOutputStream();
+				Output combostream = new Output(ostream);
+				var ostreamr = new ByteArrayOutputStream();
+				Output redostream = new Output(ostreamr);){
 			batchsize = Integer.parseInt(jobconf.getBatchsize());
 			numreducers = Integer.parseInt(jobconf.getNumofreducers());
 			var configuration = new Configuration();
 			hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
 
-			var combiner = new HashSet<>();
-			var reducer = new HashSet<>();
 			var mapclzchunkfile = new HashMap<String, Set<Object>>();
 			hdfsdirpath = DataSamudayaConstants.EMPTY;
 			semaphore = new Semaphore(Integer.parseInt(jobconf.getBatchsize()));
@@ -148,7 +150,6 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 				}
 			}
 
-			var mrtaskcount = 0;
 			var jm = new JobMetrics();
 			jm.setJobstarttime(System.currentTimeMillis());
 			jm.setJobid(DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
@@ -159,6 +160,12 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			var datasamudayamcs = new ArrayList<IgniteMapperCombiner>();
 			var allfiles = new ArrayList<String>();
 			var folderfileblocksmap = new ConcurrentHashMap<>();
+			Kryo kryo = Utils.getKryoInstance();
+			List<Combiner> combl = new ArrayList<>();
+			combl.add((Combiner) combiners.get(0));
+			kryo.writeClassAndObject(combostream, combl);
+			combostream.flush();
+			byte[] combinerbytes = ostream.toByteArray();
 			for (var hdfsdir : hdfsdirpaths) {
 				var fileStatus = hdfs.listStatus(
 						new Path(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + hdfsdir));
@@ -177,12 +184,20 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 					var lzfos = new SnappyOutputStream(baos);
 					lzfos.write(databytes);
 					lzfos.flush();
-					ignitecache.put(bl, baos.toByteArray());
+					ignitecache.putIfAbsent(bl, baos.toByteArray());
 					lzfos.close();
 					for (var mapperinput : mapclzchunkfile.get(hdfsdir)) {
-						var datasamudayamc = new IgniteMapperCombiner(bl, (List<Mapper>) Arrays.asList((Mapper) mapperinput),
-								(List<Combiner>) Arrays.asList((Combiner) combiners.get(0)));
-						datasamudayamcs.add(datasamudayamc);
+						List<Mapper> mappers = new ArrayList<>();
+						mappers.add((Mapper) mapperinput);
+						try (var baosm = new ByteArrayOutputStream();var output = new Output(baosm)){
+							kryo.writeClassAndObject(output, mappers);
+							output.flush();
+							var datasamudayamc = new IgniteMapperCombiner(bl, baosm.toByteArray(),
+									combinerbytes);
+							datasamudayamcs.add(datasamudayamc);
+						} catch(Exception ex) {
+							
+						}
 					}
 				}
 				blockpath.clear();
@@ -192,18 +207,6 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			jm.setMode(jobconf.getExecmode());
 			jm.setTotalblocks(bls.size());
 			log.debug("Total MapReduce Tasks: " + datasamudayamcs.size());
-
-			for (var obj : combiners) {
-				if (obj != null) {
-					combiner.add(obj);
-				}
-			}
-			for (var obj : reducers) {
-				if (obj != null) {
-					reducer.add(obj);
-				}
-			}
-
 			DexecutorConfig<IgniteMapperCombiner, Boolean> configmc = new DexecutorConfig(newExecutor(),
 					new TaskProviderIgniteMapperCombiner());
 			DefaultDexecutor<IgniteMapperCombiner, Boolean> executormc = new DefaultDexecutor<>(configmc);
@@ -222,7 +225,9 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			var executorser = Executors.newWorkStealingPool();
 			var ctxes = new ArrayList<Future<Context>>();
 			var result = new ArrayList<DataCruncherContext>();
-			var datasamudayar = new IgniteReducer(dccctx, (Reducer) reducers.get(0));
+			kryo.writeClassAndObject(redostream, reducers.get(0));
+			redostream.flush();
+			var datasamudayar = new IgniteReducer(dccctx, ostreamr.toByteArray());
 			ctxes.add(executorser.submit(datasamudayar));
 			for (var res :ctxes) {
 				result.add((DataCruncherContext) res.get());

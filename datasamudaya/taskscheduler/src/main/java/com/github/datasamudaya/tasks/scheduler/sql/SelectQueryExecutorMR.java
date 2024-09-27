@@ -122,16 +122,19 @@ public class SelectQueryExecutorMR {
 
 			var builder = MapReduceApplicationSqlBuilder.newBuilder().setHdfs(DataSamudayaProperties.get()
 					.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
-					.setJobConfiguration(jc).setSql(selectquery);
+					.setDb(defaultdb).setJobConfiguration(jc).setSql(selectquery);
 			for (String table : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
 				TableCreator.getColumnMetadataFromTable(defaultdb, table, columnMetadatas);
 				String hdfslocation = null;
+				String filetype = null;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
 					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
 						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
+					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
+						filetype = columnMetadata.getColumnDefault().replace("'", "").trim();
 					} else {
 						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 						tablecolumnDataType.add(SQLUtils.getSQLTypeNameMR(columnMetadata.getDataType()));
@@ -143,9 +146,7 @@ public class SelectQueryExecutorMR {
 			return (List) mra.call();
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
-			List error = new ArrayList<>();
-			error.add(ExceptionUtils.getRootCauseMessage(ex));
-			errors.add(error);
+			errors.add(ExceptionUtils.getRootCauseMessage(ex));
 			return errors;
 		}
 	}
