@@ -34,7 +34,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllFunction() throws Exception {
 		log.info("In testAllFunction() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add("/1989", "airline", airlineheader, airlineheadertypes)
+		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();

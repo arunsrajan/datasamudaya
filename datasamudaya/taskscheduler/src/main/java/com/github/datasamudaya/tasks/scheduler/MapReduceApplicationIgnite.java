@@ -179,13 +179,16 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 				FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 				fbp.getDnXref(bls, false);
 				for (var bl :bls) {
-					var databytes = HdfsBlockReader.getBlockDataMR(bl, hdfs);
-					var baos = new ByteArrayOutputStream();
-					var lzfos = new SnappyOutputStream(baos);
-					lzfos.write(databytes);
-					lzfos.flush();
-					ignitecache.putIfAbsent(bl, baos.toByteArray());
-					lzfos.close();
+					String blkey = Utils.getBlocksLocation(bl);
+					if(!ignitecache.containsKey(blkey)) {
+						var databytes = HdfsBlockReader.getBlockDataMR(bl, hdfs);
+						var baos = new ByteArrayOutputStream();
+						var lzfos = new SnappyOutputStream(baos);
+						lzfos.write(databytes);
+						lzfos.flush();
+						ignitecache.putIfAbsent(blkey, baos.toByteArray());
+						lzfos.close();
+					}
 					for (var mapperinput : mapclzchunkfile.get(hdfsdir)) {
 						List<Mapper> mappers = new ArrayList<>();
 						mappers.add((Mapper) mapperinput);

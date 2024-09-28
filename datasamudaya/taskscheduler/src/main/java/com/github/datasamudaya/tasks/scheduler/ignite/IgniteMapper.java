@@ -29,6 +29,7 @@ import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.executor.Mapper;
 
 @SuppressWarnings("rawtypes")
@@ -50,7 +51,7 @@ public class IgniteMapper {
 
 	public Context execute() throws Exception {
 		try (IgniteCache<Object, byte[]> cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
-				var compstream = new SnappyInputStream(new ByteArrayInputStream(cache.get(blockslocation)));
+				var compstream = new SnappyInputStream(new ByteArrayInputStream(cache.get(Utils.getBlocksLocation(blockslocation))));
 				var br =
 						new BufferedReader(new InputStreamReader(compstream));) {
 			var ctx = new DataCruncherContext();

@@ -14,6 +14,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.ignite.Ignite;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
@@ -28,6 +29,7 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.common.JobConfigurationBuilder;
 import com.github.datasamudaya.common.utils.DataSamudayaIgniteServer;
+import com.github.datasamudaya.common.utils.HadoopTestUtilities;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.scheduler.sql.MapReduceApplicationSqlBuilder;
 
@@ -51,6 +53,7 @@ public class MapReduceSqlBuilderIgniteTest {
 	static Logger log = LoggerFactory.getLogger(MapReduceSqlBuilderIgniteTest.class);
 	private static Ignite igniteserver;
 	private static JobConfiguration jc;
+	private static MiniDFSCluster hdfsLocalCluster;
 	String hdfsfilepath = "hdfs://127.0.0.1:9000";
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
@@ -65,6 +68,7 @@ public class MapReduceSqlBuilderIgniteTest {
 				.setUser("arun")				
 				.setExecmode(DataSamudayaConstants.EXECMODE_IGNITE)
 				.build();
+		hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
 		Configuration configuration = new Configuration();
 		FileSystem hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty("hdfs.namenode.url")),
 				configuration);
@@ -76,7 +80,7 @@ public class MapReduceSqlBuilderIgniteTest {
 	public void testAllFunction() throws Exception {
 		log.info("In testAllFunction() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline";
-		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add("/1989", "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -681,6 +685,9 @@ public class MapReduceSqlBuilderIgniteTest {
 	public static void igniteShutdown() {
 		if(nonNull(igniteserver)) {
 			igniteserver.close();
+		}
+		if(nonNull(hdfsLocalCluster)) {
+			hdfsLocalCluster.close();
 		}
 	}
 }

@@ -156,6 +156,7 @@ import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.datasamudaya.common.AllocateContainers;
 import com.github.datasamudaya.common.Block;
+import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ContainerException;
 import com.github.datasamudaya.common.ContainerLaunchAttributes;
 import com.github.datasamudaya.common.ContainerResources;
@@ -3893,5 +3894,19 @@ public class Utils {
             return Optional.empty();
         }
     }
+	
+	/**
+	 * The function returns blocks location string to store as key in ignite
+	 * @param bl blocks location
+	 * @return blocks location as key
+	 */
+	public static String getBlocksLocation(BlocksLocation bl) {
+		Block[] blocks = bl.getBlock();
+		return blocks[0].getFilename()
+				+DataSamudayaConstants.HYPHEN+
+				blocks[0].getBlockOffset()+
+				DataSamudayaConstants.ROUNDED_BRACKET_OPEN+
+				blocks[0].getBlockstart()+DataSamudayaConstants.HYPHEN+blocks[0].getBlockend()+DataSamudayaConstants.ROUNDED_BRACKET_CLOSE;
+	}
 	
 }
