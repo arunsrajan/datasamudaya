@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.apache.calcite.adapter.enumerable.EnumerableAggregate;
 import org.apache.calcite.adapter.enumerable.EnumerableAggregateBase;
@@ -56,7 +54,6 @@ import org.slf4j.LoggerFactory;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobConfiguration;
-import com.github.datasamudaya.stream.sql.RequiredColumnsExtractor;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.tasks.executor.Combiner;
 import com.github.datasamudaya.tasks.executor.Mapper;
@@ -174,9 +171,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		RelNode relnode = Utils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
 		log.info("Final Plan: {}",
 				RelOptUtil.dumpPlan(sql, relnode, SqlExplainFormat.TEXT, SqlExplainLevel.ALL_ATTRIBUTES));
-		descendants.put(relnode, false);
-		requiredcolumnindex = new RequiredColumnsExtractor().getRequiredColumnsByTable(relnode);
-		log.info("Required Columns: {}", requiredcolumnindex);
+		descendants.put(relnode, false);		
 		mrab = MapReduceApplicationBuilder.newBuilder();
 		mrab.setJobConf(jc).setOutputfolder("/aircararrivaldelay");
 		traverse(relnode, 0);
@@ -186,14 +181,12 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 
 	private final Map<RelNode, Boolean> descendants = new ConcurrentHashMap<>();
 	AtomicBoolean isDistinct = new AtomicBoolean(false);
-	private Map<String, Set<String>> requiredcolumnindex;
 	MapReduceApplicationBuilder mrab;
 	List<String> functions = null;
-	List<Integer> colindexes = null;
+	List<List<Integer>> colindexes = null;
 	int[] grpcolindexes = null;
 	List<SqlTypeName> togeneratezerobytype = null;
 	List<RexNode> columnsp = null;
-	Map<Integer, Integer> origcolreqcolmap = null;
 	boolean isprojectiondescendtablescan;
 	boolean isagg = false;
 	List<RelFieldCollation> rfc = null;
@@ -222,21 +215,12 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	protected void formMetadataRelNodeMapReduce(RelNode relNode) {
 
 		if (relNode instanceof EnumerableTableScan ets) {
-			String table = ets.getTable().getQualifiedName().get(1);
-			List<String> reqcolindex = nonNull(requiredcolumnindex.get(table))
-					? new ArrayList<>(requiredcolumnindex.get(table))
-					: new ArrayList<>();
+			String table = ets.getTable().getQualifiedName().get(1);			
 			List<String> columns = tablecolumnsmap.get(table);
 			Map<String, Long> tablecolindex = new ConcurrentHashMap<>();
 			for (int colindex = 0; colindex < columns.size(); colindex++) {
 				tablecolindex.put(columns.get(colindex), Long.valueOf(colindex));
-			}
-			if (CollectionUtils.isNotEmpty(reqcolindex)) {
-				origcolreqcolmap = new ConcurrentHashMap<>();
-				for (int colindex = 0; colindex < reqcolindex.size(); colindex++) {
-					origcolreqcolmap.put(Integer.valueOf(reqcolindex.get(colindex)), colindex);
-				}
-			}
+			}			
 			RexNode filtercondition = null;
 			RelNode relnodeparent = childnoderelnodeparentsmap.get(ets);
 			if (nonNull(relnodeparent) && relnodeparent instanceof EnumerableFilter ef) {
@@ -255,8 +239,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							functions, colindexes, grpcolindexes, filtercondition),
 					tablefoldermap.get(table));
 			mrab.addCombiner(new MapperReducerSqlCombiner(CollectionUtils.isNotEmpty(functions), functions));
-			mrab.addReducer(new MapperReducerSqlReducer(togeneratezerobytype, columnsp,
-					isprojectiondescendtablescan && !isagg || nonNull(rfc) ? origcolreqcolmap : null,
+			mrab.addReducer(new MapperReducerSqlReducer(togeneratezerobytype, columnsp,					
 					CollectionUtils.isNotEmpty(functions), functions, rfc));
 
 		} else if (relNode instanceof EnumerableFilter ef) {
@@ -265,24 +248,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			if (parentnode instanceof EnumerableHashJoin ehj) {
 				if (ehj.getLeft() == relNode && childnode instanceof EnumerableTableScan ets) {
 					String table = ets.getTable().getQualifiedName().get(1);
-					Map<String, Map<Integer, Integer>> tableorigcolreqcolmap = jointableorigcolreqcolmap.get(ehj);
-					if (isNull(tableorigcolreqcolmap)) {
-						tableorigcolreqcolmap = new ConcurrentHashMap<>();
-						jointableorigcolreqcolmap.put(ehj, tableorigcolreqcolmap);
-					}
-					Set<String> reqcols = requiredcolumnindex.get(table);
-					int index = 0;
-					tableorigcolreqcolmap.put(table, formOrigColumnsReqColumnsMap(reqcols, index));
 				} else if (ehj.getRight() == relNode && childnode instanceof EnumerableTableScan ets) {
 					String table = ets.getTable().getQualifiedName().get(1);
-					Map<String, Map<Integer, Integer>> tableorigcolreqcolmap = jointableorigcolreqcolmap.get(ehj);
-					if (isNull(tableorigcolreqcolmap)) {
-						tableorigcolreqcolmap = new ConcurrentHashMap<>();
-						jointableorigcolreqcolmap.put(ehj, tableorigcolreqcolmap);
-					}
-					Set<String> reqcols = requiredcolumnindex.get(table);
-					int index = relnodetotalinputsizemap.get(ehj.getLeft());
-					tableorigcolreqcolmap.put(table, formOrigColumnsReqColumnsMap(reqcols, index));
 				}
 			}
 		} else if (relNode instanceof EnumerableSort es) {
@@ -293,25 +260,9 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			relnodes.add(ehj.getRight());
 			for (RelNode childnode : relnodes) {
 				if (childnode == ehj.getLeft() && childnode instanceof EnumerableTableScan ets) {
-					String table = ets.getTable().getQualifiedName().get(1);
-					Map<String, Map<Integer, Integer>> tableorigcolreqcolmap = jointableorigcolreqcolmap.get(ehj);
-					if (isNull(tableorigcolreqcolmap)) {
-						tableorigcolreqcolmap = new ConcurrentHashMap<>();
-						jointableorigcolreqcolmap.put(ehj, tableorigcolreqcolmap);
-					}
-					Set<String> reqcols = requiredcolumnindex.get(table);
-					int index = 0;
-					tableorigcolreqcolmap.put(table, formOrigColumnsReqColumnsMap(reqcols, index));
+					String table = ets.getTable().getQualifiedName().get(1);					
 				} else if (childnode == ehj.getRight() && childnode instanceof EnumerableTableScan ets) {
-					String table = ets.getTable().getQualifiedName().get(1);
-					Map<String, Map<Integer, Integer>> tableorigcolreqcolmap = jointableorigcolreqcolmap.get(ehj);
-					if (isNull(tableorigcolreqcolmap)) {
-						tableorigcolreqcolmap = new ConcurrentHashMap<>();
-						jointableorigcolreqcolmap.put(ehj, tableorigcolreqcolmap);
-					}
-					Set<String> reqcols = requiredcolumnindex.get(table);
-					int index = relnodetotalinputsizemap.get(ehj.getLeft());
-					tableorigcolreqcolmap.put(table, formOrigColumnsReqColumnsMap(reqcols, index));
+					String table = ets.getTable().getQualifiedName().get(1);					
 				}
 			}
 
@@ -346,7 +297,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				if ("count".equalsIgnoreCase(pair.getKey().getAggregation().getName())) {
 					colindexes.add(null);
 				} else {
-					colindexes.add(pair.getKey().getArgList().get(0));
+					colindexes.add(pair.getKey().getArgList());
 				}
 			}
 		}
@@ -380,48 +331,27 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 		String maintablename;
 		List<SqlTypeName> tablecolumntypes;
 		List<String> functions;
-		List<Integer> colindex;
 		int[] grpcolindex;
 		RexNode filtercondition;
 		CsvParserSettings settings;
 		CsvParser parser;
 		Set<Integer> selcols = null;
 		List<RexNode> selectedcolumns;
-		Map<Integer, Integer> origcolprojcolumnmap = new ConcurrentHashMap<>();
+		List<List<Integer>> colindexes;
 		public MapperReducerSqlMapper(String maintablename, List<RexNode> selectedcolumns,
 				List<SqlTypeName> tablecolumntypes, List<String> functions,
-				List<Integer> colindex, int[] grpcolindex,
+				List<List<Integer>> colindexes,
+				int[] grpcolindex,
 				RexNode filtercondition) {
 			this.selectedcolumns = selectedcolumns;
 			this.maintablename = maintablename;
+			this.colindexes = colindexes;
 			this.functions = functions;
-			this.colindex = colindex;
+			this.tablecolumntypes = tablecolumntypes;
 			this.grpcolindex = grpcolindex;
 			this.filtercondition = filtercondition;
 			settings = new CsvParserSettings();
-			settings.getFormat().setLineSeparator("\n");
-			if (nonNull(selectedcolumns)) {
-				selcols = (Set<Integer>) selectedcolumns.stream().flatMap(rexnode -> {
-					List<Integer> colindexes = new ArrayList<>();
-					evaluateRexNodeAsRexInputRef(rexnode, colindexes);
-					return colindexes.stream();
-				}).collect(Collectors.toCollection(LinkedHashSet::new));
-				int projectcolindex = 0;
-				for(Integer origcolumn:selcols) {
-					origcolprojcolumnmap.put(origcolumn, projectcolindex++);
-				}
-				this.tablecolumntypes = selcols.stream().map(selcolindex -> tablecolumntypes.get(selcolindex))
-						.collect(Collectors.toList());
-			} else {
-				selcols = IntStream.range(0,tablecolumns.get(maintablename).size()).boxed().collect(Collectors.toCollection(LinkedHashSet::new));
-				int projectcolindex = 0;
-				for(Integer origcolumn:selcols) {
-					origcolprojcolumnmap.put(origcolumn, projectcolindex++);
-				}
-				this.tablecolumntypes = selcols.stream().map(selcolindex -> tablecolumntypes.get(selcolindex))
-						.collect(Collectors.toList());
-			}
-			settings.selectIndexes(selcols.toArray(new Integer[0]));
+			settings.getFormat().setLineSeparator("\n");			
 			settings.setNullValue(DataSamudayaConstants.EMPTY);
 			parser = new CsvParser(settings);
 		}
@@ -432,21 +362,19 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			try {
 				if (nonNull(line)) {
 					String[] csvrecord = parser.parseLine(line);
-					Object[] typedvalues = new Object[csvrecord.length];
-					int recindex = 0;
-					for(String colval: csvrecord) {
-						typedvalues[recindex] = SQLUtils.getValueMR(colval, tablecolumntypes.get(recindex));
-						recindex++;
-					}
+					int colindex = 0;
 					Object[] valueobject = new Object[nonNull(selectedcolumns)?selectedcolumns.size():0];
-					recindex = 0;
 					if(nonNull(selectedcolumns)) {
 						for (RexNode projcols : selectedcolumns) {								
-							valueobject[recindex] = evaluateRexNode(projcols, typedvalues, origcolprojcolumnmap);
-							recindex++;
+							valueobject[colindex] = evaluateRexNode(projcols, csvrecord, tablecolumntypes);
+							colindex++;
 						}
 					} else {
-						valueobject = typedvalues;
+						valueobject = new Object[csvrecord.length];
+						for(String val:csvrecord) {
+							valueobject[colindex] = SQLUtils.getValueMR((String) val, tablecolumntypes.get(colindex));
+							colindex++;
+						}
 					}
 					if (isNull(filtercondition)
 							|| nonNull(filtercondition) && SQLUtils.evaluateExpression(filtercondition, valueobject)) {						
@@ -466,7 +394,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 								if ("count".equalsIgnoreCase(functionname)) {
 									fnobj.add(1l);
 								} else {
-									fnobj.add(valueobject[colindex.get(index)]);
+									fnobj.add(valueobject[colindexes.get(index).get(0)]);
 									long cval = 0l;
 									boolean toconsider = true;
 									if (toconsider) {
@@ -556,17 +484,15 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	class MapperReducerSqlReducer implements Reducer<Tuple, Tuple, Context> {
 		List<SqlTypeName> sqltypes;
 		List<RexNode> columns;
-		Map<Integer, Integer> origcolreqcolmap;
 		Boolean isnotempty;
 		List<String> functions;
 		List<RelFieldCollation> rfc;
 
 		public MapperReducerSqlReducer(final List<SqlTypeName> sqltypes, final List<RexNode> columns,
-				final Map<Integer, Integer> origcolreqcolmap, final Boolean isnotempty, List<String> functions,
+				final Boolean isnotempty, List<String> functions,
 				List<RelFieldCollation> rfc) {
 			this.sqltypes = sqltypes;
 			this.columns = columns;
-			this.origcolreqcolmap = origcolreqcolmap;
 			this.isnotempty = isnotempty;
 			this.functions = functions;
 			this.rfc = rfc;
@@ -613,12 +539,11 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							mergeobject[valuecount] = value;
 							valuecount++;
 						}
-						if (nonNull(origcolreqcolmap) && CollectionUtils.isNotEmpty(columns)) {
+						if (CollectionUtils.isNotEmpty(columns)) {
 							Object[] finaloutput = new Object[columns.size()];
 							for (int valueindex = 0; valueindex < columns.size(); valueindex++) {
 								RexNode cols = columns.get(valueindex);
-								finaloutput[valueindex] = evaluateRexNode(cols, (Object[]) mergeobject,
-										origcolreqcolmap);
+								finaloutput[valueindex] = evaluateRexNode(cols, (Object[]) mergeobject, null);
 							}
 							if (isNull(rfc)) {
 								context.put("reducer", finaloutput);
@@ -690,58 +615,58 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	 * @param values
 	 * @return value processed
 	 */
-	public static Object evaluateRexNode(RexNode node, Object[] values, Map<Integer, Integer> origcolreqcolmap) {
+	public static Object evaluateRexNode(RexNode node, Object[] values, List<SqlTypeName> tablecolumntypes) {
 		if (node.isA(SqlKind.FUNCTION) || node.isA(SqlKind.CASE)) {
 			RexCall call = (RexCall) node;
 			RexNode expfunc = call.getOperands().size() > 0 ? call.getOperands().get(0) : null;
 			String name = call.getOperator().getName().toLowerCase();
 			switch (name) {
 			case "abs":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"abs");
 			case "length", "char_length", "character_length":
 				// Get the length of string value
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"length");
 			case "round":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"round");
 			case "ceil":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"ceil");
 			case "floor":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"floor");
 			case "power":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap),
-						evaluateRexNode(call.getOperands().get(1), values, origcolreqcolmap), "pow");
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes),
+						evaluateRexNode(call.getOperands().get(1), values, tablecolumntypes), "pow");
 			case "pow":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap),
-						evaluateRexNode(call.getOperands().get(1), values, origcolreqcolmap), "pow");
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes),
+						evaluateRexNode(call.getOperands().get(1), values, tablecolumntypes), "pow");
 			case "sqrt":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"sqrt");
 			case "exp":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"exp");
 			case "loge":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"loge");
 			case "lowercase", "lower", "lcase":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"lowercase");
 			case "uppercase", "upper", "ucase":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"uppercase");
 			case "base64encode":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"base64encode");
 			case "base64decode":
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"base64decode");
 			case "normalizespaces":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"normalizespaces");
 			case "currentisodate":
 
@@ -751,71 +676,71 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				return SQLUtils.evaluateFunctionsWithType(null, null, "currenttimemillis");
 			case "rand":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"rand");
 			case "rand_integer":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap),
-						evaluateRexNode(call.getOperands().get(1), values, origcolreqcolmap), "randinteger");
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes),
+						evaluateRexNode(call.getOperands().get(1), values, tablecolumntypes), "randinteger");
 			case "acos":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"acos");
 			case "asin":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"asin");
 			case "atan":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"atan");
 			case "cos":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"cos");
 			case "sin":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"sin");
 			case "tan":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"tan");
 			case "cosec":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"cosec");
 			case "sec":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"sec");
 			case "cot":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"cot");
 			case "cbrt":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"cbrt");
 			case "pii":
 
 				return SQLUtils.evaluateFunctionsWithType(null, null, "pii");
 			case "degrees":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"degrees");
 			case "radians":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"radians");
 			case "trimstr":
 
-				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, origcolreqcolmap), null,
+				return SQLUtils.evaluateFunctionsWithType(evaluateRexNode(expfunc, values, tablecolumntypes), null,
 						"trim");
 			case "substring":
 				RexLiteral pos = (RexLiteral) call.getOperands().get(1);
 				RexLiteral length = (RexLiteral) (call.getOperands().size() > 2 ? call.getOperands().get(2) : null);
-				String val = (String) evaluateRexNode(expfunc, values, origcolreqcolmap);
+				String val = (String) evaluateRexNode(expfunc, values, tablecolumntypes);
 				if (nonNull(length)) {
 					return val.substring((Integer) SQLUtils.getValue(pos, SqlTypeName.INTEGER),
 							Math.min(((String) val).length(), (Integer) SQLUtils.getValue(pos, SqlTypeName.INTEGER)
@@ -825,8 +750,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			case "overlay":
 				pos = (RexLiteral) call.getOperands().get(2);
 				length = (RexLiteral) (call.getOperands().size() > 3 ? call.getOperands().get(3) : null);
-				String val1 = (String) evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap);
-				String val2 = (String) evaluateRexNode(call.getOperands().get(1), values, origcolreqcolmap);
+				String val1 = (String) evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes);
+				String val2 = (String) evaluateRexNode(call.getOperands().get(1), values, tablecolumntypes);
 				if (nonNull(length)) {
 					return val1.replaceAll(val1.substring((Integer) SQLUtils.getValue(pos, SqlTypeName.INTEGER),
 							Math.min(((String) val2).length(), (Integer) SQLUtils.getValue(pos, SqlTypeName.INTEGER)
@@ -835,8 +760,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				}
 				return val1.replaceAll(val1.substring((Integer) SQLUtils.getValue(pos, SqlTypeName.INTEGER)), val2);
 			case "locate":
-				val1 = (String) evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap);
-				val2 = (String) evaluateRexNode(call.getOperands().get(1), values, origcolreqcolmap);
+				val1 = (String) evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes);
+				val2 = (String) evaluateRexNode(call.getOperands().get(1), values, tablecolumntypes);
 				pos = (RexLiteral) (call.getOperands().size() > 2 ? call.getOperands().get(2) : null);
 				if (nonNull(pos)) {
 					int positiontosearch = Math.min((Integer) SQLUtils.getValue(pos, SqlTypeName.INTEGER),
@@ -845,69 +770,69 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				}
 				return val2.indexOf(val1);
 			case "cast":
-				return evaluateRexNode(expfunc, values, origcolreqcolmap);
+				return evaluateRexNode(expfunc, values, tablecolumntypes);
 			case "group_concat":
 				RexNode rexnode1 = call.getOperands().get(0);
 				RexNode rexnode2 = call.getOperands().get(1);
-				return (String) evaluateRexNode(rexnode1, values, origcolreqcolmap)
-						+ evaluateRexNode(rexnode2, values, origcolreqcolmap);
+				return (String) evaluateRexNode(rexnode1, values, tablecolumntypes)
+						+ evaluateRexNode(rexnode2, values, tablecolumntypes);
 			case "concat":
 				rexnode1 = call.getOperands().get(0);
 				rexnode2 = call.getOperands().get(1);
-				return (String) evaluateRexNode(rexnode1, values, origcolreqcolmap)
-						+ evaluateRexNode(rexnode2, values, origcolreqcolmap);
+				return (String) evaluateRexNode(rexnode1, values, tablecolumntypes)
+						+ evaluateRexNode(rexnode2, values, tablecolumntypes);
 			case "position":
 				rexnode1 = call.getOperands().get(0);
 				rexnode2 = call.getOperands().get(1);
 				RexNode rexnode3 = call.getOperands().size() > 2 ? call.getOperands().get(2) : null;
 				if (nonNull(rexnode3)) {
-					return ((String) evaluateRexNode(rexnode2, values, origcolreqcolmap)).indexOf(
-							(String) evaluateRexNode(rexnode1, values, origcolreqcolmap),
-							(Integer) evaluateRexNode(rexnode3, values, origcolreqcolmap));
+					return ((String) evaluateRexNode(rexnode2, values, tablecolumntypes)).indexOf(
+							(String) evaluateRexNode(rexnode1, values, tablecolumntypes),
+							(Integer) evaluateRexNode(rexnode3, values, tablecolumntypes));
 				}
-				return ((String) evaluateRexNode(rexnode2, values, origcolreqcolmap))
-						.indexOf((String) evaluateRexNode(rexnode1, values, origcolreqcolmap));
+				return ((String) evaluateRexNode(rexnode2, values, tablecolumntypes))
+						.indexOf((String) evaluateRexNode(rexnode1, values, tablecolumntypes));
 			case "initcap":
-				val = (String) evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap);
+				val = (String) evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes);
 				return val.length() > 1 ? StringUtils.upperCase("" + val.charAt(0)) + val.substring(1)
 						: val.length() == 1 ? StringUtils.upperCase("" + val.charAt(0)) : val;
 			case "ascii":
-				val = (String) evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap);
+				val = (String) evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes);
 				return (int) val.charAt(0);
 			case "charac":
 				Integer asciicode = Integer
-						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap)));
+						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes)));
 				return (char) (asciicode % 256);
 			case "insertstr":
-				String value1 = (String) evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap);
+				String value1 = (String) evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes);
 				Integer postoinsert = Integer
-						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(2), values, origcolreqcolmap)));
+						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(2), values, tablecolumntypes)));
 				Integer lengthtoinsert = Integer
-						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(3), values, origcolreqcolmap)));
-				String value2 = (String) evaluateRexNode(call.getOperands().get(1), values, origcolreqcolmap);
+						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(3), values, tablecolumntypes)));
+				String value2 = (String) evaluateRexNode(call.getOperands().get(1), values, tablecolumntypes);
 				value2 = value2.substring(0, Math.min(lengthtoinsert, value2.length()));
 				return value1.substring(0, Math.min(value1.length(), postoinsert)) + value2
 						+ value1.substring(Math.min(value1.length(), postoinsert), value1.length());
 			case "leftchars":
-				value1 = (String) evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap);
+				value1 = (String) evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes);
 				Integer lengthtoextract = Integer
-						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(1), values, origcolreqcolmap)));
+						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(1), values, tablecolumntypes)));
 				return value1.substring(0, Math.min(lengthtoextract, value1.length()));
 			case "rightchars":
-				value1 = (String) evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap);
+				value1 = (String) evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes);
 				lengthtoextract = Integer
-						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(1), values, origcolreqcolmap)));
+						.valueOf(String.valueOf(evaluateRexNode(call.getOperands().get(1), values, tablecolumntypes)));
 				return value1.substring(value1.length() - Math.min(lengthtoextract, value1.length()));
 			case "reverse":
-				value1 = (String) evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap);
+				value1 = (String) evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes);
 				return StringUtils.reverse(value1);
 			case "trim":
 				rexnode1 = call.getOperands().get(0);
 				rexnode2 = call.getOperands().get(1);
 				rexnode3 = call.getOperands().get(2);
-				String leadtrailboth = (String) evaluateRexNode(rexnode1, values, origcolreqcolmap);
-				String str1 = (String) evaluateRexNode(rexnode2, values, origcolreqcolmap);
-				String str2 = (String) evaluateRexNode(rexnode3, values, origcolreqcolmap);
+				String leadtrailboth = (String) evaluateRexNode(rexnode1, values, tablecolumntypes);
+				String str1 = (String) evaluateRexNode(rexnode2, values, tablecolumntypes);
+				String str2 = (String) evaluateRexNode(rexnode3, values, tablecolumntypes);
 				if (leadtrailboth.equalsIgnoreCase("leading")) {
 					while (str2.startsWith(str1)) {
 						str2 = str2.substring(str1.length());
@@ -930,11 +855,11 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 
 			case "ltrim":
 				rexnode1 = call.getOperands().get(0);
-				str1 = (String) evaluateRexNode(rexnode1, values, origcolreqcolmap);
+				str1 = (String) evaluateRexNode(rexnode1, values, tablecolumntypes);
 				return StringUtils.stripStart(str1, null);
 			case "rtrim":
 				rexnode1 = call.getOperands().get(0);
-				str1 = (String) evaluateRexNode(rexnode1, values, origcolreqcolmap);
+				str1 = (String) evaluateRexNode(rexnode1, values, tablecolumntypes);
 				return StringUtils.stripEnd(str1, null);
 			case "curdate":
 				return date.format(new Date(System.currentTimeMillis()));
@@ -944,7 +869,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				return dateExtract.format(new Date(System.currentTimeMillis()));
 			case "year":
 				rexnode1 = call.getOperands().get(0);
-				str1 = (String) evaluateRexNode(rexnode1, values, origcolreqcolmap);
+				str1 = (String) evaluateRexNode(rexnode1, values, tablecolumntypes);
 				java.util.Calendar calendar = new java.util.GregorianCalendar();
 				try {
 					calendar.setTime(dateExtract.parse(str1));
@@ -954,7 +879,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				return calendar.get(Calendar.YEAR);
 			case "month":
 				rexnode1 = call.getOperands().get(0);
-				str1 = (String) evaluateRexNode(rexnode1, values, origcolreqcolmap);
+				str1 = (String) evaluateRexNode(rexnode1, values, tablecolumntypes);
 				calendar = new java.util.GregorianCalendar();
 				try {
 					calendar.setTime(dateExtract.parse(str1));
@@ -964,7 +889,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				return calendar.get(Calendar.MONTH);
 			case "day":
 				rexnode1 = call.getOperands().get(0);
-				str1 = (String) evaluateRexNode(rexnode1, values, origcolreqcolmap);
+				str1 = (String) evaluateRexNode(rexnode1, values, tablecolumntypes);
 				calendar = new java.util.GregorianCalendar();
 				try {
 					calendar.setTime(dateExtract.parse(str1));
@@ -976,21 +901,21 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				List<RexNode> rexnodes = call.getOperands();
 				for (int numnodes = 0; numnodes < rexnodes.size(); numnodes += 2) {
 					if (SQLUtils.evaluateExpression(rexnodes.get(numnodes), values)) {
-						return evaluateRexNode(rexnodes.get(numnodes + 1), values, origcolreqcolmap);
+						return evaluateRexNode(rexnodes.get(numnodes + 1), values, tablecolumntypes);
 					} else if (numnodes + 2 == rexnodes.size() - 1) {
-						return evaluateRexNode(rexnodes.get(numnodes + 2), values, origcolreqcolmap);
+						return evaluateRexNode(rexnodes.get(numnodes + 2), values, tablecolumntypes);
 					}
 				}
 				return "";
 			}
 		} else if (node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction) {
 			return SQLUtils.evaluateFunctionsWithType(
-					evaluateRexNode(call.getOperands().get(0), values, origcolreqcolmap), null,
+					evaluateRexNode(call.getOperands().get(0), values, tablecolumntypes), null,
 					call.getOperator().getName().toLowerCase());
 		} else if (node instanceof RexLiteral) {
 			return SQLUtils.getValue((RexLiteral) node, ((RexLiteral) node).getType().getSqlTypeName());
 		} else {
-			return getValueObject(node, values, origcolreqcolmap);
+			return getValueObject(node, values, tablecolumntypes);
 		}
 		return null;
 	}
@@ -1002,40 +927,39 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 	 * @param values
 	 * @return returns the values of RexNode
 	 */
-	public static Object getValueObject(RexNode node, Object[] values, Map<Integer, Integer> origcolreqcolmap) {
+	public static Object getValueObject(RexNode node, Object[] values, List<SqlTypeName> tablecolumntypes) {
 		if (node.isA(SqlKind.PLUS)) {
 			// For addition nodes, recursively evaluate left and right children
 			RexCall call = (RexCall) node;
-			return SQLUtils.evaluateValuesByOperator(getValueObject(call.operands.get(0), values, origcolreqcolmap),
-					getValueObject(call.operands.get(1), values, origcolreqcolmap), "+");
+			return SQLUtils.evaluateValuesByOperator(getValueObject(call.operands.get(0), values, tablecolumntypes),
+					getValueObject(call.operands.get(1), values, tablecolumntypes), "+");
 		} else if (node.isA(SqlKind.MINUS)) {
 			// For subtraction nodes, recursively evaluate left and right
 			// children
 			RexCall call = (RexCall) node;
-			return SQLUtils.evaluateValuesByOperator(getValueObject(call.operands.get(0), values, origcolreqcolmap),
-					getValueObject(call.operands.get(1), values, origcolreqcolmap), "-");
+			return SQLUtils.evaluateValuesByOperator(getValueObject(call.operands.get(0), values, tablecolumntypes),
+					getValueObject(call.operands.get(1), values, tablecolumntypes), "-");
 		} else if (node.isA(SqlKind.TIMES)) {
 			// For multiplication nodes, recursively evaluate left and right
 			// children
 			RexCall call = (RexCall) node;
-			return SQLUtils.evaluateValuesByOperator(getValueObject(call.operands.get(0), values, origcolreqcolmap),
-					getValueObject(call.operands.get(1), values, origcolreqcolmap), "*");
+			return SQLUtils.evaluateValuesByOperator(getValueObject(call.operands.get(0), values, tablecolumntypes),
+					getValueObject(call.operands.get(1), values, tablecolumntypes), "*");
 		} else if (node.isA(SqlKind.DIVIDE)) {
 			// For division nodes, recursively evaluate left and right children
 			RexCall call = (RexCall) node;
-			return SQLUtils.evaluateValuesByOperator(getValueObject(call.operands.get(0), values, origcolreqcolmap),
-					getValueObject(call.operands.get(1), values, origcolreqcolmap), "/");
+			return SQLUtils.evaluateValuesByOperator(getValueObject(call.operands.get(0), values, tablecolumntypes),
+					getValueObject(call.operands.get(1), values, tablecolumntypes), "/");
 		} else if (node.isA(SqlKind.LITERAL)) {
 			// For literals, return their value
 			RexLiteral literal = (RexLiteral) node;
 			return SQLUtils.getValue(literal, literal.getType().getSqlTypeName());
 		} else if (node.isA(SqlKind.FUNCTION)) {
 			// For functions, return their value
-			return evaluateRexNode(node, values, origcolreqcolmap);
+			return evaluateRexNode(node, values, tablecolumntypes);
 		} else if (node instanceof RexInputRef inputRef) {
 			// Handle column references
-			return nonNull(values) ? values[nonNull(origcolreqcolmap) ? origcolreqcolmap.get(inputRef.getIndex())
-					: inputRef.getIndex()] : inputRef.getIndex();
+			return nonNull(tablecolumntypes)?SQLUtils.getValueMR((String) values[inputRef.getIndex()], tablecolumntypes.get(inputRef.getIndex())):values[inputRef.getIndex()];
 		} else {
 			return null;
 		}
