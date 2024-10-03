@@ -793,7 +793,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					List<com.github.datasamudaya.common.Task> tasks = taskexecutortasks.getOrDefault(currentexecutor, new ArrayList<>());
 					com.github.datasamudaya.common.Task task = new com.github.datasamudaya.common.Task();
 					task.setJobid(applicationid);
-					task.setStageid("Stage-1");
+					task.setStageid("Stage-2");
 					task.setTaskid(taskid);
 					tasks.add(task);
 					taskexecutortasks.putIfAbsent((String) currentexecutor, tasks);
@@ -871,7 +871,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					List<com.github.datasamudaya.common.Task> tasks = taskexecutortasks.getOrDefault(currentexecutor, new ArrayList<>());
 					com.github.datasamudaya.common.Task task = new com.github.datasamudaya.common.Task();
 					task.setJobid(applicationid);
-					task.setStageid("Stage-1");
+					task.setStageid("Stage-3");
 					task.setTaskid(taskid);
 					tasks.add(task);
 					taskexecutortasks.putIfAbsent((String) currentexecutor, tasks);
