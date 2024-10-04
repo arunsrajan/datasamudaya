@@ -84,6 +84,7 @@ import com.github.datasamudaya.common.CloseStagesGraphExecutor;
 import com.github.datasamudaya.common.DAGEdge;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaJobMetrics;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaMapReducePhaseClassLoader;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -215,6 +216,7 @@ public class StreamJobScheduler {
 	@SuppressWarnings({ "unchecked", "rawtypes", "resource" })
 	public Object schedule(Job job) throws Exception {
 		this.job = job;
+		DataSamudayaJobMetrics.put(job.getJm());
 		this.pipelineconfig = job.getPipelineconfig();
 		// If scheduler is mesos?
 		ismesos = Boolean.parseBoolean(pipelineconfig.getMesos());
@@ -1280,7 +1282,18 @@ public class StreamJobScheduler {
 						semaphores.get(spts.getTask().getHostport()).acquire();
 						if (!spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
 							spts.setTaskexecutors(job.getTaskexecutors());
+							long starttime = System.currentTimeMillis();
 							Task result = (Task) spts.actors();
+							long endtime = System.currentTimeMillis();
+							if(isNull(result.taskexecutionstartime)) {
+								result.taskexecutionstartime = starttime;
+							}
+							if(isNull(result.taskexecutionendtime)) {
+								result.taskexecutionendtime = endtime;
+							}
+							if(isNull(result.timetakenseconds)) {
+								result.timetakenseconds = (endtime - starttime) / 1000;
+							}
 							log.info("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
 							printresult.acquire();
 							counttaskscomp++;
