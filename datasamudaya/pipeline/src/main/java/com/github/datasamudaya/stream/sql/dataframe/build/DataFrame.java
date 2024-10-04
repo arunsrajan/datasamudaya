@@ -1,14 +1,16 @@
 package com.github.datasamudaya.stream.sql.dataframe.build;
 
+import static java.util.Objects.isNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.apache.calcite.rel.RelFieldCollation;
-import org.apache.calcite.rel.RelFieldCollation.Direction;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollations;
+import org.apache.calcite.rel.RelFieldCollation;
+import org.apache.calcite.rel.RelFieldCollation.Direction;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
 import org.apache.calcite.rel.type.RelDataType;
@@ -27,13 +29,11 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
+import com.github.datasamudaya.common.utils.sql.Functions;
+import com.github.datasamudaya.common.utils.sql.SimpleSchema;
+import com.github.datasamudaya.common.utils.sql.SimpleTable;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
-import com.github.datasamudaya.stream.utils.SQLUtils;
-import com.github.datasamudaya.stream.utils.SimpleSchema;
-import com.github.datasamudaya.stream.utils.SimpleTable;
-
-import static java.util.Objects.isNull;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 
 /**
  * The DataFrame Object to manipulate the columns and build output using calcite
@@ -50,7 +50,7 @@ public class DataFrame {
 	protected DataFrame(DataFrameContext dfcontext) {
 		this.dfcontext = dfcontext;
 		SqlStdOperatorTable sqlStdOperatorTable = SqlStdOperatorTable.instance();
-		List<SqlFunction> sqlFunctions = SQLUtils.getAllSqlFunctions();
+		List<SqlFunction> sqlFunctions = Functions.getAllSqlFunctions();
 		sqlFunctions.stream().forEach(sqlFunction -> sqlStdOperatorTable.register(sqlFunction));
 		SchemaPlus schemaplus = Frameworks.createRootSchema(true);
 		SimpleSchema.Builder schemabuilder = SimpleSchema.newBuilder(dfcontext.db);

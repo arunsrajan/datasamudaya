@@ -13,50 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.datasamudaya.tasks.scheduler.ignite;
+package com.github.datasamudaya.tasks.yarn.executor;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
-import org.apache.ignite.Ignite;
-import org.apache.ignite.IgniteCache;
-import org.apache.ignite.resources.IgniteInstanceResource;
+import java.util.concurrent.Callable;
 import org.apache.log4j.Logger;
-import org.xerial.snappy.SnappyInputStream;
 
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.executor.Mapper;
 
+/**
+ * Executor for mapper.
+ * @author arun
+ *
+ */
 @SuppressWarnings("rawtypes")
-public class IgniteMapper {
-	@IgniteInstanceResource
-	Ignite ignite;
-
-	public IgniteMapper() {
-	}
-
-	static Logger log = Logger.getLogger(IgniteMapper.class);
+public class MapperExecutor implements Callable<Context> {
+	static Logger log = Logger.getLogger(MapperExecutor.class);
 	BlocksLocation blockslocation;
 	List<Mapper> crunchmappers;
-	byte[] mapperbytes;
-	public IgniteMapper(BlocksLocation blockslocation, byte[] mapperbytes) {
+	InputStream datastream;
+
+	public MapperExecutor(BlocksLocation blockslocation, InputStream datastream, List<Mapper> crunchmappers) {
 		this.blockslocation = blockslocation;
-		this.mapperbytes = mapperbytes;
+		this.datastream = datastream;
+		this.crunchmappers = crunchmappers;
 	}
 
-	public Context execute() throws Exception {
-		try (IgniteCache<Object, byte[]> cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
-				var compstream = new SnappyInputStream(new ByteArrayInputStream(cache.get(Utils.getBlocksLocation(blockslocation))));
+	/**
+	 * Executes the call method and returns context object.
+	 */
+	@Override
+	public Context call() throws Exception {
+		try (var compstream = datastream;
 				var br =
 						new BufferedReader(new InputStreamReader(compstream));) {
 			var ctx = new DataCruncherContext();
 			br.lines().parallel().forEachOrdered(line -> {
-				for (Mapper crunchmapper : crunchmappers) {
+				for (var crunchmapper : crunchmappers) {
 					crunchmapper.map(0l, line, ctx);
 				}
 			});

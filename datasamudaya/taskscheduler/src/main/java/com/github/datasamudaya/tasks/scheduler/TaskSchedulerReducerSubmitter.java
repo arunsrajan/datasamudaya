@@ -15,16 +15,16 @@
  */
 package com.github.datasamudaya.tasks.scheduler;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.ReducerValues;
+import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.TaskSchedulerReducerSubmitterMBean;
 import com.github.datasamudaya.common.utils.Utils;
 
@@ -40,18 +40,20 @@ public class TaskSchedulerReducerSubmitter
 	ReducerValues rv;
 	String hp;
 	String applicationid;
+	String stageid;
 	String taskid;
 	long reducersubmittedcount;
 	CuratorFramework cf;
 	String executorid;
 	boolean iscompleted;
 
-	public TaskSchedulerReducerSubmitter(String currentexecutor, ReducerValues rv, String applicationid, String taskid2,
+	public TaskSchedulerReducerSubmitter(String currentexecutor, ReducerValues rv, String applicationid, String stageid, String taskid,
 			long reducersubmittedcount, CuratorFramework cf, String executorid) {
 		this.rv = rv;
 		this.hp = currentexecutor;
 		this.applicationid = applicationid;
-		this.taskid = taskid2;
+		this.stageid = stageid;
+		this.taskid = taskid;
 		this.reducersubmittedcount = reducersubmittedcount;
 		this.cf = cf;
 		this.executorid = executorid;
@@ -68,9 +70,14 @@ public class TaskSchedulerReducerSubmitter
 	public Context call() throws Exception {
 		List objects = new ArrayList<>();
 		objects.add(rv);
-		objects.add(applicationid);
-		objects.add(taskid);
-		objects.add(executorid);		
+		Task task = new Task();
+		task.setJobid(applicationid);
+		task.setStageid(stageid);
+		task.setTaskid(taskid);
+		task.setHostport(hp);
+		task.setTeid(executorid);
+		objects.add(task);
+		objects.add(executorid);
 		log.debug("Submitting Reducer Task: " + objects);
 		return (Context) Utils.getResultObjectByInput(hp, objects, executorid);
 

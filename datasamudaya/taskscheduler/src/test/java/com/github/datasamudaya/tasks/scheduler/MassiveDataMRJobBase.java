@@ -73,7 +73,7 @@ public class MassiveDataMRJobBase {
 	static FileSystem hdfs;
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
-	String hdfsfilepath = "hdfs://localhost:9000";
+	String hdfsfilepath = "hdfs://127.0.0.1:9000";
 	String airlines = "/airlines";
 	String airline1989 = "/airline1989";
 	static String airlinenoheader = "/airlinenoheader";
@@ -197,7 +197,7 @@ public class MassiveDataMRJobBase {
 				}
 			}
 			teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
-			Utils.launchContainersUserSpec("arun", teappid, 1, 1024, 1);
+			Utils.launchContainersUserSpec("arun", teappid, 4, 4096, 3);
 			jc = JobConfigurationBuilder.newBuilder()
 					.setIsuseglobalte(true)
 					.setUser("arun")

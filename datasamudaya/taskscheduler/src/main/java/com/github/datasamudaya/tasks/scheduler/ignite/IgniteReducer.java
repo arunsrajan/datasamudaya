@@ -15,12 +15,16 @@
  */
 package com.github.datasamudaya.tasks.scheduler.ignite;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import org.apache.ignite.lang.IgniteCallable;
 import org.apache.log4j.Logger;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
+import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.executor.Reducer;
 
 @SuppressWarnings("rawtypes")
@@ -30,15 +34,21 @@ public class IgniteReducer implements IgniteCallable<Context> {
 	static Logger log = Logger.getLogger(IgniteReducer.class);
 	DataCruncherContext dcc;
 	Reducer cr;
-
-	public IgniteReducer(DataCruncherContext dcc, Reducer cr) {
+	byte[] redbytes;
+	public IgniteReducer(DataCruncherContext dcc, byte[] redbytes) {
 		this.dcc = dcc;
-		this.cr = cr;
+		this.redbytes = redbytes;
 	}
 
 	@SuppressWarnings({"unchecked"})
 	@Override
 	public Context call() throws Exception {
+		Kryo kryo = Utils.getKryoInstance();
+		try(var istream = new ByteArrayInputStream(redbytes);var input = new Input(istream)){
+			this.cr = (Reducer) kryo.readClassAndObject(input);
+		} catch(Exception ex) {
+			
+		}
 		var ctx = new DataCruncherContext();
 		dcc.keys().parallelStream().forEachOrdered(key -> {
 			cr.reduce(key, (List) dcc.get(key), ctx);

@@ -6,7 +6,7 @@
 
 	<groupId>com.github.datasamudaya</groupId>
 	<artifactId>datasamudaya</artifactId>
-	<version>3.0</version>
+	<version>4.0</version>
 	<packaging>pom</packaging>
 
 	<name>datasamudaya</name>
@@ -749,7 +749,7 @@
 							<argLine>
 								${argLine}
 								-Xms256m -Xmx2g
-								-javaagent:../lib/dsagent-3.0.jar
+								-javaagent:../lib/dsagent-4.0.jar
 								--add-opens
 								java.base/java.math=ALL-UNNAMED
 								--add-opens

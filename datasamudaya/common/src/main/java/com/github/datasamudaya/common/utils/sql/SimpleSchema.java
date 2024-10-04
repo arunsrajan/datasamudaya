@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.datasamudaya.stream.utils;
+package com.github.datasamudaya.common.utils.sql;
 
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaVersion;

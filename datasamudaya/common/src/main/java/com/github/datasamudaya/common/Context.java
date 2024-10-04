@@ -16,6 +16,7 @@
 package com.github.datasamudaya.common;
 
 import java.util.Collection;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -38,4 +39,12 @@ public interface Context<K, V> {
 	public void addAll(K k, Collection<V> v);
 
 	public void add(Context<K, V> ctx);
+	
+	public long size();
+	
+	public long valuesSize();
+	
+	public void clear();
+	
+	public Set<Entry<K, Collection<V>>> entries();
 }

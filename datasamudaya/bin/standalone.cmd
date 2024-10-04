@@ -35,7 +35,7 @@ IF EXIST %DATASAMUDAYA_JAVA_HOME%\bin\java.exe (
 
 "%DATASAMUDAYA_JAVA_HOME%\bin\java" -version
 
-"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %CLASSPATH% -javaagent:../lib/dsagent-3.0.jar -Djava.net.preferIPv4Stack=true com.github.datasamudaya.tasks.scheduler.executor.standalone.EmbeddedSchedulersNodeLauncher %*
+"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %CLASSPATH% -javaagent:../lib/dsagent-4.0.jar -Djava.net.preferIPv4Stack=true com.github.datasamudaya.tasks.scheduler.executor.standalone.EmbeddedSchedulersNodeLauncher %*
 
 ) ELSE (
  @echo on

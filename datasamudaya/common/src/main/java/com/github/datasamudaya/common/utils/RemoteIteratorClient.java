@@ -20,7 +20,6 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.SorterPort;
 import com.github.datasamudaya.common.Task;
-import com.github.datasamudaya.common.exceptions.RpcRegistryException;
 
 import net.jpountz.lz4.LZ4BlockInputStream;
 
@@ -47,7 +46,7 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 	Kryo kryo = Utils.getKryo();
 	RemoteIteratorHasNext hasnext = new RemoteIteratorHasNext();
 	RemoteIteratorNext nextelem = new RemoteIteratorNext();
-	public RemoteIteratorClient(Task task, String appendwithpath, boolean appendintermediate, boolean left, boolean right, List<FieldCollationDirection> fcsc, RequestType requesttype, IteratorType iteratortype) throws Exception {
+	public RemoteIteratorClient(Task task, String appendwithpath, boolean appendintermediate, boolean left, boolean right, List<FieldCollationDirection> fcsc, RequestType requesttype, IteratorType iteratortype, boolean ismr, Object key) throws Exception {
 		try {			
 			log.info("Trying to split host and port {}", task.getHostport());
 			String[] hostport = task.getHostport().split(DataSamudayaConstants.UNDERSCORE);
@@ -60,10 +59,11 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 			outputStream = socket.getOutputStream();
 			output = new Output(outputStream);
 			this.task = task;
-			kryo.writeClassAndObject(output, new RemoteIteratorTask(task, appendwithpath, appendintermediate, left, right, fcsc, iteratortype));
+			kryo.writeClassAndObject(output, new RemoteIteratorTask(task, appendwithpath, appendintermediate, left, right, ismr, fcsc, iteratortype));
 			output.flush();
 			this.requesttype = requesttype;
 			nextelem.setRequestType(requesttype);
+			nextelem.setKey(key);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.datasamudaya.tasks.executor;
+package com.github.datasamudaya.tasks.yarn.executor;
 
 import java.io.InputStream;
 import java.util.List;
 
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
+import com.github.datasamudaya.tasks.executor.Combiner;
+import com.github.datasamudaya.tasks.executor.Mapper;
 
 /**
  * Executor for mapper and combiner.

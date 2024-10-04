@@ -22,17 +22,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
-import org.apache.log4j.Logger;
-import org.jooq.lambda.tuple.Tuple4;
+import org.jooq.lambda.tuple.Tuple5;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.CombinerValues;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
-import com.github.datasamudaya.common.ReducerValues;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingContext;
-import com.github.datasamudaya.common.utils.IteratorType;
-import com.github.datasamudaya.common.utils.RemoteIteratorClient;
-import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
 
 /**
@@ -40,29 +38,29 @@ import com.github.datasamudaya.common.utils.Utils;
  * @author arun
  *
  */
-public class TaskExecutorReducer implements Callable<Context> {
-	static Logger log = Logger.getLogger(TaskExecutorReducer.class);
+public class TaskExecutorCombiner implements Callable<Context> {
+	static Logger log = LoggerFactory.getLogger(TaskExecutorCombiner.class);
 	@SuppressWarnings("rawtypes")
-	Reducer cr;
-	ReducerValues rv;
+	Combiner combiner;
+	CombinerValues cv;
 	File file;
 	@SuppressWarnings("rawtypes")
 	Context ctx;
-	String executorid;
 	Task task;
+	String executorid;
 	int port;
 	Map<String, Object> apptaskexecutormap;
 
 	@SuppressWarnings({"rawtypes"})
-	public TaskExecutorReducer(ReducerValues rv, Task task, ClassLoader cl,
+	public TaskExecutorCombiner(CombinerValues cv, Task task, ClassLoader cl,
 			int port, Map<String, Object> apptaskexecutormap, String executorid) throws Exception {
-		this.rv = rv;
+		this.cv = cv;
 		Class<?> clz = null;
 		this.port = port;
 		try {
-			cr = (Reducer) rv.getReducer();
-			this.executorid = executorid;
+			combiner = (Combiner) cv.getCombiner();
 			this.task = task;
+			this.executorid = executorid;
 		} catch (Exception ex) {
 			log.debug("Exception in loading class:", ex);
 		}
@@ -79,53 +77,48 @@ public class TaskExecutorReducer implements Callable<Context> {
 		var esresult = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
-			log.debug("Submitted Reducer:" + task.getJobid() + task.getTaskid());
-			var complete = new DataCruncherContext();
-			var apptaskcontextmap = new ConcurrentHashMap<String, DiskSpillingContext>();
-			DiskSpillingContext currentctx;
-			var cdl = new CountDownLatch(rv.getTuples().size());
-			for (var tuple4 : (List<Tuple4>) rv.getTuples()) {
-				var ctx = new DataCruncherContext();				
+			log.info("Submitted Combiner:" + task.getJobid() + task.getTaskid());
+			var complete = new DiskSpillingContext(task, null);
+			var appstgtaskcontextmap = new ConcurrentHashMap<String, Context>();
+			DiskSpillingContext currentctx = null;
+			var cdl = new CountDownLatch(cv.getTuples().size());
+			for (var tuple5 : (List<Tuple5>) cv.getTuples()) {
+				var ctx = new DataCruncherContext();
 				int index = 0;
-				for (var appstgtaskids : (Collection<String>) tuple4.v2) {
-					Task remotetask = ((List<Task>)tuple4.v4).get(index);
-					remotetask.setHostport((String) ((List)tuple4.v3).get(index));
-					if (apptaskcontextmap.get(tuple4.v1.toString() + appstgtaskids) != null) {
-						currentctx = apptaskcontextmap.get(tuple4.v1.toString() + appstgtaskids);
+				for (var appstgtaskids : (Collection<String>) tuple5.v2) {
+					Task remotetask = ((List<Task>)tuple5.v5).get(index);
+					remotetask.setHostport((String) ((List)tuple5.v3).get(index));
+					if (appstgtaskcontextmap.get(appstgtaskids) != null) {
+						currentctx = (DiskSpillingContext) appstgtaskcontextmap.get(tuple5.v1.toString() + appstgtaskids);
 						if(currentctx.isSpilled()) {
-							Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple4.v1, remotetask, false);
+							Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple5.v1, remotetask, false);
 						} else {
-							ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
+							ctx.addAll(tuple5.v1, currentctx.get(tuple5.v1));
 						}
 					} else {
-						Object object =
-								(Object) apptaskexecutormap.get(appstgtaskids);
-						if (object == null) {
-							currentctx = new DiskSpillingContext(task, tuple4.v1.toString() + appstgtaskids);
-							Utils.copySpilledContextToDestination(null, Arrays.asList(ctx,currentctx), tuple4.v1, remotetask, true);													
-						}
-						else if(object instanceof TaskExecutorMapper tem) {
-							currentctx = (DiskSpillingContext) tem.ctx;
-							if(currentctx.isSpilled()) {
-								Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple4.v1, remotetask, false);
-							} else {
-								ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
-							}
-						} else if(object instanceof TaskExecutorCombiner tec){
-							currentctx = (DiskSpillingContext) tec.ctx;
-							if(currentctx.isSpilled()) {
-								Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple4.v1, remotetask, false);
-							} else {
-								ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
-							}
+						TaskExecutorMapper temc =
+								(TaskExecutorMapper) apptaskexecutormap.get(appstgtaskids);
+						if (temc == null) {
+							log.info("Mapper Task Is Remote To TE");
+							currentctx = new DiskSpillingContext(task, tuple5.v1.toString() + appstgtaskids);							
+							Utils.copySpilledContextToDestination(null, Arrays.asList(ctx,currentctx), tuple5.v1, remotetask, true);
 						} else {
-							currentctx = null;
+							log.info("Mapper Task Is Local To TE");
+							currentctx = (DiskSpillingContext) temc.ctx;
+							log.info("Mapper Task Is Local To TE Is Spilled {}", currentctx.isSpilled());
+							if(currentctx.isSpilled()) {
+								Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple5.v1, remotetask, false);
+							} else {
+								log.info("Size Of Unspilled Data {}", currentctx.get(tuple5.v1).size());
+								ctx.addAll(tuple5.v1, currentctx.get(tuple5.v1));
+							}
+							log.info("Combiner Task Is Local To TE Completed");
 						}
-						apptaskcontextmap.put(tuple4.v1.toString() + appstgtaskids, currentctx);
+						appstgtaskcontextmap.put(tuple5.v1.toString() + appstgtaskids, currentctx);
 					}					
 					index++;
 				}
-				var datasamudayar = new ReducerExecutor(ctx, cr, tuple4.v1, task);
+				var datasamudayar = new CombinerExecutor(ctx, combiner, task);
 				final var fc = es.submit(datasamudayar);
 				esresult.execute(() -> {
 					DiskSpillingContext results;
@@ -133,7 +126,6 @@ public class TaskExecutorReducer implements Callable<Context> {
 						lock.acquire();
 						results = (DiskSpillingContext) fc.get();
 						if(results.isSpilled()) {
-							results.close();
 							results.keys().forEach(key->
 							Utils.copySpilledContextToDestination(results, Arrays.asList(complete), key, task, false));
 						} else {
@@ -148,8 +140,12 @@ public class TaskExecutorReducer implements Callable<Context> {
 				});
 			}
 			cdl.await();
+			if(complete.isSpilled()) {
+				complete.close();
+			}
+			log.info("Combiner Result Keys {}",complete.keys());
 			ctx = complete;
-			log.debug("Submitted Reducer Completed:" + task.getJobid() + task.getTaskid());
+			log.debug("Submitted Reducer Completed:" + task.getJobid() + task.getStageid() + task.getTaskid());
 		} catch (Throwable ex) {
 			try {
 				var baos = new ByteArrayOutputStream();

@@ -243,7 +243,7 @@ public class SelectQueryExecutor {
 	 * @throws Exception
 	 */
 	public static List executeSelectQueryIgnite(String dbdefault, String selectquery, String user, String jobid,
-			String tejobid) throws Exception {
+			String tejobid, long maxmem) throws Exception {
 		try {
 			PipelineConfig pc = new PipelineConfig();
 			pc.setJobname(DataSamudayaConstants.SQL);
@@ -257,6 +257,9 @@ public class SelectQueryExecutor {
 			pc.setUser(user);
 			pc.setJobid(jobid);
 			pc.setTejobid(tejobid);
+			String mem = String.valueOf(maxmem);
+			pc.setMinmem(mem);
+			pc.setMaxmem(mem);
 			CCJSqlParserManager parserManager = new CCJSqlParserManager();
 			Validation validation = new Validation(Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB,
 					DatabaseType.POSTGRESQL, DatabaseType.H2), selectquery);

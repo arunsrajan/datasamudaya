@@ -29,6 +29,7 @@ public class RemoteIteratorTask implements Serializable {
 	private boolean appendintermediate;
 	private boolean left;
 	private boolean right;
+	private boolean mr;
 	private List<FieldCollationDirection> fcsc;
 	private IteratorType iteratortype;
 }

@@ -26,6 +26,8 @@ import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.utils.DiskSpillingContext;
 
 /**
  * Executor for mapper.
@@ -38,11 +40,12 @@ public class MapperExecutor implements Callable<Context> {
 	BlocksLocation blockslocation;
 	List<Mapper> crunchmappers;
 	InputStream datastream;
-
-	public MapperExecutor(BlocksLocation blockslocation, InputStream datastream, List<Mapper> crunchmappers) {
+	 Task task;
+	public MapperExecutor(BlocksLocation blockslocation, InputStream datastream, List<Mapper> crunchmappers, Task task) {
 		this.blockslocation = blockslocation;
 		this.datastream = datastream;
 		this.crunchmappers = crunchmappers;
+		this.task = task;
 	}
 
 	/**
@@ -50,11 +53,11 @@ public class MapperExecutor implements Callable<Context> {
 	 */
 	@Override
 	public Context call() throws Exception {
+		var ctx = new DiskSpillingContext(task, DataSamudayaConstants.EMPTY);
 		try (var compstream = datastream;
 				var br =
-						new BufferedReader(new InputStreamReader(compstream));) {
-			var ctx = new DataCruncherContext();
-			br.lines().parallel().forEachOrdered(line -> {
+						new BufferedReader(new InputStreamReader(compstream));) {			
+			br.lines().forEach(line -> {
 				for (var crunchmapper : crunchmappers) {
 					crunchmapper.map(0l, line, ctx);
 				}
@@ -64,8 +67,12 @@ public class MapperExecutor implements Callable<Context> {
 		catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 			throw ex;
+		} finally {
+			if(ctx.isSpilled()) {
+				ctx.close();
+			}
 		}
-
+		
 	}
 
 

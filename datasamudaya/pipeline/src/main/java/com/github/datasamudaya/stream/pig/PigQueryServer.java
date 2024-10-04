@@ -135,6 +135,9 @@ public class PigQueryServer {
 								isjgroups = false;
 								isignite = true;
 								isyarn = false;
+								String memstr = String.valueOf(Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+								pipelineconfig.setMinmem(memstr);
+								pipelineconfig.setMaxmem(memstr);
 							}
 							out.println("Welcome to the Pig Server!");
 							out.println("Type 'quit' to exit.");
@@ -190,6 +193,9 @@ public class PigQueryServer {
 													pipelineconfig.setMesos("false");
 													pipelineconfig.setJgroups("false");
 													pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
+													String memstr = String.valueOf(Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+													pipelineconfig.setMinmem(memstr);
+													pipelineconfig.setMaxmem(memstr);
 													if (isyarncontainerlaunched) {
 														try {
 															Utils.shutDownYARNContainer(tejobid);

@@ -27,7 +27,5 @@ public interface TaskSchedulerMapperSubmitterMBean {
 
 	public abstract String getHostPort();
 
-	public abstract CuratorFramework getCuratorFramework();
-
 	public abstract String getExecutorid();
 }

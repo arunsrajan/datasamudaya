@@ -49,6 +49,7 @@ public class ApplicationTask implements Serializable {
 	}
 
 	private String applicationid;
+	private String stageid;
 	private String taskid;
 	private TaskStatus taskstatus;
 	private TaskType tasktype;
