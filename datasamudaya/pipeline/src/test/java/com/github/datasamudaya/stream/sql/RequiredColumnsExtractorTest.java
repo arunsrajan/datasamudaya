@@ -19,9 +19,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.datasamudaya.stream.utils.Optimizer;
-import com.github.datasamudaya.stream.utils.SimpleSchema;
-import com.github.datasamudaya.stream.utils.SimpleTable;
+import com.github.datasamudaya.common.utils.sql.Optimizer;
+import com.github.datasamudaya.common.utils.sql.SimpleSchema;
+import com.github.datasamudaya.common.utils.sql.SimpleTable;
 
 public class RequiredColumnsExtractorTest {
 	private static Logger log = LoggerFactory.getLogger(RequiredColumnsExtractorTest.class);

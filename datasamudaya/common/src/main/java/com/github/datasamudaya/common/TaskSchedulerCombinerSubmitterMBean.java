@@ -28,6 +28,4 @@ public interface TaskSchedulerCombinerSubmitterMBean {
 	public abstract String getHostPort();
 
 	public abstract long getCombinerSubmittedCount();
-
-	public abstract CuratorFramework getCuratorFramework();
 }

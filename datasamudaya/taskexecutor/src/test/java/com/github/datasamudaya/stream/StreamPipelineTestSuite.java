@@ -13,7 +13,7 @@ import org.junit.runners.Suite;
 
 import com.github.datasamudaya.stream.utils.FileBlocksPartitionerHDFSMultipleNodesTest;
 import com.github.datasamudaya.stream.utils.FileBlocksPartitionerHDFSTest;
-import com.github.datasamudaya.tasks.executor.MassiveDataCruncherMRApiTest;
+import com.github.datasamudaya.tasks.executor.MRApiTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -30,7 +30,7 @@ import com.github.datasamudaya.tasks.executor.MassiveDataCruncherMRApiTest;
 		StreamPipelineCoalesceTest.class, StreamPipelineJsonTest.class,
 		StreamPipelineTransformationFunctionsTest.class,
 		StreamPipelineStatisticsTest.class,
-		MassiveDataCruncherMRApiTest.class,
+		MRApiTest.class,
 		StreamPipelineSqlBuilderLocalModeTest.class,
 		StreamPipelineSqlBuilderNoDriverTest.class,
 		StreamPipelineSqlBuilderTest.class,

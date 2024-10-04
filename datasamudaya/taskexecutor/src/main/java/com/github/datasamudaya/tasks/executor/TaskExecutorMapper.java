@@ -29,29 +29,27 @@ import org.apache.log4j.Logger;
 
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
+import com.github.datasamudaya.common.Task;
 
 /**
  * Executor for Mapper and combiner.
  * @author arun
  *
  */
-public class TaskExecutorMapperCombiner implements Callable {
-	static Logger log = Logger.getLogger(TaskExecutorMapperCombiner.class);
+public class TaskExecutorMapper implements Callable {
+	static Logger log = Logger.getLogger(TaskExecutorMapper.class);
 	BlocksLocation blockslocation;
 	@SuppressWarnings("rawtypes")
 	List<Mapper> cm = new ArrayList<>();
 	@SuppressWarnings("rawtypes")
-	List<Combiner> cc = new ArrayList<>();
-	@SuppressWarnings("rawtypes")
 	Context ctx;
 	File file;
-	String applicationid;
-	String taskid;
+	Task task;
 	InputStream datastream;
 	int port;
 
 	@SuppressWarnings({"rawtypes"})
-	public TaskExecutorMapperCombiner(BlocksLocation blockslocation, InputStream datastream, String applicationid, String taskid,
+	public TaskExecutorMapper(BlocksLocation blockslocation, InputStream datastream, Task task,
 			ClassLoader cl, int port) throws Exception {
 		this.blockslocation = blockslocation;
 		this.datastream = datastream;
@@ -63,17 +61,11 @@ public class TaskExecutorMapperCombiner implements Callable {
 					cm.add((Mapper) mapperinstance);
 				}
 			}
-			if (blockslocation.getCombinerclasses() != null) {
-				for (var combinerInstance :blockslocation.getCombinerclasses()) {
-					cc.add((Combiner) combinerInstance);
-				}
-			}
 		}
 		catch (Throwable ex) {
 			log.error("Exception in loading class:", ex);
 		}
-		this.applicationid = applicationid;
-		this.taskid = taskid;
+		this.task = task;
 	}
 
 	/**
@@ -84,7 +76,7 @@ public class TaskExecutorMapperCombiner implements Callable {
 
 		try {
 
-			var datasamudayamc = new MapperCombinerExecutor(blockslocation, datastream, cm, cc);
+			var datasamudayamc = new MapperExecutor(blockslocation, datastream, cm, task);
 			var fc = es.submit(datasamudayamc);
 			ctx = fc.get();
 			return ctx;

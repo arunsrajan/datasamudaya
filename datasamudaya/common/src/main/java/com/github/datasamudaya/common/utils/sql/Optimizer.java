@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.datasamudaya.stream.utils;
+package com.github.datasamudaya.common.utils.sql;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,6 +53,10 @@ import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
+/**
+ * @author arun
+ * Sql Optimizer class apache calcite with volcano planner
+ */
 public class Optimizer {
 
 	private final CalciteConnectionConfig config;
@@ -92,7 +96,7 @@ public class Optimizer {
 
 
 		SqlStdOperatorTable sqlStdOperatorTable = SqlStdOperatorTable.instance();
-		List<SqlFunction> sqlFunctions = SQLUtils.getAllSqlFunctions();
+		List<SqlFunction> sqlFunctions = Functions.getAllSqlFunctions();
 
 		SqlOperatorTable customSqlOperatorTable = SqlOperatorTables.of(sqlFunctions);
 		SqlOperatorTable operatorTable = new SqlFunctionsChainedOperatorTable(Arrays.asList(sqlStdOperatorTable,customSqlOperatorTable));

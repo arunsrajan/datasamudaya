@@ -16,13 +16,12 @@ import java.util.concurrent.Executors;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.yarn.YarnSystemConstants;
 
 import com.github.datasamudaya.common.ColumnMetadata;
-import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Job.JOBTYPE;
+import com.github.datasamudaya.common.LaunchContainers;
 import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.Utils;
 
@@ -253,7 +252,7 @@ public class SQLServer {
 											List<List> results = null;
 											if (isignite) {
 												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
-												results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid);
+												results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid, Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
 											} else {
 												DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
 												results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups, isyarn, out, isdriverrequired);

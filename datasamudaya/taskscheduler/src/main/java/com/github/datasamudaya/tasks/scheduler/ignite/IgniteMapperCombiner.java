@@ -15,33 +15,47 @@
  */
 package com.github.datasamudaya.tasks.scheduler.ignite;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import org.apache.ignite.lang.IgniteCallable;
 import org.jgroups.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.executor.Combiner;
 import com.github.datasamudaya.tasks.executor.Mapper;
 
 public class IgniteMapperCombiner extends IgniteMapper implements IgniteCallable<MapReduceResult> {
-	private static final long serialVersionUID = -4560060224786371070L;
-	@SuppressWarnings("rawtypes")
-	List<Mapper> crunchmappers;
+	private static final long serialVersionUID = -661033112077346441L;
 	@SuppressWarnings("rawtypes")
 	List<Combiner> crunchcombiners;
-
-	@SuppressWarnings("rawtypes")
-	public IgniteMapperCombiner(BlocksLocation blockslocation, List<Mapper> crunchmappers,
-			List<Combiner> crunchcombiners) {
-		super(blockslocation, crunchmappers);
-		this.crunchcombiners = crunchcombiners;
+	byte[] combinerbytes;
+	Logger log = LoggerFactory.getLogger(IgniteMapperCombiner.class);
+	public IgniteMapperCombiner(BlocksLocation blockslocation, byte[] mapperbytes,
+			byte[] combinerbytes) {		
+		super(blockslocation, mapperbytes);		
+		this.combinerbytes = combinerbytes;
 	}
 
 	@SuppressWarnings({"rawtypes"})
 	@Override
 	public MapReduceResult call() throws Exception {
+		Kryo kryo = Utils.getKryoInstance();
+		try(var baism = new ByteArrayInputStream(mapperbytes);
+				Input inputm = new Input(baism);
+				var baisc = new ByteArrayInputStream(combinerbytes);
+				Input inputc = new Input(baisc);){
+			this.crunchmappers = (List<Mapper>) kryo.readClassAndObject(inputm);		
+			this.crunchcombiners = (List<Combiner>) kryo.readClassAndObject(inputc);
+		} catch(Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
 		var starttime = System.currentTimeMillis();
 		var ctx = super.execute();
 		if (crunchcombiners != null && crunchcombiners.size() > 0) {

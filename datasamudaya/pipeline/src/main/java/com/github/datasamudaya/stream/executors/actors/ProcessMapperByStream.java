@@ -187,7 +187,7 @@ public class ProcessMapperByStream extends AbstractActor implements Serializable
 										String jstid = Utils.getIntermediateInputStreamTask(nik.getTask());
 										if (isNull(taskrlistiterclientmap.get(jstid))) {
 											taskrlistiterclientmap.put(jstid, new RemoteIteratorClient<>(
-													nik.getTask(), null, false, false, false, null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION));
+													nik.getTask(), null, false, false, false, null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION, false, null));
 										}
 										if(!taskrlistiterclientmap.get(jstid).isclosed() && taskrlistiterclientmap.get(jstid).hasNext()) {
 											Object value = taskrlistiterclientmap.get(jstid).next().getValue();

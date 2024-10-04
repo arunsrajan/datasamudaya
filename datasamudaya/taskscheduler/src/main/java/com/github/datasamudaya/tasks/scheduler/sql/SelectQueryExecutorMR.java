@@ -1,7 +1,5 @@
 package com.github.datasamudaya.tasks.scheduler.sql;
 
-import static java.util.Objects.nonNull;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,11 +21,7 @@ import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationIgnite;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationYarn;
 
 import net.sf.jsqlparser.parser.CCJSqlParserManager;
-import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
-import net.sf.jsqlparser.statement.select.Join;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.util.validation.Validation;
 import net.sf.jsqlparser.util.validation.ValidationError;
 import net.sf.jsqlparser.util.validation.feature.DatabaseType;
@@ -65,50 +59,38 @@ public class SelectQueryExecutorMR {
 				throw new Exception("Syntax error in SQL");
 			}
 			Statement statement = parserManager.parse(new StringReader(selectquery));
-			Select select = (Select) statement;
-			if (select.getSelectBody() instanceof PlainSelect) {
-				var plainSelect = (PlainSelect) select.getSelectBody();
-				Table tablePrimary = (Table) plainSelect.getFromItem();
-				var tables = new ArrayList<Table>();
-				tables.add(tablePrimary);
-
-				if (nonNull(plainSelect.getJoins())) {
-					for (Join join : plainSelect.getJoins()) {
-						tables.add(((Table) join.getRightItem()));
+			var tables = new ArrayList<String>();
+			SQLUtils.getAllTables(statement, tables);
+			var builder = MapReduceApplicationSqlBuilder.newBuilder()
+					.setHdfs(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
+					.setDb(defaultdb).setJobConfiguration(jc).setSql(selectquery);
+			for (String table : tables) {
+				var columnMetadatas = new ArrayList<ColumnMetadata>();
+				TableCreator.getColumnMetadataFromTable(defaultdb, table, columnMetadatas);
+				String hdfslocation = null;
+				String filetype = null;
+				List<String> tablecolumn = new ArrayList<>();
+				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
+				for (ColumnMetadata columnMetadata : columnMetadatas) {
+					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
+						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
+					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
+						filetype = columnMetadata.getColumnDefault().replace("'", "").trim();
+					} else {
+						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
+						tablecolumnDataType.add(SQLUtils.getSQLTypeNameMR(columnMetadata.getDataType()));
 					}
 				}
-
-				var builder = MapReduceApplicationSqlBuilder.newBuilder().setHdfs(DataSamudayaProperties.get()
-						.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
-						.setJobConfiguration(jc).setSql(selectquery);
-				for (Table table : tables) {
-					var columnMetadatas = new ArrayList<ColumnMetadata>();
-					TableCreator.getColumnMetadataFromTable(defaultdb, table.getName(), columnMetadatas);
-					String hdfslocation = null;
-					String filetype = null;
-					List<String> tablecolumn = new ArrayList<>();
-					List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-					for (ColumnMetadata columnMetadata : columnMetadatas) {
-						if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
-							hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
-						} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
-							filetype = columnMetadata.getColumnDefault().replace("'", "").trim();
-						} else {
-							tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
-							tablecolumnDataType.add(SQLUtils.getSQLTypeNameMR(columnMetadata.getDataType()));
-						}
-					}
-					builder = builder.add(hdfslocation, table.getName().toLowerCase(),
-							tablecolumn,
-							tablecolumnDataType);
-				}
-				Object mraobj = builder.build();
-				if (!isyarn && mraobj instanceof MapReduceApplication mra) {
-					return (List) mra.call();
-				} else if (isyarn && mraobj instanceof MapReduceApplicationYarn mray) {
-					return (List) mray.call();
-				}
+				builder = builder.add(hdfslocation, table.toLowerCase(), tablecolumn, tablecolumnDataType);
 			}
+			Object mraobj = builder.build();
+			if (!isyarn && mraobj instanceof MapReduceApplication mra) {
+				return (List) mra.call();
+			} else if (isyarn && mraobj instanceof MapReduceApplicationYarn mray) {
+				return (List) mray.call();
+			}
+			
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
 			errors.add(ExceptionUtils.getRootCauseMessage(ex));
@@ -135,51 +117,38 @@ public class SelectQueryExecutorMR {
 				throw new Exception("Syntax error in SQL");
 			}
 			Statement statement = parserManager.parse(new StringReader(selectquery));
-			Select select = (Select) statement;
-			if (select.getSelectBody() instanceof PlainSelect) {
-				var plainSelect = (PlainSelect) select.getSelectBody();
-				Table tablePrimary = (Table) plainSelect.getFromItem();
-				var tables = new ArrayList<Table>();
-				tables.add(tablePrimary);
+			var tables = new ArrayList<String>();
+			SQLUtils.getAllTables(statement, tables);
 
-				if (nonNull(plainSelect.getJoins())) {
-					for (Join join : plainSelect.getJoins()) {
-						tables.add(((Table) join.getRightItem()));
+			var builder = MapReduceApplicationSqlBuilder.newBuilder().setHdfs(DataSamudayaProperties.get()
+					.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
+					.setDb(defaultdb).setJobConfiguration(jc).setSql(selectquery);
+			for (String table : tables) {
+				var columnMetadatas = new ArrayList<ColumnMetadata>();
+				TableCreator.getColumnMetadataFromTable(defaultdb, table, columnMetadatas);
+				String hdfslocation = null;
+				String filetype = null;
+				List<String> tablecolumn = new ArrayList<>();
+				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
+				for (ColumnMetadata columnMetadata : columnMetadatas) {
+					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
+						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
+					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
+						filetype = columnMetadata.getColumnDefault().replace("'", "").trim();
+					} else {
+						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
+						tablecolumnDataType.add(SQLUtils.getSQLTypeNameMR(columnMetadata.getDataType()));
 					}
 				}
-
-				var builder = MapReduceApplicationSqlBuilder.newBuilder().setHdfs(DataSamudayaProperties.get()
-						.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
-						.setJobConfiguration(jc).setSql(selectquery);
-				for (Table table : tables) {
-					var columnMetadatas = new ArrayList<ColumnMetadata>();
-					TableCreator.getColumnMetadataFromTable(defaultdb, table.getName(), columnMetadatas);
-					String hdfslocation = null;
-					List<String> tablecolumn = new ArrayList<>();
-					List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-					for (ColumnMetadata columnMetadata : columnMetadatas) {
-						if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
-							hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
-						} else {
-							tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
-							tablecolumnDataType.add(SQLUtils.getSQLTypeNameMR(columnMetadata.getDataType()));
-						}
-					}
-					builder = builder.add(hdfslocation, table.getName().toLowerCase(),
-							tablecolumn,
-							tablecolumnDataType);
-				}
-				MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) builder.build();
-				return (List) mra.call();
+				builder = builder.add(hdfslocation, table.toLowerCase(), tablecolumn, tablecolumnDataType);
 			}
+			MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) builder.build();
+			return (List) mra.call();
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
-			List error = new ArrayList<>();
-			error.add(ExceptionUtils.getRootCauseMessage(ex));
-			errors.add(error);
+			errors.add(ExceptionUtils.getRootCauseMessage(ex));
 			return errors;
 		}
-		return new ArrayList<>();
 	}
 
 	private SelectQueryExecutorMR() {

@@ -60,6 +60,7 @@ public class StreamPipelineIgniteBase {
 	String airlineveryverysmall1989 = "/airlineveryverysmall1989";
 	String airlinepartitionsmall = "/airlinepartitionsmall";
 	String airlinesmall = "/airlinesmall";
+	static String airlinesamplesqlucs = "/airlinesamplesqlucs";
 	static String airlinesample = "/airlinesample";
 	static String airlinesamplesql = "/airlinesamplesql";
 	static String airlinesamplejoin = "/airlinesamplejoin";
@@ -127,6 +128,7 @@ public class StreamPipelineIgniteBase {
 			Configuration configuration = new Configuration();
 			hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
+			uploadfile(hdfs, airlinesamplesqlucs, airlinesamplesqlucs + csvfileextn);
 			uploadfile(hdfs, airports, airports + csvfileextn);
 			uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
 			uploadfile(hdfs, airlinesamplesql, airlinesamplesql + csvfileextn);

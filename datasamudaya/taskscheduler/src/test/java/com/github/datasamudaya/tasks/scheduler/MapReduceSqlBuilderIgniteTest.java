@@ -1,21 +1,40 @@
 package com.github.datasamudaya.tasks.scheduler;
 
+import static java.util.Objects.nonNull;
 import static org.junit.Assert.assertEquals;
 
+import java.io.InputStream;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.apache.ignite.Ignite;
+import org.burningwave.core.assembler.StaticComponentContainer;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobConfiguration;
+import com.github.datasamudaya.common.JobConfigurationBuilder;
+import com.github.datasamudaya.common.utils.DataSamudayaIgniteServer;
+import com.github.datasamudaya.common.utils.HadoopTestUtilities;
+import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.scheduler.sql.MapReduceApplicationSqlBuilder;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
+public class MapReduceSqlBuilderIgniteTest {
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
 			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime",
 			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
@@ -28,13 +47,40 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.VARCHAR,
 			SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT,
 			SqlTypeName.BIGINT);
-	static Logger log = LoggerFactory.getLogger(MapReduceSqlBuilderTest.class);
-
+	static String airlinesample = "/airlinesample";
+	static String carriers = "/carriers";
+	static String csvfileextn = ".csv";
+	static Logger log = LoggerFactory.getLogger(MapReduceSqlBuilderIgniteTest.class);
+	private static Ignite igniteserver;
+	private static JobConfiguration jc;
+	private static MiniDFSCluster hdfsLocalCluster;
+	String hdfsfilepath = "hdfs://127.0.0.1:9000";
+	List<String> carrierheader = Arrays.asList("Code", "Description");
+	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
+	@BeforeClass
+	public static void igniteInit() throws Exception {
+		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
+		StaticComponentContainer.Modules.exportAllToAll();
+		igniteserver = DataSamudayaIgniteServer.instance();
+		jc = JobConfigurationBuilder.newBuilder()
+				.setIsuseglobalte(true)
+				.setUser("arun")				
+				.setExecmode(DataSamudayaConstants.EXECMODE_IGNITE)
+				.build();
+		hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
+		Configuration configuration = new Configuration();
+		FileSystem hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty("hdfs.namenode.url")),
+				configuration);
+		uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
+		uploadfile(hdfs, carriers, carriers + csvfileextn);
+	}
+	
 	@Test
 	public void testAllFunction() throws Exception {
 		log.info("In testAllFunction() method Entry");
 		String statement = "SELECT sum(airline.ArrDelay),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -55,7 +101,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllFunctionsWithCarrier() throws Exception {
 		log.info("In testAllFunctionsWithCarrier() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -76,7 +122,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllFunctionsWithCarrierAbsValue() throws Exception {
 		log.info("In testAllFunctionsWithCarrierAbsValue() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,sum(abs(airline.ArrDelay)),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -97,7 +143,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllFunctionsWithCarrierParameterAdd() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterAdd() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay + 2.0),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -118,7 +164,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllFunctionsWithCarrierParameterSub() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterSub() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay - 2.0),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -140,7 +186,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllFunctionsWithCarrierParameterMul() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterMul() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay * 2.0),count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -161,7 +207,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllFunctionsWithCarrierParameterDiv() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterDiv() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay / 2.0) as sdiv,count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -183,7 +229,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllFunctionsWithCarrierParameterDelay() throws Exception {
 		log.info("In testAllFunctionsWithCarrierParameterDelay() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,sum(abs(airline.ArrDelay) + abs(airline.DepDelay)) as sdelay,count(*),max(airline.ArrDelay),min(airline.ArrDelay) FROM airline group by airline.UniqueCarrier";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -205,7 +251,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllFunctionsWithCarrierWithWhere() throws Exception {
 		log.info("In testAllFunctionsWithCarrierWithWhere() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,sum(airline.ArrDelay) FROM airline where airline.MonthOfYear=12  group by airline.UniqueCarrier";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -226,7 +272,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllColumns() throws Exception {
 		log.info("In testAllColumns() method Entry");
 		String statement = "SELECT * FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -247,7 +293,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testRequiredColumns() throws Exception {
 		log.info("In testRequiredColumns() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.MonthOfYear FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -268,7 +314,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testNonAggFunctionRound() throws Exception {
 		log.info("In testNonAggFunctionRound() method Entry");
 		String statement = "SELECT airline.MonthOfYear,airline.ArrDelay,round(airline.ArrDelay + 3.14) FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -290,7 +336,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testColumnLength() method Entry");
 
 		String statement = "SELECT length(airline.Origin)  FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -313,7 +359,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnWithLength() method Entry");
 
 		String statement = "SELECT airline.Origin,length(airline.Origin)  FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -336,7 +382,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnWithMultipleLengths() method Entry");
 
 		String statement = "SELECT airline.Origin,length(airline.Origin),length(airline.Dest)  FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -359,7 +405,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Entry");
 
 		String statement = "SELECT lowercase(airline.Origin),lowercase(airline.Dest),length(airline.Origin),length(airline.Dest)  FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -381,7 +427,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnWithLengthsAndUppercase() method Entry");
 
 		String statement = "SELECT uppercase(airline.Origin),uppercase(airline.Dest),length(airline.Origin),length(airline.Dest)  FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -403,7 +449,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnTrim() method Entry");
 
 		String statement = "SELECT trimstr(concat(airline.Origin , ' ')) trmorig ,trimstr(concat(' ' , airline.Dest)) trimdest FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -425,7 +471,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnBase64Encode() method Entry");
 
 		String statement = "SELECT base64encode(airline.Origin),base64encode(airline.Dest)  FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -447,7 +493,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnSubStringAlias() method Entry");
 
 		String statement = "SELECT airline.Origin,substring(airline.Origin from 0 for 1) as substr  FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -469,7 +515,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnSubStringPos() method Entry");
 
 		String statement = "SELECT airline.Origin,substring(airline.Origin from 1),airline.Dest,substring(airline.Dest from 2) FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -492,7 +538,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnSubString() method Entry");
 
 		String statement = "SELECT airline.Origin,substring(airline.Origin from 0 for 1),airline.Dest,substring(airline.Dest from 0 for 2) FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -514,7 +560,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnNormailizeSpaces() method Entry");
 
 		String statement = "SELECT normalizespaces(airline.Dest),normalizespaces(' This is   good  work') eg FROM airline";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder()
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder()
 				.add(airlinesample, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setJobConfiguration(jc)
 				.setSql(statement).build();
@@ -535,7 +581,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testRequiredColumnsWithWhereInOrder() throws Exception {
 		log.info("In testRequiredColumnsWithWhereInOrder() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.MonthOfYear,airline.DayofMonth FROM airline where airline.MonthOfYear=12 and airline.DayofMonth>25 order by airline.MonthOfYear,airline.DayofMonth asc";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -558,7 +604,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testAllColumnsWithWhere() throws Exception {
 		log.info("In testAllColumnsWithWhere() method Entry");
 		String statement = "SELECT * FROM airline where airline.MonthOfYear=12";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -580,7 +626,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 	public void testRequiredColumnsWithWhere() throws Exception {
 		log.info("In testRequiredColumnsWithWhere() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.MonthOfYear FROM airline where airline.MonthOfYear=12";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -597,12 +643,12 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		});
 		log.info("In testRequiredColumnsWithWhere() method Exit");
 	}
-
+	
 	@Test
 	public void testRequiredColumnsInOrder() throws Exception {
 		log.info("In testRequiredColumnsInOrder() method Entry");
 		String statement = "SELECT airline.UniqueCarrier,airline.MonthOfYear,airline.DayofMonth FROM airline order by airline.MonthOfYear,airline.DayofMonth desc";
-		MapReduceApplication mra = (MapReduceApplication) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
+		MapReduceApplicationIgnite mra = (MapReduceApplicationIgnite) MapReduceApplicationSqlBuilder.newBuilder().add(airlinesample, "airline", airlineheader, airlineheadertypes)
 				.setHdfs(hdfsfilepath).setJobConfiguration(jc)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB)
 				.setSql(statement).build();
@@ -619,5 +665,29 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		log.info("In testRequiredColumnsInOrder() method Exit");
 	}
 
-
+	public static void uploadfile(FileSystem hdfs, String dir, String filename) throws Exception {
+		InputStream is = MassiveDataMRJobBase.class.getResourceAsStream(filename);
+		String jobpath = dir;
+		String filepath = jobpath + filename;
+		Path jobpathurl = new Path(jobpath);
+		if (!hdfs.exists(jobpathurl)) {
+			hdfs.mkdirs(jobpathurl);
+		}
+		Path filepathurl = new Path(filepath);
+		FSDataOutputStream fsdos = hdfs.create(filepathurl);
+		IOUtils.copy(is, fsdos);
+		fsdos.hflush();
+		is.close();
+		fsdos.close();
+	}
+	
+	@AfterClass
+	public static void igniteShutdown() {
+		if(nonNull(igniteserver)) {
+			igniteserver.close();
+		}
+		if(nonNull(hdfsLocalCluster)) {
+			hdfsLocalCluster.close();
+		}
+	}
 }
