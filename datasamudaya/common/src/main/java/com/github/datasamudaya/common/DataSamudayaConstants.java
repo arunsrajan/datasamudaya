@@ -429,6 +429,11 @@ public class DataSamudayaConstants {
 	public static final String ISDRIVERREQUIRED = "isdriverrequired";
 	public static final String SQLWORKERMODE = "sqlworkermode";
 	public static final String SQLWORKERMODE_DEFAULT = "standalone";
+	public static final String DRIVER_LOCATION = "driverlocation";
+	public static final String DRIVER_LOCATION_DEFAULT = "node";
+	public static final String DRIVER_LOCATION_CLIENT = "client";
+	public static final String DRIVER_LOCATION_NODE = "node";
+	public static final String DRIVER_LOCATION_MASTER = "master";
 	public static final String USERPIG = "piguser";
 	public static final String PIG = "PIG";
 	public static final String USERPIGREQUIRED = "User need to be provided to execute pig commands";

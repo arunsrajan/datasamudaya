@@ -63,6 +63,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -3907,6 +3908,35 @@ public class Utils {
 				blocks[0].getBlockOffset()+
 				DataSamudayaConstants.ROUNDED_BRACKET_OPEN+
 				blocks[0].getBlockstart()+DataSamudayaConstants.HYPHEN+blocks[0].getBlockend()+DataSamudayaConstants.ROUNDED_BRACKET_CLOSE;
+	}
+	
+	/**
+	 * The function returns list of launched containers for given jobid and executor host port map
+	 * @param exechostportmap
+	 * @param jobid
+	 * @return list of launched containers
+	 */
+	public static List<LaunchContainers> getLcs(Map<String, Set<String>> exechostportmap, String jobid, int cpupercontainer){
+		var lcs = new ArrayList<LaunchContainers>();
+		for (Entry<String, Set<String>> hosthps : exechostportmap.entrySet()) {
+			var crl = new ArrayList<ContainerResources>();
+			for(String te:hosthps.getValue()) {
+				var crs = new ContainerResources();
+				crs.setCpu(cpupercontainer);
+				crs.setPort(Integer.parseInt(te.split(DataSamudayaConstants.UNDERSCORE)[1]));
+				crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
+				crl.add(crs);
+			}
+			var cla = new ContainerLaunchAttributes();
+			cla.setCr(crl);
+			cla.setNumberofcontainers(hosthps.getValue().size());
+			LaunchContainers lc = new LaunchContainers();
+			lc.setCla(cla);
+			lc.setNodehostport(hosthps.getKey()+DataSamudayaConstants.UNDERSCORE+65534);
+			lc.setJobid(jobid);
+			lcs.add(lc);
+		}	
+		return lcs;
 	}
 	
 }

@@ -56,7 +56,7 @@ public class SQLServer {
 						int memorydriver = 1024;
 						boolean isdriverrequired;
 						String scheduler = "";
-						String tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+						String tejobid = DataSamudayaConstants.EMPTY;
 						boolean iscontainerlaunched = false;
 						boolean isyarncontainerlaunched = false;
 						try (Socket clientSocket = sock;
@@ -71,6 +71,7 @@ public class SQLServer {
 							memorydriver = Integer.valueOf(in.readLine());
 							isdriverrequired = Boolean.parseBoolean(in.readLine());
 							scheduler = in.readLine();
+							tejobid = in.readLine();
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
 								out.println(usernotexistsmessage);

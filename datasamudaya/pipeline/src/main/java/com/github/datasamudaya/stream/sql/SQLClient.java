@@ -12,7 +12,11 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -23,8 +27,11 @@ import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.GlobalContainerLaunchers;
+import com.github.datasamudaya.common.Job.JOBTYPE;
 import com.github.datasamudaya.common.utils.UnixTerminal;
 import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.common.utils.ZookeeperOperations;
 
 import jline.TerminalFactory;
 import jline.TerminalFactory.Flavor;
@@ -58,6 +65,7 @@ public class SQLClient {
 		options.addOption(DataSamudayaConstants.MEMORYDRIVER, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.ISDRIVERREQUIRED, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.SQLWORKERMODE, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.DRIVER_LOCATION, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
 		var cmd = parser.parse(options, args);
 		String user;
@@ -130,6 +138,31 @@ public class SQLClient {
 		if (cmd.hasOption(DataSamudayaConstants.SQLWORKERMODE)) {
 			mode = cmd.getOptionValue(DataSamudayaConstants.SQLWORKERMODE);
 		}
+		
+		String driverlocation = null;
+		boolean isclient=false;
+		ZookeeperOperations zo = null;
+		if(isdriverrequired && mode.equalsIgnoreCase(DataSamudayaConstants.SQLWORKERMODE_DEFAULT)) {
+			if (cmd.hasOption(DataSamudayaConstants.DRIVER_LOCATION)) {
+				driverlocation = cmd.getOptionValue(DataSamudayaConstants.DRIVER_LOCATION);
+				isclient = driverlocation
+				.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
+				if(isclient) {
+					cpudriver = 0;
+					memorydriver = 0;
+					zo = new ZookeeperOperations();
+					zo.connect();
+					zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
+						log.info("Node Created");
+					});
+					zo.watchNodes();					
+				}
+			} else {
+				driverlocation = DataSamudayaConstants.DRIVER_LOCATION_DEFAULT;
+			}
+		}
+		
+		
 		StaticComponentContainer.Modules.exportAllToAll();
 		// get the hostname of the sql server
 		String hostName = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST);
@@ -139,6 +172,7 @@ public class SQLClient {
 
 		int timeout = Integer
 				.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SO_TIMEOUT, DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
+		String teid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		while (true) {
 			try (Socket sock = new Socket();) {
 				sock.connect(new InetSocketAddress(hostName, portNumber), timeout);
@@ -154,15 +188,26 @@ public class SQLClient {
 						out.println(memorydriver);
 						out.println(isdriverrequired);
 						out.println(mode);
-						printServerResponse(in);
+						out.println(teid);
+						printServerResponse(in);						
 						String messagestorefile = DataSamudayaProperties.get().getProperty(
 								DataSamudayaConstants.SQLMESSAGESSTORE, DataSamudayaConstants.SQLMESSAGESSTORE_DEFAULT)
 								+ DataSamudayaConstants.UNDERSCORE + user;
-						try {
-							processMessage(out, in, messagestorefile);
-						} catch (Exception ex) {
-							log.info("Aborting Connection");
-							out.println("quit");
+						if(isclient) {
+							var taskexecutors = zo.getTaskExectorsByJobId(teid);
+							Map<String, Set<String>> lcs = (Map) taskexecutors.stream().collect(
+									Collectors.groupingBy(executor -> executor.split(DataSamudayaConstants.UNDERSCORE)[0], Collectors
+											.mapping(executor -> executor, Collectors.toCollection(LinkedHashSet::new))));
+							GlobalContainerLaunchers.put(user, teid, Utils.getLcs(lcs, teid, cpupercontainer));
+							processMessage(new PrintWriter(System.out), 
+									new BufferedReader(new InputStreamReader(System.in)), messagestorefile, isclient, teid, user);
+						} else {
+							try {
+								processMessage(out, in, messagestorefile, isclient, teid, user);
+							} catch (Exception ex) {
+								log.info("Aborting Connection");
+								out.println("quit");
+							}
 						}
 						break;
 					} catch (Exception ex) {
@@ -171,6 +216,10 @@ public class SQLClient {
 				}
 			} catch (Throwable ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
+			} finally {
+				if(nonNull(zo)) {
+					zo.close();
+				}
 			}
 			log.info("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
 			Thread.sleep(2000);
@@ -195,23 +244,45 @@ public class SQLClient {
 	 * @param out
 	 * @param in
 	 * @param messagestorefile
+	 * @param isclient
+	 * @param teid
 	 * @throws Exception
 	 */
-	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile) throws Exception {
+	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid, String user) throws Exception {
 		loadHistory(messagestorefile);
 		BuffereredConsoleReader reader = new BuffereredConsoleReader();
 		reader.setHandleUserInterrupt(true);
 		reader.setPrompt("\nSQL>");
+		String dbdefault = DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
 		while (true) {
 			String input = readLineWithHistory(reader);
 			if ("Quit".equals(input)) {
 				break;
 			}
-			processInput(input, out);
-			boolean toquit = printServerResponse(in);
-			if (toquit) {
-				break;
-			}
+			if (isclient) {
+				System.out.println("\nProcessing input: " + input);
+				String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+						+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+				long starttime = System.currentTimeMillis();
+				List<List> results = SelectQueryExecutor.executeSelectQuery(dbdefault, input, user, jobid, teid, false,
+						false, out, false);
+				double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
+				long totalrecords = 0;
+				for (List result : results) {
+					totalrecords += Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
+				}
+				out.printf("Total records processed %d", totalrecords);
+				out.println("");
+				out.println("Time taken " + timetaken + " seconds");
+				out.println("");
+			} else {
+				processInput(input, out);
+				boolean toquit = printServerResponse(in);
+				if (toquit) {
+					break;
+				}
+			}			
 			saveHistory(messagestorefile);
 		}
 
