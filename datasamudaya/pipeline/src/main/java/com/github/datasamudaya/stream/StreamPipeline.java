@@ -743,7 +743,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			if (root != null) {
 				graph.addEdge(root, func);
 			}
-			log.info(PipelineUtils.getFunctions(func.tasks));
+			log.debug(PipelineUtils.getFunctions(func.tasks));
 			//recursively form edges for root and child nodes.
 			formDAGAbstractFunction(func, func.childs);
 		}
@@ -808,7 +808,7 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			var topoaf = new TopologicalOrderIterator<>(graph);
 			while (topoaf.hasNext()) {
 				var af = topoaf.next();
-				log.info(PipelineUtils.getFunctions(af.tasks) + ", task=" + af.tasks);
+				log.debug(PipelineUtils.getFunctions(af.tasks) + ", task=" + af.tasks);
 				// If AbstractFunction is mds then create a new stage object
 				// parent and
 				// child stage and form the edge between stages.
@@ -949,12 +949,12 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			var stagesprocessed = graphstages.vertexSet();
 			job.getJm().setStageGraphs(graphstages);
 			for (var stagetoprint : stagesprocessed) {
-				log.info("\n\nStage " + stagetoprint.getId());
-				log.info("[Parent] [Child]");
-				log.info(printStages(stagetoprint.parent) + " , " + printStages(stagetoprint.child));
-				log.info("Tasks");
+				log.debug("\n\nStage " + stagetoprint.getId());
+				log.debug("[Parent] [Child]");
+				log.debug(printStages(stagetoprint.parent) + " , " + printStages(stagetoprint.child));
+				log.debug("Tasks");
 				for (var task : stagetoprint.tasks) {
-					log.info(PipelineUtils.getFunctions(task));
+					log.debug(PipelineUtils.getFunctions(task));
 				}
 			}
 

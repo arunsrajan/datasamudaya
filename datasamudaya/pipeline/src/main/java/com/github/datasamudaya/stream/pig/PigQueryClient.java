@@ -12,23 +12,35 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.pig.newplan.logical.relational.LogicalPlan;
+import org.apache.pig.parser.QueryParserDriver;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.GlobalContainerLaunchers;
+import com.github.datasamudaya.common.PipelineConfig;
+import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.common.utils.ZookeeperOperations;
 
 import jline.console.ConsoleReader;
 
 /**
- * This class is SQL client
+ * This class is PIG client
  * 
  * @author arun
  *
@@ -56,6 +68,7 @@ public class PigQueryClient {
 		options.addOption(DataSamudayaConstants.MEMORYDRIVER, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.ISDRIVERREQUIRED, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.PIGWORKERMODE, true, DataSamudayaConstants.EMPTY);
+		options.addOption(DataSamudayaConstants.DRIVER_LOCATION, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
 		var cmd = parser.parse(options, args);
 		String user;
@@ -129,6 +142,30 @@ public class PigQueryClient {
 		if (cmd.hasOption(DataSamudayaConstants.PIGWORKERMODE)) {
 			mode = cmd.getOptionValue(DataSamudayaConstants.PIGWORKERMODE);
 		}
+		
+		String driverlocation = null;
+		boolean isclient=false;
+		ZookeeperOperations zo = null;
+		if(isdriverrequired && mode.equalsIgnoreCase(DataSamudayaConstants.PIGWORKERMODE_DEFAULT)) {
+			if (cmd.hasOption(DataSamudayaConstants.DRIVER_LOCATION)) {
+				driverlocation = cmd.getOptionValue(DataSamudayaConstants.DRIVER_LOCATION);
+				isclient = driverlocation
+				.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
+				if(isclient) {
+					cpudriver = 0;
+					memorydriver = 0;
+					zo = new ZookeeperOperations();
+					zo.connect();
+					zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
+						log.info("Node Created");
+					});
+					zo.watchNodes();					
+				}
+			} else {
+				driverlocation = DataSamudayaConstants.DRIVER_LOCATION_DEFAULT;
+			}
+		}
+		
 		StaticComponentContainer.Modules.exportAllToAll();
 		// get the hostname of the sql server
 		String hostName = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST);
@@ -138,7 +175,7 @@ public class PigQueryClient {
 
 		int timeout = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SO_TIMEOUT,
 				DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
-
+		String teid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		while (true) {
 			try (Socket sock = new Socket();) {
 				sock.connect(new InetSocketAddress(hostName, portNumber), timeout);
@@ -154,14 +191,26 @@ public class PigQueryClient {
 						out.println(memorydriver);
 						out.println(isdriverrequired);
 						out.println(mode);
+						out.println(teid);
 						printServerResponse(in);
 						String messagestorefile = DataSamudayaProperties.get().getProperty(
 								DataSamudayaConstants.PIGMESSAGESSTORE, DataSamudayaConstants.PIGMESSAGESSTORE_DEFAULT)
 								+ DataSamudayaConstants.UNDERSCORE + user;
 						try {
-							processMessage(out, in, messagestorefile);
+							if(isclient) {
+								var taskexecutors = zo.getTaskExectorsByJobId(teid);
+								Map<String, Set<String>> lcs = (Map) taskexecutors.stream().collect(
+										Collectors.groupingBy(executor -> executor.split(DataSamudayaConstants.UNDERSCORE)[0], Collectors
+												.mapping(executor -> executor, Collectors.toCollection(LinkedHashSet::new))));
+								GlobalContainerLaunchers.put(user, teid, Utils.getLcs(lcs, teid, cpupercontainer));
+								processMessage(new PrintWriter(System.out), 
+										new BufferedReader(new InputStreamReader(System.in)), messagestorefile, isclient, teid, user);
+							} else {
+								processMessage(out, in, messagestorefile, isclient, teid, user);
+							}
 						} catch (Exception ex) {
-							log.info("Aborting Connection");
+							log.error("Aborting Connection", ex);							
+						} finally {
 							out.println("quit");
 						}
 						break;
@@ -171,6 +220,10 @@ public class PigQueryClient {
 				}
 			} catch (Throwable ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
+			} finally {
+				if(nonNull(zo)) {
+					zo.close();
+				}
 			}
 			log.info("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
 			Thread.sleep(2000);
@@ -192,26 +245,88 @@ public class PigQueryClient {
 
 	/**
 	 * Processes the message from client to server and back to client.
-	 * 
 	 * @param out
 	 * @param in
 	 * @param messagestorefile
+	 * @param isclient
+	 * @param teid
+	 * @param user
 	 * @throws Exception
 	 */
-	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile) throws Exception {
+	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid, String user) throws Exception {
 		loadHistory(messagestorefile);
 		BuffereredConsoleReader reader = new BuffereredConsoleReader();
 		reader.setHandleUserInterrupt(true);
-		reader.setPrompt("\nPIG>");
+		reader.setPrompt("\nPIG>");		
+		List<String> pigQueriesToExecute = new ArrayList<>();
+		List<String> pigQueries = new ArrayList<>();
+		PipelineConfig pipelineconfig = new PipelineConfig();
+		pipelineconfig.setLocal("false");
+		pipelineconfig.setYarn("false");
+		pipelineconfig.setMesos("false");
+		pipelineconfig.setJgroups("false");
+		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
+		pipelineconfig.setIsremotescheduler(false);
+		pipelineconfig.setPigoutput(new Output(System.out));
+		pipelineconfig.setWriter(out);
+		pipelineconfig.setJobname(DataSamudayaConstants.PIG);
+		QueryParserDriver queryParserDriver = PigUtils.getQueryParserDriver("pig");
 		while (true) {
-			String input = readLineWithHistory(reader);
-			if ("Quit".equals(input)) {
+			String inputLine = readLineWithHistory(reader);
+			if ("quit".equalsIgnoreCase(inputLine.trim())) {
 				break;
 			}
-			processInput(input, out);
-			boolean toquit = printServerResponse(in);
-			if (toquit) {
-				break;
+			if (isclient) {
+				System.out.println("\nProcessing input: " + inputLine);
+				if (inputLine.startsWith("dump") || inputLine.startsWith("DUMP")) {
+					if (nonNull(pipelineconfig)) {
+						pipelineconfig.setSqlpigquery(inputLine);
+					}
+					inputLine = inputLine.replace(";", "");
+					String[] dumpwithalias = inputLine.split(" ");
+					long starttime = System.currentTimeMillis();
+					String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+					pigQueriesToExecute.clear();
+					pigQueriesToExecute.addAll(pigQueries);
+					pigQueriesToExecute.add("\n");
+					DataSamudayaMetricsExporter.getNumberOfPigQueriesDumpExecutedCounter().inc();
+					LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+					PigQueryExecutor.executePlan(lp, false, dumpwithalias[1].trim(), user, jobid, teid, pipelineconfig);
+					double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
+					out.println("Time taken " + timetaken + " seconds");
+					out.println("");
+				} else {
+					long starttime = System.currentTimeMillis();
+					if (nonNull(pipelineconfig)) {
+						pipelineconfig.setSqlpigquery(inputLine);
+					}
+					pigQueriesToExecute.clear();
+					pigQueriesToExecute.addAll(pigQueries);
+					pigQueriesToExecute.add(inputLine);
+					pigQueriesToExecute.add("\n");
+					LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+					if (nonNull(lp)) {
+						DataSamudayaMetricsExporter.getNumberOfPigQueriesCounter().inc();
+						if (inputLine.startsWith("store") || inputLine.startsWith("STORE")) {
+							String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+							PigQueryExecutor.executePlan(lp, true, DataSamudayaConstants.EMPTY, user, jobid, teid, pipelineconfig);
+						}
+						pigQueries.add(inputLine);
+						pigQueries.add("\n");
+					} else {
+						out.println(String.format("Error In Pig Query for the current line: %s ", inputLine));
+					}
+					double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
+					out.println("Time taken " + timetaken + " seconds");
+					out.println("");
+				}
+			} else {
+				processInput(inputLine, out);
+				boolean toquit = printServerResponse(in);
+				if (toquit) {
+					break;
+				}
 			}
 			saveHistory(messagestorefile);
 		}

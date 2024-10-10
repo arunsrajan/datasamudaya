@@ -257,7 +257,7 @@ public class SQLClient {
 				.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
 		while (true) {
 			String input = readLineWithHistory(reader);
-			if ("Quit".equals(input)) {
+			if ("quit".equalsIgnoreCase(input.trim())) {
 				break;
 			}
 			if (isclient) {

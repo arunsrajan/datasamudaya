@@ -15,11 +15,8 @@
  */
 package com.github.datasamudaya.common;
 
-import static java.util.Objects.nonNull;
-
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,8 +24,6 @@ import java.util.Vector;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.SerializationUtils;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
@@ -73,7 +68,7 @@ public class HDFSBlockUtils {
 					var lb = locatedblocks.get(lbindex);
 					var dinfoa = lb.getLocations();
 					var dninfos = Arrays.asList(dinfoa);
-					log.info("In getBlocksLocation dninfos TimeTaken {}",
+					log.debug("In getBlocksLocation dninfos TimeTaken {}",
 							(System.currentTimeMillis() - starttime) / 1000.0);
 					var skipbytes = 0l;
 					while (true) {
@@ -93,14 +88,14 @@ public class HDFSBlockUtils {
 						bls.setBlock(block);
 						blocklocationsl.add(bls);
 						skipbytes = 0l;
-						log.info("In getBlocksLocation skipbytes TimeTaken {}",
+						log.debug("In getBlocksLocation skipbytes TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
 						boolean isnewline = isNewLineAtEnd(hdfs, lb, lb.getStartOffset() + block[0].getBlockend() - 1,
 								dninfos.get(0).getXferAddr());
-						log.info("In getBlocksLocation isnewline TimeTaken {}",
+						log.debug("In getBlocksLocation isnewline TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
 						if (!isnewline && lbindex < locatedblocks.size() - 1) {
-							log.info(
+							log.debug(
 									"In getBlocksLocation lbindex < locatedblocks.size TimeTaken {}",
 									(System.currentTimeMillis() - starttime) / 1000.0);
 							lbindex++;
@@ -128,11 +123,11 @@ public class HDFSBlockUtils {
 						} else {
 							break;
 						}
-						log.info("In getBlocksLocation blockslocations TimeTaken {}",
+						log.debug("In getBlocksLocation blockslocations TimeTaken {}",
 								(System.currentTimeMillis() - starttime) / 1000.0);
 					}
 					var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-					log.info("In getBlocksLocation TimeTaken {}", timetaken);
+					log.debug("In getBlocksLocation TimeTaken {}", timetaken);
 				}
 			} catch (Exception ex) {
 				log.error("Blocks Unavailable due to error", ex);
@@ -157,7 +152,7 @@ public class HDFSBlockUtils {
 		var read1byt = new byte[1];
 		var blockReader = HdfsBlockReader.getBlockReader((DistributedFileSystem) hdfs, lblock, l, xrefaddress);
 		var skipbytes = 0;
-		//long starttime = System.currentTimeMillis();
+		long starttime = System.currentTimeMillis();
 		if (blockReader.available() > 0) {
 			read1byt[0] = 0;
 			while (blockReader.available() > 0) {
@@ -173,8 +168,8 @@ public class HDFSBlockUtils {
 			}
 		}
 		blockReader.close();
-		//var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-		//log.info("In skipBlockToNewLine TimeTaken {}", timetaken);
+		var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
+		log.debug("In skipBlockToNewLine TimeTaken {}", timetaken);
 		log.debug("Exiting HDFSBlockUtils.skipBlockToNewLine");
 		return skipbytes;
 	}
@@ -212,7 +207,7 @@ public class HDFSBlockUtils {
 		//}
 		//blockReader.close();
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-		log.info("In isNewLineAtEnd TimeTaken {}", timetaken);
+		log.debug("In isNewLineAtEnd TimeTaken {}", timetaken);
 		return isnewlineatend;
 	}
 }

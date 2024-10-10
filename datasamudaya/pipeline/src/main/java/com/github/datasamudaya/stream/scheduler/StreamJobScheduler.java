@@ -264,9 +264,9 @@ public class StreamJobScheduler {
 							lj.setMrjar(pipelineconfig.getJar());
 							String jarloaded = (String) Utils.getResultObjectByInput(hp, lj, job.getId());
 							if (!Objects.isNull(jarloaded) && jarloaded.equals(DataSamudayaConstants.JARLOADED)) {
-								log.info("Jar bundled to the server with host and port " + hp);
+								log.debug("Jar bundled to the server with host and port " + hp);
 							} else {
-								log.info("Jar not bundled to the server with host and port " + hp);
+								log.debug("Jar not bundled to the server with host and port " + hp);
 							}
 
 						} catch (Exception e) {
@@ -340,7 +340,7 @@ public class StreamJobScheduler {
 			}
 			log.debug("{}", sptsl);
 			var sptss = getFinalPhasesWithNoSuccessors(graph, sptsl);
-			log.info("Results To Print from stream pipeline tasks {}", sptss);
+			log.debug("Results To Print from stream pipeline tasks {}", sptss);
 			var partitionnumber = 0;
 			var ishdfs = false;
 			if (nonNull(job.getUri())) {
@@ -415,16 +415,16 @@ public class StreamJobScheduler {
 					Utils.sendJobToYARNDistributedQueue(zo, job.getId());
 					TaskInfoYARN tinfoyarn = Utils.getJobOutputStatusYARNDistributedQueueBlocking(zo, job.getId());
 					Utils.shutDownYARNContainer(zo, job.getId());
-					log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
+					log.debug("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
 							job.getId().equals(tinfoyarn.getJobid()));
 				} else {
 					Utils.createJobInHDFS(pipelineconfig, sptsl, graph, tasksptsthread, jsidjsmap, job);
 					Utils.sendJobToYARNDistributedQueue(pipelineconfig.getTejobid(), job.getId());
 					TaskInfoYARN tinfoyarn = Utils
 							.getJobOutputStatusYARNDistributedQueueBlocking(pipelineconfig.getTejobid());
-					log.info("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
+					log.debug("Request jobid {} matching Response job id {} is {}", job.getId(), tinfoyarn.getJobid(),
 							job.getId().equals(tinfoyarn.getJobid()));
-					log.info("Is output available {}", tinfoyarn.isIsresultavailable());
+					log.debug("Is output available {}", tinfoyarn.isIsresultavailable());
 				}
 			} else if (Boolean.TRUE.equals(isjgroups)) {
 				Iterator<Task> toposort = new TopologicalOrderIterator(taskgraph);
@@ -616,7 +616,7 @@ public class StreamJobScheduler {
 		job.getJm().setJobcompletiontime(System.currentTimeMillis());
 		Utils.writeToOstream(pipelineconfig.getOutput(), "\nConcluded job in "
 				+ ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0) + " seconds");
-		log.info("Concluded job in " + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
+		log.debug("Concluded job in " + ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0)
 				+ " seconds");
 		job.getJm().setTotaltimetaken((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0);
 	}
@@ -649,11 +649,11 @@ public class StreamJobScheduler {
 			jobid = pipelineconfig.getTejobid();
 		}
 		final String finaljobid = jobid;
-		log.info("Tasks To Broadcast for job id::{} {}", finaljobid, tasks);
+		log.debug("Tasks To Broadcast for job id::{} {}", finaljobid, tasks);
 		Map<String, Set<String>> jobexecutorsmap = tasks.stream()
 				.collect(Collectors.groupingBy(task -> task.jobid + task.stageid, HashMap::new,
 						Collectors.mapping(task -> task.hostport, Collectors.toSet())));
-		log.info("Job Executors Map::{} jsjidmap {}", jobexecutorsmap, jsidjsmap);
+		log.debug("Job Executors Map::{} jsjidmap {}", jobexecutorsmap, jsidjsmap);
 		jobexecutorsmap.keySet().stream().forEach(key -> {
 			try {
 				JobStage js = (JobStage) jsidjsmap.get(key);
@@ -770,7 +770,7 @@ public class StreamJobScheduler {
 				Task task = (Task) Utils.getResultObjectByInput(hp,
 						new CloseStagesGraphExecutor(taskgraphexecutor.getTasks()), jobid);
 				if (nonNull(task)) {
-					log.info("Wrap up of tasks completed successfully for host " + hp);
+					log.debug("Wrap up of tasks completed successfully for host " + hp);
 				}
 			}
 		}
@@ -1294,7 +1294,7 @@ public class StreamJobScheduler {
 							if(isNull(result.timetakenseconds)) {
 								result.timetakenseconds = (endtime - starttime) / 1000;
 							}
-							log.info("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
+							log.debug("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
 							printresult.acquire();
 							counttaskscomp++;
 							double percentagecompleted = Math.floor((counttaskscomp / totaltasks) * 100.0);
@@ -1639,7 +1639,7 @@ public class StreamJobScheduler {
 						semaphores.get(spts.getTask().getHostport()).acquire();
 						if (!spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
 							Task result = (Task) spts.call();
-							log.info("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
+							log.debug("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
 							printresult.acquire();
 							if (Objects.isNull(tetotaltaskscompleted.get(spts.getHostPort()))) {
 								tetotaltaskscompleted.put(spts.getHostPort(), 0d);
@@ -1987,7 +1987,7 @@ public class StreamJobScheduler {
 								(entry.getValue().size()) / coalesce.getCoalescepartition()).iterator();
 						for (; partkeys.hasNext();) {
 							partitionindex++;
-							log.info("Coalesce Parent::: {} with partition index {}",entry.getValue(), partitionindex);
+							log.debug("Coalesce Parent::: {} with partition index {}",entry.getValue(), partitionindex);
 							var spts = getPipelineTasks(jobid, null, currentstage, partitionindex, currentstage.number,
 									(List) entry.getValue());
 							tasksptsthread.put(spts.getTask().jobid + spts.getTask().stageid + spts.getTask().taskid,
@@ -2067,7 +2067,7 @@ public class StreamJobScheduler {
 						Map<String, List<Object>> hpsptsl = parents.stream()
 								.collect(Collectors.groupingBy(StreamPipelineTaskSubmitter::getHostPort,
 										Collectors.mapping(spts -> spts, Collectors.toList())));
-						log.info("Reduce:::HostPort spts List {}", hpsptsl);
+						log.debug("Reduce:::HostPort spts List {}", hpsptsl);
 						for (Entry<String, List<Object>> entry : hpsptsl.entrySet()) {
 							int initialrange = startrange;
 							for (; initialrange < endrange; initialrange++) {
@@ -2205,7 +2205,7 @@ public class StreamJobScheduler {
 				}
 			} else {
 				// Form the nodes and edges for map stage.
-				log.info("Map Stage Graph Parent::: {} for stage {}",outputparent1, currentstage.number);
+				log.debug("Map Stage Graph Parent::: {} for stage {}",outputparent1, currentstage.number);
 				for (var input : outputparent1) {
 					partitionindex++;
 					StreamPipelineTaskSubmitter spts;
@@ -2239,7 +2239,7 @@ public class StreamJobScheduler {
 					}
 					tasks.add(spts);
 				}
-				log.info("Map Stage Graph Child::: {} for parent {} with stage {}",tasks, outputparent1, currentstage.number);
+				log.debug("Map Stage Graph Child::: {} for parent {} with stage {}",tasks, outputparent1, currentstage.number);
 			}
 			stageoutputs.put(currentstage, tasks);
 		} catch (Exception ex) {
@@ -2331,14 +2331,14 @@ public class StreamJobScheduler {
 													DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 											DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false,false ,false, null, null, 1);
 											for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
-												log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
+												log.debug("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 												try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(),null, false, false, false, nik.getTask().getFcsc(),
 														RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION,false, null)) {
 													while (client.hasNext()) {
-														log.info("Getting Next List From Remote Server");
+														log.debug("Getting Next List From Remote Server");
 														List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 																.convertBytesToObjectCompressed((byte[]) client.next(), null);
-														log.info("Next List From Remote Server with size {}", niks.size());
+														log.debug("Next List From Remote Server with size {}", niks.size());
 														niks.stream().parallel().forEach(diskspillset::add);
 													}
 												}
@@ -2481,14 +2481,14 @@ public class StreamJobScheduler {
 												DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 										DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false,false ,false, null, null, 1);
 										for (NodeIndexKey nik : (List<NodeIndexKey>)lst) {
-											log.info("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
+											log.debug("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(),null, false, false, false, nik.getTask().getFcsc(),
 													RequestType.LIST, IteratorType.SORTORUNIONORINTERSECTION, false, null)) {
 												while (client.hasNext()) {
-													log.info("Getting Next List From Remote Server");
+													log.debug("Getting Next List From Remote Server");
 													List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 															.convertBytesToObjectCompressed((byte[]) client.next(), null);
-													log.info("Next List From Remote Server with size {}", niks.size());
+													log.debug("Next List From Remote Server with size {}", niks.size());
 													niks.stream().parallel().forEach(diskspillset::add);
 												}
 											}
@@ -2722,7 +2722,7 @@ public class StreamJobScheduler {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void writeResultsFromIgnite(Task task, int partition, List stageoutput) throws Exception {
 		try {
-			log.info("Eventual outcome Ignite task: " + task);
+			log.debug("Eventual outcome Ignite task: " + task);
 
 			try (var sis = new ByteArrayInputStream(job.getIgcache().get(task.jobid + task.stageid + task.taskid));
 					var input = new Input(sis);) {
@@ -2835,7 +2835,7 @@ public class StreamJobScheduler {
 			task.hostport = hp;
 			zo.createTasksForJobNode(jobid, task, event -> {
 				var taskid = task.taskid;
-				log.info("Task {} created in zookeeper", taskid);
+				log.debug("Task {} created in zookeeper", taskid);
 			});
 			return spts;
 		} catch (Exception ex) {

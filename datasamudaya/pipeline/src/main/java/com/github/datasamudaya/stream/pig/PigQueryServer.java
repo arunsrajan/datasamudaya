@@ -72,7 +72,7 @@ public class PigQueryServer {
 						int memorydriver = 1024;
 						boolean isdriverrequired;
 						String scheduler = "";
-						String tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+						String tejobid = null;
 						Map<String, Object> pigAliasExecutedObjectMap = new ConcurrentHashMap<>();
 						List<String> pigQueries = new ArrayList<>();
 						List<String> pigQueriesToExecute = new ArrayList<>();
@@ -94,6 +94,7 @@ public class PigQueryServer {
 							memorydriver = Integer.valueOf(in.readLine());
 							isdriverrequired = Boolean.parseBoolean(in.readLine());
 							scheduler = in.readLine();
+							tejobid = in.readLine();
 							pipelineconfig.setIsremotescheduler(isdriverrequired);
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
@@ -105,7 +106,6 @@ public class PigQueryServer {
 							Map<String, Object> cpumemory = null;
 							if (scheduler.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_DEFAULT)
 									|| scheduler.equalsIgnoreCase(DataSamudayaConstants.JGROUPS)) {
-								tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 								containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver, true);
 								cpumemory = Utils.getAllocatedContainersResources(containers);
 								out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
@@ -124,7 +124,6 @@ public class PigQueryServer {
 								isjgroups = false;
 								isignite = false;
 								isyarn = true;
-								tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 								Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
 								isyarncontainerlaunched = true;
 							} else if (scheduler.equalsIgnoreCase(DataSamudayaConstants.STANDALONE)) {
@@ -175,7 +174,6 @@ public class PigQueryServer {
 														isyarncontainerlaunched = false;
 													}
 													if (!iscontainerlaunched) {
-														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver, true);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
@@ -232,7 +230,6 @@ public class PigQueryServer {
 													}
 													if (!isyarncontainerlaunched) {
 														try {
-															tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 															Utils.launchYARNExecutors(tejobid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
 														} catch (Exception ex) {
 															log.error(DataSamudayaConstants.EMPTY, ex);
@@ -258,7 +255,6 @@ public class PigQueryServer {
 														isyarncontainerlaunched = false;
 													}
 													if (!iscontainerlaunched) {
-														tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 														containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver, true);
 														cpumemory = Utils.getAllocatedContainersResources(containers);
 														iscontainerlaunched = true;
