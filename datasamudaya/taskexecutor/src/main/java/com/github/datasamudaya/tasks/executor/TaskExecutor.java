@@ -121,14 +121,14 @@ public class TaskExecutor implements Callable<Object> {
 		log.debug("Started the run------------------------------------------------------");
 		try {
 			if (deserobj instanceof JobStage jobstage) {
-				log.info("JobStage {} with port {} ", jobstage, port);
+				log.debug("JobStage {} with port {} ", jobstage, port);
 				jobidstageidjobstagemap.put(jobstage.getJobid() + jobstage.getStageid(), jobstage);
 				tasktoreturn.taskstatus = TaskStatus.COMPLETED;
 				tasktoreturn.tasktype = TaskType.JOBSTAGEMAPPUT;
 				tasktoreturn.stagefailuremessage = "Acquired job stage: " + jobstage;
 				return tasktoreturn;
 			} else if (deserobj instanceof Task task) {
-				log.info("Acquired Task: " + task);
+				log.debug("Acquired Task: " + task);
 				var taskexecutor = jobstageexecutormap.get(task.jobid + task.stageid + task.taskid);
 				var spte = (StreamPipelineTaskExecutor) taskexecutor;
 				if (taskexecutor == null
@@ -156,9 +156,9 @@ public class TaskExecutor implements Callable<Object> {
 						stageidexecutormap = (Map<String, Object>) jobidstageidexecutormap.get(task.jobid);
 					}
 					stageidexecutormap.put(task.stageid, spte);
-					log.info("Submitted kickoff execution: " + deserobj);
+					log.debug("Submitted kickoff execution: " + deserobj);
 					boolean status = spte.call();
-					log.info("Is Task Completed: {}", status);
+					log.debug("Is Task Completed: {}", status);
 					tasktoreturn.taskstatus = status ? TaskStatus.COMPLETED : TaskStatus.FAILED;
 					tasktoreturn.tasktype = TaskType.EXECUTEUSERTASK;
 					tasktoreturn.taskid = task.taskid;
@@ -181,16 +181,16 @@ public class TaskExecutor implements Callable<Object> {
 						+ stagesgraph.getTasks().get(numoftasks - 1).taskid;
 				var taskexecutor = jobstageexecutormap.get(key);
 				if (taskexecutor == null) {
-					log.info("In JGroups Port And Tasks {} {}", port, stagesgraph.getTasks());
+					log.debug("In JGroups Port And Tasks {} {}", port, stagesgraph.getTasks());
 					StreamPipelineTaskExecutor sptej = null;
 					if (stagesgraph.getStorage() == STORAGE.COLUMNARSQL) {
 						sptej = new StreamPipelineTaskExecutorJGroupsSQL(jobidstageidjobstagemap, stagesgraph.getTasks(), port,
 								inmemorycache, blorcmap, stagesgraph.getTasks().get(0).isTopersist());
-						log.info("In JGroups Storage Columnar Object {}", sptej);
+						log.debug("In JGroups Storage Columnar Object {}", sptej);
 					} else if (stagesgraph.getStorage() == STORAGE.DISK) {
 						sptej = new StreamPipelineTaskExecutorJGroups(jobidstageidjobstagemap, stagesgraph.getTasks(), port,
 								inmemorycache);
-						log.info("In JGroups Storage Object {}", sptej);
+						log.debug("In JGroups Storage Object {}", sptej);
 					}
 					sptej.setExecutor(es);
 					for (Task task : stagesgraph.getTasks()) {
@@ -217,7 +217,7 @@ public class TaskExecutor implements Callable<Object> {
 								+ DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + task.jobid
 								+ DataSamudayaConstants.FORWARD_SLASH + task.taskid);
 						todelete.delete();
-						log.info("Sanitize the task " + todelete);
+						log.debug("Sanitize the task " + todelete);
 					}
 					File jobtmpdir = new File(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + DataSamudayaConstants.FORWARD_SLASH
 							+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + closestagesgraph.getTasks().get(0).jobid);
@@ -238,7 +238,7 @@ public class TaskExecutor implements Callable<Object> {
 					for (var key : keys) {
 						jsem.remove(key);
 						jobstageexecutormap.remove(cce.getJobid() + key);
-						log.info("Sanitize stages: " + cce.getJobid() + key);
+						log.debug("Sanitize stages: " + cce.getJobid() + key);
 					}
 				}
 				tasktoreturn.tasktype = TaskType.FREERESOURCES;
@@ -247,7 +247,7 @@ public class TaskExecutor implements Callable<Object> {
 				var taskexecutor =
 						jobstageexecutormap.get(rdf.getJobid() + rdf.getStageid() + rdf.getTaskid());
 				var mdstde = (StreamPipelineTaskExecutor) taskexecutor;
-				log.info("Task Executor Remote Data Fetch {} Mode {} Storage {} {}", taskexecutor, rdf.getMode(), rdf.getStorage(), jobidstageidtaskidcompletedmap);
+				log.debug("Task Executor Remote Data Fetch {} Mode {} Storage {} {}", taskexecutor, rdf.getMode(), rdf.getStorage(), jobidstageidtaskidcompletedmap);
 				if (rdf.getMode().equals(DataSamudayaConstants.STANDALONE)) {
 					if (rdf.getStorage() == STORAGE.COLUMNARSQL) {
 						var path = Utils.getIntermediateInputStreamRDF(rdf);
@@ -260,7 +260,7 @@ public class TaskExecutor implements Callable<Object> {
 						Task task = mdstde.getTask();
 						if (task.storage == DataSamudayaConstants.STORAGE.INMEMORY) {
 							var os = ((StreamPipelineTaskExecutorInMemory) mdstde).getIntermediateInputStreamRDF(rdf);
-							log.info("Intermediate InputStream RDF {}", os);
+							log.debug("Intermediate InputStream RDF {}", os);
 							if (!Objects.isNull(os)) {
 								ByteBufferOutputStream bbos = (ByteBufferOutputStream) os;
 								rdf.setData(
@@ -318,7 +318,7 @@ public class TaskExecutor implements Callable<Object> {
 								try (var hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get()
 												.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)),
 										configuration)) {
-									log.info("Application Submitted:" + task.getJobid() + "-" + task.getTaskid());
+									log.debug("Application Submitted:" + task.getJobid() + "-" + task.getTaskid());
 									mdtemc = new TaskExecutorMapper(blockslocation,
 											HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs), task, cl, port);
 									apptaskexecutormap.put(appstgtaskid, mdtemc);
@@ -330,7 +330,7 @@ public class TaskExecutor implements Callable<Object> {
 									rk.stageid = task.getStageid();
 									rk.taskid = task.getTaskid();
 									rk.response = true;
-									log.info("destroying Mapper {}", appstgtaskid);
+									log.debug("destroying Mapper {}", appstgtaskid);
 									return rk;
 								}
 							}
@@ -341,7 +341,7 @@ public class TaskExecutor implements Callable<Object> {
 								tec =
 										new TaskExecutorCombiner(cv, task, cl, port, apptaskexecutormap, executorid);
 								apptaskexecutormap.put(appstgtaskid, tec);
-								log.info("Combiner submission:" + appstgtaskid);
+								log.debug("Combiner submission:" + appstgtaskid);
 								tec.call();
 								var keys = tec.ctx.keys();
 								RetrieveKeys rk = new RetrieveKeys();
@@ -350,7 +350,7 @@ public class TaskExecutor implements Callable<Object> {
 								rk.stageid = task.getStageid();
 								rk.taskid = task.getTaskid();
 								rk.response = true;
-								log.info("destroying Combiner {}", appstgtaskid);
+								log.debug("destroying Combiner {}", appstgtaskid);
 								return rk;
 							}
 						} else if (object instanceof ReducerValues rv) {
@@ -366,13 +366,13 @@ public class TaskExecutor implements Callable<Object> {
 						} else if (object instanceof RetrieveData) {
 							Context ctx = null;
 							if (taskexecutor instanceof TaskExecutorReducer ter) {
-								log.info("Gathering reducer context: " + appstgtaskid);
+								log.debug("Gathering reducer context: " + appstgtaskid);
 								ctx = ter.ctx;
 							} else if (taskexecutor instanceof TaskExecutorCombiner tec) {
-								log.info("Gathering combiner context: " + appstgtaskid);
+								log.debug("Gathering combiner context: " + appstgtaskid);
 								ctx = tec.ctx;
 							} else if (taskexecutor instanceof TaskExecutorMapper temc) {
-								log.info("Gathering reducer context: " + appstgtaskid);
+								log.debug("Gathering reducer context: " + appstgtaskid);
 								ctx = temc.ctx;
 							}
 							apptaskexecutormap.remove(appstgtaskid);

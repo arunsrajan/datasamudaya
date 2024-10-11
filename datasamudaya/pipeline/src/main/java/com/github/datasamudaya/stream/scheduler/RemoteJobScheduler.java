@@ -157,7 +157,7 @@ public class RemoteJobScheduler {
 			};
 			String choosente = getDriverNode(zo, jobid);
 			job.getJm().setDriverhp(choosente);
-			log.info("Choosen Task Executor Host Port {}", choosente);			
+			log.debug("Choosen Task Executor Host Port {}", choosente);			
 			Object output = null;
 			if(nonNull(job.getPipelineconfig().getJar())) {
 				output = Utils.getResultObjectByInput(choosente, job, jobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
@@ -170,7 +170,7 @@ public class RemoteJobScheduler {
 			job.getJm().setJobcompletiontime(System.currentTimeMillis());
 			Utils.writeToOstream(job.getPipelineconfig().getOutput(), "Concluded job in "
 					+ ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0) + " seconds");
-			log.info("Concluded job in "
+			log.debug("Concluded job in "
 					+ ((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0) + " seconds");
 			job.getJm()
 					.setTotaltimetaken((job.getJm().getJobcompletiontime() - job.getJm().getJobstarttime()) / 1000.0);

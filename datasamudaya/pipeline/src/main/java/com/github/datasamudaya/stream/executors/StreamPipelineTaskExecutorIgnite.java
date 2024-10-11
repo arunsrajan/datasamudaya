@@ -855,7 +855,7 @@ public class StreamPipelineTaskExecutorIgnite implements IgniteRunnable {
 			}
 
 			computeTasks(task);
-			log.info("Finished step: " + stagePartition);
+			log.debug("Finished step: " + stagePartition);
 			completed = true;
 		} catch (Exception ex) {
 			log.error("Failed stage:", ex);

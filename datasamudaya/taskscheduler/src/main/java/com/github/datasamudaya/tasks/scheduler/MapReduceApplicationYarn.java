@@ -244,9 +244,9 @@ public class MapReduceApplicationYarn implements Callable<List<DataCruncherConte
 				Utils.sendJobToYARNDistributedQueue(jobconf.getTeappid(), applicationid);
 				tinfoyarn = Utils
 						.getJobOutputStatusYARNDistributedQueueBlocking(jobconf.getTeappid());
-				log.info("Request jobid {} matching Response job id {} is {}", applicationid, tinfoyarn.getJobid(),
+				log.debug("Request jobid {} matching Response job id {} is {}", applicationid, tinfoyarn.getJobid(),
 						applicationid.equals(tinfoyarn.getJobid()));
-				log.info("Is output available {}", tinfoyarn.isIsresultavailable());
+				log.debug("Is output available {}", tinfoyarn.isIsresultavailable());
 			}
 
 			log.debug("Waiting for the Reducer to complete------------");

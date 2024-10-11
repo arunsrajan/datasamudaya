@@ -190,7 +190,7 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 				if (context.valuesSize() > 0) {
 					spillToDiskIntermediate(true);
 				}
-				log.info("Closing Stream For Task {} {} {} {}", task, op, sos, ostream);
+				log.debug("Closing Stream For Task {} {} {} {}", task, op, sos, ostream);
 				if (nonNull(op)) {
 					op.close();
 				}

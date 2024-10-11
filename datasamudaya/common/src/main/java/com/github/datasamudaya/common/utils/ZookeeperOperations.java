@@ -77,7 +77,7 @@ public class ZookeeperOperations implements AutoCloseable {
 	public void createRootNode(String path, byte[] data) throws ZookeeperException {
 		try {
 			curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(path, data);
-			Watcher watcher = (WatchedEvent event) -> log.info("Root node changed: {}", event);
+			Watcher watcher = (WatchedEvent event) -> log.debug("Root node changed: {}", event);
 			curator.getData().usingWatcher(watcher).forPath(path);
 		} catch (Exception ex) {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
@@ -234,9 +234,9 @@ public class ZookeeperOperations implements AutoCloseable {
 				public void nodeChanged() throws Exception {
 					ChildData data = cache.getCurrentData();
 					if (data != null) {
-						log.info("Task executor node changed: {}", new String(data.getData()));
+						log.debug("Task executor node changed: {}", new String(data.getData()));
 					} else {
-						log.info("Task executor node deleted: {}", path);
+						log.debug("Task executor node deleted: {}", path);
 					}
 				}
 			});
@@ -276,7 +276,7 @@ public class ZookeeperOperations implements AutoCloseable {
 							}
 							Utils.allocateResourcesByUser(resources,
 									DataSamudayaNodesResources.getAllocatedResources().get(currentnode));
-							log.info("Master node added: {}", event.getData().getPath());
+							log.debug("Master node added: {}", event.getData().getPath());
 							break;
 						case CHILD_REMOVED:
 							String[] nodetoberemoved = event.getData().getPath().split("/");
@@ -287,7 +287,7 @@ public class ZookeeperOperations implements AutoCloseable {
 							DataSamudayaNodesResources.get().remove(nodetoremove);
 							DataSamudayaNodesResources.getAllocatedResources().remove(nodetoremove);
 
-							log.info("Master node removed: {}", event.getData().getPath());
+							log.debug("Master node removed: {}", event.getData().getPath());
 							break;
 						default:
 							break;

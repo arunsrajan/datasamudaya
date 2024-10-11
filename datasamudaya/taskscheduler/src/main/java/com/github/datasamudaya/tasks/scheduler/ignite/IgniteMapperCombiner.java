@@ -67,7 +67,7 @@ public class IgniteMapperCombiner extends IgniteMapper implements IgniteCallable
 		var cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHEMR);
 		cache.put(mrresult.cachekey, (DataCruncherContext) ctx);
 		var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-		log.info("Time taken to measure mapper task is " + timetaken + " seconds");
+		log.debug("Time taken to measure mapper task is " + timetaken + " seconds");
 		return mrresult;
 	}
 

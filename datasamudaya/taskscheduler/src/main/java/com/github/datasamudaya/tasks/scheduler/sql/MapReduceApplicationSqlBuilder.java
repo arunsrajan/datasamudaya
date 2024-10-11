@@ -169,7 +169,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			throw new Exception("Syntax error in SQL");
 		}
 		RelNode relnode = Utils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
-		log.info("Final Plan: {}",
+		log.debug("Final Plan: {}",
 				RelOptUtil.dumpPlan(sql, relnode, SqlExplainFormat.TEXT, SqlExplainLevel.ALL_ATTRIBUTES));
 		descendants.put(relnode, false);		
 		mrab = MapReduceApplicationBuilder.newBuilder();
@@ -446,7 +446,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 							})));
 					tuplekeyvaluemap.entrySet().stream()
 							.forEach(entry -> context.put(entry.getKey(), entry.getValue().get()));
-					log.info("Combiner Result = {}", tuplekeyvaluemap);
+					log.debug("Combiner Result = {}", tuplekeyvaluemap);
 				}
 			} else {
 				for (Tuple tuple1 : tuples) {
@@ -504,7 +504,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 			if (istuple2) {
 				if (isnotempty) {
 					List<Tuple2> tuples2 = (List) tuples;
-					log.info("In Reduce Tuples = {}", tuples2);
+					log.debug("In Reduce Tuples = {}", tuples2);
 					Map<Object, Optional<Tuple>> tuplekeyvaluemap = tuples2.stream()
 							.collect(Collectors.groupingBy(tuple2 -> tuple2.v1,
 									Collectors.reducing(
@@ -518,8 +518,8 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 					tuplekeyvaluemap.entrySet().stream().forEach(entry -> {
 						Object[] valuesgrpby = SQLUtils.populateObjectFromTuple((Tuple) entry.getKey());
 						Tuple2<Tuple, Tuple> grpbyfunctions = (Tuple2<Tuple, Tuple>) entry.getValue().get();
-						log.info("In Reduce Group By Key = {}", Arrays.toString(valuesgrpby));
-						log.info("In Reduce {} v2={}", grpbyfunctions, grpbyfunctions.v2);
+						log.debug("In Reduce Group By Key = {}", Arrays.toString(valuesgrpby));
+						log.debug("In Reduce {} v2={}", grpbyfunctions, grpbyfunctions.v2);
 						Object[] valuesfromfunctions = SQLUtils.populateObjectFromFunctions(grpbyfunctions.v2,
 								functions);
 						Object[] mergeobject = null;
@@ -594,7 +594,7 @@ public class MapReduceApplicationSqlBuilder implements Serializable {
 				}
 			}
 
-			log.info("In Reduce Output Values {}", context.keys().size());
+			log.debug("In Reduce Output Values {}", context.keys().size());
 		}
 	}
 

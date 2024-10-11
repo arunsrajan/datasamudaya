@@ -43,7 +43,7 @@ public class ByteBufferPoolDirect {
 	 */
 	public static void init(long dm) {
 		directmemory = dm;
-		log.info("Total memory In Bytes: {}", directmemory);
+		log.debug("Total memory In Bytes: {}", directmemory);
 		GenericObjectPoolConfig config = new GenericObjectPoolConfig();
 		config.setMaxIdle(DataSamudayaConstants.BYTEBUFFERPOOLMAXIDLE);
 		config.setBlockWhenExhausted(false);

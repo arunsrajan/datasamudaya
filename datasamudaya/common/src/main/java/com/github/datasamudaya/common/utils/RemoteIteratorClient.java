@@ -48,11 +48,11 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 	RemoteIteratorNext nextelem = new RemoteIteratorNext();
 	public RemoteIteratorClient(Task task, String appendwithpath, boolean appendintermediate, boolean left, boolean right, List<FieldCollationDirection> fcsc, RequestType requesttype, IteratorType iteratortype, boolean ismr, Object key) throws Exception {
 		try {			
-			log.info("Trying to split host and port {}", task.getHostport());
+			log.debug("Trying to split host and port {}", task.getHostport());
 			String[] hostport = task.getHostport().split(DataSamudayaConstants.UNDERSCORE);
-			log.info("Connecting To Host {} And Port {} For Fetching And Sorting with task executor id {}", hostport[0], hostport[1], task.teid);
+			log.debug("Connecting To Host {} And Port {} For Fetching And Sorting with task executor id {}", hostport[0], hostport[1], task.teid);
 			sorterport = (int) Utils.getResultObjectByInput(task.getHostport(), new SorterPort(), task.teid);
-			log.info("Connecting To Host {} And Port {} For Fetching And Sorting", hostport[0], sorterport);
+			log.debug("Connecting To Host {} And Port {} For Fetching And Sorting", hostport[0], sorterport);
 			socket = new Socket(hostport[0], sorterport);
 			inputStream = socket.getInputStream();
 			input = new Input(inputStream);
@@ -108,7 +108,7 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 		}
 
 		if (nonNull(socket)) {
-			log.info("Closing Connection At Client");
+			log.debug("Closing Connection At Client");
 			socket.close();
 		}
 		isclosed = true;

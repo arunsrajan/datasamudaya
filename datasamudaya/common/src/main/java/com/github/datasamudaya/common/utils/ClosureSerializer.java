@@ -121,7 +121,7 @@ public class ClosureSerializer extends Serializer {
 		ClassLoader cl = capturingClass.getClassLoader();
 		Class<?> implClass = cl.loadClass(lambda.getImplClass().replace('/', '.'));
 		Class<?> interfaceType = cl.loadClass(lambda.getFunctionalInterfaceClass().replace('/', '.'));
-		log.info("Capturing Class {} Impl Class {} InterfaceType {}", capturingClass, implClass, interfaceType);
+		log.debug("Capturing Class {} Impl Class {} InterfaceType {}", capturingClass, implClass, interfaceType);
 		Lookup lookup = getLookup(implClass);
 		MethodType implType = MethodType.fromMethodDescriptorString(lambda.getImplMethodSignature(), cl);
 		MethodType samType = MethodType.fromMethodDescriptorString(lambda.getFunctionalInterfaceMethodSignature(),

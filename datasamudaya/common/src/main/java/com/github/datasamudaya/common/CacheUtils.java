@@ -54,13 +54,13 @@ public class CacheUtils {
 	public static Cache<?, ?> buildInMemoryCache(String cachename, Class<?> keytype,
 			Class<?> valuetype, int numbuffsize, int expiry, CacheExpiry cacheexpiry, int disksizeingb,
 			String cachedatapath) {
-		log.info("Entered CacheUtils.buildInMemoryCache");
+		log.debug("Entered CacheUtils.buildInMemoryCache");
 		CacheManager cacheManager;
 		if (Objects.isNull(DataSamudayaCacheManager.get())) {
 			cacheManager = CacheManagerBuilder.newCacheManagerBuilder()
 					.with(CacheManagerBuilder.persistence(cachedatapath)).build();
 			cacheManager.init();
-			log.info("Cache Manager Object Built");
+			log.debug("Cache Manager Object Built");
 			DataSamudayaCacheManager.put(cacheManager);
 		} else {
 			cacheManager = DataSamudayaCacheManager.get();
@@ -72,7 +72,7 @@ public class CacheUtils {
 			}
 			return cache;
 		} catch (Exception ex) {
-			log.info("Cache {} is not available, so creating cache... ", cachename);
+			log.debug("Cache {} is not available, so creating cache... ", cachename);
 			return createCache(cacheManager, cachename, keytype, valuetype, numbuffsize, disksizeingb);
 		}
 	}

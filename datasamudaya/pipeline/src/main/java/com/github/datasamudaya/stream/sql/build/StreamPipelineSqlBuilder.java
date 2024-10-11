@@ -181,7 +181,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 		RelNode relnode = SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
 		descendants.put(relnode, false);
 		requiredcolumnindex = new RequiredColumnsExtractor().getRequiredColumnsByTable(relnode);
-		log.info("Required Columns: {}", requiredcolumnindex);
+		log.debug("Required Columns: {}", requiredcolumnindex);
 		return new StreamPipelineSql(execute(relnode, 0));
 	}
 
@@ -344,7 +344,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 			List<SqlTypeName> togeneratezerobytype = ep.getProjects().stream().map(rexnode -> 
 							SQLUtils.findGreatestType(rexnode)).toList();
 			List<RexNode> columnsp = new ArrayList<>(ep.getProjects());
-			log.info("Column Enumerable Aggregate {}", columnsp);
+			log.debug("Column Enumerable Aggregate {}", columnsp);
 			return sp.get(0).map(new MapFunction<Object[], Object[]>() {
 				private static final long serialVersionUID = -1502525188707133614L;
 				List<RexNode> columns = columnsp;

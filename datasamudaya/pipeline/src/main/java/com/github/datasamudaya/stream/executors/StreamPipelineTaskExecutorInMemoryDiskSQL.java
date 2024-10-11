@@ -98,7 +98,7 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutorInMemoryDiskSQL.processBlockHDFSMap");
-		log.info("BlocksLocation Columns: {}", blockslocation.getColumns());
+		log.debug("BlocksLocation Columns: {}", blockslocation.getColumns());
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
 		YosegiRecordWriter writer = null;
@@ -139,7 +139,7 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 					final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted().toList();
 					if (CollectionUtils.isNotEmpty(originalcolsorder)) {
 						if (isNull(yosegibytes) || yosegibytes.length == 0 || nonNull(blockslocation.getToreprocess()) && blockslocation.getToreprocess().booleanValue()) {
-							log.info("Unable To Find vector for blocks {}", blockslocation);
+							log.debug("Unable To Find vector for blocks {}", blockslocation);
 							bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 							buffer = new BufferedReader(new InputStreamReader(bais));
 							task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
@@ -293,7 +293,7 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 					out.add(standardDeviation);
 
 				} else {
-					log.info("Map assembly deriving");
+					log.debug("Map assembly deriving");
 					if (task.finalphase && task.saveresulttohdfs) {
 						try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
 								Short.parseShort(DataSamudayaProperties.get().getProperty(
@@ -317,7 +317,7 @@ public final class StreamPipelineTaskExecutorInMemoryDiskSQL extends StreamPipel
 										executor, Runtime.getRuntime().availableProcessors()));
 						out = cf.get();
 					}
-					log.info("Map assembly concluded");
+					log.debug("Map assembly concluded");
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
 				output.flush();

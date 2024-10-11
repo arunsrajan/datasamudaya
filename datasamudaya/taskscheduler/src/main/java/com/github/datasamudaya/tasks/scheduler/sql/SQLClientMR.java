@@ -17,6 +17,7 @@ import java.util.List;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,8 @@ public class SQLClientMR {
 	 */
 	public static void main(String[] args) throws Exception {
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
+		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.USERSQL, true, DataSamudayaConstants.USERSQLREQUIRED);
@@ -125,7 +128,7 @@ public class SQLClientMR {
 						try {
 							processMessage(out, in, messagestorefile);
 						} catch (Exception ex) {
-							log.info("Aborting Connection");
+							log.debug("Aborting Connection");
 							out.println("quit");
 						}
 						break;
@@ -136,7 +139,7 @@ public class SQLClientMR {
 			} catch (Throwable ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
-			log.info("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
+			log.debug("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
 			Thread.sleep(2000);
 		}
 	}

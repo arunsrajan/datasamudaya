@@ -116,8 +116,8 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			var containerallocator = (DefaultContainerAllocator) getAllocator();
 			log.debug("Parameters: " + getParameters());
-			log.info("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
-			log.info("Container-Cpu: " + getParameters().getProperty("container-cpu", "1"));
+			log.debug("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
+			log.debug("Container-Cpu: " + getParameters().getProperty("container-cpu", "1"));
 			containerallocator.setVirtualcores(Integer.parseInt(getParameters().getProperty("container-cpu", "1")));
 			containerallocator.setMemory(Integer.parseInt(getParameters().getProperty("container-memory", "1024")));
 		} catch (Exception ex) {

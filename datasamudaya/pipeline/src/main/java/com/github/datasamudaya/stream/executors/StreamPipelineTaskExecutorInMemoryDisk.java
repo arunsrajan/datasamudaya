@@ -702,7 +702,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 					out.add(standardDeviation);
 
 				} else {
-					log.info("Map assembly deriving");
+					log.debug("Map assembly deriving");
 					CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
 							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
@@ -716,7 +716,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 						}
 						return (System.currentTimeMillis() - starttime) / 1000.0;
 					}
-					log.info("Map assembly concluded");
+					log.debug("Map assembly concluded");
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
 				output.flush();

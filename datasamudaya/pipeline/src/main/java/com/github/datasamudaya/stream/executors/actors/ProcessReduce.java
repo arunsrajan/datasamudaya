@@ -109,13 +109,13 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 					Object obj = sb.getData();					
 					if (obj instanceof DiskSpillingList dsl) {
 						if (dsl.isSpilled()) {
-							log.info("ProcessReduce::: Spilled Write Started...");
+							log.debug("ProcessReduce::: Spilled Write Started...");
 							Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
-							log.info("ProcessReduce::: Spilled Write Completed");
+							log.debug("ProcessReduce::: Spilled Write Completed");
 						} else {
-							log.info("ProcessReduce::: NotSpilled {}",  dsl.isSpilled());
+							log.debug("ProcessReduce::: NotSpilled {}",  dsl.isSpilled());
 							diskspilllistinterm.addAll(dsl.getData());
-							log.info("ProcessReduce::: NotSpilled Completed {}",  dsl.isSpilled());
+							log.debug("ProcessReduce::: NotSpilled Completed {}",  dsl.isSpilled());
 						}
 						dsl.clear();
 					} else if (obj instanceof byte[] data){
@@ -127,7 +127,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 			} 
 			if(object.getTerminiatingclass() == Dummy.class) {
 				dummysize++;
-				log.info("ProcessReduce::ShuffleSize {} , Terminating Dummy Size {}", terminatingsize, dummysize);
+				log.debug("ProcessReduce::ShuffleSize {} , Terminating Dummy Size {}", terminatingsize, dummysize);
 			}
 			else if (object.getTerminiatingclass() == DiskSpillingList.class
 					|| object.getTerminiatingclass() == ShuffleBlock.class
@@ -135,7 +135,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 					|| object.getTerminiatingclass() == DiskSpillingSet.class
 					|| object.getTerminiatingclass() == TreeSet.class) {
 				initialshufflesize++;				
-				log.info("ProcessReduce::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
+				log.debug("ProcessReduce::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
 			}
 			if (dummysize == terminatingsize || initialshufflesize == terminatingsize) {
 				if(diskspilllistinterm.isSpilled()) {
@@ -160,7 +160,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 						}					
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				} else {
-					log.info("Reduce Started");
+					log.debug("Reduce Started");
 					diskspilllist = new DiskSpillingList(tasktoprocess, diskspillpercentage,
 							DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
 						try {
@@ -182,7 +182,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 					childpipes.stream().forEach(action -> action
 							.tell(new OutputObject(diskspilllist, false, false, DiskSpillingList.class), ActorRef.noSender()));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
-					log.info("Reduce Completed");
+					log.debug("Reduce Completed");
 				}
 			}
 

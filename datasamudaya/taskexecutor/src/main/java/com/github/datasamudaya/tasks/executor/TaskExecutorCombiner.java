@@ -77,7 +77,7 @@ public class TaskExecutorCombiner implements Callable<Context> {
 		var esresult = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
-			log.info("Submitted Combiner:" + task.getJobid() + task.getTaskid());
+			log.debug("Submitted Combiner:" + task.getJobid() + task.getTaskid());
 			var complete = new DiskSpillingContext(task, null);
 			var appstgtaskcontextmap = new ConcurrentHashMap<String, Context>();
 			DiskSpillingContext currentctx = null;
@@ -99,20 +99,20 @@ public class TaskExecutorCombiner implements Callable<Context> {
 						TaskExecutorMapper temc =
 								(TaskExecutorMapper) apptaskexecutormap.get(appstgtaskids);
 						if (temc == null) {
-							log.info("Mapper Task Is Remote To TE");
+							log.debug("Mapper Task Is Remote To TE");
 							currentctx = new DiskSpillingContext(task, tuple5.v1.toString() + appstgtaskids);							
 							Utils.copySpilledContextToDestination(null, Arrays.asList(ctx,currentctx), tuple5.v1, remotetask, true);
 						} else {
-							log.info("Mapper Task Is Local To TE");
+							log.debug("Mapper Task Is Local To TE");
 							currentctx = (DiskSpillingContext) temc.ctx;
-							log.info("Mapper Task Is Local To TE Is Spilled {}", currentctx.isSpilled());
+							log.debug("Mapper Task Is Local To TE Is Spilled {}", currentctx.isSpilled());
 							if(currentctx.isSpilled()) {
 								Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple5.v1, remotetask, false);
 							} else {
-								log.info("Size Of Unspilled Data {}", currentctx.get(tuple5.v1).size());
+								log.debug("Size Of Unspilled Data {}", currentctx.get(tuple5.v1).size());
 								ctx.addAll(tuple5.v1, currentctx.get(tuple5.v1));
 							}
-							log.info("Combiner Task Is Local To TE Completed");
+							log.debug("Combiner Task Is Local To TE Completed");
 						}
 						appstgtaskcontextmap.put(tuple5.v1.toString() + appstgtaskids, currentctx);
 					}					
@@ -143,7 +143,7 @@ public class TaskExecutorCombiner implements Callable<Context> {
 			if(complete.isSpilled()) {
 				complete.close();
 			}
-			log.info("Combiner Result Keys {}",complete.keys());
+			log.debug("Combiner Result Keys {}",complete.keys());
 			ctx = complete;
 			log.debug("Submitted Reducer Completed:" + task.getJobid() + task.getStageid() + task.getTaskid());
 		} catch (Throwable ex) {

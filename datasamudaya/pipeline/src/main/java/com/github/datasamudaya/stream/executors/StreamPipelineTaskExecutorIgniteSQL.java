@@ -120,7 +120,7 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 		
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
-		log.info("BlocksLocation Columns: {}" + blockslocation.getColumns());
+		log.debug("BlocksLocation Columns: {}" + blockslocation.getColumns());
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
 		YosegiRecordWriter writer = null;
@@ -159,7 +159,7 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 					final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted().toList();
 					if (CollectionUtils.isNotEmpty(originalcolsorder)) {
 						if (isNull(yosegibytes) || yosegibytes.length == 0 || nonNull(blockslocation.getToreprocess()) && blockslocation.getToreprocess().booleanValue()) {
-							log.info("Unable To Find vector for blocks {}", blockslocation);
+							log.debug("Unable To Find vector for blocks {}", blockslocation);
 							bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 							buffer = new BufferedReader(new InputStreamReader(bais));
 							task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
@@ -310,9 +310,9 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 					out.add(standardDeviation);
 
 				} else {
-					log.info("Map assembly deriving");
+					log.debug("Map assembly deriving");
 					out = (List) ((Stream) streammap).collect(Collectors.toCollection(Vector::new));
-					log.info("Map assembly concluded");
+					log.debug("Map assembly concluded");
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
 				output.flush();

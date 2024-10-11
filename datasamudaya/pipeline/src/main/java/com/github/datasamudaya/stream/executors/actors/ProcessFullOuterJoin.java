@@ -81,7 +81,7 @@ public class ProcessFullOuterJoin extends AbstractActor implements Serializable 
 	}
 
 	private ProcessFullOuterJoin processFullOuterJoin(OutputObject oo) throws Exception {
-		log.info("ProcessFullOuterJoin {} {} {}", oo.getValue().getClass(), oo.isLeft(), oo.isRight());
+		log.debug("ProcessFullOuterJoin {} {} {}", oo.getValue().getClass(), oo.isLeft(), oo.isRight());
 		if (oo.isLeft()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
@@ -104,7 +104,7 @@ public class ProcessFullOuterJoin extends AbstractActor implements Serializable 
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
 				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
 				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
-			log.info("Full Outer Join Task {} from hostport {}", task, task.hostport);
+			log.debug("Full Outer Join Task {} from hostport {}", task, task.hostport);
 			if(diskspilllistintermleft.isSpilled()) {
 				diskspilllistintermleft.close();
 			}
@@ -168,7 +168,7 @@ public class ProcessFullOuterJoin extends AbstractActor implements Serializable 
 					diskspilllist.close();
 				}
 				try {
-					log.info("processFullOuterJoin::: DownStream Pipelines {}", pipelines);
+					log.debug("processFullOuterJoin::: DownStream Pipelines {}", pipelines);
 					if (CollectionUtils.isNotEmpty(pipelines)) {
 						pipelines.stream().forEach(downstreampipe -> {
 							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class),

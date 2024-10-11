@@ -18,9 +18,9 @@ public class AkkaKryoInitializer extends DefaultKryoInitializer {
 
 	@Override
 	public void preInit(ScalaKryo kryo) {
-		log.info("Instantiating and configuring Scala Kryo start");
+		log.debug("Instantiating and configuring Scala Kryo start");
 		Utils.configureScalaKryo(kryo);
-		log.info("Instantiating and configuring Scala Kryo end");
+		log.debug("Instantiating and configuring Scala Kryo end");
 	}
 
 }

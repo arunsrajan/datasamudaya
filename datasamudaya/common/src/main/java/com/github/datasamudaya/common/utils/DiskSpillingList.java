@@ -248,7 +248,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 				if (CollectionUtils.isNotEmpty(dataList)) {
 					spillToDiskIntermediate(true);
 				}
-				log.info("Closing Stream For Task {} {} {} {}", task, op, sos, ostream);
+				log.debug("Closing Stream For Task {} {} {} {}", task, op, sos, ostream);
 				if (nonNull(op)) {
 					op.close();
 				}

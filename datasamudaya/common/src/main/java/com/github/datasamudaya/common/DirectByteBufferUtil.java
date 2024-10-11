@@ -55,7 +55,7 @@ public final class DirectByteBufferUtil {
 					Method cleanMethod = cleaner.getClass().getMethod("clean");
 					cleanMethod.setAccessible(true);
 					cleanMethod.invoke(cleaner);
-					log.info("Direct Byte Buffer recovering to pool exhaustion number {} with buffer info {}",
+					log.debug("Direct Byte Buffer recovering to pool exhaustion number {} with buffer info {}",
 							deallocation.incrementAndGet(), buffer);
 				}
 				return true;
@@ -75,7 +75,7 @@ public final class DirectByteBufferUtil {
 	 */
 	public static synchronized ByteBuffer allocateDirect(int cap) throws Exception {
 		ByteBuffer buffer = ByteBuffer.allocateDirect(cap);
-		log.info("Direct Byte Buffer quota number {} with object info {}", allocation.incrementAndGet(), buffer);
+		log.debug("Direct Byte Buffer quota number {} with object info {}", allocation.incrementAndGet(), buffer);
 		return buffer;
 	}
 

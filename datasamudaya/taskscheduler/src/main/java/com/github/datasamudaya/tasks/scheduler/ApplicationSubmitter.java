@@ -116,7 +116,7 @@ public class ApplicationSubmitter {
 							if ("quit".equals(messagetasksscheduler.trim())) {
 								break;
 							}
-							log.info(messagetasksscheduler);
+							log.debug(messagetasksscheduler);
 						}
 					}
 				} catch (Exception ex) {

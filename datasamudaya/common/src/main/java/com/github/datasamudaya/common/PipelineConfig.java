@@ -537,7 +537,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 			jarOutputStream.closeEntry();
 			this.jar = jarBytes.toByteArray();
 		} catch (Exception ex) {
-			log.info(DataSamudayaConstants.EMPTY, ex);
+			log.debug(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
 

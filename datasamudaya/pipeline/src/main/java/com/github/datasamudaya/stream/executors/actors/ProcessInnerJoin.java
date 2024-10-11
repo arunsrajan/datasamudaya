@@ -82,7 +82,7 @@ public class ProcessInnerJoin extends AbstractActor implements Serializable {
 	private ProcessInnerJoin processInnerJoin(OutputObject oo) throws Exception {		
 		if (oo.isLeft()) {			
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
-				log.info("In process Inner Join Left {} {}", oo.isLeft(), getIntermediateDataFSFilePath(task));
+				log.debug("In process Inner Join Left {} {}", oo.isLeft(), getIntermediateDataFSFilePath(task));
 				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
@@ -92,7 +92,7 @@ public class ProcessInnerJoin extends AbstractActor implements Serializable {
 			}
 		} else if (oo.isRight()) {			
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
-				log.info("In process Inner Join Right {} {}", oo.isRight(), getIntermediateDataFSFilePath(task));
+				log.debug("In process Inner Join Right {} {}", oo.isRight(), getIntermediateDataFSFilePath(task));
 				diskspilllistintermright = new DiskSpillingList(task, diskspillpercentage, null, true, false, true, null, null, 0);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);

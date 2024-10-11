@@ -70,7 +70,7 @@ public class ProcessIntersection extends AbstractActor {
 
 	private void processIntersection(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			log.info("processIntersection::: InitialSize {} terminating size {}",initialsize, terminatingsize);
+			log.debug("processIntersection::: InitialSize {} terminating size {}",initialsize, terminatingsize);
 			if (object.getValue() instanceof DiskSpillingList<?> dsl) {
 				ldiskspill.add(dsl);
 			} else if (object.getValue() instanceof DiskSpillingSet<?> dss) {
@@ -86,7 +86,7 @@ public class ProcessIntersection extends AbstractActor {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
-				log.info(
+				log.debug(
 						"processIntersection::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}",
 						initialsize, terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
 				if (CollectionUtils.isNotEmpty(childpipes)) {
@@ -169,7 +169,7 @@ public class ProcessIntersection extends AbstractActor {
 			            }
 			            diskspillsetintm1 = diskspillsetresult;
 			        }					
-					log.info("Object To be sent to downstream pipeline size {}", diskspillsetresult.size());
+					log.debug("Object To be sent to downstream pipeline size {}", diskspillsetresult.size());
 					Set<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
 					childpipes.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspillsetresultfinal, false, false, DiskSpillingSet.class),

@@ -152,12 +152,12 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 			channel = Utils.getChannelTaskExecutor(jobstage.getTejobid(),
 					host,
 					port, taskstatusconcmapreq, taskstatusconcmapresp);
-			log.info("Work in Jgroups agent: " + tasks + " in host: " + host + " port: " + port);
+			log.debug("Work in Jgroups agent: " + tasks + " in host: " + host + " port: " + port);
 			var cd = new CountDownLatch(tasks.size());
 			var exec = executor;
 			for (var tasktocompute : tasks) {
 				semaphore.acquire();
-				log.info("js:{} with id {} with port", jsidjsmap.get(tasktocompute.jobid + tasktocompute.stageid), tasktocompute.jobid + tasktocompute.stageid, port);
+				log.debug("js:{} with id {} with port", jsidjsmap.get(tasktocompute.jobid + tasktocompute.stageid), tasktocompute.jobid + tasktocompute.stageid, port);
 				es.submit(new StreamPipelineTaskExecutor(jsidjsmap.get(tasktocompute.jobid + tasktocompute.stageid),
 						cache) {
 					/**
@@ -174,7 +174,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 							throws PipelineException {
 						var starttime = System.currentTimeMillis();
 						log.debug("Entered StreamPipelineTaskExecutorJGroupsSQL.processBlockHDFSMap");
-						log.info("BlocksLocation Columns: {}" + blockslocation.getColumns());
+						log.debug("BlocksLocation Columns: {}" + blockslocation.getColumns());
 						InputStream istreamnocols = null;
 						BufferedReader buffernocols = null;
 						YosegiRecordWriter writer = null;
@@ -214,7 +214,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted().toList();
 									if (CollectionUtils.isNotEmpty(originalcolsorder)) {
 										if (isNull(yosegibytes) || yosegibytes.length == 0 || nonNull(blockslocation.getToreprocess()) && blockslocation.getToreprocess().booleanValue()) {
-											log.info("Unable To Find vector for blocks {}", blockslocation);
+											log.debug("Unable To Find vector for blocks {}", blockslocation);
 											bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
 											buffer = new BufferedReader(new InputStreamReader(bais));
 											task.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
@@ -368,7 +368,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 									out.add(standardDeviation);
 
 								} else {
-									log.info("Map assembly deriving");
+									log.debug("Map assembly deriving");
 									if (task.finalphase && task.saveresulttohdfs) {
 										try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
 												Short.parseShort(DataSamudayaProperties.get().getProperty(
@@ -392,7 +392,7 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 														executor, Runtime.getRuntime().availableProcessors()));
 										out = cf.get();
 									}
-									log.info("Map assembly concluded");
+									log.debug("Map assembly concluded");
 								}
 								Utils.getKryo().writeClassAndObject(output, out);
 								output.flush();
@@ -480,11 +480,11 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 						hdfs = hdfscompute;
 						task = tasktocompute;
 						executor = exec;
-						log.info("Submitting Task {} in hostport {}", task, task.hostport);
+						log.debug("Submitting Task {} in hostport {}", task, task.hostport);
 						var stagePartition = task.jobid + task.taskid;
 						try {
 							var taskspredecessor = task.taskspredecessor;
-							log.info("Submitting Task {} in hostport {} with predecessor {}", task, task.hostport, taskspredecessor);
+							log.debug("Submitting Task {} in hostport {} with predecessor {}", task, task.hostport, taskspredecessor);
 							if (!taskspredecessor.isEmpty()) {
 								var taskids = taskspredecessor.parallelStream().map(tk -> tk.jobid + tk.taskid)
 										.collect(Collectors.toList());
@@ -540,23 +540,23 @@ public final class StreamPipelineTaskExecutorJGroupsSQL extends StreamPipelineTa
 							}
 							jobstage = jsidjsmap.get(tasktocompute.jobid + tasktocompute.stageid);
 							var timetakenseconds = computeTasks(task, hdfs);
-							log.info("Completed Stage " + stagePartition + " in " + timetakenseconds);
+							log.debug("Completed Stage " + stagePartition + " in " + timetakenseconds);
 							taskstatusconcmapreq.put(stagePartition, WhoIsResponse.STATUS.COMPLETED);
 						} catch (Exception ex) {
 							log.error("Failed Stage " + tasks, ex);
 							completed = false;
 						} finally {
-							log.info("Releasing Semaphore: {} {}", task.hostport, semaphore);
+							log.debug("Releasing Semaphore: {} {}", task.hostport, semaphore);
 							semaphore.release();
-							log.info("Semaphore Released for next task host: {} {}", task.hostport, semaphore);
+							log.debug("Semaphore Released for next task host: {} {}", task.hostport, semaphore);
 							cd.countDown();
-							log.info("Countdown Released for next task host: {} {}", task.hostport, cd);
+							log.debug("Countdown Released for next task host: {} {}", task.hostport, cd);
 						}
 						return completed;
 					}
 				});
 			}
-			log.info("StagePartitionId with Stage Statuses: " + taskstatusconcmapreq
+			log.debug("StagePartitionId with Stage Statuses: " + taskstatusconcmapreq
 					+ " WhoIs Response stauses: " + taskstatusconcmapresp);
 			cd.await();
 			completed = true;

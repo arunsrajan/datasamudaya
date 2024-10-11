@@ -75,19 +75,19 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 		executor = Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
 		Semaphore lock = new Semaphore(2);
 		try {
-			log.info("Initializing Container Properties");
+			log.debug("Initializing Container Properties");
 			var prop = new Properties();
 			prop.putAll(System.getProperties());
 			prop.putAll(containerprops);
 			DataSamudayaProperties.put(prop);
-			log.info("Initializing Container Properties Completed");
-			log.info("Initializing Cache");
+			log.debug("Initializing Container Properties Completed");
+			log.debug("Initializing Cache");
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			var inmemorycache = DataSamudayaCache.get();
-			log.info("Initializing Cache Completed");
+			log.debug("Initializing Cache Completed");
 			ByteBufferPoolDirectOld.init(2 * DataSamudayaConstants.GB);
 			while (true) {
 				request = new JobRequest();

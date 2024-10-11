@@ -57,7 +57,7 @@ public class GlobalJobFolderBlockLocations {
 			folderblockslocationmap = new ConcurrentHashMap<>();
 			lcsmap.put(jobid, folderblockslocationmap);
 		} else {
-			log.info("Chamber launched already: " + hdfsfolder + " with assets: " + lbls);
+			log.debug("Chamber launched already: " + hdfsfolder + " with assets: " + lbls);
 		}
 		folderblockslocationmap.put(hdfsfolder, lbls);
 	}
@@ -93,7 +93,7 @@ public class GlobalJobFolderBlockLocations {
 			folderpathsmap = new ConcurrentHashMap<>();
 			paths.put(jobid, folderpathsmap);
 		} else {
-			log.info("Chamber launched already: " + hdfsfolder + " with paths: " + latestpaths);
+			log.debug("Chamber launched already: " + hdfsfolder + " with paths: " + latestpaths);
 		}
 		folderpathsmap.put(hdfsfolder, latestpaths);
 		Map<Path, String> newchecksums = Utils.getCheckSum(latestpaths, hdfs);

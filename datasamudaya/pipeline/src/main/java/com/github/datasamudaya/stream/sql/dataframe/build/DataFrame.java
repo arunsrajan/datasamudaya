@@ -195,7 +195,7 @@ public class DataFrame {
 	public Object execute() throws Exception {
 		RelNode relnode = builder.build();
 		String sql = convertRelNodeToSqlString(relnode, SqlDialect.DatabaseProduct.H2.getDialect());
-		log.info("SQL From DataFrame Builder {}", sql);
+		log.debug("SQL From DataFrame Builder {}", sql);
 		StreamPipelineSql sps = StreamPipelineSqlBuilder.newBuilder()
 				.add(dfcontext.folder, dfcontext.tablename,
 						Arrays.asList(dfcontext.columns), dfcontext.types)

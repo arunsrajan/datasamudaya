@@ -54,7 +54,7 @@ public class JShellClient {
 						try {
 							processMessage(out, in, messagestorefile);
 						} catch (Exception ex) {
-							log.info("Aborting Connection");
+							log.error("Aborting Connection");
 							out.println("quit");
 						}
 						break;
@@ -65,7 +65,7 @@ public class JShellClient {
 			} catch (Throwable ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
-			log.info("Socket Timeout Occurred for host {} and port {}, retrying...", hostName, portNumber);
+			log.debug("Socket Timeout Occurred for host {} and port {}, retrying...", hostName, portNumber);
 			Thread.sleep(2000);
 		}
 	}

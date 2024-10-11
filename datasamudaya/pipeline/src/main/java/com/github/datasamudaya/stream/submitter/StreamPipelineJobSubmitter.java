@@ -177,7 +177,7 @@ public class StreamPipelineJobSubmitter {
 					var rand = new Random(System.currentTimeMillis());
 					currenttaskscheduler = taskscheduler;
 				}
-				log.info("Adopting job scheduler for host with port: " + currenttaskscheduler);
+				log.debug("Adopting job scheduler for host with port: " + currenttaskscheduler);
 				var mrjarpath = args[0];
 				var ts = currenttaskscheduler.split(DataSamudayaConstants.UNDERSCORE);
 				writeToTaskScheduler(ts, jarpath, classtoexecute, argumentsarray, user, 
@@ -228,7 +228,7 @@ public class StreamPipelineJobSubmitter {
 			if (args.length > 0) {
 				for (var argsindex = 0;argsindex < args.length;argsindex++) {
 					var arg = args[argsindex];
-					log.info("Dispatching arguments to application: " + arg);
+					log.debug("Dispatching arguments to application: " + arg);
 					Utils.writeDataStream(os, arg.getBytes());
 				}
 			}
@@ -237,7 +237,7 @@ public class StreamPipelineJobSubmitter {
 			while (true) {
 				var messagetasksscheduler = (String) br.readLine();
 				if (nonNull(messagetasksscheduler)) {
-					log.info(messagetasksscheduler);
+					log.debug(messagetasksscheduler);
 					if (messagetasksscheduler.trim().contains("quit")) {
 						break;
 					}

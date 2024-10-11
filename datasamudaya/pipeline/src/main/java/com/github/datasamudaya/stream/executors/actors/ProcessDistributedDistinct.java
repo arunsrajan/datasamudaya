@@ -54,7 +54,7 @@ public class ProcessDistributedDistinct extends AbstractActor {
 	private void processDistributedDistinct(OutputObject object) throws PipelineException, Exception {		
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
-				log.info("In Distributed Distinct {} {} {} {} {}", object, dsl.size(), dsl.isSpilled(), dsl.getTask(), terminatingsize);
+				log.debug("In Distributed Distinct {} {} {} {} {}", object, dsl.size(), dsl.isSpilled(), dsl.getTask(), terminatingsize);
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspillset);
 				} else {
@@ -66,13 +66,13 @@ public class ProcessDistributedDistinct extends AbstractActor {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
-				log.info("processDistributedDistinct::Started InitialSize {} , Terminating Size {} childPipes {} Task {}", initialsize,
+				log.debug("processDistributedDistinct::Started InitialSize {} , Terminating Size {} childPipes {} Task {}", initialsize,
 						terminatingsize, childpipes, diskspillset.getTask());
 				if(diskspillset.isSpilled()) {
 					diskspillset.close();			
 				}
 				if (CollectionUtils.isNotEmpty(childpipes)) {															
-					log.info("processDistributedDistinct::DiskSpill intermediate Set Is Spilled {} Task {}", diskspillset.isSpilled(), diskspillset.getTask());
+					log.debug("processDistributedDistinct::DiskSpill intermediate Set Is Spilled {} Task {}", diskspillset.isSpilled(), diskspillset.getTask());
 					childpipes.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class),
 								ActorRef.noSender());

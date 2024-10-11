@@ -49,10 +49,10 @@ public class MapReduceYarnAppmasterService extends MindAppmasterService {
 	protected MindRpcMessageHolder handleMindMessageInternal(MindRpcMessageHolder message) {
 		var request = getConversionService().convert(message, BaseObject.class);
 		var jobrequest = (JobRequest) request;
-		log.info("Request from container: " + jobrequest.getContainerid() + " " + jobrequest.getTimerequested());
+		log.debug("Request from container: " + jobrequest.getContainerid() + " " + jobrequest.getTimerequested());
 		var response = handleJob(jobrequest);
 		var mindrpcmessageholder = getConversionService().convert(response, MindRpcMessageHolder.class);
-		log.info("Response to container: " + response.getContainerid() + " :" + mindrpcmessageholder);
+		log.debug("Response to container: " + response.getContainerid() + " :" + mindrpcmessageholder);
 		return mindrpcmessageholder;
 	}
 
@@ -96,12 +96,12 @@ public class MapReduceYarnAppmasterService extends MindAppmasterService {
 						}
 					}
 				} catch (Exception ex) {
-					log.info("Handle job request error, See cause below \n", ex);
+					log.debug("Handle job request error, See cause below \n", ex);
 				}
 			}
 
 			var job = yarnAppMaster.getJob(request.getContainerid());
-			log.info(request.getContainerid() + ": " + job);
+			log.debug(request.getContainerid() + ": " + job);
 			//Job is available
 			if (job != null) {
 				var baos = new ByteArrayOutputStream();
@@ -121,7 +121,7 @@ public class MapReduceYarnAppmasterService extends MindAppmasterService {
 			log.error("Handle job request error, See cause below \n", ex);
 		}
 		finally {
-			log.info("Response: state=" + response.getState() + " job=" + response.getJob());
+			log.debug("Response: state=" + response.getState() + " job=" + response.getJob());
 		}
 		return response;
 	}

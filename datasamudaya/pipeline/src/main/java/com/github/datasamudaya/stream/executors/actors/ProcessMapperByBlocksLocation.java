@@ -122,10 +122,10 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 
 	private void processBlocksLocationRecord(BlocksLocationRecord blr) {
 		BlocksLocation blockslocation = blr.bl;
-		log.info("processing {}", blr.bl);
+		log.debug("processing {}", blr.bl);
 		var starttime = System.currentTimeMillis();
-		log.info("Entered ProcessMapperByBlocksLocation.processBlocksLocationRecord");
-		log.info("BlocksLocation Columns: {}", blockslocation.getColumns());
+		log.debug("Entered ProcessMapperByBlocksLocation.processBlocksLocationRecord");
+		log.debug("BlocksLocation Columns: {}", blockslocation.getColumns());
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
 		BufferedReader buffer = null;
@@ -169,7 +169,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					if (CollectionUtils.isNotEmpty(originalcolsorder)) {
 						if (isNull(yosegibytes) || yosegibytes.length == 1 || nonNull(blockslocation.getToreprocess())
 								&& blockslocation.getToreprocess().booleanValue()) {
-							log.info("Unable To Find vector for blocks {}", blockslocation);
+							log.debug("Unable To Find vector for blocks {}", blockslocation);
 							bais = HdfsBlockReader.getBlockDataInputStreamMerge(blockslocation, hdfs);
 							buffer = new BufferedReader(new InputStreamReader(bais));
 							tasktoprocess.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
@@ -264,10 +264,10 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 				
 				int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
 						DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-				log.info("Number Of Shuffle Files PerExecutor {}", numfileperexec);
+				log.debug("Number Of Shuffle Files PerExecutor {}", numfileperexec);
 				if (MapUtils.isNotEmpty(blr.pipeline)) {
 					int totalranges = blr.pipeline.keySet().size();
-					log.info("Total Ranges {}", totalranges);
+					log.debug("Total Ranges {}", totalranges);
 					ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
 					Map<Integer, DiskSpillingList> results = fjpool.submit(()-> (Map) ((Stream<Tuple2>) streammap).collect(
 							Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % totalranges,
@@ -289,12 +289,12 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					});
 					int numexecutorpipe = totalranges/numfileperexec;
 					IntStream.range(0, numexecutorpipe).map(val-> val * numfileperexec).forEach(val -> {
-						log.info("Sending Dummy To Actor: {}", blr.pipeline.get(val));
+						log.debug("Sending Dummy To Actor: {}", blr.pipeline.get(val));
 						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right, Dummy.class),
 								ActorRef.noSender());
 					});
 				} else if (CollectionUtils.isNotEmpty(blr.childactors)) {
-					log.info("Child Actors pipeline Process Started with actors {} with left {} right {} Task {}...",blr.childactors(), left ,right, getIntermediateDataFSFilePath(tasktoprocess));
+					log.debug("Child Actors pipeline Process Started with actors {} with left {} right {} Task {}...",blr.childactors(), left ,right, getIntermediateDataFSFilePath(tasktoprocess));
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							diskspillpercentage, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);
@@ -305,15 +305,15 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 							action -> action.tell(new OutputObject(diskspilllist, left, right, null), ActorRef.noSender()));
 					blr.childactors().stream().forEach(
 							action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class), ActorRef.noSender()));
-					log.info("Child Actors pipeline Process Ended ...");
+					log.debug("Child Actors pipeline Process Ended ...");
 				} else {
-					log.info("Processing Mapper Task In Writing To Cache Started ...");
+					log.debug("Processing Mapper Task In Writing To Cache Started ...");
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							diskspillpercentage, null, false, left, right, null, null, numfileperexec);
 					((Stream) streammap).forEach(diskspilllist::add);
-					log.info("Processing Mapper Disk Spill Close ...");
+					log.debug("Processing Mapper Disk Spill Close ...");
 					diskspilllist.close();
-					log.info("Writing To Cache Started with spilled? {}...",diskspilllist.isSpilled());
+					log.debug("Writing To Cache Started with spilled? {}...",diskspilllist.isSpilled());
 					Stream datastream = diskspilllist.isSpilled()
 							? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
 							Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, false, false, false)))
@@ -323,9 +323,9 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 					cacheAble(fsdos);
 					diskspilllist.clear();
-					log.info("Writing To Cache Ended with total bytes {}...", fsdos.toByteArray().length);
+					log.debug("Writing To Cache Ended with total bytes {}...", fsdos.toByteArray().length);
 				}
-				log.info("Map assembly concluded");
+				log.debug("Map assembly concluded");
 				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);				
 				log.debug("Exiting ProcessMapperByBlocksLocation.processBlocksLocationRecord");
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;

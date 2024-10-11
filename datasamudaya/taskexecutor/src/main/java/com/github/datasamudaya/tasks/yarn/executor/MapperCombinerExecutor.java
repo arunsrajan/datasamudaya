@@ -57,7 +57,7 @@ public class MapperCombinerExecutor extends MapperExecutor {
 			return ctx;
 		}
 		var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-		log.info("Time taken to guage mapper task is " + timetaken + " seconds");
+		log.debug("Time taken to guage mapper task is " + timetaken + " seconds");
 		return ctx;
 	}
 

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,8 +54,10 @@ public class SQLClient {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		TerminalFactory.registerFlavor(Flavor.UNIX, UnixTerminal.class);
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
+		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+		TerminalFactory.registerFlavor(Flavor.UNIX, UnixTerminal.class);
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.USERSQL, true, DataSamudayaConstants.USERSQLREQUIRED);
@@ -153,7 +156,7 @@ public class SQLClient {
 					zo = new ZookeeperOperations();
 					zo.connect();
 					zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
-						log.info("Node Created");
+						log.debug("Node Created");
 					});
 					zo.watchNodes();					
 				}
@@ -205,7 +208,7 @@ public class SQLClient {
 							try {
 								processMessage(out, in, messagestorefile, isclient, teid, user);
 							} catch (Exception ex) {
-								log.info("Aborting Connection");
+								log.debug("Aborting Connection");
 								out.println("quit");
 							}
 						}
@@ -221,7 +224,7 @@ public class SQLClient {
 					zo.close();
 				}
 			}
-			log.info("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
+			log.debug("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
 			Thread.sleep(2000);
 		}
 	}

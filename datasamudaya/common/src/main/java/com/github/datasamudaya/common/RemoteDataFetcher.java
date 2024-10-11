@@ -312,7 +312,7 @@ public class RemoteDataFetcher {
 	 */
 	public static void remoteInMemoryDataFetch(RemoteDataFetch rdf) throws Exception {
 		log.debug("Entered RemoteDataFetcher.remoteInMemoryDataFetch");
-		log.info("Remote data recover with hp: " + rdf.getHp());
+		log.debug("Remote data recover with hp: " + rdf.getHp());
 		var rdfwithdata = (RemoteDataFetch) Utils.getResultObjectByInput(rdf.getHp(), rdf, rdf.getTejobid());
 		rdf.setData(rdfwithdata.getData());
 		log.debug("Exiting RemoteDataFetcher.remoteInMemoryDataFetch");

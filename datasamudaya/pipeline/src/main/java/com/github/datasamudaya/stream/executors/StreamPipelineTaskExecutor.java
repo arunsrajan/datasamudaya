@@ -788,7 +788,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 					out.add(standardDeviation);
 
 				} else {
-					log.info("Map assembly deriving");
+					log.debug("Map assembly deriving");
 					CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
 							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
 									Runtime.getRuntime().availableProcessors()));
@@ -803,7 +803,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 						var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 						return timetaken;
 					}
-					log.info("Map assembly concluded");
+					log.debug("Map assembly concluded");
 				}
 				Utils.getKryo().writeClassAndObject(output, out);
 				output.flush();
@@ -2660,7 +2660,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 					keyvaluepairs.addAll((List) Utils.getKryo().readClassAndObject(input));
 				}
 			}
-			log.info("Coalesce Data Size:" + keyvaluepairs.size());
+			log.debug("Coalesce Data Size:" + keyvaluepairs.size());
 			// Parallel execution of reduce by key stream execution.
 			List out = null;
 			if (Objects.nonNull(coalescefunction.get(0))

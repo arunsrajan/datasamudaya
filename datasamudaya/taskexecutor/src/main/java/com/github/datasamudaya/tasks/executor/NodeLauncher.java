@@ -93,7 +93,7 @@ public class NodeLauncher {
 			resource.setUsabledisksize(Utils.usablediskspace());
 			resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
 			zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + port, resource, event -> {
-				log.info("{}", event);
+				log.debug("{}", event);
 			});
 			var escontainer = Executors.newWorkStealingPool();
 
@@ -123,7 +123,7 @@ public class NodeLauncher {
 								hdfs, containeridthreads, containeridports, object, zo);
 						Future<Object> containerallocated = escontainer.submit(container);
 						Object obj = containerallocated.get();
-						log.info("Chamber reply: " + obj);
+						log.debug("Chamber reply: " + obj);
 						return obj;
 					} catch (InterruptedException e) {
 						log.warn("Interrupted!", e);
@@ -136,9 +136,9 @@ public class NodeLauncher {
 				}
 			};
 			server = Utils.getRPCRegistry(port, sdc, DataSamudayaConstants.EMPTY);
-			log.info("NodeLauncher kickoff at port {}.....",
+			log.debug("NodeLauncher kickoff at port {}.....",
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
-			log.info("Reckoning closedown lock...");
+			log.debug("Reckoning closedown lock...");
 			var cdl = new CountDownLatch(1);
 			Utils.addShutdownHook(() -> {
 				try {

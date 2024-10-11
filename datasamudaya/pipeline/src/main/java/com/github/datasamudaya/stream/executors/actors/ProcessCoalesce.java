@@ -100,9 +100,9 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 			if(object.getTerminiatingclass() == Dummy.class || object.getTerminiatingclass() == DiskSpillingList.class) {
 				initialsize++;
 			}
-			log.info("processCoalesce::: InitSize {} TermSize {}", initialsize, terminatingsize);
+			log.debug("processCoalesce::: InitSize {} TermSize {}", initialsize, terminatingsize);
 			if (initialsize == terminatingsize) {
-				log.info("processCoalesce::: InitSize {} TermSize {}", initialsize, terminatingsize);
+				log.debug("processCoalesce::: InitSize {} TermSize {}", initialsize, terminatingsize);
 				if(diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
@@ -125,13 +125,13 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 				final boolean right = isNull(task.joinpos) ? false
 						: nonNull(task.joinpos) && "right".equals(task.joinpos) ? true : false;
 				if (CollectionUtils.isNotEmpty(pipelines)) {
-					log.info("Process Coalesce To Pipeline Started {} IsSpilled {} {}", pipelines, diskspilllist.isSpilled(), diskspilllist.getData());
+					log.debug("Process Coalesce To Pipeline Started {} IsSpilled {} {}", pipelines, diskspilllist.isSpilled(), diskspilllist.getData());
 					pipelines.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspilllist, left, right, DiskSpillingList.class), ActorRef.noSender());
 					});
-					log.info("Process Coalesce To Pipeline Ended {}", pipelines);
+					log.debug("Process Coalesce To Pipeline Ended {}", pipelines);
 				} else {
-					log.info("Process Coalesce To Cache Started");
+					log.debug("Process Coalesce To Cache Started");
 					Stream<Tuple2> datastreamsplilled = diskspilllist.isSpilled()
 							? (Stream<Tuple2>) Utils.getStreamData(
 							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null,
@@ -148,7 +148,7 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 					} catch (Exception ex) {
 						log.error("Error in putting output in cache", ex);
 					}
-					log.info("Process Coalesce To Cache Ended");
+					log.debug("Process Coalesce To Cache Ended");
 				}
 
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()

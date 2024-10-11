@@ -50,25 +50,25 @@ public class StreamPipelineSQLYarnContainer extends AbstractIntegrationYarnConta
 		StaticComponentContainer.Modules.exportAllToAll();
 		JobRequest request;
 		try {
-			log.info("In runInternal method started with environment {}", getEnvironment());
+			log.debug("In runInternal method started with environment {}", getEnvironment());
 			Class<?> cls = Class.forName(DataSamudayaConstants.DEFAULTASKEXECUTORRUNNER, true, getClass().getClassLoader());
 			Method method = cls.getDeclaredMethod("main", String[].class);
-			log.info("In Main method Obtained");
+			log.debug("In Main method Obtained");
 			System.setProperty(DataSamudayaConstants.TASKEXECUTOR_HOST, getEnvironment(DataSamudayaConstants.NM_HOST));
 			System.setProperty(DataSamudayaConstants.TASKEXECUTOR_PORT, DataSamudayaConstants.EMPTY
 					+ Utils.getRandomPort());
 			request = new JobRequest();
 			request.setState(JobRequest.State.GETTASKEXECUTORID);
-			log.info("In Client Request Set");
+			log.debug("In Client Request Set");
 			client = (MindAppmasterServiceClient) getIntegrationServiceClient();
 			var response = (JobResponse) client.doMindRequest(request);
-			log.info("In Client Response Obtained");
+			log.debug("In Client Response Obtained");
 			String jobid = response.getContainerid();
-			log.info("JobId {}", jobid);
+			log.debug("JobId {}", jobid);
 			String[] args = new String[]{DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG, ((int)(Utils.mpBeanLocalToJVM.getUsage().getMax() * 0.4)) +"", jobid, response.getExecutorordriver().name()};  
 			method.invoke(null, (Object) args);
-			log.info("Executing TaskExecutor For JobId {}", jobid);
-			log.info("In runInternal method Ended");
+			log.debug("Executing TaskExecutor For JobId {}", jobid);
+			log.debug("In runInternal method Ended");
 			System.exit(0);
 		}
 		catch (Throwable ex) {

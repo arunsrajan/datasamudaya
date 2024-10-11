@@ -51,7 +51,7 @@ public class GlobalContainerLaunchers {
 			jobidcontainersmap = new ConcurrentHashMap<>();
 			lcsmap.put(userid, jobidcontainersmap);
 		} else {
-			log.info("Chamber launched already: " + userid + " with assets: " + lcs);
+			log.debug("Chamber launched already: " + userid + " with assets: " + lcs);
 		}
 		jobidcontainersmap.put(jobid, lcs);
 	}

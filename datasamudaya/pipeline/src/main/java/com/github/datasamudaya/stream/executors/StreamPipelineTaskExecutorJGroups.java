@@ -95,7 +95,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 			channel = Utils.getChannelTaskExecutor(jobstage.getTejobid(),
 					host,
 					port, taskstatusconcmapreq, taskstatusconcmapresp);
-			log.info("Work in Jgroups agent: " + tasks + " in host: " + host + " port: " + port);
+			log.debug("Work in Jgroups agent: " + tasks + " in host: " + host + " port: " + port);
 			var cd = new CountDownLatch(tasks.size());
 			var exec = executor;
 			for (var tasktocompute : tasks) {
@@ -150,7 +150,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 									var numinputs = task.parentremotedatafetch.length;
 									for (var inputindex = 0;inputindex < numinputs;inputindex++) {
 										var input = task.parentremotedatafetch[inputindex];
-										log.info("Task Input " + task.jobid + " rdf:" + input);
+										log.debug("Task Input " + task.jobid + " rdf:" + input);
 										if (input != null) {
 											var rdf = input;
 											InputStream is = RemoteDataFetcher.readIntermediatePhaseOutputFromFS(
@@ -169,7 +169,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 										var input = task.input[inputindex];
 										if (input != null && input instanceof Task taskinput) {
 											var os = getIntermediateInputStreamFS(taskinput);
-											log.info("Task Input " + taskinput.jobid + " Os:" + os);
+											log.debug("Task Input " + taskinput.jobid + " Os:" + os);
 											if (os != null) {
 												task.input[inputindex] = new BufferedInputStream(os);
 											}
@@ -179,7 +179,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 							}
 
 							var timetakenseconds = computeTasks(task, hdfs);
-							log.info("Completed Stage " + stagePartition + " in " + timetakenseconds);
+							log.debug("Completed Stage " + stagePartition + " in " + timetakenseconds);
 							taskstatusconcmapreq.put(stagePartition, WhoIsResponse.STATUS.COMPLETED);
 						} catch (Exception ex) {
 							log.error("Failed Stage " + tasks, ex);

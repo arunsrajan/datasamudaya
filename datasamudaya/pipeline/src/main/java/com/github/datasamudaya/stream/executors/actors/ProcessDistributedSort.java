@@ -92,7 +92,7 @@ public class ProcessDistributedSort extends AbstractActor {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
-				log.info("processDistributedSort::Started InitialSize {} , Terminating Size {}", initialsize,
+				log.debug("processDistributedSort::Started InitialSize {} , Terminating Size {}", initialsize,
 						terminatingsize);
 				if(diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();		

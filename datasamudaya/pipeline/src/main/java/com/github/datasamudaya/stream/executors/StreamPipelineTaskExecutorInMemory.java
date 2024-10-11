@@ -111,7 +111,7 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 		log.debug("Entered StreamPipelineTaskExecutorInMemory.createIntermediateDataToFS");
 		try {
 			var path = getIntermediateDataFSFilePath(task);
-			log.info("ResultStream Path: " + path);
+			log.debug("ResultStream Path: " + path);
 			OutputStream os;
 			os = new ByteBufferOutputStream(ByteBufferPoolDirectOld.get(buffersize));
 			resultstream.put(path, os);
@@ -151,12 +151,12 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 		log.debug("Entered StreamPipelineTaskExecutorInMemory.call for task " + task);
 		String stageTasks = "";
 		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
-		log.info("Acclaimed namenode URL " + hdfsfilepath);
-		log.info("Result Stream " + resultstream);
+		log.debug("Acclaimed namenode URL " + hdfsfilepath);
+		log.debug("Result Stream " + resultstream);
 		var configuration = new Configuration();
 		try (var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);) {
 			stageTasks = getStagesTask();
-			log.info("Submitted Task " + task);
+			log.debug("Submitted Task " + task);
 			if (task.input != null && task.parentremotedatafetch != null) {
 				if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
 					var numinputs = task.parentremotedatafetch.length;
@@ -181,7 +181,7 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 						var input = task.input[inputindex];
 						if (input != null && input instanceof Task taskinput) {
 							var os = getIntermediateInputStreamTask(taskinput);
-							log.info("Task Input " + taskinput.jobid + " Os:" + os);
+							log.debug("Task Input " + taskinput.jobid + " Os:" + os);
 							if (os != null) {
 								ByteBufferOutputStream bbos = (ByteBufferOutputStream) os;
 								ByteBuffer buffer = bbos.get();
@@ -191,14 +191,14 @@ public sealed class StreamPipelineTaskExecutorInMemory extends StreamPipelineTas
 					}
 				}
 			}
-			log.info("Functioning Task " + task);
-			log.info("Task Input length" + task.input.length);
-			log.info("Task Input " + task.input[0]);
+			log.debug("Functioning Task " + task);
+			log.debug("Task Input length" + task.input.length);
+			log.debug("Task Input " + task.input[0]);
 			task.taskexecutionstartime = starttime;
 			timetaken = computeTasks(task, hdfs);
 			endtime = task.taskexecutionendtime = System.currentTimeMillis();
 			task.timetakenseconds = timetaken;
-			log.info("Completed Task: " + task);
+			log.debug("Completed Task: " + task);
 			task.piguuid = UUID.randomUUID().toString();
 			completed = true;
 		} catch (Throwable ex) {

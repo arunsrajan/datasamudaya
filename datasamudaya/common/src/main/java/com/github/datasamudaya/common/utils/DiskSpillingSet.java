@@ -246,7 +246,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 				if (CollectionUtils.isNotEmpty(dataSet)) {
 					spillToDiskIntermediate(true);
 				}
-				log.info("Closing Stream For Task {} {} {} {}", task, op, sos, ostream);
+				log.debug("Closing Stream For Task {} {} {} {}", task, op, sos, ostream);
 				if (nonNull(op)) {
 					op.close();
 				}

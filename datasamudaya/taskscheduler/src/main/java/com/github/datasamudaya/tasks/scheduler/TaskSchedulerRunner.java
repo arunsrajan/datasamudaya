@@ -63,14 +63,14 @@ public class TaskSchedulerRunner {
 		var zo = new ZookeeperOperations();
 		zo.connect();
 		zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
-			log.info("Node Created");
+			log.debug("Node Created");
 		});
 		zo.watchNodes();
 		zo.leaderElectionScheduler(zookeeperid, new LeaderLatchListener(){
 
 			@Override
 			public void isLeader() {
-				log.info("Scheduler Node {} elected as leader", zookeeperid);
+				log.debug("Scheduler Node {} elected as leader", zookeeperid);
 				try {
 					zo.setLeader(zookeeperid.getBytes());
 					cdlmr.countDown();
@@ -83,7 +83,7 @@ public class TaskSchedulerRunner {
 			}
 
 		});
-		log.info("Scheduler Waiting to elect as a leader...");
+		log.debug("Scheduler Waiting to elect as a leader...");
 		cdlmr.await();
 
 		String cacheid = DataSamudayaConstants.BLOCKCACHE;
@@ -157,7 +157,7 @@ public class TaskSchedulerRunner {
 		});
 		String mrport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PORT);
 		String mrwebport = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_WEB_PORT);
-		log.info("MapReduce scheduler kickoff at the ports[port={},webport={}]", mrport, mrwebport);
+		log.debug("MapReduce scheduler kickoff at the ports[port={},webport={}]", mrport, mrwebport);
 		cdl.await();
 	}
 

@@ -72,7 +72,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 	@Override
 	protected void runInternal() {
 		StaticComponentContainer.Modules.exportAllToAll();
-		log.info("Container Started...");
+		log.debug("Container Started...");
 		JobRequest request;
 		byte[] job = null;
 		var containerid = getEnvironment().get(DataSamudayaConstants.SHDP_CONTAINERID);
@@ -88,17 +88,17 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 				request.setTimerequested(System.currentTimeMillis());
 				client = (MindAppmasterServiceClient) getIntegrationServiceClient();
 				var response = (JobResponse) client.doMindRequest(request);
-				log.info(containerid + ": Response containerid: " + response);
+				log.debug(containerid + ": Response containerid: " + response);
 				if (response == null) {
 					sleep(1);
 					continue;
 				}
-				log.info(containerid + ": Response State: " + response.getState() + " " + response.getResmsg());
+				log.debug(containerid + ": Response State: " + response.getState() + " " + response.getResmsg());
 				if (response.getState().equals(JobResponse.State.STANDBY)) {
 					sleep(1);
 					continue;
 				} else if (response.getState().equals(JobResponse.State.RUNJOB)) {
-					log.info(containerid + ": Environment " + getEnvironment());
+					log.debug(containerid + ": Environment " + getEnvironment());
 					job = response.getJob();
 					var input = new Input(new ByteArrayInputStream(job));
 					var object = Utils.getKryo().readClassAndObject(input);
@@ -137,7 +137,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 							request.setJob(job);
 							request.setContainerid(containerid);
 							response = (JobResponse) client.doMindRequest(request);
-							log.info(containerid + ": Task Completed=" + mc);
+							log.debug(containerid + ": Task Completed=" + mc);
 							sleep(1);
 						}
 					} else if (object instanceof YarnReducer red) {
@@ -158,13 +158,13 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 								}
 								ctx.addAll(tuple2.v1, currentctx.get(tuple2.v1));
 							}
-							log.info("In Reducer ctx: " + ctx);
+							log.debug("In Reducer ctx: " + ctx);
 							var datasamudayar = new ReducerExecutor((DataCruncherContext) ctx, cr,
 									tuple2.v1);
 							var fc = (Future<Context>) es.submit(datasamudayar);
 							Context results = fc.get();
 							complete.add(results);
-							log.info("Complete Result: " + complete);
+							log.debug("Complete Result: " + complete);
 						}
 						RemoteDataFetcher.writerIntermediatePhaseOutputToDFS(complete, red.apptask.getApplicationid(),
 								(red.apptask.getApplicationid() + red.apptask.getTaskid()));
@@ -174,17 +174,17 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 						request.setJob(job);
 						request.setContainerid(containerid);
 						response = (JobResponse) client.doMindRequest(request);
-						log.info(containerid + ": Task Completed=" + red);
+						log.debug(containerid + ": Task Completed=" + red);
 						sleep(1);
 					}
 				} else if (response.getState().equals(JobResponse.State.DIE)) {
-					log.info(containerid + ": Container dies: " + response.getState());
+					log.debug(containerid + ": Container dies: " + response.getState());
 					break;
 				}
-				log.info(containerid + ": Response state=" + response.getState());
+				log.debug(containerid + ": Response state=" + response.getState());
 
 			}
-			log.info(containerid + ": Completed Job Exiting with status 0...");
+			log.debug(containerid + ": Completed Job Exiting with status 0...");
 			ByteBufferPoolDirect.destroyPool();
 			System.exit(0);
 		} catch (Exception ex) {
@@ -194,7 +194,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 			request.setJob(job);
 			if (client != null) {
 				JobResponse response = (JobResponse) client.doMindRequest(request);
-				log.info("Job Completion Error..." + response.getState() + "..., See cause below \n", ex);
+				log.debug("Job Completion Error..." + response.getState() + "..., See cause below \n", ex);
 			}
 			ByteBufferPoolDirect.destroyPool();
 			System.exit(-1);
@@ -217,7 +217,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 			// Restore interrupted state...
 			Thread.currentThread().interrupt();
 		} catch (Exception ex) {
-			log.info("Delay error, See cause below \n", ex);
+			log.debug("Delay error, See cause below \n", ex);
 		}
 	}
 

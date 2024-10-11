@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.pig.newplan.logical.relational.LogicalPlan;
 import org.apache.pig.parser.QueryParserDriver;
 import org.burningwave.core.assembler.StaticComponentContainer;
@@ -58,6 +59,8 @@ public class PigQueryClient {
 	 */
 	public static void main(String[] args) throws Exception {
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
+		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.USERPIG, true, DataSamudayaConstants.USERPIGREQUIRED);
@@ -157,7 +160,7 @@ public class PigQueryClient {
 					zo = new ZookeeperOperations();
 					zo.connect();
 					zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
-						log.info("Node Created");
+						log.debug("Node Created");
 					});
 					zo.watchNodes();					
 				}
@@ -225,7 +228,7 @@ public class PigQueryClient {
 					zo.close();
 				}
 			}
-			log.info("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
+			log.debug("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
 			Thread.sleep(2000);
 		}
 	}

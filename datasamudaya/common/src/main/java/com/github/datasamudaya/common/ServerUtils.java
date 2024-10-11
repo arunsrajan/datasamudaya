@@ -56,7 +56,7 @@ public class ServerUtils implements ServerUtilsMBean {
 				throw new Exception(
 						"Path must be Url path of servlet " + config[conf].getClass().getName());
 			}
-			log.info("Configuring the servlet to receive the request.");
+			log.debug("Configuring the servlet to receive the request.");
 			context.addServlet(new ServletHolder((Servlet) config[conf]), (String) config[conf + 1]);
 		}
 	}
@@ -69,9 +69,9 @@ public class ServerUtils implements ServerUtilsMBean {
 		while (true) {
 			try {
 				if (server != null) {
-					log.info("In ServerUtils start method starting...");
+					log.debug("In ServerUtils start method starting...");
 					server.start();
-					log.info("In ServerUtils start method exiting...");
+					log.debug("In ServerUtils start method exiting...");
 					return;
 				}
 			} catch (IOException ex) {

@@ -47,7 +47,7 @@ public class ByteBufferPoolDirectOld {
 	public static void init(long dm) {
 		directmemory = dm;
 		bufferPool = new Vector<>((int) (directmemory / (130 * DataSamudayaConstants.MB)) + 30);
-		log.info("Total Buffer pool size: {}", bufferPool.size());
+		log.debug("Total Buffer pool size: {}", bufferPool.size());
 	}
 
 	/**

@@ -70,7 +70,7 @@ public class ProcessUnion extends AbstractActor {
 
 	private void processUnion(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			log.info("processUnion::: {}",object.getValue().getClass());
+			log.debug("processUnion::: {}",object.getValue().getClass());
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				ldiskspill.add(dsl);
 			} else if (object.getValue() instanceof DiskSpillingSet dss) {
@@ -86,7 +86,7 @@ public class ProcessUnion extends AbstractActor {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
-				log.info("processUnion::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}", initialsize,
+				log.debug("processUnion::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}", initialsize,
 						terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 				if (CollectionUtils.isNotEmpty(childpipes)) {										
@@ -129,7 +129,7 @@ public class ProcessUnion extends AbstractActor {
 						diskspillset.close();
 					}
 					childpipes.stream().forEach(downstreampipe -> {
-						log.info("Pushing data to downstream");
+						log.debug("Pushing data to downstream");
 						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class),
 								ActorRef.noSender());
 					});

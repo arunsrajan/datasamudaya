@@ -487,7 +487,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					}
 				}
 				if (!Objects.isNull(loadjar.getMrjar())) {
-					log.info("MapReduce Jar: {}",Utils.getResultObjectByInput(tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar,
+					log.debug("MapReduce Jar: {}",Utils.getResultObjectByInput(tehost + DataSamudayaConstants.UNDERSCORE + ports.get(index), loadjar,
 							appid));
 				}
 				index++;
@@ -771,7 +771,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 							return tuples.stream();})
 						.collect(Collectors.toCollection(ArrayList::new));
 				int numpartition = keyapptaskshp.size()>containers.size()?containers.size():keyapptaskshp.size();
-				log.info("Combiner Keys For Shuffling:" + keyapptaskshp.size());	
+				log.debug("Combiner Keys For Shuffling:" + keyapptaskshp.size());	
 				dccombinerphases.clear();
 				dccombinerphases.add(new DataCruncherContext<>());
 				DexecutorConfig<TaskSchedulerCombinerSubmitter, Boolean> redconfig = new DexecutorConfig(newExecutor(), new CombinerTaskScheduler(new Semaphore(numpartition), dccombinerphases.get(0), 1));
@@ -800,7 +800,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					var tscs = new TaskSchedulerCombinerSubmitter(
 							cv, apptask, teappid);
 					apptaskhp.put(apptask.getApplicationid() + apptask.getStageid() + apptask.getTaskid(), apptask.getHp());
-					log.info("Combiner: Submitting " + mrtaskcount + " App And Task:"
+					log.debug("Combiner: Submitting " + mrtaskcount + " App And Task:"
 							+ applicationid + taskid + cv.getTuples());
 					if (!Objects.isNull(jobconf.getOutput())) {
 						Utils.writeToOstream(jobconf.getOutput(), "Initial Combiner: Submitting " + mrtaskcount + " App And Task:"
@@ -854,7 +854,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						.collect(Collectors.toCollection(ArrayList::new));
 				var partkeys = Iterables
 						.partition(keyapptasks, (keyapptasks.size()) / numreducers).iterator();
-				log.info("Reducer Keys For Shuffling:" + keyapptasks.size());
+				log.debug("Reducer Keys For Shuffling:" + keyapptasks.size());
 
 				DexecutorConfig<TaskSchedulerReducerSubmitter, Boolean> redconfig = new DexecutorConfig(newExecutor(), new ReducerTaskExecutor(batchsize, applicationid, dccred));
 				DefaultDexecutor<TaskSchedulerReducerSubmitter, Boolean> executorred = new DefaultDexecutor<>(redconfig);
@@ -884,8 +884,8 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					executorred.addIndependent(mdtstr);
 				}
 				executorred.execute(ExecutionConfig.NON_TERMINATING);
-				log.info("Reducer concluded------------------------------");
-				log.info("Total tasks done: " + mrtaskcount);
+				log.debug("Reducer concluded------------------------------");
+				log.debug("Total tasks done: " + mrtaskcount);
 				if (!isexception) {
 					if (!Objects.isNull(jobconf.getOutput())) {
 						Utils.writeToOstream(jobconf.getOutput(), "Reducer completed------------------------------");
@@ -1068,12 +1068,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						resultmerge.acquire();
 						taskexecuted++;
 						double percentagecompleted = Math.floor(((float) taskexecuted) / totaltasks * 100.0);
-						log.info("\nPercentage Completed TE("
+						log.debug("\nPercentage Completed TE("
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						Utils.writeToOstream(jobconf.getOutput(), "\nPercentage Completed TE("
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						dccmapphase.get(rk.applicationid + rk.stageid + rk.taskid).putAll(rk.keys, rk.applicationid + DataSamudayaConstants.UNDERSCORE + rk.stageid + DataSamudayaConstants.UNDERSCORE + rk.taskid);
-						log.info("Combiner Keys: {}", rk);
+						log.debug("Combiner Keys: {}", rk);
 						resultmerge.release();
 						semaphorebatch.release();
 						return true;
@@ -1119,12 +1119,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						resultmerge.acquire();
 						taskexecuted++;
 						double percentagecompleted = Math.floor(((float) taskexecuted) / totaltasks * 100.0);
-						log.info("\nPercentage Completed TE("
+						log.debug("\nPercentage Completed TE("
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						Utils.writeToOstream(jobconf.getOutput(), "\nPercentage Completed TE("
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						dcccombinerphase.putAll(rk.keys, rk.applicationid + DataSamudayaConstants.UNDERSCORE + rk.stageid + DataSamudayaConstants.UNDERSCORE + rk.taskid);
-						log.info("Combiner Keys: {}", rk);
+						log.debug("Combiner Keys: {}", rk);
 						resultmerge.release();
 						semaphorebatch.release();
 						return true;

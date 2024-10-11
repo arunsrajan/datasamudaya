@@ -304,7 +304,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 						var mrresult = compute.affinityCall(DataSamudayaConstants.DATASAMUDAYACACHE, datasamudayamc.getBlocksLocation(), datasamudayamc);
 						resultsemaphore.acquire();
 						mrresults.add(mrresult);
-						log.info(mrresult);
+						log.debug(mrresult);
 						resultsemaphore.release();
 						semaphore.release();
 					} catch (InterruptedException e) {

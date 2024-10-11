@@ -73,11 +73,11 @@ public class ContainerLauncher {
 			argumentsForSpawn.add("" + cr.getDirectheap());
 			argumentsForSpawn.add(jobid);
 			argumentsForSpawn.add(DataSamudayaConstants.EMPTY + cr.getExecutortype());
-			log.info("Launching Container Daemon Process: " + argumentsForSpawn);
+			log.debug("Launching Container Daemon Process: " + argumentsForSpawn);
 			//Spawning the process for running task executor
 			Process process = Runtime.getRuntime()
 					.exec(argumentsForSpawn.toArray(new String[argumentsForSpawn.size()]));
-			log.info("Process {} started", process);
+			log.debug("Process {} started", process);
 			return process;
 
 
