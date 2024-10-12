@@ -21,11 +21,13 @@ import java.util.stream.Collectors;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.ColumnMetadata;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
@@ -202,7 +204,7 @@ public class SQLClient {
 									Collectors.groupingBy(executor -> executor.split(DataSamudayaConstants.UNDERSCORE)[0], Collectors
 											.mapping(executor -> executor, Collectors.toCollection(LinkedHashSet::new))));
 							GlobalContainerLaunchers.put(user, teid, Utils.getLcs(lcs, teid, cpupercontainer));
-							processMessage(new PrintWriter(System.out), 
+							processMessage(new PrintWriter(System.out, true), 
 									new BufferedReader(new InputStreamReader(System.in)), messagestorefile, isclient, teid, user);
 						} else {
 							try {
@@ -264,21 +266,42 @@ public class SQLClient {
 				break;
 			}
 			if (isclient) {
-				System.out.println("\nProcessing input: " + input);
-				String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
-						+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-				long starttime = System.currentTimeMillis();
-				List<List> results = SelectQueryExecutor.executeSelectQuery(dbdefault, input, user, jobid, teid, false,
-						false, out, false);
-				double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-				long totalrecords = 0;
-				for (List result : results) {
-					totalrecords += Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
+				if (input.startsWith("use")) {
+					dbdefault = StringUtils.normalizeSpace(input.trim()).split(" ")[1];
+				} else if (input.startsWith("getdb")) {
+					out.println(dbdefault);
+				} else if (input.startsWith("create")
+						|| input.startsWith("alter")) {
+					out.println(TableCreator.createAlterTable(dbdefault, input));
+				} else if (input.startsWith("drop")) {
+					out.println(TableCreator.dropTable(dbdefault, input));
+				} else if (input.startsWith("show")) {
+					Utils.printTableOrError(TableCreator.showTables(dbdefault, input), out, JOBTYPE.NORMAL);
+				} else if (input.startsWith("explain")) {
+					SelectQueryExecutor.explain(dbdefault, input.replaceFirst("explain", ""), out);
+				} else if (input.startsWith("describe")) {
+					var columns = new ArrayList<ColumnMetadata>();
+					TableCreator.getColumnMetadataFromTable(dbdefault, input.split(" ")[1], columns);
+					for (ColumnMetadata colmetadata : columns) {
+						out.println(colmetadata);
+					}
+				} else if (input.contains("select")) {
+					out.println("\nProcessing input: " + input);
+					out.flush();
+					String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+							+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+					long starttime = System.currentTimeMillis();
+					List<List> results = SelectQueryExecutor.executeSelectQuery(dbdefault, input, user, jobid, teid, false,
+							false, out, false);
+					double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
+					long totalrecords = 0;
+					for (List result : results) {
+						totalrecords += Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
+					}
+					out.println("Time taken " + timetaken + " seconds");
+					out.println("");
+					out.flush();
 				}
-				out.printf("Total records processed %d", totalrecords);
-				out.println("");
-				out.println("Time taken " + timetaken + " seconds");
-				out.println("");
 			} else {
 				processInput(input, out);
 				boolean toquit = printServerResponse(in);
