@@ -1835,6 +1835,9 @@ public class Utils {
 			GlobalYARNResources.setYarnResourcesByTeId(teid, yarnresourcesmap);
 			var appreport = client.getApplicationReport(appid);
 			while (appreport.getYarnApplicationState() != YarnApplicationState.RUNNING) {
+				if(appreport.getYarnApplicationState() == YarnApplicationState.FAILED || appreport.getYarnApplicationState() == YarnApplicationState.KILLED) {
+					break;
+				}
 				appreport = client.getApplicationReport(appid);
 				Thread.sleep(1000);
 			}
