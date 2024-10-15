@@ -149,7 +149,8 @@ public class PigQueryClient {
 		String driverlocation = null;
 		boolean isclient=false;
 		ZookeeperOperations zo = null;
-		if(isdriverrequired && mode.equalsIgnoreCase(DataSamudayaConstants.PIGWORKERMODE_DEFAULT)) {
+		boolean isyarn = mode.equalsIgnoreCase(DataSamudayaConstants.YARN);
+		if(isdriverrequired && (mode.equalsIgnoreCase(DataSamudayaConstants.PIGWORKERMODE_DEFAULT) || isyarn)) {
 			if (cmd.hasOption(DataSamudayaConstants.DRIVER_LOCATION)) {
 				driverlocation = cmd.getOptionValue(DataSamudayaConstants.DRIVER_LOCATION);
 				isclient = driverlocation
@@ -180,56 +181,78 @@ public class PigQueryClient {
 				DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
 		String teid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		while (true) {
-			try (Socket sock = new Socket();) {
-				sock.connect(new InetSocketAddress(hostName, portNumber), timeout);
-				if (sock.isConnected()) {
-					try (Socket socket = sock;
-							PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-							BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
-						out.println(user);
-						out.println(numberofcontainers);
-						out.println(cpupercontainer);
-						out.println(memorypercontainer);
-						out.println(cpudriver);
-						out.println(memorydriver);
-						out.println(isdriverrequired);
-						out.println(mode);
-						out.println(teid);
-						printServerResponse(in);
-						String messagestorefile = DataSamudayaProperties.get().getProperty(
-								DataSamudayaConstants.PIGMESSAGESSTORE, DataSamudayaConstants.PIGMESSAGESSTORE_DEFAULT)
-								+ DataSamudayaConstants.UNDERSCORE + user;
-						try {
-							if(isclient) {
-								var taskexecutors = zo.getTaskExectorsByJobId(teid);
-								Map<String, Set<String>> lcs = (Map) taskexecutors.stream().collect(
-										Collectors.groupingBy(executor -> executor.split(DataSamudayaConstants.UNDERSCORE)[0], Collectors
-												.mapping(executor -> executor, Collectors.toCollection(LinkedHashSet::new))));
-								GlobalContainerLaunchers.put(user, teid, Utils.getLcs(lcs, teid, cpupercontainer));
-								processMessage(new PrintWriter(System.out), 
-										new BufferedReader(new InputStreamReader(System.in)), messagestorefile, isclient, teid, user);
-							} else {
-								processMessage(out, in, messagestorefile, isclient, teid, user);
+			if(mode.equalsIgnoreCase(DataSamudayaConstants.YARN) && isclient) {
+				Utils.launchYARNExecutors(teid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
+				String messagestorefile = DataSamudayaProperties.get().getProperty(
+						DataSamudayaConstants.PIGMESSAGESSTORE,
+						DataSamudayaConstants.PIGMESSAGESSTORE_DEFAULT) + DataSamudayaConstants.UNDERSCORE
+						+ user;
+				processMessage(new PrintWriter(System.out, true), 
+						new BufferedReader(new InputStreamReader(System.in)), messagestorefile, isclient, teid, user, true);
+				break;
+			} else {
+				try (Socket sock = new Socket();) {
+					sock.connect(new InetSocketAddress(hostName, portNumber), timeout);
+					if (sock.isConnected()) {
+						try (Socket socket = sock;
+								PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+								BufferedReader in = new BufferedReader(
+										new InputStreamReader(socket.getInputStream()));) {
+							out.println(user);
+							out.println(numberofcontainers);
+							out.println(cpupercontainer);
+							out.println(memorypercontainer);
+							out.println(cpudriver);
+							out.println(memorydriver);
+							out.println(isdriverrequired);
+							out.println(mode);
+							out.println(teid);
+							printServerResponse(in);
+							String messagestorefile = DataSamudayaProperties.get().getProperty(
+									DataSamudayaConstants.PIGMESSAGESSTORE,
+									DataSamudayaConstants.PIGMESSAGESSTORE_DEFAULT) + DataSamudayaConstants.UNDERSCORE
+									+ user;
+							try {
+								if (isclient) {
+									var taskexecutors = zo.getTaskExectorsByJobId(teid);
+									Map<String, Set<String>> lcs = (Map) taskexecutors.stream()
+											.collect(Collectors.groupingBy(
+													executor -> executor.split(DataSamudayaConstants.UNDERSCORE)[0],
+													Collectors.mapping(executor -> executor,
+															Collectors.toCollection(LinkedHashSet::new))));
+									GlobalContainerLaunchers.put(user, teid, Utils.getLcs(lcs, teid, cpupercontainer));
+									processMessage(new PrintWriter(System.out, true),
+											new BufferedReader(new InputStreamReader(System.in)), messagestorefile,
+											isclient, teid, user, isyarn);
+								} else {
+									processMessage(out, in, messagestorefile, isclient, teid, user, isyarn);
+								}
+							} catch (Exception ex) {
+								log.error("Aborting Connection", ex);
+							} finally {
+								out.println("quit");
 							}
+							break;
 						} catch (Exception ex) {
-							log.error("Aborting Connection", ex);							
-						} finally {
-							out.println("quit");
+							log.error(DataSamudayaConstants.EMPTY, ex);
 						}
-						break;
-					} catch (Exception ex) {
-						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
+				} catch (Throwable ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
-			} catch (Throwable ex) {
-				log.error(DataSamudayaConstants.EMPTY, ex);
-			} finally {
-				if(nonNull(zo)) {
-					zo.close();
-				}
+				log.debug("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
+				Thread.sleep(2000);
 			}
-			log.debug("Socket Timeout Occurred for host {} and port, retrying...", hostName, portNumber);
-			Thread.sleep(2000);
+		}
+		if(isyarn && isclient) {
+			try {
+				Utils.shutDownYARNContainer(teid);
+			} catch (Exception ex) {
+				log.error(DataSamudayaConstants.EMPTY, ex);
+			}
+		}
+		if (nonNull(zo)) {
+			zo.close();
 		}
 	}
 
@@ -256,7 +279,7 @@ public class PigQueryClient {
 	 * @param user
 	 * @throws Exception
 	 */
-	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid, String user) throws Exception {
+	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid, String user, boolean isyarn) throws Exception {
 		loadHistory(messagestorefile);
 		BuffereredConsoleReader reader = new BuffereredConsoleReader();
 		reader.setHandleUserInterrupt(true);
@@ -266,6 +289,9 @@ public class PigQueryClient {
 		PipelineConfig pipelineconfig = new PipelineConfig();
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setYarn("false");
+		if(isyarn) {
+			pipelineconfig.setYarn("true");
+		}		
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
@@ -276,12 +302,12 @@ public class PigQueryClient {
 		pipelineconfig.setJobname(DataSamudayaConstants.PIG);
 		QueryParserDriver queryParserDriver = PigUtils.getQueryParserDriver("pig");
 		while (true) {
-			String inputLine = readLineWithHistory(reader);
-			if ("quit".equalsIgnoreCase(inputLine.trim())) {
-				break;
-			}
+			String inputLine = readLineWithHistory(reader);			
 			if (isclient) {
-				System.out.println("\nProcessing input: " + inputLine);
+				if ("quit".equalsIgnoreCase(inputLine.trim())) {
+					break;
+				}
+				out.println("\nProcessing input: " + inputLine);
 				if (inputLine.startsWith("dump") || inputLine.startsWith("DUMP")) {
 					if (nonNull(pipelineconfig)) {
 						pipelineconfig.setSqlpigquery(inputLine);
