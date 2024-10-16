@@ -45,7 +45,7 @@ public class RemoteDataFetcherTest {
 	@BeforeClass
 	public static void setUpHdfs() throws Exception {
 		StaticComponentContainer.Modules.exportAllToAll();
-		System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
+		System.setProperty("HADOOP_HOME", System.getenv("HADOOP_HOME"));
 		hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_TEST_PROPERTIES);

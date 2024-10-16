@@ -28,6 +28,7 @@ public class HadoopTestUtilities {
 	*/
 	public static MiniDFSCluster initHdfsCluster(int port, int httpport, int numnodes) {
 		try {
+			System.setProperty("HADOOP_HOME", System.getenv("HADOOP_HOME"));
 			Configuration conf = new Configuration();
 			conf.set("dfs.replication", "1");
 			conf.set("dfs.permissions.enabled", "false");
@@ -42,7 +43,7 @@ public class HadoopTestUtilities {
 
 		}
 		catch (Exception ex) {
-			log.error("Reusing the hadoop node for testing");
+			log.error("Reusing the hadoop node for testing", ex);
 		}
 		return null;
 	}

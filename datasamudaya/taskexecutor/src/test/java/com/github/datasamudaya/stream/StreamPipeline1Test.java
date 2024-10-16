@@ -26,6 +26,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.functions.HashPartitioner;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -37,6 +39,16 @@ public class StreamPipeline1Test extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testHashPartitionerReduceByKeyPartitioned() throws Throwable {
 		log.info("{}","testHashPartitionerReduceByKeyPartitioned Before---------------------------------------");
+		PipelineConfig pipelineconfig = new PipelineConfig();
+		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		pipelineconfig.setNumberofcontainers("1");
+		pipelineconfig.setLocal("false");
+		pipelineconfig.setUseglobaltaskexecutors(false);
+		pipelineconfig.setIsremotescheduler(false);
+		pipelineconfig.setNumtaskexecutors(1);		
+		pipelineconfig.setUser("arun");
+		pipelineconfig.setCpudriver(0);
+		pipelineconfig.setMemorydriver(0);
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		List<List<Tuple2<Integer, List<Tuple2<String, Integer>>>>> tupleslist = (List) datastream.map(str -> str.split(","))
@@ -66,6 +78,14 @@ public class StreamPipeline1Test extends StreamPipelineBaseTestCommon {
 	@Test
 	public void testGroupBy() throws Throwable {
 		log.info("{}","testGroupBy Before---------------------------------------");
+		PipelineConfig pipelineconfig = new PipelineConfig();
+		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		pipelineconfig.setNumberofcontainers("1");
+		pipelineconfig.setLocal("false");
+		pipelineconfig.setUseglobaltaskexecutors(false);
+		pipelineconfig.setIsremotescheduler(false);
+		pipelineconfig.setNumtaskexecutors(1);
+		pipelineconfig.setUser("arun");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		List<List<Tuple2<Map, List<String[]>>>> tupleslist = (List) datastream.map(str -> str.split(","))

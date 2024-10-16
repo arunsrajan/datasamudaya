@@ -46,7 +46,7 @@ public class ContainerLauncher {
 			//Class path from task scheduler
 			argumentsForSpawn.add(System.getProperty("java.class.path"));
 			//Minimum memory 256MB
-			argumentsForSpawn.add("-Xms256m");
+			argumentsForSpawn.add("-Xms" + cr.getMinmemory());
 			//Maximum heap to launch container.
 			argumentsForSpawn.add("-Xmx" + cr.getMaxmemory());
 			//Set the Stack size to 128 mb

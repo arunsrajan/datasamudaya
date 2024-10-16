@@ -33,6 +33,8 @@ public class PigCommandsLocalModeTest extends PigCommandsTest {
 		isuseglobaltaskexecutors = pipelineconfig.getUseglobaltaskexecutors();
 		islocal = pipelineconfig.getLocal();
 		user = pipelineconfig.getUser();
+		pipelineconfig.setIsremotescheduler(false);
+		pipelineconfig.setUseglobaltaskexecutors(false);
 		queryParserDriver = PigUtils.getQueryParserDriver("pig");
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);

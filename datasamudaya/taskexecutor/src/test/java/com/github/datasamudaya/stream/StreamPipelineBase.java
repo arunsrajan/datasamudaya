@@ -97,7 +97,7 @@ public class StreamPipelineBase {
 	static TestingServer testingserver;
 	static ConcurrentMap<String, Map<String, Process>> containerprocesses = new ConcurrentHashMap<>();
 	static FileSystem hdfste;
-	protected static PipelineConfig pipelineconfig = new PipelineConfig();
+	protected static PipelineConfig pipelineconfig;
 
 
 }

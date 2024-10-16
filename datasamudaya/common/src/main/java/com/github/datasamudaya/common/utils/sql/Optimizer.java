@@ -147,7 +147,7 @@ public class Optimizer {
 	}
 
 	public RelNode convert(SqlNode node) {
-		RelRoot root = converter.convertQuery(node, false, true);
+		RelRoot root = converter.convertQuery(node, true, true);
 
 		return root.rel;
 	}

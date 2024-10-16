@@ -135,6 +135,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 	@Test
 	public void testGetContainersBalanced() throws Exception {
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
+		fbp.pipelineconfig = new PipelineConfig();
 		fbp.supplier = () -> 2;
 		FileSystem hdfs = FileSystem.newInstance(new URI(hdfsfilepath), new Configuration());
 		fbp.hdfs = hdfs;
@@ -162,6 +163,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 	@Test
 	public void testGetContainersBalancedMultipleContainer() throws Exception {
 		FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
+		fbp.pipelineconfig = new PipelineConfig();
 		fbp.supplier = () -> 2;
 		FileSystem hdfs = FileSystem.newInstance(new URI(hdfsfilepath), new Configuration());
 		fbp.hdfs = hdfs;

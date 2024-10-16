@@ -43,6 +43,8 @@ public class RemoteJobSchedulerTest extends StreamPipelineBaseTestCommon impleme
 		pc.setLocal("false");
 		pc.setUseglobaltaskexecutors(false);
 		pc.setIsremotescheduler(false);
+		pc.setNumtaskexecutors(1);
+		pc.setUser("arun");
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pc);
 		List<List> data = (List) datapipeline
@@ -74,6 +76,8 @@ public class RemoteJobSchedulerTest extends StreamPipelineBaseTestCommon impleme
 		pc.setLocal("false");
 		pc.setUseglobaltaskexecutors(false);
 		pc.setIsremotescheduler(false);
+		pc.setNumtaskexecutors(1);
+		pc.setUser("arun");
 		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath,
 				airlinesample, pc);
 		List<List<Long>> data = (List) datapipeline

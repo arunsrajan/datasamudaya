@@ -20,8 +20,10 @@ import static java.util.Objects.nonNull;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,8 +39,10 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
+import org.jgroups.protocols.UnicastHeader3;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
@@ -53,6 +57,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.NetworkUtil;
+import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.TaskExecutorShutdown;
@@ -80,14 +85,17 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			PropertyConfigurator.configure(System.getProperty(DataSamudayaConstants.USERDIR) + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 			var out = System.out;
+			pipelineconfig = new PipelineConfig();
 			pipelineconfig.setOutput(out);
 			pipelineconfig.setMaxmem("1024");
 			pipelineconfig.setMinmem("512");
 			pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 			pipelineconfig.setNumberofcontainers("1");
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-			pipelineconfig.setBatchsize("4");
+			pipelineconfig.setBatchsize("4");			
 			tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+			pipelineconfig.setTejobid(tejobid);
+			pipelineconfig.setUser("arun");
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
 			ByteBufferPoolDirectOld.init(1 * DataSamudayaConstants.GB);
 			ByteBufferPoolDirect.init(1 * DataSamudayaConstants.GB);
@@ -112,19 +120,22 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 				host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskschedulerstream.host"));
 				port = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.port"));
 				int nodeport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
-				threadpool = Executors.newSingleThreadExecutor();
-				executorpool = Executors.newSingleThreadExecutor();
+				threadpool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+				executorpool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 				ClassLoader cl = Thread.currentThread().getContextClassLoader();
 				port = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskexecutor.port"));
 				int executorsindex = 0;
 				Resources resource = new Resources();
 				resource.setNodeport(host + DataSamudayaConstants.UNDERSCORE + nodeport);
-				resource.setTotalmemory(Runtime.getRuntime().totalMemory());
+				resource.setFreememory(4 * 1024 * 1024 * 1024l);
 				resource.setFreememory(Utils.getTotalAvailablePhysicalMemory());
 				resource.setNumberofprocessors(Utils.getAvailableProcessors());
 				resource.setTotaldisksize(Utils.totaldiskspace());
 				resource.setUsabledisksize(Utils.usablediskspace());
 				resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
+				ConcurrentMap<String, Resources> mapres = new ConcurrentHashMap<>();				
+				mapres.put(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource);		
+				DataSamudayaNodesResources.put(mapres);
 				zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource, event -> {
 					log.info("{}", event);
 				});
@@ -141,7 +152,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 
 					host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskexecutor.host"));
 					if (isNull(server)) {
-						server = Utils.getRPCRegistry(nodeport, new StreamDataCruncher() {
+						StreamDataCruncher rpc = new StreamDataCruncher() {
 							public Object postObject(Object object) throws RemoteException {
 								try {
 									if (object instanceof byte[] bytes) {
@@ -163,7 +174,8 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 								}
 								return null;
 							}
-						}, DataSamudayaConstants.EMPTY);
+						};
+						server = Utils.getRPCRegistry(nodeport, rpc, DataSamudayaConstants.EMPTY);
 						sss.add(server);
 					}
 					port += 100;
@@ -238,6 +250,20 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 		if (testingserver != null) {
 			testingserver.close();
 		}
+		
+		if(CollectionUtils.isNotEmpty(sss)) {
+			sss.stream().forEach(server->{
+				try {
+					server.unbind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + DataSamudayaConstants.EMPTY);
+					UnicastRemoteObject.unexportObject(server, true);
+				} catch (RemoteException | NotBoundException e) {
+					log.info("Cannot Unbind: "+DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + DataSamudayaConstants.EMPTY);
+				}
+			});
+			sss.clear();
+			server = null;
+		}
+		
 		containerprocesses.keySet().stream().forEach(key -> {
 			containerprocesses.get(key).keySet().stream().forEach(port -> {
 				Process proc = containerprocesses.get(key).get(port);
@@ -266,6 +292,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 				}
 			});
 		});
+		ByteBufferPoolDirectOld.destroy();
 		ByteBufferPoolDirect.destroyPool();
 	}
 }

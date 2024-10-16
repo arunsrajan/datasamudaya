@@ -263,7 +263,13 @@ public class NodeRunner implements Callable<Object> {
 					log.debug("Seeking the chamber case stats {}",
 							DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST) + DataSamudayaConstants.UNDERSCORE
 									+ port);
-					Thread.sleep(500);
+					try {
+						Utils.getResultObjectByInput(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
+								+ DataSamudayaConstants.UNDERSCORE + port, taskExecutorshutdown, jobid);
+						Thread.sleep(500);
+					} catch(Exception ex) {
+						
+					}
 				}
 				log.debug("The chamber case {} shattered for the port {} ", proc, port);
 			} catch (Exception ex) {
