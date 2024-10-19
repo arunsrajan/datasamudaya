@@ -150,12 +150,13 @@ public class PigQueryClient {
 		boolean isclient=false;
 		ZookeeperOperations zo = null;
 		boolean isyarn = mode.equalsIgnoreCase(DataSamudayaConstants.YARN);
-		if(isdriverrequired && (mode.equalsIgnoreCase(DataSamudayaConstants.PIGWORKERMODE_DEFAULT) || isyarn)) {
+		boolean isignite = mode.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE);
+		if(isdriverrequired && (mode.equalsIgnoreCase(DataSamudayaConstants.PIGWORKERMODE_DEFAULT) || isyarn || isignite)) {
 			if (cmd.hasOption(DataSamudayaConstants.DRIVER_LOCATION)) {
 				driverlocation = cmd.getOptionValue(DataSamudayaConstants.DRIVER_LOCATION);
 				isclient = driverlocation
 				.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
-				if(isclient) {
+				if(isclient && !(isignite)) {
 					cpudriver = 0;
 					memorydriver = 0;
 					zo = new ZookeeperOperations();
@@ -181,14 +182,16 @@ public class PigQueryClient {
 				DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
 		String teid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		while (true) {
-			if(mode.equalsIgnoreCase(DataSamudayaConstants.YARN) && isclient) {
-				Utils.launchYARNExecutors(teid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
+			if((isyarn || isignite) && isclient) {
+				if(isyarn) {
+					Utils.launchYARNExecutors(teid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
+				}
 				String messagestorefile = DataSamudayaProperties.get().getProperty(
 						DataSamudayaConstants.PIGMESSAGESSTORE,
 						DataSamudayaConstants.PIGMESSAGESSTORE_DEFAULT) + DataSamudayaConstants.UNDERSCORE
 						+ user;
 				processMessage(new PrintWriter(System.out, true), 
-						new BufferedReader(new InputStreamReader(System.in)), messagestorefile, isclient, teid, user, true);
+						new BufferedReader(new InputStreamReader(System.in)), messagestorefile, isclient, teid, user, isyarn, isignite, memorypercontainer);
 				break;
 			} else {
 				try (Socket sock = new Socket();) {
@@ -223,9 +226,9 @@ public class PigQueryClient {
 									GlobalContainerLaunchers.put(user, teid, Utils.getLcs(lcs, teid, cpupercontainer));
 									processMessage(new PrintWriter(System.out, true),
 											new BufferedReader(new InputStreamReader(System.in)), messagestorefile,
-											isclient, teid, user, isyarn);
+											isclient, teid, user, isyarn, isignite, memorypercontainer);
 								} else {
-									processMessage(out, in, messagestorefile, isclient, teid, user, isyarn);
+									processMessage(out, in, messagestorefile, isclient, teid, user, isyarn, isignite, memorypercontainer);
 								}
 							} catch (Exception ex) {
 								log.error("Aborting Connection", ex);
@@ -279,7 +282,8 @@ public class PigQueryClient {
 	 * @param user
 	 * @throws Exception
 	 */
-	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid, String user, boolean isyarn) throws Exception {
+	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid, 
+			String user, boolean isyarn, boolean isignite, long memorypercontainer) throws Exception {
 		loadHistory(messagestorefile);
 		BuffereredConsoleReader reader = new BuffereredConsoleReader();
 		reader.setHandleUserInterrupt(true);
@@ -291,10 +295,17 @@ public class PigQueryClient {
 		pipelineconfig.setYarn("false");
 		if(isyarn) {
 			pipelineconfig.setYarn("true");
-		}		
+		}
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setJgroups("false");
-		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		if(isignite) {
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
+			String memstr = String.valueOf(Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+			pipelineconfig.setMinmem(memstr);
+			pipelineconfig.setMaxmem(memstr);
+		} else {
+			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
+		}
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 		pipelineconfig.setIsremotescheduler(false);
 		pipelineconfig.setPigoutput(new Output(System.out));

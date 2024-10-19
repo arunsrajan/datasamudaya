@@ -148,12 +148,13 @@ public class SQLClient {
 		boolean isclient=false;
 		ZookeeperOperations zo = null;
 		boolean isyarn = mode.equalsIgnoreCase(DataSamudayaConstants.YARN);
-		if(isdriverrequired && (mode.equalsIgnoreCase(DataSamudayaConstants.SQLWORKERMODE_DEFAULT) || isyarn)) {
+		boolean isignite = mode.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE);
+		if(isdriverrequired && (mode.equalsIgnoreCase(DataSamudayaConstants.SQLWORKERMODE_DEFAULT) || isyarn || isignite)) {
 			if (cmd.hasOption(DataSamudayaConstants.DRIVER_LOCATION)) {
 				driverlocation = cmd.getOptionValue(DataSamudayaConstants.DRIVER_LOCATION);
 				isclient = driverlocation
 				.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
-				if(isclient) {
+				if(isclient && !(isignite)) {
 					cpudriver = 0;
 					memorydriver = 0;
 					zo = new ZookeeperOperations();
@@ -180,15 +181,17 @@ public class SQLClient {
 				.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SO_TIMEOUT, DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
 		String teid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		while (true) {
-			if(mode.equalsIgnoreCase(DataSamudayaConstants.YARN) && isclient) {
-				Utils.launchYARNExecutors(teid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
+			if((isyarn || isignite) && isclient) {
+				if(isyarn) {
+					Utils.launchYARNExecutors(teid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
+				}
 				String messagestorefile = DataSamudayaProperties.get().getProperty(
 						DataSamudayaConstants.SQLMESSAGESSTORE,
 						DataSamudayaConstants.SQLMESSAGESSTORE_DEFAULT) + DataSamudayaConstants.UNDERSCORE
 						+ user;
 				processMessage(new PrintWriter(System.out, true),
 						new BufferedReader(new InputStreamReader(System.in)), messagestorefile,
-						isclient, teid, user, true);
+						isclient, teid, user, isyarn, isignite, memorypercontainer);
 				break;
 			} else {
 				try (Socket sock = new Socket();) {
@@ -222,10 +225,15 @@ public class SQLClient {
 								GlobalContainerLaunchers.put(user, teid, Utils.getLcs(lcs, teid, cpupercontainer));
 								processMessage(new PrintWriter(System.out, true),
 										new BufferedReader(new InputStreamReader(System.in)), messagestorefile,
-										isclient, teid, user, false);
+										isclient, teid, user, isyarn, isignite, memorypercontainer);
+								processInput("quit", out);
+								boolean toquit = printServerResponse(in);
+								if (toquit) {
+									break;
+								}
 							} else {
 								try {
-									processMessage(out, in, messagestorefile, isclient, teid, user, false);
+									processMessage(out, in, messagestorefile, isclient, teid, user, isyarn, isignite, memorypercontainer);
 								} catch (Exception ex) {
 									log.debug("Aborting Connection");
 									out.println("quit");
@@ -243,7 +251,7 @@ public class SQLClient {
 				Thread.sleep(2000);
 			}
 		}
-		if(mode.equalsIgnoreCase(DataSamudayaConstants.YARN) && isclient) {
+		if(isyarn && isclient) {
 			try {
 				Utils.shutDownYARNContainer(teid);
 			} catch (Exception ex) {
@@ -277,7 +285,7 @@ public class SQLClient {
 	 * @param teid
 	 * @throws Exception
 	 */
-	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid, String user, boolean isyarn) throws Exception {
+	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid, String user, boolean isyarn, boolean isignite, long memorypercontainer) throws Exception {
 		loadHistory(messagestorefile);
 		BuffereredConsoleReader reader = new BuffereredConsoleReader();
 		reader.setHandleUserInterrupt(true);
@@ -315,8 +323,13 @@ public class SQLClient {
 					String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
 							+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 					long starttime = System.currentTimeMillis();
-					List<List> results = SelectQueryExecutor.executeSelectQuery(dbdefault, input, user, jobid, teid, false,
+					List<List> results;
+					if(isignite) {
+						results = results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, input, user, jobid, teid, Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+					} else {
+						results = SelectQueryExecutor.executeSelectQuery(dbdefault, input, user, jobid, teid, false,
 							isyarn, out, false);
+					}
 					double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 					long totalrecords = 0;
 					for (List result : results) {
