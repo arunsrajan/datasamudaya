@@ -617,6 +617,8 @@ public class DataSamudayaConstants {
 	public static final String NUMBERCONTAINERS = "numbercontainers";
 	
 	//AI Constants
+	public static final String OLLAMA_ENABLE = "ollama.enable";
+	public static final String OLLAMA_ENABLE_DEFAULT = "false";
 	public static final String OLLAMA_MODEL_NAME = "ollama.model.name";
 	public static final String OLLAMA_MODEL__DEFAULT = "llama3.2:latest";
 	public static final String OLLAMA_MODEL_TEMPERATURE = "ollama.model.temperature";
