@@ -42,7 +42,7 @@ import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaCacheManager;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.utils.HadoopTestUtilities;
+import com.github.datasamudaya.common.HadoopTestUtilities;
 import com.github.datasamudaya.common.utils.Utils;
 
 public class StreamPipelineTestCommon {

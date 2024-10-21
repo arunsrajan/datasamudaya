@@ -26,6 +26,10 @@ import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.ChatResponse;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.ollama.api.OllamaOptions;
 
 import com.github.datasamudaya.common.ColumnMetadata;
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -57,6 +61,9 @@ public class SQLClient {
 	 */
 	public static void main(String[] args) throws Exception {
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
+		Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+		Utils.initializeOllamaChatClient();
 		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 		TerminalFactory.registerFlavor(Flavor.UNIX, UnixTerminal.class);
@@ -293,7 +300,29 @@ public class SQLClient {
 		String dbdefault = DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
 		while (true) {
-			String input = readLineWithHistory(reader);			
+			String input = readLineWithHistory(reader);
+			if (input.startsWith(("ai"))) {
+				String[] args = input.split(" ");
+				if(!args[1].equalsIgnoreCase("sql")) {
+					out.println("Provide options with parameter sql");
+					continue;
+				}
+				var columns = new ArrayList<ColumnMetadata>();
+				TableCreator.getColumnMetadataFromTable(dbdefault, args[2], columns);
+				List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());				
+				String query = String.format(DataSamudayaConstants.SQL_QUERY_AGG_PROMPT, args[2],columnsNames.toString());
+				out.println(query);
+				ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+						OllamaOptions.create()
+						.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+								getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+										DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
+						.withModel(DataSamudayaProperties.get().
+								getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
+										DataSamudayaConstants.OLLAMA_MODEL__DEFAULT))));
+				out.println(response.getResult().getOutput().getContent());
+				continue;
+			}
 			if (isclient) {
 				if ("quit".equalsIgnoreCase(input.trim())) {
 					break;

@@ -13,10 +13,10 @@ import java.io.IOException;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +57,8 @@ public class ServerUtils implements ServerUtilsMBean {
 						"Path must be Url path of servlet " + config[conf].getClass().getName());
 			}
 			log.debug("Configuring the servlet to receive the request.");
-			context.addServlet(new ServletHolder((Servlet) config[conf]), (String) config[conf + 1]);
+			var servlet = new ServletHolder((Servlet) config[conf]);
+			context.addServlet(servlet, (String) config[conf + 1]);
 		}
 	}
 

@@ -33,7 +33,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.github.datasamudaya.common.utils.HadoopTestUtilities;
 import com.github.datasamudaya.common.utils.Utils;
 
 public class RemoteDataFetcherTest {

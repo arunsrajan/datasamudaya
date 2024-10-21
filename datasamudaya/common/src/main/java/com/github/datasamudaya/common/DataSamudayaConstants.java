@@ -615,4 +615,14 @@ public class DataSamudayaConstants {
 	public static final String USERJOB = "user";
 	public static final String USERJOBREQUIRED = "User required for executing job";
 	public static final String NUMBERCONTAINERS = "numbercontainers";
+	
+	//AI Constants
+	public static final String OLLAMA_MODEL_NAME = "ollama.model.name";
+	public static final String OLLAMA_MODEL__DEFAULT = "llama3.2:latest";
+	public static final String OLLAMA_MODEL_TEMPERATURE = "ollama.model.temperature";
+	public static final String OLLAMA_MODEL_TEMPERATURE_DEFAULT = ".7";
+	public static final String OLLAMA_BASE_URL = "ollama.base.url";
+	public static final String OLLAMA_BASE_URL_DEFAULT = "https://localhost:11434";
+	public static final String SQL_QUERY_AGG_PROMPT = "Generate a simple SQL aggregate query for the table %s with fields %s";
+	public static final String SQL_QUERY_MUL_AGG_PROMPT = "Generate %s simple SQL aggregate queries for the table %s with fields %s";
 }

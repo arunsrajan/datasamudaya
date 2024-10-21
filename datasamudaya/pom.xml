@@ -83,13 +83,19 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
-			<version>2.13.5</version>
+			<version>2.18.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.18.0</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
-			<version>2.13.5</version>
+			<version>2.18.0</version>
 		</dependency>
 
 		<dependency>
@@ -127,6 +133,7 @@
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-hdfs</artifactId>
 			<version>3.3.4</version>
+			<scope>test</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>asm</groupId>
@@ -244,7 +251,23 @@
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-yarn-batch</artifactId>
 			<version>2.5.0.RELEASE</version>
-		</dependency>		
+		</dependency>
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-core</artifactId>
+		    <version>6.1.14</version> <!-- Use the appropriate version -->
+		</dependency>
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-web</artifactId>
+		    <version>6.1.14</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-webmvc</artifactId>
+		    <version>6.1.14</version>
+		</dependency>
+		
 		
 		<dependency>
 		    <groupId>org.apache.hadoop</groupId>
@@ -509,6 +532,11 @@
 	      <version>4.11.1</version>
 	    </dependency>
 
+		<dependency>
+		    <groupId>org.springframework.ai</groupId>
+		    <artifactId>spring-ai-ollama</artifactId>
+		    <version>0.8.0</version>
+		</dependency>
 	</dependencies>
 	<reporting>
     <plugins>
@@ -1122,6 +1150,22 @@
             <name>Akka library repository</name>
             <url>https://repo.akka.io/maven</url>
         </repository>
+        <repository>
+	      <id>spring-milestones</id>
+	      <name>Spring Milestones</name>
+	      <url>https://repo.spring.io/milestone</url>
+	      <snapshots>
+	        <enabled>false</enabled>
+	      </snapshots>
+	    </repository>
+	    <repository>
+	      <id>spring-snapshots</id>
+	      <name>Spring Snapshots</name>
+	      <url>https://repo.spring.io/snapshot</url>
+	      <releases>
+	        <enabled>false</enabled>
+	      </releases>
+	    </repository>
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>

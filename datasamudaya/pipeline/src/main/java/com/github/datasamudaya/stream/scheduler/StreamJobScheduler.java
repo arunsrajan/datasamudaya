@@ -146,7 +146,6 @@ import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutor;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgnite;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorIgniteSQL;
 import com.github.datasamudaya.stream.executors.StreamPipelineTaskExecutorLocal;
-import com.github.datasamudaya.stream.mesos.scheduler.MesosScheduler;
 import com.github.datasamudaya.stream.pig.PigSortedComparator;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.dexecutor.core.DefaultDexecutor;
@@ -382,10 +381,6 @@ public class StreamJobScheduler {
 					parallelExecutionPhaseDExecutorLocalMode(graph,
 							new TaskProviderLocalMode(graph.vertexSet().size()));
 				}
-			} else if (Boolean.TRUE.equals(ismesos)) {
-				MesosScheduler.runFramework(sptsl, graph,
-						DataSamudayaProperties.get().getProperty(DataSamudayaConstants.MESOS_MASTER), tasksptsthread,
-						pipelineconfig.getJar());
 			} else if (Boolean.TRUE.equals(isyarn)) {
 				DataSamudayaMetricsExporter.getNumberOfJobSubmittedCounter().inc();
 				DataSamudayaMetricsExporter.getNumberOfJobSubmittedYarnModeCounter().inc();

@@ -92,6 +92,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.conf.Configuration;
@@ -140,6 +141,8 @@ import org.jooq.lambda.tuple.Tuple9;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.ollama.OllamaChatClient;
+import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.yarn.client.CommandYarnClient;
 import org.xerial.snappy.SnappyInputStream;
@@ -210,7 +213,6 @@ import com.github.datasamudaya.common.exceptions.YarnLaunchException;
 import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.google.common.collect.ImmutableList;
-import com.nimbusds.jose.util.IOUtils;
 import com.sun.management.OperatingSystemMXBean;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -271,6 +273,8 @@ public class Utils {
 	private Utils() {
 	}
 
+	public static OllamaChatClient ollamaChatClient;
+	
 	public static MemoryPoolMXBean mpBeanLocalToJVM;
 
 	static {
@@ -3264,7 +3268,7 @@ public class Utils {
 			throws IOException, Exception {
 		String akkaconf;
 		if(configtype.equals(DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG)) {			
-			akkaconf = IOUtils.readInputStreamToString(Utils.class.getResourceAsStream(DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.AKKACONF));
+			akkaconf = IOUtils.toString(Utils.class.getResourceAsStream(DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.AKKACONF), Charset.defaultCharset());
 		}
 		else {
 			akkaconf = Files.readString(java.nio.file.Path.of(DataSamudayaConstants.PREV_FOLDER
@@ -3942,4 +3946,24 @@ public class Utils {
 		return lcs;
 	}
 	
+	/**
+	 * The function returns ollama chat client
+	 * @return chat client
+	 */
+	public static OllamaChatClient getOllamaChatClient() {
+		var chatclient = new OllamaChatClient(new OllamaApi(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.OLLAMA_BASE_URL, 
+						DataSamudayaConstants.OLLAMA_BASE_URL_DEFAULT)));
+		return chatclient;
+	}
+	
+	/**
+	 * Initializes Ollama Chat Client and returns it
+	 * @return
+	 */
+	public static void initializeOllamaChatClient() {
+		ollamaChatClient = new OllamaChatClient(new OllamaApi(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.OLLAMA_BASE_URL, 
+						DataSamudayaConstants.OLLAMA_BASE_URL_DEFAULT)));
+	}
 }

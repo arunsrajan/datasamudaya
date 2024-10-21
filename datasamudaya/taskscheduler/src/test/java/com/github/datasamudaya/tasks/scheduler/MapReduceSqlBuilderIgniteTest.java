@@ -26,10 +26,10 @@ import org.slf4j.LoggerFactory;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.HadoopTestUtilities;
 import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.common.JobConfigurationBuilder;
 import com.github.datasamudaya.common.utils.DataSamudayaIgniteServer;
-import com.github.datasamudaya.common.utils.HadoopTestUtilities;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.scheduler.sql.MapReduceApplicationSqlBuilder;
 

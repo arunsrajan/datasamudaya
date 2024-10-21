@@ -1,4 +1,4 @@
-package com.github.datasamudaya.common.utils;
+package com.github.datasamudaya.common;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
