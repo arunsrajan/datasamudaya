@@ -15,6 +15,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<skip.assemblyxml>true</skip.assemblyxml>
+		<maven.dependency.skip>true</maven.dependency.skip>
 		<skipDockerBuild>true</skipDockerBuild>
 		<code.coverage.project.folder>${basedir}/../</code.coverage.project.folder>
 		<code.coverage.overall.data.folder>${basedir}/target/</code.coverage.overall.data.folder>

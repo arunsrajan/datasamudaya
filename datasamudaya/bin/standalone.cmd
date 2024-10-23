@@ -21,7 +21,7 @@ set DEBUGPORT=4005
 
 set ZOOKEEPERADMINCONFIG=-Dzookeeper.admin.serverPort=2180
 
-set CLASSPATH=-classpath ".;../lib/*;../modules/*"
+set CLASSPATH=-classpath ".;../yarnlib/*;../jars/*"
 
 set DEBUGCONFIG=-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=%DEBUGPORT%,suspend=n
 
@@ -35,7 +35,7 @@ IF EXIST %DATASAMUDAYA_JAVA_HOME%\bin\java.exe (
 
 "%DATASAMUDAYA_JAVA_HOME%\bin\java" -version
 
-"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %CLASSPATH% -javaagent:../lib/dsagent-4.0.jar -Djava.net.preferIPv4Stack=true com.github.datasamudaya.tasks.scheduler.executor.standalone.EmbeddedSchedulersNodeLauncher %*
+"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %CLASSPATH% -javaagent:../jars/dsagent-4.0.jar -Djava.net.preferIPv4Stack=true com.github.datasamudaya.tasks.scheduler.executor.standalone.EmbeddedSchedulersNodeLauncher %*
 
 ) ELSE (
  @echo on

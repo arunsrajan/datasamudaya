@@ -7,7 +7,7 @@ if [[ ! -v DATASAMUDAYA_HOME ]]; then
 else
 	echo "DATASAMUDAYA_HOME is set as $DATASAMUDAYA_HOME"
 fi
-export CLASSPATH="-cp .:../lib/*:../modules/*"
+export CLASSPATH="-cp .:../jars/*"
 export DEBUGCONFIG="-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=$DEBUGPORT,suspend=y"
 export GCCONFIG="-XX:+UseG1GC"
 export MEMCONFIGLOW=-Xms512m

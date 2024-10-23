@@ -11,6 +11,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<skip.assemblyxml>true</skip.assemblyxml>
+		<skip.dependency>true</skip.dependency>
 		<skipDockerBuild>false</skipDockerBuild>
 		<main.basedir>${basedir}/../</main.basedir>
 	</properties>

@@ -10,13 +10,19 @@
 	<dependencySets>
 		<dependencySet>
 			<useProjectArtifact>false</useProjectArtifact>
-			<outputDirectory>lib</outputDirectory>
+			<outputDirectory>jars</outputDirectory>
 			<useTransitiveDependencies>true</useTransitiveDependencies>
 			<unpack>false</unpack>
 			<excludes>
 				<exclude>org.springframework.ai:*</exclude>
-				<exclude>org.springframework:spring-core</exclude>
-				<exclude>org.springframework:spring-context</exclude>
+				<exclude>org.springframework.data:*</exclude>
+				<exclude>org.springframework:*</exclude>
+				<exclude>org.springframework.integration:*</exclude>
+				<exclude>org.springframework.boot:*</exclude>
+				<exclude>org.springframework.batch:*</exclude>
+				<exclude>org.springframework.cloud:*</exclude>
+            	<exclude>org.springframework.retry:*</exclude>
+            	<exclude>org.springframework.statemachine:*</exclude>
 			</excludes>
 		</dependencySet>
 		<dependencySet>
@@ -32,14 +38,35 @@
             	<include>org.springframework:spring-webflux</include>
             	<include>org.springframework:spring-context</include>
             	<include>org.springframework:spring-core</include>
+            	<include>org.springframework:spring-beans</include>
+            	<include>org.springframework:spring-web</include>            	
             	<include>com.fasterxml.jackson.core:jackson-databind</include>
             	<include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310</include>
             </includes>
         </dependencySet>
         <dependencySet>
-            <outputDirectory>ailib</outputDirectory>
+			<useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>yarnlib</outputDirectory>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <unpack>false</unpack>
+            <scope>runtime</scope>
             <includes>
-            	<include>org.springframework.boot:spring-boot:3.2.3</include>            	
+            	<include>org.springframework.data:spring-yarn-core</include>
+            	<include>org.springframework.data:spring-data-hadoop-core</include>
+            	<include>org.springframework.data:spring-data-hadoop-config</include>
+            	<include>org.springframework.data:spring-yarn-batch</include>
+            	<include>org.springframework.data:spring-yarn-integration</include>
+            	<include>org.springframework:spring-jdbc</include>
+            	<include>org.springframework:spring-messaging</include>
+            	<include>org.springframework.integration:spring-integration-core</include>
+            	<include>org.springframework.integration:spring-integration-ip</include>
+            	<include>org.springframework.batch:spring-batch-core</include>
+            	<include>org.springframework.batch:spring-batch-infrastructure</include>
+            	<include>org.springframework.boot:*</include>
+            	<include>org.springframework.cloud:*</include>
+            	<include>org.springframework.retry:*</include>
+            	<include>org.springframework.statemachine:*</include>
+            	<include>org.springframework:spring-expression</include>
             </includes>
         </dependencySet>
 	</dependencySets>
@@ -143,13 +170,19 @@
 		</fileSet>
 		<fileSet>
 			<directory>lib</directory>
-			<outputDirectory>lib</outputDirectory>
+			<outputDirectory>jars</outputDirectory>
+			<fileMode>0777</fileMode>
+			<directoryMode>0777</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>jars</directory>
+			<outputDirectory>jars</outputDirectory>
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/common/target</directory>
-			<outputDirectory>lib</outputDirectory>
+			<outputDirectory>jars</outputDirectory>
 			<includes>
                 <include>common-*.jar</include>
             </includes>
@@ -158,7 +191,7 @@
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/pipeline/target</directory>
-			<outputDirectory>lib</outputDirectory>
+			<outputDirectory>jars</outputDirectory>
 			<includes>
                 <include>pipeline-*.jar</include>
             </includes>
@@ -167,7 +200,7 @@
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/taskscheduler/target</directory>
-			<outputDirectory>lib</outputDirectory>
+			<outputDirectory>jars</outputDirectory>
 			<includes>
                 <include>taskscheduler-*.jar</include>
             </includes>
@@ -176,7 +209,7 @@
 		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/taskexecutor/target</directory>
-			<outputDirectory>lib</outputDirectory>
+			<outputDirectory>jars</outputDirectory>
 			<includes>
                 <include>taskexecutor-*.jar</include>
             </includes>
@@ -186,6 +219,18 @@
 		<fileSet>
 			<directory>ailib</directory>
 			<outputDirectory>ailib</outputDirectory>
+			<fileMode>0777</fileMode>
+			<directoryMode>0777</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>yarnlib</directory>
+			<outputDirectory>yarnlib</outputDirectory>
+			<fileMode>0777</fileMode>
+			<directoryMode>0777</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/target/lib</directory>
+			<outputDirectory>yarnlib</outputDirectory>
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 		</fileSet>

@@ -10,7 +10,7 @@ fi
 export DEBUGCONFIG="-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=$DEBUGPORT,suspend=n"
 export IPV4="-Djava.net.preferIPv4Stack=true"
 export CLASSNAME=com.github.datasamudaya.tasks.scheduler.sql.SQLClientMR
-export CLASSPATH="-cp .:../lib/*:../modules/*"
+export CLASSPATH="-cp .:../jars/*"
 export MEMCONFIGLOW=-Xms512m
 export MEMCONFIGHIGH=-Xmx512m
 export GCCCONFIG=-XX:+UseZGC

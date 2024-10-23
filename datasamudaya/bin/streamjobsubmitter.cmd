@@ -17,7 +17,7 @@ echo DATASAMUDAYA home is configured as "%DATASAMUDAYA_HOME%"
 @echo off
 )
 
-set CLASSPATH=-classpath ".;../lib/*;../modules/*"
+set CLASSPATH=-classpath ".;../jars/*"
 
 set MEMCONFIG=-Xms128m -Xmx128m
 

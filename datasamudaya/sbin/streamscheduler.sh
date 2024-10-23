@@ -7,7 +7,7 @@ if [[ ! -v DATASAMUDAYA_HOME ]]; then
 else
 	echo "DATASAMUDAYA_HOME is set as $DATASAMUDAYA_HOME"
 fi
-export CLASSPATH="-cp .:../lib/*:../modules/*"
+export CLASSPATH="-cp .:../jars/*;../yarnlib/*"
 export DEBUGCONFIG="-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=$DEBUGPORT,suspend=n"
 export CLASSNAME=com.github.datasamudaya.stream.scheduler.StreamPipelineTaskSchedulerRunner
 export MEMCONFIGLOW=-Xms1g 

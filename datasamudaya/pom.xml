@@ -14,6 +14,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<skip.assemblyxml>true</skip.assemblyxml>
+		<maven.dependency.skip>false</maven.dependency.skip>
 		<ignite.version>2.16.0</ignite.version>
 		<calcite.version>1.38.0</calcite.version>
 		<maven.compiler.source>21</maven.compiler.source>
@@ -249,22 +250,23 @@
 					<groupId>org.springframework</groupId>
 					<artifactId>spring-core</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-context</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
-			<version>6.1.4</version>
+			<version>4.3.9.RELEASE</version>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
-			<version>6.1.4</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.data</groupId>
-			<artifactId>spring-yarn-batch</artifactId>
-			<version>2.5.0.RELEASE</version>
+			<version>4.3.9.RELEASE</version>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.data</groupId>
@@ -539,6 +541,35 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-ollama</artifactId>
 			<version>0.8.0</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-context</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-beans</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>6.1.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>6.1.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
+			<version>6.1.4</version>
 		</dependency>
 	</dependencies>
 	<reporting>
@@ -778,6 +809,55 @@
 								</configuration>
 							</execution>
 						</executions>
+					</plugin>
+					<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>2.1</version>
+					<executions>
+					    <execution>
+					        <id>copy-model</id>
+					        <phase>package</phase>
+					        <goals>
+					            <goal>copy</goal>
+					        </goals>
+					        <configuration>
+					            <artifactItems>
+					                <artifactItem>
+					                    <groupId>org.springframework</groupId>
+										<artifactId>spring-core</artifactId>
+										<version>4.3.9.RELEASE</version>
+					                    <type>jar</type>
+					                </artifactItem>
+					                <artifactItem>
+					                    <groupId>org.springframework</groupId>
+										<artifactId>spring-context</artifactId>
+										<version>4.3.9.RELEASE</version>
+					                    <type>jar</type>
+					                </artifactItem>
+					                 <artifactItem>
+					                    <groupId>org.springframework</groupId>
+										<artifactId>spring-beans</artifactId>
+										<version>4.3.9.RELEASE</version>
+					                    <type>jar</type>
+					                </artifactItem>
+					                <artifactItem>
+					                    <groupId>org.springframework</groupId>
+										<artifactId>spring-aop</artifactId>
+										<version>4.3.9.RELEASE</version>
+					                    <type>jar</type>
+					                </artifactItem>
+					                <artifactItem>
+					                    <groupId>org.springframework</groupId>
+										<artifactId>spring-dao</artifactId>
+										<version>2.0.8</version>
+					                    <type>jar</type>
+					                </artifactItem>
+					            </artifactItems>
+					            <outputDirectory>${project.basedir}/target/lib</outputDirectory>
+					        </configuration>
+					    </execution>
+					</executions>
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
