@@ -2,7 +2,7 @@ The datasamudaya can be build using the following maven goals
 
 mvn -Dmaven.antrun.skip=true -Dmaven.test.skip=true -Pmodules clean rewrite:run
 
-mvn -Dmaven.antrun.skip=true -Dmaven.test.skip.exec=true -DskipMavenParsing=true -Pmodules clean install assembly:assembly
+mvn -Dmaven.antrun.skip=true -Dmaven.test.skip.exec=true -DskipMavenParsing=true -Pmodules clean assembly:assembly
 
 To Build Only Requires Containers
 ---------------------------------

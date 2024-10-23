@@ -23,7 +23,7 @@
 			${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml
 		</sonar.coverage.jacoco.xmlReportPaths>
 		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
-		<akka.version>2.9.1</akka.version>     
+		<akka.version>2.9.1</akka.version>
 	</properties>
 
 	<dependencies>
@@ -41,9 +41,9 @@
 		</dependency>
 
 		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-pool2</artifactId>
-		    <version>2.12.0</version>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-pool2</artifactId>
+			<version>2.12.0</version>
 		</dependency>
 
 
@@ -85,13 +85,13 @@
 			<artifactId>jackson-core</artifactId>
 			<version>2.18.0</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>2.18.0</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
@@ -123,9 +123,9 @@
 		</dependency>
 
 		<dependency>
-		    <groupId>net.sf.trove4j</groupId>
-		    <artifactId>trove4j</artifactId>
-		    <version>3.0.3</version>
+			<groupId>net.sf.trove4j</groupId>
+			<artifactId>trove4j</artifactId>
+			<version>3.0.3</version>
 		</dependency>
 
 
@@ -163,7 +163,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-client</artifactId>
@@ -192,11 +192,11 @@
 			<artifactId>hessian</artifactId>
 			<version>4.0.66</version>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>org.objenesis</groupId>
-		    <artifactId>objenesis</artifactId>
-		    <version>3.3</version>
+			<groupId>org.objenesis</groupId>
+			<artifactId>objenesis</artifactId>
+			<version>3.3</version>
 		</dependency>
 
 
@@ -205,11 +205,11 @@
 			<artifactId>kryo</artifactId>
 			<version>5.6.0</version>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>de.javakaffee</groupId>
-		    <artifactId>kryo-serializers</artifactId>
-		    <version>0.45</version>
+			<groupId>de.javakaffee</groupId>
+			<artifactId>kryo-serializers</artifactId>
+			<version>0.45</version>
 		</dependency>
 
 		<dependency>
@@ -245,7 +245,21 @@
 					<groupId>org.apache.hadoop</groupId>
 					<artifactId>hadoop-yarn-client</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-core</artifactId>
+				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>6.1.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>6.1.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.data</groupId>
@@ -253,27 +267,16 @@
 			<version>2.5.0.RELEASE</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-core</artifactId>
-		    <version>6.1.14</version> <!-- Use the appropriate version -->
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-yarn-batch</artifactId>
+			<version>2.5.0.RELEASE</version>
 		</dependency>
+
 		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-web</artifactId>
-		    <version>6.1.14</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-webmvc</artifactId>
-		    <version>6.1.14</version>
-		</dependency>
-		
-		
-		<dependency>
-		    <groupId>org.apache.hadoop</groupId>
-		    <artifactId>hadoop-minicluster</artifactId>
-		    <version>3.3.4</version>
-		    <exclusions>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-minicluster</artifactId>
+			<version>3.3.4</version>
+			<exclusions>
 				<exclusion>
 					<groupId>org.apache.hadoop</groupId>
 					<artifactId>hadoop-yarn-server-tests</artifactId>
@@ -288,11 +291,11 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-lang3</artifactId>
-		    <version>3.12.0</version>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.12.0</version>
 		</dependency>
 
 
@@ -311,7 +314,7 @@
 			<artifactId>asm-analysis</artifactId>
 			<version>9.6</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.jooq</groupId>
 			<artifactId>jool</artifactId>
@@ -324,9 +327,9 @@
 			<version>1.8</version>
 		</dependency>
 		<dependency>
-		    <groupId>com.univocity</groupId>
-		    <artifactId>univocity-parsers</artifactId>
-		    <version>2.9.1</version>
+			<groupId>com.univocity</groupId>
+			<artifactId>univocity-parsers</artifactId>
+			<version>2.9.1</version>
 		</dependency>
 		<dependency>
 			<groupId>de.siegmar</groupId>
@@ -362,9 +365,9 @@
 		</dependency>
 
 		<dependency>
-		    <groupId>org.lz4</groupId>
-		    <artifactId>lz4-java</artifactId>
-		    <version>1.8.0</version>
+			<groupId>org.lz4</groupId>
+			<artifactId>lz4-java</artifactId>
+			<version>1.8.0</version>
 		</dependency>
 
 		<dependency>
@@ -418,154 +421,154 @@
 			<artifactId>joda-time</artifactId>
 			<version>2.11.2</version>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>jline</groupId>
-		    <artifactId>jline</artifactId>
-		    <version>2.14.3</version>
+			<groupId>jline</groupId>
+			<artifactId>jline</artifactId>
+			<version>2.14.3</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
 			<version>5.3.1</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>jp.co.yahoo.yosegi</groupId>
-		    <artifactId>yosegi</artifactId>
-		    <version>2.0.5</version>
+			<groupId>jp.co.yahoo.yosegi</groupId>
+			<artifactId>yosegi</artifactId>
+			<version>2.0.5</version>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>org.apache.arrow</groupId>
-		    <artifactId>arrow-vector</artifactId>
-		    <version>12.0.0</version>
+			<groupId>org.apache.arrow</groupId>
+			<artifactId>arrow-vector</artifactId>
+			<version>12.0.0</version>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>org.apache.arrow</groupId>
-		    <artifactId>arrow-memory-netty</artifactId>
-		    <version>12.0.0</version>
+			<groupId>org.apache.arrow</groupId>
+			<artifactId>arrow-memory-netty</artifactId>
+			<version>12.0.0</version>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>org.apache.pig</groupId>
-		    <artifactId>pig</artifactId>
-		    <version>0.17.0</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.apache.orc</groupId>
-		    <artifactId>orc-core</artifactId>
-		    <version>1.7.5</version>
+			<groupId>org.apache.pig</groupId>
+			<artifactId>pig</artifactId>
+			<version>0.17.0</version>
 		</dependency>
 		<dependency>
-	        <groupId>org.apache.hadoop</groupId>
-	        <artifactId>hadoop-client-runtime</artifactId>
-	        <version>3.3.4</version>
-	    </dependency>
-	    <dependency>
-	        <groupId>io.prometheus</groupId>
-	        <artifactId>simpleclient</artifactId>
-	        <version>0.16.0</version>
-	    </dependency>
-		<dependency>
-		    <groupId>io.prometheus</groupId>
-		    <artifactId>simpleclient_httpserver</artifactId>
-		    <version>0.16.0</version>
+			<groupId>org.apache.orc</groupId>
+			<artifactId>orc-core</artifactId>
+			<version>1.7.5</version>
 		</dependency>
 		<dependency>
-	        <groupId>io.prometheus</groupId>
-	        <artifactId>simpleclient_common</artifactId>
-	        <version>0.16.0</version>
-	    </dependency>
-	    <dependency>
-	        <groupId>io.prometheus</groupId>
-	        <artifactId>simpleclient_hotspot</artifactId>
-	        <version>0.16.0</version>
-	    </dependency>
-		<dependency>
-		    <groupId>io.micrometer</groupId>
-		    <artifactId>micrometer-core</artifactId>
-		    <version>1.12.2</version>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-client-runtime</artifactId>
+			<version>3.3.4</version>
 		</dependency>
 		<dependency>
-		    <groupId>io.micrometer</groupId>
-		    <artifactId>micrometer-registry-prometheus</artifactId>
-		    <version>1.12.2</version>
+			<groupId>io.prometheus</groupId>
+			<artifactId>simpleclient</artifactId>
+			<version>0.16.0</version>
 		</dependency>
 		<dependency>
-		    <groupId>com.ea.agentloader</groupId>
-		    <artifactId>ea-agent-loader</artifactId>
-		    <version>1.0.3</version>
+			<groupId>io.prometheus</groupId>
+			<artifactId>simpleclient_httpserver</artifactId>
+			<version>0.16.0</version>
+		</dependency>
+		<dependency>
+			<groupId>io.prometheus</groupId>
+			<artifactId>simpleclient_common</artifactId>
+			<version>0.16.0</version>
+		</dependency>
+		<dependency>
+			<groupId>io.prometheus</groupId>
+			<artifactId>simpleclient_hotspot</artifactId>
+			<version>0.16.0</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+			<version>1.12.2</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+			<version>1.12.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ea.agentloader</groupId>
+			<artifactId>ea-agent-loader</artifactId>
+			<version>1.0.3</version>
 		</dependency>
 
 		<!-- Akka Actors -->
 		<dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor-typed_2.13</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-		
-		<dependency>
-		    <groupId>com.typesafe.akka</groupId>
-		    <artifactId>akka-cluster-typed_2.13</artifactId>
-		    <version>${akka.version}</version>
+			<groupId>com.typesafe.akka</groupId>
+			<artifactId>akka-actor-typed_2.13</artifactId>
+			<version>${akka.version}</version>
 		</dependency>
-		
-		<dependency>
-	        <groupId>io.altoo</groupId>
-	        <artifactId>akka-kryo-serialization_2.13</artifactId>
-	        <version>2.5.2</version>
-	    </dependency>
-		
-		<dependency>
-		    <groupId>ch.qos.logback</groupId>
-		    <artifactId>logback-core</artifactId>
-		    <version>1.5.3</version>
-		</dependency>		
-		
-		<dependency>
-	      <groupId>io.fabric8</groupId>
-	      <artifactId>kubernetes-client</artifactId>
-	      <version>4.11.1</version>
-	    </dependency>
 
 		<dependency>
-		    <groupId>org.springframework.ai</groupId>
-		    <artifactId>spring-ai-ollama</artifactId>
-		    <version>0.8.0</version>
+			<groupId>com.typesafe.akka</groupId>
+			<artifactId>akka-cluster-typed_2.13</artifactId>
+			<version>${akka.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.altoo</groupId>
+			<artifactId>akka-kryo-serialization_2.13</artifactId>
+			<version>2.5.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-core</artifactId>
+			<version>1.5.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.fabric8</groupId>
+			<artifactId>kubernetes-client</artifactId>
+			<version>4.11.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-ollama</artifactId>
+			<version>0.8.0</version>
 		</dependency>
 	</dependencies>
 	<reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.6.3</version>
-        <configuration>
-			<failOnError>false</failOnError>
-            <doclint>none</doclint>
-        </configuration>
-        <reportSets>
-          <reportSet>
-            <id>aggregate</id>
-            <inherited>false</inherited>
-            <reports>
-              <report>aggregate</report>
-            </reports>
-          </reportSet>
-          <reportSet>
-            <id>default</id>
-            <reports>
-              <report>javadoc</report>
-            </reports>
-          </reportSet>
-        </reportSets>
-      </plugin>
-    </plugins>
-  </reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.6.3</version>
+				<configuration>
+					<failOnError>false</failOnError>
+					<doclint>none</doclint>
+				</configuration>
+				<reportSets>
+					<reportSet>
+						<id>aggregate</id>
+						<inherited>false</inherited>
+						<reports>
+							<report>aggregate</report>
+						</reports>
+					</reportSet>
+					<reportSet>
+						<id>default</id>
+						<reports>
+							<report>javadoc</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+		</plugins>
+	</reporting>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -578,6 +581,30 @@
 		</dependencies>
 	</dependencyManagement>
 	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.sonarsource.scanner.maven</groupId>
+					<artifactId>sonar-maven-plugin</artifactId>
+					<version>3.4.0.905</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.8.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>2.4</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>2.6</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<plugin>
 				<groupId>io.github.solven-eu.cleanthat</groupId>
@@ -598,10 +625,10 @@
 				</configuration>
 				<dependencies>
 					<dependency>
-			            <groupId>org.openrewrite.recipe</groupId>
-			            <artifactId>rewrite-static-analysis</artifactId>
-			            <version>1.1.1</version>
-			      	</dependency>
+						<groupId>org.openrewrite.recipe</groupId>
+						<artifactId>rewrite-static-analysis</artifactId>
+						<version>1.1.1</version>
+					</dependency>
 					<dependency>
 						<groupId>org.openrewrite.recipe</groupId>
 						<artifactId>rewrite-migrate-java</artifactId>
@@ -630,27 +657,34 @@
 									src="target/datasamudaya-${project.version}-jdk21.tar.gz"
 									dest="target/unpack/opt/datasamudaya" />
 								<mkdir dir="target/unpack/usr/local/java" />
-								<gunzip src="target/openjdk-21.0.2_linux-x64_bin.tar.gz"
+								<gunzip
+									src="target/openjdk-21.0.2_linux-x64_bin.tar.gz"
 									dest="target/" />
-								<untar src="target/openjdk-21.0.2_linux-x64_bin.tar"
+								<untar
+									src="target/openjdk-21.0.2_linux-x64_bin.tar"
 									dest="target/unpack/usr/local/java" />
 								<copy todir="target/datasamudayastandalone">
-									<fileset dir="dockerdatasamudayastandalone" includes="entry.sh" />
+									<fileset dir="dockerdatasamudayastandalone"
+										includes="entry.sh" />
 									<fileset dir="dockerdatasamudayastandalone"
 										includes="standalone.sh" />
 								</copy>
 								<copy todir="target/datasamudayacontainer">
-									<fileset dir="dockerdatasamudayacontainer" includes="entry.sh" />
+									<fileset dir="dockerdatasamudayacontainer"
+										includes="entry.sh" />
 									<fileset dir="dockerdatasamudayacontainer"
 										includes="container.sh" />
 								</copy>
 								<fixcrlf srcdir="target/unpack/usr/local/java"
 									eol="unix" includes="**/*.sh" />
-								<fixcrlf srcdir="target/unpack/opt/datasamudaya" eol="unix"
+								<fixcrlf srcdir="target/unpack/opt/datasamudaya"
+									eol="unix"
 									includes="**/*.sh" />
-								<fixcrlf srcdir="target/datasamudayastandalone" eol="unix"
+								<fixcrlf srcdir="target/datasamudayastandalone"
+									eol="unix"
 									includes="*.sh" />
-								<fixcrlf srcdir="target/datasamudayacontainer" eol="unix"
+								<fixcrlf srcdir="target/datasamudayacontainer"
+									eol="unix"
 									includes="*.sh" />
 							</target>
 						</configuration>
@@ -691,20 +725,22 @@
 					<release>17</release>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<release>21</release>
-				</configuration>
-			</plugin>
 		</plugins>
-	</build>
+	</build>	
 	<profiles>
 		<profile>
 			<id>modules</id>
+			<modules>
+				<module>taskexecutor</module>
+				<module>taskscheduler</module>
+				<module>common</module>
+				<module>pipeline</module>
+				<module>examples</module>
+				<module>coverage</module>
+				<module>dsagent</module>
+			</modules>
 			<build>
-				<plugins>					
+				<plugins>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-clean-plugin</artifactId>
@@ -717,7 +753,8 @@
 									<followSymlinks>false</followSymlinks>
 									<useDefaultExcludes>true</useDefaultExcludes>
 									<excludes>
-										<exclude>openjdk-21.0.2_linux-x64_bin.tar.gz</exclude>
+										<exclude>
+											openjdk-21.0.2_linux-x64_bin.tar.gz</exclude>
 									</excludes>
 								</fileset>
 							</filesets>
@@ -726,19 +763,54 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-compiler-plugin</artifactId>
-						<version>3.8.1</version>
-						<configuration>
-							<release>21</release>
-							<source>21</source>
-							<target>21</target>
-							<forceJavacCompilerUse>false</forceJavacCompilerUse>
-						</configuration>
 						<executions>
 							<execution>
+								<id>compile-source</id>
 								<phase>compile</phase>
 								<goals>
 									<goal>compile</goal>
 								</goals>
+								<configuration>
+									<release>21</release>
+									<source>21</source>
+									<target>21</target>
+									<forceJavacCompilerUse>false</forceJavacCompilerUse>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>jar-module</id>
+								<phase>package</phase>
+								<goals>
+									<goal>jar</goal>
+									<goal>test-jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<configuration>
+							<descriptors>
+								<descriptor>assembly/assembly.xml</descriptor>
+							</descriptors>
+						</configuration>
+						<executions>
+							<execution>
+								<id>distro-assembly</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<skipAssembly>${skip.assemblyxml}</skipAssembly>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
@@ -827,28 +899,6 @@
 						</configuration>
 					</plugin>
 					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.6</version>
-						<configuration>
-							<descriptors>
-								<descriptor>assembly/assembly.xml</descriptor>
-							</descriptors>
-						</configuration>
-						<executions>
-							<execution>
-								<id>distro-assembly</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<skipAssembly>${skip.assemblyxml}</skipAssembly>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
 						<artifactId>maven-resources-plugin</artifactId>
 						<version>3.1.0</version>
 						<executions>
@@ -859,12 +909,15 @@
 									<goal>copy-resources</goal>
 								</goals>
 								<configuration>
-									<outputDirectory>${session.executionRootDirectory}/dockerdatasamudayacontainer</outputDirectory>
+									<outputDirectory>
+										${session.executionRootDirectory}/dockerdatasamudayacontainer</outputDirectory>
 									<resources>
 										<resource>
-											<directory>${session.executionRootDirectory}/target</directory>
+											<directory>
+												${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
+												<include>
+													datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -877,12 +930,15 @@
 									<goal>copy-resources</goal>
 								</goals>
 								<configuration>
-									<outputDirectory>${session.executionRootDirectory}/dockerdatasamudayatss</outputDirectory>
+									<outputDirectory>
+										${session.executionRootDirectory}/dockerdatasamudayatss</outputDirectory>
 									<resources>
 										<resource>
-											<directory>${session.executionRootDirectory}/target</directory>
+											<directory>
+												${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
+												<include>
+													datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -895,12 +951,15 @@
 									<goal>copy-resources</goal>
 								</goals>
 								<configuration>
-									<outputDirectory>${session.executionRootDirectory}/dockerdatasamudayats</outputDirectory>
+									<outputDirectory>
+										${session.executionRootDirectory}/dockerdatasamudayats</outputDirectory>
 									<resources>
 										<resource>
-											<directory>${session.executionRootDirectory}/target</directory>
+											<directory>
+												${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
+												<include>
+													datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -913,12 +972,15 @@
 									<goal>copy-resources</goal>
 								</goals>
 								<configuration>
-									<outputDirectory>${session.executionRootDirectory}/dockerdatasamudayastandalone</outputDirectory>
+									<outputDirectory>
+										${session.executionRootDirectory}/dockerdatasamudayastandalone</outputDirectory>
 									<resources>
 										<resource>
-											<directory>${session.executionRootDirectory}/target</directory>
+											<directory>
+												${session.executionRootDirectory}/target</directory>
 											<includes>
-												<include>datasamudaya-${project.version}-jdk21.tar.gz</include>
+												<include>
+													datasamudaya-${project.version}-jdk21.tar.gz</include>
 											</includes>
 										</resource>
 									</resources>
@@ -927,25 +989,7 @@
 						</executions>
 					</plugin>
 				</plugins>
-				<pluginManagement>
-					<plugins>
-						<plugin>
-							<groupId>org.sonarsource.scanner.maven</groupId>
-							<artifactId>sonar-maven-plugin</artifactId>
-							<version>3.4.0.905</version>
-						</plugin>
-					</plugins>
-				</pluginManagement>
 			</build>
-			<modules>
-				<module>taskexecutor</module>
-				<module>taskscheduler</module>
-				<module>common</module>
-				<module>pipeline</module>
-				<module>examples</module>
-				<module>coverage</module>
-				<module>dsagent</module>
-			</modules>
 		</profile>
 		<profile>
 			<id>datasamudayastandalone</id>
@@ -980,17 +1024,21 @@
 												<into>/</into>
 											</path>
 											<path>
-												<from>dockerdatasamudayastandalone</from>
+												<from>
+													dockerdatasamudayastandalone</from>
 												<into>/opt/datasamudaya/config</into>
-												<includes>datasamudaya.properties</includes>
+												<includes>
+													datasamudaya.properties</includes>
 											</path>
 											<path>
-												<from>target/datasamudayastandalone</from>
+												<from>
+													target/datasamudayastandalone</from>
 												<into>/</into>
 												<includes>entry.sh</includes>
 											</path>
 											<path>
-												<from>target/datasamudayastandalone</from>
+												<from>
+													target/datasamudayastandalone</from>
 												<into>/opt/datasamudaya/bin</into>
 												<includes>standalone.sh</includes>
 											</path>
@@ -999,34 +1047,47 @@
 											<permission>
 												<file>/opt/datasamudaya/bin/*</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 											<permission>
 												<file>/entry.sh</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 											<permission>
 												<file>/entrypoint.sh</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 											<permission>
 												<file>/run.sh</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 											<permission>
-												<file>/usr/local/java/jdk-21.0.2/bin/*</file>
+												<file>
+													/usr/local/java/jdk-21.0.2/bin/*</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 										</permissions>
 									</extraDirectories>
 									<container>
 										<environment>
-											<CORE_CONF_fs_defaultFS>hdfs://namenode:9000</CORE_CONF_fs_defaultFS>
-											<HDFS_CONF_dfs_datanode_data_dir>file:///opt/dockershare/data
+											<CORE_CONF_fs_defaultFS>
+												hdfs://namenode:9000</CORE_CONF_fs_defaultFS>
+											<HDFS_CONF_dfs_datanode_data_dir>
+												file:///opt/dockershare/data
 											</HDFS_CONF_dfs_datanode_data_dir>
 										</environment>
 										<volumes>
@@ -1066,17 +1127,21 @@
 												<into>/</into>
 											</path>
 											<path>
-												<from>dockerdatasamudayacontainer</from>
+												<from>
+													dockerdatasamudayacontainer</from>
 												<into>/opt/datasamudaya/config</into>
-												<includes>datasamudaya.properties</includes>
+												<includes>
+													datasamudaya.properties</includes>
 											</path>
 											<path>
-												<from>target/datasamudayacontainer</from>
+												<from>
+													target/datasamudayacontainer</from>
 												<into>/</into>
 												<includes>entry.sh</includes>
 											</path>
 											<path>
-												<from>target/datasamudayacontainer</from>
+												<from>
+													target/datasamudayacontainer</from>
 												<into>/opt/datasamudaya/bin</into>
 												<includes>container.sh</includes>
 											</path>
@@ -1085,34 +1150,47 @@
 											<permission>
 												<file>/opt/datasamudaya/bin/*</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 											<permission>
 												<file>/entry.sh</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 											<permission>
 												<file>/entrypoint.sh</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 											<permission>
 												<file>/run.sh</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 											<permission>
-												<file>/usr/local/java/jdk-21.0.2/bin/*</file>
+												<file>
+													/usr/local/java/jdk-21.0.2/bin/*</file>
 												<mode>777
-												</mode> <!-- Read/write/execute for owner, read/execute for group/other -->
+												</mode> <!--
+												Read/write/execute for owner,
+												read/execute for group/other -->
 											</permission>
 										</permissions>
 									</extraDirectories>
 									<container>
 										<environment>
-											<CORE_CONF_fs_defaultFS>hdfs://namenode:9000</CORE_CONF_fs_defaultFS>
-											<HDFS_CONF_dfs_datanode_data_dir>file:///opt/dockershare/data
+											<CORE_CONF_fs_defaultFS>
+												hdfs://namenode:9000</CORE_CONF_fs_defaultFS>
+											<HDFS_CONF_dfs_datanode_data_dir>
+												file:///opt/dockershare/data
 											</HDFS_CONF_dfs_datanode_data_dir>
 										</environment>
 										<volumes>
@@ -1140,32 +1218,32 @@
 		<repository>
 			<id>mavenrepo</id>
 			<url>https://repo1.maven.org/maven2</url>
-		</repository>		
+		</repository>
 		<repository>
 			<id>clojars</id>
 			<url>http://clojars.org/repo/</url>
 		</repository>
 		<repository>
-            <id>akka-repository</id>
-            <name>Akka library repository</name>
-            <url>https://repo.akka.io/maven</url>
-        </repository>
-        <repository>
-	      <id>spring-milestones</id>
-	      <name>Spring Milestones</name>
-	      <url>https://repo.spring.io/milestone</url>
-	      <snapshots>
-	        <enabled>false</enabled>
-	      </snapshots>
-	    </repository>
-	    <repository>
-	      <id>spring-snapshots</id>
-	      <name>Spring Snapshots</name>
-	      <url>https://repo.spring.io/snapshot</url>
-	      <releases>
-	        <enabled>false</enabled>
-	      </releases>
-	    </repository>
+			<id>akka-repository</id>
+			<name>Akka library repository</name>
+			<url>https://repo.akka.io/maven</url>
+		</repository>
+		<repository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>spring-snapshots</id>
+			<name>Spring Snapshots</name>
+			<url>https://repo.spring.io/snapshot</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</repository>
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
