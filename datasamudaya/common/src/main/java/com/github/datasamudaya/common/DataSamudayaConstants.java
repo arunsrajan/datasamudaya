@@ -627,4 +627,6 @@ public class DataSamudayaConstants {
 	public static final String OLLAMA_BASE_URL_DEFAULT = "https://localhost:11434";
 	public static final String SQL_QUERY_AGG_PROMPT = "Generate a simple SQL aggregate query for the table %s with fields %s";
 	public static final String SQL_QUERY_MUL_AGG_PROMPT = "Generate %s simple SQL aggregate queries for the table %s with fields %s";
+	public static final String SQL_QUERY_INFERENCE_PROMPT = "Generate %s artificial intelligence inference prompts based on sql query \"%s\"";
+	public static final String SQL_QUERY_INFERENCE_EXEC_PROMPT = "%s based on sql query \"%s\" and data provided in table format below with the table header in sql query column order.\n%s";
 }

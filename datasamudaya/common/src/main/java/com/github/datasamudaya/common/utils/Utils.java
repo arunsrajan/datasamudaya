@@ -2322,7 +2322,7 @@ public class Utils {
 	 * @param tableData
 	 * @param out
 	 */
-	private static long printTable(List<Object[]> tableData, PrintWriter out) {
+	public static long printTable(List<Object[]> tableData, PrintWriter out) {
 		if (tableData.isEmpty()) {
 			out.println("Table is empty.");
 			out.flush();

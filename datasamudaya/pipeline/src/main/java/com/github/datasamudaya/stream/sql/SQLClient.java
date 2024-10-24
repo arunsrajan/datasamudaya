@@ -3,14 +3,18 @@ package com.github.datasamudaya.stream.sql;
 import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -54,7 +58,8 @@ public class SQLClient {
 	private static final Logger log = LoggerFactory.getLogger(SQLClient.class);
 	private static final List<String> history = new ArrayList<>();
 	private static int historyIndex;
-
+	private static String currentsqlquery;
+	private static String currentsqloutput;
 	/**
 	 * Main method which starts sql client in terminal.
 	 * @param args
@@ -314,7 +319,9 @@ public class SQLClient {
 			if (input.startsWith(("ai"))) {
 				if(ollamaenable) {
 					String[] args = input.split(" ");
-					if(!args[1].equalsIgnoreCase("sql") && !args[1].equalsIgnoreCase("sqlmulti")) {
+					if(!args[1].equalsIgnoreCase("sql") && !args[1].equalsIgnoreCase("sqlmulti")
+							&& !args[1].equalsIgnoreCase("inference")
+							&& !args[1].equalsIgnoreCase("inferenceexec")) {
 						consoleout.println();
 						consoleout.println("Provide options with parameter sql or sqlmulti");
 						continue;
@@ -346,6 +353,36 @@ public class SQLClient {
 						TableCreator.getColumnMetadataFromTable(dbdefault, args[3], columns);
 						List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());				
 						String query = String.format(DataSamudayaConstants.SQL_QUERY_MUL_AGG_PROMPT, args[2],args[3],columnsNames.toString());
+						consoleout.println();
+						consoleout.println(query);
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+								OllamaOptions.create()
+								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
+								.withModel(DataSamudayaProperties.get().
+										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
+												DataSamudayaConstants.OLLAMA_MODEL__DEFAULT))));
+						consoleout.println(response.getResult().getOutput().getContent());
+					} else if(args[1].equalsIgnoreCase("inference")) {
+						String query = String.format(DataSamudayaConstants.SQL_QUERY_INFERENCE_PROMPT, args[2], currentsqlquery, currentsqloutput);
+						consoleout.println();
+						consoleout.println(query);
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+								OllamaOptions.create()
+								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
+								.withModel(DataSamudayaProperties.get().
+										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
+												DataSamudayaConstants.OLLAMA_MODEL__DEFAULT))));
+						consoleout.println(response.getResult().getOutput().getContent());
+					} else if(args[1].equalsIgnoreCase("inferenceexec")) {
+						var sb = new StringBuffer();
+						for (int count = 2; count < args.length; count++) {
+							sb.append(args[count]).append(" ");
+						}
+						String query = String.format(DataSamudayaConstants.SQL_QUERY_INFERENCE_EXEC_PROMPT, sb.toString(), currentsqlquery, currentsqloutput);
 						consoleout.println();
 						consoleout.println(query);
 						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
@@ -393,17 +430,27 @@ public class SQLClient {
 							+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 					long starttime = System.currentTimeMillis();
 					List<List> results;
+					currentsqlquery = input;					
 					if(isignite) {
-						results = results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, input, user, jobid, teid, Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+						results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, input, user, jobid, teid, Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
 					} else {
 						results = SelectQueryExecutor.executeSelectQuery(dbdefault, input, user, jobid, teid, false,
-							isyarn, out, false);
-					}
+							isyarn, null, false);
+					}					
 					double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 					long totalrecords = 0;
+					var buffer = new ByteArrayOutputStream();
+					var oswriter = new OutputStreamWriter(buffer, StandardCharsets.UTF_8);
+					var sqlwriter = new PrintWriter(oswriter, true);
 					for (List result : results) {
 						totalrecords += Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
+						Utils.printTable(result, sqlwriter);
 					}
+					currentsqloutput = new String(buffer.toByteArray());
+					buffer.close();
+					oswriter.close();
+					sqlwriter.close();
+					out.println("Total records " + totalrecords);
 					out.println("Time taken " + timetaken + " seconds");
 					out.println("");
 					out.flush();
