@@ -629,4 +629,5 @@ public class DataSamudayaConstants {
 	public static final String SQL_QUERY_MUL_AGG_PROMPT = "Generate %s simple SQL aggregate queries for the table %s with fields %s";
 	public static final String SQL_QUERY_INFERENCE_PROMPT = "Generate %s artificial intelligence inference prompts based on sql query \"%s\"";
 	public static final String SQL_QUERY_INFERENCE_EXEC_PROMPT = "%s based on sql query \"%s\" and data provided in table format below with the table header in sql query column order.\n%s";
+	public static final String SQL_QUERY_ASCII_ART_HISTOGRAM_EXEC_PROMPT = "Interpret on sql query \"%s\" and data provided in table format below without the table header in sql query column order.\n%s\n\nDraw histogram of type %s with %s in x-axis and %s in y-axis [without using python, sql or any language] to display in console using ascii character | to represent height of histogram.\n";
 }

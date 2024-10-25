@@ -3,7 +3,6 @@ package com.github.datasamudaya.stream.sql;
 import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -321,9 +320,10 @@ public class SQLClient {
 					String[] args = input.split(" ");
 					if(!args[1].equalsIgnoreCase("sql") && !args[1].equalsIgnoreCase("sqlmulti")
 							&& !args[1].equalsIgnoreCase("inference")
-							&& !args[1].equalsIgnoreCase("inferenceexec")) {
+							&& !args[1].equalsIgnoreCase("inferenceexec")
+							&& !args[1].equalsIgnoreCase("asciiarthistogram")) {
 						consoleout.println();
-						consoleout.println("Provide options with parameter sql or sqlmulti");
+						consoleout.println("Provide options with parameter sql or sqlmulti or inference or inferenceexec or asciiarthistogram");
 						continue;
 					}					
 					if(args[1].equalsIgnoreCase("sql")) {
@@ -366,6 +366,19 @@ public class SQLClient {
 						consoleout.println(response.getResult().getOutput().getContent());
 					} else if(args[1].equalsIgnoreCase("inference")) {
 						String query = String.format(DataSamudayaConstants.SQL_QUERY_INFERENCE_PROMPT, args[2], currentsqlquery, currentsqloutput);
+						consoleout.println();
+						consoleout.println(query);
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+								OllamaOptions.create()
+								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
+								.withModel(DataSamudayaProperties.get().
+										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
+												DataSamudayaConstants.OLLAMA_MODEL__DEFAULT))));
+						consoleout.println(response.getResult().getOutput().getContent());
+					} else if(args[1].equalsIgnoreCase("asciiarthistogram")) {
+						String query = String.format(DataSamudayaConstants.SQL_QUERY_ASCII_ART_HISTOGRAM_EXEC_PROMPT, currentsqlquery, currentsqloutput, args[2], args[3], args[4]);
 						consoleout.println();
 						consoleout.println(query);
 						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
