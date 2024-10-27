@@ -20,7 +20,7 @@ set DEBUGPORT=5001
 
 set ZOOKEEPERADMINCONFIG=-Dzookeeper.admin.serverPort=2180
 
-set CLASSPATH=-classpath ".;../jars/*"
+set CLASSPATH=-classpath ".;../ailib/*;../yarnlib/*;../jars/*"
 
 set DEBUGCONFIG=-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=%DEBUGPORT%,suspend=n
 

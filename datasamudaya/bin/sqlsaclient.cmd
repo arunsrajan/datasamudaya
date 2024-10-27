@@ -20,11 +20,11 @@ set DEBUGPORT=5002
 
 set ZOOKEEPERADMINCONFIG=-Dzookeeper.admin.serverPort=2180
 
-set CLASSPATH=-classpath ".;../jars/*"
+set CLASSPATH=-classpath ".;../ailib/*;../yarnlib/*;../jars/*"
 
 set DEBUGCONFIG=-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=%DEBUGPORT%,suspend=n
 
-set MEMCONFIG=-Xms128m -Xmx256m
+set MEMCONFIG=-Xms128m -Xmx5G
 
 set ADDOPENSMODULES=--enable-preview --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.sql/java.sql=ALL-UNNAMED
 
@@ -34,7 +34,7 @@ IF EXIST %DATASAMUDAYA_JAVA_HOME%\bin\java.exe (
 
 "%DATASAMUDAYA_JAVA_HOME%\bin\java" -version
 
-"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -javaagent:../lib/dsagent-4.0.jar -Djava.net.preferIPv4Stack=true com.github.datasamudaya.stream.sql.SQLClient -user arun -containerssql 3 -containercpu 3 -containermemory 3072 -drivercpu 3 -drivermemory 2048 -isdriverrequired true -driverlocation client -sqlworkermode standalone
+"%DATASAMUDAYA_JAVA_HOME%\bin\java" %MEMCONFIG% %ADDOPENSMODULES% %GCCONFIG% %DEBUGCONFIG% %CLASSPATH% -javaagent:../jars/dsagent-4.0.jar -Djava.net.preferIPv4Stack=true com.github.datasamudaya.stream.sql.SQLClient -user arun -containerssql 3 -containercpu 3 -containermemory 3072 -drivercpu 3 -drivermemory 2048 -isdriverrequired true -driverlocation client -sqlworkermode standalone
 
 ) ELSE (
  @echo on

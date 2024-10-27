@@ -7,7 +7,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -210,9 +212,11 @@ public class SQLClient {
 					sock.connect(new InetSocketAddress(hostName, portNumber), timeout);
 					if (sock.isConnected()) {
 						try (Socket socket = sock;
-								PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+								OutputStream ostream = socket.getOutputStream();
+								PrintWriter out = new PrintWriter(ostream, true);
+								InputStream istream = socket.getInputStream();
 								BufferedReader in = new BufferedReader(
-										new InputStreamReader(socket.getInputStream()));) {
+										new InputStreamReader(istream));) {
 							out.println(user);
 							out.println(numberofcontainers);
 							out.println(cpupercontainer);
@@ -321,12 +325,21 @@ public class SQLClient {
 					if(!args[1].equalsIgnoreCase("sql") && !args[1].equalsIgnoreCase("sqlmulti")
 							&& !args[1].equalsIgnoreCase("inference")
 							&& !args[1].equalsIgnoreCase("inferenceexec")
-							&& !args[1].equalsIgnoreCase("asciiarthistogram")) {
+							&& !args[1].equalsIgnoreCase("asciiarthistogram")
+							&& !args[1].equalsIgnoreCase("inferencequestion")
+							&& !args[1].equalsIgnoreCase("setmodel")
+							&& !args[1].equalsIgnoreCase("setinferencemodel")) {
 						consoleout.println();
-						consoleout.println("Provide options with parameter sql or sqlmulti or inference or inferenceexec or asciiarthistogram");
+						consoleout.println("Provide ai with parameter setmodel or setinferencemodel or sql or sqlmulti or inference or inferenceexec or asciiarthistogram or inferencequestion");
 						continue;
 					}					
-					if(args[1].equalsIgnoreCase("sql")) {
+					if(args[1].equalsIgnoreCase("setmodel")) {
+						DataSamudayaProperties.get().put(DataSamudayaConstants.OLLAMA_MODEL_NAME,
+												args[2]);
+					} else if(args[1].equalsIgnoreCase("setinferencemodel")) {
+						DataSamudayaProperties.get().put(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
+								args[2]);
+					} else if(args[1].equalsIgnoreCase("sql")) {
 						var columns = new ArrayList<ColumnMetadata>();
 						TableCreator.getColumnMetadataFromTable(dbdefault, args[2], columns);
 						List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());				
@@ -340,7 +353,7 @@ public class SQLClient {
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
 								.withModel(DataSamudayaProperties.get().
 										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
-												DataSamudayaConstants.OLLAMA_MODEL__DEFAULT))));
+												DataSamudayaConstants.OLLAMA_MODEL_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
 					}
 					else if(args[1].equalsIgnoreCase("sqlmulti")) {
@@ -362,10 +375,10 @@ public class SQLClient {
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
 								.withModel(DataSamudayaProperties.get().
 										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
-												DataSamudayaConstants.OLLAMA_MODEL__DEFAULT))));
+												DataSamudayaConstants.OLLAMA_MODEL_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
 					} else if(args[1].equalsIgnoreCase("inference")) {
-						String query = String.format(DataSamudayaConstants.SQL_QUERY_INFERENCE_PROMPT, args[2], currentsqlquery, currentsqloutput);
+						String query = String.format(DataSamudayaConstants.SQL_QUERY_INFERENCE_PROMPT, args[2], currentsqlquery);
 						consoleout.println();
 						consoleout.println(query);
 						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
@@ -374,8 +387,8 @@ public class SQLClient {
 										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
 								.withModel(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
-												DataSamudayaConstants.OLLAMA_MODEL__DEFAULT))));
+										getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
+												DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
 					} else if(args[1].equalsIgnoreCase("asciiarthistogram")) {
 						String query = String.format(DataSamudayaConstants.SQL_QUERY_ASCII_ART_HISTOGRAM_EXEC_PROMPT, currentsqlquery, currentsqloutput, args[2], args[3], args[4]);
@@ -388,7 +401,7 @@ public class SQLClient {
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
 								.withModel(DataSamudayaProperties.get().
 										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
-												DataSamudayaConstants.OLLAMA_MODEL__DEFAULT))));
+												DataSamudayaConstants.OLLAMA_MODEL_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
 					} else if(args[1].equalsIgnoreCase("inferenceexec")) {
 						var sb = new StringBuffer();
@@ -404,8 +417,31 @@ public class SQLClient {
 										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
 								.withModel(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
-												DataSamudayaConstants.OLLAMA_MODEL__DEFAULT))));
+										getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
+												DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME_DEFAULT))));
+						consoleout.println(response.getResult().getOutput().getContent());
+					} else if(args[1].equalsIgnoreCase("inferencequestion")) {
+						var inference = new StringBuffer();
+						var columnnames = new StringBuffer();
+						String tablename = args[2];
+						var columns = new ArrayList<ColumnMetadata>();
+						TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columns);
+						columns.stream().map(ColumnMetadata::getColumnName).forEach(colname->columnnames.append(colname).append(", "));
+						columnnames.deleteCharAt(columnnames.length()-2);
+						for (int count = 3; count < args.length; count++) {
+							inference.append(args[count]).append(" ");
+						}
+						String query = String.format(DataSamudayaConstants.SQL_QUERY_PROMPT, inference.toString(), tablename, columnnames.toString());
+						consoleout.println();
+						consoleout.println(query);
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+								OllamaOptions.create()
+								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
+								.withModel(DataSamudayaProperties.get().
+										getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
+												DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
 					}
 					continue;
@@ -457,9 +493,11 @@ public class SQLClient {
 					var sqlwriter = new PrintWriter(oswriter, true);
 					for (List result : results) {
 						totalrecords += Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
-						Utils.printTable(result, sqlwriter);
+						Utils.printTableOrError(result, sqlwriter, JOBTYPE.NORMAL);
 					}
-					currentsqloutput = new String(buffer.toByteArray());
+					if(totalrecords > 0) {
+						currentsqloutput = new String(buffer.toByteArray());
+					}
 					buffer.close();
 					oswriter.close();
 					sqlwriter.close();

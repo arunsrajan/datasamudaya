@@ -620,14 +620,32 @@ public class DataSamudayaConstants {
 	public static final String OLLAMA_ENABLE = "ollama.enable";
 	public static final String OLLAMA_ENABLE_DEFAULT = "false";
 	public static final String OLLAMA_MODEL_NAME = "ollama.model.name";
-	public static final String OLLAMA_MODEL__DEFAULT = "llama3.2:latest";
+	public static final String OLLAMA_INFERENCE_MODEL_NAME = "ollama.inference.model.name";
+	public static final String OLLAMA_INFERENCE_MODEL_NAME_DEFAULT = "codellama:latest";
+	public static final String OLLAMA_MODEL_DEFAULT = "llama3.2:latest";
 	public static final String OLLAMA_MODEL_TEMPERATURE = "ollama.model.temperature";
 	public static final String OLLAMA_MODEL_TEMPERATURE_DEFAULT = ".7";
 	public static final String OLLAMA_BASE_URL = "ollama.base.url";
 	public static final String OLLAMA_BASE_URL_DEFAULT = "https://localhost:11434";
 	public static final String SQL_QUERY_AGG_PROMPT = "Generate a simple SQL aggregate query for the table %s with fields %s";
 	public static final String SQL_QUERY_MUL_AGG_PROMPT = "Generate %s simple SQL aggregate queries for the table %s with fields %s";
-	public static final String SQL_QUERY_INFERENCE_PROMPT = "Generate %s artificial intelligence inference prompts based on sql query \"%s\"";
-	public static final String SQL_QUERY_INFERENCE_EXEC_PROMPT = "%s based on sql query \"%s\" and data provided in table format below with the table header in sql query column order.\n%s";
+	public static final String SQL_QUERY_INFERENCE_PROMPT = "Provide %s artificial intelligence inference prompts based on the sql query \"%s\"";
+	public static final String SQL_QUERY_INFERENCE_EXEC_PROMPT = "%s. The analysis should be based on sql query \"%s\" and data provided in table format below with the table header in sql query column order.\n%s";
 	public static final String SQL_QUERY_ASCII_ART_HISTOGRAM_EXEC_PROMPT = "Interpret on sql query \"%s\" and data provided in table format below without the table header in sql query column order.\n%s\n\nDraw histogram of type %s with %s in x-axis and %s in y-axis [without using python, sql or any language] to display in console using ascii character | to represent height of histogram.\n";
+	public static final String SQL_QUERY_PROMPT = """
+							Given the tablename in the TABLE section, and its fields in the FIELDS section write an SQL query that answers the asked question in the QUESTION section.
+							Only produce select queries. Do not append any text or markup in the start or end of response.
+							Remove the markups such as ``` , sql , \n as well.
+							If the question would result in an insert, update, or delete, or if the query would alter the DDL in any way, say that the operation isn't supported.
+							If the question can't be answered, say that the DDL doesn't support answering that question.
+							
+							QUESTION
+							%s
+							
+							TABLE
+							%s
+							
+							FIELDS
+							%s
+							""";
 }
