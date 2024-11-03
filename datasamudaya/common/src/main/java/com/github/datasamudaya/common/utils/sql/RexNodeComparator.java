@@ -1,0 +1,159 @@
+package com.github.datasamudaya.common.utils.sql;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexNode;
+
+public class RexNodeComparator {
+	public boolean compareRexNodesSemantically(RexNode node1, RexNode node2) {
+	    // Check if both nodes are the same instance
+	    if (node1 == node2) {
+	        return true;
+	    }
+
+	    // Check types
+	    if (node1 instanceof RexLiteral && node2 instanceof RexLiteral) {
+	        return compareRexLiterals((RexLiteral) node1, (RexLiteral) node2);
+	    } else if (node1 instanceof RexInputRef && node2 instanceof RexInputRef) {
+	        return compareRexInputRefs((RexInputRef) node1, (RexInputRef) node2);
+	    } else if (node1 instanceof RexCall && node2 instanceof RexCall) {
+	        return compareRexCallsSemantically((RexCall) node1, (RexCall) node2);
+	    }
+
+	    return false; // Different types or unsupported types
+	}
+
+	private boolean compareRexLiterals(RexLiteral literal1, RexLiteral literal2) {
+	    return literal1.getTypeName() == literal2.getTypeName() &&
+	           literal1.getValue().equals(literal2.getValue());
+	}
+
+	private boolean compareRexInputRefs(RexInputRef inputRef1, RexInputRef inputRef2) {
+	    return inputRef1.getIndex() == inputRef2.getIndex();
+	}
+
+	private boolean compareRexCallsSemantically(RexCall call1, RexCall call2) {
+	    if (isReversedComparison(call1.getOperator().getName(), call2.getOperator().getName())) {
+	        // Get the operands
+	        List<RexNode> operands1 = call1.getOperands();
+	        List<RexNode> operands2 = call2.getOperands();
+
+	        // Check that the operands are equivalent (the first operand in the reversed comparison should match the second)
+	        if (operands1.size() == 2 && operands2.size() == 2) {
+	            return compareRexNodesSemantically(operands1.get(0), operands2.get(1)) &&
+	                   compareRexNodesSemantically(operands1.get(1), operands2.get(0));
+	        }
+	    }
+	    // Get the operands
+	    List<RexNode> operands1 = call1.getOperands();
+	    List<RexNode> operands2 = call2.getOperands();
+
+	    // Handle logical operators AND and OR
+	    if (call1.getOperator().getName().equals("AND") || call1.getOperator().getName().equals("OR")) {
+	        return compareOperandsIgnoringOrder(operands1, operands2);
+	    }
+	    
+	    // Handle comparison operators (including equality and others)
+	    if (call1.getOperator().getName().equals("=")) {
+	        // For equality, check both combinations of operand orders
+	        return (operands1.size() == operands2.size()) && 
+	               (compareOperandsIgnoringOrder(operands1, operands2) || 
+	                compareOperandsIgnoringOrder(operands2, operands1));
+	    } else if (isComparisonOperator(call1.getOperator().getName())) {
+	        // For comparison operators, check the number of operands
+	        if (operands1.size() != operands2.size()) {
+	            return false; // Different number of operands
+	        }
+	        
+	        // Compare each operand
+	        for (int i = 0; i < operands1.size(); i++) {
+	            if (!compareRexNodesSemantically(operands1.get(i), operands2.get(i))) {
+	                return false; // Operands are not semantically equal
+	            }
+	        }
+	        return true; // All checks passed, the calls are semantically equal
+	    }
+
+	    // Check the number of operands
+	    if (operands1.size() != operands2.size()) {
+	        return false; // Different number of operands
+	    }
+
+	    // Compare each operand
+	    for (int i = 0; i < operands1.size(); i++) {
+	        if (!compareRexNodesSemantically(operands1.get(i), operands2.get(i))) {
+	            return false; // Operands are not semantically equal
+	        }
+	    }
+
+	    return true; // All checks passed, the calls are semantically equal
+	}
+
+	private boolean isReversedComparison(String operator1, String operator2) {
+	    // Define pairs of semantically equivalent operators
+	    return (operator1.equals(">") && operator2.equals("<=")) ||
+	           (operator1.equals("<") && operator2.equals(">=")) ||
+	           (operator1.equals(">=") && operator2.equals("<")) ||
+	           (operator1.equals("<=") && operator2.equals(">")) ||
+	           (operator1.equals("<>") && operator2.equals("<>")); // Treat <> as self-equivalent
+	}
+	
+	private boolean isComparisonOperator(String operatorName) {
+	    return operatorName.equals(">") ||
+	           operatorName.equals(">=") ||
+	           operatorName.equals("<") ||
+	           operatorName.equals("<=") ||
+	           operatorName.equals("<>");
+	}
+
+	private boolean compareOperandsIgnoringOrder(List<RexNode> operands1, List<RexNode> operands2) {
+	    // Create a copy of the operands to sort them
+	    List<RexNode> sortedOperands1 = new ArrayList<>(operands1);
+	    List<RexNode> sortedOperands2 = new ArrayList<>(operands2);
+
+	    // Sort the operands to compare
+	    Collections.sort(sortedOperands1, this::compareRexNodeOrder);
+	    Collections.sort(sortedOperands2, this::compareRexNodeOrder);
+
+	    // Compare sorted operands
+	    for (int i = 0; i < sortedOperands1.size(); i++) {
+	        if (!compareRexNodesSemantically(sortedOperands1.get(i), sortedOperands2.get(i))) {
+	            return false; // Operands are not equal
+	        }
+	    }
+	    return true; // All operands match
+	}
+
+	private int compareRexNodeOrder(RexNode node1, RexNode node2) {
+	    // This method can be customized to provide consistent ordering for sorting
+	    return node1.hashCode() - node2.hashCode();
+	}
+	public boolean compareWhereConditions(RexNode rexnode1, RexNode rexnode2) {
+		List<RexNode> conditions1 = ((RexCall)rexnode1).getOperands();
+		List<RexNode> conditions2 = ((RexCall)rexnode2).getOperands();
+	    // Check if both condition lists have the same size
+	    if (conditions1.size() != conditions2.size()) {
+	        return false; // Different number of conditions
+	    }
+
+	    // Compare the conditions ignoring order
+	    for (RexNode condition1 : conditions1) {
+	        boolean foundEquivalent = false;
+	        for (RexNode condition2 : conditions2) {
+	            if (compareRexNodesSemantically(condition1, condition2)) {
+	                foundEquivalent = true;
+	                break;
+	            }
+	        }
+	        if (!foundEquivalent) {
+	            return false; // No equivalent condition found
+	        }
+	    }
+	    return true; // All conditions match
+	}
+}

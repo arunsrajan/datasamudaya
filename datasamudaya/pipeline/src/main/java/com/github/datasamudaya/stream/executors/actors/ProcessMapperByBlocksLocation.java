@@ -61,7 +61,6 @@ import com.google.common.collect.Maps;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
-import akka.cluster.Cluster;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvCallbackHandler;
 import de.siegmar.fastcsv.reader.CsvReader;

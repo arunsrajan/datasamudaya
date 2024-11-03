@@ -65,7 +65,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			pipelineconfig.setUseglobaltaskexecutors(true);
 			pipelineconfig.setIsremotescheduler(true);
 			pipelineconfig.setTejobid(tejobid);
-			Utils.launchContainersExecutorSpecWithDriverSpec("arun", tejobid, 3, 3000, 2, 3, 3000, true);			
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", tejobid, 1, 3000, 2, 1, 3000, true);			
 			pipelineconfig.setUser("arun");
 		}
 	}

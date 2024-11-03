@@ -1159,7 +1159,7 @@ public class StreamJobScheduler {
 			var semaphores = new ConcurrentHashMap<String, Semaphore>();
 			for (var cr : chpcres.entrySet()) {
 				batchsize += cr.getValue().getCpu();
-				semaphores.put(cr.getKey(), new Semaphore(cr.getValue().getCpu()));
+				semaphores.put(cr.getKey(), new Semaphore(cr.getValue().getCpu()*2));
 			}
 			es = newExecutor(batchsize);
 			while (!completed && numexecute < executioncount) {
