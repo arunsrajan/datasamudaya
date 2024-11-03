@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
 
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
@@ -179,11 +180,11 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 
 	}
 
-	public static CsvStream<Map<String, Object>> newCsvStreamHDFSSQL(String hdfspath, String folder, PipelineConfig pipelineconfig, String[] header, List<SqlTypeName> types, List<String> requiredcolumns) throws PipelineException {
+	public static CsvStream<Map<String, Object>> newCsvStreamHDFSSQL(String hdfspath, String folder, PipelineConfig pipelineconfig, String[] header, List<SqlTypeName> types, List<String> requiredcolumns, RexNode filter) throws PipelineException {
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 		StreamPipeline<String> pipeline = new StreamPipeline<String>(hdfspath, folder, pipelineconfig);
 		pipeline.tasks.add(new Dummy());
-		return pipeline.csvWithHeader(header, types, requiredcolumns);
+		return pipeline.csvWithHeader(header, types, requiredcolumns, filter);
 
 	}
 
@@ -231,8 +232,8 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @param header
 	 * @return CsvStream object.
 	 */
-	private CsvStream<Map<String, Object>> csvWithHeader(String[] header, List<SqlTypeName> columntypes, List<String> columns) {
-		return new CsvStream<>(this, new CsvOptionsSQL(header, columntypes, columns));
+	private CsvStream<Map<String, Object>> csvWithHeader(String[] header, List<SqlTypeName> columntypes, List<String> columns, RexNode filter) {
+		return new CsvStream<>(this, new CsvOptionsSQL(header, columntypes, columns, filter));
 	}
 
 	/**

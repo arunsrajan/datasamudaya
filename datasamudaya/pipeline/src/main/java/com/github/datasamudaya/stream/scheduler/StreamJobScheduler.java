@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.calcite.rel.RelFieldCollation.Direction;
+import org.apache.calcite.rex.RexNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -190,7 +191,7 @@ public class StreamJobScheduler {
 	FileSystem hdfs;
 	String hbphysicaladdress;
 	ActorSystem system;
-
+	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap = new ConcurrentHashMap<>();
 	public StreamJobScheduler() {
 		hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
@@ -998,7 +999,8 @@ public class StreamJobScheduler {
 					if (CollectionUtils.isEmpty(predecessors)) {
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, successors.size());
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor, jsidjsmap, hdfs, cache,
-								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null, actorrefs);
+								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null, actorrefs, 
+								blockspartitionfilterskipmap);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 					} else {
 						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
@@ -1006,7 +1008,8 @@ public class StreamJobScheduler {
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
 								successors.size());
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor, jsidjsmap, hdfs, cache,
-								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null, actorrefs);
+								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null, actorrefs,
+								blockspartitionfilterskipmap);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 						sptsreverse.setChildactors(childactorsoriggraph);
 					}
@@ -1099,7 +1102,8 @@ public class StreamJobScheduler {
 						}
 						ExecuteTaskActor eta = new ExecuteTaskActor(task, actorsselection, filepartitionstartindex);
 						Task task = SQLUtils.getAkkaActor(system, eta, jsidjsmap, hdfs, cache,
-								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null, actorrefs);
+								jobidstageidtaskidcompletedmap, actorsystemurl, Cluster.get(system), null, actorrefs,
+								blockspartitionfilterskipmap);
 						Utils.writeToOstream(pipelineconfig.getOutput(),
 								"Completed Job And Stages: " + spts.getTask().jobid + DataSamudayaConstants.HYPHEN
 										+ spts.getTask().stageid + DataSamudayaConstants.HYPHEN + spts.getTask().taskid

@@ -179,6 +179,8 @@ public class StreamPipelineSqlBuilder implements Serializable {
 		}
 
 		RelNode relnode = SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
+		RelNode optrelnodewithfilter = SQLUtils.getSQLFilter(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
+		traverseRelNodeGatherFilter(optrelnodewithfilter, 0);
 		descendants.put(relnode, false);
 		requiredcolumnindex = new RequiredColumnsExtractor().getRequiredColumnsByTable(relnode);
 		log.debug("Required Columns: {}", requiredcolumnindex);
@@ -189,6 +191,29 @@ public class StreamPipelineSqlBuilder implements Serializable {
 
 	private Map<String, Set<String>> requiredcolumnindex;
 
+	private Stack<EnumerableFilter> enumerablefilterstack = new Stack<>();
+	private Map<String, EnumerableFilter> tablefiltermap = new ConcurrentHashMap<>();
+	
+	/**
+	 * The method traverses RelNode and Obtain the 
+	 * @param relNode
+	 * @param depth
+	 */
+	protected void traverseRelNodeGatherFilter(RelNode relNode, int depth) {
+		// Traverse child nodes
+		List<RelNode> childNodes = relNode.getInputs();
+		for (RelNode child : childNodes) {
+			if(child instanceof EnumerableFilter ef) {
+				enumerablefilterstack.push(ef);
+			} else if(child instanceof EnumerableTableScan ets) {
+				if(CollectionUtils.isNotEmpty(enumerablefilterstack)) {
+					tablefiltermap.put(ets.getTable().getQualifiedName().get(1), enumerablefilterstack.pop());
+				}
+			}
+			traverseRelNodeGatherFilter(child, depth + 1);
+		}
+	}
+	
 	/**
 	 * Execute the sql statement.
 	 * 
@@ -223,9 +248,11 @@ public class StreamPipelineSqlBuilder implements Serializable {
 	protected StreamPipeline<?> buildStreamPipeline(List<StreamPipeline<Object[]>> sp, RelNode relNode) throws Exception {
 		if (relNode instanceof EnumerableTableScan ets) {
 			String table = ets.getTable().getQualifiedName().get(1);
+			EnumerableFilter filter = tablefiltermap.get(table);
 			return fileformat.equals(DataSamudayaConstants.CSV) ? StreamPipeline.newCsvStreamHDFSSQL(hdfs, tablefoldermap.get(table), this.pc,
 					tablecolumnsmap.get(table).toArray(new String[0]),
-					tablecolumntypesmap.get(table), nonNull(requiredcolumnindex.get(table)) ? new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>())
+					tablecolumntypesmap.get(table), nonNull(requiredcolumnindex.get(table)) ? new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>(), 
+							nonNull(filter) ? filter.getCondition(): null)
 					: StreamPipeline.newJsonStreamHDFSSQL(hdfs, tablefoldermap.get(table), this.pc,
 					tablecolumnsmap.get(table).toArray(new String[0]),
 					tablecolumntypesmap.get(table), nonNull(requiredcolumnindex.get(table)) ? new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>());

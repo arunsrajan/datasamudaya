@@ -189,7 +189,7 @@ public class PigUtils {
 		List<SqlTypeName> schematypes = getTypesFromSchema(loload.getSchema());
 		return StreamPipeline.newCsvStreamHDFSSQL(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 						DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT), loload.getSchemaFile(),
-				pipelineconfig, headers, schematypes, Arrays.asList(headers));
+				pipelineconfig, headers, schematypes, Arrays.asList(headers), null);
 	}
 
 	/**

@@ -2243,6 +2243,55 @@ public class SQLUtils {
 
 		return optimizer.optimize(relTree, relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
 	}
+	/**
+	 * The function returns Optimized RelNode Filter Into TableScan
+	 * @param tablecolumnsmap
+	 * @param tablecolumntypesmap
+	 * @param sql
+	 * @param db
+	 * @param isDistinct
+	 * @return Optimized RelNode Filter Into TableScan
+	 * @throws Exception
+	 */
+	public static RelNode getSQLFilter(ConcurrentMap<String, List<String>> tablecolumnsmap,
+			ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap, String sql, String db,
+			AtomicBoolean isDistinct) throws Exception {
+		Set<String> tablesfromconfig = tablecolumnsmap.keySet();
+		SimpleSchema.Builder builder = SimpleSchema.newBuilder(db);
+		for (String table : tablesfromconfig) {
+			List<String> columns = tablecolumnsmap.get(table);
+			List<SqlTypeName> sqltypes = tablecolumntypesmap.get(table);
+			builder.addTable(getSimpleTable(table, columns.toArray(new String[columns.size()]),
+					sqltypes.toArray(new SqlTypeName[sqltypes.size()])));
+		}
+		SimpleSchema schema = builder.build();
+		Optimizer optimizer = Optimizer.create(schema);
+		SqlNode sqlTree = optimizer.parse(sql);
+		sqlTree = optimizer.validate(sqlTree);
+		if (sqlTree.getKind() == SqlKind.SELECT) {
+			SqlSelect selectNode = (SqlSelect) sqlTree;
+			isDistinct.set(selectNode.isDistinct());
+		}
+		RelNode relTree = optimizer.convert(sqlTree);
+		RuleSet rules = RuleSets.ofList(
+				CoreRules.FILTER_TO_CALC, CoreRules.PROJECT_TO_CALC, CoreRules.FILTER_MERGE,
+				CoreRules.FILTER_CALC_MERGE, CoreRules.PROJECT_CALC_MERGE,
+				CoreRules.AGGREGATE_PROJECT_MERGE,
+				CoreRules.AGGREGATE_JOIN_TRANSPOSE,
+				CoreRules.AGGREGATE_PROJECT_MERGE,
+				CoreRules.PROJECT_AGGREGATE_MERGE,
+				CoreRules.PROJECT_MERGE,
+				CoreRules.FILTER_INTO_JOIN,
+				CoreRules.FILTER_PROJECT_TRANSPOSE,
+				EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
+				EnumerableRules.ENUMERABLE_PROJECT_RULE, EnumerableRules.ENUMERABLE_FILTER_RULE,
+				EnumerableRules.ENUMERABLE_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_SORT_RULE,
+				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_JOIN_RULE,
+				EnumerableRules.ENUMERABLE_UNION_RULE, EnumerableRules.ENUMERABLE_INTERSECT_RULE
+				);
+
+		return optimizer.optimize(relTree, relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+	}
 
 	/**
 	 * Get simple table given the tablename, fields and types
@@ -3664,20 +3713,23 @@ public class SQLUtils {
 	/**
 	 * The function returns the current tasks operated with the actor selection
 	 * url or executes task
-	 * 
 	 * @param system
 	 * @param obj
 	 * @param jobidstageidjobstagemap
 	 * @param hdfs
 	 * @param inmemorycache
 	 * @param jobidstageidtaskidcompletedmap
-	 * @param actornameactorrefmap
 	 * @param actorsystemurl
-	 * @return currently task operated
+	 * @param cluster
+	 * @param teid
+	 * @param actors
+	 * @param blockspartitionfilterskipmap
+	 * @return
 	 */
 	public static Task getAkkaActor(ActorSystem system, Object obj, Map<String, JobStage> jobidstageidjobstagemap,
 			FileSystem hdfs, Cache inmemorycache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			String actorsystemurl, Cluster cluster, String teid, List<ActorRef> actors) {
+			String actorsystemurl, Cluster cluster, String teid, List<ActorRef> actors, 
+			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap) {
 		if (obj instanceof GetTaskActor taskactor) {
 			String jobstageid = taskactor.getTask().getJobid() + taskactor.getTask().getStageid();
 			JobStage js = jobidstageidjobstagemap.get(jobstageid);
@@ -3687,7 +3739,8 @@ public class SQLUtils {
 					log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
 					actors.add(system.actorOf(
 							Props.create(ProcessMapperByBlocksLocation.class, jobidstageidjobstagemap.get(jobstageid),
-									hdfs, inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask()),
+									hdfs, inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(),
+									blockspartitionfilterskipmap),
 							jobstageid + taskactor.getTask().getTaskid()));
 				});
 				taskactor.getTask().setActorselection(actorsystemurl + DataSamudayaConstants.FORWARD_SLASH + jobstageid

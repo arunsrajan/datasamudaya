@@ -32,7 +32,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.calcite.rex.RexNode;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
@@ -101,6 +103,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	ConcurrentMap<String, OutputStream> resultstream = new ConcurrentHashMap<>();
 	Map<String, Map<String, Object>> jobidstageidexecutormap = new ConcurrentHashMap<>();
 	Map<String, Boolean> jobidstageidtaskidcompletedmap = new ConcurrentHashMap<>();
+	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionskipmap = new ConcurrentHashMap<>();
 	Map<String, JobStage> jobidstageidjobstagemap = new ConcurrentHashMap<>();
 	Queue<Object> taskqueue = new LinkedBlockingQueue<Object>();
 	Map<String, List<ActorRef>> jobidactorrefmap = new ConcurrentHashMap<>();
@@ -329,7 +332,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						return SQLUtils.getAkkaActor(actsystem, gettaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
-								actorsystemurl, cluster, jobid, jobidactorrefmap.get(gettaskactor.getTask().getJobid()));
+								actorsystemurl, cluster, jobid, jobidactorrefmap.get(gettaskactor.getTask().getJobid()),
+								blockspartitionskipmap);
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
 						if(isNull(jobidactorrefmap.get(executetaskactor.getTask().getJobid()))) {
 							jobidactorrefmap.put(executetaskactor.getTask().getJobid(),new ArrayList<>());
@@ -338,7 +342,8 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 							return SQLUtils.getAkkaActor(actsystem, executetaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
-								actorsystemurl, cluster, jobid, jobidactorrefmap.get(executetaskactor.getTask().getJobid()));
+								actorsystemurl, cluster, jobid, jobidactorrefmap.get(executetaskactor.getTask().getJobid()),
+								blockspartitionskipmap);
 						});
 						return escomputfuture.get();
 					} else if (deserobj instanceof CleanupTaskActors cleanupactors) {

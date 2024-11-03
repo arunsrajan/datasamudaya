@@ -16,18 +16,22 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
 import org.json.simple.JSONObject;
@@ -51,6 +55,7 @@ import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.common.utils.sql.RexNodeComparator;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.JsonSQL;
 import com.github.datasamudaya.stream.PipelineException;
@@ -84,6 +89,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 	boolean iscacheable;
 	ExecutorService executor;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
+	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap;
 	int diskspillpercentage;
 	protected List getFunctions() {
 		log.debug("Entered ProcessMapperByBlocksLocation.getFunctions");
@@ -97,11 +103,13 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 	}
 
 	private ProcessMapperByBlocksLocation(JobStage js, FileSystem hdfs, Cache cache,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, 
+			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap) {
 		this.jobstage = js;
 		this.hdfs = hdfs;
 		this.cache = cache;
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
+		this.blockspartitionfilterskipmap = blockspartitionfilterskipmap;
 		this.iscacheable = true;
 		this.tasktoprocess = tasktoprocess;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
@@ -134,6 +142,9 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 		List<SqlTypeName> sqltypenamel = null;
 		final String[] headers;
 		boolean iscsv = false;
+		final boolean isfilterexist;
+		final AtomicBoolean toskipartition;
+		RexNode filter;
 		final boolean left = isNull(tasktoprocess.joinpos) ? false
 				: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
 		final boolean right = isNull(tasktoprocess.joinpos) ? false
@@ -151,6 +162,30 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 						sqltypenamel = cosql.getTypes();
 						headers = cosql.getHeader();
 						iscsv = true;
+						filter = cosql.getFilter();
+						var filtercomparator = new RexNodeComparator();
+						String blkey = Utils.getBlocksLocation(blockslocation);
+						var toskippartitionoptional = nonNull(filter) &&  nonNull(blockspartitionfilterskipmap.get(blkey))? blockspartitionfilterskipmap
+						.get(blkey)
+						.entrySet().stream().filter(entry->filtercomparator.compareWhereConditions(entry.getKey(), filter))
+						.map(entry->entry.getValue())
+						.findFirst():Optional.empty();
+						if(toskippartitionoptional.isPresent()) {
+							toskipartition = (AtomicBoolean) toskippartitionoptional.get();
+							isfilterexist = true;
+						} else if(nonNull(filter)) {
+							isfilterexist = false;
+							Map<RexNode, AtomicBoolean> filterskipmap = blockspartitionfilterskipmap.get(blkey);
+							if(isNull(filterskipmap)) {
+								filterskipmap = new ConcurrentHashMap<>();
+								blockspartitionfilterskipmap.put(blkey, filterskipmap);
+							}
+							toskipartition = new AtomicBoolean(true);
+							filterskipmap.put(filter, toskipartition);
+						} else {
+							isfilterexist = false;
+							toskipartition = new AtomicBoolean(false);
+						}
 
 					} else if (jobstage.getStage().tasks.get(0) instanceof JsonSQL jsql) {
 						reqcols = new Vector<>(jsql.getRequiredcolumns());
@@ -159,8 +194,14 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 						sqltypenamel = jsql.getTypes();
 						headers = jsql.getHeader();
 						iscsv = false;
+						toskipartition = new AtomicBoolean(false);
+						isfilterexist = true;
+						filter = null;
 					} else {
 						headers = null;
+						toskipartition = new AtomicBoolean(false);
+						isfilterexist = true;
+						filter = null;
 					}
 					byte[] yosegibytes = new byte[1];
 					final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted()
@@ -175,29 +216,38 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 							Map<String, SqlTypeName> sqltypename = SQLUtils.getColumnTypesByColumn(sqltypenamel,
 									Arrays.asList(headers));
 							if (iscsv) {
-								CsvCallbackHandler<NamedCsvRecord> callbackHandler = new NamedCsvRecordHandler(
-										headers);
-								CsvReader<NamedCsvRecord> csv = CsvReader.builder().fieldSeparator(',')
-										.quoteCharacter('"').commentStrategy(CommentStrategy.SKIP).commentCharacter('#')
-										.skipEmptyLines(true).ignoreDifferentFieldCount(false).detectBomHeader(false)
-										.build(callbackHandler, buffer);
-								intermediatestreamobject = csv.stream().map(values -> {
-									Object[] valuesobject = new Object[headers.length];
-									Object[] toconsidervalueobjects = new Object[headers.length];
-									try {
-										for (Integer index : oco) {
-											SQLUtils.getValueByIndex(values.getField(index),
-													sqltypename.get(headers[index]), valuesobject,
-													toconsidervalueobjects, index);
+								if (isfilterexist && toskipartition.get()) {
+									intermediatestreamobject = Arrays.asList().stream();
+								} else {
+									CsvCallbackHandler<NamedCsvRecord> callbackHandler = new NamedCsvRecordHandler(
+											headers);
+									CsvReader<NamedCsvRecord> csv = CsvReader.builder().fieldSeparator(',')
+											.quoteCharacter('"').commentStrategy(CommentStrategy.SKIP)
+											.commentCharacter('#').skipEmptyLines(true).ignoreDifferentFieldCount(false)
+											.detectBomHeader(false).build(callbackHandler, buffer);
+									intermediatestreamobject = csv.stream().map(values -> {
+										Object[] valuesobject = new Object[headers.length];
+										Object[] toconsidervalueobjects = new Object[headers.length];
+										try {
+											for (Integer index : oco) {
+												SQLUtils.getValueByIndex(values.getField(index),
+														sqltypename.get(headers[index]), valuesobject,
+														toconsidervalueobjects, index);
+											}
+										} catch (Exception ex) {
+											log.error(DataSamudayaConstants.EMPTY, ex);
 										}
-									} catch (Exception ex) {
-										log.error(DataSamudayaConstants.EMPTY, ex);
-									}
-									Object[] valueswithconsideration = new Object[2];
-									valueswithconsideration[0] = valuesobject;
-									valueswithconsideration[1] = toconsidervalueobjects;
-									return valueswithconsideration;
-								});
+										if(nonNull(filter) && !isfilterexist && toskipartition.get()) {
+											if(SQLUtils.evaluateExpression(filter, valuesobject)) {
+												toskipartition.set(false);
+											}
+										}
+										Object[] valueswithconsideration = new Object[2];
+										valueswithconsideration[0] = valuesobject;
+										valueswithconsideration[1] = toconsidervalueobjects;
+										return valueswithconsideration;
+									});
+								}
 							} else {
 								intermediatestreamobject = buffer.lines();
 								intermediatestreamobject = intermediatestreamobject.map(line -> {
