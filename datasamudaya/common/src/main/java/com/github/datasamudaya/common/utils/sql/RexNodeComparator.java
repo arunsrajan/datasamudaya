@@ -8,8 +8,17 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
-
+/**
+ * @author arun
+ * The class for compare two RexNode
+ */
 public class RexNodeComparator {
+	/**
+	 * Compare two RexNodes semantically
+	 * @param node1
+	 * @param node2
+	 * @return true if the two RexNodes are semantically equivalent
+	 */
 	public boolean compareRexNodesSemantically(RexNode node1, RexNode node2) {
 	    // Check if both nodes are the same instance
 	    if (node1 == node2) {
@@ -27,16 +36,32 @@ public class RexNodeComparator {
 
 	    return false; // Different types or unsupported types
 	}
-
+	/**
+	 * compare two RexLiterals semantically
+	 * @param literal1
+	 * @param literal2
+	 * @return true if the two RexLiterals are semantically equivalent
+	 */
 	private boolean compareRexLiterals(RexLiteral literal1, RexLiteral literal2) {
 	    return literal1.getTypeName() == literal2.getTypeName() &&
 	           literal1.getValue().equals(literal2.getValue());
 	}
-
+	/**
+	 * compare two RexInputRefs semantically
+	 * @param inputRef1
+	 * @param inputRef2
+	 * @return true if the two RexInputRefs are semantically equivalent
+	 */
 	private boolean compareRexInputRefs(RexInputRef inputRef1, RexInputRef inputRef2) {
 	    return inputRef1.getIndex() == inputRef2.getIndex();
 	}
-
+	
+	/**
+	 * compare two RexCalls semantically
+	 * @param call1
+	 * @param call2
+	 * @return true if the two RexCalls are semantically equivalent
+	 */
 	private boolean compareRexCallsSemantically(RexCall call1, RexCall call2) {
 	    if (isReversedComparison(call1.getOperator().getName(), call2.getOperator().getName())) {
 	        // Get the operands
@@ -93,7 +118,12 @@ public class RexNodeComparator {
 
 	    return true; // All checks passed, the calls are semantically equal
 	}
-
+	/**
+	 * reversed comparison
+	 * @param operator1
+	 * @param operator2
+	 * @return true if the two operators are semantically equivalent
+	 */
 	private boolean isReversedComparison(String operator1, String operator2) {
 	    // Define pairs of semantically equivalent operators
 	    return (operator1.equals(">") && operator2.equals("<=")) ||
@@ -110,7 +140,12 @@ public class RexNodeComparator {
 	           operatorName.equals("<=") ||
 	           operatorName.equals("<>");
 	}
-
+	/**
+	 * compare operands ignoring order
+	 * @param operands1
+	 * @param operands2
+	 * @return true if the operands are semantically equivalent
+	 */
 	private boolean compareOperandsIgnoringOrder(List<RexNode> operands1, List<RexNode> operands2) {
 	    // Create a copy of the operands to sort them
 	    List<RexNode> sortedOperands1 = new ArrayList<>(operands1);
@@ -128,11 +163,22 @@ public class RexNodeComparator {
 	    }
 	    return true; // All operands match
 	}
-
+	/**
+	 * compare two RexNodes
+	 * @param node1
+	 * @param node2
+	 * @return true if the two nodes are semantically equivalent
+	 */
 	private int compareRexNodeOrder(RexNode node1, RexNode node2) {
 	    // This method can be customized to provide consistent ordering for sorting
 	    return node1.hashCode() - node2.hashCode();
 	}
+	/**
+	 * compare where conditions
+	 * @param rexnode1
+	 * @param rexnode2
+	 * @return true if the where conditions are semantically equivalent
+	 */
 	public boolean compareWhereConditions(RexNode rexnode1, RexNode rexnode2) {
 		List<RexNode> conditions1 = ((RexCall)rexnode1).getOperands();
 		List<RexNode> conditions2 = ((RexCall)rexnode2).getOperands();

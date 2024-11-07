@@ -455,6 +455,266 @@ public class RexNodeComparatorTest {
 		assertEquals(true, rexnodecomparator.compareWhereConditions(filter1.getCondition(), filter2.getCondition()));
 	}
 	
+	
+	@Test
+	public void testWhereConditionSameOrderAnd() throws Exception {
+		
+		String sql = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear = 2 and airline.dayofmonth = 4
+				""";
+		String sql1 = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear = 2 and airline.dayofmonth = 4
+				""";
+		
+		SqlNode sqlTree = optimizer.parse(sql);
+		SqlNode sqlTree1 = optimizer.parse(sql1);
+		sqlTree = optimizer.validate(sqlTree);
+		sqlTree1 = optimizer.validate(sqlTree1);		
+		RelNode relTree = optimizer.convert(sqlTree);
+		RelNode relTree1 = optimizer.convert(sqlTree1);
+		
+
+		RelNode optimizerRelTree = optimizer.optimize(relTree,
+				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		RelNode optimizerRelTree1 = optimizer.optimize(relTree1,
+				relTree1.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		EnumerableFilter filter1 = traverseRelNode(optimizerRelTree, 0);
+		EnumerableFilter filter2 = traverseRelNode(optimizerRelTree1, 0);
+		RexNodeComparator rexnodecomparator = new RexNodeComparator();
+		assertEquals(true, rexnodecomparator.compareWhereConditions(filter1.getCondition(), filter2.getCondition()));
+	}
+	
+	
+	@Test
+	public void testWhereConditionDiffOrderAnd() throws Exception {
+		
+		String sql = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear = 2 and airline.dayofmonth = 4
+				""";
+		String sql1 = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.dayofmonth = 4 and airline.monthofyear = 2 
+				""";
+		
+		SqlNode sqlTree = optimizer.parse(sql);
+		SqlNode sqlTree1 = optimizer.parse(sql1);
+		sqlTree = optimizer.validate(sqlTree);
+		sqlTree1 = optimizer.validate(sqlTree1);		
+		RelNode relTree = optimizer.convert(sqlTree);
+		RelNode relTree1 = optimizer.convert(sqlTree1);
+		
+
+		RelNode optimizerRelTree = optimizer.optimize(relTree,
+				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		RelNode optimizerRelTree1 = optimizer.optimize(relTree1,
+				relTree1.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		EnumerableFilter filter1 = traverseRelNode(optimizerRelTree, 0);
+		EnumerableFilter filter2 = traverseRelNode(optimizerRelTree1, 0);
+		RexNodeComparator rexnodecomparator = new RexNodeComparator();
+		assertEquals(true, rexnodecomparator.compareWhereConditions(filter1.getCondition(), filter2.getCondition()));
+	}
+	
+	@Test
+	public void testWhereConditionSameOrderOr() throws Exception {
+		
+		String sql = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear = 2 or airline.dayofmonth = 4
+				""";
+		String sql1 = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear = 2 or airline.dayofmonth = 4
+				""";
+		
+		SqlNode sqlTree = optimizer.parse(sql);
+		SqlNode sqlTree1 = optimizer.parse(sql1);
+		sqlTree = optimizer.validate(sqlTree);
+		sqlTree1 = optimizer.validate(sqlTree1);		
+		RelNode relTree = optimizer.convert(sqlTree);
+		RelNode relTree1 = optimizer.convert(sqlTree1);
+		
+
+		RelNode optimizerRelTree = optimizer.optimize(relTree,
+				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		RelNode optimizerRelTree1 = optimizer.optimize(relTree1,
+				relTree1.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		EnumerableFilter filter1 = traverseRelNode(optimizerRelTree, 0);
+		EnumerableFilter filter2 = traverseRelNode(optimizerRelTree1, 0);
+		RexNodeComparator rexnodecomparator = new RexNodeComparator();
+		assertEquals(true, rexnodecomparator.compareWhereConditions(filter1.getCondition(), filter2.getCondition()));
+	}
+	
+	@Test
+	public void testWhereConditionDiffOrderOr() throws Exception {
+		
+		String sql = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear = 2 or airline.dayofmonth = 4
+				""";
+		String sql1 = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.dayofmonth = 4 or airline.monthofyear = 2
+				""";
+		
+		SqlNode sqlTree = optimizer.parse(sql);
+		SqlNode sqlTree1 = optimizer.parse(sql1);
+		sqlTree = optimizer.validate(sqlTree);
+		sqlTree1 = optimizer.validate(sqlTree1);		
+		RelNode relTree = optimizer.convert(sqlTree);
+		RelNode relTree1 = optimizer.convert(sqlTree1);
+		
+
+		RelNode optimizerRelTree = optimizer.optimize(relTree,
+				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		RelNode optimizerRelTree1 = optimizer.optimize(relTree1,
+				relTree1.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		EnumerableFilter filter1 = traverseRelNode(optimizerRelTree, 0);
+		EnumerableFilter filter2 = traverseRelNode(optimizerRelTree1, 0);
+		RexNodeComparator rexnodecomparator = new RexNodeComparator();
+		assertEquals(true, rexnodecomparator.compareWhereConditions(filter1.getCondition(), filter2.getCondition()));
+	}
+	
+	
+	@Test
+	public void testWhereConditionSameOrderNotEquals() throws Exception {
+		
+		String sql = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear <> 2
+				""";
+		String sql1 = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear <> 2
+				""";
+		
+		SqlNode sqlTree = optimizer.parse(sql);
+		SqlNode sqlTree1 = optimizer.parse(sql1);
+		sqlTree = optimizer.validate(sqlTree);
+		sqlTree1 = optimizer.validate(sqlTree1);		
+		RelNode relTree = optimizer.convert(sqlTree);
+		RelNode relTree1 = optimizer.convert(sqlTree1);
+		
+
+		RelNode optimizerRelTree = optimizer.optimize(relTree,
+				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		RelNode optimizerRelTree1 = optimizer.optimize(relTree1,
+				relTree1.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		EnumerableFilter filter1 = traverseRelNode(optimizerRelTree, 0);
+		EnumerableFilter filter2 = traverseRelNode(optimizerRelTree1, 0);
+		RexNodeComparator rexnodecomparator = new RexNodeComparator();
+		assertEquals(true, rexnodecomparator.compareWhereConditions(filter1.getCondition(), filter2.getCondition()));
+	}
+	
+	@Test
+	public void testWhereConditionDiffOrderNotEquals() throws Exception {
+		
+		String sql = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear <> 2
+				""";
+		String sql1 = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				2 <> airline.monthofyear
+				""";
+		
+		SqlNode sqlTree = optimizer.parse(sql);
+		SqlNode sqlTree1 = optimizer.parse(sql1);
+		sqlTree = optimizer.validate(sqlTree);
+		sqlTree1 = optimizer.validate(sqlTree1);		
+		RelNode relTree = optimizer.convert(sqlTree);
+		RelNode relTree1 = optimizer.convert(sqlTree1);
+		
+
+		RelNode optimizerRelTree = optimizer.optimize(relTree,
+				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		RelNode optimizerRelTree1 = optimizer.optimize(relTree1,
+				relTree1.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		EnumerableFilter filter1 = traverseRelNode(optimizerRelTree, 0);
+		EnumerableFilter filter2 = traverseRelNode(optimizerRelTree1, 0);
+		RexNodeComparator rexnodecomparator = new RexNodeComparator();
+		assertEquals(true, rexnodecomparator.compareWhereConditions(filter1.getCondition(), filter2.getCondition()));
+	}
+	
+	
+	@Test
+	public void testWhereConditionSameOrderMultiply() throws Exception {
+		
+		String sql = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear * 1 = 2
+				""";
+		String sql1 = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear * 1 = 2
+				""";
+		
+		SqlNode sqlTree = optimizer.parse(sql);
+		SqlNode sqlTree1 = optimizer.parse(sql1);
+		sqlTree = optimizer.validate(sqlTree);
+		sqlTree1 = optimizer.validate(sqlTree1);		
+		RelNode relTree = optimizer.convert(sqlTree);
+		RelNode relTree1 = optimizer.convert(sqlTree1);
+		
+
+		RelNode optimizerRelTree = optimizer.optimize(relTree,
+				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		RelNode optimizerRelTree1 = optimizer.optimize(relTree1,
+				relTree1.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		EnumerableFilter filter1 = traverseRelNode(optimizerRelTree, 0);
+		EnumerableFilter filter2 = traverseRelNode(optimizerRelTree1, 0);
+		RexNodeComparator rexnodecomparator = new RexNodeComparator();
+		assertEquals(true, rexnodecomparator.compareWhereConditions(filter1.getCondition(), filter2.getCondition()));
+	}
+	
+	@Test
+	public void testWhereConditionDiffOrderMultiply() throws Exception {
+		
+		String sql = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				airline.monthofyear * 1 = 2
+				""";
+		String sql1 = """
+				select sum(arrdelay),sum(depdelay) from airline where 
+				2 = airline.monthofyear * 1
+				""";
+		
+		SqlNode sqlTree = optimizer.parse(sql);
+		SqlNode sqlTree1 = optimizer.parse(sql1);
+		sqlTree = optimizer.validate(sqlTree);
+		sqlTree1 = optimizer.validate(sqlTree1);		
+		RelNode relTree = optimizer.convert(sqlTree);
+		RelNode relTree1 = optimizer.convert(sqlTree1);
+		
+
+		RelNode optimizerRelTree = optimizer.optimize(relTree,
+				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		RelNode optimizerRelTree1 = optimizer.optimize(relTree1,
+				relTree1.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		
+		EnumerableFilter filter1 = traverseRelNode(optimizerRelTree, 0);
+		EnumerableFilter filter2 = traverseRelNode(optimizerRelTree1, 0);
+		RexNodeComparator rexnodecomparator = new RexNodeComparator();
+		assertEquals(true, rexnodecomparator.compareWhereConditions(filter1.getCondition(), filter2.getCondition()));
+	}
+	
 	protected EnumerableFilter traverseRelNode(RelNode relNode, int depth) {
 		// Traverse child nodes
 		List<RelNode> childNodes = relNode.getInputs();
