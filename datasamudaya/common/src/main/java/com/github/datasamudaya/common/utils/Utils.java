@@ -119,6 +119,11 @@ import org.jgroups.ObjectMessage;
 import org.jgroups.Receiver;
 import org.jgroups.View;
 import org.jgroups.util.UUID;
+import org.jline.reader.History;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
@@ -3966,4 +3971,25 @@ public class Utils {
 				.getProperty(DataSamudayaConstants.OLLAMA_BASE_URL, 
 						DataSamudayaConstants.OLLAMA_BASE_URL_DEFAULT)));
 	}
+	
+	/**
+	 * This method returns line reader object
+	 * @return Line Reader object
+	 * @throws Exception
+	 */
+	public static LineReader getLineReaderTerminal(String path) throws Exception {
+		Terminal terminal = TerminalBuilder.builder()
+                .nativeSignals(true)
+                .signalHandler(Terminal.SignalHandler.SIG_IGN)
+                .build();
+		return LineReaderBuilder.builder().variable(
+			    LineReader.HISTORY_FILE,
+			    path
+			).terminal(terminal).variable(
+				    LineReader.HISTORY_FILE_SIZE,
+				    1_000 // history entries
+				).build();
+	}
+	
+	
 }

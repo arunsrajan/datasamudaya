@@ -3,30 +3,27 @@ package com.github.datasamudaya.tasks.scheduler.sql;
 import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.log4j.PropertyConfigurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.History;
+import org.jline.reader.LineReader;
+import org.jline.reader.UserInterruptException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.utils.Utils;
-
-import jline.console.ConsoleReader;
 
 /**
  * This class is SQL client
@@ -36,8 +33,6 @@ import jline.console.ConsoleReader;
  */
 public class SQLClientMR {
 	private static final Logger log = LoggerFactory.getLogger(SQLClientMR.class);
-	private static final List<String> history = new ArrayList<>();
-	private static int historyIndex;
 
 	/**
 	 * Main method which starts sql client in terminal.
@@ -166,10 +161,7 @@ public class SQLClientMR {
 	 * @throws Exception
 	 */
 	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile) throws Exception {
-		loadHistory(messagestorefile);
-		BuffereredConsoleReader reader = new BuffereredConsoleReader();
-		reader.setHandleUserInterrupt(true);
-		reader.setPrompt("\nSQLMR>");
+		LineReader reader = Utils.getLineReaderTerminal(messagestorefile);
 		while (true) {
 			String input = readLineWithHistory(reader);
 			if ("Quit".equals(input)) {
@@ -180,137 +172,30 @@ public class SQLClientMR {
 			if (toquit) {
 				break;
 			}
-			saveHistory(messagestorefile);
+			saveHistory(reader.getHistory());
 		}
 
-		reader.close();
 	}
 
 	/**
-	 * Histroy stored in file will be loaded and when keys are pressed will be
-	 * displayed to the user.
-	 * 
+	 * Reads line from user.
 	 * @param reader
-	 * @return messages like sql query from history or user typed text.
+	 * @return line
 	 * @throws Exception
 	 */
-	private static String readLineWithHistory(BuffereredConsoleReader reader) throws Exception {
+	private static String readLineWithHistory(LineReader reader) throws Exception {
 		String line = "";
 		boolean lineRead = false;
 		while (!lineRead) {
-			StringBuilder sb = new StringBuilder();
-			int key;
-			System.out.print("\nSQLMR>");
-			reader.setCursorPosition(0);
-			reader.setConsoleBuffer(DataSamudayaConstants.EMPTY);
-			reader.drawLine();
-			reader.flush();
-			while ((key = reader.readCharacter()) != '\r') {
-				if (key == 27) { // Escape sequence
-					key = reader.readCharacter();
-					if (key == 91) { // Arrow key sequence
-						key = reader.readCharacter();
-						if (key == 65) { // Up arrow key
-							if (historyIndex > 0) {
-								historyIndex--;
-								line = history.get(historyIndex);
-								reader.setCursorPosition(0);
-								reader.killLine();
-								reader.setConsoleBuffer(line);
-								reader.flush();
-							}
-						} else if (key == 66) { // Down arrow key
-							if (historyIndex < history.size() - 1) {
-								historyIndex++;
-								line = history.get(historyIndex);
-								reader.setCursorPosition(0);
-								reader.killLine();
-								reader.setConsoleBuffer(line);
-								reader.flush();
-							} else {
-								historyIndex = history.size();
-								line = "";
-								reader.setCursorPosition(0);
-								reader.killLine();
-								reader.setConsoleBuffer(line);
-								reader.flush();
-							}
-						} else if (key == 68 || key == 67) {
-							if (key == 68) {
-								int curPos = reader.getCursorBuffer().cursor;
-								if (curPos > 0) {
-									reader.setCursorPosition(curPos - 1);
-									reader.flush();
-								}
-							} else if (key == 67) {
-								int curPos = reader.getCursorBuffer().cursor;
-								int bufferLen = reader.getCursorBuffer().buffer.length();
-								if (curPos < bufferLen) {
-									reader.setCursorPosition(curPos + 1);
-									reader.flush();
-								}
-							}
-						} else if (key == 49) {
-							reader.setCursorPosition(0);
-							reader.backspace();
-							reader.flush();
-						} else if (key == 52) {
-							reader.setCursorPosition(reader.getCursorBuffer().length());
-							reader.flush();
-						} else if (key == 51) {
-							int curPos = reader.getCursorBuffer().cursor;
-							if (curPos >= 0 && curPos < reader.getCursorBuffer().length()) {
-								reader.setCursorPosition(curPos + 1);
-								reader.backspace();
-								reader.flush();
-								if (!sb.isEmpty() && curPos < sb.length()) {
-									sb.deleteCharAt(curPos);
-								}
-							}
-						} else {
-							historyIndex = history.size();
-							sb.append((char) key);
-							reader.setConsoleBuffer(sb.toString());
-							reader.flush();
-						}
-					} else {
-						historyIndex = history.size();
-						sb.append((char) 27);
-						sb.append((char) key);
-						reader.setConsoleBuffer(sb.toString());
-						reader.flush();
-					}
-				} else if (key == 127 || key == 8) { // Backspace
-					int curPos = reader.getCursorBuffer().cursor;
-					if (curPos > 0) {
-						reader.backspace();
-						reader.setCursorPosition(curPos - 1);
-						reader.flush();
-						if (!sb.isEmpty() && sb.length() < curPos) {
-							sb.deleteCharAt(curPos);
-						}
-					}
-				} else if (key != 126) {
-					historyIndex = history.size();
-					sb.delete(0, sb.length());
-					sb.append(reader.getCursorBuffer().toString());
-					int curPos = reader.getCursorBuffer().cursor;
-					sb.insert(curPos, (char) key);
-					reader.setConsoleBuffer(sb.toString());
-					reader.setCursorPosition(curPos + 1);
-					reader.flush();
-
-				}
+			try {
+				line =  reader.readLine("SQL> ");
+				lineRead = true;
 			}
-			line = sb.toString();
-			if (!line.isEmpty()) {
-				history.add(line);
-			} else {
-				history.add(reader.getCursorBuffer().toString());
-				line = reader.getCursorBuffer().toString();
-			}
-			historyIndex = history.size();
-			lineRead = true;
+		    catch (UserInterruptException e) {
+		    }
+		    catch (EndOfFileException e) {
+		        break;
+		    }
 		}
 		return line;
 	}
@@ -328,57 +213,14 @@ public class SQLClientMR {
 	}
 
 	/**
-	 * The history from the files will be loaded.
-	 * 
-	 * @param messagestorefile
-	 */
-	private static void loadHistory(String messagestorefile) {
-		try (BufferedReader reader = new BufferedReader(new FileReader(messagestorefile))) {
-			String line;
-			while ((line = reader.readLine()) != null) {
-				history.add(line);
-			}
-			historyIndex = history.size();
-		} catch (IOException e) {
-			System.err.println("Error loading history: " + e.getMessage());
-		}
-	}
-
-	/**
 	 * Save the messages to history file.
-	 * 
 	 * @param messagestorefile
 	 */
-	private static void saveHistory(String messagestorefile) {
-		try (PrintWriter writer = new PrintWriter(new FileWriter(messagestorefile))) {
-			for (String line : history) {
-				writer.println(line);
-			}
+	private static void saveHistory(History history) {
+		try {
+			history.save();
 		} catch (IOException e) {
 			System.err.println("Error saving history: " + e.getMessage());
-		}
-	}
-
-	/**
-	 * This method is console reader with custom setConsoleBuffer method.
-	 * 
-	 * @author arun
-	 *
-	 */
-	private static class BuffereredConsoleReader extends ConsoleReader {
-
-		public BuffereredConsoleReader() throws IOException {
-			super();
-		}
-
-		public void setConsoleBuffer(String buffer) throws IOException {
-			try {
-				Method setBuffer = ConsoleReader.class.getDeclaredMethod("setBuffer", String.class);
-				setBuffer.setAccessible(true);
-				setBuffer.invoke(this, buffer);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
 		}
 	}
 }
