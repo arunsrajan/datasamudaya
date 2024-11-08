@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Query Generator</title>
+    <script src="/resources/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input {
+            padding: 5px;
+            font-size: 14px;
+            width: 300px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>SQL Query Generator</h1>
+
+    <!-- Page 1: Single SQL Query -->
+    <div class="container">
+        <h3>Generate Single SQL Query</h3>
+        <label for="table-name-single">Enter Table Name:</label>
+        <input type="text" id="table-name-single" placeholder="Enter table name">
+        <button id="generate-sql-single">Generate SQL</button>
+        <div class="output" id="sql-output-single"></div>
+    </div>
+
+    <!-- Page 2: Multiple SQL Queries -->
+    <div class="container">
+        <h3>Generate Multiple SQL Queries</h3>
+        <label for="table-name-multiple">Enter Table Name:</label>
+        <input type="text" id="table-name-multiple" placeholder="Enter table name">
+        <label for="num-queries">Enter Number of Queries:</label>
+        <input type="number" id="num-queries" placeholder="Enter number of queries" min="1" max="10">
+        <button id="generate-sql-multiple">Generate SQLs</button>
+        <div class="output" id="sql-output-multiple"></div>
+    </div>
+
+    <script>
+        // Page 1: Generate Single SQL Query
+        $('#generate-sql-single').click(function() {
+            var tableName = $('#table-name-single').val();
+            if (tableName) {
+                $.ajax({
+                    url: '/generateSQL', // Servlet endpoint for single query
+                    type: 'GET',
+                    data: { table: tableName },
+                    success: function(response) {
+                        $('#sql-output-single').html(response);
+                    },
+                    error: function() {
+                        $('#sql-output-single').html('Error generating SQL query.');
+                    }
+                });
+            } else {
+                alert("Please enter a table name.");
+            }
+        });
+
+        // Page 2: Generate Multiple SQL Queries
+        $('#generate-sql-multiple').click(function() {
+            var tableName = $('#table-name-multiple').val();
+            var numQueries = $('#num-queries').val();
+            if (tableName && numQueries) {
+                $.ajax({
+                    url: '/generateMultipleSQL', // Servlet endpoint for multiple queries
+                    type: 'GET',
+                    data: { table: tableName, numQueries: numQueries },
+                    success: function(response) {
+                        $('#sql-output-multiple').html(response);
+                    },
+                    error: function() {
+                        $('#sql-output-multiple').html('Error generating SQL queries.');
+                    }
+                });
+            } else {
+                alert("Please enter both table name and number of queries.");
+            }
+        });
+    </script>
+</body>
+</html>

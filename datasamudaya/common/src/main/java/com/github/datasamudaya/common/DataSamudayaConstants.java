@@ -296,6 +296,9 @@ public class DataSamudayaConstants {
 	public static final String TEXTCSS = "text/css";
 	public static final String ICON = "image/x-icon";
 	public static final String FAVICON = "favicon.ico";
+	public static final String AIHTML = "ai.html";
+	public static final String GENERATESQL = "generateSQL";
+	public static final String GENERATEMULTIPLESQL = "generateMultipleSQL";
 	public static final String WEB_FOLDER = "web";
 	public static final String RESOURCES = "resources";
 	public static final String GRAPH = "graph";
@@ -617,8 +620,10 @@ public class DataSamudayaConstants {
 	public static final String NUMBERCONTAINERS = "numbercontainers";
 	
 	//AI Constants
-	public static final String OLLAMA_ENABLE = "ollama.enable";
+	public static final String OLLAMA_ENABLE = "ollama.enable";	
 	public static final String OLLAMA_ENABLE_DEFAULT = "false";
+	public static final String OLLAMA_SQL_QUERY_PORT = "ollama.sql.port";
+	public static final String OLLAMA_SQL_QUERY_PORT_DEFAULT = "22224";
 	public static final String OLLAMA_MODEL_NAME = "ollama.model.name";
 	public static final String OLLAMA_INFERENCE_MODEL_NAME = "ollama.inference.model.name";
 	public static final String OLLAMA_INFERENCE_MODEL_NAME_DEFAULT = "codellama:latest";
@@ -629,8 +634,8 @@ public class DataSamudayaConstants {
 	public static final String OLLAMA_BASE_URL_DEFAULT = "https://localhost:11434";
 	public static final String SQL_QUERY_AGG_PROMPT = "Generate a simple SQL aggregate query for the table %s with fields %s";
 	public static final String SQL_QUERY_MUL_AGG_PROMPT = "Generate %s simple SQL aggregate queries for the table %s with fields %s";
-	public static final String SQL_QUERY_INFERENCE_PROMPT = "Provide %s artificial intelligence inference prompts based on the sql query \"%s\"";
-	public static final String SQL_QUERY_INFERENCE_EXEC_PROMPT = "%s. The analysis should be based on sql query \"%s\" and data provided in table format below with the table header in sql query column order.\n%s";
+	public static final String SQL_QUERY_INFERENCE_PROMPT = "Provide %s artificial intelligence inference prompts for the sql query \"%s\"";
+	public static final String SQL_QUERY_INFERENCE_EXEC_PROMPT = "%s. The analysis should be for the sql query \"%s\" and data provided in table format below with the table header in sql query column order.\n%s";
 	public static final String SQL_QUERY_ASCII_ART_HISTOGRAM_EXEC_PROMPT = "Interpret on sql query \"%s\" and data provided in table format below without the table header in sql query column order.\n%s\n\nDraw histogram of type %s with %s in x-axis and %s in y-axis [without using python, sql or any language] to display in console using ascii character | to represent height of histogram.\n";
 	public static final String SQL_QUERY_PROMPT = """
 							Given the tablename in the TABLE section, and its fields in the FIELDS section write an SQL query that answers the asked question in the QUESTION section.

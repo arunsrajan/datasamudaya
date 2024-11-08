@@ -43,6 +43,8 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
 import com.github.datasamudaya.common.Job.JOBTYPE;
+import com.github.datasamudaya.common.ServerUtils;
+import com.github.datasamudaya.common.WebResourcesServlet;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 
@@ -300,6 +302,20 @@ public class SQLClient {
 				.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
 		boolean ollamaenable = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.OLLAMA_ENABLE, 
 				DataSamudayaConstants.OLLAMA_ENABLE_DEFAULT));
+		ServerUtils su = null;
+		if(ollamaenable) {
+			su = new ServerUtils();
+			int ollamasqlport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.OLLAMA_SQL_QUERY_PORT, 
+					DataSamudayaConstants.OLLAMA_SQL_QUERY_PORT_DEFAULT));			
+			su.init(ollamasqlport, new WebResourcesServlet(),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.ASTERIX,
+					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON,
+					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.AIHTML,
+					new SQLServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GENERATESQL,
+					new SQLServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GENERATEMULTIPLESQL);
+			su.start();
+		}
 		PrintWriter consoleout;
 		if(ollamaenable && !isclient) {
 			consoleout = new PrintWriter(System.out, true);
@@ -505,7 +521,10 @@ public class SQLClient {
 			}			
 			saveHistory(reader.getHistory());
 		}
-
+		if(ollamaenable && nonNull(su)) {
+			su.stop();
+			su.destroy();
+		}
 	}
 
 	/**
