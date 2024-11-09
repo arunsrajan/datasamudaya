@@ -22,15 +22,18 @@ public class SQLServlet extends HttpServlet {
 
 	@Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String task = request.getParameter("task");
         String tableName = request.getParameter("table");
         String numQueriesStr = request.getParameter("numQueries");
+        String sqlStr = request.getParameter("sql");
+        String numInsightsStr = request.getParameter("numInsights");
 
         // Set response content type
         response.setContentType("text/plain");
         PrintWriter out = response.getWriter();
 
         // If generating a single query (Page 1)
-        if (numQueriesStr == null) {
+        if (task.equalsIgnoreCase(DataSamudayaConstants.GENERATESQLTASK)) {
             if (tableName != null && !tableName.isEmpty()) {
                 out.println(generateSingleSQL(tableName));
             } else {
@@ -38,7 +41,7 @@ public class SQLServlet extends HttpServlet {
             }
         }
         // If generating multiple queries (Page 2)
-        else {
+        else if(task.equalsIgnoreCase(DataSamudayaConstants.GENERATEMULTIPLESQLTASK)) {
             try {
                 int numQueries = Integer.parseInt(numQueriesStr);
                 if (tableName != null && !tableName.isEmpty() && numQueries > 0) {
@@ -48,6 +51,17 @@ public class SQLServlet extends HttpServlet {
                 }
             } catch (NumberFormatException e) {
                 out.println("Error: Invalid number of queries.");
+            }
+        } else if(task.equalsIgnoreCase(DataSamudayaConstants.GENERATEINSIGHTSSQLTASK)) {
+        	try {
+                int numInsights = Integer.parseInt(numInsightsStr);
+                if (sqlStr != null && numInsights > 0) {
+                	out.println(generateInsightsSQL(sqlStr, numInsights));
+                } else {
+                    out.println("Error: Sql and number of insights are required.");
+                }
+            } catch (NumberFormatException e) {
+                out.println("Error: Invalid number of insights.");
             }
         }
     }
@@ -98,6 +112,25 @@ public class SQLServlet extends HttpServlet {
     	} catch(Exception ex) {
     		
     	}
+		return DataSamudayaConstants.EMPTY;
+    }
+    
+ // Method to generate multiple SQL queries
+    private String generateInsightsSQL(String sql, int numInsightsToGenerate) {
+    	try {
+	    	String formattedquery = String.format(DataSamudayaConstants.SQL_QUERY_INFERENCE_PROMPT, numInsightsToGenerate, sql);
+			ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(formattedquery), 
+					OllamaOptions.create()
+					.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+							getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+									DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
+					.withModel(DataSamudayaProperties.get().
+							getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
+									DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME_DEFAULT))));
+			return response.getResult().getOutput().getContent().replace(DataSamudayaConstants.NEWLINE, DataSamudayaConstants.BR);
+    	} catch(Exception ex) {
+			
+		}
 		return DataSamudayaConstants.EMPTY;
     }
 }

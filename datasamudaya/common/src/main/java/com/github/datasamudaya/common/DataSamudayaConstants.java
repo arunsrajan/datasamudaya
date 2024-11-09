@@ -299,6 +299,7 @@ public class DataSamudayaConstants {
 	public static final String AIHTML = "ai.html";
 	public static final String GENERATESQL = "generateSQL";
 	public static final String GENERATEMULTIPLESQL = "generateMultipleSQL";
+	public static final String GENERATEINSIGHTSSQL = "generateInsightsSQL";
 	public static final String WEB_FOLDER = "web";
 	public static final String RESOURCES = "resources";
 	public static final String GRAPH = "graph";
@@ -634,7 +635,7 @@ public class DataSamudayaConstants {
 	public static final String OLLAMA_BASE_URL_DEFAULT = "https://localhost:11434";
 	public static final String SQL_QUERY_AGG_PROMPT = "Generate a simple SQL aggregate query for the table %s with fields %s";
 	public static final String SQL_QUERY_MUL_AGG_PROMPT = "Generate %s simple SQL aggregate queries for the table %s with fields %s";
-	public static final String SQL_QUERY_INFERENCE_PROMPT = "Provide %s artificial intelligence inference prompts for the sql query \"%s\"";
+	public static final String SQL_QUERY_INFERENCE_PROMPT = "Provide %s insights from the sql query: \"%s\"";
 	public static final String SQL_QUERY_INFERENCE_EXEC_PROMPT = "%s. The analysis should be for the sql query \"%s\" and data provided in table format below with the table header in sql query column order.\n%s";
 	public static final String SQL_QUERY_ASCII_ART_HISTOGRAM_EXEC_PROMPT = "Interpret on sql query \"%s\" and data provided in table format below without the table header in sql query column order.\n%s\n\nDraw histogram of type %s with %s in x-axis and %s in y-axis [without using python, sql or any language] to display in console using ascii character | to represent height of histogram.\n";
 	public static final String SQL_QUERY_PROMPT = """
@@ -653,4 +654,7 @@ public class DataSamudayaConstants {
 							FIELDS
 							%s
 							""";
+	public static final String GENERATESQLTASK = "generateSQL";
+	public static final String GENERATEMULTIPLESQLTASK = "generateMultipleSQL";
+	public static final String GENERATEINSIGHTSSQLTASK = "generateInsightsSQL";
 }

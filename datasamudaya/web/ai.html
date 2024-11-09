@@ -64,6 +64,17 @@
         <div class="output" id="sql-output-multiple"></div>
     </div>
 
+	<!-- Page 3: Generate Multiple Insights for SQL Query -->
+    <div class="container">
+        <h3>Generate Multiple Insights for SQL Query</h3>
+        <label for="sql">Enter SQL Query:</label>
+        <textarea rows="4" cols="50" id="sql" placeholder="Enter SQL query"></textarea>
+        <label for="num-insights">Enter Number of Insights:</label>
+        <input type="number" id="num-insights" placeholder="Enter number of insights" min="1" max="10">
+        <button id="generate-sql-insights-multiple">Generate Insights</button>
+        <div class="output" id="sql-insights-multiple"></div>
+    </div>
+	
     <script>
         // Page 1: Generate Single SQL Query
         $('#generate-sql-single').click(function() {
@@ -72,7 +83,7 @@
                 $.ajax({
                     url: '/generateSQL', // Servlet endpoint for single query
                     type: 'GET',
-                    data: { table: tableName },
+                    data: { task: 'generateSQL', table: tableName },
                     success: function(response) {
                         $('#sql-output-single').html(response);
                     },
@@ -93,7 +104,7 @@
                 $.ajax({
                     url: '/generateMultipleSQL', // Servlet endpoint for multiple queries
                     type: 'GET',
-                    data: { table: tableName, numQueries: numQueries },
+                    data: {task: 'generateMultipleSQL', table: tableName, numQueries: numQueries },
                     success: function(response) {
                         $('#sql-output-multiple').html(response);
                     },
@@ -103,6 +114,26 @@
                 });
             } else {
                 alert("Please enter both table name and number of queries.");
+            }
+        });
+     // Page 3: Generate n insights from SQL Query
+        $('#generate-sql-insights-multiple').click(function() {
+            var sql = $('#sql').val();
+            var numInsights = $('#num-insights').val();
+            if (sql && numInsights) {
+                $.ajax({
+                    url: '/generateInsightsSQL', // Servlet endpoint for multiple queries
+                    type: 'GET',
+                    data: { task: 'generateInsightsSQL', sql: sql, numInsights: numInsights },
+                    success: function(response) {
+                        $('#sql-insights-multiple').html(response);
+                    },
+                    error: function() {
+                        $('#sql-insights-multiple').html('Error generating Insights from SQL queries.');
+                    }
+                });
+            } else {
+                alert("Please enter both sql and number of insights to generate.");
             }
         });
     </script>

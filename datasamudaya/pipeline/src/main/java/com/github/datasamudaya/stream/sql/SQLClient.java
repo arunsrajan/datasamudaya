@@ -313,7 +313,8 @@ public class SQLClient {
 					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON,
 					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.AIHTML,
 					new SQLServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GENERATESQL,
-					new SQLServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GENERATEMULTIPLESQL);
+					new SQLServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GENERATEMULTIPLESQL,
+					new SQLServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GENERATEINSIGHTSSQL);
 			su.start();
 		}
 		PrintWriter consoleout;
