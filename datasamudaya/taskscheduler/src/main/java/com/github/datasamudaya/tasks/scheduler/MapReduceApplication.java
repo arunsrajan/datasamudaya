@@ -540,7 +540,9 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		try {
 			var starttime = System.currentTimeMillis();
 			var containerscount = 0;
-			es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+			es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 			cf = CuratorFrameworkFactory.newClient(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_HOSTPORT),
 					20000, 50000, new RetryForever(
 							Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_RETRYDELAY))));
@@ -692,7 +694,9 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					}
 				});
 			}
-			esmap = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+			esmap = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 			while (!completed && numexecute < taskexeccount) {
 				var mapperexecutors = new ArrayList<DefaultDexecutor>();
 				var cdl = new CountDownLatch(containermappermap.size());
@@ -1144,7 +1148,9 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	}
 
 	private ExecutorService newExecutor() {
-		return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+		return Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 	}
 
 	protected void destroyContainers(String appid) throws Exception {

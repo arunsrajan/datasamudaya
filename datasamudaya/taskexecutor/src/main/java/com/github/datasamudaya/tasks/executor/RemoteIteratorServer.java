@@ -29,6 +29,7 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.Task;
@@ -57,7 +58,9 @@ public class RemoteIteratorServer<T> {
 	}
 
 	public Tuple2<ServerSocket,ExecutorService> start() {
-		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+		ExecutorService es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		try {
 			ServerSocket serverSocket = new ServerSocket(0);
 			log.debug("Server listening on port {}" , serverSocket.getLocalPort());

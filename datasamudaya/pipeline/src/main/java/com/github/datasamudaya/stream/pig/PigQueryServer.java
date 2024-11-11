@@ -47,7 +47,9 @@ public class PigQueryServer {
 	 * @throws Exception
 	 */
 	public static void start() throws Exception {
-		ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+		ExecutorService executors = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.PIGPORT, DataSamudayaConstants.PIGPORT_DEFAULT)));
 		queryParserDriver = PigUtils.getQueryParserDriver("pig");

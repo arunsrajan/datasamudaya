@@ -27,6 +27,8 @@ import org.jooq.lambda.tuple.Tuple4;
 
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.ReducerValues;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingContext;
@@ -75,8 +77,12 @@ public class TaskExecutorReducer implements Callable<Context> {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Override
 	public Context call() {
-		var es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
-		var esresult = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		var esresult = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
 			log.debug("Submitted Reducer:" + task.getJobid() + task.getTaskid());

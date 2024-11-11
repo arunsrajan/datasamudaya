@@ -95,7 +95,9 @@ public class NodeLauncher {
 			zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + port, resource, event -> {
 				log.debug("{}", event);
 			});
-			var escontainer = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+			var escontainer = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 
 			var hdfs =
 					FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,

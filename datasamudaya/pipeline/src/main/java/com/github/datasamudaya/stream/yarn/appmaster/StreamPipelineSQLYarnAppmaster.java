@@ -369,7 +369,9 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	 * @return thread pool
 	 */
 	private ExecutorService newExecutor(int numberoftasks) {
-		return Executors.newFixedThreadPool(numberoftasks, Thread.ofVirtual().factory());
+		return Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 	}
 	
 	/**

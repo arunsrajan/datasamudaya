@@ -161,8 +161,12 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 							+ DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			int numberofprocessors = Runtime.getRuntime().availableProcessors();
 			ThreadFactory virtualThreadFactory = Thread.ofVirtual().factory();
-			estask = Executors.newFixedThreadPool(numberofprocessors, virtualThreadFactory);
-			escompute = Executors.newFixedThreadPool(numberofprocessors, virtualThreadFactory);
+			estask = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), virtualThreadFactory);
+			escompute = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), virtualThreadFactory);
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid, executortype);
 			ter.start(zo, jobid, executortype, args);

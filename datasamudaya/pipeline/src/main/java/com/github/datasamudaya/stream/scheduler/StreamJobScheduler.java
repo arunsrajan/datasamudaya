@@ -197,7 +197,9 @@ public class StreamJobScheduler {
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 	}
 
-	ExecutorService jobping = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+	ExecutorService jobping = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+			.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+					DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 	public Job job;
 	public Boolean islocal;
 	public Boolean isignite, ismesos, isyarn, isjgroups;
@@ -1068,7 +1070,9 @@ public class StreamJobScheduler {
 	 */
 	public class TaskProviderLocalModeAkkaActors implements TaskProvider<StreamPipelineTaskSubmitter, Boolean> {
 
-		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+		ExecutorService es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		double totaltasks;
 		double counttaskscomp = 0;
 		double counttasksfailed = 0;
@@ -1161,9 +1165,13 @@ public class StreamJobScheduler {
 				});
 			}
 			var semaphores = new ConcurrentHashMap<String, Semaphore>();
+			var numoftasks = Integer.parseInt(DataSamudayaProperties.get()
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT));
+			numoftasks = numoftasks/chpcres.entrySet().size();
 			for (var cr : chpcres.entrySet()) {
 				batchsize += cr.getValue().getCpu();
-				semaphores.put(cr.getKey(), new Semaphore(cr.getValue().getCpu()*2));
+				semaphores.put(cr.getKey(), new Semaphore(numoftasks));
 			}
 			es = newExecutor(batchsize);
 			while (!completed && numexecute < executioncount) {
@@ -1355,7 +1363,9 @@ public class StreamJobScheduler {
 	 * @return ExecutorsService object.
 	 */
 	private ExecutorService newExecutor(int numberoftasks) {
-		return Executors.newFixedThreadPool(numberoftasks);
+		return Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 	}
 
 	/**
@@ -1502,7 +1512,9 @@ public class StreamJobScheduler {
 	public class TaskProviderLocalMode
 			implements TaskProvider<StreamPipelineTaskSubmitter, StreamPipelineTaskExecutorLocal> {
 
-		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+		ExecutorService es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		double totaltasks;
 		double counttaskscomp = 0;
 		double counttasksfailed = 0;

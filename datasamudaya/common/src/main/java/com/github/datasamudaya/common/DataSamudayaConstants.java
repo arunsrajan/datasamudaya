@@ -657,4 +657,7 @@ public class DataSamudayaConstants {
 	public static final String GENERATESQLTASK = "generateSQL";
 	public static final String GENERATEMULTIPLESQLTASK = "generateMultipleSQL";
 	public static final String GENERATEINSIGHTSSQLTASK = "generateInsightsSQL";
+	
+	public static final String VIRTUALTHREADSPOOLSIZE = "virtual.threads.poolsize";
+	public static final String VIRTUALTHREADSPOOLSIZE_DEFAULT = "1000";
 }
