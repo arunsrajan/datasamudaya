@@ -74,7 +74,7 @@ public class TaskExecutorCombiner implements Callable<Context> {
 	@Override
 	public Context call() {
 		var es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-		var esresult = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		var esresult = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
 			log.debug("Submitted Combiner:" + task.getJobid() + task.getTaskid());

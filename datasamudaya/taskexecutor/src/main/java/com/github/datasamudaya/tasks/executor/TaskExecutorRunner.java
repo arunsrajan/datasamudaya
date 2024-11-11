@@ -28,8 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -158,10 +160,9 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			int numberofprocessors = Runtime.getRuntime().availableProcessors();
-			estask = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS,
-					new LinkedBlockingQueue());
-			escompute = new ThreadPoolExecutor(numberofprocessors, numberofprocessors, 60, TimeUnit.SECONDS,
-					new LinkedBlockingQueue());
+			ThreadFactory virtualThreadFactory = Thread.ofVirtual().factory();
+			estask = Executors.newFixedThreadPool(numberofprocessors, virtualThreadFactory);
+			escompute = Executors.newFixedThreadPool(numberofprocessors, virtualThreadFactory);
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid, executortype);
 			ter.start(zo, jobid, executortype, args);

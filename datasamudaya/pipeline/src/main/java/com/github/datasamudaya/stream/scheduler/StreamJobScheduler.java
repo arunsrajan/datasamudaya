@@ -197,7 +197,7 @@ public class StreamJobScheduler {
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 	}
 
-	ExecutorService jobping = Executors.newWorkStealingPool();
+	ExecutorService jobping = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 	public Job job;
 	public Boolean islocal;
 	public Boolean isignite, ismesos, isyarn, isjgroups;
@@ -1068,7 +1068,7 @@ public class StreamJobScheduler {
 	 */
 	public class TaskProviderLocalModeAkkaActors implements TaskProvider<StreamPipelineTaskSubmitter, Boolean> {
 
-		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 		double totaltasks;
 		double counttaskscomp = 0;
 		double counttasksfailed = 0;
@@ -1502,7 +1502,7 @@ public class StreamJobScheduler {
 	public class TaskProviderLocalMode
 			implements TaskProvider<StreamPipelineTaskSubmitter, StreamPipelineTaskExecutorLocal> {
 
-		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 		double totaltasks;
 		double counttaskscomp = 0;
 		double counttasksfailed = 0;

@@ -3371,7 +3371,7 @@ public class Utils {
 		final ExecutorService executors;
 		final ServerSocket serverSocket;
 		try  {
-			executors = Executors.newFixedThreadPool(10);
+			executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 			serverSocket = new ServerSocket(0);
 			log.debug("Shuffle Server started at port. {}", serverSocket.getLocalPort());
 			executors.execute(() -> {

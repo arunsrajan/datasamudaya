@@ -57,7 +57,7 @@ public class RemoteIteratorServer<T> {
 	}
 
 	public Tuple2<ServerSocket,ExecutorService> start() {
-		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 		try {
 			ServerSocket serverSocket = new ServerSocket(0);
 			log.debug("Server listening on port {}" , serverSocket.getLocalPort());

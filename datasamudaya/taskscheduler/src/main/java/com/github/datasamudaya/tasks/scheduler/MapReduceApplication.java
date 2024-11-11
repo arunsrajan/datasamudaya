@@ -96,6 +96,8 @@ import com.github.dexecutor.core.task.Task;
 import com.github.dexecutor.core.task.TaskProvider;
 import com.google.common.collect.Iterables;
 
+import javassist.bytecode.analysis.Executor;
+
 /**
  * Map reduce application to execute map and reduce tasks.
  * @author arun
@@ -538,7 +540,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		try {
 			var starttime = System.currentTimeMillis();
 			var containerscount = 0;
-			es = Executors.newWorkStealingPool();
+			es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 			cf = CuratorFrameworkFactory.newClient(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_HOSTPORT),
 					20000, 50000, new RetryForever(
 							Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_RETRYDELAY))));
@@ -690,7 +692,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					}
 				});
 			}
-			esmap = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			esmap = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 			while (!completed && numexecute < taskexeccount) {
 				var mapperexecutors = new ArrayList<DefaultDexecutor>();
 				var cdl = new CountDownLatch(containermappermap.size());
@@ -1142,7 +1144,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	}
 
 	private ExecutorService newExecutor() {
-		return Executors.newWorkStealingPool();
+		return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 	}
 
 	protected void destroyContainers(String appid) throws Exception {

@@ -75,8 +75,8 @@ public class TaskExecutorReducer implements Callable<Context> {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Override
 	public Context call() {
-		var es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-		var esresult = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		var es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+		var esresult = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
 			log.debug("Submitted Reducer:" + task.getJobid() + task.getTaskid());

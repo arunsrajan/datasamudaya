@@ -38,7 +38,7 @@ public class JShellServer {
 	 * @throws IOException
 	 */
 	public static void startJShell() throws Exception, IOException {
-		ExecutorService executors = Executors.newFixedThreadPool(10);
+		ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 		Integer port = Integer
 				.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SHELLPORT, DataSamudayaConstants.SHELLPORT_DEFAULT));
 		System.out.println("DataSamudaya JShell started on port " + port);

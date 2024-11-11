@@ -123,7 +123,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 								}
 							}
 
-							var es = Executors.newWorkStealingPool();
+							var es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 							var datasamudayamc = new MapperCombinerExecutor(
 									mc.blockslocation, CacheUtils.getBlockData(mc.blockslocation, hdfs), cm, cc);
 							var fc = (Future<Context>) es.submit(datasamudayamc);
@@ -145,7 +145,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 						var complete = new DataCruncherContext();
 						var apptaskcontextmap = new ConcurrentHashMap<String, Context>();
 						Context currentctx;
-						var es = Executors.newWorkStealingPool();
+						var es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 						for (var tuple2 : (List<Tuple2>) red.tuples) {
 							var ctx = new DataCruncherContext();
 							for (var apptaskids : (Collection<String>) tuple2.v2) {

@@ -88,7 +88,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 		var taskstatusconcmapresp = new ConcurrentHashMap<String, WhoIsResponse.STATUS>();
 		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL);
 		String host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
-		es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
 		Semaphore semaphore = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try (var hdfscompute = FileSystem.newInstance(new URI(hdfsfilepath), new Configuration());) {
 			this.hdfs = hdfscompute;

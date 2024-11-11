@@ -101,8 +101,8 @@ public class TaskSchedulerRunner {
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 		su.start();
 		SQLServerMR.start();
-		var es = Executors.newWorkStealingPool();
-		var essingle = Executors.newSingleThreadExecutor();
+		var es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().factory());
+		var essingle = Executors.newSingleThreadExecutor(Thread.ofVirtual().factory());
 
 
 		var ss = new ServerSocket(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PORT)));

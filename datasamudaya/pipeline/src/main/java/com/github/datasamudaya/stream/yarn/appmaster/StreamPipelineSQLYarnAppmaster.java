@@ -143,7 +143,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	public void submitApplication() {
 		ExecutorService es = null;
 		try {
-			es = Executors.newFixedThreadPool(1);
+			es = Executors.newFixedThreadPool(1, Thread.ofVirtual().factory());
 			teid = getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
 			isdriverrequired = Boolean.parseBoolean(getEnvironment().get(DataSamudayaConstants.ISDRIVERREQUIREDYARN));
 			es.execute(() -> pollQueue());
@@ -369,7 +369,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	 * @return thread pool
 	 */
 	private ExecutorService newExecutor(int numberoftasks) {
-		return Executors.newFixedThreadPool(numberoftasks);
+		return Executors.newFixedThreadPool(numberoftasks, Thread.ofVirtual().factory());
 	}
 	
 	/**

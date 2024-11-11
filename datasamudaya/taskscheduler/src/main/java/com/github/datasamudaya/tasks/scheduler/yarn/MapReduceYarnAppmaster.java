@@ -128,7 +128,7 @@ public class MapReduceYarnAppmaster extends StaticEventingAppmaster implements C
 				// Set the Yarn App master bean to the Yarn App master service object.
 				appmasterservice.setYarnAppMaster(this);
 			}
-			es = Executors.newFixedThreadPool(1);
+			es = Executors.newFixedThreadPool(1, Thread.ofVirtual().factory());
 			es.execute(() -> pollQueue());
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
