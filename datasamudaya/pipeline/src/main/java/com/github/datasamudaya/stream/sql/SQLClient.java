@@ -163,6 +163,9 @@ public class SQLClient {
 				driverlocation = cmd.getOptionValue(DataSamudayaConstants.DRIVER_LOCATION);
 				isclient = driverlocation
 				.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
+				if(isclient) {
+					Utils.startHiveSession();
+				}
 				if(isclient && !(isignite)) {
 					cpudriver = 0;
 					memorydriver = 0;

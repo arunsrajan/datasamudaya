@@ -210,6 +210,23 @@ public class SQLUtils {
 			return SqlTypeName.VARCHAR;
 		}
 	}
+	
+	/**
+	 * The function returns calcite sql type from hive datatype
+	 * @param hivedatatype
+	 * @return calcite datatype
+	 */
+	public static SqlTypeName getHiveSQLTypeName(String hivedatatype) {
+		if ("int".equals(hivedatatype)) {
+			return SqlTypeName.INTEGER;
+		} else if ("double".equals(hivedatatype)) {
+			return SqlTypeName.DOUBLE;
+		} else if ("string".equals(hivedatatype)) {
+			return SqlTypeName.VARCHAR;
+		} else {
+			return SqlTypeName.VARCHAR;
+		}
+	}
 
 	/**
 	 * Static function H2 datatype to calcite format.

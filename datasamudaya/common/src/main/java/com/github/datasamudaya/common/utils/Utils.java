@@ -99,6 +99,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
+import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
@@ -119,7 +122,6 @@ import org.jgroups.ObjectMessage;
 import org.jgroups.Receiver;
 import org.jgroups.View;
 import org.jgroups.util.UUID;
-import org.jline.reader.History;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
@@ -3993,5 +3995,87 @@ public class Utils {
 				).build();
 	}
 	
+	/**
+	 * The function configures the Metastore for hive to store table information
+	 * @return HiveConf 
+	 * @throws Exception
+	 */
+	public static HiveConf getHiveConf() throws Exception {
+		File scratchDirFile = new File(DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.HIVE_SCRATCH_DIR, 
+						DataSamudayaConstants.HIVE_SCRATCH_DIR_DEFAULT));
+		String scratchDir = scratchDirFile.getAbsolutePath();
+		Configuration cfg = new Configuration();		
+		HiveConf conf = new HiveConf(cfg, HiveConf.class);
+		conf.setBoolean("datanucleus.schema.autoCreateAll", true);
+		conf.addToRestrictList("columns.comments");
+		conf.set("hive.scratch.dir.permission", "777");
+		conf.setVar(ConfVars.SCRATCH_DIR_PERMISSION, "777");
+		scratchDirFile.mkdirs();
+		// also set the permissions manually since Hive doesn't do it...
+		scratchDirFile.setWritable(true, false);
+		String storeid = "1234";
+		conf.set("hive.metastore.warehouse.dir", scratchDir + DataSamudayaProperties.get()
+		.getProperty(DataSamudayaConstants.WAREHOUSE_DIR_PATH, 
+				DataSamudayaConstants.WAREHOUSE_DIR_PATH_DEFAULT) + storeid);
+		conf.set("hive.metastore.metadb.dir", scratchDir + DataSamudayaProperties.get()
+		.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH, 
+				DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid);
+		conf.set("hive.exec.scratchdir", scratchDir);
+		conf.set("fs.permissions.umask-mode", "022");
+		conf.set("hive.metastore.dbtype", "derby");
+		conf.set("hive.metastore.local", "true");
+		conf.set("hive.metastore.schema.verification", "false");
+		conf.set("javax.jdo.option.ConnectionURL",
+				"jdbc:derby:;databaseName=" + scratchDir + DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH, 
+						DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid + ";create=true");
+		conf.set("hive.metastore.local", "true");
+		conf.set("hive.aux.jars.path", "");
+		conf.set("hive.added.jars.path", "");
+		conf.set("hive.added.files.path", "");
+		conf.set("hive.added.archives.path", "");
+		conf.set("fs.default.name", "file:///");
+		conf.set("mapred.job.tracker", "local");
+		conf.set("hive.server2.thrift.bind.host", "localhost");
+		conf.set("hive.server2.thrift.port", DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.THRIFT_PORT, 
+						DataSamudayaConstants.THRIFT_PORT_DEFAULT));
+		conf.set("hive.server2.transport.mode", "binary");
+		conf.set("hive.server2.thrift.client.user", "admin");
+		conf.set("hive.server2.thrift.client.password", "admin");
+		conf.set("hive.server2.authentication", "LDAP");
+		conf.setBoolean("hive.server2.use.SSL", false);
+		// clear mapred.job.tracker - Hadoop defaults to 'local' if not defined. Hive
+		// however expects this to be set to 'local' - if it's not, it does a remote
+		// execution (i.e. no child JVM)
+		Field field = Configuration.class.getDeclaredField("properties");
+		field.setAccessible(true);
+		Properties props = (Properties) field.get(conf);
+		props.remove("mapreduce.framework.name");
+		props.setProperty("fs.default.name", "file:///");
+		// intercept SessionState to clean the threadlocal
+		Field tss = SessionState.class.getDeclaredField("tss");
+		tss.setAccessible(true);
+		return new HiveConf(conf);
+	}
 	
+	/**
+	 * The function starts hive session and returns session state
+	 * @return session start
+	 * @throws Exception
+	 */
+	public static SessionState startHiveSession() throws Exception {
+		SessionState sessionState = new SessionState(getHiveConf());
+        return SessionState.start(sessionState);
+	}
+	
+	/**
+	 * The current session ends
+	 * @param sessionState
+	 * @throws Exception
+	 */
+	public static void endStartHiveSession(SessionState sessionState) throws Exception {
+       SessionState.endStart(sessionState);
+	}
 }

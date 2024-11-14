@@ -20,6 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.zookeeper.server.ServerCnxn.DisconnectReason;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
@@ -67,7 +68,7 @@ public class ZookeeperMain {
 			Utils.addShutdownHook(() -> {
 				cdl.countDown();
 				log.info("Bumbling Zookeeper...");
-				scf.closeAll();
+				scf.closeAll(DisconnectReason.CONNECTION_CLOSE_FORCED);
 
 			});
 		} catch (Exception e) {

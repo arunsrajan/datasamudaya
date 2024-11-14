@@ -1,5 +1,7 @@
 package com.github.datasamudaya.stream.sql;
 
+import static java.util.Objects.*;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -14,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +64,7 @@ public class SQLServer {
 						String tejobid = DataSamudayaConstants.EMPTY;
 						boolean iscontainerlaunched = false;
 						boolean isyarncontainerlaunched = false;
+						SessionState sessionState = null;
 						try (Socket clientSocket = sock;
 								PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 								BufferedReader in = new BufferedReader(
@@ -74,6 +78,7 @@ public class SQLServer {
 							isdriverrequired = Boolean.parseBoolean(in.readLine());
 							scheduler = in.readLine();
 							tejobid = in.readLine();
+							sessionState = Utils.startHiveSession();
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
 								out.println(usernotexistsmessage);
@@ -296,6 +301,13 @@ public class SQLServer {
 							} else if (isyarncontainerlaunched) {
 								try {
 									Utils.shutDownYARNContainer(tejobid);
+								} catch (Exception ex) {
+									log.error(DataSamudayaConstants.EMPTY, ex);
+								}
+							}
+							if(nonNull(sessionState)) {
+								try {
+									Utils.endStartHiveSession(sessionState);
 								} catch (Exception ex) {
 									log.error(DataSamudayaConstants.EMPTY, ex);
 								}

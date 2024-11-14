@@ -87,20 +87,13 @@ public class SelectQueryExecutor {
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);
 			for (String tablename : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
-				String hdfslocation = null;
-				String fileformat = null;
+				String hdfslocation = TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
+				String fileformat = DataSamudayaConstants.CSV;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-				for (ColumnMetadata columnMetadata : columnMetadatas) {
-					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
-						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
-					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
-						fileformat = columnMetadata.getColumnDefault().replace("'", "").trim();
-					} else {
-						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
-						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
-					}
+				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
+					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}
 				builder = builder.add(hdfslocation, tablename.toLowerCase(), tablecolumn, tablecolumnDataType);
 				builder.setFileformat(fileformat);
@@ -152,13 +145,9 @@ public class SelectQueryExecutor {
 				TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-				for (ColumnMetadata columnMetadata : columnMetadatas) {
-					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
-					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
-					} else {
-						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
-						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
-					}
+				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
+					tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
 				}
 				tablecolumnsmap.put(tablename, tablecolumn);
 				tablecolumntypesmap.put(tablename, tablecolumnDataType);
@@ -276,20 +265,13 @@ public class SelectQueryExecutor {
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);
 			for (String tablename : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
-				String hdfslocation = null;
-				String fileformat = null;
+				String hdfslocation = TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
+				String fileformat = DataSamudayaConstants.CSV;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
-					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
-						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
-					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
-						fileformat = columnMetadata.getColumnDefault().replace("'", "").trim();
-					} else {
-						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
-						tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
-					}
+					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
+					tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
 				}
 				builder = builder.add(hdfslocation, tablename.toLowerCase(), tablecolumn, tablecolumnDataType);
 				builder.setFileformat(fileformat);

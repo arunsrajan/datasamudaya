@@ -532,7 +532,7 @@ public class DataSamudayaConstants {
 	public static final String SQLMESSAGESSTORE_DEFAULT = "../sql_message_store";
 	public static final String SHELLMESSAGESSTORE_DEFAULT = "../shell_message_store";
 	public static final String SQLDB = "sql.db";
-	public static final String SQLMETASTORE_DB = "metastore_db";
+	public static final String SQLMETASTORE_DB = "default";
 	public static final String SQLDB_URL = "jdbc:h2:~/";
 	public static final String SQLDBUSERNAME = "sql.db.username";
 	public static final String SQLDBUSERNAME_DEFAULT = "sa";
@@ -660,4 +660,15 @@ public class DataSamudayaConstants {
 	
 	public static final String VIRTUALTHREADSPOOLSIZE = "virtual.threads.poolsize";
 	public static final String VIRTUALTHREADSPOOLSIZE_DEFAULT = "1000";
+	
+	public static final String HIVE_SCRATCH_DIR = "hive.dir";
+	public static final String HIVE_SCRATCH_DIR_DEFAULT = "./hive";
+	public static final String WAREHOUSE_DIR_PATH = "warehouse.dir.path";
+	public static final String WAREHOUSE_DIR_PATH_DEFAULT = "/warehouse";
+	public static final String METASTORE_DIR_PATH = "metastore.dir.path";
+	public static final String METASTORE_DIR_PATH_DEFAULT = "/metastore";
+	public static final String THRIFT_HOST = "thrift.host";
+	public static final String THRIFT_HOST_DEFAULT = "127.0.0.1";
+	public static final String THRIFT_PORT = "thrift.port";
+	public static final String THRIFT_PORT_DEFAULT = "10000";
 }
