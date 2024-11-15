@@ -1,10 +1,16 @@
 package com.github.datasamudaya.tasks.scheduler.sql;
 
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -14,6 +20,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.common.JobConfigurationBuilder;
+import com.github.datasamudaya.stream.sql.SelectQueryExecutor;
 import com.github.datasamudaya.stream.sql.TableCreator;
 import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplication;
@@ -66,21 +73,13 @@ public class SelectQueryExecutorMR {
 							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setDb(defaultdb).setJobConfiguration(jc).setSql(selectquery);
 			for (String table : tables) {
-				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				TableCreator.getColumnMetadataFromTable(defaultdb, table, columnMetadatas);
-				String hdfslocation = null;
-				String filetype = null;
+				var columnMetadatas = new ArrayList<ColumnMetadata>();				
+				String hdfslocation = TableCreator.getColumnMetadataFromTable(defaultdb, table, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-				for (ColumnMetadata columnMetadata : columnMetadatas) {
-					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
-						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
-					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
-						filetype = columnMetadata.getColumnDefault().replace("'", "").trim();
-					} else {
-						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
-						tablecolumnDataType.add(SQLUtils.getSQLTypeNameMR(columnMetadata.getDataType()));
-					}
+				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
+					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}
 				builder = builder.add(hdfslocation, table.toLowerCase(), tablecolumn, tablecolumnDataType);
 			}
@@ -99,7 +98,67 @@ public class SelectQueryExecutorMR {
 		return new ArrayList<>();
 	}
 
+	/**
+	 * Prints Plan
+	 * @param dbdefault
+	 * @param selectquery
+	 * @param out
+	 * @throws Exception
+	 */
+	public static void explain(String dbdefault, String selectquery, PrintWriter out) throws Exception {
+		try {
+			CCJSqlParserManager parserManager = new CCJSqlParserManager();
+			Validation validation = new Validation(Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB,
+					DatabaseType.POSTGRESQL, DatabaseType.H2), selectquery);
+			List<ValidationError> errors = validation.validate();
+			if (!CollectionUtils.isEmpty(errors)) {
+				throw new Exception("Syntax error in SQL");
+			}
+			Statement statement = parserManager.parse(new StringReader(selectquery));
+			var tables = new ArrayList<String>();
+			SQLUtils.getAllTables(statement, tables);
+			ConcurrentMap<String, List<String>> tablecolumnsmap = new ConcurrentHashMap<>();
+			ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap = new ConcurrentHashMap<>();
+			for (String tablename : tables) {
+				var columnMetadatas = new ArrayList<ColumnMetadata>();
+				TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
+				List<String> tablecolumn = new ArrayList<>();
+				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
+				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
+					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
+				}
+				tablecolumnsmap.put(tablename, tablecolumn);
+				tablecolumntypesmap.put(tablename, tablecolumnDataType);
+			}
+			AtomicBoolean isdistinct = new AtomicBoolean(false);
+			RelNode relnode = Utils.validateSql(tablecolumnsmap, tablecolumntypesmap, selectquery, dbdefault,
+					isdistinct);
+			SelectQueryExecutor.traverseRelNode(relnode, 0, out);
+		} catch (Exception ex) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();
+			try (StringWriter stackTrace = new StringWriter(); 
+					PrintWriter writer = new PrintWriter(stackTrace);) {
+				ex.printStackTrace(writer);
+				writer.flush();
+				error.add(stackTrace.toString());
+				errors.add(error);
+			}
+			out.println("Error in Query: " + selectquery);
+		}
+	}
 
+	/**
+	 * The function executes select in ignite server and returns results.
+	 * @param defaultdb
+	 * @param selectquery
+	 * @param user
+	 * @param appid
+	 * @param teappid
+	 * @return execution results
+	 * @throws Exception
+	 */
 	public static List executeSelectQueryIgnite(String defaultdb, String selectquery, String user, String appid,
 			String teappid) throws Exception {
 		try {
@@ -124,21 +183,13 @@ public class SelectQueryExecutorMR {
 					.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setDb(defaultdb).setJobConfiguration(jc).setSql(selectquery);
 			for (String table : tables) {
-				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				TableCreator.getColumnMetadataFromTable(defaultdb, table, columnMetadatas);
-				String hdfslocation = null;
-				String filetype = null;
+				var columnMetadatas = new ArrayList<ColumnMetadata>();				
+				String hdfslocation = TableCreator.getColumnMetadataFromTable(defaultdb, table, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-				for (ColumnMetadata columnMetadata : columnMetadatas) {
-					if ("hdfslocation".equals(columnMetadata.getColumnName().toLowerCase())) {
-						hdfslocation = columnMetadata.getColumnDefault().replace("'", "").trim();
-					} else if ("fileformat".equals(columnMetadata.getColumnName().toLowerCase())) {
-						filetype = columnMetadata.getColumnDefault().replace("'", "").trim();
-					} else {
-						tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
-						tablecolumnDataType.add(SQLUtils.getSQLTypeNameMR(columnMetadata.getDataType()));
-					}
+				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
+					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}
 				builder = builder.add(hdfslocation, table.toLowerCase(), tablecolumn, tablecolumnDataType);
 			}

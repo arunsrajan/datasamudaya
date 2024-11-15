@@ -147,7 +147,7 @@ public class SelectQueryExecutor {
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {					
 					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
-					tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
+					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}
 				tablecolumnsmap.put(tablename, tablecolumn);
 				tablecolumntypesmap.put(tablename, tablecolumnDataType);
@@ -175,7 +175,7 @@ public class SelectQueryExecutor {
 	 * @param relNode
 	 * @param depth
 	 */
-	private static void traverseRelNode(RelNode relNode, int depth, PrintWriter out) {
+	public static void traverseRelNode(RelNode relNode, int depth, PrintWriter out) {
 		// Print information about the current node
 		printNodeInfo(relNode, depth, out);
 
@@ -271,7 +271,7 @@ public class SelectQueryExecutor {
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {
 					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
-					tablecolumnDataType.add(SQLUtils.getSQLTypeName(columnMetadata.getDataType()));
+					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}
 				builder = builder.add(hdfslocation, tablename.toLowerCase(), tablecolumn, tablecolumnDataType);
 				builder.setFileformat(fileformat);

@@ -1,5 +1,7 @@
 package com.github.datasamudaya.tasks.scheduler.sql;
 
+import static java.util.Objects.nonNull;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -14,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +26,7 @@ import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Job.JOBTYPE;
 import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.stream.sql.SelectQueryExecutor;
 import com.github.datasamudaya.stream.sql.TableCreator;
 
 /**
@@ -60,6 +64,7 @@ public class SQLServerMR {
 						boolean isyarn = false;
 						boolean iscontainerlaunched = false;
 						boolean isyarncontainerlaunched = false;
+						SessionState sessionState = null;
 						try (Socket clientSocket = sock;
 								PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 								BufferedReader in = new BufferedReader(
@@ -69,6 +74,7 @@ public class SQLServerMR {
 							cpupercontainer = Integer.valueOf(in.readLine());
 							memorypercontainer = Integer.valueOf(in.readLine());
 							scheduler = in.readLine();
+							sessionState = Utils.startHiveSession();
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
 								out.println(usernotexistsmessage);
@@ -205,6 +211,8 @@ public class SQLServerMR {
 											out.println(TableCreator.dropTable(dbdefault, inputLine));
 										} else if (inputLine.startsWith("show")) {
 											Utils.printTableOrError(TableCreator.showTables(dbdefault, inputLine), out, JOBTYPE.NORMAL);
+										} else if (inputLine.startsWith("explain")) {
+											SelectQueryExecutorMR.explain(dbdefault, inputLine.replaceFirst("explain", ""), out);
 										} else if (inputLine.startsWith("describe")) {
 											var columns = new ArrayList<ColumnMetadata>();
 											TableCreator.getColumnMetadataFromTable(dbdefault, inputLine.split(" ")[1], columns);
@@ -256,6 +264,13 @@ public class SQLServerMR {
 									log.error(DataSamudayaConstants.EMPTY, ex);
 								}
 								isyarncontainerlaunched = false;
+							}
+							if(nonNull(sessionState)) {
+								try {
+									Utils.endStartHiveSession(sessionState);
+								} catch (Exception ex) {
+									log.error(DataSamudayaConstants.EMPTY, ex);
+								}
 							}
 						}
 					});

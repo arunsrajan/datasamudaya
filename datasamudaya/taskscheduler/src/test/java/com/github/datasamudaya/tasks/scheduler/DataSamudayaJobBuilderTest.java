@@ -57,7 +57,7 @@ public class DataSamudayaJobBuilderTest extends MassiveDataMRJobBase {
 		assertTrue(datasamudayajob.reducers.get(0) instanceof AirlineDataMapper);
 		assertEquals("/aircararrivaldelay", datasamudayajob.outputfolder);
 		List<DataCruncherContext> dccl = datasamudayajob.call();
-		log.info(dccl);
+		log.info("{}",dccl);
 		assertEquals(1, dccl.size());
 	}
 }

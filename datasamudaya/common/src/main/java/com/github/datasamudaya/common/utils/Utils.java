@@ -2208,7 +2208,7 @@ public class Utils {
 	 * @param out
 	 */
 	public static long printTableOrError(List data, PrintWriter out, JOBTYPE jobtype) {
-		if (data.isEmpty()) {
+		if (isNull(data) || data.isEmpty()) {
 			out.println("No data available to display.");
 			return 0;
 		}

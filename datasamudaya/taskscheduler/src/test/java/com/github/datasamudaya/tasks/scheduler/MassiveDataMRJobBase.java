@@ -41,10 +41,11 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
-import org.apache.log4j.Logger;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.CacheUtils;
@@ -64,7 +65,7 @@ import com.github.datasamudaya.tasks.executor.NodeRunner;
 
 public class MassiveDataMRJobBase {
 	static ConcurrentMap<String, Map<String, Process>> containerprocesses = new ConcurrentHashMap<>();
-	static Logger log = Logger.getLogger(MassiveDataMRJobBase.class);
+	static Logger log = LoggerFactory.getLogger(MassiveDataMRJobBase.class);
 	static String teappid;
 	static String appid;
 	static MiniDFSCluster hdfsLocalCluster;
@@ -158,7 +159,7 @@ public class MassiveDataMRJobBase {
 				resource.setUsabledisksize(Utils.usablediskspace());
 				resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
 				zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource, event -> {
-					log.info(event);
+					log.info("{}",event);
 				});
 				while (isNull(DataSamudayaNodesResources.get()) || nonNull(DataSamudayaNodesResources.get()) && DataSamudayaNodesResources.get().size() != numberofnodes) {
 					Thread.sleep(1000);
