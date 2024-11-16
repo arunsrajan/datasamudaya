@@ -78,7 +78,7 @@ public class SQLServer {
 							isdriverrequired = Boolean.parseBoolean(in.readLine());
 							scheduler = in.readLine();
 							tejobid = in.readLine();
-							sessionState = Utils.startHiveSession();
+							sessionState = Utils.startHiveSession(user);
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
 								out.println(usernotexistsmessage);
@@ -241,16 +241,16 @@ public class SQLServer {
 											out.println(dbdefault);
 										} else if (inputLine.startsWith("create")
 												|| inputLine.startsWith("alter")) {
-											out.println(TableCreator.createAlterTable(dbdefault, inputLine));
+											out.println(TableCreator.createAlterTable(user, dbdefault, inputLine));
 										} else if (inputLine.startsWith("drop")) {
-											out.println(TableCreator.dropTable(dbdefault, inputLine));
+											out.println(TableCreator.dropTable(user, dbdefault, inputLine));
 										} else if (inputLine.startsWith("show")) {
-											Utils.printTableOrError(TableCreator.showTables(dbdefault, inputLine), out, JOBTYPE.NORMAL);
+											Utils.printTableOrError(TableCreator.showTables(user, dbdefault, inputLine), out, JOBTYPE.NORMAL);
 										} else if (inputLine.startsWith("explain")) {
-											SelectQueryExecutor.explain(dbdefault, inputLine.replaceFirst("explain", ""), out);
+											SelectQueryExecutor.explain(user, dbdefault, inputLine.replaceFirst("explain", ""), out);
 										} else if (inputLine.startsWith("describe")) {
 											var columns = new ArrayList<ColumnMetadata>();
-											TableCreator.getColumnMetadataFromTable(dbdefault, inputLine.split(" ")[1], columns);
+											TableCreator.getColumnMetadataFromTable(user, dbdefault, inputLine.split(" ")[1], columns);
 											for (ColumnMetadata colmetadata : columns) {
 												out.println(colmetadata);
 											}

@@ -74,7 +74,7 @@ public class SQLServerMR {
 							cpupercontainer = Integer.valueOf(in.readLine());
 							memorypercontainer = Integer.valueOf(in.readLine());
 							scheduler = in.readLine();
-							sessionState = Utils.startHiveSession();
+							sessionState = Utils.startHiveSession(user);
 							if (!Utils.isUserExists(user)) {
 								String usernotexistsmessage = "User " + user + " is not configured. Exiting...";
 								out.println(usernotexistsmessage);
@@ -206,16 +206,16 @@ public class SQLServerMR {
 											out.println(dbdefault);
 										} else if (inputLine.startsWith("create")
 												|| inputLine.startsWith("alter")) {
-											out.println(TableCreator.createAlterTable(dbdefault, inputLine));
+											out.println(TableCreator.createAlterTable(user, dbdefault, inputLine));
 										} else if (inputLine.startsWith("drop")) {
-											out.println(TableCreator.dropTable(dbdefault, inputLine));
+											out.println(TableCreator.dropTable(user, dbdefault, inputLine));
 										} else if (inputLine.startsWith("show")) {
-											Utils.printTableOrError(TableCreator.showTables(dbdefault, inputLine), out, JOBTYPE.NORMAL);
+											Utils.printTableOrError(TableCreator.showTables(user, dbdefault, inputLine), out, JOBTYPE.NORMAL);
 										} else if (inputLine.startsWith("explain")) {
-											SelectQueryExecutorMR.explain(dbdefault, inputLine.replaceFirst("explain", ""), out);
+											SelectQueryExecutorMR.explain(user, dbdefault, inputLine.replaceFirst("explain", ""), out);
 										} else if (inputLine.startsWith("describe")) {
 											var columns = new ArrayList<ColumnMetadata>();
-											TableCreator.getColumnMetadataFromTable(dbdefault, inputLine.split(" ")[1], columns);
+											TableCreator.getColumnMetadataFromTable(user, dbdefault, inputLine.split(" ")[1], columns);
 											for (ColumnMetadata colmetadata : columns) {
 												out.println(colmetadata);
 											}

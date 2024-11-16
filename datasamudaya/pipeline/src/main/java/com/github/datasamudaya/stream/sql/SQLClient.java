@@ -164,7 +164,7 @@ public class SQLClient {
 				isclient = driverlocation
 				.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
 				if(isclient) {
-					Utils.startHiveSession();
+					Utils.startHiveSession(user);
 				}
 				if(isclient && !(isignite)) {
 					cpudriver = 0;
@@ -351,7 +351,7 @@ public class SQLClient {
 								args[2]);
 					} else if(args[1].equalsIgnoreCase("sql")) {
 						var columns = new ArrayList<ColumnMetadata>();
-						TableCreator.getColumnMetadataFromTable(dbdefault, args[2], columns);
+						TableCreator.getColumnMetadataFromTable(user, dbdefault, args[2], columns);
 						List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());				
 						String query = String.format(DataSamudayaConstants.SQL_QUERY_AGG_PROMPT, args[2],columnsNames.toString());
 						consoleout.println();
@@ -373,7 +373,7 @@ public class SQLClient {
 							continue;
 						}
 						var columns = new ArrayList<ColumnMetadata>();
-						TableCreator.getColumnMetadataFromTable(dbdefault, args[3], columns);
+						TableCreator.getColumnMetadataFromTable(user, dbdefault, args[3], columns);
 						List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());				
 						String query = String.format(DataSamudayaConstants.SQL_QUERY_MUL_AGG_PROMPT, args[2],args[3],columnsNames.toString());
 						consoleout.println();
@@ -435,7 +435,7 @@ public class SQLClient {
 						var columnnames = new StringBuffer();
 						String tablename = args[2];
 						var columns = new ArrayList<ColumnMetadata>();
-						TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columns);
+						TableCreator.getColumnMetadataFromTable(user, dbdefault, tablename, columns);
 						columns.stream().map(ColumnMetadata::getColumnName).forEach(colname->columnnames.append(colname).append(", "));
 						columnnames.deleteCharAt(columnnames.length()-2);
 						for (int count = 3; count < args.length; count++) {
@@ -469,16 +469,16 @@ public class SQLClient {
 					out.println(dbdefault);
 				} else if (input.startsWith("create")
 						|| input.startsWith("alter")) {
-					out.println(TableCreator.createAlterTable(dbdefault, input));
+					out.println(TableCreator.createAlterTable(user, dbdefault, input));
 				} else if (input.startsWith("drop")) {
-					out.println(TableCreator.dropTable(dbdefault, input));
+					out.println(TableCreator.dropTable(user, dbdefault, input));
 				} else if (input.startsWith("show")) {
-					Utils.printTableOrError(TableCreator.showTables(dbdefault, input), out, JOBTYPE.NORMAL);
+					Utils.printTableOrError(TableCreator.showTables(user, dbdefault, input), out, JOBTYPE.NORMAL);
 				} else if (input.startsWith("explain")) {
-					SelectQueryExecutor.explain(dbdefault, input.replaceFirst("explain", ""), out);
+					SelectQueryExecutor.explain(user, dbdefault, input.replaceFirst("explain", ""), out);
 				} else if (input.startsWith("describe")) {
 					var columns = new ArrayList<ColumnMetadata>();
-					TableCreator.getColumnMetadataFromTable(dbdefault, input.split(" ")[1], columns);
+					TableCreator.getColumnMetadataFromTable(user, dbdefault, input.split(" ")[1], columns);
 					for (ColumnMetadata colmetadata : columns) {
 						out.println(colmetadata);
 					}

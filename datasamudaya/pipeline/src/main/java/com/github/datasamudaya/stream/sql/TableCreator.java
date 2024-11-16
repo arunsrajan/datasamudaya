@@ -39,8 +39,8 @@ public class TableCreator {
 	 * @return Table Created message
 	 * @throws Exception
 	 */
-	public static String createAlterTable(String db, String createCommand) throws Exception {
-		Configuration conf = Utils.getHiveConf();	      
+	public static String createAlterTable(String user, String db, String createCommand) throws Exception {
+		Configuration conf = Utils.getHiveConf(user);	      
 		try (Driver driver = new Driver((HiveConf) conf);){	        
 	        driver.run(createCommand);
 			return "Table created/altered";
@@ -60,8 +60,8 @@ public class TableCreator {
 	 * @return "Table Dropped" message
 	 * @throws Exception
 	 */
-	public static String dropTable(String db, String dropCommand) throws Exception {
-		Configuration conf = Utils.getHiveConf();	      
+	public static String dropTable(String user, String db, String dropCommand) throws Exception {
+		Configuration conf = Utils.getHiveConf(user);	      
 		try (Driver driver = new Driver((HiveConf) conf);){	        
 	        driver.run(dropCommand);
 			return "Table dropped";
@@ -75,8 +75,8 @@ public class TableCreator {
 		}
 	}
 
-	public static List<String> showTables(String db, String showcommand) throws Exception {
-		Configuration conf = Utils.getHiveConf();	 
+	public static List<String> showTables(String user, String db, String showcommand) throws Exception {
+		Configuration conf = Utils.getHiveConf(user);	 
 		HCatClient client = null;
 		try {
 			client = HCatClient.create(conf);
@@ -102,8 +102,8 @@ public class TableCreator {
 	 * @return "Metadata Retrieved for table" message
 	 * @throws Exception
 	 */
-	public static String getColumnMetadataFromTable(String db, String tablename, List<ColumnMetadata> columnMetadatas) throws Exception {
-		Configuration conf = Utils.getHiveConf();	 
+	public static String getColumnMetadataFromTable(String user, String db, String tablename, List<ColumnMetadata> columnMetadatas) throws Exception {
+		Configuration conf = Utils.getHiveConf(user);	 
 		HCatClient client = null;
 		try {
 			client = HCatClient.create(conf);

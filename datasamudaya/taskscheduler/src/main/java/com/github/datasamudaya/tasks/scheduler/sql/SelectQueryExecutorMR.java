@@ -74,7 +74,7 @@ public class SelectQueryExecutorMR {
 					.setDb(defaultdb).setJobConfiguration(jc).setSql(selectquery);
 			for (String table : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();				
-				String hdfslocation = TableCreator.getColumnMetadataFromTable(defaultdb, table, columnMetadatas);
+				String hdfslocation = TableCreator.getColumnMetadataFromTable(user, defaultdb, table, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {					
@@ -105,7 +105,7 @@ public class SelectQueryExecutorMR {
 	 * @param out
 	 * @throws Exception
 	 */
-	public static void explain(String dbdefault, String selectquery, PrintWriter out) throws Exception {
+	public static void explain(String user, String dbdefault, String selectquery, PrintWriter out) throws Exception {
 		try {
 			CCJSqlParserManager parserManager = new CCJSqlParserManager();
 			Validation validation = new Validation(Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB,
@@ -121,7 +121,7 @@ public class SelectQueryExecutorMR {
 			ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap = new ConcurrentHashMap<>();
 			for (String tablename : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
+				TableCreator.getColumnMetadataFromTable(user, dbdefault, tablename, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {					
@@ -184,7 +184,7 @@ public class SelectQueryExecutorMR {
 					.setDb(defaultdb).setJobConfiguration(jc).setSql(selectquery);
 			for (String table : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();				
-				String hdfslocation = TableCreator.getColumnMetadataFromTable(defaultdb, table, columnMetadatas);
+				String hdfslocation = TableCreator.getColumnMetadataFromTable(user, defaultdb, table, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {					

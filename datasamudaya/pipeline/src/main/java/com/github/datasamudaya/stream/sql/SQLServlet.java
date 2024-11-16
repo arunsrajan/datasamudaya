@@ -27,6 +27,7 @@ public class SQLServlet extends HttpServlet {
         String numQueriesStr = request.getParameter("numQueries");
         String sqlStr = request.getParameter("sql");
         String numInsightsStr = request.getParameter("numInsights");
+        String user = request.getParameter("user");
 
         // Set response content type
         response.setContentType("text/plain");
@@ -35,7 +36,7 @@ public class SQLServlet extends HttpServlet {
         // If generating a single query (Page 1)
         if (task.equalsIgnoreCase(DataSamudayaConstants.GENERATESQLTASK)) {
             if (tableName != null && !tableName.isEmpty()) {
-                out.println(generateSingleSQL(tableName));
+                out.println(generateSingleSQL(user, tableName));
             } else {
                 out.println("Error: Table name is required.");
             }
@@ -45,7 +46,7 @@ public class SQLServlet extends HttpServlet {
             try {
                 int numQueries = Integer.parseInt(numQueriesStr);
                 if (tableName != null && !tableName.isEmpty() && numQueries > 0) {
-                	out.println(generateMultipleSQL(tableName, numQueries));
+                	out.println(generateMultipleSQL(user, tableName, numQueries));
                 } else {
                     out.println("Error: Table name and number of queries are required.");
                 }
@@ -67,12 +68,12 @@ public class SQLServlet extends HttpServlet {
     }
 
     // Method to generate a single SQL query
-    private String generateSingleSQL(String tableName) {
+    private String generateSingleSQL(String user, String tableName) {
 		try {
 			String dbdefault = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SQLDB,
 					DataSamudayaConstants.SQLMETASTORE_DB);
 			var columns = new ArrayList<ColumnMetadata>();
-			TableCreator.getColumnMetadataFromTable(dbdefault, tableName, columns);
+			TableCreator.getColumnMetadataFromTable(user, dbdefault, tableName, columns);
 			List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName)
 					.collect(Collectors.toList());
 			String query = String.format(DataSamudayaConstants.SQL_QUERY_AGG_PROMPT, tableName,
@@ -92,12 +93,12 @@ public class SQLServlet extends HttpServlet {
     }
 
     // Method to generate multiple SQL queries
-    private String generateMultipleSQL(String tableName, int numQueries) {
+    private String generateMultipleSQL(String user, String tableName, int numQueries) {
     	try {
 	    	String dbdefault = DataSamudayaProperties.get()
 					.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
 	    	var columns = new ArrayList<ColumnMetadata>();
-			TableCreator.getColumnMetadataFromTable(dbdefault, tableName, columns);
+			TableCreator.getColumnMetadataFromTable(user, dbdefault, tableName, columns);
 			List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());				
 			String query = String.format(DataSamudayaConstants.SQL_QUERY_MUL_AGG_PROMPT, numQueries,tableName,columnsNames.toString());
 			ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 

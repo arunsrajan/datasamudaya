@@ -4000,7 +4000,7 @@ public class Utils {
 	 * @return HiveConf 
 	 * @throws Exception
 	 */
-	public static HiveConf getHiveConf() throws Exception {
+	public static HiveConf getHiveConf(String user) throws Exception {
 		File scratchDirFile = new File(DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.HIVE_SCRATCH_DIR, 
 						DataSamudayaConstants.HIVE_SCRATCH_DIR_DEFAULT));
@@ -4015,19 +4015,24 @@ public class Utils {
 		// also set the permissions manually since Hive doesn't do it...
 		scratchDirFile.setWritable(true, false);
 		String storeid = "1234";
-		conf.set("hive.metastore.warehouse.dir", scratchDir + DataSamudayaProperties.get()
+		conf.set("hive.metastore.warehouse.dir", scratchDir + DataSamudayaConstants.SLASH + user + 
+				DataSamudayaProperties.get()
 		.getProperty(DataSamudayaConstants.WAREHOUSE_DIR_PATH, 
 				DataSamudayaConstants.WAREHOUSE_DIR_PATH_DEFAULT) + storeid);
-		conf.set("hive.metastore.metadb.dir", scratchDir + DataSamudayaProperties.get()
+		conf.set("hive.metastore.metadb.dir", 
+				scratchDir + DataSamudayaConstants.SLASH + user +
+				DataSamudayaProperties.get()
 		.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH, 
 				DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid);
-		conf.set("hive.exec.scratchdir", scratchDir);
+		conf.set("hive.exec.scratchdir", scratchDir + DataSamudayaConstants.SLASH + user);
 		conf.set("fs.permissions.umask-mode", "022");
 		conf.set("hive.metastore.dbtype", "derby");
 		conf.set("hive.metastore.local", "true");
 		conf.set("hive.metastore.schema.verification", "false");
 		conf.set("javax.jdo.option.ConnectionURL",
-				"jdbc:derby:;databaseName=" + scratchDir + DataSamudayaProperties.get()
+				"jdbc:derby:;databaseName=" + scratchDir 
+				 + DataSamudayaConstants.SLASH + user
+				+ DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH, 
 						DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid + ";create=true");
 		conf.set("hive.metastore.local", "true");
@@ -4065,8 +4070,8 @@ public class Utils {
 	 * @return session start
 	 * @throws Exception
 	 */
-	public static SessionState startHiveSession() throws Exception {
-		SessionState sessionState = new SessionState(getHiveConf());
+	public static SessionState startHiveSession(String user) throws Exception {
+		SessionState sessionState = new SessionState(getHiveConf(user));
         return SessionState.start(sessionState);
 	}
 	

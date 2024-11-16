@@ -87,7 +87,7 @@ public class SelectQueryExecutor {
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);
 			for (String tablename : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				String hdfslocation = TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
+				String hdfslocation = TableCreator.getColumnMetadataFromTable(user, dbdefault, tablename, columnMetadatas);
 				String fileformat = DataSamudayaConstants.CSV;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
@@ -126,7 +126,7 @@ public class SelectQueryExecutor {
 	 * @param selectquery
 	 * @throws Exception
 	 */
-	public static void explain(String dbdefault, String selectquery, PrintWriter out) throws Exception {
+	public static void explain(String user, String dbdefault, String selectquery, PrintWriter out) throws Exception {
 		try {
 			CCJSqlParserManager parserManager = new CCJSqlParserManager();
 			Validation validation = new Validation(Arrays.asList(DatabaseType.SQLSERVER, DatabaseType.MARIADB,
@@ -142,7 +142,7 @@ public class SelectQueryExecutor {
 			ConcurrentMap<String, List<SqlTypeName>> tablecolumntypesmap = new ConcurrentHashMap<>();
 			for (String tablename : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
+				TableCreator.getColumnMetadataFromTable(user, dbdefault, tablename, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
 				for (ColumnMetadata columnMetadata : columnMetadatas) {					
@@ -265,7 +265,7 @@ public class SelectQueryExecutor {
 					.setPipelineConfig(pc).setSql(selectquery).setDb(dbdefault);
 			for (String tablename : tables) {
 				var columnMetadatas = new ArrayList<ColumnMetadata>();
-				String hdfslocation = TableCreator.getColumnMetadataFromTable(dbdefault, tablename, columnMetadatas);
+				String hdfslocation = TableCreator.getColumnMetadataFromTable(user, dbdefault, tablename, columnMetadatas);
 				String fileformat = DataSamudayaConstants.CSV;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
