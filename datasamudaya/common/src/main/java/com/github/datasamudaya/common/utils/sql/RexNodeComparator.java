@@ -67,7 +67,7 @@ public class RexNodeComparator {
 	 * @param call2
 	 * @return true if the two RexCalls are semantically equivalent
 	 */
-	private boolean compareRexCallsSemantically(RexCall call1, RexCall call2) {
+	public boolean compareRexCallsSemantically(RexCall call1, RexCall call2) {
 	    if (isReversedComparison(call1.getOperator().getName(), call2.getOperator().getName())) {
 	        // Get the operands
 	        List<RexNode> operands1 = call1.getOperands();
@@ -157,7 +157,10 @@ public class RexNodeComparator {
 	 * @param operands2
 	 * @return true if the operands are semantically equivalent
 	 */
-	private boolean compareOperandsIgnoringOrder(List<RexNode> operands1, List<RexNode> operands2) {
+	public boolean compareOperandsIgnoringOrder(List<RexNode> operands1, List<RexNode> operands2) {
+		if (operands1.size() != operands2.size()) {
+			return false;
+		}
 	    // Create a copy of the operands to sort them
 	    List<RexNode> sortedOperands1 = new ArrayList<>(operands1);
 	    List<RexNode> sortedOperands2 = new ArrayList<>(operands2);

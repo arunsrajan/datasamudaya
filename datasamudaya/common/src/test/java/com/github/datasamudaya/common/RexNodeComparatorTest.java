@@ -19,6 +19,7 @@ import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
@@ -28,7 +29,6 @@ import org.apache.calcite.tools.RuleSets;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 
 import com.github.datasamudaya.common.utils.sql.Optimizer;
 import com.github.datasamudaya.common.utils.sql.RexNodeComparator;
@@ -978,6 +978,247 @@ public class RexNodeComparatorTest {
         Assertions.assertFalse(comparator.compareRexNodesSemantically(literal1, literal3), "RexLiterals with different edge case values should not be equal");
     }
     
-  //Test cases from chatgpt prompt end
-	
+    @Test
+    public void testCompareRexCallsSemantically_EqualCalls() {
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        // Create a RexCall for equality with same operands
+        RexLiteral literal1 = (RexLiteral) rexBuilder.makeLiteral(1, intType, false);
+        RexLiteral literal2 =(RexLiteral) rexBuilder.makeLiteral(1, intType, false);
+        RexCall call1 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.PLUS, List.of(literal1, literal2));
+        RexCall call2 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.PLUS, List.of(literal1, literal2));
+
+        // The two calls should be semantically equal
+        assertTrue(comparator.compareRexCallsSemantically(call1, call2));
+    }
+
+    @Test
+    public void testCompareRexCallsSemantically_DifferentOperator() {
+        // Create RexCalls with different operators
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexLiteral literal1 = (RexLiteral) rexBuilder.makeLiteral(1, intType, false);
+        RexLiteral literal2 =(RexLiteral) rexBuilder.makeLiteral(2, intType, false);
+        RexCall call1 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(literal1, literal2));
+        RexCall call2 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.LESS_THAN, List.of(literal1, literal2));
+
+
+        // The operators are different, so the calls should not be semantically equal
+        assertFalse(comparator.compareRexCallsSemantically(call1, call2));
+    }
+
+    @Test
+    public void testCompareRexCallsSemantically_SwappedOperands() {
+        // Create RexCalls with swapped operands but same operator
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        // Create a RexCall for equality with same operands
+        RexLiteral literal1 = (RexLiteral) rexBuilder.makeLiteral(1, intType, false);
+        RexLiteral literal2 =(RexLiteral) rexBuilder.makeLiteral(2, intType, false);
+        RexCall call1 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(literal1, literal2));
+        RexCall call2 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(literal2, literal1));
+
+
+        // The operands are swapped, but for equality, the order doesn't matter
+        assertTrue(comparator.compareRexCallsSemantically(call1, call2));
+    }
+
+    @Test
+    public void testCompareRexCallsSemantically_AndOperator() {
+        // Create RexCalls with AND operator
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexLiteral literal1 = (RexLiteral) rexBuilder.makeLiteral(1, intType, false);
+        RexLiteral literal2 =(RexLiteral) rexBuilder.makeLiteral(2, intType, false);
+        RexCall call1 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.AND, List.of(literal1, literal2));
+        RexCall call2 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.AND, List.of(literal2, literal1));
+
+
+        // AND operator should ignore operand order
+        assertTrue(comparator.compareRexCallsSemantically(call1, call2));
+    }
+
+    @Test
+    public void testCompareRexCallsSemantically_GreaterThanReversedComparison() {
+        // Create RexCalls with reversed comparison operators
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexLiteral literal1 = (RexLiteral) rexBuilder.makeLiteral(1, intType, false);
+        RexLiteral literal2 =(RexLiteral) rexBuilder.makeLiteral(2, intType, false);
+        RexCall call1 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN, List.of(literal1, literal2));
+        RexCall call2 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.LESS_THAN_OR_EQUAL, List.of(literal2, literal1));
+
+        // Reversed operators should be considered semantically equivalent
+        assertTrue(comparator.compareRexCallsSemantically(call1, call2));
+    }
+
+    @Test
+    public void testCompareRexCallsSemantically_ComparisonOperator() {
+        // Create RexCalls with the same comparison operator and operands
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexLiteral literal1 = (RexLiteral) rexBuilder.makeLiteral(1, intType, false);
+        RexLiteral literal2 =(RexLiteral) rexBuilder.makeLiteral(2, intType, false);
+        RexCall call1 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN, List.of(literal1, literal2));
+        RexCall call2 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN, List.of(literal1, literal2));
+
+
+        // Comparison operators should work when operands and operator match
+        assertTrue(comparator.compareRexCallsSemantically(call1, call2));
+    }
+
+    @Test
+    public void testCompareRexCallsSemantically_EqualityWithNullOperands() {
+        // Create RexCalls with NULL operands
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexLiteral literal1 = (RexLiteral) rexBuilder.makeLiteral(null, intType, false);
+        RexLiteral literal2 =(RexLiteral) rexBuilder.makeLiteral(null, intType, false);
+        RexCall call1 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(literal1, literal2));
+        RexCall call2 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(literal1, literal2));
+
+
+        // NULLs should be considered equal when comparing
+        assertTrue(comparator.compareRexCallsSemantically(call1, call2));
+    }
+
+    @Test
+    public void testCompareRexCallsSemantically_NotEqual() {
+        // Create RexCalls with different operands
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexLiteral literal1 = (RexLiteral) rexBuilder.makeLiteral(1, intType, false);
+        RexLiteral literal2 =(RexLiteral) rexBuilder.makeLiteral(3, intType, false);
+        RexCall call1 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(literal1, literal2));
+        RexCall call2 = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(literal2, literal1));
+
+
+        // Different values in the operands means the calls are not equal
+        assertTrue(comparator.compareRexCallsSemantically(call1, call2));
+    }
+    
+    @Test
+    public void testCompareOperandsIgnoringOrder_withSameOperandsInDifferentOrder() {
+        // Create RexInputRefs (or any RexNode type) with same values but different order
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexNode input1 = rexBuilder.makeInputRef(intType, 0);
+        RexNode input2 = rexBuilder.makeInputRef(intType, 1);
+        RexNode input3 = rexBuilder.makeInputRef(intType, 2);
+        
+        // Operands in different order
+        List<RexNode> operands1 = Arrays.asList(input1, input2, input3);
+        List<RexNode> operands2 = Arrays.asList(input3, input1, input2);
+        
+        // Compare operands ignoring order
+        Assertions.assertTrue(comparator.compareOperandsIgnoringOrder(operands1, operands2), "Operands should be equal ignoring order");
+    }
+
+    @Test
+    public void testCompareOperandsIgnoringOrder_withSameOperandsInSameOrder() {
+        // Create RexInputRefs with same values and the same order
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexNode input1 = rexBuilder.makeInputRef(intType, 0);
+        RexNode input2 = rexBuilder.makeInputRef(intType, 1);
+        RexNode input3 = rexBuilder.makeInputRef(intType, 2);
+        
+        // Operands in same order
+        List<RexNode> operands1 = Arrays.asList(input1, input2, input3);
+        List<RexNode> operands2 = Arrays.asList(input1, input2, input3);
+        
+        // Compare operands
+        Assertions.assertTrue(comparator.compareOperandsIgnoringOrder(operands1, operands2), "Operands should be equal in the same order");
+    }
+
+    @Test
+    public void testCompareOperandsIgnoringOrder_withDifferentOperands() {
+        // Create RexInputRefs with different values
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexNode input1 = rexBuilder.makeInputRef(intType, 0);
+        RexNode input2 = rexBuilder.makeInputRef(intType, 1);
+        RexNode input3 = rexBuilder.makeInputRef(intType, 2);
+        RexNode input4 = rexBuilder.makeInputRef(intType, 3);
+        
+        // Operands are different
+        List<RexNode> operands1 = Arrays.asList(input1, input2, input3);
+        List<RexNode> operands2 = Arrays.asList(input1, input4, input3);
+        
+        // Compare operands
+        Assertions.assertFalse(comparator.compareOperandsIgnoringOrder(operands1, operands2), "Operands should not be equal because of different values");
+    }
+
+    @Test
+    public void testCompareOperandsIgnoringOrder_withEmptyLists() {
+        // Empty operand lists
+        List<RexNode> operands1 = Arrays.asList();
+        List<RexNode> operands2 = Arrays.asList();
+        
+        // Compare empty operand lists
+        Assertions.assertTrue(comparator.compareOperandsIgnoringOrder(operands1, operands2), "Empty operand lists should be considered equal");
+    }
+
+    @Test
+    public void testCompareOperandsIgnoringOrder_withOneEmptyList() {
+        // One empty operand list
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexNode input1 = rexBuilder.makeInputRef(intType, 0);
+        RexNode input2 = rexBuilder.makeInputRef(intType, 1);
+        
+        List<RexNode> operands1 = Arrays.asList(input1, input2);
+        List<RexNode> operands2 = Arrays.asList();
+        
+        // Compare one non-empty list with an empty list
+        Assertions.assertFalse(comparator.compareOperandsIgnoringOrder(operands1, operands2), "Non-empty operand list should not be equal to an empty list");
+    }
+
+    @Test
+    public void testCompareOperandsIgnoringOrder_withNullValues() {
+        // Test with null literals
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexNode nullLiteral1 = rexBuilder.makeLiteral(null, intType);
+        RexNode nullLiteral2 = rexBuilder.makeLiteral(null, intType);
+        
+        RexNode input1 = rexBuilder.makeInputRef(intType, 0);
+        
+        List<RexNode> operands1 = Arrays.asList(nullLiteral1, input1);
+        List<RexNode> operands2 = Arrays.asList(input1, nullLiteral2);
+        
+        // Compare operands with nulls
+        Assertions.assertTrue(comparator.compareOperandsIgnoringOrder(operands1, operands2), "Operands containing nulls should be considered equal ignoring order");
+    }
+
+    @Test
+    public void testCompareOperandsIgnoringOrder_withDifferentNulls() {
+        // Test with null and non-null operands
+    	JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+        RelDataType intType = typeFactory.createJavaType(Integer.class);
+        RexBuilder rexBuilder = new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+        RexNode nullLiteral = rexBuilder.makeLiteral(null, intType);
+        RexNode input1 = rexBuilder.makeInputRef(intType, 0);
+        
+        List<RexNode> operands1 = Arrays.asList(input1, nullLiteral);
+        List<RexNode> operands2 = Arrays.asList(nullLiteral, input1);
+        
+        // Compare operands with nulls and other values
+        Assertions.assertTrue(comparator.compareOperandsIgnoringOrder(operands1, operands2), "Operands containing nulls should be considered equal ignoring order");
+    }
+    
+    //Test cases from chatgpt prompt end
 }
