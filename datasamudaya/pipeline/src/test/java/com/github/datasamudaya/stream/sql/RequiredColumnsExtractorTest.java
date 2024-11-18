@@ -293,6 +293,7 @@ public class RequiredColumnsExtractorTest {
 		SimpleSchema schema = builder.build();
 		Optimizer optimizer = Optimizer.create(schema);
 		SqlNode sqlTree = optimizer.parse(sql);
+		sqlTree = optimizer.validate(sqlTree);
 		log.info("{}",sqlTree);	
 		RelNode relTree = optimizer.convert(sqlTree);		
 		RuleSet rules = RuleSets.ofList(

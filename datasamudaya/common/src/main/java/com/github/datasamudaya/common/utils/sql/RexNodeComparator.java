@@ -1,5 +1,8 @@
 package com.github.datasamudaya.common.utils.sql;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,8 +46,10 @@ public class RexNodeComparator {
 	 * @return true if the two RexLiterals are semantically equivalent
 	 */
 	private boolean compareRexLiterals(RexLiteral literal1, RexLiteral literal2) {
-	    return literal1.getTypeName() == literal2.getTypeName() &&
-	           literal1.getValue().equals(literal2.getValue());
+	    return literal1.getType() == literal2.getType() && (
+	    		isNull(literal1.getValue()) && isNull(literal2.getValue())
+	    		|| nonNull(literal1.getValue()) &&
+	           literal1.getValue().equals(literal2.getValue()));
 	}
 	/**
 	 * compare two RexInputRefs semantically
@@ -84,12 +89,18 @@ public class RexNodeComparator {
 	    }
 	    
 	    // Handle comparison operators (including equality and others)
-	    if (call1.getOperator().getName().equals("=")) {
+	    if(!call1.getOperator().getName().equals(call2.getOperator().getName())) {
+	    	return false;
+	    }
+	    else if (call1.getOperator().getName().equals("=") && 
+	    		call2.getOperator().getName().equals("=")) {
 	        // For equality, check both combinations of operand orders
 	        return (operands1.size() == operands2.size()) && 
 	               (compareOperandsIgnoringOrder(operands1, operands2) || 
 	                compareOperandsIgnoringOrder(operands2, operands1));
-	    } else if (isComparisonOperator(call1.getOperator().getName())) {
+	    } else if (isComparisonOperator(call1.getOperator().getName()) && 
+	    		isComparisonOperator(call2.getOperator().getName()) &&
+	    		call1.getOperator().getName().equals(call2.getOperator().getName())) {
 	        // For comparison operators, check the number of operands
 	        if (operands1.size() != operands2.size()) {
 	            return false; // Different number of operands
