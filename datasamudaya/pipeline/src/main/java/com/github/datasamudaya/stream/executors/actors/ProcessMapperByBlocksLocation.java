@@ -29,9 +29,9 @@ import java.util.stream.Stream;
 
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
 import org.json.simple.JSONObject;
@@ -55,7 +55,6 @@ import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
-import com.github.datasamudaya.common.utils.sql.RexNodeComparator;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.JsonSQL;
 import com.github.datasamudaya.stream.PipelineException;
@@ -163,11 +162,10 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 						headers = cosql.getHeader();
 						iscsv = true;
 						filter = cosql.getFilter();
-						var filtercomparator = new RexNodeComparator();
 						String blkey = Utils.getBlocksLocation(blockslocation);
 						var toskippartitionoptional = nonNull(filter) &&  nonNull(blockspartitionfilterskipmap.get(blkey))? blockspartitionfilterskipmap
 						.get(blkey)
-						.entrySet().stream().filter(entry->filtercomparator.compareWhereConditions(entry.getKey(), filter))
+						.entrySet().stream().filter(entry->entry.getKey().equals(filter))
 						.map(entry->entry.getValue())
 						.findFirst():Optional.empty();
 						if(toskippartitionoptional.isPresent()) {
