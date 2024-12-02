@@ -377,7 +377,7 @@ public class PigQueryClient {
 		boolean lineRead = false;
 		while (!lineRead) {
 			try {
-				line =  reader.readLine("SQL> ");
+				line =  reader.readLine("PIG> ");
 				lineRead = true;
 			}
 		    catch (UserInterruptException e) {

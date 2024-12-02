@@ -137,7 +137,6 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			}
 			String jobid = args[2];
 			String executortype = args[3];	
-			shuffleFileServer = Utils.startShuffleRecordsServer();						
 			if (args[0].equals(DataSamudayaConstants.TEPROPLOADDISTROCONFIG)) {
 				String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 				PropertyConfigurator.configure(
@@ -167,6 +166,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			escompute = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
 					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
 							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), virtualThreadFactory);
+			shuffleFileServer = Utils.startShuffleRecordsServer();
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid, executortype);
 			ter.start(zo, jobid, executortype, args);
