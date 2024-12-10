@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -31,23 +32,26 @@ import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
-import com.github.datasamudaya.common.TerminatingActorValue;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
  * Akka actors for the Reduce operators.
  * @author Arun
  *
  */
-public class ProcessReduce extends AbstractActor implements Serializable {
+public class ProcessReduce extends AbstractBehavior<Command> implements Serializable {
 	Logger log = LoggerFactory.getLogger(ProcessReduce.class);
 	
 	protected JobStage jobstage;
@@ -59,7 +63,7 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 	ExecutorService executor;
 	private final boolean topersist = false;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<ActorSelection> childpipes;
+	List<EntityRef> childpipes;
 	int dummysize;
 	int terminatingsize;
 	int initialshufflesize;
@@ -77,10 +81,20 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 		log.debug("Exiting ProcessReduce");
 		return functions;
 	}
-
-	private ProcessReduce(JobStage js, FileSystem hdfs, Cache cache,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<ActorSelection> childpipes,
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessReduce-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, JobStage js, FileSystem hdfs, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+	return Behaviors.setup(context -> new ProcessReduce(context, js, hdfs, cache, 
+				jobidstageidtaskidcompletedmap, 
+				tasktoprocess, childpipes, terminatingsize));
+	}
+	private ProcessReduce(ActorContext<Command> context, JobStage js, FileSystem hdfs, Cache cache,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<EntityRef> childpipes,
 			int terminatingsize) {
+		super(context);
 		this.jobstage = js;
 		this.hdfs = hdfs;
 		this.cache = cache;
@@ -96,13 +110,13 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder()
-				.match(OutputObject.class, this::processReduce)
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder()
+				.onMessage(OutputObject.class, this::processReduce)
 				.build();
 	}
 
-	private void processReduce(OutputObject object) throws PipelineException, Exception {
+	private Behavior<Command> processReduce(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof ShuffleBlock sb) {								
 				try {
@@ -180,14 +194,14 @@ public class ProcessReduce extends AbstractActor implements Serializable {
 						diskspilllist.close();
 					}
 					childpipes.stream().forEach(action -> action
-							.tell(new OutputObject(diskspilllist, false, false, DiskSpillingList.class), ActorRef.noSender()));
+							.tell(new OutputObject(diskspilllist, false, false, DiskSpillingList.class)));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 					log.debug("Reduce Completed");
 				}
 			}
 
 		}
-
+		return this;
 	}
 
 	/**

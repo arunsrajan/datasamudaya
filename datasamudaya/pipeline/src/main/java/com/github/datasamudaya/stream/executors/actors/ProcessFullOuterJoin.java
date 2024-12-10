@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.JobStage;
@@ -30,16 +31,20 @@ import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
  * Akka actors for the left outer join operators
  * @author arun
  *
  */
-public class ProcessFullOuterJoin extends AbstractActor implements Serializable {
+public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements Serializable {
 	private static Logger log =LoggerFactory.getLogger(ProcessFullOuterJoin.class);
 
 	protected JobStage jobstage;
@@ -50,7 +55,7 @@ public class ProcessFullOuterJoin extends AbstractActor implements Serializable 
 	ExecutorService executor;
 	int terminatingsize;
 	int initialsize;
-	List<ActorSelection> pipelines;
+	List<EntityRef> pipelines;
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	OutputObject left;
@@ -60,8 +65,20 @@ public class ProcessFullOuterJoin extends AbstractActor implements Serializable 
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
-	private ProcessFullOuterJoin(List<ActorSelection> pipelines, int terminatingsize,
+	
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessFullOuterJoin-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+	return Behaviors.setup(context -> new ProcessFullOuterJoin(context, pipelines, terminatingsize,
+			jobidstageidtaskidcompletedmap, cache, task));
+	}
+	
+	private ProcessFullOuterJoin(ActorContext<Command> context, List<EntityRef> pipelines, int terminatingsize,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+		super(context);
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -74,13 +91,13 @@ public class ProcessFullOuterJoin extends AbstractActor implements Serializable 
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder()
-				.match(OutputObject.class, this::processFullOuterJoin)
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder()
+				.onMessage(OutputObject.class, this::processFullOuterJoin)
 				.build();
 	}
 
-	private ProcessFullOuterJoin processFullOuterJoin(OutputObject oo) throws Exception {
+	private Behavior<Command> processFullOuterJoin(OutputObject oo) throws Exception {
 		log.debug("ProcessFullOuterJoin {} {} {}", oo.getValue().getClass(), oo.isLeft(), oo.isRight());
 		if (oo.isLeft()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
@@ -171,8 +188,7 @@ public class ProcessFullOuterJoin extends AbstractActor implements Serializable 
 					log.debug("processFullOuterJoin::: DownStream Pipelines {}", pipelines);
 					if (CollectionUtils.isNotEmpty(pipelines)) {
 						pipelines.stream().forEach(downstreampipe -> {
-							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class),
-									ActorRef.noSender());
+							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class));
 						});
 					} else {
 						Stream<Tuple2> datastream = diskspilllist.isSpilled()

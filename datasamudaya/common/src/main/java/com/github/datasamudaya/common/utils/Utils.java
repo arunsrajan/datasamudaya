@@ -225,8 +225,9 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.univocity.parsers.csv.CsvWriter;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
+import akka.actor.typed.ActorSystem;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import de.javakaffee.kryoserializers.ArraysAsListSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyMapSerializer;
@@ -3578,9 +3579,8 @@ public class Utils {
 	 * @return successful cleanup of tmp folder for job
 	 * @throws Exception 
 	 */
-	public static boolean cleanupTaskActorFromSystem(ActorSystem actorsystem, List<ActorRef> actors, String jobid) throws Exception {
-		for(ActorRef actor:actors) {
-			actorsystem.stop(actor);
+	public static boolean cleanupTaskActorFromSystem(ActorSystem actorsystem, Map<String, EntityTypeKey> actors, String jobid) throws Exception {
+		for(EntityTypeKey actor:actors.values()) {
 		}
 		deleteJobDir(jobid);
 		actors.clear();

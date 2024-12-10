@@ -11,15 +11,19 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.calcite.rex.RexNode;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.FilePartitionId;
@@ -34,14 +38,21 @@ import com.github.datasamudaya.common.utils.Utils;
 import akka.actor.AbstractActor;
 import akka.actor.Actor;
 import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
 import akka.cluster.Cluster;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
  * Akka Actors for the shuffle operators
  * @author Administrator
  *
  */
-public class ProcessShuffle extends AbstractActor implements Serializable {
+public class ProcessShuffle extends AbstractBehavior<Command> implements Serializable {
 	Logger log = LoggerFactory.getLogger(ProcessShuffle.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 	
@@ -52,7 +63,7 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 	boolean iscacheable;
 	ExecutorService executor;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<ActorSelection> childpipes;
+	List<EntityRef> childpipes;
 	int terminatingsize;
 	int initialsize;
 	int initialshufflesize;
@@ -62,7 +73,19 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 	Kryo kryo = Utils.getKryo();
 	Semaphore lock = new Semaphore(1);
 
-	private ProcessShuffle(Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<ActorSelection> childpipes) {
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessShuffle-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, 
+											List<EntityRef> childpipes) {
+		return Behaviors.setup(context -> new ProcessShuffle(context, 
+				jobidstageidtaskidcompletedmap, 
+				tasktoprocess, childpipes));
+	}
+	private ProcessShuffle(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, 
+			List<EntityRef> childpipes) {
+		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.iscacheable = true;
 		this.tasktoprocess = tasktoprocess;
@@ -74,13 +97,13 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder()
-				.match(OutputObject.class, this::processShuffle)
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder()
+				.onMessage(OutputObject.class, this::processShuffle)
 				.build();
 	}
 
-	private void processShuffle(OutputObject object) throws Exception {
+	private Behavior<Command> processShuffle(OutputObject object) throws Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof TerminatingActorValue tav) {
 				this.terminatingsize = tav.getTerminatingval();
@@ -137,14 +160,14 @@ public class ProcessShuffle extends AbstractActor implements Serializable {
 							: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
 					final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
 							: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true : false;
-					childpipes.parallelStream().forEach(childactorsel -> childactorsel.tell(new OutputObject(fileblockpath, leftvalue, rightvalue, Map.class), Actor.noSender()));
+					childpipes.parallelStream().forEach(childactorsel -> childactorsel.tell(new OutputObject(fileblockpath, leftvalue, rightvalue, Map.class)));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 					log.debug("Shuffle Completed");
 					shufflecompleted = true;
 				}
 			}
 		}
-
+		return this;
 
 	}
 }

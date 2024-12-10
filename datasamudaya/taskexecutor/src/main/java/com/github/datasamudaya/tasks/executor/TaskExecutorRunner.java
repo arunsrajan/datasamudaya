@@ -20,6 +20,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,8 +33,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.calcite.rex.RexNode;
@@ -78,9 +77,15 @@ import com.github.datasamudaya.tasks.executor.web.NodeWebServlet;
 import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 import com.typesafe.config.Config;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.cluster.Cluster;
+import akka.actor.Address;
+import akka.actor.typed.ActorRef;
+import akka.actor.typed.ActorSystem;
+import akka.actor.typed.scaladsl.Behaviors;
+import akka.cluster.sharding.typed.javadsl.ClusterSharding;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
+import akka.cluster.typed.Cluster;
+import akka.cluster.typed.JoinSeedNodes;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
@@ -108,7 +113,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionskipmap = new ConcurrentHashMap<>();
 	Map<String, JobStage> jobidstageidjobstagemap = new ConcurrentHashMap<>();
 	Queue<Object> taskqueue = new LinkedBlockingQueue<Object>();
-	Map<String, List<ActorRef>> jobidactorrefmap = new ConcurrentHashMap<>();
+	Map<String, Map<String, EntityTypeKey>> jobidentitytypekeymap = new ConcurrentHashMap<>();
 	static ExecutorService estask;
 	static ExecutorService escompute;
 	static CountDownLatch shutdown = new CountDownLatch(1);
@@ -288,6 +293,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		ActorSystem system = null;
 		Cluster cluster;
 		final String actorsystemurl;
+		ClusterSharding sharding = null;
 		if(executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
 			while(true) {
 				try {
@@ -295,7 +301,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					, DataSamudayaConstants.AKKA_HOST_DEFAULT)
 					, Utils.getRandomPort(),
 					args[0]);
-					system = ActorSystem.create(DataSamudayaConstants.ACTORUSERNAME, config);
+					system = ActorSystem.create(Behaviors.empty(), DataSamudayaConstants.ACTORUSERNAME, config);
 					break;
 				} catch(Exception ex) {
 					log.error("Unable To Create Akka Actors System...",ex);
@@ -303,10 +309,11 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				}
 			}
 			cluster = Cluster.get(system);
-			cluster.join(cluster.selfAddress());
-	
+			Address address = cluster.selfMember().address();
+	        cluster.manager().tell(new JoinSeedNodes(Arrays.asList(address)));
+	        sharding = ClusterSharding.get(system);
 			actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME + "://" + DataSamudayaConstants.ACTORUSERNAME + "@"
-					+ system.provider().getDefaultAddress().getHost().get() + ":" + system.provider().getDefaultAddress().getPort().get() + "/user";
+					+ cluster.selfMember().address().getHost().get() + ":" + cluster.selfMember().address().getPort().get() + "/user";
 	
 			log.debug("Actor System Url {}", actorsystemurl);
 		} else {
@@ -317,6 +324,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 		var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);
 		final ActorSystem actsystem = system;
+		final ClusterSharding clussharding = sharding;
 		dataCruncher = new StreamDataCruncher() {
 			public Object postObject(Object deserobj) throws RemoteException {
 				Task task = new Task();
@@ -331,29 +339,29 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						cl = DataSamudayaMapReducePhaseClassLoader.newInstance(loadjar.getMrjar(), cl);
 						return DataSamudayaConstants.JARLOADED;
 					} else if (deserobj instanceof GetTaskActor gettaskactor) {
-						if(isNull(jobidactorrefmap.get(gettaskactor.getTask().getJobid()))) {
-							jobidactorrefmap.put(gettaskactor.getTask().getJobid(),new ArrayList<>());
+						if(isNull(jobidentitytypekeymap.get(gettaskactor.getTask().getJobid()))) {
+							jobidentitytypekeymap.put(gettaskactor.getTask().getJobid(), new ConcurrentHashMap<String, EntityTypeKey>());
 						}
 						return SQLUtils.getAkkaActor(actsystem, gettaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
-								actorsystemurl, cluster, jobid, jobidactorrefmap.get(gettaskactor.getTask().getJobid()),
+								actorsystemurl, clussharding, jobid, jobidentitytypekeymap.get(gettaskactor.getTask().getJobid()),
 								blockspartitionskipmap);
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
-						if(isNull(jobidactorrefmap.get(executetaskactor.getTask().getJobid()))) {
-							jobidactorrefmap.put(executetaskactor.getTask().getJobid(),new ArrayList<>());
+						if(isNull(jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()))) {
+							jobidentitytypekeymap.put(executetaskactor.getTask().getJobid(),new ConcurrentHashMap<String, EntityTypeKey>());
 						}
 						Future<Task> escomputfuture=escompute.submit(()->{
 							return SQLUtils.getAkkaActor(actsystem, executetaskactor,
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
-								actorsystemurl, cluster, jobid, jobidactorrefmap.get(executetaskactor.getTask().getJobid()),
+								actorsystemurl, clussharding, jobid, jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()),
 								blockspartitionskipmap);
 						});
 						return escomputfuture.get();
 					} else if (deserobj instanceof CleanupTaskActors cleanupactors) {
-						if(jobidactorrefmap.containsKey(cleanupactors.getJobid())) {
-							Utils.cleanupTaskActorFromSystem(actsystem, jobidactorrefmap.remove(cleanupactors.getJobid()), cleanupactors.getJobid());
+						if(jobidentitytypekeymap.containsKey(cleanupactors.getJobid())) {
+							Utils.cleanupTaskActorFromSystem(actsystem, jobidentitytypekeymap.remove(cleanupactors.getJobid()), cleanupactors.getJobid());
 						}
 						return true;
 					} else if (deserobj instanceof Job job) {

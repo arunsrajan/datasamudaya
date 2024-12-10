@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -31,16 +32,20 @@ import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
  * Akka actors for the inner join operators
  * @author Arun
  *
  */
-public class ProcessInnerJoin extends AbstractActor implements Serializable {
+public class ProcessInnerJoin extends AbstractBehavior<Command> implements Serializable {
 	Logger log = LoggerFactory.getLogger(ProcessInnerJoin.class);
 	
 	protected JobStage jobstage;
@@ -52,15 +57,28 @@ public class ProcessInnerJoin extends AbstractActor implements Serializable {
 	JoinPredicate jp;
 	int terminatingsize;
 	int initialsize;
-	List<ActorSelection> pipelines;
+	List<EntityRef> pipelines;
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
-	private ProcessInnerJoin(JoinPredicate jp, List<ActorSelection> pipelines, int terminatingsize,
+	
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessInnerJoin-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, JoinPredicate jp, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+	return Behaviors.setup(context -> new ProcessInnerJoin(context, jp, pipelines, terminatingsize,
+			jobidstageidtaskidcompletedmap, cache, task));
+	}
+	
+	
+	private ProcessInnerJoin(ActorContext<Command> context, JoinPredicate jp, List<EntityRef> pipelines, int terminatingsize,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+		super(context);
 		this.jp = jp;
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
@@ -73,13 +91,13 @@ public class ProcessInnerJoin extends AbstractActor implements Serializable {
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder()
-				.match(OutputObject.class, this::processInnerJoin)
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder()
+				.onMessage(OutputObject.class, this::processInnerJoin)
 				.build();
 	}
 
-	private ProcessInnerJoin processInnerJoin(OutputObject oo) throws Exception {		
+	private Behavior<Command> processInnerJoin(OutputObject oo) throws Exception {		
 		if (oo.isLeft()) {			
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				log.debug("In process Inner Join Left {} {}", oo.isLeft(), getIntermediateDataFSFilePath(task));
@@ -134,8 +152,7 @@ public class ProcessInnerJoin extends AbstractActor implements Serializable {
 				if (Objects.nonNull(pipelines)) {
 					pipelines.forEach(downstreampipe -> {
 						try {
-							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class),
-									ActorRef.noSender());
+							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class));
 						} catch(Exception ex) {
 							log.error(DataSamudayaConstants.EMPTY, ex);
 						}

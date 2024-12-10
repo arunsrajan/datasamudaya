@@ -16,9 +16,12 @@ import org.apache.hadoop.fs.FileSystem;
 import org.ehcache.Cache;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -29,42 +32,25 @@ import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
 import akka.cluster.Cluster;
-import akka.cluster.ClusterEvent;
-import akka.cluster.ClusterEvent.MemberRemoved;
-import akka.cluster.ClusterEvent.MemberUp;
-import akka.cluster.ClusterEvent.MemberEvent;
-import akka.cluster.ClusterEvent.UnreachableMember;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
  * Akka Actors for the Right Join Operators
  * @author Administrator
  *
  */
-public class ProcessRightOuterJoin extends AbstractActor implements Serializable {
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements Serializable {
+	Logger log = LoggerFactory.getLogger(ProcessRightOuterJoin.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 
 	// subscribe to cluster changes
-	@Override
-	public void preStart() {
-		// #subscribe
-		cluster.subscribe(
-				getSelf(), ClusterEvent.initialStateAsEvents(),
-				MemberEvent.class, UnreachableMember.class,
-				MemberUp.class, MemberUp.class);
-	}
-
-	// re-subscribe when restart
-	@Override
-	public void postStop() {
-		cluster.unsubscribe(getSelf());
-	}
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -74,7 +60,7 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 	RightOuterJoinPredicate rojp;
 	int terminatingsize;
 	int initialsize;
-	List<ActorSelection> pipelines;
+	List<EntityRef> pipelines;
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	OutputObject left;
@@ -85,8 +71,19 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
 
-	private ProcessRightOuterJoin(RightOuterJoinPredicate rojp, List<ActorSelection> pipelines, int terminatingsize,
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessRightOuterJoin-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, RightOuterJoinPredicate rojp, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+	return Behaviors.setup(context -> new ProcessRightOuterJoin(context, rojp, pipelines, terminatingsize,
+			jobidstageidtaskidcompletedmap, cache, task));
+	}
+	
+	private ProcessRightOuterJoin(ActorContext<Command> context,RightOuterJoinPredicate rojp, List<EntityRef> pipelines, int terminatingsize,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+		super(context);
 		this.rojp = rojp;
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
@@ -100,13 +97,13 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder()
-				.match(OutputObject.class, this::processRightOuterJoin)
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder()
+				.onMessage(OutputObject.class, this::processRightOuterJoin)
 				.build();
 	}
 
-	private ProcessRightOuterJoin processRightOuterJoin(OutputObject oo) throws Exception {
+	private Behavior<Command> processRightOuterJoin(OutputObject oo) throws Exception {
 		if (oo.isLeft()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
@@ -185,9 +182,8 @@ public class ProcessRightOuterJoin extends AbstractActor implements Serializable
 				try {
 					if (Objects.nonNull(pipelines)) {
 						pipelines.parallelStream().forEach(downstreampipe -> {
-							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class),
-									ActorRef.noSender());
-							downstreampipe.tell(new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class), ActorRef.noSender());
+							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class));
+							downstreampipe.tell(new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class));
 						});
 					} else {
 						Stream<Tuple2> datastream = diskspilllist.isSpilled()

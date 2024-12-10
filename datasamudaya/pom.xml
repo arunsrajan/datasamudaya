@@ -24,7 +24,8 @@
 			${project.basedir}/../coverage/target/site/jacoco-aggregate/jacoco.xml
 		</sonar.coverage.jacoco.xmlReportPaths>
 		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
-		<akka.version>2.9.1</akka.version>
+		<akka.version>2.9.1</akka.version> 
+     	<scala.binary.version>2.13</scala.binary.version>
 	</properties>
 
 	<dependencies>
@@ -568,16 +569,22 @@
 		<!-- Akka Actors -->
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
-			<artifactId>akka-actor-typed_2.13</artifactId>
+			<artifactId>akka-actor-typed_${scala.binary.version}</artifactId>
 			<version>${akka.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
-			<artifactId>akka-cluster-typed_2.13</artifactId>
+			<artifactId>akka-cluster-typed_${scala.binary.version}</artifactId>
 			<version>${akka.version}</version>
 		</dependency>
-
+		
+		<dependency>
+		    <groupId>com.typesafe.akka</groupId>
+		    <artifactId>akka-cluster-sharding-typed_${scala.binary.version}</artifactId>
+		    <version>${akka.version}</version>
+		</dependency>
+		
 		<dependency>
 			<groupId>io.altoo</groupId>
 			<artifactId>akka-kryo-serialization_2.13</artifactId>

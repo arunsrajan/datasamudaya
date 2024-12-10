@@ -16,7 +16,7 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class OutputObject implements Serializable {
+public class OutputObject implements Command,Serializable {
 	private static final long serialVersionUID = -2703111261796356369L;
 	Object value;
 	boolean left;

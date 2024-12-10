@@ -8,6 +8,7 @@ import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -21,21 +22,40 @@ import com.github.datasamudaya.stream.PipelineException;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
 import akka.cluster.Cluster;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
-public class ProcessDistributedDistinct extends AbstractActor {
+public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 	Logger log = LoggerFactory.getLogger(ProcessDistributedDistinct.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 	int terminatingsize;
 	int initialsize = 0;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<ActorSelection> childpipes;
+	List<EntityRef> childpipes;
 	Task tasktoprocess;
 	int diskspillpercentage;
 	DiskSpillingSet diskspillset;
 
-	public ProcessDistributedDistinct(Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<ActorSelection> childpipes, int terminatingsize) {
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessDistributedDistinct-"+entityId);
+	}	
+	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, 
+			List<EntityRef> childpipes, int terminatingsize) {
+	return Behaviors.setup(context -> new ProcessDistributedDistinct(context, 
+				jobidstageidtaskidcompletedmap, 
+				tasktoprocess, childpipes, terminatingsize));
+	}
+	
+	
+	public ProcessDistributedDistinct(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
 		this.terminatingsize = terminatingsize;
@@ -47,11 +67,11 @@ public class ProcessDistributedDistinct extends AbstractActor {
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processDistributedDistinct).build();
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder().onMessage(OutputObject.class, this::processDistributedDistinct).build();
 	}
 
-	private void processDistributedDistinct(OutputObject object) throws PipelineException, Exception {		
+	private Behavior<Command> processDistributedDistinct(OutputObject object) throws PipelineException, Exception {		
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				log.debug("In Distributed Distinct {} {} {} {} {}", object, dsl.size(), dsl.isSpilled(), dsl.getTask(), terminatingsize);
@@ -74,13 +94,13 @@ public class ProcessDistributedDistinct extends AbstractActor {
 				if (CollectionUtils.isNotEmpty(childpipes)) {															
 					log.debug("processDistributedDistinct::DiskSpill intermediate Set Is Spilled {} Task {}", diskspillset.isSpilled(), diskspillset.getTask());
 					childpipes.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class),
-								ActorRef.noSender());
+						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class));
 					});
 				}
 				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN
 						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);
 			}
 		}
+		return this;
 	}
 }

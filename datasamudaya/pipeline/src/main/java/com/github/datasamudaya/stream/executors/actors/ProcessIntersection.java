@@ -1,5 +1,7 @@
 package com.github.datasamudaya.stream.executors.actors;
 
+import static java.util.Objects.nonNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -29,18 +32,20 @@ import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
-import static java.util.Objects.nonNull;
-
-public class ProcessIntersection extends AbstractActor {
+public class ProcessIntersection extends AbstractBehavior<Command> {
 	Logger log = LoggerFactory.getLogger(ProcessIntersection.class);
 	int terminatingsize;
 	int initialsize = 0;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<ActorSelection> childpipes;
+	List<EntityRef> childpipes;
 	Task tasktoprocess;
 	Cache cache;
 	JobStage js;
@@ -48,8 +53,21 @@ public class ProcessIntersection extends AbstractActor {
 	int btreesize;
 	int diskspillpercentage;
 	List ldiskspill;
-	public ProcessIntersection(JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<ActorSelection> childpipes, int terminatingsize) {
+	
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessIntersection-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+	return Behaviors.setup(context -> new ProcessIntersection(context, js, cache, 
+				jobidstageidtaskidcompletedmap, 
+				tasktoprocess, childpipes, terminatingsize));
+	}
+	
+	public ProcessIntersection(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
 		this.terminatingsize = terminatingsize;
@@ -64,11 +82,11 @@ public class ProcessIntersection extends AbstractActor {
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processIntersection).build();
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder().onMessage(OutputObject.class, this::processIntersection).build();
 	}
 
-	private void processIntersection(OutputObject object) throws PipelineException, Exception {
+	private Behavior<Command> processIntersection(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			log.debug("processIntersection::: InitialSize {} terminating size {}",initialsize, terminatingsize);
 			if (object.getValue() instanceof DiskSpillingList<?> dsl) {
@@ -172,8 +190,7 @@ public class ProcessIntersection extends AbstractActor {
 					log.debug("Object To be sent to downstream pipeline size {}", diskspillsetresult.size());
 					Set<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
 					childpipes.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspillsetresultfinal, false, false, DiskSpillingSet.class),
-								ActorRef.noSender());
+						downstreampipe.tell(new OutputObject(diskspillsetresultfinal, false, false, DiskSpillingSet.class));
 					});
 				} else {
 					AtomicInteger index = new AtomicInteger(0);
@@ -192,6 +209,7 @@ public class ProcessIntersection extends AbstractActor {
 						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);
 			}
 		}
+		return this;
 	}
 
 	/**

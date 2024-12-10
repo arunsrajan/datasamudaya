@@ -62,9 +62,13 @@ import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 import com.google.common.collect.Maps;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvCallbackHandler;
 import de.siegmar.fastcsv.reader.CsvReader;
@@ -76,11 +80,12 @@ import de.siegmar.fastcsv.reader.NamedCsvRecordHandler;
  * @author Arun
  *
  */
-public class ProcessMapperByBlocksLocation extends AbstractActor implements Serializable {
+public class ProcessMapperByBlocksLocation extends AbstractBehavior<ProcessMapperByBlocksLocation.Command> implements Serializable {
 
+	public interface Command {}
+	
 	Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);	
 
-	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
 	Cache cache;
@@ -90,7 +95,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap;
 	int diskspillpercentage;
-	protected List getFunctions() {
+	protected List getFunctions(JobStage jobstage) {
 		log.debug("Entered ProcessMapperByBlocksLocation.getFunctions");
 		var tasks = jobstage.getStage().tasks;
 		var functions = new ArrayList<>();
@@ -100,11 +105,22 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 		log.debug("Exiting ProcessMapperByBlocksLocation.getFunctions");
 		return functions;
 	}
-
-	private ProcessMapperByBlocksLocation(JobStage js, FileSystem hdfs, Cache cache,
+	
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessMapperByBlocksLocation-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, 
 			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap) {
-		this.jobstage = js;
+		return Behaviors.setup(context -> new ProcessMapperByBlocksLocation(context, entityId, hdfs, cache, 
+				jobidstageidtaskidcompletedmap, tasktoprocess, blockspartitionfilterskipmap));
+	}
+	
+	private ProcessMapperByBlocksLocation(ActorContext<Command> context,String entityId, FileSystem hdfs, Cache cache,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, 
+			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap) {
+		super(context);
 		this.hdfs = hdfs;
 		this.cache = cache;
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -116,17 +132,18 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 	}
 
 	public static record BlocksLocationRecord(BlocksLocation bl, FileSystem hdfs,
-	Map<Integer, FilePartitionId> filespartitions, List<ActorSelection> childactors, Map<Integer, ActorSelection> pipeline) implements Serializable {
+	Map<Integer, FilePartitionId> filespartitions, List<EntityRef> childactors, Map<Integer, EntityRef> pipeline, 
+	JobStage jobstage) implements Command,Serializable {
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder()
-				.match(BlocksLocationRecord.class, this::processBlocksLocationRecord)
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder()
+				.onMessage(BlocksLocationRecord.class, this::processBlocksLocationRecord)
 				.build();
 	}
 
-	private void processBlocksLocationRecord(BlocksLocationRecord blr) {
+	private Behavior<Command> processBlocksLocationRecord(BlocksLocationRecord blr) {
 		BlocksLocation blockslocation = blr.bl;
 		log.debug("processing {}", blr.bl);
 		var starttime = System.currentTimeMillis();
@@ -154,7 +171,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 			Stream intermediatestreamobject;
 			try {
 				try {
-					if (jobstage.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {
+					if (blr.jobstage.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {
 						reqcols = new Vector<>(cosql.getRequiredcolumns());
 						originalcolsorder = new Vector<>(cosql.getRequiredcolumns());
 						Collections.sort(reqcols);
@@ -185,7 +202,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 							toskipartition = new AtomicBoolean(false);
 						}
 
-					} else if (jobstage.getStage().tasks.get(0) instanceof JsonSQL jsql) {
+					} else if (blr.jobstage.getStage().tasks.get(0) instanceof JsonSQL jsql) {
 						reqcols = new Vector<>(jsql.getRequiredcolumns());
 						originalcolsorder = new Vector<>(jsql.getRequiredcolumns());
 						Collections.sort(reqcols);
@@ -303,9 +320,9 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 			intermediatestreamobject.onClose(() -> {
 				log.debug("Stream closed");
 			});
-			var finaltask = jobstage.getStage().tasks.get(jobstage.getStage().tasks.size() - 1);
+			var finaltask = blr.jobstage.getStage().tasks.get(blr.jobstage.getStage().tasks.size() - 1);
 
-			try (var streammap = (BaseStream) StreamUtils.getFunctionsToStream(getFunctions(),
+			try (var streammap = (BaseStream) StreamUtils.getFunctionsToStream(getFunctions(blr.jobstage),
 					intermediatestreamobject);) {
 				List out;
 				
@@ -328,8 +345,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 								entry.getValue().close();
 							}
 							blr.pipeline.get(entry.getKey()%totalranges).tell(new OutputObject(new ShuffleBlock(null,
-											Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey() % totalranges)), entry.getValue()), left, right, null),
-									ActorRef.noSender());
+											Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey() % totalranges)), entry.getValue()), left, right, null));
 						} catch (Exception e) {
 							log.error(DataSamudayaConstants.EMPTY, e);
 						}
@@ -337,8 +353,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					int numexecutorpipe = totalranges/numfileperexec;
 					IntStream.range(0, numexecutorpipe).map(val-> val * numfileperexec).forEach(val -> {
 						log.debug("Sending Dummy To Actor: {}", blr.pipeline.get(val));
-						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right, Dummy.class),
-								ActorRef.noSender());
+						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right, Dummy.class));
 					});
 				} else if (CollectionUtils.isNotEmpty(blr.childactors)) {
 					log.debug("Child Actors pipeline Process Started with actors {} with left {} right {} Task {}...",blr.childactors(), left ,right, getIntermediateDataFSFilePath(tasktoprocess));
@@ -349,9 +364,9 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 						diskspilllist.close();
 					}
 					blr.childactors().stream().forEach(
-							action -> action.tell(new OutputObject(diskspilllist, left, right, null), ActorRef.noSender()));
+							action -> action.tell(new OutputObject(diskspilllist, left, right, null)));
 					blr.childactors().stream().forEach(
-							action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class), ActorRef.noSender()));
+							action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class)));
 					log.debug("Child Actors pipeline Process Ended ...");
 				} else {
 					log.debug("Processing Mapper Task In Writing To Cache Started ...");
@@ -416,6 +431,7 @@ public class ProcessMapperByBlocksLocation extends AbstractActor implements Seri
 					log.error(DataSamudayaConstants.EMPTY, e);
 				}
 			}
+			return this;
 		}
 	}
 

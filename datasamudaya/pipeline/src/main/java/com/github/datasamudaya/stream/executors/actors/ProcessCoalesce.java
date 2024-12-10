@@ -20,9 +20,12 @@ import org.apache.hadoop.fs.FileSystem;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -33,20 +36,22 @@ import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
 import akka.cluster.Cluster;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
  * The Akka Actors for the coalesce operators
  * @author arun
  *
  */
-public class ProcessCoalesce extends AbstractActor implements Serializable {
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+public class ProcessCoalesce extends AbstractBehavior<Command> implements Serializable {
+	Logger log = LoggerFactory.getLogger(ProcessCoalesce.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 
 	protected JobStage jobstage;
@@ -60,14 +65,24 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 	Coalesce coalesce;
 	int terminatingsize;
 	int initialsize;
-	List<ActorSelection> pipelines;
+	List<EntityRef> pipelines;
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
 	DiskSpillingList<Tuple2> diskspilllistinterm;
-
-	private ProcessCoalesce(Coalesce coalesce, List<ActorSelection> pipelines, int terminatingsize,
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessCoalesce-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, Coalesce coalesce, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+	return Behaviors.setup(context -> new ProcessCoalesce(context, coalesce, pipelines, terminatingsize, 
+				jobidstageidtaskidcompletedmap, 
+				cache, task));
+	}
+	private ProcessCoalesce(ActorContext<Command> context, Coalesce coalesce, List<EntityRef> pipelines, int terminatingsize,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+		super(context);
 		this.coalesce = coalesce;
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
@@ -81,13 +96,13 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder()
-				.match(OutputObject.class, this::processCoalesce)
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder()
+				.onMessage(OutputObject.class, this::processCoalesce)
 				.build();
 	}
 
-	private ProcessCoalesce processCoalesce(OutputObject object) throws Exception {
+	private Behavior<Command> processCoalesce(OutputObject object) throws Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {			
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				if (dsl.isSpilled()) {
@@ -127,7 +142,7 @@ public class ProcessCoalesce extends AbstractActor implements Serializable {
 				if (CollectionUtils.isNotEmpty(pipelines)) {
 					log.debug("Process Coalesce To Pipeline Started {} IsSpilled {} {}", pipelines, diskspilllist.isSpilled(), diskspilllist.getData());
 					pipelines.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(diskspilllist, left, right, DiskSpillingList.class), ActorRef.noSender());
+						downstreampipe.tell(new OutputObject(diskspilllist, left, right, DiskSpillingList.class));
 					});
 					log.debug("Process Coalesce To Pipeline Ended {}", pipelines);
 				} else {

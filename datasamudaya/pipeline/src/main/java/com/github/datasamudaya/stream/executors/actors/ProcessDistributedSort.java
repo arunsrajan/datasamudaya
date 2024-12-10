@@ -3,7 +3,6 @@ package com.github.datasamudaya.stream.executors.actors;
 import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +15,10 @@ import java.util.stream.Stream;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -31,20 +33,22 @@ import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
 import akka.cluster.Cluster;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
-public class ProcessDistributedSort extends AbstractActor {
-	LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
+public class ProcessDistributedSort extends AbstractBehavior<Command> {
+	Logger log = LoggerFactory.getLogger(ProcessCoalesce.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 	int terminatingsize;
 	int initialsize = 0;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<ActorSelection> childpipes;
+	List<EntityRef> childpipes;
 	Task tasktoprocess;
 	Cache cache;
 	JobStage js;
@@ -53,8 +57,21 @@ public class ProcessDistributedSort extends AbstractActor {
 	int diskspillpercentage;
 	DiskSpillingList diskspilllistinterm;
 	List ldiskspill;
-	public ProcessDistributedSort(JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<ActorSelection> childpipes, int terminatingsize) {
+	
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessDistributedSort-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+	return Behaviors.setup(context -> new ProcessDistributedSort(context, js, cache, jobidstageidtaskidcompletedmap, 
+			tasktoprocess, 
+			childpipes, terminatingsize));
+	}
+	
+	public ProcessDistributedSort(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
 		this.terminatingsize = terminatingsize;
@@ -71,11 +88,11 @@ public class ProcessDistributedSort extends AbstractActor {
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processDistributedSort).build();
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder().onMessage(OutputObject.class, this::processDistributedSort).build();
 	}
 
-	private void processDistributedSort(OutputObject object) throws PipelineException, Exception {
+	private Behavior<Command> processDistributedSort(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList<?> dsl) {
 				ldiskspill.add(dsl);
@@ -139,8 +156,7 @@ public class ProcessDistributedSort extends AbstractActor {
 						log.error(DataSamudayaConstants.EMPTY, e);
 					}
 					childpipes.stream().forEach(downstreampipe -> {
-						downstreampipe.tell(new OutputObject(rootniks, false, false, NodeIndexKey.class),
-								ActorRef.noSender());
+						downstreampipe.tell(new OutputObject(rootniks, false, false, NodeIndexKey.class));
 					});
 				} else {
 					List<NodeIndexKey> cachesort = new ArrayList<>();
@@ -154,6 +170,7 @@ public class ProcessDistributedSort extends AbstractActor {
 						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);
 			}
 		}
+		return this; 
 	}
 
 	/**

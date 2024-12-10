@@ -1,5 +1,7 @@
 package com.github.datasamudaya.stream.executors.actors;
 
+import static java.util.Objects.nonNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -13,7 +15,10 @@ import java.util.stream.Stream;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.ehcache.Cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -26,20 +31,20 @@ import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
-import static java.util.Objects.nonNull;
-
-public class ProcessUnion extends AbstractActor {
+public class ProcessUnion extends AbstractBehavior<Command> {
 	Logger log = LoggerFactory.getLogger(ProcessUnion.class);	
 	int terminatingsize;
 	int initialsize = 0;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<ActorSelection> childpipes;
+	List<EntityRef> childpipes;
 	Task tasktoprocess;
 	Cache cache;
 	JobStage js;
@@ -48,8 +53,20 @@ public class ProcessUnion extends AbstractActor {
 	int diskspillpercentage;
 	List ldiskspill;
 
-	public ProcessUnion(JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<ActorSelection> childpipes, int terminatingsize) {
+	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
+		return EntityTypeKey.create(Command.class, "ProcessUnion-"+entityId);
+	}
+	
+	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+	return Behaviors.setup(context -> new ProcessUnion(context, js, cache, 
+				jobidstageidtaskidcompletedmap, 
+				tasktoprocess, childpipes, terminatingsize));
+	}
+	
+	public ProcessUnion(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
 		this.terminatingsize = terminatingsize;
@@ -64,11 +81,11 @@ public class ProcessUnion extends AbstractActor {
 	}
 
 	@Override
-	public Receive createReceive() {
-		return receiveBuilder().match(OutputObject.class, this::processUnion).build();
+	public Receive<Command> createReceive() {
+		return newReceiveBuilder().onMessage(OutputObject.class, this::processUnion).build();
 	}
 
-	private void processUnion(OutputObject object) throws PipelineException, Exception {
+	private Behavior<Command> processUnion(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			log.debug("processUnion::: {}",object.getValue().getClass());
 			if (object.getValue() instanceof DiskSpillingList dsl) {
@@ -130,8 +147,7 @@ public class ProcessUnion extends AbstractActor {
 					}
 					childpipes.stream().forEach(downstreampipe -> {
 						log.debug("Pushing data to downstream");
-						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class),
-								ActorRef.noSender());
+						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class));
 					});
 				} else {
 					AtomicInteger index = new AtomicInteger(0);
@@ -150,6 +166,7 @@ public class ProcessUnion extends AbstractActor {
 						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);
 			}
 		}
+		return this;
 	}
 
 	/**
