@@ -338,6 +338,7 @@ public class DataSamudayaConstants {
 	public static final String GRAPDIRPATH = "graph.file.dir.path";
 	public static final String GRAPHFILESTAGESPLANNAME = "graph.stages.file";
 	public static final String GRAPHFILEPEPLANNAME = "graph.peplan.file";
+	public static final String REVERSEGRAPHFILEPEPLANNAME = "graph.peplan.revered.file";
 	public static final String GRAPHTASKFILENAME = "graph.task.file";
 
 	// Cache Properties
@@ -571,7 +572,9 @@ public class DataSamudayaConstants {
 	public static final String YARN_OUTPUT_QUEUE = "/outputqueue";
 	public static final String TASKEXECUTOR_STATUS_UP = "UP";
 	public static final String TASKEXECUTOR_STATUS_DOWN = "DOWN";
-
+	public static final String AKKASEEDNODESLOCK = "/akkaseednodeslock";
+	public static final String AKKASEEDNODESZKROOT = "/akkaseednodesroot";
+	public static final String AKKASEEDNODES = "/akkaseednodes";
 
 	public static final String INTERRUPTED = "Interrupted!";
 	public static final String FALSE = Boolean.toString(Boolean.FALSE);

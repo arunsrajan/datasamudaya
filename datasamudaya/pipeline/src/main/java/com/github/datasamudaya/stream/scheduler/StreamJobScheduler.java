@@ -14,13 +14,16 @@ import static java.util.Objects.nonNull;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Socket;
@@ -62,6 +65,8 @@ import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.graph.SimpleDirectedGraph;
+import org.jgrapht.io.ComponentNameProvider;
+import org.jgrapht.io.DOTExporter;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.jgroups.JChannel;
 import org.jgroups.ObjectMessage;
@@ -1186,6 +1191,11 @@ public class StreamJobScheduler {
 
 				Graph<StreamPipelineTaskSubmitter, DAGEdge> graphreversed = new EdgeReversedGraph<StreamPipelineTaskSubmitter, DAGEdge>(
 						lineagegraph);
+				var writer = new StringWriter();
+				if (Boolean
+						.parseBoolean((String) DataSamudayaProperties.get().get(DataSamudayaConstants.GRAPHSTOREENABLE))) {
+					renderReversedGraphPhysicalExecPlan(graphreversed, writer);
+				}
 				TopologicalOrderIterator<StreamPipelineTaskSubmitter, DAGEdge> iterator = new TopologicalOrderIterator(
 						graphreversed);
 				String jobid;
@@ -1259,6 +1269,42 @@ public class StreamJobScheduler {
 		return lineagegraph;
 	}
 
+	/**
+	 * The method prints reversed physical plan to a file
+	 * @param graph
+	 * @param writer
+	 */
+	public static void renderReversedGraphPhysicalExecPlan(Graph<StreamPipelineTaskSubmitter, DAGEdge> graph, Writer writer) {
+		log.debug("Entered Utils.renderReversedGraphPhysicalExecPlan");
+		ComponentNameProvider<StreamPipelineTaskSubmitter> vertexIdProvider = jobstage -> {
+
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				log.warn(DataSamudayaConstants.INTERRUPTED, e);
+				// Restore interrupted state...
+				Thread.currentThread().interrupt();
+			} catch (Exception ex) {
+				log.error("Delay Error, see cause below \n", ex);
+			}
+			return "" + System.currentTimeMillis();
+
+		};
+		ComponentNameProvider<StreamPipelineTaskSubmitter> vertexLabelProvider = StreamPipelineTaskSubmitter::toString;
+		var exporter = new DOTExporter<StreamPipelineTaskSubmitter, DAGEdge>(vertexIdProvider, vertexLabelProvider, null);
+		exporter.exportGraph(graph, writer);
+		var path = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.GRAPDIRPATH);
+		new File(path).mkdirs();
+		try (var stagegraphfile = new FileWriter(
+				path + DataSamudayaProperties.get().getProperty(DataSamudayaConstants.REVERSEGRAPHFILEPEPLANNAME)
+						+ System.currentTimeMillis());) {
+			stagegraphfile.write(writer.toString());
+		} catch (Exception e) {
+			log.error("File Write Error, see cause below \n", e);
+		}
+		log.debug("Exiting Utils.renderReversedGraphPhysicalExecPlan");
+	}
+	
 	/**
 	 * The Scheduler for Akka Actors Task
 	 * 

@@ -1,9 +1,11 @@
 package com.github.datasamudaya.common.utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -15,6 +17,9 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
+import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreV2;
+import org.apache.curator.framework.recipes.locks.Lease;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.retry.RetryForever;
@@ -173,7 +178,68 @@ public class ZookeeperOperations implements AutoCloseable {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}
 	}
-
+	
+	/**
+	 * Creates Akka Seed nodes for a given jobid in zookeeper
+	 * @param jobid
+	 * @param seednode
+	 * @param data
+	 * @throws ZookeeperException
+	 */
+	public void createAkkaSeedNode(String jobid, String seednode, byte[] data) throws ZookeeperException {
+		try {			
+			if (curator.checkExists()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESZKROOT
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+							+ seednode) == null) {
+				curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
+						.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
+						.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESZKROOT
+								+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+								+ seednode, data);
+			}
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
+	/**
+	 * The function acquires lock for a given jobid and returns seed nodes
+	 * @param jobid
+	 * @return returns seed node
+	 * @throws Exception
+	 */
+	public List<String> acquireLockAndAddSeedNode(String jobid, String seednode) throws Exception {
+		InterProcessSemaphoreV2 semaphore = null;
+		Lease lease = null;
+		try {
+			if (curator.checkExists()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid) == null) {
+				curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
+				.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
+				.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
+						+ DataSamudayaConstants.FORWARD_SLASH + jobid, DataSamudayaConstants.EMPTY.getBytes());
+			}
+			semaphore = new InterProcessSemaphoreV2(curator, DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
+					+ DataSamudayaConstants.FORWARD_SLASH + jobid, 1);
+			lease =  semaphore.acquire();
+			List<String> seednodes = getAkkaSeedNodesByJobId(jobid);
+			if(CollectionUtils.isNotEmpty(seednodes)) {
+				return seednodes;
+			}
+			createAkkaSeedNode(jobid, seednode, DataSamudayaConstants.EMPTY.getBytes());
+			return Arrays.asList(seednode);			
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		} finally {
+			if(nonNull(semaphore) && nonNull(lease)) {
+				semaphore.returnLease(lease);
+			}
+		}
+	}
+	
 	/**
 	 * The method creates the driver znode in zookeeper with the jobid and driver, data and watcher.
 	 * @param jobid
@@ -532,6 +598,26 @@ public class ZookeeperOperations implements AutoCloseable {
 		}
 	}
 
+	/**
+	 * THe function returns akka seed nodes by jobid
+	 * @param jobid
+	 * @return seed nodes
+	 * @throws ZookeeperException
+	 */
+	public List<String> getAkkaSeedNodesByJobId(String jobid) throws ZookeeperException {
+		try {
+			if(curator.checkExists()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK
+							+ DataSamudayaConstants.AKKASEEDNODESZKROOT + DataSamudayaConstants.FORWARD_SLASH + jobid) != null) {
+				return curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
+					+ DataSamudayaConstants.AKKASEEDNODESZKROOT + DataSamudayaConstants.FORWARD_SLASH + jobid);
+			}
+			return Arrays.asList();
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
 	/**
 	  Close the curator object for closing the zookeeper connection.
 	 */

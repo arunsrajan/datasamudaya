@@ -43,6 +43,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
+import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -80,9 +81,7 @@ import de.siegmar.fastcsv.reader.NamedCsvRecordHandler;
  * @author Arun
  *
  */
-public class ProcessMapperByBlocksLocation extends AbstractBehavior<ProcessMapperByBlocksLocation.Command> implements Serializable {
-
-	public interface Command {}
+public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> implements Serializable {
 	
 	Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);	
 

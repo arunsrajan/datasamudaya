@@ -19,7 +19,6 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -78,11 +77,9 @@ import com.github.datasamudaya.tasks.executor.web.ResourcesMetricsServlet;
 import com.typesafe.config.Config;
 
 import akka.actor.Address;
-import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.scaladsl.Behaviors;
 import akka.cluster.sharding.typed.javadsl.ClusterSharding;
-import akka.cluster.sharding.typed.javadsl.EntityRef;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import akka.cluster.typed.Cluster;
 import akka.cluster.typed.JoinSeedNodes;
@@ -308,13 +305,24 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					log.debug("Trying to create Akka actor system again...");
 				}
 			}
+			log.debug("Initializing Cluster ...");
 			cluster = Cluster.get(system);
 			Address address = cluster.selfMember().address();
-	        cluster.manager().tell(new JoinSeedNodes(Arrays.asList(address)));
+			log.debug("Initialized Cluster ...");
+			List<String> seedNodes = zo.acquireLockAndAddSeedNode(jobid, address.getHost().get() + DataSamudayaConstants.UNDERSCORE 
+					+ address.getPort().get());
+			log.debug("Seed Nodes {} ...",seedNodes);
+			String akkahostport = seedNodes.get(0);
+			var addressarray = akkahostport.split(DataSamudayaConstants.UNDERSCORE);
+			log.debug("Seed Nodes {}", akkahostport);
+			var seednodeaddress = new Address(DataSamudayaConstants.AKKA_URL_SCHEME, DataSamudayaConstants.ACTORUSERNAME, addressarray[0], Integer.parseInt(addressarray[1]));
+			log.debug("Seed Nodes Address {}", seednodeaddress);
+	        cluster.manager().tell(new JoinSeedNodes(Arrays.asList(seednodeaddress)));
+	        log.debug("Joining Seed Nodes Address {}", seednodeaddress);
 	        sharding = ClusterSharding.get(system);
 			actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME + "://" + DataSamudayaConstants.ACTORUSERNAME + "@"
 					+ cluster.selfMember().address().getHost().get() + ":" + cluster.selfMember().address().getPort().get() + "/user";
-	
+			log.debug("Initializing Sharding ...");
 			log.debug("Actor System Url {}", actorsystemurl);
 		} else {
 			actorsystemurl = "";
