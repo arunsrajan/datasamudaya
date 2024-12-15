@@ -75,6 +75,10 @@ import de.siegmar.fastcsv.reader.CsvCallbackHandler;
 import de.siegmar.fastcsv.reader.CsvReader;
 import de.siegmar.fastcsv.reader.NamedCsvRecord;
 import de.siegmar.fastcsv.reader.NamedCsvRecordHandler;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Akka actors for the Mapper operators by blocks location
@@ -83,7 +87,8 @@ import de.siegmar.fastcsv.reader.NamedCsvRecordHandler;
  */
 public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> implements Serializable {
 	
-	Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);	
+	Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);
+	org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ProcessMapperByBlocksLocation.class);	
 
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -95,13 +100,13 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap;
 	int diskspillpercentage;
 	protected List getFunctions(JobStage jobstage) {
-		log.debug("Entered ProcessMapperByBlocksLocation.getFunctions");
+		logger.debug("Entered ProcessMapperByBlocksLocation.getFunctions");
 		var tasks = jobstage.getStage().tasks;
 		var functions = new ArrayList<>();
 		for (var task : tasks) {
 			functions.add(task);
 		}
-		log.debug("Exiting ProcessMapperByBlocksLocation.getFunctions");
+		logger.debug("Exiting ProcessMapperByBlocksLocation.getFunctions");
 		return functions;
 	}
 	
@@ -130,9 +135,19 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 	}
 
-	public static record BlocksLocationRecord(BlocksLocation bl, FileSystem hdfs,
-	Map<Integer, FilePartitionId> filespartitions, List<EntityRef> childactors, Map<Integer, EntityRef> pipeline, 
-	JobStage jobstage) implements Command,Serializable {
+	@Setter
+	@Getter
+	@AllArgsConstructor
+	@NoArgsConstructor
+	public static class BlocksLocationRecord implements Command,Serializable {		
+		private static final long serialVersionUID = -4918434381808493015L;
+		BlocksLocation bl; 
+		FileSystem hdfs;
+		Map<Integer, 
+		FilePartitionId> filespartitions; 
+		List<EntityRef> childactors; 
+		Map<Integer, EntityRef> pipeline; 
+		JobStage jobstage;
 	}
 
 	@Override
@@ -144,10 +159,10 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 
 	private Behavior<Command> processBlocksLocationRecord(BlocksLocationRecord blr) {
 		BlocksLocation blockslocation = blr.bl;
-		log.debug("processing {}", blr.bl);
+		logger.debug("processing {}"+ blr.bl);
 		var starttime = System.currentTimeMillis();
-		log.debug("Entered ProcessMapperByBlocksLocation.processBlocksLocationRecord");
-		log.debug("BlocksLocation Columns: {}", blockslocation.getColumns());
+		logger.debug("Entered ProcessMapperByBlocksLocation.processBlocksLocationRecord");
+		logger.debug("BlocksLocation Columns: {}"+ blockslocation.getColumns());
 		InputStream istreamnocols = null;
 		BufferedReader buffernocols = null;
 		BufferedReader buffer = null;
@@ -223,7 +238,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 					if (CollectionUtils.isNotEmpty(originalcolsorder)) {
 						if (isNull(yosegibytes) || yosegibytes.length == 1 || nonNull(blockslocation.getToreprocess())
 								&& blockslocation.getToreprocess().booleanValue()) {
-							log.debug("Unable To Find vector for blocks {}", blockslocation);
+							logger.debug("Unable To Find vector for blocks {}"+ blockslocation);
 							bais = HdfsBlockReader.getBlockDataInputStreamMerge(blockslocation, hdfs);
 							buffer = new BufferedReader(new InputStreamReader(bais));
 							tasktoprocess.numbytesprocessed = Utils.numBytesBlocks(blockslocation.getBlock());
@@ -249,7 +264,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 														toconsidervalueobjects, index);
 											}
 										} catch (Exception ex) {
-											log.error(DataSamudayaConstants.EMPTY, ex);
+											logger.error(DataSamudayaConstants.EMPTY, ex);
 										}
 										if(nonNull(filter) && !isfilterexist && toskipartition.get()) {
 											if(SQLUtils.evaluateExpression(filter, valuesobject)) {
@@ -286,7 +301,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 														headers[index], data, index);
 											});
 										} catch (Exception ex) {
-											log.error(DataSamudayaConstants.EMPTY, ex);
+											logger.error(DataSamudayaConstants.EMPTY, ex);
 										}
 										Object[] valueswithconsideration = new Object[2];
 										valueswithconsideration[0] = valuesobject;
@@ -309,15 +324,15 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 				} finally {
 				}
 			} catch (IOException ioe) {
-				log.error(PipelineConstants.FILEIOERROR, ioe);
+				logger.error(PipelineConstants.FILEIOERROR, ioe);
 				throw new PipelineException(PipelineConstants.FILEIOERROR, ioe);
 			} catch (Exception ex) {
-				log.error(PipelineConstants.PROCESSHDFSERROR, ex);
+				logger.error(PipelineConstants.PROCESSHDFSERROR, ex);
 				throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 			}
 
 			intermediatestreamobject.onClose(() -> {
-				log.debug("Stream closed");
+				logger.debug("Stream closed");
 			});
 			var finaltask = blr.jobstage.getStage().tasks.get(blr.jobstage.getStage().tasks.size() - 1);
 
@@ -327,10 +342,10 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 				
 				int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
 						DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-				log.debug("Number Of Shuffle Files PerExecutor {}", numfileperexec);
+				logger.debug("Number Of Shuffle Files PerExecutor {}"+ numfileperexec);
 				if (MapUtils.isNotEmpty(blr.pipeline)) {
 					int totalranges = blr.pipeline.keySet().size();
-					log.debug("Total Ranges {}", totalranges);
+					logger.debug("Total Ranges {}"+ totalranges);
 					ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
 					Map<Integer, DiskSpillingList> results = fjpool.submit(()-> (Map) ((Stream<Tuple2>) streammap).collect(
 							Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % totalranges,
@@ -346,35 +361,35 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 							blr.pipeline.get(entry.getKey()%totalranges).tell(new OutputObject(new ShuffleBlock(null,
 											Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey() % totalranges)), entry.getValue()), left, right, null));
 						} catch (Exception e) {
-							log.error(DataSamudayaConstants.EMPTY, e);
+							logger.error(DataSamudayaConstants.EMPTY, e);
 						}
 					});
 					int numexecutorpipe = totalranges/numfileperexec;
 					IntStream.range(0, numexecutorpipe).map(val-> val * numfileperexec).forEach(val -> {
-						log.debug("Sending Dummy To Actor: {}", blr.pipeline.get(val));
+						logger.debug("Sending Dummy To Actor: {}"+ blr.pipeline.get(val));
 						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right, Dummy.class));
 					});
 				} else if (CollectionUtils.isNotEmpty(blr.childactors)) {
-					log.debug("Child Actors pipeline Process Started with actors {} with left {} right {} Task {}...",blr.childactors(), left ,right, getIntermediateDataFSFilePath(tasktoprocess));
+					logger.debug("Child Actors pipeline Process Started with actors {} with left {} right {} Task {}..."+blr.getChildactors()+ left + right+ getIntermediateDataFSFilePath(tasktoprocess));
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							diskspillpercentage, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
 					((Stream) streammap).forEach(diskspilllist::add);
 					if(diskspilllist.isSpilled()) {
 						diskspilllist.close();
 					}
-					blr.childactors().stream().forEach(
+					blr.getChildactors().stream().forEach(
 							action -> action.tell(new OutputObject(diskspilllist, left, right, null)));
-					blr.childactors().stream().forEach(
+					blr.getChildactors().stream().forEach(
 							action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class)));
-					log.debug("Child Actors pipeline Process Ended ...");
+					logger.debug("Child Actors pipeline Process Ended ...");
 				} else {
-					log.debug("Processing Mapper Task In Writing To Cache Started ...");
+					logger.debug("Processing Mapper Task In Writing To Cache Started ...");
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							diskspillpercentage, null, false, left, right, null, null, numfileperexec);
 					((Stream) streammap).forEach(diskspilllist::add);
-					log.debug("Processing Mapper Disk Spill Close ...");
+					logger.debug("Processing Mapper Disk Spill Close ...");
 					diskspilllist.close();
-					log.debug("Writing To Cache Started with spilled? {}...",diskspilllist.isSpilled());
+					logger.debug("Writing To Cache Started with spilled? {}... "+diskspilllist.isSpilled());
 					Stream datastream = diskspilllist.isSpilled()
 							? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
 							Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, false, false, false)))
@@ -384,50 +399,50 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 					tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 					cacheAble(fsdos);
 					diskspilllist.clear();
-					log.debug("Writing To Cache Ended with total bytes {}...", fsdos.toByteArray().length);
+					logger.debug("Writing To Cache Ended with total bytes {}... " + fsdos.toByteArray().length);
 				}
-				log.debug("Map assembly concluded");
+				logger.debug("Map assembly concluded");
 				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);				
-				log.debug("Exiting ProcessMapperByBlocksLocation.processBlocksLocationRecord");
+				logger.debug("Exiting ProcessMapperByBlocksLocation.processBlocksLocationRecord");
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
-				log.debug("Time taken to compute the Map Task is " + timetaken + " seconds");
-				log.debug("GC Status Map task:" + Utils.getGCStats());
+				logger.debug("Time taken to compute the Map Task is " + timetaken + " seconds");
+				logger.debug("GC Status Map task:" + Utils.getGCStats());
 			} catch (IOException ioe) {
-				log.error(PipelineConstants.FILEIOERROR, ioe);
+				logger.error(PipelineConstants.FILEIOERROR, ioe);
 				throw new PipelineException(PipelineConstants.FILEIOERROR, ioe);
 			} catch (Exception ex) {
-				log.error(PipelineConstants.PROCESSHDFSERROR, ex);
+				logger.error(PipelineConstants.PROCESSHDFSERROR, ex);
 				throw new PipelineException(PipelineConstants.PROCESSHDFSERROR, ex);
 			}
 		} catch (Throwable ex) {
-			log.error(PipelineConstants.PROCESSHDFSERROR, ex);
+			logger.error(PipelineConstants.PROCESSHDFSERROR, ex);
 		} finally {			
 			if (nonNull(buffer)) {
 				try {
 					buffer.close();
 				} catch (IOException e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
+					logger.error(DataSamudayaConstants.EMPTY, e);
 				}
 			}
 			if (nonNull(bais)) {
 				try {
 					bais.close();
 				} catch (IOException e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
+					logger.error(DataSamudayaConstants.EMPTY, e);
 				}
 			}
 			if (nonNull(buffernocols)) {
 				try {
 					buffernocols.close();
 				} catch (Exception e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
+					logger.error(DataSamudayaConstants.EMPTY, e);
 				}
 			}
 			if (nonNull(istreamnocols)) {
 				try {
 					istreamnocols.close();
 				} catch (Exception e) {
-					log.error(DataSamudayaConstants.EMPTY, e);
+					logger.error(DataSamudayaConstants.EMPTY, e);
 				}
 			}
 			return this;

@@ -595,6 +595,7 @@ public class DataSamudayaConstants {
 	public static final String AKKA_HOST = "akka.host";
 	public static final String AKKA_HOST_DEFAULT = "127.0.0.1";
 	public static final String AKKA_URL_SCHEME = "akka";
+	public static final String AKKA_ROLE = "backend";
 	
 	public static final String TOTALFILEPARTSPEREXEC = "disk.spill.file.parts.per.exec";
 	public static final String TOTALFILEPARTSPEREXEC_DEFAULT = "4";

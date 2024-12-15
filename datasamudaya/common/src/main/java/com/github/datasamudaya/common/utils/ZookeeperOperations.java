@@ -1,5 +1,8 @@
 package com.github.datasamudaya.common.utils;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,13 +18,11 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache.StartMode;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
-import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreV2;
-import org.apache.curator.framework.recipes.locks.Lease;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.retry.RetryForever;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
@@ -39,8 +40,6 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.exceptions.ZookeeperException;
-
-import static java.util.Objects.*;
 
 /**
  * @author arun
@@ -210,20 +209,22 @@ public class ZookeeperOperations implements AutoCloseable {
 	 * @throws Exception
 	 */
 	public List<String> acquireLockAndAddSeedNode(String jobid, String seednode) throws Exception {
-		InterProcessSemaphoreV2 semaphore = null;
-		Lease lease = null;
+		InterProcessSemaphoreMutex semaphore = null;
 		try {
+			semaphore = new InterProcessSemaphoreMutex(curator, DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK);
+			semaphore.acquire();
 			if (curator.checkExists()
 					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
-							+ DataSamudayaConstants.FORWARD_SLASH + jobid) == null) {
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid) == null) {				
 				curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
 				.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
 				.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
-						+ DataSamudayaConstants.FORWARD_SLASH + jobid, DataSamudayaConstants.EMPTY.getBytes());
+						+ DataSamudayaConstants.FORWARD_SLASH + jobid, DataSamudayaConstants.EMPTY.getBytes());				
 			}
-			semaphore = new InterProcessSemaphoreV2(curator, DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
-					+ DataSamudayaConstants.FORWARD_SLASH + jobid, 1);
-			lease =  semaphore.acquire();
+			semaphore.release();
+			semaphore = new InterProcessSemaphoreMutex(curator, DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
+					+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+			semaphore.acquire();
 			List<String> seednodes = getAkkaSeedNodesByJobId(jobid);
 			if(CollectionUtils.isNotEmpty(seednodes)) {
 				return seednodes;
@@ -234,8 +235,8 @@ public class ZookeeperOperations implements AutoCloseable {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		} finally {
-			if(nonNull(semaphore) && nonNull(lease)) {
-				semaphore.returnLease(lease);
+			if(nonNull(semaphore)) {
+				semaphore.release();
 			}
 		}
 	}

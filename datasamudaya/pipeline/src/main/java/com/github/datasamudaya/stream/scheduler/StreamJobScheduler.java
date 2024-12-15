@@ -70,6 +70,7 @@ import org.jgrapht.io.DOTExporter;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.jgroups.JChannel;
 import org.jgroups.ObjectMessage;
+import org.jgroups.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -201,6 +202,7 @@ public class StreamJobScheduler {
 	String hbphysicaladdress;
 	ActorSystem system;
 	ClusterSharding sharding;
+	String shardid;
 	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap = new ConcurrentHashMap<>();
 	public StreamJobScheduler() {
 		hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
@@ -387,10 +389,9 @@ public class StreamJobScheduler {
 					Address address = cluster.selfMember().address();
 			        cluster.manager().tell(new JoinSeedNodes(Arrays.asList(address)));
 			        sharding = ClusterSharding.get(system);
-					final String actorsystemurl = DataSamudayaConstants.AKKA_URL_SCHEME + "://"
-							+ DataSamudayaConstants.ACTORUSERNAME + "@"
-							+ cluster.selfMember().address().getHost().get() + ":"
-							+ cluster.selfMember().address().getPort().get() + "/user";
+					final String actorsystemurl = cluster.selfMember().address().getHost().get() + DataSamudayaConstants.COLON
+							+ cluster.selfMember().address().getPort().get();
+					shardid = UUID.randomUUID().toString();
 					parallelExecutionAkkaActorsLocal(system, actorsystemurl, graph);
 				} else {
 					parallelExecutionPhaseDExecutorLocalMode(graph,
@@ -650,37 +651,53 @@ public class StreamJobScheduler {
 	 * @throws Exception
 	 */
 	public void broadcastJobStageToTaskExecutors(List<Task> tasks) throws Exception {
-		Kryo kryo = Utils.getKryoInstance();
-		if (nonNull(pipelineconfig.getClsloader())) {
-			kryo.setClassLoader(pipelineconfig.getClsloader());
-		}
 		String jobid = job.getId();
 		if (pipelineconfig.getUseglobaltaskexecutors()) {
 			jobid = pipelineconfig.getTejobid();
 		}
-		final String finaljobid = jobid;
-		log.debug("Tasks To Broadcast for job id::{} {}", finaljobid, tasks);
-		Map<String, Set<String>> jobexecutorsmap = tasks.stream()
-				.collect(Collectors.groupingBy(task -> task.jobid + task.stageid, HashMap::new,
-						Collectors.mapping(task -> task.hostport, Collectors.toSet())));
-		log.debug("Job Executors Map::{} jsjidmap {}", jobexecutorsmap, jsidjsmap);
-		jobexecutorsmap.keySet().stream().forEach(key -> {
-			try {
-				JobStage js = (JobStage) jsidjsmap.get(key);
-				if (nonNull(js)) {
-					js.setTejobid(finaljobid);				
-					for (String te : jobexecutorsmap.get(key)) {
-						if(nonNull(job.getPipelineconfig().getJar())) {
-							Utils.getResultObjectByInput(te, js, finaljobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
-						} else {
-							Utils.getResultObjectByInput(te, js, finaljobid);
+		final String finaljobid = jobid;		
+		if(pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
+			jsidjsmap.keySet().stream().forEach(key -> {
+				try {
+					JobStage js = (JobStage) jsidjsmap.get(key);
+					if (nonNull(js)) {
+						js.setTejobid(finaljobid);				
+						for (String te : job.getTaskexecutors()) {
+							if(nonNull(job.getPipelineconfig().getJar())) {
+								Utils.getResultObjectByInput(te, js, finaljobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
+							} else {
+								Utils.getResultObjectByInput(te, js, finaljobid);
+							}
 						}
 					}
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
 				}
-			} catch (Exception e) {
-				log.error(DataSamudayaConstants.EMPTY, e);
-			}
-		});
+			});
+		} else {
+			log.debug("Tasks To Broadcast for job id::{} {}", finaljobid, tasks);
+			Map<String, Set<String>> jobexecutorsmap = tasks.stream()
+					.collect(Collectors.groupingBy(task -> task.jobid + task.stageid, HashMap::new,
+							Collectors.mapping(task -> task.hostport, Collectors.toSet())));
+			log.debug("Job Executors Map::{} jsjidmap {}", jobexecutorsmap, jsidjsmap);
+			jobexecutorsmap.keySet().stream().forEach(key -> {
+				try {
+					JobStage js = (JobStage) jsidjsmap.get(key);
+					if (nonNull(js)) {
+						js.setTejobid(finaljobid);				
+						for (String te : jobexecutorsmap.get(key)) {
+							if(nonNull(job.getPipelineconfig().getJar())) {
+								Utils.getResultObjectByInput(te, js, finaljobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
+							} else {
+								Utils.getResultObjectByInput(te, js, finaljobid);
+							}
+						}
+					}
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			});
+		}
 	}
 
 	/**
@@ -1014,7 +1031,7 @@ public class StreamJobScheduler {
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, successors.size());
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor, jsidjsmap, hdfs, cache,
 								jobidstageidtaskidcompletedmap, actorsystemurl, sharding, null, actorrefs, 
-								blockspartitionfilterskipmap);
+								blockspartitionfilterskipmap, shardid);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 					} else {
 						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
@@ -1023,7 +1040,7 @@ public class StreamJobScheduler {
 								successors.size());
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor, jsidjsmap, hdfs, cache,
 								jobidstageidtaskidcompletedmap, actorsystemurl, sharding, null, actorrefs,
-								blockspartitionfilterskipmap);
+								blockspartitionfilterskipmap, shardid);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 						sptsreverse.setChildactors(childactorsoriggraph);
 					}
@@ -1119,7 +1136,7 @@ public class StreamJobScheduler {
 						ExecuteTaskActor eta = new ExecuteTaskActor(task, actorsselection, filepartitionstartindex);
 						Task task = SQLUtils.getAkkaActor(system, eta, jsidjsmap, hdfs, cache,
 								jobidstageidtaskidcompletedmap, actorsystemurl, sharding, null, actorrefs,
-								blockspartitionfilterskipmap);
+								blockspartitionfilterskipmap, shardid);
 						Utils.writeToOstream(pipelineconfig.getOutput(),
 								"Completed Job And Stages: " + spts.getTask().jobid + DataSamudayaConstants.HYPHEN
 										+ spts.getTask().stageid + DataSamudayaConstants.HYPHEN + spts.getTask().taskid
