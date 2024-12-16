@@ -282,7 +282,7 @@ public class Utils {
 	}
 
 	public static OllamaChatClient ollamaChatClient;
-	
+
 	public static MemoryPoolMXBean mpBeanLocalToJVM;
 
 	static {
@@ -358,7 +358,7 @@ public class Utils {
 					int noofusers = userswithshare / 2;
 					var userssharepercentage = new ConcurrentHashMap<String, User>();
 					double sharepercentagetotal = 0;
-					for (int usercount = 0; usercount < noofusers; usercount++) {
+					for (int usercount = 0;usercount < noofusers;usercount++) {
 						int sharepercentage = Integer.parseInt(cus[usercount * 2 + 1]);
 						String username = cus[usercount * 2];
 						User user = new User(username, sharepercentage, new ConcurrentHashMap<>());
@@ -381,7 +381,7 @@ public class Utils {
 		}
 		log.debug("Exiting Utils.initializeProperties");
 	}
-	
+
 	/**
 	 * Load Properties from class path
 	 * @param propertiesfilepath
@@ -410,7 +410,7 @@ public class Utils {
 					int noofusers = userswithshare / 2;
 					var userssharepercentage = new ConcurrentHashMap<String, User>();
 					double sharepercentagetotal = 0;
-					for (int usercount = 0; usercount < noofusers; usercount++) {
+					for (int usercount = 0;usercount < noofusers;usercount++) {
 						int sharepercentage = Integer.parseInt(cus[usercount * 2 + 1]);
 						String username = cus[usercount * 2];
 						User user = new User(username, sharepercentage, new ConcurrentHashMap<>());
@@ -442,7 +442,7 @@ public class Utils {
 			StaticComponentContainer.Configuration.Default
 					.setFileName(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.BURNINGWAVE_PROPERTIES,
 							DataSamudayaConstants.BURNINGWAVE_PROPERTIES_DEFAULT));
-		} catch (UnsupportedOperationException uoe) {			
+		} catch (UnsupportedOperationException uoe) {
 		}
 	}
 
@@ -995,7 +995,7 @@ public class Utils {
 					"Unable to read result Object for the input object %s from host port %s", inputobj, hp), ex);
 		}
 	}
-	
+
 	/**
 	 * This function returns the jgroups channel object.
 	 * 
@@ -1061,15 +1061,15 @@ public class Utils {
 				new FileOutputStream(outputfolder + DataSamudayaConstants.FORWARD_SLASH + outjarfilename), manifest);) {
 			add(folder, target);
 			add(new File(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
-					+ DataSamudayaConstants.DIST_CONFIG_FOLDER 
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER
 					+ DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.DATASAMUDAYA_PROPERTIES)
-					, target);
+			, target);
 			add(new File(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
-					+ DataSamudayaConstants.DIST_CONFIG_FOLDER 
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER
 					+ DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.AKKACONF)
-					, target);
+			, target);
 		} catch (IOException ioe) {
 			log.error("Unable to create Jar", ioe);
 		}
@@ -1197,7 +1197,7 @@ public class Utils {
 			values.add(driveGB);
 		}
 		var totalHDSize = 0d;
-		for (var i = 0; i < values.size(); i++) {
+		for (var i = 0;i < values.size();i++) {
 			totalHDSize += values.get(i);
 		}
 		log.debug("Exiting HeartBeatServer.usablediskspace");
@@ -1273,7 +1273,7 @@ public class Utils {
 			values.add(driveGB);
 		}
 		var totalHDSize = 0d;
-		for (var i = 0; i < values.size(); i++) {
+		for (var i = 0;i < values.size();i++) {
 			totalHDSize += values.get(i);
 		}
 		log.debug("Exiting HeartBeatServer.totaldiskspace");
@@ -1369,7 +1369,7 @@ public class Utils {
 		}
 		PipelineConfig pc = new PipelineConfig();
 		int numberofcontainerpernode = Integer.parseInt(pc.getNumberofcontainers());
-		for (int container = 0; container < numavailable; container++) {
+		for (int container = 0;container < numavailable;container++) {
 			ConcurrentMap<String, Resources> userrestolaunch = res.next();
 			Resources restolaunch = userrestolaunch.get(user);
 			var cpu = restolaunch.getNumberofprocessors();
@@ -1491,7 +1491,7 @@ public class Utils {
 		}
 		PipelineConfig pc = new PipelineConfig();
 		List<String> launchedcontainerhostports = new ArrayList<>();
-		for (int container = 0; container < numavailable; container++) {
+		for (int container = 0;container < numavailable;container++) {
 			ConcurrentMap<String, Resources> noderesmap = res.next();
 			Resources restolaunch = noderesmap.get(user);
 			var usershare = usersshare.get(user);
@@ -1623,20 +1623,20 @@ public class Utils {
 			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 		}
 		PipelineConfig pc = new PipelineConfig();
-		List<String> launchedcontainerhostports = new ArrayList<>();		
-		if(cpudriver > 0 && memorydriver > 0) {
-			allocateDriverOrExecutor(user, 
-				resources, usersshare,
-				1, cpudriver, memorydriverbytes, jobid,
-				pc, globallaunchcontainers, launchedcontainerhostports, 
-				EXECUTORTYPE.DRIVER);
+		List<String> launchedcontainerhostports = new ArrayList<>();
+		if (cpudriver > 0 && memorydriver > 0) {
+			allocateDriverOrExecutor(user,
+					resources, usersshare,
+					1, cpudriver, memorydriverbytes, jobid,
+					pc, globallaunchcontainers, launchedcontainerhostports,
+					EXECUTORTYPE.DRIVER);
 		}
-		allocateDriverOrExecutor(user, 
+		allocateDriverOrExecutor(user,
 				resources, usersshare,
 				numberofcontainers, cpuuser, memoryuserbytes, jobid,
-				pc, globallaunchcontainers, launchedcontainerhostports, 
+				pc, globallaunchcontainers, launchedcontainerhostports,
 				EXECUTORTYPE.EXECUTOR);
-		if(tolaunchcontainer) {
+		if (tolaunchcontainer) {
 			for (LaunchContainers lc : globallaunchcontainers) {
 				List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
 						lc, DataSamudayaConstants.EMPTY);
@@ -1646,7 +1646,7 @@ public class Utils {
 				if (Objects.isNull(launchedcontainerports)) {
 					throw new ContainerException("Task Executor Launch Error From Container");
 				}
-			}			
+			}
 			int index = 0;
 			while (index < launchedcontainerhostports.size()) {
 				while (true) {
@@ -1676,7 +1676,7 @@ public class Utils {
 		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		return globallaunchcontainers;
 	}
-	
+
 	/**
 	 * allocates diver or executors with the given spec
 	 * @param user
@@ -1693,7 +1693,7 @@ public class Utils {
 	 * @throws ContainerException
 	 * @throws RpcRegistryException
 	 */
-	private static void allocateDriverOrExecutor(String user, 
+	private static void allocateDriverOrExecutor(String user,
 			Collection<ConcurrentMap<String, Resources>> resources, ConcurrentMap<String, User> usersshare,
 			int numberofcontainers, int cpuuser, long memoryuserbytes, String jobid,
 			PipelineConfig pc, List<LaunchContainers> globallaunchcontainers,
@@ -1702,7 +1702,7 @@ public class Utils {
 		Map<String, Boolean> allresourcesallocated = new HashMap<>();
 		int numofcontcount = 0;
 		outer:
-		while(numofcontcount<numberofcontainers) {
+		while (numofcontcount < numberofcontainers) {
 			Iterator<ConcurrentMap<String, Resources>> res = resources.iterator();
 			while (res.hasNext()) {
 				ConcurrentMap<String, Resources> noderesmap = res.next();
@@ -1712,7 +1712,7 @@ public class Utils {
 					throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
 				}
 				int cpu = restolaunch.getNumberofprocessors();
-				if(resources.size() == allresourcesallocated.size()){
+				if (resources.size() == allresourcesallocated.size()) {
 					break outer;
 				}
 				if (cpu <= 0 || cpu < cpuuser) {
@@ -1724,11 +1724,11 @@ public class Utils {
 				if (actualmemory < (128 * DataSamudayaConstants.MB) || memoryrequire < memoryuserbytes) {
 					allresourcesallocated.put(restolaunch.getNodeport(), true);
 					continue;
-				}			
+				}
 				var heapmem = memoryuserbytes * Integer.parseInt(DataSamudayaProperties.get()
 						.getProperty(DataSamudayaConstants.HEAP_PERCENTAGE, DataSamudayaConstants.HEAP_PERCENTAGE_DEFAULT))
 						/ 100;
-	
+
 				var directmem = memoryuserbytes - heapmem;
 				var ac = new AllocateContainers();
 				ac.setJobid(jobid);
@@ -1739,7 +1739,7 @@ public class Utils {
 					throw new ContainerException("Port Allocation Error From Container");
 				}
 				log.debug("Chamber alloted with node: {} amidst ports: {}", restolaunch.getNodeport(), ports);
-	
+
 				var cla = new ContainerLaunchAttributes();
 				var crl = new ArrayList<ContainerResources>();
 				for (Integer port : ports) {
@@ -1768,20 +1768,20 @@ public class Utils {
 					restolaunch.setFreememory(restolaunch.getFreememory() - heapmem - directmem);
 					restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() - cpuuser);
 				}
-				if(nonNull(DataSamudayaUsers.get().get(user).getNodecontainersmap().get(restolaunch.getNodeport()))){
+				if (nonNull(DataSamudayaUsers.get().get(user).getNodecontainersmap().get(restolaunch.getNodeport()))) {
 					DataSamudayaUsers.get().get(user).getNodecontainersmap().get(restolaunch.getNodeport()).addAll(crl);
 				} else {
 					DataSamudayaUsers.get().get(user).getNodecontainersmap().put(restolaunch.getNodeport(), new ArrayList<>(crl));
-				}				
+				}
 				numofcontcount++;
-				if(executortype == EXECUTORTYPE.DRIVER || numofcontcount == numberofcontainers || resources.size() == allresourcesallocated.size()) {
+				if (executortype == EXECUTORTYPE.DRIVER || numofcontcount == numberofcontainers || resources.size() == allresourcesallocated.size()) {
 					allresourcesallocated.clear();
 					break outer;
 				}
 			}
 		}
 	}
-	
+
 	/**
 	 * Allocate resources based on user allocation percentage for the nodes
 	 * 
@@ -1818,7 +1818,7 @@ public class Utils {
 			new File(DataSamudayaConstants.LOCAL_FS_APPJRPATH).mkdirs();
 			Utils.createJar(new File(DataSamudayaConstants.YARNFOLDER), DataSamudayaConstants.LOCAL_FS_APPJRPATH,
 					DataSamudayaConstants.YARNOUTJAR);
-			if(isyarndriverrequired) {
+			if (isyarndriverrequired) {
 				numberofcontainers++;
 			}
 			System.setProperty("jobcount", "1");
@@ -1830,7 +1830,7 @@ public class Utils {
 			var client = (CommandYarnClient) context.getBean(DataSamudayaConstants.YARN_CLIENT);
 			client.setAppName(DataSamudayaConstants.DATASAMUDAYA);
 			client.getEnvironment().put(DataSamudayaConstants.YARNDATASAMUDAYAJOBID, teid);
-			client.getEnvironment().put(DataSamudayaConstants.ISDRIVERREQUIREDYARN, isyarndriverrequired+DataSamudayaConstants.EMPTY);
+			client.getEnvironment().put(DataSamudayaConstants.ISDRIVERREQUIREDYARN, isyarndriverrequired + DataSamudayaConstants.EMPTY);
 			ApplicationId appid = client.submitApplication(true);
 			var zo = new ZookeeperOperations();
 			zo.connect();
@@ -1847,7 +1847,7 @@ public class Utils {
 			GlobalYARNResources.setYarnResourcesByTeId(teid, yarnresourcesmap);
 			var appreport = client.getApplicationReport(appid);
 			while (appreport.getYarnApplicationState() != YarnApplicationState.RUNNING) {
-				if(appreport.getYarnApplicationState() == YarnApplicationState.FAILED || appreport.getYarnApplicationState() == YarnApplicationState.KILLED) {
+				if (appreport.getYarnApplicationState() == YarnApplicationState.FAILED || appreport.getYarnApplicationState() == YarnApplicationState.KILLED) {
 					break;
 				}
 				appreport = client.getApplicationReport(appid);
@@ -2175,7 +2175,7 @@ public class Utils {
 				out.println(
 						"cpu: " + crs.getCpu() + " memory: "
 								+ (crs.getMaxmemory() / DataSamudayaConstants.MB
-										+ crs.getDirectheap() / DataSamudayaConstants.MB)
+								+ crs.getDirectheap() / DataSamudayaConstants.MB)
 								+ " mb port:" + crs.getPort());
 			}
 		}
@@ -2436,7 +2436,7 @@ public class Utils {
 			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		}
 	}
-	
+
 	/**
 	 * This method destroys containers for the given user and jobid.
 	 * 
@@ -2528,7 +2528,7 @@ public class Utils {
 		} else {
 			// Get the fields of the object using reflection
 			header = new String[fields.length];
-			for (int i = 0; i < fields.length; i++) {
+			for (int i = 0;i < fields.length;i++) {
 				header[i] = fields[i].getName();
 			}
 		}
@@ -2547,7 +2547,7 @@ public class Utils {
 				List<Object> rowData = new ArrayList<>();
 				for (Object obj : data) {
 
-					for (int i = 0; i < fields.length; i++) {
+					for (int i = 0;i < fields.length;i++) {
 						fields[i].setAccessible(true);
 						Object value = fields[i].get(obj);
 						rowData.add(value);
@@ -2573,12 +2573,12 @@ public class Utils {
 		if (obj instanceof Map map) {
 			map.keySet().parallelStream().filter(key -> !((String) key).endsWith("-count"))
 					.map(header -> map.get(header)).forEachOrdered(value -> {
-						writer.addValue(value);
-					});
+				writer.addValue(value);
+			});
 			writer.writeValuesToRow();
 		} else {
 			Field[] fields = obj.getClass().getDeclaredFields();
-			for (int i = 0; i < fields.length; i++) {
+			for (int i = 0;i < fields.length;i++) {
 				fields[i].setAccessible(true);
 				Object value = fields[i].get(obj);
 				writer.addValue(value);
@@ -2680,16 +2680,16 @@ public class Utils {
 				+ DataSamudayaConstants.FORWARD_SLASH + task.getJobid() + DataSamudayaConstants.HYPHEN
 				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()
 				+ (StringUtils.isNotEmpty(appendwithpath) ? DataSamudayaConstants.HYPHEN + appendwithpath
-						: DataSamudayaConstants.EMPTY)
+				: DataSamudayaConstants.EMPTY)
 				+ (appendintermediate ? DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATE
-						: DataSamudayaConstants.EMPTY)
+				: DataSamudayaConstants.EMPTY)
 				+ (left || right
-						? left ? DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATEJOINLEFT
-								: DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATEJOINRIGHT
-						: DataSamudayaConstants.EMPTY)
+				? left ? DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATEJOINLEFT
+				: DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATEJOINRIGHT
+				: DataSamudayaConstants.EMPTY)
 				+ DataSamudayaConstants.DOT + DataSamudayaConstants.DATA;
 	}
-	
+
 	/**
 	 * The function returns the file path to store intermediate data generated by Map Reduce Tasks to disk
 	 * @param task
@@ -2702,7 +2702,7 @@ public class Utils {
 				+ DataSamudayaConstants.FORWARD_SLASH + task.getJobid() + DataSamudayaConstants.HYPHEN
 				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()
 				+ (StringUtils.isNotEmpty(appendwithpath) ? DataSamudayaConstants.HYPHEN + appendwithpath
-						: DataSamudayaConstants.EMPTY)
+				: DataSamudayaConstants.EMPTY)
 				+ DataSamudayaConstants.DOT + DataSamudayaConstants.DATA;
 	}
 
@@ -2734,7 +2734,7 @@ public class Utils {
 					Input input = new Input(sis);) {
 				while (input.available() > 0) {
 					List records = (List) kryo.readClassAndObject(input);
-					if(CollectionUtils.isNotEmpty(records)) {
+					if (CollectionUtils.isNotEmpty(records)) {
 						dslout.addAll(records);
 					}
 				}
@@ -2743,28 +2743,28 @@ public class Utils {
 			}
 		} else {
 			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask()
-					, dslinput.getAppendwithpath()
-					, dslinput.getAppendintermediate()
-					, dslinput.getLeft()
-					, dslinput.getRight()
-					, dslinput.getTask().getFcsc(),
+			, dslinput.getAppendwithpath()
+			, dslinput.getAppendintermediate()
+			, dslinput.getLeft()
+			, dslinput.getRight()
+			, dslinput.getTask().getFcsc(),
 					RequestType.LIST, IteratorType.DISKSPILLITERATOR, false, null)) {
 				while (client.hasNext()) {
-					
+
 					List records = (List) Utils
 							.convertBytesToObjectCompressed((byte[]) client.next(), null);
-					
-					if(CollectionUtils.isNotEmpty(records)) {
+
+					if (CollectionUtils.isNotEmpty(records)) {
 						dslout.addAll(records);
 					}
-					
+
 				}
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		}
 	}
-	
+
 	/**
 	 * Copy Disk Spilling List To Disk For Sorting
 	 * @param dslinput
@@ -2820,17 +2820,17 @@ public class Utils {
 				log.debug("Path Of Remote Data File {}", rdf.getShufflefilepath());
 				rdf.setTejobid(dslinput.getTask().getTeid());
 				int port = Utils.getRemoteShufflePort(dslinput.getTask().getHostport(), dslinput.getTask().getTeid());
-				log.debug("Obtaining ShufflePort {} of Task Executor {}", port ,dslinput.getTask().getHostport());
+				log.debug("Obtaining ShufflePort {} of Task Executor {}", port, dslinput.getTask().getHostport());
 				Socket sock = new Socket(hostport[0], port);
 				try (OutputStream outputstream = sock.getOutputStream();
 						Output outputrdf = new Output(outputstream);) {
 					kryo.writeClassAndObject(outputrdf, rdf);
 					outputrdf.flush();
 					log.debug("Written Remote Data Fetch to host {} and port {}", hostport[0], port);
-					try(Socket socket = sock;
+					try (Socket socket = sock;
 						InputStream inputstream = sock.getInputStream();
 							LZ4BlockInputStream sis = new LZ4BlockInputStream(inputstream);
-						Input input = new Input(sis);){
+						Input input = new Input(sis);) {
 						log.debug("Reading Data From Remote Data Fetch from host {} and port {}", hostport[0], port);
 						while (true) {
 							Object records = kryo.readClassAndObject(input);
@@ -2880,16 +2880,17 @@ public class Utils {
 				Kryo kryo = Utils.getKryoInstance();
 				Collection<?> intermdata = null;
 				Iterator<?> iterator = null;
+
 				public boolean tryAdvance(Consumer<? super Object> action) {
 					try {
 						if (isNull(intermdata) && inputinternal.available() > 0 || inputinternal.available() > 0 && !iterator.hasNext()) {
 							intermdata = (Collection<?>) kryo.readClassAndObject(inputinternal);
 							iterator = intermdata.iterator();
 						}
-						if(nonNull(iterator) && iterator.hasNext() ) {								
-							action.accept(iterator.next());							
+						if (nonNull(iterator) && iterator.hasNext()) {
+							action.accept(iterator.next());
 						}
-						if(inputinternal.available() > 0 || iterator.hasNext()) {
+						if (inputinternal.available() > 0 || iterator.hasNext()) {
 							return true;
 						}
 						inputinternal.close();
@@ -2907,8 +2908,8 @@ public class Utils {
 		}
 		return null;
 	}
-	
-	
+
+
 	/**
 	 * The function returns stream of data of diskspilled whether it is local or remote server.
 	 * @param dslinput
@@ -2924,13 +2925,14 @@ public class Utils {
 				Collection<?> intermdata = null;
 				Iterator<?> iterator = null;
 				RemoteIteratorClient client = null;
+
 				public boolean tryAdvance(Consumer<? super Object> action) {
 					try {
 						if (dslinput.isSpilled()) {
 							if (isNull(dslinput.getTask().getHostport())
 									|| dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
-											.equals(DataSamudayaProperties.get()
-													.getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+									.equals(DataSamudayaProperties.get()
+											.getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
 								if (isNull(istream)) {
 									istream = new FileInputStream(Utils.getLocalFilePathForTask(dslinput.getTask(),
 											dslinput.getAppendwithpath(), dslinput.getAppendintermediate(),
@@ -2945,24 +2947,24 @@ public class Utils {
 								}
 
 							} else {
-								if(isNull(client)) {
+								if (isNull(client)) {
 									client = new RemoteIteratorClient(dslinput.getTask()
-											, dslinput.getAppendwithpath()
-											, dslinput.getAppendintermediate()
-											,dslinput.getLeft()
-											,dslinput.getRight()
-											, dslinput.getTask().getFcsc(),
-										RequestType.LIST, IteratorType.DISKSPILLITERATOR, false, null);
+									, dslinput.getAppendwithpath()
+									, dslinput.getAppendintermediate()
+									, dslinput.getLeft()
+									, dslinput.getRight()
+									, dslinput.getTask().getFcsc(),
+											RequestType.LIST, IteratorType.DISKSPILLITERATOR, false, null);
 								}
-								if (isNull(iterator) && client.hasNext() || client.hasNext() && nonNull(iterator) && 
-										!iterator.hasNext()) {
+								if (isNull(iterator) && client.hasNext() || client.hasNext() && nonNull(iterator)
+										&& !iterator.hasNext()) {
 									List records = (List) Utils.convertBytesToObjectCompressed((byte[]) client.next(),
 											null);
 									iterator = records.iterator();
 								}
 							}
-						} else if(isNull(iterator)){
-							if(nonNull(dslinput.getData())) {
+						} else if (isNull(iterator)) {
+							if (nonNull(dslinput.getData())) {
 								iterator = dslinput.getData().iterator();
 							} else {
 								iterator = new Vector<>().iterator();
@@ -2974,29 +2976,29 @@ public class Utils {
 						if (nonNull(inputinternal) && inputinternal.available() > 0 || nonNull(iterator) && iterator.hasNext()) {
 							return true;
 						}
-						log.debug("Stream Close {} {} {} {}", inputinternal,sisinternal, istream, client); 
-						if(nonNull(inputinternal)) {
+						log.debug("Stream Close {} {} {} {}", inputinternal, sisinternal, istream, client);
+						if (nonNull(inputinternal)) {
 							try {
 								inputinternal.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(sisinternal)) {
+						if (nonNull(sisinternal)) {
 							try {
 								sisinternal.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(istream)) {
+						if (nonNull(istream)) {
 							try {
 								istream.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(client)) {
+						if (nonNull(client)) {
 							try {
 								client.close();
 							} catch (Exception e) {
@@ -3009,28 +3011,28 @@ public class Utils {
 						return false;
 					} catch (Throwable ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
-						if(nonNull(inputinternal)) {
+						if (nonNull(inputinternal)) {
 							try {
 								inputinternal.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(sisinternal)) {
+						if (nonNull(sisinternal)) {
 							try {
 								sisinternal.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(istream)) {
+						if (nonNull(istream)) {
 							try {
 								istream.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(client)) {
+						if (nonNull(client)) {
 							try {
 								client.close();
 							} catch (Exception e) {
@@ -3046,7 +3048,7 @@ public class Utils {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * The function returns stream of data of diskspilled whether it is local or remote server.
 	 * @param dslinput
@@ -3062,13 +3064,14 @@ public class Utils {
 				Collection<?> intermdata = null;
 				Iterator<?> iterator = null;
 				RemoteIteratorClient client = null;
+
 				public boolean tryAdvance(Consumer<? super Object> action) {
 					try {
 						if (dslinput.isSpilled()) {
 							if (isNull(dslinput.getTask().getHostport())
 									|| dslinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
-											.equals(DataSamudayaProperties.get()
-													.getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+									.equals(DataSamudayaProperties.get()
+											.getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
 								if (isNull(istream)) {
 									istream = new FileInputStream(Utils.getLocalFilePathForTask(dslinput.getTask(),
 											dslinput.getAppendwithpath(), dslinput.getAppendintermediate(),
@@ -3083,22 +3086,22 @@ public class Utils {
 								}
 
 							} else {
-								if(isNull(client)) {
-									client = new RemoteIteratorClient(dslinput.getTask(),dslinput.getAppendwithpath(),
+								if (isNull(client)) {
+									client = new RemoteIteratorClient(dslinput.getTask(), dslinput.getAppendwithpath(),
 											dslinput.getAppendintermediate(),
 											dslinput.getLeft(),
 											dslinput.getRight(), dslinput.getTask().getFcsc(),
-										RequestType.LIST, IteratorType.DISKSPILLITERATOR, false, null);
+											RequestType.LIST, IteratorType.DISKSPILLITERATOR, false, null);
 								}
-								if (isNull(iterator) && client.hasNext() || client.hasNext() && nonNull(iterator) &&
-										!iterator.hasNext()) {
+								if (isNull(iterator) && client.hasNext() || client.hasNext() && nonNull(iterator)
+										&& !iterator.hasNext()) {
 									List records = (List) Utils.convertBytesToObjectCompressed((byte[]) client.next(),
 											null);
 									iterator = records.iterator();
 								}
 							}
-						} else if(isNull(iterator)){
-							if(nonNull(dslinput.getData())) {
+						} else if (isNull(iterator)) {
+							if (nonNull(dslinput.getData())) {
 								iterator = dslinput.getData().iterator();
 							} else {
 								iterator = new LinkedHashSet<>().iterator();
@@ -3110,29 +3113,29 @@ public class Utils {
 						if (nonNull(inputinternal) && inputinternal.available() > 0 || nonNull(iterator) && iterator.hasNext()) {
 							return true;
 						}
-						log.debug("Stream Close {} {} {} {}", inputinternal,sisinternal, istream, client); 
-						if(nonNull(inputinternal)) {
+						log.debug("Stream Close {} {} {} {}", inputinternal, sisinternal, istream, client);
+						if (nonNull(inputinternal)) {
 							try {
 								inputinternal.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(sisinternal)) {
+						if (nonNull(sisinternal)) {
 							try {
 								sisinternal.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(istream)) {
+						if (nonNull(istream)) {
 							try {
 								istream.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(client)) {
+						if (nonNull(client)) {
 							try {
 								client.close();
 							} catch (Exception e) {
@@ -3140,40 +3143,39 @@ public class Utils {
 							}
 						}
 						log.debug("Stream Close {}", Utils.getLocalFilePathForTask(dslinput.getTask(),
-											dslinput.getAppendwithpath(), dslinput.getAppendintermediate(),
-											dslinput.getLeft(), dslinput.getRight()));
+								dslinput.getAppendwithpath(), dslinput.getAppendintermediate(),
+								dslinput.getLeft(), dslinput.getRight()));
 						return false;
 					} catch (Throwable ex) {
 						log.error(DataSamudayaConstants.EMPTY, ex);
-						if(nonNull(inputinternal)) {
+						if (nonNull(inputinternal)) {
 							try {
 								inputinternal.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(sisinternal)) {
+						if (nonNull(sisinternal)) {
 							try {
 								sisinternal.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(istream)) {
+						if (nonNull(istream)) {
 							try {
 								istream.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-						if(nonNull(client)) {
+						if (nonNull(client)) {
 							try {
 								client.close();
 							} catch (Exception e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						}
-					} finally {						
 					}
 					return false;
 				}
@@ -3183,20 +3185,21 @@ public class Utils {
 		}
 		return null;
 	}
+
 	/**
 	 * The function converts ordered tree to lists inorder traversal
 	 * @param nik
 	 * @param orderedlist
 	 */
 	public static void traverseBinaryTree(NodeIndexKey nik, List<NodeIndexKey> orderedlist) {
-		if(isNull(nik)) {
+		if (isNull(nik)) {
 			return;
-		}		
+		}
 		traverseBinaryTree(nik.getLeft(), orderedlist);
 		orderedlist.add(nik);
 		traverseBinaryTree(nik.getRight(), orderedlist);
 	}
-	
+
 	/**
 	 * The function converts the list of objects to stream fetching the data from iterator
 	 * @param niks
@@ -3207,43 +3210,44 @@ public class Utils {
 		boolean iscachenonempty = nonNull(cache);
 		try {
 			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Object>(Long.MAX_VALUE,
-					Spliterator.IMMUTABLE | Spliterator.ORDERED | Spliterator.NONNULL) {				
-				Kryo kryo = Utils.getKryoInstance();					
+					Spliterator.IMMUTABLE | Spliterator.ORDERED | Spliterator.NONNULL) {
+				Kryo kryo = Utils.getKryoInstance();
+
 				public boolean tryAdvance(Consumer<? super Object> action) {
 					List<NodeIndexKey> orderednodesinternal = niks;
 					Map<String, Input> keyinputmap = new ConcurrentHashMap<>();
 					Map<String, SnappyInputStream> keysismap = new ConcurrentHashMap<>();
 					Map<String, List> cachekeylistmap = new ConcurrentHashMap<>();
 					Map<String, Integer> cachekeyindexmap = new ConcurrentHashMap<>();
-					Map<Task,RemoteIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>(); 
+					Map<Task, RemoteIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>();
 					try {
-						for(var node:orderednodesinternal) {
-							if(iscachenonempty) {
-								if(isNull(keyinputmap.get(node.getCachekey()))) {
+						for (var node :orderednodesinternal) {
+							if (iscachenonempty) {
+								if (isNull(keyinputmap.get(node.getCachekey()))) {
 									ByteArrayInputStream bais = new ByteArrayInputStream(cache.get(node.getCachekey()));
-									keysismap.put(node.getCachekey(), new SnappyInputStream(bais));									
+									keysismap.put(node.getCachekey(), new SnappyInputStream(bais));
 									keyinputmap.put(node.getCachekey(), new Input(keysismap.get(node.getCachekey())));
 									cachekeylistmap.put(node.getCachekey(), (List) kryo.readClassAndObject(keyinputmap.get(node.getCachekey())));
 									cachekeyindexmap.put(node.getCachekey(), 0);
 								}
 								action.accept(cachekeylistmap.get(node.getCachekey()).get(cachekeyindexmap.get(node.getCachekey())));
-								cachekeyindexmap.put(node.getCachekey(), cachekeyindexmap.get(node.getCachekey())+1);
+								cachekeyindexmap.put(node.getCachekey(), cachekeyindexmap.get(node.getCachekey()) + 1);
 							} else {
-								if(isNull(taskrlistiterclientmap.get(node.getTask()))) {
-									taskrlistiterclientmap.put(node.getTask(), new RemoteIteratorClient<>(node.getTask(), null, false, false ,false , null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION, false, null));
+								if (isNull(taskrlistiterclientmap.get(node.getTask()))) {
+									taskrlistiterclientmap.put(node.getTask(), new RemoteIteratorClient<>(node.getTask(), null, false, false, false, null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION, false, null));
 								}
 								action.accept(taskrlistiterclientmap.get(node.getTask()).next().getValue());
 							}
 						}
-						keyinputmap.entrySet().stream().forEach(entry->entry.getValue().close());
-						keysismap.entrySet().stream().forEach(entry->{
+						keyinputmap.entrySet().stream().forEach(entry -> entry.getValue().close());
+						keysismap.entrySet().stream().forEach(entry -> {
 							try {
 								entry.getValue().close();
 							} catch (IOException e) {
 								log.error(DataSamudayaConstants.EMPTY, e);
 							}
 						});
-						taskrlistiterclientmap.entrySet().stream().forEach(entry->{
+						taskrlistiterclientmap.entrySet().stream().forEach(entry -> {
 							try {
 								entry.getValue().close();
 							} catch (IOException e) {
@@ -3275,13 +3279,12 @@ public class Utils {
 	public static Config getAkkaSystemConfig(String hostname, int akkaport, String configtype)
 			throws IOException, Exception {
 		String akkaconf;
-		if(configtype.equals(DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG)) {			
+		if (configtype.equals(DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG)) {
 			akkaconf = IOUtils.toString(Utils.class.getResourceAsStream(DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.AKKACONF), Charset.defaultCharset());
-		}
-		else {
+		} else {
 			akkaconf = Files.readString(java.nio.file.Path.of(DataSamudayaConstants.PREV_FOLDER
-				+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
-				+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.AKKACONF), Charset.defaultCharset());
+					+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
+					+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.AKKACONF), Charset.defaultCharset());
 		}
 		return ConfigFactory.parseString(String.format(akkaconf, hostname, akkaport, hostname, akkaport));
 	}
@@ -3315,7 +3318,7 @@ public class Utils {
 				var sis = new SnappyInputStream(istream);
 				var ip = new Input(sis);) {
 			Kryo kryo = Utils.getKryoInstance();
-			if(nonNull(cl)) {
+			if (nonNull(cl)) {
 				kryo.setClassLoader(cl);
 			}
 			return kryo.readClassAndObject(ip);
@@ -3336,7 +3339,7 @@ public class Utils {
 				var sos = new SnappyOutputStream(ostream);
 				var op = new Output(sos);) {
 			Kryo kryo = Utils.getKryoInstance();
-			if(nonNull(cl)) {
+			if (nonNull(cl)) {
 				kryo.setClassLoader(cl);
 			}
 			kryo.writeClassAndObject(op, obj);
@@ -3373,15 +3376,15 @@ public class Utils {
 	public static Tuple2<ServerSocket, ExecutorService> startShuffleRecordsServer() throws Exception {
 		final ExecutorService executors;
 		final ServerSocket serverSocket;
-		try  {
+		try {
 			executors = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 			serverSocket = new ServerSocket(0);
 			log.debug("Shuffle Server started at port. {}", serverSocket.getLocalPort());
 			executors.execute(() -> {
 				while (true) {
-					if(nonNull(serverSocket) && serverSocket.isClosed()) {
+					if (nonNull(serverSocket) && serverSocket.isClosed()) {
 						break;
 					}
 					final Socket sock;
@@ -3393,7 +3396,7 @@ public class Utils {
 						continue;
 					}
 					executors.execute(() -> {
-					try (Socket socket = sock;) {
+						try (Socket socket = sock;) {
 							Kryo readkryo = Utils.getKryoInstance();
 							Kryo writekryo = Utils.getKryoInstance();
 							try (InputStream istream = socket.getInputStream();
@@ -3403,8 +3406,8 @@ public class Utils {
 									Output output = new Output(socketsos);) {
 								log.debug("File Started To be Processed for remote shuffle from path {}", System.getProperty(DataSamudayaConstants.TMPDIR));
 								RemoteDataFetch rdf = (RemoteDataFetch) readkryo.readClassAndObject(input);
-								log.debug("File To be Processed for remote shuffle with path {} and subpath rdf {}", 
-										System.getProperty(DataSamudayaConstants.TMPDIR),  rdf);
+								log.debug("File To be Processed for remote shuffle with path {} and subpath rdf {}",
+										System.getProperty(DataSamudayaConstants.TMPDIR), rdf);
 								try (FileInputStream fstream = new FileInputStream(
 										System.getProperty(DataSamudayaConstants.TMPDIR) + rdf.getShufflefilepath());
 										InputStream sis = new SnappyInputStream(fstream);
@@ -3419,14 +3422,15 @@ public class Utils {
 								}
 							} catch (Exception ex) {
 								log.error(DataSamudayaConstants.EMPTY, ex);
-							}						
-					} catch (Exception ex) {
-						log.error(DataSamudayaConstants.EMPTY, ex);
-					}});
+							}
+						} catch (Exception ex) {
+							log.error(DataSamudayaConstants.EMPTY, ex);
+						}
+					});
 				}
 			});
 			return new Tuple2<>(serverSocket, executors);
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 		return null;
@@ -3448,17 +3452,18 @@ public class Utils {
 				+ task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid() + DataSamudayaConstants.HYPHEN
 				+ task.getTaskid()
 				+ (StringUtils.isNotEmpty(appendwithpath) ? DataSamudayaConstants.HYPHEN + appendwithpath
-						: DataSamudayaConstants.EMPTY)
+				: DataSamudayaConstants.EMPTY)
 				+ (appendintermediate ? DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATE
-						: DataSamudayaConstants.EMPTY)
+				: DataSamudayaConstants.EMPTY)
 				+ (left || right
-						? left ? DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATEJOINLEFT
-								: DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATEJOINRIGHT
-						: DataSamudayaConstants.EMPTY)
+				? left ? DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATEJOINLEFT
+				: DataSamudayaConstants.HYPHEN + DataSamudayaConstants.INTERMEDIATEJOINRIGHT
+				: DataSamudayaConstants.EMPTY)
 				+ DataSamudayaConstants.DOT + DataSamudayaConstants.DATA;
 	}
-	
+
 	static final Random rand = new Random(System.currentTimeMillis());
+
 	/**
 	 * The function forms binary tree for sorting
 	 * @param root
@@ -3468,44 +3473,44 @@ public class Utils {
 	 */
 	public static void formSortedBinaryTree(NodeIndexKey root, NodeIndexKey child, List<FieldCollationDirection> rfcs) {
 		try {
-			if(root==null||child==null) {
+			if (root == null || child == null) {
 				return;
 			} else {
-				if(compare(root.getKey(), child.getKey(), rfcs)>0){
-					if(isNull(root.getLeft())) {
+				if (compare(root.getKey(), child.getKey(), rfcs) > 0) {
+					if (isNull(root.getLeft())) {
 						root.setLeft(child);
 					} else {
-						formSortedBinaryTree(root.getLeft(),child, rfcs);
+						formSortedBinaryTree(root.getLeft(), child, rfcs);
 					}
-				} 
-				if(compare(root.getKey(), child.getKey(), rfcs)<0){
-					if(isNull(root.getRight())) {
+				}
+				if (compare(root.getKey(), child.getKey(), rfcs) < 0) {
+					if (isNull(root.getRight())) {
 						root.setRight(child);
-					} else { 
-						formSortedBinaryTree(root.getRight(),child, rfcs);
+					} else {
+						formSortedBinaryTree(root.getRight(), child, rfcs);
 					}
-				} 
-				if(compare(root.getKey(), child.getKey(), rfcs)==0) {
-					if(rand.nextBoolean()) {
-						if(isNull(root.getLeft())) {
+				}
+				if (compare(root.getKey(), child.getKey(), rfcs) == 0) {
+					if (rand.nextBoolean()) {
+						if (isNull(root.getLeft())) {
 							root.setLeft(child);
 						} else {
-							formSortedBinaryTree(root.getLeft(),child, rfcs);
+							formSortedBinaryTree(root.getLeft(), child, rfcs);
 						}
 					} else {
-						if(isNull(root.getRight())) {
+						if (isNull(root.getRight())) {
 							root.setRight(child);
-						} else { 
-							formSortedBinaryTree(root.getRight(),child, rfcs);
+						} else {
+							formSortedBinaryTree(root.getRight(), child, rfcs);
 						}
 					}
 				}
 			}
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
-	
+
 	/**
 	 * Compare two object array
 	 * @param obj1
@@ -3515,7 +3520,7 @@ public class Utils {
 	 */
 	public static int compare(Object[] obj1, Object[] obj2, List<FieldCollationDirection> rfcs) {
 		int numofelem = rfcs.size();
-		for (int index = 0; index < numofelem; index++) {
+		for (int index = 0;index < numofelem;index++) {
 			FieldCollationDirection fc = rfcs.get(index);
 			String sortOrder = fc.getDirection().name();
 			Object value1 = obj1[0].getClass() == Object[].class ? ((Object[]) obj1[0])[index]
@@ -3532,7 +3537,7 @@ public class Utils {
 		}
 		return 0;
 	}
-	
+
 	/**
 	 * Compare two objects and returns comparison value
 	 * @param obj1
@@ -3553,7 +3558,7 @@ public class Utils {
 		}
 		return 0;
 	}
-	
+
 	/**
 	 * The function returns key from object for forming binary tree sort
 	 * @param rfcs
@@ -3562,15 +3567,15 @@ public class Utils {
 	 */
 	public static Object[] getKeyFromNodeIndexKey(List<FieldCollationDirection> rfcs, Object[] obj) {
 		List<Object> keys = new ArrayList<>();
-		for (int i = 0; i < rfcs.size(); i++) {
+		for (int i = 0;i < rfcs.size();i++) {
 			FieldCollationDirection fc = rfcs.get(i);
 			Object value = obj[0].getClass() == Object[].class ? ((Object[]) obj[0])[fc.getFieldindex()]
-					: obj[fc.getFieldindex()];			
+					: obj[fc.getFieldindex()];
 			keys.add(value);
 		}
 		return keys.toArray();
 	}
-	
+
 	/**
 	 * Cleanup function to deregister actors from actors system
 	 * @param actorsystem
@@ -3580,37 +3585,37 @@ public class Utils {
 	 * @throws Exception 
 	 */
 	public static boolean cleanupTaskActorFromSystem(ActorSystem actorsystem, Map<String, EntityTypeKey> actors, String jobid) throws Exception {
-		for(EntityTypeKey actor:actors.values()) {
+		for (EntityTypeKey actor :actors.values()) {
 		}
 		deleteJobDir(jobid);
 		actors.clear();
 		return true;
 	}
-	
+
 	/**
 	 * The method deletes temporary job folder
 	 * @param jobid
 	 * @throws Exception
 	 */
 	public static void deleteJobDir(String jobid) throws Exception {
-		File deletefolder = new File(System.getProperty(DataSamudayaConstants.TMPDIR)+
-				DataSamudayaConstants.FORWARD_SLASH+jobid);
-		if(deletefolder.exists()) {
+		File deletefolder = new File(System.getProperty(DataSamudayaConstants.TMPDIR)
+				+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+		if (deletefolder.exists()) {
 			FileUtils.deleteDirectory(deletefolder);
 		}
 	}
-	
+
 	/**
 	 * The function nullify the left and right nodes to serialize object without stackoverflow error.
 	 * @param niks
 	 */
 	public static void NullifyLeftAndRightNikTree(DiskSpillingList<NodeIndexKey> niks) {
-		niks.getData().stream().forEach(nik->{
+		niks.getData().stream().forEach(nik -> {
 			nik.setLeft(null);
 			nik.setRight(null);
 		});
 	}
-	
+
 	/**
 	 * The Copy of the spilled data from one file to another file
 	 * 
@@ -3629,7 +3634,7 @@ public class Utils {
 					Input input = new Input(sis);) {
 				while (input.available() > 0) {
 					Set records = (Set) kryo.readClassAndObject(input);
-					if(CollectionUtils.isNotEmpty(records)) {
+					if (CollectionUtils.isNotEmpty(records)) {
 						dslout.addAll(records);
 					}
 				}
@@ -3638,28 +3643,28 @@ public class Utils {
 			}
 		} else {
 			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask()
-					, dslinput.getAppendwithpath()
-					, dslinput.getAppendintermediate()
-					, dslinput.getLeft()
-					, dslinput.getRight()
-					, dslinput.getTask().getFcsc(),
+			, dslinput.getAppendwithpath()
+			, dslinput.getAppendintermediate()
+			, dslinput.getLeft()
+			, dslinput.getRight()
+			, dslinput.getTask().getFcsc(),
 					RequestType.LIST, IteratorType.DISKSPILLITERATOR, false, null)) {
 				while (client.hasNext()) {
-					
+
 					List records = (List) Utils
 							.convertBytesToObjectCompressed((byte[]) client.next(), null);
-					
-					if(CollectionUtils.isNotEmpty(records)) {
+
+					if (CollectionUtils.isNotEmpty(records)) {
 						dslout.addAll(records);
 					}
-					
+
 				}
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		}
 	}
-	
+
 	/**
 	 * The Copy of the spilled data from list to set
 	 * @param dslinput
@@ -3676,7 +3681,7 @@ public class Utils {
 					Input input = new Input(sis);) {
 				while (input.available() > 0) {
 					List records = (List) kryo.readClassAndObject(input);
-					if(CollectionUtils.isNotEmpty(records)) {
+					if (CollectionUtils.isNotEmpty(records)) {
 						dslout.addAll(records);
 					}
 				}
@@ -3685,28 +3690,28 @@ public class Utils {
 			}
 		} else {
 			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask()
-					, dslinput.getAppendwithpath()
-					, dslinput.getAppendintermediate()
-					, dslinput.getLeft()
-					, dslinput.getRight()
-					, dslinput.getTask().getFcsc(),
+			, dslinput.getAppendwithpath()
+			, dslinput.getAppendintermediate()
+			, dslinput.getLeft()
+			, dslinput.getRight()
+			, dslinput.getTask().getFcsc(),
 					RequestType.LIST, IteratorType.DISKSPILLITERATOR, false, null)) {
 				while (client.hasNext()) {
-					
+
 					List records = (List) Utils
 							.convertBytesToObjectCompressed((byte[]) client.next(), null);
-					
-					if(CollectionUtils.isNotEmpty(records)) {
+
+					if (CollectionUtils.isNotEmpty(records)) {
 						dslout.addAll(records);
 					}
-					
+
 				}
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		}
 	}
-	
+
 	/**
 	 * The Copy of the spilled data from set to set
 	 * @param dslinput
@@ -3723,7 +3728,7 @@ public class Utils {
 					Input input = new Input(sis);) {
 				while (input.available() > 0) {
 					Set records = (Set) kryo.readClassAndObject(input);
-					if(CollectionUtils.isNotEmpty(records)) {
+					if (CollectionUtils.isNotEmpty(records)) {
 						dslout.addAll(records);
 					}
 				}
@@ -3732,51 +3737,51 @@ public class Utils {
 			}
 		} else {
 			try (RemoteIteratorClient client = new RemoteIteratorClient(dslinput.getTask()
-					, dslinput.getAppendwithpath()
-					, dslinput.getAppendintermediate()
-					, dslinput.getLeft()
-					, dslinput.getRight()
-					,dslinput.getTask().getFcsc(),
+			, dslinput.getAppendwithpath()
+			, dslinput.getAppendintermediate()
+			, dslinput.getLeft()
+			, dslinput.getRight()
+			, dslinput.getTask().getFcsc(),
 					RequestType.LIST, IteratorType.DISKSPILLITERATOR, false, null)) {
 				while (client.hasNext()) {
-					
+
 					List records = (List) Utils
 							.convertBytesToObjectCompressed((byte[]) client.next(), null);
-					
-					if(CollectionUtils.isNotEmpty(records)) {
+
+					if (CollectionUtils.isNotEmpty(records)) {
 						dslout.addAll(records);
 					}
-					
+
 				}
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
 			}
 		}
 	}
-	
+
 	/**
 	 * Copy Spilled Context from source to destination.
 	 * @param dslinput
 	 * @param dslout
 	 */
 	public static void copySpilledContextToDestination(DiskSpillingContext dscinput, List<Context> dscouts, Object key, Task remotetask, boolean isremote) {
-		if (!isremote && ((nonNull(dscinput) &&
-				dscinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
-				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) ||
-				remotetask.getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
-						.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)))) {			
+		if (!isremote && ((nonNull(dscinput)
+				&& dscinput.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)))
+				|| remotetask.getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+				.equals(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)))) {
 			Kryo kryo = Utils.getKryoInstance();
-			String filepath = nonNull(dscinput)?Utils.getLocalFilePathForMRTask(dscinput.getTask(), dscinput.getAppendwithpath()):
-				Utils.getLocalFilePathForMRTask(remotetask, null);
-			if(new File(filepath).exists()) {
+			String filepath = nonNull(dscinput) ? Utils.getLocalFilePathForMRTask(dscinput.getTask(), dscinput.getAppendwithpath())
+					: Utils.getLocalFilePathForMRTask(remotetask, null);
+			if (new File(filepath).exists()) {
 				log.debug("In Fetching Local DiskSpilled with file path {}", filepath);
 				try (FileInputStream istream = new FileInputStream(filepath);
 						var sis = new SnappyInputStream(istream);
 						Input input = new Input(sis);) {
 					while (input.available() > 0) {
 						DataCruncherContext ctx = (DataCruncherContext) kryo.readClassAndObject(input);
-						if(nonNull(ctx)) {
-							for(Context dscout:dscouts) {
+						if (nonNull(ctx)) {
+							for (Context dscout :dscouts) {
 								dscout.addAll(key, ctx.get(key));
 							}
 						}
@@ -3786,7 +3791,7 @@ public class Utils {
 				}
 				return;
 			}
-		} 
+		}
 		log.debug("In Fetching Remote DiskSpilled");
 		try (RemoteIteratorClient client = new RemoteIteratorClient<byte[]>(remotetask, null, false, false, false, null,
 				RequestType.CONTEXT, IteratorType.DISKSPILLITERATOR, true, key)) {
@@ -3801,9 +3806,9 @@ public class Utils {
 		} catch (Exception e) {
 			log.error(DataSamudayaConstants.EMPTY, e);
 		}
-		
+
 	}
-	
+
 	/**
 	 * Copy Disk Spilling Set To Disk For Union
 	 * @param dslinput
@@ -3821,7 +3826,7 @@ public class Utils {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
-	
+
 	/**
 	 * The function sends push notification to the system tray
 	 * @param title
@@ -3830,36 +3835,36 @@ public class Utils {
 	 * @throws AWTException
 	 */
 	public static void showNotification(String title, String message, MessageType messageType) throws AWTException {
-        // Check if SystemTray is supported
-        if (!SystemTray.isSupported()) {
-            log.error("System tray is not supported!");
-            return;
-        }
+		// Check if SystemTray is supported
+		if (!SystemTray.isSupported()) {
+			log.error("System tray is not supported!");
+			return;
+		}
 
-        // Get the SystemTray instance
-        SystemTray tray = SystemTray.getSystemTray();
+		// Get the SystemTray instance
+		SystemTray tray = SystemTray.getSystemTray();
 
-        // Load an image
-        Image image = Toolkit.getDefaultToolkit().createImage("Notification Image");
+		// Load an image
+		Image image = Toolkit.getDefaultToolkit().createImage("Notification Image");
 
-        // Create a popup menu (optional)
-        PopupMenu popup = new PopupMenu();
-        MenuItem defaultItem = new MenuItem("Open");
-        defaultItem.addActionListener(e -> log.debug("Opening..."));
-        popup.add(defaultItem);
+		// Create a popup menu (optional)
+		PopupMenu popup = new PopupMenu();
+		MenuItem defaultItem = new MenuItem("Open");
+		defaultItem.addActionListener(e -> log.debug("Opening..."));
+		popup.add(defaultItem);
 
-        // Create a TrayIcon
-        TrayIcon trayIcon = new TrayIcon(image, "Push Notification", popup);
-        // Auto-size
-        trayIcon.setImageAutoSize(true);
+		// Create a TrayIcon
+		TrayIcon trayIcon = new TrayIcon(image, "Push Notification", popup);
+		// Auto-size
+		trayIcon.setImageAutoSize(true);
 
-        // Add the TrayIcon to the SystemTray
-        tray.add(trayIcon);
+		// Add the TrayIcon to the SystemTray
+		tray.add(trayIcon);
 
-        // Display a notification
-        trayIcon.displayMessage(title, message, messageType);
-    }
-	
+		// Display a notification
+		trayIcon.displayMessage(title, message, messageType);
+	}
+
 	/**
 	 * The function forms details on job for push notification
 	 * @param job
@@ -3878,7 +3883,7 @@ public class Utils {
 		builder.append("Job Type: ");
 		builder.append(job.getJobtype());
 		builder.append(DataSamudayaConstants.NEWLINE);
-		if(nonNull(job.getJm())) {
+		if (nonNull(job.getJm())) {
 			builder.append("Total Time Taken: ");
 			builder.append(job.getJm().getTotaltimetaken());
 			builder.append(" Seconds");
@@ -3886,32 +3891,32 @@ public class Utils {
 		}
 		return builder.toString();
 	}
-	
+
 	/**
 	 * The function returns node ip for a given pod ip
 	 * @param podIP
 	 * @return NodeIp
 	 */
 	public static Optional<String> getNodeIPByPodIP(String podIP) {
-        try {
-        	String nodeip = null;
-        	KubernetesClient kubeclient = new DefaultKubernetesClient();
-            List<Pod> podsWithIPAddress = kubeclient.pods().inAnyNamespace().withField(DataSamudayaConstants.PODIP_STATUS, podIP)
-                    .list().getItems();
-            if (podsWithIPAddress.size() > 0) {
-            	String nodename = podsWithIPAddress.get(0).getSpec().getNodeName();
-            	log.debug("Using Pod Ip {} To Node Name: {}", podIP, nodename);
-            	nodeip = kubeclient.nodes().withName(nodename).get().getStatus().getAddresses().get(0).getAddress().split(":")[0];
-            	log.debug("Using Pod Ip {} To Node Address: {}", podIP, nodeip);
-            }
+		try {
+			String nodeip = null;
+			KubernetesClient kubeclient = new DefaultKubernetesClient();
+			List<Pod> podsWithIPAddress = kubeclient.pods().inAnyNamespace().withField(DataSamudayaConstants.PODIP_STATUS, podIP)
+					.list().getItems();
+			if (podsWithIPAddress.size() > 0) {
+				String nodename = podsWithIPAddress.get(0).getSpec().getNodeName();
+				log.debug("Using Pod Ip {} To Node Name: {}", podIP, nodename);
+				nodeip = kubeclient.nodes().withName(nodename).get().getStatus().getAddresses().get(0).getAddress().split(":")[0];
+				log.debug("Using Pod Ip {} To Node Address: {}", podIP, nodeip);
+			}
 
-            return Optional.ofNullable(nodeip);
-        } catch (KubernetesClientException e) {
-            log.warn("Couldn't resolve Node by Pod IP " + podIP, e);
-            return Optional.empty();
-        }
-    }
-	
+			return Optional.ofNullable(nodeip);
+		} catch (KubernetesClientException e) {
+			log.warn("Couldn't resolve Node by Pod IP " + podIP, e);
+			return Optional.empty();
+		}
+	}
+
 	/**
 	 * The function returns blocks location string to store as key in ignite
 	 * @param bl blocks location
@@ -3920,23 +3925,23 @@ public class Utils {
 	public static String getBlocksLocation(BlocksLocation bl) {
 		Block[] blocks = bl.getBlock();
 		return blocks[0].getFilename()
-				+DataSamudayaConstants.HYPHEN+
-				blocks[0].getBlockOffset()+
-				DataSamudayaConstants.ROUNDED_BRACKET_OPEN+
-				blocks[0].getBlockstart()+DataSamudayaConstants.HYPHEN+blocks[0].getBlockend()+DataSamudayaConstants.ROUNDED_BRACKET_CLOSE;
+				+ DataSamudayaConstants.HYPHEN
+				+ blocks[0].getBlockOffset()
+				+ DataSamudayaConstants.ROUNDED_BRACKET_OPEN
+				+ blocks[0].getBlockstart() + DataSamudayaConstants.HYPHEN + blocks[0].getBlockend() + DataSamudayaConstants.ROUNDED_BRACKET_CLOSE;
 	}
-	
+
 	/**
 	 * The function returns list of launched containers for given jobid and executor host port map
 	 * @param exechostportmap
 	 * @param jobid
 	 * @return list of launched containers
 	 */
-	public static List<LaunchContainers> getLcs(Map<String, Set<String>> exechostportmap, String jobid, int cpupercontainer){
+	public static List<LaunchContainers> getLcs(Map<String, Set<String>> exechostportmap, String jobid, int cpupercontainer) {
 		var lcs = new ArrayList<LaunchContainers>();
 		for (Entry<String, Set<String>> hosthps : exechostportmap.entrySet()) {
 			var crl = new ArrayList<ContainerResources>();
-			for(String te:hosthps.getValue()) {
+			for (String te :hosthps.getValue()) {
 				var crs = new ContainerResources();
 				crs.setCpu(cpupercontainer);
 				crs.setPort(Integer.parseInt(te.split(DataSamudayaConstants.UNDERSCORE)[1]));
@@ -3948,34 +3953,34 @@ public class Utils {
 			cla.setNumberofcontainers(hosthps.getValue().size());
 			LaunchContainers lc = new LaunchContainers();
 			lc.setCla(cla);
-			lc.setNodehostport(hosthps.getKey()+DataSamudayaConstants.UNDERSCORE+65534);
+			lc.setNodehostport(hosthps.getKey() + DataSamudayaConstants.UNDERSCORE + 65534);
 			lc.setJobid(jobid);
 			lcs.add(lc);
-		}	
+		}
 		return lcs;
 	}
-	
+
 	/**
 	 * The function returns ollama chat client
 	 * @return chat client
 	 */
 	public static OllamaChatClient getOllamaChatClient() {
 		var chatclient = new OllamaChatClient(new OllamaApi(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.OLLAMA_BASE_URL, 
+				.getProperty(DataSamudayaConstants.OLLAMA_BASE_URL,
 						DataSamudayaConstants.OLLAMA_BASE_URL_DEFAULT)));
 		return chatclient;
 	}
-	
+
 	/**
 	 * Initializes Ollama Chat Client and returns it
 	 * @return
 	 */
 	public static void initializeOllamaChatClient() {
 		ollamaChatClient = new OllamaChatClient(new OllamaApi(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.OLLAMA_BASE_URL, 
+				.getProperty(DataSamudayaConstants.OLLAMA_BASE_URL,
 						DataSamudayaConstants.OLLAMA_BASE_URL_DEFAULT)));
 	}
-	
+
 	/**
 	 * This method returns line reader object
 	 * @return Line Reader object
@@ -3983,18 +3988,18 @@ public class Utils {
 	 */
 	public static LineReader getLineReaderTerminal(String path) throws Exception {
 		Terminal terminal = TerminalBuilder.builder()
-                .nativeSignals(true)
-                .signalHandler(Terminal.SignalHandler.SIG_IGN)
-                .build();
+				.nativeSignals(true)
+				.signalHandler(Terminal.SignalHandler.SIG_IGN)
+				.build();
 		return LineReaderBuilder.builder().variable(
-			    LineReader.HISTORY_FILE,
-			    path
-			).terminal(terminal).variable(
-				    LineReader.HISTORY_FILE_SIZE,
-				    1_000 // history entries
-				).build();
+				LineReader.HISTORY_FILE,
+				path
+		).terminal(terminal).variable(
+				LineReader.HISTORY_FILE_SIZE,
+				1_000 // history entries
+		).build();
 	}
-	
+
 	/**
 	 * The function configures the Metastore for hive to store table information
 	 * @return HiveConf 
@@ -4002,10 +4007,10 @@ public class Utils {
 	 */
 	public static HiveConf getHiveConf(String user) throws Exception {
 		File scratchDirFile = new File(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.HIVE_SCRATCH_DIR, 
+				.getProperty(DataSamudayaConstants.HIVE_SCRATCH_DIR,
 						DataSamudayaConstants.HIVE_SCRATCH_DIR_DEFAULT));
 		String scratchDir = scratchDirFile.getAbsolutePath();
-		Configuration cfg = new Configuration();		
+		Configuration cfg = new Configuration();
 		HiveConf conf = new HiveConf(cfg, HiveConf.class);
 		conf.setBoolean("datanucleus.schema.autoCreateAll", true);
 		conf.addToRestrictList("columns.comments");
@@ -4015,26 +4020,26 @@ public class Utils {
 		// also set the permissions manually since Hive doesn't do it...
 		scratchDirFile.setWritable(true, false);
 		String storeid = "1234";
-		conf.set("hive.metastore.warehouse.dir", scratchDir + DataSamudayaConstants.SLASH + user + 
-				DataSamudayaProperties.get()
-		.getProperty(DataSamudayaConstants.WAREHOUSE_DIR_PATH, 
-				DataSamudayaConstants.WAREHOUSE_DIR_PATH_DEFAULT) + storeid);
-		conf.set("hive.metastore.metadb.dir", 
-				scratchDir + DataSamudayaConstants.SLASH + user +
-				DataSamudayaProperties.get()
-		.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH, 
-				DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid);
+		conf.set("hive.metastore.warehouse.dir", scratchDir + DataSamudayaConstants.SLASH + user
+				+ DataSamudayaProperties.get()
+				.getProperty(DataSamudayaConstants.WAREHOUSE_DIR_PATH,
+						DataSamudayaConstants.WAREHOUSE_DIR_PATH_DEFAULT) + storeid);
+		conf.set("hive.metastore.metadb.dir",
+				scratchDir + DataSamudayaConstants.SLASH + user
+						+ DataSamudayaProperties.get()
+						.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH,
+								DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid);
 		conf.set("hive.exec.scratchdir", scratchDir + DataSamudayaConstants.SLASH + user);
 		conf.set("fs.permissions.umask-mode", "022");
 		conf.set("hive.metastore.dbtype", "derby");
 		conf.set("hive.metastore.local", "true");
 		conf.set("hive.metastore.schema.verification", "false");
 		conf.set("javax.jdo.option.ConnectionURL",
-				"jdbc:derby:;databaseName=" + scratchDir 
-				 + DataSamudayaConstants.SLASH + user
-				+ DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH, 
-						DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid + ";create=true");
+				"jdbc:derby:;databaseName=" + scratchDir
+						+ DataSamudayaConstants.SLASH + user
+						+ DataSamudayaProperties.get()
+						.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH,
+								DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid + ";create=true");
 		conf.set("hive.metastore.local", "true");
 		conf.set("hive.aux.jars.path", "");
 		conf.set("hive.added.jars.path", "");
@@ -4044,7 +4049,7 @@ public class Utils {
 		conf.set("mapred.job.tracker", "local");
 		conf.set("hive.server2.thrift.bind.host", "localhost");
 		conf.set("hive.server2.thrift.port", DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.THRIFT_PORT, 
+				.getProperty(DataSamudayaConstants.THRIFT_PORT,
 						DataSamudayaConstants.THRIFT_PORT_DEFAULT));
 		conf.set("hive.server2.transport.mode", "binary");
 		conf.set("hive.server2.thrift.client.user", "admin");
@@ -4064,7 +4069,7 @@ public class Utils {
 		tss.setAccessible(true);
 		return new HiveConf(conf);
 	}
-	
+
 	/**
 	 * The function starts hive session and returns session state
 	 * @return session start
@@ -4072,15 +4077,15 @@ public class Utils {
 	 */
 	public static SessionState startHiveSession(String user) throws Exception {
 		SessionState sessionState = new SessionState(getHiveConf(user));
-        return SessionState.start(sessionState);
+		return SessionState.start(sessionState);
 	}
-	
+
 	/**
 	 * The current session ends
 	 * @param sessionState
 	 * @throws Exception
 	 */
 	public static void endStartHiveSession(SessionState sessionState) throws Exception {
-       SessionState.endStart(sessionState);
+		SessionState.endStart(sessionState);
 	}
 }

@@ -145,7 +145,7 @@ public class MassiveDataMRJobBase {
 			log.info("HDFS FileSystem Object: " + hdfs);
 			if (numberofnodes > 0 && !issetupdone) {
 				port = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
-				int executorsindex = 0;				
+				int executorsindex = 0;
 				ConcurrentMap<String, Map<String, List<Thread>>> containeridthreads = new ConcurrentHashMap<>();
 				ExecutorService es = Executors.newWorkStealingPool();
 				var containeridports = new ConcurrentHashMap<String, List<Integer>>();
@@ -159,7 +159,7 @@ public class MassiveDataMRJobBase {
 				resource.setUsabledisksize(Utils.usablediskspace());
 				resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
 				zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource, event -> {
-					log.info("{}",event);
+					log.info("{}", event);
 				});
 				while (isNull(DataSamudayaNodesResources.get()) || nonNull(DataSamudayaNodesResources.get()) && DataSamudayaNodesResources.get().size() != numberofnodes) {
 					Thread.sleep(1000);
@@ -173,9 +173,9 @@ public class MassiveDataMRJobBase {
 							new StreamDataCruncher() {
 								public Object postObject(Object object) throws RemoteException {
 									try {
-										if(object instanceof byte[] bytdata) {
+										if (object instanceof byte[] bytdata) {
 											object = Utils.convertBytesToObjectCompressed(bytdata, null);
-										}										
+										}
 										var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
 												containerprocesses, hdfs, containeridthreads, containeridports,
 												object, zo);

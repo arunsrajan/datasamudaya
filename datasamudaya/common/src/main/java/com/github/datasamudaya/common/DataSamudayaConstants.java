@@ -59,7 +59,7 @@ public class DataSamudayaConstants {
 	public static final String SPARSE = "Sparse";
 	public static final String NORMAL = "Normal";
 	public static final String NODES = "nodes";
-	public static final String LOG4J_PROPERTIES = "log4j.properties";
+	public static final String LOG4J2_PROPERTIES = "log4j2.properties";
 	public static final String BURNINGWAVE_PROPERTIES = "burningwave.properties.path";
 	public static final String BURNINGWAVE_PROPERTIES_DEFAULT = "burningwave.properties";
 	public static final String TASKSCHEDULERSTREAM = "taskschedulerstream";
@@ -116,7 +116,7 @@ public class DataSamudayaConstants {
 	public static final String DATABLOCK_EXCEPTION = "Unable to get Next Located Block";
 	public static final String TSEXCEEDEDEXECUTIONCOUNT =
 			"Tasks Execution Count Exceeded (Max Execution Count = 3)";
-	
+
 	public static final String TASKSCHEDULER_HOST = "taskscheduler.host";
 	public static final String TASKSCHEDULER_PORT = "taskscheduler.port";
 	public static final String TASKSCHEDULER_BATCHSIZE = "taskscheduler.batchsize";
@@ -212,7 +212,7 @@ public class DataSamudayaConstants {
 	public static final String MESOS_CONFIGDIR = "../config/";
 
 	public static final String YARNINPUTFOLDER = "yarninput";
-	public static final String MASSIVEDATA_YARNINPUT_CONFIGFILE = "pipelineconfig.dat"; 
+	public static final String MASSIVEDATA_YARNINPUT_CONFIGFILE = "pipelineconfig.dat";
 	public static final String MASSIVEDATA_YARNINPUT_DATAFILE = "mdststs.dat";
 	public static final String MASSIVEDATA_YARNINPUT_GRAPH_FILE = "graph.dat";
 	public static final String MASSIVEDATA_YARNINPUT_TASK_FILE = "taskmdsthread.dat";
@@ -313,7 +313,7 @@ public class DataSamudayaConstants {
 	public static final String YARNDATASAMUDAYAJOBID = "YARNDATASAMUDAYAJOBID";
 
 	public static final String ISDRIVERREQUIREDYARN = "ISDRIVERREQUIREDYARN";
-	
+
 	public static final String SHDP_CONTAINERID = "SHDP_CONTAINERID";
 
 	public static final String PARTITION = "Partition-";
@@ -596,7 +596,7 @@ public class DataSamudayaConstants {
 	public static final String AKKA_HOST_DEFAULT = "127.0.0.1";
 	public static final String AKKA_URL_SCHEME = "akka";
 	public static final String AKKA_ROLE = "backend";
-	
+
 	public static final String TOTALFILEPARTSPEREXEC = "disk.spill.file.parts.per.exec";
 	public static final String TOTALFILEPARTSPEREXEC_DEFAULT = "4";
 	public static final String DISKSPILLDOWNSTREAMBATCHSIZE = "disk.spill.downstream.batch.size";
@@ -605,27 +605,27 @@ public class DataSamudayaConstants {
 	public static final String BTREEELEMENTSNUMBER_DEFAULT = "10000";
 	public static final int BYTEBUFFERSIZE = 1024;
 	public static final int BYTEBUFFERPOOLMAXIDLE = 10;
-	
+
 	public static final String PUSHNOTIFICATION = "push.notification";
 	public static final String PUSHNOTIFICATION_DEFAULT = "false";
-	
+
 	public static final String DEFAULTASKEXECUTORRUNNER = "com.github.datasamudaya.tasks.executor.TaskExecutorRunner";
-	
+
 	public static final String NM_HOST = "NM_HOST";
-	
+
 	public static final String PODCIDR_TO_NODE_MAPPING_ENABLED = "podcidr.node.mapping.enabled";
 	public static final String PODCIDR_TO_NODE_MAPPING_ENABLED_DEFAULT = "false";
 	public static final String PODIP_STATUS = "status.podIP";
-	
+
 	public static final Integer DRIVERMEMORY_DEFAULT = 1024;
 	public static final Integer EXECUTORMEMORY_DEFAULT = 1024;
 	public static final String USERJAR = "jars";
 	public static final String USERJOB = "user";
 	public static final String USERJOBREQUIRED = "User required for executing job";
 	public static final String NUMBERCONTAINERS = "numbercontainers";
-	
+
 	//AI Constants
-	public static final String OLLAMA_ENABLE = "ollama.enable";	
+	public static final String OLLAMA_ENABLE = "ollama.enable";
 	public static final String OLLAMA_ENABLE_DEFAULT = "false";
 	public static final String OLLAMA_SQL_QUERY_PORT = "ollama.sql.port";
 	public static final String OLLAMA_SQL_QUERY_PORT_DEFAULT = "22224";
@@ -661,10 +661,10 @@ public class DataSamudayaConstants {
 	public static final String GENERATESQLTASK = "generateSQL";
 	public static final String GENERATEMULTIPLESQLTASK = "generateMultipleSQL";
 	public static final String GENERATEINSIGHTSSQLTASK = "generateInsightsSQL";
-	
+
 	public static final String VIRTUALTHREADSPOOLSIZE = "virtual.threads.poolsize";
 	public static final String VIRTUALTHREADSPOOLSIZE_DEFAULT = "1000";
-	
+
 	public static final String HIVE_SCRATCH_DIR = "hive.dir";
 	public static final String HIVE_SCRATCH_DIR_DEFAULT = "./hive";
 	public static final String WAREHOUSE_DIR_PATH = "warehouse.dir.path";

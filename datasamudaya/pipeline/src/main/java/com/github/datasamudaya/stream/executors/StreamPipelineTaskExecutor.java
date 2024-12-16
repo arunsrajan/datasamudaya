@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -42,7 +43,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ehcache.Cache;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple;
@@ -55,11 +57,11 @@ import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Blocks;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.ByteBufferOutputStream;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.FileSystemSupport;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
-import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.Task;
@@ -98,12 +100,13 @@ import com.pivovarit.collectors.ParallelCollectors;
 
 /**
  * Task executors thread for standalone task executors daemon.
+ * 
  * @author Arun
  */
 @SuppressWarnings("rawtypes")
 public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	protected JobStage jobstage;
-	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutor.class);
+	private static Logger log = LogManager.getLogger(StreamPipelineTaskExecutor.class);
 	protected FileSystem hdfs;
 	protected boolean completed;
 	public long starttime;
@@ -139,12 +142,12 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	 * This method writes the intermediate data generated in to output stream.  
+	 * This method writes the intermediate data generated in to output stream.
+	 * 
 	 * @param fsdos
-	* @throws PipelineException
-	*/
-	protected void writeIntermediateDataToDirectByteBuffer(final ByteArrayOutputStream fsdos)
-			throws PipelineException {
+	 * @throws PipelineException
+	 */
+	protected void writeIntermediateDataToDirectByteBuffer(final ByteArrayOutputStream fsdos) throws PipelineException {
 		byte[] intermediatedata = fsdos.toByteArray();
 		try (OutputStream os = createIntermediateDataToFS(task, intermediatedata.length);) {
 			IOUtils.write(intermediatedata, os);
@@ -162,9 +165,10 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* This set method is used to set Task Object.
-	* @param task
-	*/
+	 * This set method is used to set Task Object.
+	 * 
+	 * @param task
+	 */
 	public void setTask(Task task) {
 		this.task = task;
 		if (task.finalphase && task.saveresulttohdfs) {
@@ -177,26 +181,28 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* This function returns thread pool object.
-	* @return thread pool object
-	*/
+	 * This function returns thread pool object.
+	 * 
+	 * @return thread pool object
+	 */
 	public ExecutorService getExecutor() {
 		return executor;
 	}
 
 	/**
-	* This function sets the thread pool object.
-	* @param executor
-	*/
+	 * This function sets the thread pool object.
+	 * 
+	 * @param executor
+	 */
 	public void setExecutor(ExecutorService executor) {
 		this.executor = executor;
 	}
 
 	/**
-	* Get the list of all the functions.
-	* 
-	* @return
-	*/
+	 * Get the list of all the functions.
+	 * 
+	 * @return
+	 */
 	protected List getFunctions() {
 		log.debug("Entered StreamPipelineTaskExecutor.getFunctions");
 		var tasks = jobstage.getStage().tasks;
@@ -209,9 +215,10 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* This function provide the stage tasks in text format.
-	* @return tasks in string format.
-	*/
+	 * This function provide the stage tasks in text format.
+	 * 
+	 * @return tasks in string format.
+	 */
 	protected String getStagesTask() {
 		log.debug("Entered StreamPipelineTaskExecutor.getStagesTask");
 		var tasks = jobstage.getStage().tasks;
@@ -225,48 +232,48 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Process the data using intersection function.
-	* @param blocksfirst
-	* @param blockssecond
-	* @param hdfs
-	* @return timetaken in seconds
-	* @throws Exception
-	*/
-	public double processBlockHDFSIntersection(BlocksLocation blocksfirst,
-			BlocksLocation blockssecond, FileSystem hdfs) throws Exception {
+	 * Process the data using intersection function.
+	 * 
+	 * @param blocksfirst
+	 * @param blockssecond
+	 * @param hdfs
+	 * @return timetaken in seconds
+	 * @throws Exception
+	 */
+	public double processBlockHDFSIntersection(BlocksLocation blocksfirst, BlocksLocation blockssecond, FileSystem hdfs)
+			throws Exception {
 		long starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSIntersection");
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
 
-        var bais1 = HdfsBlockReader.getBlockDataInputStream(blocksfirst, hdfs);
-        var buffer1 = new BufferedReader(new InputStreamReader(bais1));
-        var bais2 = HdfsBlockReader.getBlockDataInputStream(blockssecond, hdfs);
-        var buffer2 = new BufferedReader(new InputStreamReader(bais2));
-        var streamfirst = buffer1.lines();
-        var streamsecond = buffer2.lines();) {
-			var cf = (CompletableFuture) streamsecond.distinct()
-					.collect(ParallelCollectors.parallel(value -> value,
-							Collectors.toCollection(LinkedHashSet::new), executor,
-							Runtime.getRuntime().availableProcessors()));
+				var bais1 = HdfsBlockReader.getBlockDataInputStream(blocksfirst, hdfs);
+				var buffer1 = new BufferedReader(new InputStreamReader(bais1));
+				var bais2 = HdfsBlockReader.getBlockDataInputStream(blockssecond, hdfs);
+				var buffer2 = new BufferedReader(new InputStreamReader(bais2));
+				var streamfirst = buffer1.lines();
+				var streamsecond = buffer2.lines();) {
+			var cf = (CompletableFuture) streamsecond.distinct().collect(ParallelCollectors.parallel(value -> value,
+					Collectors.toCollection(LinkedHashSet::new), executor, Runtime.getRuntime().availableProcessors()));
 			;
 			var setsecond = (Set) cf.get();
 			cf = (CompletableFuture) streamfirst.distinct().filter(setsecond::contains)
-					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-							executor, Runtime.getRuntime().availableProcessors()));
+					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
+							Runtime.getRuntime().availableProcessors()));
 			Object result = cf.get();
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv((List) result, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 				return timetaken;
 			}
 			// Get the result of intersection functions parallel.
-				
+
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
 			task.setNumbytesgenerated(fsdos.toByteArray().length);
@@ -292,43 +299,42 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Process the data using intersection function.
-	* @param fsstreamfirst
-	* @param blockssecond
-	* @param hdfs
-	* @return timetaken in seconds
-	* @throws Exception
-	*/
-	@SuppressWarnings({"unchecked"})
-	public double processBlockHDFSIntersection(Set<InputStream> fsstreamfirst,
-			List<BlocksLocation> blockssecond, FileSystem hdfs) throws Exception {
+	 * Process the data using intersection function.
+	 * 
+	 * @param fsstreamfirst
+	 * @param blockssecond
+	 * @param hdfs
+	 * @return timetaken in seconds
+	 * @throws Exception
+	 */
+	@SuppressWarnings({ "unchecked" })
+	public double processBlockHDFSIntersection(Set<InputStream> fsstreamfirst, List<BlocksLocation> blockssecond,
+			FileSystem hdfs) throws Exception {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSIntersection");
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst =
-						new Input(fsstreamfirst.iterator().next());
-        var bais2 = HdfsBlockReader.getBlockDataInputStream(blockssecond.get(0), hdfs);
-        var buffer2 = new BufferedReader(new InputStreamReader(bais2));
-        var streamsecond = buffer2.lines();) {
+				var inputfirst = new Input(fsstreamfirst.iterator().next());
+				var bais2 = HdfsBlockReader.getBlockDataInputStream(blockssecond.get(0), hdfs);
+				var buffer2 = new BufferedReader(new InputStreamReader(bais2));
+				var streamsecond = buffer2.lines();) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
-			var cf = (CompletableFuture) streamsecond.distinct()
-					.collect(ParallelCollectors.parallel(value -> value,
-							Collectors.toCollection(LinkedHashSet::new), executor,
-							Runtime.getRuntime().availableProcessors()));
+			var cf = (CompletableFuture) streamsecond.distinct().collect(ParallelCollectors.parallel(value -> value,
+					Collectors.toCollection(LinkedHashSet::new), executor, Runtime.getRuntime().availableProcessors()));
 			;
 			var setsecond = (Set) cf.get();
 			// Parallel execution of the intersection function.
 			cf = (CompletableFuture) datafirst.stream().distinct().filter(setsecond::contains)
-					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-							executor, Runtime.getRuntime().availableProcessors()));
+					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
+							Runtime.getRuntime().availableProcessors()));
 			Object result = cf.get();
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv((List) result, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -359,39 +365,38 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	 Process the data using intersection function.
-	 
-	 @param fsstreamfirst
-	 @param fsstreamsecond
-	 @return timetaken in seconds.
-	 @throws PipelineException
-	*/
-	@SuppressWarnings({"unchecked"})
-	public double processBlockHDFSIntersection(List<InputStream> fsstreamfirst,
-			List<InputStream> fsstreamsecond) throws PipelineException {
+	 * Process the data using intersection function.
+	 * 
+	 * @param fsstreamfirst
+	 * @param fsstreamsecond
+	 * @return timetaken in seconds.
+	 * @throws PipelineException
+	 */
+	@SuppressWarnings({ "unchecked" })
+	public double processBlockHDFSIntersection(List<InputStream> fsstreamfirst, List<InputStream> fsstreamsecond)
+			throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSIntersection");
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst =
-						new Input(fsstreamfirst.iterator().next());
-        var inputsecond =
-						new Input(fsstreamsecond.iterator().next());
+				var inputfirst = new Input(fsstreamfirst.iterator().next());
+				var inputsecond = new Input(fsstreamsecond.iterator().next());
 
-				) {
+		) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var datasecond = (List) Utils.getKryo().readClassAndObject(inputsecond);
 			// parallel execution of intersection function.
 			var cf = (CompletableFuture) datafirst.stream().distinct().filter(datasecond::contains)
-					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-							executor, Runtime.getRuntime().availableProcessors()));
+					.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
+							Runtime.getRuntime().availableProcessors()));
 			Object result = cf.get();
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv((List) result, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -422,29 +427,31 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Get the HDFS file path using the job id and task id.
-	* @param task
-	* @return path of the tasks.
-	*/
+	 * Get the HDFS file path using the job id and task id.
+	 * 
+	 * @param task
+	 * @return path of the tasks.
+	 */
 	public String getIntermediateDataFSFilePath(Task task) {
 		return DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH
 				+ task.jobid + DataSamudayaConstants.FORWARD_SLASH + task.taskid;
 	}
 
 	/**
-	* Create a file in HDFS and return the stream.
-	* @param task
-	* @param buffersize
-	* @return file output stream
-	* @throws PipelineException
-	*/
-	public OutputStream createIntermediateDataToFS(Task task, int buffersize)
-			throws PipelineException {
+	 * Create a file in HDFS and return the stream.
+	 * 
+	 * @param task
+	 * @param buffersize
+	 * @return file output stream
+	 * @throws PipelineException
+	 */
+	public OutputStream createIntermediateDataToFS(Task task, int buffersize) throws PipelineException {
 		log.debug("Entered StreamPipelineTaskExecutor.createIntermediateDataToFS");
 		try {
 			var path = getIntermediateDataFSFilePath(task);
-			new File(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + DataSamudayaConstants.FORWARD_SLASH
-					+ FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH + jobstage.getJobid()).mkdirs();
+			new File(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR)
+					+ DataSamudayaConstants.FORWARD_SLASH + FileSystemSupport.MDS + DataSamudayaConstants.FORWARD_SLASH
+					+ jobstage.getJobid()).mkdirs();
 			log.debug("Exiting StreamPipelineTaskExecutor.createIntermediateDataToFS");
 			return new FileOutputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path);
 		} catch (IOException ioe) {
@@ -454,37 +461,39 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Open the already existing file using the job id and task id.
-	* @return file input stream
-	* @throws Exception
-	*/
+	 * Open the already existing file using the job id and task id.
+	 * 
+	 * @return file input stream
+	 * @throws Exception
+	 */
 	public InputStream getIntermediateInputStreamFS(Task task) throws Exception {
 		var path = getIntermediateDataFSFilePath(task);
 		return new FileInputStream(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TMPDIR) + path);
 	}
 
 	/**
-	* Perform the union operation.
-	* @param blocksfirst
-	* @param blockssecond
-	* @param hdfs
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
-	@SuppressWarnings({"unchecked"})
-	public double processBlockHDFSUnion(BlocksLocation blocksfirst, BlocksLocation blockssecond,
-			FileSystem hdfs) throws PipelineException {
+	 * Perform the union operation.
+	 * 
+	 * @param blocksfirst
+	 * @param blockssecond
+	 * @param hdfs
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
+	@SuppressWarnings({ "unchecked" })
+	public double processBlockHDFSUnion(BlocksLocation blocksfirst, BlocksLocation blockssecond, FileSystem hdfs)
+			throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSUnion");
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var bais1 = HdfsBlockReader.getBlockDataInputStream(blocksfirst, hdfs);
-        var buffer1 = new BufferedReader(new InputStreamReader(bais1));
-        var bais2 = HdfsBlockReader.getBlockDataInputStream(blockssecond, hdfs);
-        var buffer2 = new BufferedReader(new InputStreamReader(bais2));
-        var streamfirst = buffer1.lines();
-        var streamsecond = buffer2.lines();) {
+				var bais1 = HdfsBlockReader.getBlockDataInputStream(blocksfirst, hdfs);
+				var buffer1 = new BufferedReader(new InputStreamReader(bais1));
+				var bais2 = HdfsBlockReader.getBlockDataInputStream(blockssecond, hdfs);
+				var buffer2 = new BufferedReader(new InputStreamReader(bais2));
+				var streamfirst = buffer1.lines();
+				var streamsecond = buffer2.lines();) {
 			boolean terminalCount = false;
 			if (jobstage.getStage().tasks.get(0) instanceof CalculateCount) {
 				terminalCount = true;
@@ -495,23 +504,21 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				result.add(Stream.concat(streamfirst, streamsecond).distinct().count());
 			} else {
 				// parallel stream union operation result
-				var cf =
-						(CompletableFuture) Stream.concat(streamfirst, streamsecond).distinct()
-								.collect(ParallelCollectors.parallel(value -> value,
-										Collectors.toCollection(Vector::new), executor,
-										Runtime.getRuntime().availableProcessors()));
+				var cf = (CompletableFuture) Stream.concat(streamfirst, streamsecond).distinct()
+						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+								executor, Runtime.getRuntime().availableProcessors()));
 				result = (List) cf.get();
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv((List) result, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 				return timetaken;
 			}
-
 
 			Utils.getKryo().writeClassAndObject(output, result);
 			output.flush();
@@ -538,26 +545,26 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Perform the union operation
-	* @param fsstreamfirst
-	* @param blockssecond
-	* @param hdfs
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
-	@SuppressWarnings({"unchecked"})
-	public double processBlockHDFSUnion(Set<InputStream> fsstreamfirst,
-			List<BlocksLocation> blockssecond, FileSystem hdfs) throws PipelineException {
+	 * Perform the union operation
+	 * 
+	 * @param fsstreamfirst
+	 * @param blockssecond
+	 * @param hdfs
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
+	@SuppressWarnings({ "unchecked" })
+	public double processBlockHDFSUnion(Set<InputStream> fsstreamfirst, List<BlocksLocation> blockssecond,
+			FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSUnion");
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst =
-						new Input(fsstreamfirst.iterator().next());
-        var bais2 = HdfsBlockReader.getBlockDataInputStream(blockssecond.get(0), hdfs);
-        var buffer2 = new BufferedReader(new InputStreamReader(bais2));
-        var streamsecond = buffer2.lines();) {
+				var inputfirst = new Input(fsstreamfirst.iterator().next());
+				var bais2 = HdfsBlockReader.getBlockDataInputStream(blockssecond.get(0), hdfs);
+				var buffer2 = new BufferedReader(new InputStreamReader(bais2));
+				var streamsecond = buffer2.lines();) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			boolean terminalCount = false;
@@ -567,22 +574,19 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			List result;
 			if (terminalCount) {
 				result = new Vector<>();
-				result.add(
-						Stream.concat(datafirst.stream(), streamsecond).distinct().count());
+				result.add(Stream.concat(datafirst.stream(), streamsecond).distinct().count());
 			} else {
 				// parallel stream union operation result
-				CompletableFuture cf =
-						(CompletableFuture) Stream.concat(datafirst.stream(), streamsecond)
-								.distinct()
-								.collect(ParallelCollectors.parallel(value -> value,
-										Collectors.toCollection(Vector::new), executor,
-										Runtime.getRuntime().availableProcessors()));
+				CompletableFuture cf = (CompletableFuture) Stream.concat(datafirst.stream(), streamsecond).distinct()
+						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+								executor, Runtime.getRuntime().availableProcessors()));
 				result = (List) cf.get();
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv((List) result, os);
 					var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 					return timetaken;
@@ -614,23 +618,23 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Perform the union operation
-	* @param fsstreamfirst
-	* @param fsstreamsecond
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
-	@SuppressWarnings({"unchecked"})
-	public double processBlockHDFSUnion(List<InputStream> fsstreamfirst,
-			List<InputStream> fsstreamsecond) throws PipelineException {
+	 * Perform the union operation
+	 * 
+	 * @param fsstreamfirst
+	 * @param fsstreamsecond
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
+	@SuppressWarnings({ "unchecked" })
+	public double processBlockHDFSUnion(List<InputStream> fsstreamfirst, List<InputStream> fsstreamsecond)
+			throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSUnion");
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst =
-						new Input(fsstreamfirst.iterator().next());
-        var inputsecond = new Input(fsstreamsecond.iterator().next());) {
+				var inputfirst = new Input(fsstreamfirst.iterator().next());
+				var inputsecond = new Input(fsstreamsecond.iterator().next());) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var datasecond = (List) Utils.getKryo().readClassAndObject(inputsecond);
@@ -641,21 +645,20 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			}
 			if (terminalCount) {
 				result = new ArrayList<>();
-				result.add(Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
-						.distinct().count());
+				result.add(Stream.concat(datafirst.parallelStream(), datasecond.parallelStream()).distinct().count());
 			} else {
 				// parallel stream union operation result
-				var cf = (CompletableFuture) Stream.concat(datafirst.stream(), datasecond.stream())
-						.distinct()
-						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
-								Runtime.getRuntime().availableProcessors()));
+				var cf = (CompletableFuture) Stream.concat(datafirst.stream(), datasecond.stream()).distinct()
+						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+								executor, Runtime.getRuntime().availableProcessors()));
 				result = (List) cf.get();
 			}
 
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv((List) result, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -687,22 +690,22 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Perform map operation to obtain intermediate stage result.
-	* @param blockslocation
-	* @param hdfs
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Perform map operation to obtain intermediate stage result.
+	 * 
+	 * @param blockslocation
+	 * @param hdfs
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
-	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs)
-			throws PipelineException {
+	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
 		CSVParser records = null;
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
-        var buffer = new BufferedReader(new InputStreamReader(bais));) {
+				var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+				var buffer = new BufferedReader(new InputStreamReader(bais));) {
 
 			Stream intermediatestreamobject;
 			if (jobstage.getStage().tasks.get(0) instanceof Json) {
@@ -717,8 +720,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			} else {
 				if (jobstage.getStage().tasks.get(0) instanceof CsvOptions csvoptions) {
 					var csvformat = CSVFormat.DEFAULT.withQuote('"').withEscape('\\');
-					csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader())
-							.withIgnoreHeaderCase().withTrim();
+					csvformat = csvformat.withDelimiter(',').withHeader(csvoptions.getHeader()).withIgnoreHeaderCase()
+							.withTrim();
 
 					try {
 						records = csvformat.parse(buffer);
@@ -775,11 +778,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 				} else if (finaltask instanceof StandardDeviation) {
 					out = new Vector<>();
-					CompletableFuture<List> cf =
-							(CompletableFuture) ((IntStream) streammap).boxed()
-									.collect(ParallelCollectors.parallel(value -> value,
-											Collectors.toCollection(Vector::new), executor,
-											Runtime.getRuntime().availableProcessors()));
+					CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
+							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+									executor, Runtime.getRuntime().availableProcessors()));
 					var streamtmp = cf.get();
 					var mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
 					var variance = streamtmp.stream().mapToInt(Integer.class::cast)
@@ -790,14 +791,14 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				} else {
 					log.debug("Map assembly deriving");
 					CompletableFuture<List> cf = (CompletableFuture) ((Stream) streammap)
-							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new), executor,
-									Runtime.getRuntime().availableProcessors()));
+							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+									executor, Runtime.getRuntime().availableProcessors()));
 					out = cf.get();
 					if (task.finalphase && task.saveresulttohdfs) {
 						try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-								Short.parseShort(
-										DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-												DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+								Short.parseShort(DataSamudayaProperties.get().getProperty(
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 							Utils.convertToCsv((List) out, os);
 						}
 						var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -845,9 +846,10 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Write the intermediate in ehcache.
-	* @param fsdos
-	*/
+	 * Write the intermediate in ehcache.
+	 * 
+	 * @param fsdos
+	 */
 	@SuppressWarnings("unchecked")
 	public void cacheAble(OutputStream fsdos) {
 		if (iscacheable) {
@@ -857,11 +859,12 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Perform map operation to obtain intermediate stage result.
-	* @param fsstreamfirst
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Perform map operation to obtain intermediate stage result.
+	 * 
+	 * @param fsstreamfirst
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
 	public double processBlockHDFSMap(Set<InputStream> fsstreamfirst) throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -878,8 +881,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 					// while (input.available() > 0) {
 					var inputdatas = (List) Utils.getKryo().readClassAndObject(input);
 					// Get Streams object from list of map functions.
-					try (BaseStream streammap =
-							(BaseStream) StreamUtils.getFunctionsToStream(functions, inputdatas.stream());) {
+					try (BaseStream streammap = (BaseStream) StreamUtils.getFunctionsToStream(functions,
+							inputdatas.stream());) {
 						if (finaltask instanceof CalculateCount) {
 							out = new Vector<>();
 							if (streammap instanceof IntStream stmap) {
@@ -910,14 +913,12 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 						} else if (finaltask instanceof StandardDeviation) {
 							out = new Vector<>();
-							CompletableFuture<List> cf =
-									(CompletableFuture) ((IntStream) streammap).boxed()
-											.collect(ParallelCollectors.parallel(value -> value,
-													Collectors.toCollection(Vector::new), executor,
-													Runtime.getRuntime().availableProcessors()));
+							CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
+									.collect(ParallelCollectors.parallel(value -> value,
+											Collectors.toCollection(Vector::new), executor,
+											Runtime.getRuntime().availableProcessors()));
 							var streamtmp = cf.get();
-							double mean =
-									streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
+							double mean = streamtmp.stream().mapToInt(Integer.class::cast).average().getAsDouble();
 							double variance = (double) streamtmp.stream().mapToInt(Integer.class::cast)
 									.mapToDouble(i -> (i - mean) * (i - mean)).average().getAsDouble();
 							double standardDeviation = Math.sqrt(variance);
@@ -971,27 +972,27 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* The sampling done by this method
-	* @param numofsample
-	* @param blockslocation
-	* @param hdfs
-	* @return timetaken in seconds
-	* @throws Exception
-	*/
+	 * The sampling done by this method
+	 * 
+	 * @param numofsample
+	 * @param blockslocation
+	 * @param hdfs
+	 * @return timetaken in seconds
+	 * @throws Exception
+	 */
 	@SuppressWarnings("unchecked")
-	public double processSamplesBlocks(Integer numofsample, BlocksLocation blockslocation,
-			FileSystem hdfs) throws Exception {
+	public double processSamplesBlocks(Integer numofsample, BlocksLocation blockslocation, FileSystem hdfs)
+			throws Exception {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processSamplesBlocks");
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
-        var buffer = new BufferedReader(new InputStreamReader(bais));
-        var stringdata = buffer.lines();) {
+				var bais = HdfsBlockReader.getBlockDataInputStream(blockslocation, hdfs);
+				var buffer = new BufferedReader(new InputStreamReader(bais));
+				var stringdata = buffer.lines();) {
 			// Limit the sample using the limit method.
 			boolean terminalCount = false;
-			if (jobstage.getStage().tasks
-					.get(jobstage.getStage().tasks.size() - 1) instanceof CalculateCount) {
+			if (jobstage.getStage().tasks.get(jobstage.getStage().tasks.size() - 1) instanceof CalculateCount) {
 				terminalCount = true;
 			}
 			List out;
@@ -999,17 +1000,16 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				out = new Vector<>();
 				out.add(stringdata.limit(numofsample).count());
 			} else {
-				CompletableFuture<List> cf =
-						(CompletableFuture) stringdata.limit(numofsample)
-								.collect(ParallelCollectors.parallel(value -> value,
-										Collectors.toCollection(Vector::new), executor,
-										Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = (CompletableFuture) stringdata.limit(numofsample)
+						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+								executor, Runtime.getRuntime().availableProcessors()));
 				out = cf.get();
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(out, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -1041,20 +1041,19 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Obtain data samples using this method.
-	* @param numofsample
-	* @param fsstreams
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Obtain data samples using this method.
+	 * 
+	 * @param numofsample
+	 * @param fsstreams
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
-	public double processSamplesObjects(Integer numofsample, List fsstreams)
-			throws PipelineException {
+	public double processSamplesObjects(Integer numofsample, List fsstreams) throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processSamplesObjects");
 		var fsdos = new ByteArrayOutputStream();
-		try (var output = new Output(fsdos);
-        var inputfirst = new Input((InputStream) fsstreams.iterator().next());) {
+		try (var output = new Output(fsdos); var inputfirst = new Input((InputStream) fsstreams.iterator().next());) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var terminalCount = false;
@@ -1067,17 +1066,16 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				out.add(datafirst.parallelStream().limit(numofsample).count());
 			} else {
 				// Limit the sample using the limit method.
-				CompletableFuture<List> cf =
-						(CompletableFuture) datafirst.stream().limit(numofsample)
-								.collect(ParallelCollectors.parallel(value -> value,
-										Collectors.toCollection(Vector::new), executor,
-										Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = (CompletableFuture) datafirst.stream().limit(numofsample)
+						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+								executor, Runtime.getRuntime().availableProcessors()));
 				out = cf.get();
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(out, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -1109,28 +1107,30 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* This functions returns the intermediate file system path.
-	* @param jobid
-	* @param stageid
-	* @param taskid
-	* @return jobid-stageid-taskid
-	*/
+	 * This functions returns the intermediate file system path.
+	 * 
+	 * @param jobid
+	 * @param stageid
+	 * @param taskid
+	 * @return jobid-stageid-taskid
+	 */
 	public String getIntermediateDataFSFilePath(String jobid, String stageid, String taskid) {
 		return jobid + DataSamudayaConstants.HYPHEN + stageid + DataSamudayaConstants.HYPHEN + taskid;
 	}
 
 	/**
-	* Gets the taskid
-	* @param taskid
-	* @return taskid
-	*/
+	 * Gets the taskid
+	 * 
+	 * @param taskid
+	 * @return taskid
+	 */
 	public String getIntermediateDataRDF(String taskid) {
 		return taskid;
 	}
 
 	/**
-	* This function is called to execute the tasks.
-	*/
+	 * This function is called to execute the tasks.
+	 */
 	@Override
 	public Boolean call() {
 		starttime = System.currentTimeMillis();
@@ -1138,8 +1138,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 		var stageTasks = getStagesTask();
 		var stagePartition = jobstage.getStageid();
 		var timetakenseconds = 0.0;
-		var hdfsfilepath =
-				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
+		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 		try (var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), new Configuration());) {
 			this.hdfs = hdfs;
 
@@ -1150,7 +1150,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 			if (task.input != null && task.parentremotedatafetch != null) {
 				var numinputs = task.parentremotedatafetch.length;
-				for (var inputindex = 0;inputindex < numinputs;inputindex++) {
+				for (var inputindex = 0; inputindex < numinputs; inputindex++) {
 					var input = task.parentremotedatafetch[inputindex];
 					if (input != null) {
 						var rdf = input;
@@ -1158,8 +1158,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 								rdf.getTaskid());
 						if (Objects.isNull(is)) {
 							RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
-							task.input[inputindex] =
-									new BufferedInputStream(new ByteArrayInputStream(rdf.getData()));
+							task.input[inputindex] = new BufferedInputStream(new ByteArrayInputStream(rdf.getData()));
 						} else {
 							task.input[inputindex] = is;
 						}
@@ -1193,13 +1192,14 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* This function computes the various tasks like union,intersection, map, filter, joins,
-	* coalesce etc.
-	* @param task
-	* @param hdfs
-	* @return timetaken in seconds
-	* @throws Exception
-	*/
+	 * This function computes the various tasks like union,intersection, map,
+	 * filter, joins, coalesce etc.
+	 * 
+	 * @param task
+	 * @param hdfs
+	 * @return timetaken in seconds
+	 * @throws Exception
+	 */
 	@SuppressWarnings("unchecked")
 	public double computeTasks(Task task, FileSystem hdfs) throws Exception {
 		var timetakenseconds = 0.0;
@@ -1223,7 +1223,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				streamsecond = (InputStream) task.input[1];
 			}
 			try (var streamfirsttocompute = (InputStream) streamfirst;
-          var streamsecondtocompute = (InputStream) streamsecond;) {
+					var streamsecondtocompute = (InputStream) streamsecond;) {
 				timetakenseconds = processJoin(streamfirsttocompute, streamsecondtocompute, jp,
 						task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
 			} catch (IOException ioe) {
@@ -1254,7 +1254,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				streamsecond = (InputStream) task.input[1];
 			}
 			try (var streamfirsttocompute = (InputStream) streamfirst;
-          var streamsecondtocompute = (InputStream) streamsecond;) {
+					var streamsecondtocompute = (InputStream) streamsecond;) {
 				timetakenseconds = processLeftOuterJoin(streamfirsttocompute, streamsecondtocompute, ljp,
 						task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
 			} catch (IOException ioe) {
@@ -1284,7 +1284,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				streamsecond = (InputStream) task.input[1];
 			}
 			try (var streamfirsttocompute = (InputStream) streamfirst;
-          var streamsecondtocompute = (InputStream) streamsecond;) {
+					var streamsecondtocompute = (InputStream) streamsecond;) {
 				timetakenseconds = processRightOuterJoin(streamfirsttocompute, streamsecondtocompute, rjp,
 						task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
 			} catch (IOException ioe) {
@@ -1314,7 +1314,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				streamsecond = (InputStream) task.input[1];
 			}
 			try (var streamfirsttocompute = (InputStream) streamfirst;
-          var streamsecondtocompute = (InputStream) streamsecond;) {
+					var streamsecondtocompute = (InputStream) streamsecond;) {
 				timetakenseconds = processJoin(streamfirsttocompute, streamsecondtocompute,
 						task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
 			} catch (IOException ioe) {
@@ -1345,7 +1345,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				streamsecond = (InputStream) task.input[1];
 			}
 			try (var streamfirsttocompute = (InputStream) streamfirst;
-          var streamsecondtocompute = (InputStream) streamsecond;) {
+					var streamsecondtocompute = (InputStream) streamsecond;) {
 				timetakenseconds = processLeftJoin(streamfirsttocompute, streamsecondtocompute,
 						task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
 			} catch (IOException ioe) {
@@ -1375,7 +1375,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				streamsecond = (InputStream) task.input[1];
 			}
 			try (var streamfirsttocompute = (InputStream) streamfirst;
-          var streamsecondtocompute = (InputStream) streamsecond;) {
+					var streamsecondtocompute = (InputStream) streamsecond;) {
 				timetakenseconds = processRightJoin(streamfirsttocompute, streamsecondtocompute,
 						task.input[0] instanceof BlocksLocation, task.input[1] instanceof BlocksLocation);
 			} catch (IOException ioe) {
@@ -1392,7 +1392,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				timetakenseconds = processBlockHDFSIntersection(blfirst, blsecond, hdfs);
 			} else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
 					|| ((task.input[0] instanceof InputStream) && task.input[1] instanceof Blocks
-					|| task.input[1] instanceof BlocksLocation)) {
+							|| task.input[1] instanceof BlocksLocation)) {
 				var streamfirst = new LinkedHashSet<InputStream>();
 				var blockssecond = new ArrayList<BlocksLocation>();
 				for (var input : task.input) {
@@ -1415,7 +1415,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				timetakenseconds = processBlockHDFSUnion(blfirst, blsecond, hdfs);
 			} else if (((task.input[0] instanceof BlocksLocation) && task.input[1] instanceof InputStream)
 					|| ((task.input[0] instanceof InputStream) && task.input[1] instanceof Blocks
-					|| task.input[1] instanceof BlocksLocation)) {
+							|| task.input[1] instanceof BlocksLocation)) {
 				var streamfirst = new LinkedHashSet<InputStream>();
 				var blockssecond = new ArrayList<BlocksLocation>();
 				for (var input : task.input) {
@@ -1466,50 +1466,44 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Join pair operation.
-	* 
-	* @param streamfirst
-	* @param streamsecond
-	* @param isinputfirstblocks
-	* @param isinputsecondblocks
-	* @return timetaken in milliseconds
-	* @throws PipelineException
-	*/
+	 * Join pair operation.
+	 * 
+	 * @param streamfirst
+	 * @param streamsecond
+	 * @param isinputfirstblocks
+	 * @param isinputsecondblocks
+	 * @return timetaken in milliseconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
-	public double processJoin(InputStream streamfirst, InputStream streamsecond,
-			boolean isinputfirstblocks, boolean isinputsecondblocks) throws PipelineException {
+	public double processJoin(InputStream streamfirst, InputStream streamsecond, boolean isinputfirstblocks,
+			boolean isinputsecondblocks) throws PipelineException {
 		log.debug("Entered StreamPipelineTaskExecutor.processJoin");
 		var starttime = System.currentTimeMillis();
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst = isinputfirstblocks ? null
-						: new Input(streamfirst);
-        var inputsecond = isinputsecondblocks ? null
-						: new Input(streamsecond);
-        var buffreader1 =
-						isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
-        var buffreader2 =
-						isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
+				var inputfirst = isinputfirstblocks ? null : new Input(streamfirst);
+				var inputsecond = isinputsecondblocks ? null : new Input(streamsecond);
+				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
+				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			final List<Tuple2> inputs1, inputs2;
 			;
 			if (Objects.isNull(buffreader1)) {
 				inputs1 = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			} else {
-				CompletableFuture<List> cf = buffreader1.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader1.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs1 = cf.get();
 			}
 			if (Objects.isNull(buffreader2)) {
 				inputs2 = (List) Utils.getKryo().readClassAndObject(inputsecond);
 			} else {
-				CompletableFuture<List> cf = buffreader2.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader2.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs2 = cf.get();
 			}
 			var terminalCount = false;
@@ -1519,8 +1513,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 			Stream<Tuple2> joinpairs = inputs1.parallelStream().flatMap(tup1 -> {
 				return inputs2.parallelStream().filter(tup2 -> tup1.v1.equals(tup2.v1))
-						.map(tup2 -> new Tuple2(tup2.v1, new Tuple2(tup1.v2, tup2.v2)))
-						.collect(Collectors.toList()).stream();
+						.map(tup2 -> new Tuple2(tup2.v1, new Tuple2(tup1.v2, tup2.v2))).collect(Collectors.toList())
+						.stream();
 			});
 			List joinpairsout;
 			if (terminalCount) {
@@ -1537,8 +1531,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(joinpairsout, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -1570,50 +1565,44 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Left Join pair operation.
-	* 
-	* @param streamfirst
-	* @param streamsecond
-	* @param isinputfirstblocks
-	* @param isinputsecondblocks
-	* @return timetaken in milliseconds
-	* @throws PipelineException
-	*/
+	 * Left Join pair operation.
+	 * 
+	 * @param streamfirst
+	 * @param streamsecond
+	 * @param isinputfirstblocks
+	 * @param isinputsecondblocks
+	 * @return timetaken in milliseconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
-	public double processLeftJoin(InputStream streamfirst, InputStream streamsecond,
-			boolean isinputfirstblocks, boolean isinputsecondblocks) throws PipelineException {
+	public double processLeftJoin(InputStream streamfirst, InputStream streamsecond, boolean isinputfirstblocks,
+			boolean isinputsecondblocks) throws PipelineException {
 		log.debug("Entered StreamPipelineTaskExecutor.processLeftJoin");
 		var starttime = System.currentTimeMillis();
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst = isinputfirstblocks ? null
-						: new Input(streamfirst);
-        var inputsecond = isinputsecondblocks ? null
-						: new Input(streamsecond);
-        var buffreader1 =
-						isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
-        var buffreader2 =
-						isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
+				var inputfirst = isinputfirstblocks ? null : new Input(streamfirst);
+				var inputsecond = isinputsecondblocks ? null : new Input(streamsecond);
+				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
+				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			final List<Tuple2> inputs1, inputs2;
 			;
 			if (Objects.isNull(buffreader1)) {
 				inputs1 = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			} else {
-				CompletableFuture<List> cf = buffreader1.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader1.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs1 = cf.get();
 			}
 			if (Objects.isNull(buffreader2)) {
 				inputs2 = (List) Utils.getKryo().readClassAndObject(inputsecond);
 			} else {
-				CompletableFuture<List> cf = buffreader2.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader2.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs2 = cf.get();
 			}
 			var terminalCount = false;
@@ -1623,8 +1612,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 			Stream<Tuple2> joinpairs = inputs1.parallelStream().flatMap(tup1 -> {
 				List<Tuple2> joinlist = inputs2.parallelStream().filter(tup2 -> tup1.v1.equals(tup2.v1))
-						.map(tup2 -> new Tuple2(tup2.v1, new Tuple2(tup1.v2, tup2.v2)))
-						.collect(Collectors.toList());
+						.map(tup2 -> new Tuple2(tup2.v1, new Tuple2(tup1.v2, tup2.v2))).collect(Collectors.toList());
 				if (joinlist.isEmpty()) {
 					return Arrays.asList(new Tuple2(tup1.v1, new Tuple2(tup1.v2, null))).stream();
 				}
@@ -1645,8 +1633,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(joinpairsout, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -1677,50 +1666,44 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Left Join pair operation.
-	* 
-	* @param streamfirst
-	* @param streamsecond
-	* @param isinputfirstblocks
-	* @param isinputsecondblocks
-	* @return timetaken in milliseconds
-	* @throws PipelineException
-	*/
+	 * Left Join pair operation.
+	 * 
+	 * @param streamfirst
+	 * @param streamsecond
+	 * @param isinputfirstblocks
+	 * @param isinputsecondblocks
+	 * @return timetaken in milliseconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
-	public double processRightJoin(InputStream streamfirst, InputStream streamsecond,
-			boolean isinputfirstblocks, boolean isinputsecondblocks) throws PipelineException {
+	public double processRightJoin(InputStream streamfirst, InputStream streamsecond, boolean isinputfirstblocks,
+			boolean isinputsecondblocks) throws PipelineException {
 		log.debug("Entered StreamPipelineTaskExecutor.processRightJoin");
 		var starttime = System.currentTimeMillis();
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst = isinputfirstblocks ? null
-						: new Input(streamfirst);
-        var inputsecond = isinputsecondblocks ? null
-						: new Input(streamsecond);
-        var buffreader1 =
-						isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
-        var buffreader2 =
-						isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
+				var inputfirst = isinputfirstblocks ? null : new Input(streamfirst);
+				var inputsecond = isinputsecondblocks ? null : new Input(streamsecond);
+				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
+				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			final List<Tuple2> inputs1, inputs2;
 			;
 			if (Objects.isNull(buffreader1)) {
 				inputs1 = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			} else {
-				CompletableFuture<List> cf = buffreader1.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader1.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs1 = cf.get();
 			}
 			if (Objects.isNull(buffreader2)) {
 				inputs2 = (List) Utils.getKryo().readClassAndObject(inputsecond);
 			} else {
-				CompletableFuture<List> cf = buffreader2.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader2.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs2 = cf.get();
 			}
 			var terminalCount = false;
@@ -1730,8 +1713,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 			Stream<Tuple2> joinpairs = inputs2.parallelStream().flatMap(tup1 -> {
 				List<Tuple2> joinlist = inputs1.parallelStream().filter(tup2 -> tup1.v1.equals(tup2.v1))
-						.map(tup2 -> new Tuple2(tup2.v1, new Tuple2(tup2.v2, tup1.v2)))
-						.collect(Collectors.toList());
+						.map(tup2 -> new Tuple2(tup2.v1, new Tuple2(tup2.v2, tup1.v2))).collect(Collectors.toList());
 				if (joinlist.isEmpty()) {
 					return Arrays.asList(new Tuple2(tup1.v1, new Tuple2(null, tup1.v2))).stream();
 				}
@@ -1752,8 +1734,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(joinpairsout, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -1784,51 +1767,45 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Join pair operation.
-	* @param streamfirst
-	* @param streamsecond
-	* @param joinpredicate
-	* @param isinputfirstblocks
-	* @param isinputsecondblocks
-	* @return timetaken in seconds.
-	* @throws PipelineException
-	*/
+	 * Join pair operation.
+	 * 
+	 * @param streamfirst
+	 * @param streamsecond
+	 * @param joinpredicate
+	 * @param isinputfirstblocks
+	 * @param isinputsecondblocks
+	 * @return timetaken in seconds.
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
-	public double processJoin(InputStream streamfirst, InputStream streamsecond,
-			JoinPredicate joinpredicate, boolean isinputfirstblocks, boolean isinputsecondblocks)
-			throws PipelineException {
+	public double processJoin(InputStream streamfirst, InputStream streamsecond, JoinPredicate joinpredicate,
+			boolean isinputfirstblocks, boolean isinputsecondblocks) throws PipelineException {
 		log.debug("Entered StreamPipelineTaskExecutor.processJoin");
 		var starttime = System.currentTimeMillis();
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst = isinputfirstblocks ? null
-						: new Input(streamfirst);
-        var inputsecond = isinputsecondblocks ? null
-						: new Input(streamsecond);
-        var buffreader1 =
-						isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
-        var buffreader2 =
-						isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
+				var inputfirst = isinputfirstblocks ? null : new Input(streamfirst);
+				var inputsecond = isinputsecondblocks ? null : new Input(streamsecond);
+				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
+				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			List inputs1 = null, inputs2 = null;
 			;
 			if (Objects.isNull(buffreader1)) {
 				inputs1 = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			} else {
-				CompletableFuture<List> cf = buffreader1.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader1.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs1 = cf.get();
 			}
 			if (Objects.isNull(buffreader2)) {
 				inputs2 = (List) Utils.getKryo().readClassAndObject(inputsecond);
 			} else {
-				CompletableFuture<List> cf = buffreader2.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader2.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs2 = cf.get();
 			}
 			var terminalCount = false;
@@ -1839,8 +1816,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			if (terminalCount) {
 				joinpairsout = new Vector<>();
 				try (var seq1 = Seq.of(inputs1.toArray());
-            var seq2 = Seq.of(inputs2.toArray());
-            var seqinnerjoin = seq1.innerJoin(seq2, joinpredicate)) {
+						var seq2 = Seq.of(inputs2.toArray());
+						var seqinnerjoin = seq1.innerJoin(seq2, joinpredicate)) {
 					joinpairsout.add(seqinnerjoin.count());
 				} catch (Exception ex) {
 					log.error(PipelineConstants.PROCESSJOIN, ex);
@@ -1849,38 +1826,37 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			} else {
 				// Parallel join pair result.
 				try (var seq1 = Seq.of(inputs1.toArray());
-            var seq2 = Seq.of(inputs2.toArray());
-            var seqinnerjoin = seq1.innerJoin(seq2, joinpredicate)) {
+						var seq2 = Seq.of(inputs2.toArray());
+						var seqinnerjoin = seq1.innerJoin(seq2, joinpredicate)) {
 					joinpairsout = seqinnerjoin.toList();
 					if (!joinpairsout.isEmpty()) {
 						Tuple2 tuple2 = (Tuple2) joinpairsout.get(0);
 						if (tuple2.v1 instanceof CSVRecord && tuple2.v2 instanceof CSVRecord) {
-							var cf = (CompletableFuture) joinpairsout.stream()
-									.filter(val -> val instanceof Tuple2).filter(value -> {
-								Tuple2 csvrec = (Tuple2) value;
-								Object rec1 = csvrec.v1;
-								Object rec2 = csvrec.v2;
-								return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
-							}).map((Object rec) -> {
-								try {
-									Tuple2 csvrec = (Tuple2) rec;
-									CSVRecord rec1 = (CSVRecord) csvrec.v1;
-									CSVRecord rec2 = (CSVRecord) csvrec.v2;
-									Map<String, String> keyvalue = rec1.toMap();
-									keyvalue.putAll(rec2.toMap());
-									List<String> keys = new ArrayList<>(keyvalue.keySet());
-									CSVRecord recordmutated =
-											CSVParser
+							var cf = (CompletableFuture) joinpairsout.stream().filter(val -> val instanceof Tuple2)
+									.filter(value -> {
+										Tuple2 csvrec = (Tuple2) value;
+										Object rec1 = csvrec.v1;
+										Object rec2 = csvrec.v2;
+										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
+									}).map((Object rec) -> {
+										try {
+											Tuple2 csvrec = (Tuple2) rec;
+											CSVRecord rec1 = (CSVRecord) csvrec.v1;
+											CSVRecord rec2 = (CSVRecord) csvrec.v2;
+											Map<String, String> keyvalue = rec1.toMap();
+											keyvalue.putAll(rec2.toMap());
+											List<String> keys = new ArrayList<>(keyvalue.keySet());
+											CSVRecord recordmutated = CSVParser
 													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
 															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
 																	.withHeader(keys.toArray(new String[keys.size()])))
 													.getRecords().get(0);
-									return recordmutated;
-								} catch (IOException e) {
+											return recordmutated;
+										} catch (IOException e) {
 
-								}
-								return null;
-							})
+										}
+										return null;
+									})
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
@@ -1895,8 +1871,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(joinpairsout, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -1928,51 +1905,46 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Function for Left Outer Join computation.
-	* @param streamfirst
-	* @param streamsecond
-	* @param leftouterjoinpredicate
-	* @param isinputfirstblocks
-	* @param isinputsecondblocks
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Function for Left Outer Join computation.
+	 * 
+	 * @param streamfirst
+	 * @param streamsecond
+	 * @param leftouterjoinpredicate
+	 * @param isinputfirstblocks
+	 * @param isinputsecondblocks
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
 	public double processLeftOuterJoin(InputStream streamfirst, InputStream streamsecond,
-			LeftOuterJoinPredicate leftouterjoinpredicate, boolean isinputfirstblocks,
-			boolean isinputsecondblocks) throws PipelineException {
+			LeftOuterJoinPredicate leftouterjoinpredicate, boolean isinputfirstblocks, boolean isinputsecondblocks)
+			throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processLeftOuterJoin");
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst = isinputfirstblocks ? null
-						: new Input(streamfirst);
-        var inputsecond = isinputsecondblocks ? null
-						: new Input(streamsecond);
-        var buffreader1 =
-						isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
-        var buffreader2 =
-						isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
+				var inputfirst = isinputfirstblocks ? null : new Input(streamfirst);
+				var inputsecond = isinputsecondblocks ? null : new Input(streamsecond);
+				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
+				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			List inputs1 = null, inputs2 = null;
 			;
 			if (Objects.isNull(buffreader1)) {
 				inputs1 = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			} else {
-				CompletableFuture<List> cf = buffreader1.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader1.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs1 = cf.get();
 			}
 			if (Objects.isNull(buffreader2)) {
 				inputs2 = (List) Utils.getKryo().readClassAndObject(inputsecond);
 			} else {
-				CompletableFuture<List> cf = buffreader2.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader2.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs2 = cf.get();
 			}
 			boolean terminalCount = false;
@@ -1983,8 +1955,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			if (terminalCount) {
 				joinpairsout = new Vector<>();
 				try (var seq1 = Seq.of(inputs1.toArray());
-            var seq2 = Seq.of(inputs2.toArray());
-            var seqleftouterjoin = seq1.leftOuterJoin(seq2, leftouterjoinpredicate)) {
+						var seq2 = Seq.of(inputs2.toArray());
+						var seqleftouterjoin = seq1.leftOuterJoin(seq2, leftouterjoinpredicate)) {
 					joinpairsout.add(seqleftouterjoin.count());
 				} catch (Exception ex) {
 					log.error(PipelineConstants.PROCESSLEFTOUTERJOIN, ex);
@@ -1993,79 +1965,79 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			} else {
 				// Parallel join pair result.
 				try (var seq1 = Seq.of(inputs1.toArray());
-            var seq2 = Seq.of(inputs2.toArray());
-            var seqleftouterjoin = seq1.leftOuterJoin(seq2, leftouterjoinpredicate)) {
+						var seq2 = Seq.of(inputs2.toArray());
+						var seqleftouterjoin = seq1.leftOuterJoin(seq2, leftouterjoinpredicate)) {
 					joinpairsout = seqleftouterjoin.toList();
 					if (!joinpairsout.isEmpty()) {
 						Tuple2 tuple2 = (Tuple2) joinpairsout.get(0);
 						if (tuple2.v1 instanceof CSVRecord && tuple2.v2 instanceof CSVRecord) {
-							var cf = (CompletableFuture) joinpairsout.stream()
-									.filter(val -> val instanceof Tuple2).filter(value -> {
-								Tuple2 csvrec = (Tuple2) value;
-								Object rec1 = csvrec.v1;
-								Object rec2 = csvrec.v2;
-								return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
-							}).map((Object rec) -> {
-								try {
-									Tuple2 csvrec = (Tuple2) rec;
-									CSVRecord rec1 = (CSVRecord) csvrec.v1;
-									CSVRecord rec2 = (CSVRecord) csvrec.v2;
-									Map<String, String> keyvalue = rec1.toMap();
-									keyvalue.putAll(rec2.toMap());
-									List<String> keys = new ArrayList<>(keyvalue.keySet());
-									CSVRecord recordmutated =
-											CSVParser
+							var cf = (CompletableFuture) joinpairsout.stream().filter(val -> val instanceof Tuple2)
+									.filter(value -> {
+										Tuple2 csvrec = (Tuple2) value;
+										Object rec1 = csvrec.v1;
+										Object rec2 = csvrec.v2;
+										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
+									}).map((Object rec) -> {
+										try {
+											Tuple2 csvrec = (Tuple2) rec;
+											CSVRecord rec1 = (CSVRecord) csvrec.v1;
+											CSVRecord rec2 = (CSVRecord) csvrec.v2;
+											Map<String, String> keyvalue = rec1.toMap();
+											keyvalue.putAll(rec2.toMap());
+											List<String> keys = new ArrayList<>(keyvalue.keySet());
+											CSVRecord recordmutated = CSVParser
 													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
 															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
 																	.withHeader(keys.toArray(new String[keys.size()])))
 													.getRecords().get(0);
-									return recordmutated;
-								} catch (IOException e) {
+											return recordmutated;
+										} catch (IOException e) {
 
-								}
-								return null;
-							})
+										}
+										return null;
+									})
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
 							joinpairsout = (List) cf.get();
-						} else if (tuple2.v1 instanceof Map
-								&& (tuple2.v2 == null || tuple2.v2 instanceof Map)) {
+						} else if (tuple2.v1 instanceof Map && (tuple2.v2 == null || tuple2.v2 instanceof Map)) {
 							Map<String, Object> keyvaluemap = (Map<String, Object>) inputs2.get(0);
 							Map<String, Object> nullmap = new HashMap<>();
 							keyvaluemap.keySet().forEach(key -> nullmap.put(key, null));
-							var cf = (CompletableFuture) joinpairsout.stream()
-									.filter(val -> val instanceof Tuple2).map(value -> {
-								Tuple2 maprec = (Tuple2) value;
-								Map<String, Object> rec1 = (Map<String, Object>) maprec.v1;
-								Map<String, Object> rec2 = (Map<String, Object>) maprec.v2;
-								if (rec2 == null) {
-									return new Tuple2(rec1, nullmap);
-								}
-								return maprec;
-							}).collect(ParallelCollectors.parallel(value -> value,
-									Collectors.toCollection(Vector::new), executor,
-									Runtime.getRuntime().availableProcessors()));
+							var cf = (CompletableFuture) joinpairsout.stream().filter(val -> val instanceof Tuple2)
+									.map(value -> {
+										Tuple2 maprec = (Tuple2) value;
+										Map<String, Object> rec1 = (Map<String, Object>) maprec.v1;
+										Map<String, Object> rec2 = (Map<String, Object>) maprec.v2;
+										if (rec2 == null) {
+											return new Tuple2(rec1, nullmap);
+										}
+										return maprec;
+									})
+									.collect(ParallelCollectors.parallel(value -> value,
+											Collectors.toCollection(Vector::new), executor,
+											Runtime.getRuntime().availableProcessors()));
 							joinpairsout = (List) cf.get();
 						} else if (tuple2.v1 instanceof Object[]
 								&& (tuple2.v2 == null || tuple2.v2 instanceof Object[])) {
-							Object[]  origobjarray = (Object[]) inputs2.get(0);
-							Object[][]  nullobjarr = new Object[2][((Object[]) origobjarray[0]).length];
-							for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
+							Object[] origobjarray = (Object[]) inputs2.get(0);
+							Object[][] nullobjarr = new Object[2][((Object[]) origobjarray[0]).length];
+							for (int numvalues = 0; numvalues < nullobjarr[0].length; numvalues++) {
 								nullobjarr[1][numvalues] = true;
 							}
-							var cf = (CompletableFuture) joinpairsout.stream()
-									.filter(val -> val instanceof Tuple2).map(value -> {
-								Tuple2 maprec = (Tuple2) value;
-								Object[] rec1 = (Object[]) maprec.v1;
-								Object[] rec2 = (Object[]) maprec.v2;
-								if (rec2 == null) {
-									return new Tuple2(rec1, nullobjarr);
-								}
-								return maprec;
-							}).collect(ParallelCollectors.parallel(value -> value,
-									Collectors.toCollection(Vector::new), executor,
-									Runtime.getRuntime().availableProcessors()));
+							var cf = (CompletableFuture) joinpairsout.stream().filter(val -> val instanceof Tuple2)
+									.map(value -> {
+										Tuple2 maprec = (Tuple2) value;
+										Object[] rec1 = (Object[]) maprec.v1;
+										Object[] rec2 = (Object[]) maprec.v2;
+										if (rec2 == null) {
+											return new Tuple2(rec1, nullobjarr);
+										}
+										return maprec;
+									})
+									.collect(ParallelCollectors.parallel(value -> value,
+											Collectors.toCollection(Vector::new), executor,
+											Runtime.getRuntime().availableProcessors()));
 							joinpairsout = (List) cf.get();
 						}
 					}
@@ -2076,8 +2048,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(joinpairsout, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2109,51 +2082,46 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Function for Right Outer Join computation.
-	* @param streamfirst
-	* @param streamsecond
-	* @param rightouterjoinpredicate
-	* @param isinputfirstblocks
-	* @param isinputsecondblocks
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Function for Right Outer Join computation.
+	 * 
+	 * @param streamfirst
+	 * @param streamsecond
+	 * @param rightouterjoinpredicate
+	 * @param isinputfirstblocks
+	 * @param isinputsecondblocks
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
 	public double processRightOuterJoin(InputStream streamfirst, InputStream streamsecond,
-			RightOuterJoinPredicate rightouterjoinpredicate, boolean isinputfirstblocks,
-			boolean isinputsecondblocks) throws PipelineException {
+			RightOuterJoinPredicate rightouterjoinpredicate, boolean isinputfirstblocks, boolean isinputsecondblocks)
+			throws PipelineException {
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processRightOuterJoin");
 
 		var fsdos = new ByteArrayOutputStream();
 		try (var output = new Output(fsdos);
-        var inputfirst = isinputfirstblocks ? null
-						: new Input(streamfirst);
-        var inputsecond = isinputsecondblocks ? null
-						: new Input(streamsecond);
-        var buffreader1 =
-						isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
-        var buffreader2 =
-						isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
+				var inputfirst = isinputfirstblocks ? null : new Input(streamfirst);
+				var inputsecond = isinputsecondblocks ? null : new Input(streamsecond);
+				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
+				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			List inputs1 = null, inputs2 = null;
 			;
 			if (Objects.isNull(buffreader1)) {
 				inputs1 = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			} else {
-				CompletableFuture<List> cf = buffreader1.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader1.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs1 = cf.get();
 			}
 			if (Objects.isNull(buffreader2)) {
 				inputs2 = (List) Utils.getKryo().readClassAndObject(inputsecond);
 			} else {
-				CompletableFuture<List> cf = buffreader2.lines().collect(
-						ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
-								executor, Runtime.getRuntime().availableProcessors()));
+				CompletableFuture<List> cf = buffreader2.lines().collect(ParallelCollectors.parallel(value -> value,
+						Collectors.toCollection(Vector::new), executor, Runtime.getRuntime().availableProcessors()));
 				inputs2 = cf.get();
 			}
 			boolean terminalCount = false;
@@ -2164,8 +2132,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			if (terminalCount) {
 				joinpairsout = new Vector<>();
 				try (var seq1 = Seq.of(inputs1.toArray());
-            var seq2 = Seq.of(inputs2.toArray());
-            var seqrightouterjoin = seq1.rightOuterJoin(seq2, rightouterjoinpredicate)) {
+						var seq2 = Seq.of(inputs2.toArray());
+						var seqrightouterjoin = seq1.rightOuterJoin(seq2, rightouterjoinpredicate)) {
 					joinpairsout.add(seqrightouterjoin.count());
 				} catch (Exception ex) {
 					log.error(PipelineConstants.PROCESSRIGHTOUTERJOIN, ex);
@@ -2174,80 +2142,80 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			} else {
 				// Parallel join pair result.
 				try (var seq1 = Seq.of(inputs1.toArray());
-            var seq2 = Seq.of(inputs2.toArray());
-            var seqrightouterjoin = seq1.rightOuterJoin(seq2, rightouterjoinpredicate)) {
+						var seq2 = Seq.of(inputs2.toArray());
+						var seqrightouterjoin = seq1.rightOuterJoin(seq2, rightouterjoinpredicate)) {
 					joinpairsout = seqrightouterjoin.toList();
 					if (!joinpairsout.isEmpty()) {
 						Tuple2 tuple2 = (Tuple2) joinpairsout.get(0);
 						if (tuple2.v1 instanceof CSVRecord && tuple2.v2 instanceof CSVRecord) {
-							var cf = (CompletableFuture) joinpairsout.stream()
-									.filter(val -> val instanceof Tuple2).filter(value -> {
-								Tuple2 csvrec = (Tuple2) value;
-								Object rec1 = csvrec.v1;
-								Object rec2 = csvrec.v2;
-								return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
-							}).map((Object rec) -> {
-								try {
-									Tuple2 csvrec = (Tuple2) rec;
-									CSVRecord rec1 = (CSVRecord) csvrec.v1;
-									CSVRecord rec2 = (CSVRecord) csvrec.v2;
-									Map<String, String> keyvalue = rec1.toMap();
-									keyvalue.putAll(rec2.toMap());
-									List<String> keys = new ArrayList<>(keyvalue.keySet());
-									CSVRecord recordmutated =
-											CSVParser
+							var cf = (CompletableFuture) joinpairsout.stream().filter(val -> val instanceof Tuple2)
+									.filter(value -> {
+										Tuple2 csvrec = (Tuple2) value;
+										Object rec1 = csvrec.v1;
+										Object rec2 = csvrec.v2;
+										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
+									}).map((Object rec) -> {
+										try {
+											Tuple2 csvrec = (Tuple2) rec;
+											CSVRecord rec1 = (CSVRecord) csvrec.v1;
+											CSVRecord rec2 = (CSVRecord) csvrec.v2;
+											Map<String, String> keyvalue = rec1.toMap();
+											keyvalue.putAll(rec2.toMap());
+											List<String> keys = new ArrayList<>(keyvalue.keySet());
+											CSVRecord recordmutated = CSVParser
 													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
 															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
 																	.withHeader(keys.toArray(new String[keys.size()])))
 													.getRecords().get(0);
-									return recordmutated;
-								} catch (IOException e) {
+											return recordmutated;
+										} catch (IOException e) {
 
-								}
-								return null;
-							})
+										}
+										return null;
+									})
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
 							joinpairsout = (List) cf.get();
-						} else if ((tuple2.v1 == null || tuple2.v1 instanceof Map)
-								&& tuple2.v2 instanceof Map) {
+						} else if ((tuple2.v1 == null || tuple2.v1 instanceof Map) && tuple2.v2 instanceof Map) {
 							Map<String, Object> keyvaluemap = (Map<String, Object>) inputs1.get(0);
 							Map<String, Object> nullmap = new HashMap<>();
 							keyvaluemap.keySet().forEach(key -> nullmap.put(key, null));
-							var cf = (CompletableFuture) joinpairsout.stream()
-									.filter(val -> val instanceof Tuple2).map(value -> {
-								Tuple2 maprec = (Tuple2) value;
-								Map<String, Object> rec1 = (Map<String, Object>) maprec.v1;
-								Map<String, Object> rec2 = (Map<String, Object>) maprec.v2;
-								if (rec1 == null) {
-									return new Tuple2(nullmap, rec2);
-								}
-								return maprec;
-							}).collect(ParallelCollectors.parallel(value -> value,
-									Collectors.toCollection(Vector::new), executor,
-									Runtime.getRuntime().availableProcessors()));
+							var cf = (CompletableFuture) joinpairsout.stream().filter(val -> val instanceof Tuple2)
+									.map(value -> {
+										Tuple2 maprec = (Tuple2) value;
+										Map<String, Object> rec1 = (Map<String, Object>) maprec.v1;
+										Map<String, Object> rec2 = (Map<String, Object>) maprec.v2;
+										if (rec1 == null) {
+											return new Tuple2(nullmap, rec2);
+										}
+										return maprec;
+									})
+									.collect(ParallelCollectors.parallel(value -> value,
+											Collectors.toCollection(Vector::new), executor,
+											Runtime.getRuntime().availableProcessors()));
 							joinpairsout = (List) cf.get();
 						} else if ((tuple2.v1 == null || tuple2.v1 instanceof Object[])
 								&& tuple2.v2 instanceof Object[]) {
 
 							Object[] origvalarr = (Object[]) inputs1.get(0);
 							Object[][] nullobjarr = new Object[2][((Object[]) origvalarr[0]).length];
-							for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
+							for (int numvalues = 0; numvalues < nullobjarr[0].length; numvalues++) {
 								nullobjarr[1][numvalues] = true;
 							}
-							var cf = (CompletableFuture) joinpairsout.stream()
-									.filter(val -> val instanceof Tuple2).map(value -> {
-								Tuple2 maprec = (Tuple2) value;
-								Object[] rec1 = (Object[]) maprec.v1;
-								Object[] rec2 = (Object[]) maprec.v2;
-								if (rec1 == null) {
-									return new Tuple2(nullobjarr, rec2);
-								}
-								return maprec;
-							}).collect(ParallelCollectors.parallel(value -> value,
-									Collectors.toCollection(Vector::new), executor,
-									Runtime.getRuntime().availableProcessors()));
+							var cf = (CompletableFuture) joinpairsout.stream().filter(val -> val instanceof Tuple2)
+									.map(value -> {
+										Tuple2 maprec = (Tuple2) value;
+										Object[] rec1 = (Object[]) maprec.v1;
+										Object[] rec2 = (Object[]) maprec.v2;
+										if (rec1 == null) {
+											return new Tuple2(nullobjarr, rec2);
+										}
+										return maprec;
+									})
+									.collect(ParallelCollectors.parallel(value -> value,
+											Collectors.toCollection(Vector::new), executor,
+											Runtime.getRuntime().availableProcessors()));
 							joinpairsout = (List) cf.get();
 						}
 					}
@@ -2258,8 +2226,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(joinpairsout, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2291,10 +2260,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Group by key pair operation.
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Group by key pair operation.
+	 * 
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
 	public double processGroupByKeyTuple2() throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -2306,8 +2276,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			var allpairs = new ArrayList<>();
 			var mapgpbykey = new LinkedHashSet<Map>();
 			for (var fs : task.input) {
-				try (var fsdis = (InputStream) fs;
-            var input = new Input(fsdis);) {
+				try (var fsdis = (InputStream) fs; var input = new Input(fsdis);) {
 					// while (input.available() > 0) {
 					var keyvaluepair = Utils.getKryo().readClassAndObject(input);
 					if (keyvaluepair instanceof List kvp) {
@@ -2327,34 +2296,29 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			// Parallel processing of group by key operation.
 			List out = null;
 			if (!allpairs.isEmpty()) {
-				var processedgroupbykey = Seq.of(allpairs.toArray(new Tuple2[allpairs.size()])).groupBy(
-						tup2 -> tup2.v1, Collectors.mapping(Tuple2::v2, Collectors.toCollection(Vector::new)));
-				var cf =
-						(CompletableFuture) processedgroupbykey.keySet().stream()
-								.map(key -> Tuple.tuple(key, processedgroupbykey.get(key)))
-								.collect(ParallelCollectors.parallel(value -> value,
-										Collectors.toCollection(Vector::new), executor,
-										Runtime.getRuntime().availableProcessors()));
+				var processedgroupbykey = Seq.of(allpairs.toArray(new Tuple2[allpairs.size()])).groupBy(tup2 -> tup2.v1,
+						Collectors.mapping(Tuple2::v2, Collectors.toCollection(Vector::new)));
+				var cf = (CompletableFuture) processedgroupbykey.keySet().stream()
+						.map(key -> Tuple.tuple(key, processedgroupbykey.get(key)))
+						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+								executor, Runtime.getRuntime().availableProcessors()));
 				out = (List) cf.get();
 			} else if (!mapgpbykey.isEmpty()) {
-				var result = (Map) mapgpbykey.parallelStream()
-						.flatMap(map1 -> map1.entrySet().parallelStream())
+				var result = (Map) mapgpbykey.parallelStream().flatMap(map1 -> map1.entrySet().parallelStream())
 						.collect(Collectors.groupingBy((Entry entry) -> entry.getKey(), Collectors
 								.mapping((Entry entry) -> entry.getValue(), Collectors.toCollection(Vector::new))));
-				var cf =
-						(CompletableFuture) result.keySet().stream()
-								.map(key -> Tuple.tuple(key, result.get(key)))
-								.collect(ParallelCollectors.parallel(value -> value,
-										Collectors.toCollection(Vector::new), executor,
-										Runtime.getRuntime().availableProcessors()));
+				var cf = (CompletableFuture) result.keySet().stream().map(key -> Tuple.tuple(key, result.get(key)))
+						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+								executor, Runtime.getRuntime().availableProcessors()));
 				out = (List) cf.get();
 			} else {
 				out = new Vector<>();
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(out, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2384,10 +2348,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Fold by key pair operation.
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Fold by key pair operation.
+	 * 
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
 	public double processFoldByKeyTuple2() throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -2399,8 +2364,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			var allpairs = new ArrayList<Tuple2>();
 			var mapgpbykey = new LinkedHashSet<Map>();
 			for (var fs : task.input) {
-				try (var fsdis = (InputStream) fs;
-            var input = new Input(fsdis);) {
+				try (var fsdis = (InputStream) fs; var input = new Input(fsdis);) {
 					// while (input.available() > 0) {
 					var keyvaluepair = Utils.getKryo().readClassAndObject(input);
 					if (keyvaluepair instanceof List kvp) {
@@ -2422,17 +2386,15 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			List out = null;
 			if (!allpairs.isEmpty()) {
 				var finalfoldbykeyobj = new ArrayList<>();
-				var processedgroupbykey = Seq.of(allpairs.toArray(new Tuple2[allpairs.size()])).groupBy(
-						tup2 -> tup2.v1, Collectors.mapping(Tuple2::v2, Collectors.toCollection(Vector::new)));
+				var processedgroupbykey = Seq.of(allpairs.toArray(new Tuple2[allpairs.size()])).groupBy(tup2 -> tup2.v1,
+						Collectors.mapping(Tuple2::v2, Collectors.toCollection(Vector::new)));
 				for (var key : processedgroupbykey.keySet()) {
 					var seqtuple2 = Seq.of(processedgroupbykey.get(key).toArray());
 					Object foldbykeyresult;
 					if (foldbykey.isLeft()) {
-						foldbykeyresult =
-								seqtuple2.foldLeft(foldbykey.getValue(), foldbykey.getReduceFunction());
+						foldbykeyresult = seqtuple2.foldLeft(foldbykey.getValue(), foldbykey.getReduceFunction());
 					} else {
-						foldbykeyresult =
-								seqtuple2.foldRight(foldbykey.getValue(), foldbykey.getReduceFunction());
+						foldbykeyresult = seqtuple2.foldRight(foldbykey.getValue(), foldbykey.getReduceFunction());
 					}
 					finalfoldbykeyobj.add(Tuple.tuple(key, foldbykeyresult));
 				}
@@ -2448,8 +2410,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(out, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2481,10 +2444,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Count by key pair operation.
-	* @return tietaken in seconds
-	* @throws PipelineException
-	*/
+	 * Count by key pair operation.
+	 * 
+	 * @return tietaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
 	public double processCountByKeyTuple2() throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -2510,27 +2474,26 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			if (!allpairs.isEmpty()) {
 				var processedcountbykey = (Map) allpairs.parallelStream()
 						.collect(Collectors.toMap(Tuple2::v1, (Object v2) -> 1l, (a, b) -> a + b));
-				var cf =
-						(CompletableFuture) processedcountbykey.entrySet().stream()
-								.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
-								.collect(ParallelCollectors.parallel(value -> value,
-										Collectors.toCollection(Vector::new), executor,
-										Runtime.getRuntime().availableProcessors()));
+				var cf = (CompletableFuture) processedcountbykey.entrySet().stream()
+						.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
+						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+								executor, Runtime.getRuntime().availableProcessors()));
 				intermediatelist = (List<Tuple2>) cf.get();
 				if (jobstage.getStage().tasks.size() > 1) {
 					var functions = getFunctions();
 					functions.remove(0);
 					cf = (CompletableFuture) ((Stream) StreamUtils.getFunctionsToStream(functions,
-							intermediatelist.parallelStream())).collect(
-							ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+							intermediatelist.parallelStream()))
+							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
 					intermediatelist = (List<Tuple2>) cf.get();
 				}
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(intermediatelist, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2561,10 +2524,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Count by key pair operation.
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Count by key pair operation.
+	 * 
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
 	public double processCountByValueTuple2() throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -2589,27 +2553,26 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			if (!allpairs.isEmpty()) {
 				var processedcountbyvalue = (Map) allpairs.parallelStream()
 						.collect(Collectors.toMap(tuple2 -> tuple2, (Object v2) -> 1l, (a, b) -> a + b));
-				var cf =
-						(CompletableFuture) processedcountbyvalue.entrySet().stream()
-								.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
-								.collect(ParallelCollectors.parallel(value -> value,
-										Collectors.toCollection(Vector::new), executor,
-										Runtime.getRuntime().availableProcessors()));
+				var cf = (CompletableFuture) processedcountbyvalue.entrySet().stream()
+						.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
+						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+								executor, Runtime.getRuntime().availableProcessors()));
 				intermediatelist = (List) cf.get();
 				if (jobstage.getStage().tasks.size() > 1) {
 					var functions = getFunctions();
 					functions.remove(0);
 					cf = (CompletableFuture) ((Stream) StreamUtils.getFunctionsToStream(functions,
-							intermediatelist.stream())).collect(
-							ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+							intermediatelist.stream()))
+							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
 					intermediatelist = (List) cf.get();
 				}
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(intermediatelist, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2641,10 +2604,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Result of Coalesce by key operation
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Result of Coalesce by key operation
+	 * 
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
 	public double processCoalesce() throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -2655,8 +2619,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 			var keyvaluepairs = new ArrayList<Tuple2>();
 			for (var fs : task.input) {
-				try (var fsis = (InputStream) fs;
-            var input = new Input(fsis);) {
+				try (var fsis = (InputStream) fs; var input = new Input(fsis);) {
 					keyvaluepairs.addAll((List) Utils.getKryo().readClassAndObject(input));
 				}
 			}
@@ -2668,25 +2631,22 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 				if (coalescefunction.get(0).getCoalescefunction() instanceof PipelineCoalesceFunction pcf) {
 					out = Arrays.asList(keyvaluepairs.parallelStream().reduce(pcf).get());
 				} else {
-					out =
-							keyvaluepairs.parallelStream()
-									.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
-											(input1, input2) -> coalescefunction.get(0).getCoalescefunction()
-													.apply(input1, input2)))
-									.entrySet().stream()
-									.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
-									.collect(ParallelCollectors.parallel(value -> value,
-											Collectors.toCollection(Vector::new), executor,
-											Runtime.getRuntime().availableProcessors()))
-									.get();
+					out = keyvaluepairs.parallelStream().collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
+							(input1, input2) -> coalescefunction.get(0).getCoalescefunction().apply(input1, input2)))
+							.entrySet().stream()
+							.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
+							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+									executor, Runtime.getRuntime().availableProcessors()))
+							.get();
 				}
 			} else {
 				out = keyvaluepairs;
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(out, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2711,8 +2671,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 							piplineistream.getObjIntConsumer(), piplineistream.getBiConsumer()));
 
 				} else {
-					CompletableFuture<Vector> cf = (CompletableFuture) ((Stream) stream).collect(
-							ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
+					CompletableFuture<Vector> cf = (CompletableFuture) ((Stream) stream)
+							.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 									executor, Runtime.getRuntime().availableProcessors()));
 					outpairs = cf.get();
 				}
@@ -2742,10 +2702,11 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 	}
 
 	/**
-	* Result of HashPartition operation
-	* @return timetaken in seconds
-	* @throws PipelineException
-	*/
+	 * Result of HashPartition operation
+	 * 
+	 * @return timetaken in seconds
+	 * @throws PipelineException
+	 */
 	@SuppressWarnings("unchecked")
 	public double processHashPartition() throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -2756,8 +2717,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 			var keyvaluepairs = new ArrayList<Tuple2>();
 			for (var fs : task.input) {
-				try (var fsis = (InputStream) fs;
-            var input = new Input(fsis);) {
+				try (var fsis = (InputStream) fs; var input = new Input(fsis);) {
 					keyvaluepairs.addAll((List) Utils.getKryo().readClassAndObject(input));
 				}
 			}
@@ -2766,20 +2726,21 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			List output = null;
 			if (Objects.nonNull(hashpartition.get(0))) {
 				int partitionnumber = hashpartition.get(0).getPartitionnumber();
-				Map<Integer, List<Tuple2>> mappartitoned =
-						keyvaluepairs.parallelStream()
-								.collect(Collectors.groupingBy(tup2 -> tup2.v1.hashCode() % partitionnumber, HashMap::new,
-										Collectors.mapping(tup2 -> tup2, Collectors.toList())));
+				Map<Integer, List<Tuple2>> mappartitoned = keyvaluepairs.parallelStream()
+						.collect(Collectors.groupingBy(tup2 -> tup2.v1.hashCode() % partitionnumber, HashMap::new,
+								Collectors.mapping(tup2 -> tup2, Collectors.toList())));
 				output = new ArrayList<Tuple2<Integer, List<Tuple2>>>();
-				for (int partitionindex = 0;partitionindex < partitionnumber;partitionindex++) {
-					output.add(new Tuple2<Integer, List<Tuple2>>(Integer.valueOf(partitionindex), mappartitoned.get(partitionindex)));
+				for (int partitionindex = 0; partitionindex < partitionnumber; partitionindex++) {
+					output.add(new Tuple2<Integer, List<Tuple2>>(Integer.valueOf(partitionindex),
+							mappartitoned.get(partitionindex)));
 				}
 
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(output, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -2811,9 +2772,10 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 	/**
 	 * Result of Group By operation
+	 * 
 	 * @return timetaken in seconds
 	 * @throws PipelineException
-	*/
+	 */
 	@SuppressWarnings("unchecked")
 	public double processGroupBy() throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -2824,8 +2786,7 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 
 			var keyvaluepairs = new ArrayList<>();
 			for (var fs : task.input) {
-				try (var fsis = (InputStream) fs;
-            var input = new Input(fsis);) {
+				try (var fsis = (InputStream) fs; var input = new Input(fsis);) {
 					keyvaluepairs.addAll((List) Utils.getKryo().readClassAndObject(input));
 				}
 			}
@@ -2834,12 +2795,8 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			List output = null;
 			if (Objects.nonNull(groupbyfunctions.get(0))) {
 				GroupByFunction gbf = groupbyfunctions.get(0);
-				Map<Object, List<Object>> mapgroupby =
-						keyvaluepairs.parallelStream()
-								.collect(Collectors.groupingBy(
-										obj -> gbf.apply(obj),
-										HashMap::new,
-										Collectors.mapping(obj -> obj, Collectors.toList())));
+				Map<Object, List<Object>> mapgroupby = keyvaluepairs.parallelStream().collect(Collectors.groupingBy(
+						obj -> gbf.apply(obj), HashMap::new, Collectors.mapping(obj -> obj, Collectors.toList())));
 				output = mapgroupby.keySet().stream()
 						.map(key -> new Tuple2<Object, List<Object>>(key, mapgroupby.get(key)))
 						.collect(Collectors.toList());
@@ -2847,8 +2804,9 @@ public class StreamPipelineTaskExecutor implements Callable<Boolean> {
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv(output, os);
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;

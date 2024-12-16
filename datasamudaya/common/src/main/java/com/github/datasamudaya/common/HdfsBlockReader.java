@@ -52,23 +52,23 @@ import org.apache.hadoop.hdfs.security.token.block.BlockTokenIdentifier;
 import org.apache.hadoop.hdfs.server.datanode.CachingStrategy;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.token.Token;
-import org.apache.log4j.Logger;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * 
- * @author 
- * Arun HDFS Block Reader for data locality
+ * @author Arun HDFS Block Reader for data locality
  */
 public class HdfsBlockReader {
 
-	private static final Logger log = Logger.getLogger(HdfsBlockReader.class);
+	private static final Logger log = LogManager.getLogger(HdfsBlockReader.class);
 
 	/**
 	 * This method gets the data in bytes from hdfs given the blocks location.
+	 * 
 	 * @param bl
 	 * @param hdfs
-	 * @return byte array 
+	 * @return byte array
 	 * @throws Exception
 	 */
 	public static byte[] getBlockDataMR(final BlocksLocation bl, FileSystem hdfs) throws Exception {
@@ -88,7 +88,8 @@ public class HdfsBlockReader {
 					for (var lb : locatedBlocks) {
 						if (lb.getStartOffset() == block.getBlockOffset()) {
 							log.debug("Obtaining Data for the " + block + " with offset: " + lb.getStartOffset());
-							getDataBlock(block, lb, hdfs, baos, block.getHp().split(DataSamudayaConstants.UNDERSCORE)[0]);
+							getDataBlock(block, lb, hdfs, baos,
+									block.getHp().split(DataSamudayaConstants.UNDERSCORE)[0]);
 							break;
 						}
 					}
@@ -112,6 +113,7 @@ public class HdfsBlockReader {
 
 	/**
 	 * This method gets the data in bytes.
+	 * 
 	 * @param block
 	 * @param lb
 	 * @param hdfs
@@ -123,7 +125,8 @@ public class HdfsBlockReader {
 			String containerhost) {
 		log.debug("Entered HdfsBlockReader.getDataBlock");
 		int totalbytestoread = (int) (block.getBlockend() - block.getBlockstart());
-		try (var breader = getBlockReader((DistributedFileSystem) hdfs, lb, lb.getStartOffset() + block.getBlockstart(), containerhost);) {
+		try (var breader = getBlockReader((DistributedFileSystem) hdfs, lb, lb.getStartOffset() + block.getBlockstart(),
+				containerhost);) {
 			log.debug("In getDataBlock Read Bytes: " + totalbytestoread);
 			var readsize = 4096;
 			var byt = new byte[readsize];
@@ -159,10 +162,10 @@ public class HdfsBlockReader {
 		return null;
 	}
 
-
 	/**
 	 * 
 	 * This function returns compressed data stream using LZF compression.
+	 * 
 	 * @param bl
 	 * @param hdfs
 	 * @return
@@ -176,7 +179,8 @@ public class HdfsBlockReader {
 				if (nonNull(block)) {
 					log.debug("Obtaining Data for the " + block + " with offset: " + block.getBlockOffset());
 					FSDataInputStream dfsis = hdfs.open(new Path(block.getFilename()));
-					BlockReaderInputStream bris = new BlockReaderInputStream(dfsis, (long) (block.getBlockOffset() + block.getBlockstart()),
+					BlockReaderInputStream bris = new BlockReaderInputStream(dfsis,
+							(long) (block.getBlockOffset() + block.getBlockstart()),
 							block.getBlockend() - block.getBlockstart());
 					inputstreams.add(bris);
 				}
@@ -193,6 +197,7 @@ public class HdfsBlockReader {
 
 	/**
 	 * The Merged InputStream
+	 * 
 	 * @param bl
 	 * @param hdfs
 	 * @return inputstream object
@@ -206,7 +211,7 @@ public class HdfsBlockReader {
 			FSDataInputStream dfsis = hdfs.open(new Path(block[0].getFilename()));
 			long blocklimit = block[0].getBlockend() - block[0].getBlockstart();
 			if (block.length > 1 && nonNull(block[1])) {
-				blocklimit += (block[1].getBlockend() - block[1].getBlockstart());
+				blocklimit += block[1].getBlockend() - block[1].getBlockstart();
 			}
 			BlockReaderInputStream bris = new BlockReaderInputStream(dfsis,
 					(long) (block[0].getBlockOffset() + block[0].getBlockstart()), blocklimit);
@@ -222,6 +227,7 @@ public class HdfsBlockReader {
 
 	/**
 	 * To calculate the total amount of bytes required;
+	 * 
 	 * @param block
 	 * @return
 	 */
@@ -235,6 +241,7 @@ public class HdfsBlockReader {
 
 	/**
 	 * The block reader for reading block information.
+	 * 
 	 * @param fs
 	 * @param lb
 	 * @param offset
@@ -249,8 +256,7 @@ public class HdfsBlockReader {
 		var eblock = lb.getBlock();
 		var nodes = lb.getLocations();
 		var dninfos = Arrays.asList(nodes);
-		var dnaddress = dninfos.stream().filter(dninfo -> dninfo.getXferAddr().contains(xrefaddress))
-				.findFirst();
+		var dnaddress = dninfos.stream().filter(dninfo -> dninfo.getXferAddr().contains(xrefaddress)).findFirst();
 		DatanodeInfo dninfo;
 		if (dnaddress.isEmpty()) {
 			targetAddr = NetUtils.createSocketAddr(nodes[0].getXferAddr());
@@ -275,11 +281,11 @@ public class HdfsBlockReader {
 		log.debug("Exiting HdfsBlockReader.getBlockReader");
 		return new BlockReaderFactory(dfsClientConf).setInetSocketAddress(targetAddr).setBlock(eblock)
 				.setFileName(targetAddr.toString() + DataSamudayaConstants.COLON + eblock.getBlockId())
-				.setBlockToken(lb.getBlockToken()).setStartOffset(offsetIntoBlock).setLength(lb.getBlockSize() - offsetIntoBlock)
-				.setVerifyChecksum(false).setClientName(DataSamudayaConstants.DATASAMUDAYA).setDatanodeInfo(dninfo)
+				.setBlockToken(lb.getBlockToken()).setStartOffset(offsetIntoBlock)
+				.setLength(lb.getBlockSize() - offsetIntoBlock).setVerifyChecksum(false)
+				.setClientName(DataSamudayaConstants.DATASAMUDAYA).setDatanodeInfo(dninfo)
 				.setClientCacheContext(clientContext).setCachingStrategy(CachingStrategy.newDefaultStrategy())
-				.setConfiguration(fs.getConf())
-				.setStorageType(StorageType.DISK).setAllowShortCircuitLocalReads(false)
+				.setConfiguration(fs.getConf()).setStorageType(StorageType.DISK).setAllowShortCircuitLocalReads(false)
 				.setRemotePeerFactory(new RemotePeerFactory() {
 
 					public Peer newConnectedPeer(InetSocketAddress addr, Token<BlockTokenIdentifier> blockToken,

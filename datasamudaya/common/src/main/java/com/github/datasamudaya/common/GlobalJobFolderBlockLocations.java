@@ -26,18 +26,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.utils.Utils;
 
 /**
  * Holds BlocksLocation object globally.
+ * 
  * @author arun
  *
  */
 public class GlobalJobFolderBlockLocations {
 
-	private static final Logger log = Logger.getLogger(GlobalJobFolderBlockLocations.class);
+	private static final Logger log = LogManager.getLogger(GlobalJobFolderBlockLocations.class);
 
 	private GlobalJobFolderBlockLocations() {
 	}
@@ -47,7 +49,9 @@ public class GlobalJobFolderBlockLocations {
 	private static final Map<String, Map<Path, String>> pathwithmd5has = new ConcurrentHashMap<>();
 
 	/**
-	 * The put method for holding userid as key and list of BlocksLocation object as values.
+	 * The put method for holding userid as key and list of BlocksLocation object as
+	 * values.
+	 * 
 	 * @param hdfsfolder
 	 * @param lbls
 	 */
@@ -63,7 +67,8 @@ public class GlobalJobFolderBlockLocations {
 	}
 
 	/**
-	 * Thie method returns list of LaunchContainers objects for a given userid.  
+	 * Thie method returns list of LaunchContainers objects for a given userid.
+	 * 
 	 * @param hdfsfolderpath
 	 * @return list of LaunchContainers object.
 	 */
@@ -73,6 +78,7 @@ public class GlobalJobFolderBlockLocations {
 
 	/**
 	 * Removes the entry of key and its values for the given hdfsfolderpath.
+	 * 
 	 * @param hdfsfolderpath
 	 */
 	public static void remove(String jobid) {
@@ -83,6 +89,7 @@ public class GlobalJobFolderBlockLocations {
 
 	/**
 	 * The function puts path with the given jobid folder and paths
+	 * 
 	 * @param jobid
 	 * @param hdfsfolder
 	 * @param latestpaths
@@ -107,6 +114,7 @@ public class GlobalJobFolderBlockLocations {
 
 	/**
 	 * This function returns current paths for the given jobid and folder
+	 * 
 	 * @param jobid
 	 * @param hdfsfolder
 	 * @return returns the paths
@@ -116,14 +124,17 @@ public class GlobalJobFolderBlockLocations {
 	}
 
 	/**
-	 * This function returns the set of paths to process again if there is change in file content
+	 * This function returns the set of paths to process again if there is change in
+	 * file content
+	 * 
 	 * @param jobid
 	 * @param hdfsfolder
 	 * @param currentpaths
 	 * @param hdfs
 	 * @return path to process
 	 */
-	public static Set<Path> compareCurrentPathsNewPathsAndStore(String jobid, String hdfsfolder, List<Path> currentpaths, FileSystem hdfs) {
+	public static Set<Path> compareCurrentPathsNewPathsAndStore(String jobid, String hdfsfolder,
+			List<Path> currentpaths, FileSystem hdfs) {
 		Map<String, List<Path>> folderpathsmap = paths.get(jobid);
 		Set<Path> newpathtoprocess = new LinkedHashSet<>();
 		if (nonNull(folderpathsmap)) {
@@ -145,6 +156,5 @@ public class GlobalJobFolderBlockLocations {
 		}
 		return newpathtoprocess;
 	}
-
 
 }

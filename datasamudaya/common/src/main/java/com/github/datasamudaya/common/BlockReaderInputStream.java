@@ -25,7 +25,7 @@ public class BlockReaderInputStream extends InputStream implements Serializable 
 		this.fsdis = fsdis;
 		this.startoffset = startoffset;
 		fsdis.seek(startoffset);
-		buffer = ByteBufferPoolDirect.get();		
+		buffer = ByteBufferPoolDirect.get();
 		this.limit = limit;
 		this.bytesRead = 0;
 	}
@@ -33,30 +33,30 @@ public class BlockReaderInputStream extends InputStream implements Serializable 
 	@Override
 	public int read() throws IOException {
 		if (bytesRead >= limit) {
-            return -1; // Read limit reached
-        }
-        if (!buffer.hasRemaining()) {
-            buffer.clear(); // Clear the buffer for writing
-            int bytesToRead = (int) Math.min(buffer.capacity(), limit - bytesRead);
-            buffer.limit(bytesToRead); // Adjust buffer limit based on the read limit
-            int numread = fsdis.read(buffer);
-            if (numread == -1) {
-                return -1; // End of file reached
-            }
-            buffer.flip(); // Flip the buffer for reading
-        }
-        bytesRead++;
-        return buffer.get() & 0xFF; // Return the next byte
+			return -1; // Read limit reached
+		}
+		if (!buffer.hasRemaining()) {
+			buffer.clear(); // Clear the buffer for writing
+			int bytesToRead = (int) Math.min(buffer.capacity(), limit - bytesRead);
+			buffer.limit(bytesToRead); // Adjust buffer limit based on the read limit
+			int numread = fsdis.read(buffer);
+			if (numread == -1) {
+				return -1; // End of file reached
+			}
+			buffer.flip(); // Flip the buffer for reading
+		}
+		bytesRead++;
+		return buffer.get() & 0xFF; // Return the next byte
 	}
 
 	@Override
 	public void close() {
 		try {
-			if(nonNull(fsdis)) {
+			if (nonNull(fsdis)) {
 				fsdis.close();
 				fsdis = null;
 			}
-			if(nonNull(buffer)) {
+			if (nonNull(buffer)) {
 				ByteBufferPoolDirect.destroy(buffer);
 				buffer = null;
 			}

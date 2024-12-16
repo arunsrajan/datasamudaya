@@ -91,7 +91,7 @@ public class StreamPipelineSQLYarnAppmasterService extends MindAppmasterService 
 			log.error("Handle job request error, See cause below \n", ex);
 		}
 		finally {
-			log.debug("Response: state=" + response.getState() + "for Job Id "+sqlYarnAppMaster.getTaskExecutorId());
+			log.debug("Response: state=" + response.getState() + "for Job Id " + sqlYarnAppMaster.getTaskExecutorId());
 		}
 		return response;
 	}

@@ -11,6 +11,7 @@ package com.github.datasamudaya.tasks.executor;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -38,8 +39,10 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgroups.util.UUID;
 import org.jooq.lambda.tuple.Tuple2;
@@ -82,7 +85,6 @@ import akka.actor.typed.scaladsl.Behaviors;
 import akka.cluster.sharding.typed.javadsl.ClusterSharding;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import akka.cluster.typed.Cluster;
-import akka.cluster.typed.Join;
 import akka.cluster.typed.JoinSeedNodes;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
@@ -100,8 +102,11 @@ import io.prometheus.client.hotspot.DefaultExports;
  *
  */
 public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
-
-	static Logger log = Logger.getLogger(TaskExecutorRunner.class);;
+	static {
+		System.setProperty("log4j.configurationFile", 
+				System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+	}
+	static Logger log = LogManager.getLogger(TaskExecutorRunner.class);
 	Map<String, Object> apptaskexecutormap = new ConcurrentHashMap<>();
 	Map<String, Object> jobstageexecutormap = new ConcurrentHashMap<>();
 	Map<String, Object> actornameactorrefmap = new ConcurrentHashMap<>();
@@ -119,6 +124,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	static Tuple2<ServerSocket, ExecutorService> shuffleFileServer;
 	static Tuple2<ServerSocket, ExecutorService> sortServer;
 	static String shardId;
+
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {
 			URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
@@ -142,19 +148,15 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			String executortype = args[3];
 			shardId = UUID.randomUUID().toString();
 			if (args[0].equals(DataSamudayaConstants.TEPROPLOADDISTROCONFIG)) {
-				String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-				PropertyConfigurator.configure(
-						datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
-								+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 				Utils.initializeProperties(
 						DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 								+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
 						DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
-			} else if(args[0].equals(DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG)) {
+			} else if (args[0].equals(DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG)) {
 				Utils.initializePropertiesClasspath(DataSamudayaConstants.FORWARD_SLASH,
 						DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 			}
-			log = Logger.getLogger(TaskExecutorRunner.class);
+			log = LogManager.getLogger(TaskExecutorRunner.class);
 			StaticComponentContainer.Modules.exportAllToAll();
 			zo.connect();
 			ByteBufferPoolDirectOld.init(Long.parseLong(args[1]));
@@ -166,10 +168,10 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			int numberofprocessors = Runtime.getRuntime().availableProcessors();
 			ThreadFactory virtualThreadFactory = Thread.ofVirtual().factory();
 			estask = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), virtualThreadFactory);
 			escompute = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), virtualThreadFactory);
 			shuffleFileServer = Utils.startShuffleRecordsServer();
 			var ter = new TaskExecutorRunner();
@@ -186,37 +188,37 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			HTTPServer server = new HTTPServer(new InetSocketAddress(metricsport),
 					meterRegistry.getPrometheusRegistry());
 			// Start an HTTP server to expose metrics
-			log.debug("TaskExecuterRunner evoked at metrics port.....{}"+metricsport);
+			log.debug("TaskExecuterRunner evoked at metrics port.....{}" + metricsport);
 			log.debug("TaskExecuterRunner evoked at port..... {}"
-			+ System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
+					+ System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 			log.debug("Reckoning stoppage holder...");
 			shutdown.await();
 			log.debug("Ceasing the connections...");
-			if(nonNull(serverRegistry)) {
+			if (nonNull(serverRegistry)) {
 				serverRegistry.unbind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + jobid);
 				UnicastRemoteObject.unexportObject(serverRegistry, true);
 			}
-			server.close();			
+			server.close();
 			ByteBufferPoolDirect.destroyPool();
-			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v1)) {
+			if (nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v1)) {
 				shuffleFileServer.v1.close();
 			}
-			if(nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v2)) {
+			if (nonNull(shuffleFileServer) && nonNull(shuffleFileServer.v2)) {
 				shuffleFileServer.v2.shutdown();
 			}
-			if(nonNull(sortServer) && nonNull(sortServer.v1)) {
+			if (nonNull(sortServer) && nonNull(sortServer.v1)) {
 				sortServer.v1.close();
 			}
-			if(nonNull(sortServer) && nonNull(sortServer.v2)) {
+			if (nonNull(sortServer) && nonNull(sortServer.v2)) {
 				sortServer.v2.shutdown();
 			}
 			ter.destroy();
-			log.debug("Freed the assets for task executor {}..."+ System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
+			log.debug("Freed the assets for task executor {}..." + System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 			System.exit(0);
 		} catch (Throwable e) {
 			log.error("Error in starting Task Executor: ", e);
 		}
-		log.debug("Exiting Task Executor {} ..."+ System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
+		log.debug("Exiting Task Executor {} ..." + System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 		return;
 	}
 
@@ -232,13 +234,13 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 
 		var hp = host + DataSamudayaConstants.UNDERSCORE + port;
 
-		if(executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
+		if (executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
 			zo.createTaskExecutorNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
-				log.debug("TaskExecutor {} initialized and started"+ hp);
+				log.debug("TaskExecutor {} initialized and started" + hp);
 			});
-		} else if(executortype.equalsIgnoreCase(EXECUTORTYPE.DRIVER.name())) {
+		} else if (executortype.equalsIgnoreCase(EXECUTORTYPE.DRIVER.name())) {
 			zo.createDriverNode(jobid, hp, DataSamudayaConstants.EMPTY.getBytes(), event -> {
-				log.debug("Driver {} initialized and started"+ hp);
+				log.debug("Driver {} initialized and started" + hp);
 			});
 		}
 
@@ -252,24 +254,24 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	 */
 	@SuppressWarnings({})
 	@Override
-	public void start(ZookeeperOperations zo, String jobid, String executortype,String[] args) throws Exception {
+	public void start(ZookeeperOperations zo, String jobid, String executortype, String[] args) throws Exception {
 		var port = Integer.parseInt(System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
-		log.debug("TaskExecutor Port: {}"+ port);
+		log.debug("TaskExecutor Port: {}" + port);
 		var su = new ServerUtils();
-		log.debug("Initializing Server at: {}"+ port);
-		if(executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
-			log.debug("Executor WebUI initialized at: {}"+ port + DataSamudayaConstants.PORT_OFFSET);
+		log.debug("Initializing Server at: {}" + port);
+		if (executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
+			log.debug("Executor WebUI initialized at: {}" + port + DataSamudayaConstants.PORT_OFFSET);
 			su.init(port + DataSamudayaConstants.PORT_OFFSET,
-				new NodeWebServlet(new ConcurrentHashMap<String, Map<String, Process>>()),
-				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
-				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
-						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
-				new ResourcesMetricsServlet(),
-				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH
-						+ DataSamudayaConstants.ASTERIX,
-				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+					new NodeWebServlet(new ConcurrentHashMap<String, Map<String, Process>>()),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
+							+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+					new ResourcesMetricsServlet(),
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.ASTERIX,
+					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 		} else {
-			log.debug("Driver WebUI initialized at: {}"+ port + DataSamudayaConstants.PORT_OFFSET);
+			log.debug("Driver WebUI initialized at: {}" + port + DataSamudayaConstants.PORT_OFFSET);
 			su.init(port + DataSamudayaConstants.PORT_OFFSET,
 					new NodeWebServlet(new ConcurrentHashMap<String, Map<String, Process>>()),
 					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX, new WebResourcesServlet(),
@@ -278,13 +280,13 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					new ResourcesMetricsServlet(),
 					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DATA + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.ASTERIX, new SummaryWebServlet(),
-							DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY_DRIVER 
+					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY_DRIVER
 							+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
 					new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 		}
-		log.debug("Jetty Server initialized at: {}"+ port);
+		log.debug("Jetty Server initialized at: {}" + port);
 		su.start();
-		log.debug("Jetty Server started and listening: {}"+ port);
+		log.debug("Jetty Server started and listening: {}" + port);
 		var configuration = new Configuration();
 
 		var inmemorycache = DataSamudayaCache.get();
@@ -294,17 +296,17 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 		Cluster cluster;
 		final String actorsystemurl;
 		ClusterSharding sharding = null;
-		if(executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
-			while(true) {
+		if (executortype.equalsIgnoreCase(EXECUTORTYPE.EXECUTOR.name())) {
+			while (true) {
 				try {
 					Config config = Utils.getAkkaSystemConfig(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST
 					, DataSamudayaConstants.AKKA_HOST_DEFAULT)
 					, Utils.getRandomPort(),
-					args[0]);
+							args[0]);
 					system = ActorSystem.create(Behaviors.empty(), DataSamudayaConstants.ACTORUSERNAME, config);
 					break;
-				} catch(Exception ex) {
-					log.error("Unable To Create Akka Actors System...",ex);
+				} catch (Exception ex) {
+					log.error("Unable To Create Akka Actors System...", ex);
 					log.debug("Trying to create Akka actor system again...");
 				}
 			}
@@ -312,21 +314,21 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			cluster = Cluster.get(system);
 			Address address = cluster.selfMember().address();
 			log.debug("Initialized Cluster ...");
-			List<String> seedNodes = zo.acquireLockAndAddSeedNode(jobid, address.getHost().get() + DataSamudayaConstants.UNDERSCORE 
+			List<String> seedNodes = zo.acquireLockAndAddSeedNode(jobid, address.getHost().get() + DataSamudayaConstants.UNDERSCORE
 					+ address.getPort().get());
-			log.debug("Seed Nodes {} ..."+ seedNodes);
+			log.debug("Seed Nodes {} ..." + seedNodes);
 			String akkahostport = seedNodes.get(0);
 			var addressarray = akkahostport.split(DataSamudayaConstants.UNDERSCORE);
-			log.debug("Seed Nodes {}"+  akkahostport);
+			log.debug("Seed Nodes {}" + akkahostport);
 			var seednodeaddress = new Address(DataSamudayaConstants.AKKA_URL_SCHEME, DataSamudayaConstants.ACTORUSERNAME, addressarray[0], Integer.parseInt(addressarray[1]));
-			log.debug("Seed Nodes Address {}"+ seednodeaddress);
-			cluster.manager().tell(new JoinSeedNodes(Arrays.asList(seednodeaddress)));	        
-	        log.debug("Joining Seed Nodes Address {}"+ seednodeaddress);
-	        log.debug("Cluster Members {}"+ cluster.state().members());
-	        sharding = ClusterSharding.get(system);
-			actorsystemurl = cluster.selfMember().address().getHost().get() +  DataSamudayaConstants.COLON + cluster.selfMember().address().getPort().get();
+			log.debug("Seed Nodes Address {}" + seednodeaddress);
+			cluster.manager().tell(new JoinSeedNodes(Arrays.asList(seednodeaddress)));
+			log.debug("Joining Seed Nodes Address {}" + seednodeaddress);
+			log.debug("Cluster Members {}" + cluster.state().members());
+			sharding = ClusterSharding.get(system);
+			actorsystemurl = cluster.selfMember().address().getHost().get() + DataSamudayaConstants.COLON + cluster.selfMember().address().getPort().get();
 			log.debug("Initializing Sharding ...");
-			log.debug("Actor System Url {}"+ actorsystemurl);
+			log.debug("Actor System Url {}" + actorsystemurl);
 		} else {
 			actorsystemurl = "";
 			cluster = null;
@@ -350,7 +352,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						cl = DataSamudayaMapReducePhaseClassLoader.newInstance(loadjar.getMrjar(), cl);
 						return DataSamudayaConstants.JARLOADED;
 					} else if (deserobj instanceof GetTaskActor gettaskactor) {
-						if(isNull(jobidentitytypekeymap.get(gettaskactor.getTask().getJobid()))) {
+						if (isNull(jobidentitytypekeymap.get(gettaskactor.getTask().getJobid()))) {
 							jobidentitytypekeymap.put(gettaskactor.getTask().getJobid(), new ConcurrentHashMap<String, EntityTypeKey>());
 						}
 						return SQLUtils.getAkkaActor(actsystem, gettaskactor,
@@ -359,19 +361,19 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 								actorsystemurl, clussharding, jobid, jobidentitytypekeymap.get(gettaskactor.getTask().getJobid()),
 								blockspartitionskipmap, shardId);
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
-						if(isNull(jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()))) {
-							jobidentitytypekeymap.put(executetaskactor.getTask().getJobid(),new ConcurrentHashMap<String, EntityTypeKey>());
+						if (isNull(jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()))) {
+							jobidentitytypekeymap.put(executetaskactor.getTask().getJobid(), new ConcurrentHashMap<String, EntityTypeKey>());
 						}
-						Future<Task> escomputfuture=escompute.submit(()->{
+						Future<Task> escomputfuture = escompute.submit(() -> {
 							return SQLUtils.getAkkaActor(actsystem, executetaskactor,
-								jobidstageidjobstagemap, hdfs,
-								inmemorycache, jobidstageidtaskidcompletedmap,
-								actorsystemurl, clussharding, jobid, jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()),
-								blockspartitionskipmap, shardId);
+									jobidstageidjobstagemap, hdfs,
+									inmemorycache, jobidstageidtaskidcompletedmap,
+									actorsystemurl, clussharding, jobid, jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()),
+									blockspartitionskipmap, shardId);
 						});
 						return escomputfuture.get();
 					} else if (deserobj instanceof CleanupTaskActors cleanupactors) {
-						if(jobidentitytypekeymap.containsKey(cleanupactors.getJobid())) {
+						if (jobidentitytypekeymap.containsKey(cleanupactors.getJobid())) {
 							Utils.cleanupTaskActorFromSystem(actsystem, jobidentitytypekeymap.remove(cleanupactors.getJobid()), cleanupactors.getJobid());
 						}
 						return true;
@@ -379,12 +381,12 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 						job.getPipelineconfig().setClsloader(cl);
 						StreamJobScheduler js = new StreamJobScheduler();
 						return js.schedule(job);
-					} else if (deserobj instanceof ShufflePort) {						
+					} else if (deserobj instanceof ShufflePort) {
 						return shuffleFileServer.v1.getLocalPort();
-					} else if (deserobj instanceof SorterPort) {						
+					} else if (deserobj instanceof SorterPort) {
 						return sortServer.v1().getLocalPort();
 					} else if (!Objects.isNull(deserobj)) {
-						log.debug("Deserialized object:{} "+ deserobj.getClass().getName());
+						log.debug("Deserialized object:{} " + deserobj.getClass().getName());
 						TaskExecutor taskexecutor = new TaskExecutor(cl, port, escompute, configuration,
 								apptaskexecutormap, jobstageexecutormap, resultstream, inmemorycache, deserobj,
 								jobidstageidexecutormap, task, jobidstageidjobstagemap, zo, blorcmap,
@@ -400,9 +402,9 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				return task;
 			}
 		};
-		log.debug("Getting RPC Registry for port: {}"+ port);
+		log.debug("Getting RPC Registry for port: {}" + port);
 		serverRegistry = Utils.getRPCRegistry(port, dataCruncher, jobid);
-		log.debug("RPC Registry for port: {} Obtained"+ port);
+		log.debug("RPC Registry for port: {} Obtained" + port);
 	}
 
 	static StreamDataCruncher stub;

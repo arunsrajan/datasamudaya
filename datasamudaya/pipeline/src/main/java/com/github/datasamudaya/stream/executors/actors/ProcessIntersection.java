@@ -43,28 +43,28 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 public class ProcessIntersection extends AbstractBehavior<Command> {
 	Logger log = LoggerFactory.getLogger(ProcessIntersection.class);
 	int terminatingsize;
-	int initialsize = 0;
+	int initialsize;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	List<EntityRef> childpipes;
 	Task tasktoprocess;
 	Cache cache;
 	JobStage js;
-	private boolean iscacheable = true;
+	private final boolean iscacheable = true;
 	int btreesize;
 	int diskspillpercentage;
 	List ldiskspill;
-	
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessIntersection-"+entityId);
+
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessIntersection-" + entityId);
 	}
-	
+
 	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
-	return Behaviors.setup(context -> new ProcessIntersection(context, js, cache, 
-				jobidstageidtaskidcompletedmap, 
+		return Behaviors.setup(context -> new ProcessIntersection(context, js, cache,
+				jobidstageidtaskidcompletedmap,
 				tasktoprocess, childpipes, terminatingsize));
 	}
-	
+
 	public ProcessIntersection(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
 		super(context);
@@ -88,7 +88,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 
 	private Behavior<Command> processIntersection(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			log.debug("processIntersection::: InitialSize {} terminating size {}",initialsize, terminatingsize);
+			log.debug("processIntersection::: InitialSize {} terminating size {}", initialsize, terminatingsize);
 			if (object.getValue() instanceof DiskSpillingList<?> dsl) {
 				ldiskspill.add(dsl);
 			} else if (object.getValue() instanceof DiskSpillingSet<?> dss) {
@@ -96,7 +96,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 			} else if (object.getValue() instanceof TreeSet<?> ts) {
 				ldiskspill.add(ts);
 			}
-			if (object.getTerminiatingclass() == DiskSpillingList.class	
+			if (object.getTerminiatingclass() == DiskSpillingList.class
 					|| object.getTerminiatingclass() == Dummy.class
 					|| object.getTerminiatingclass() == NodeIndexKey.class
 					|| object.getTerminiatingclass() == DiskSpillingSet.class
@@ -123,7 +123,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 					}
 					AtomicInteger atomindex = new AtomicInteger(0);
 					Set<NodeIndexKey> diskspillsetinterm = diskspillsetintm1;
-					if(nonNull(datastream)) {
+					if (nonNull(datastream)) {
 						datastream.forEach(obj -> {
 							if (obj instanceof NodeIndexKey nik) {
 								diskspillsetinterm.add(nik);
@@ -147,7 +147,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 							datastream = null;
 						}
 						AtomicInteger atomindex1 = new AtomicInteger(0);
-						if(nonNull(datastream)) {
+						if (nonNull(datastream)) {
 							datastream.forEach(obj -> {
 								if (obj instanceof NodeIndexKey nik) {
 									diskspillsetinterm2.add(nik);
@@ -158,35 +158,37 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 							});
 						}
 						Iterator<NodeIndexKey> it1 = diskspillsetintm1.iterator();
-			            Iterator<NodeIndexKey> it2 = diskspillsetintm2.iterator();
+						Iterator<NodeIndexKey> it2 = diskspillsetintm2.iterator();
 
-			            if (!it1.hasNext() || !it2.hasNext()) break; // One of the sets is empty
+						if (!it1.hasNext() || !it2.hasNext()) {
+							break; // One of the sets is empty
 
-			            NodeIndexKey item1 = it1.next();
-			            NodeIndexKey item2 = it2.next();
+						}
+						NodeIndexKey item1 = it1.next();
+						NodeIndexKey item2 = it2.next();
 
-			            while (it1.hasNext() && it2.hasNext()) {
-			                int compare = item1.compareTo(item2);
-			                if (compare == 0) {
-			                    // Add to result, advance both
-			                	diskspillsetresult.add(item1);
-			                    item1 = it1.next();
-			                    item2 = it2.next();
-			                } else if (compare < 0) {
-			                    // item1 is smaller, advance it1
-			                    item1 = it1.next();
-			                } else {
-			                    // item2 is smaller, advance it2
-			                    item2 = it2.next();
-			                }
-			            }
+						while (it1.hasNext() && it2.hasNext()) {
+							int compare = item1.compareTo(item2);
+							if (compare == 0) {
+								// Add to result, advance both
+								diskspillsetresult.add(item1);
+								item1 = it1.next();
+								item2 = it2.next();
+							} else if (compare < 0) {
+								// item1 is smaller, advance it1
+								item1 = it1.next();
+							} else {
+								// item2 is smaller, advance it2
+								item2 = it2.next();
+							}
+						}
 
-			            // Check last pair if any
-			            if (item1.compareTo(item2) == 0) {
-			            	diskspillsetresult.add(item1);
-			            }
-			            diskspillsetintm1 = diskspillsetresult;
-			        }					
+						// Check last pair if any
+						if (item1.compareTo(item2) == 0) {
+							diskspillsetresult.add(item1);
+						}
+						diskspillsetintm1 = diskspillsetresult;
+					}
 					log.debug("Object To be sent to downstream pipeline size {}", diskspillsetresult.size());
 					Set<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
 					childpipes.stream().forEach(downstreampipe -> {

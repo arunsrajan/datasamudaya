@@ -74,7 +74,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  Creates root node by path and set the data for the root node
-	  @param path
+		@param path
 		 @param data
 		 @throws Exception
 		*/
@@ -90,7 +90,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method creates nodes in zookeeper with the node path, setting the data and watcher.
-	  @param node
+		@param node
 		 @param data
 		 @param watcher
 		 @throws Exception
@@ -115,7 +115,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method creates schedulers with leader election with setting the data and watcher.
-	  @param data
+		@param data
 		 @param watcher
 		 @throws Exception
 		*/
@@ -144,7 +144,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  Creates distributed queue
-	  @param path
+		@param path
 		 @return Distributed queue object
 	 */
 	public SimpleDistributedQueue createDistributedQueue(String path) {
@@ -153,7 +153,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method creates the task executor znode in zookeeper with the jobid and taskexecutor, data and watcher.
-	  @param jobid
+		@param jobid
 		 @param taskexecutor
 		 @param data
 		 @param watcher
@@ -177,7 +177,7 @@ public class ZookeeperOperations implements AutoCloseable {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}
 	}
-	
+
 	/**
 	 * Creates Akka Seed nodes for a given jobid in zookeeper
 	 * @param jobid
@@ -186,7 +186,7 @@ public class ZookeeperOperations implements AutoCloseable {
 	 * @throws ZookeeperException
 	 */
 	public void createAkkaSeedNode(String jobid, String seednode, byte[] data) throws ZookeeperException {
-		try {			
+		try {
 			if (curator.checkExists()
 					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESZKROOT
 							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
@@ -201,7 +201,7 @@ public class ZookeeperOperations implements AutoCloseable {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}
 	}
-	
+
 	/**
 	 * The function acquires lock for a given jobid and returns seed nodes
 	 * @param jobid
@@ -215,32 +215,32 @@ public class ZookeeperOperations implements AutoCloseable {
 			semaphore.acquire();
 			if (curator.checkExists()
 					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
-							+ DataSamudayaConstants.FORWARD_SLASH + jobid) == null) {				
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid) == null) {
 				curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
-				.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
-				.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
-						+ DataSamudayaConstants.FORWARD_SLASH + jobid, DataSamudayaConstants.EMPTY.getBytes());				
+						.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
+						.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
+								+ DataSamudayaConstants.FORWARD_SLASH + jobid, DataSamudayaConstants.EMPTY.getBytes());
 			}
 			semaphore.release();
 			semaphore = new InterProcessSemaphoreMutex(curator, DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKASEEDNODESLOCK
 					+ DataSamudayaConstants.FORWARD_SLASH + jobid);
 			semaphore.acquire();
 			List<String> seednodes = getAkkaSeedNodesByJobId(jobid);
-			if(CollectionUtils.isNotEmpty(seednodes)) {
+			if (CollectionUtils.isNotEmpty(seednodes)) {
 				return seednodes;
 			}
 			createAkkaSeedNode(jobid, seednode, DataSamudayaConstants.EMPTY.getBytes());
-			return Arrays.asList(seednode);			
+			return Arrays.asList(seednode);
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		} finally {
-			if(nonNull(semaphore)) {
+			if (nonNull(semaphore)) {
 				semaphore.release();
 			}
 		}
 	}
-	
+
 	/**
 	 * The method creates the driver znode in zookeeper with the jobid and driver, data and watcher.
 	 * @param jobid
@@ -267,11 +267,11 @@ public class ZookeeperOperations implements AutoCloseable {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}
 	}
-	
-	
+
+
 	/**
 	  This method creates the znodes for tasks given jobid, task and watcher. 
-	  @param jobid
+		@param jobid
 		 @param task
 		 @param watcher
 		 @throws Exception
@@ -314,7 +314,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method creates the watcher for the nodes added and updates the global resources.
-	  @throws Exception
+		@throws Exception
 		*/
 	public void watchNodes() throws ZookeeperException {
 		try {
@@ -368,10 +368,10 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method creates the leader nodes for the map reduce scheduler
-	  @param scheduler
+		@param scheduler
 		 @param listener
 		 @return leaderlatch object.
-	  @throws Exception
+		@throws Exception
 		*/
 	public LeaderLatch leaderElectionScheduler(String scheduler, LeaderLatchListener listener) throws ZookeeperException {
 		try {
@@ -387,10 +387,10 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method creates the leader nodes for the stream scheduler
-	  @param scheduler
+		@param scheduler
 		 @param listener
 		 @return leaderlatch object.
-	  @throws Exception
+		@throws Exception
 		*/
 	public LeaderLatch leaderElectionSchedulerStream(String scheduler, LeaderLatchListener listener) throws ZookeeperException {
 		try {
@@ -406,9 +406,9 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method returns the data for the given path.
-	  @param path
+		@param path
 		 @return byte data
-	  @throws Exception
+		@throws Exception
 		*/
 	public byte[] getData(String path) throws ZookeeperException {
 		try {
@@ -420,7 +420,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method sets the data for the given znode path.
-	  @param path
+		@param path
 		 @param data
 		 @throws Exception
 		*/
@@ -435,7 +435,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method set the leader for the mr scheduler
-	  @param data
+		@param data
 		 @throws Exception
 		*/
 	public void setLeader(byte[] data) throws ZookeeperException {
@@ -449,7 +449,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method set the leader for the streaming scheduler
-	  @param data
+		@param data
 		 @throws Exception
 		*/
 	public void setLeaderStream(byte[] data) throws ZookeeperException {
@@ -463,7 +463,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method set the task information for the given task and jobid.
-	  @param jobid
+		@param jobid
 		 @param task
 		 @throws Exception
 		*/
@@ -490,7 +490,7 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This method deletes the job entries for the given job id.
-	  @param jobid
+		@param jobid
 		 @throws Exception
 		*/
 	public void deleteJob(String jobid) throws ZookeeperException {
@@ -507,8 +507,8 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This function returns all the nodes created in zookeeper.
-	  @return list of nodes in string format.
-	  @throws Exception
+		@return list of nodes in string format.
+		@throws Exception
 		*/
 	public List<String> getNodes() throws ZookeeperException {
 		try {
@@ -521,9 +521,9 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This function returns list of task executors.
-	  @param jobid
+		@param jobid
 		 @return list of te's
-	  @throws Exception
+		@throws Exception
 		*/
 	public List<String> getTaskExectorsByJobId(String jobid) throws ZookeeperException {
 		try {
@@ -533,7 +533,7 @@ public class ZookeeperOperations implements AutoCloseable {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}
 	}
-	
+
 	/**
 	 * The function returns all the drivers registered for the given job id 
 	 * @param jobid
@@ -551,9 +551,9 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  This function returns the list of tasks by jobid.
-	  @param jobid
+		@param jobid
 		 @return list of tasks
-	  @throws Exception
+		@throws Exception
 		*/
 	public List<Task> getTasksByJobId(String jobid) throws ZookeeperException {
 		try {
@@ -573,8 +573,8 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  Gets the master of the stream scheduler.
-	  @return master of stream scheduler
-	  @throws Exception
+		@return master of stream scheduler
+		@throws Exception
 		*/
 	public String getStreamSchedulerMaster() throws ZookeeperException {
 		try {
@@ -587,8 +587,8 @@ public class ZookeeperOperations implements AutoCloseable {
 
 	/**
 	  Gets the master of the map reduce scheduler.
-	  @return master of mr's
-	  @throws Exception
+		@return master of mr's
+		@throws Exception
 		*/
 	public String getMRSchedulerMaster() throws ZookeeperException {
 		try {
@@ -607,18 +607,18 @@ public class ZookeeperOperations implements AutoCloseable {
 	 */
 	public List<String> getAkkaSeedNodesByJobId(String jobid) throws ZookeeperException {
 		try {
-			if(curator.checkExists()
+			if (curator.checkExists()
 					.forPath(DataSamudayaConstants.ROOTZNODEZK
 							+ DataSamudayaConstants.AKKASEEDNODESZKROOT + DataSamudayaConstants.FORWARD_SLASH + jobid) != null) {
 				return curator.getChildren().forPath(DataSamudayaConstants.ROOTZNODEZK
-					+ DataSamudayaConstants.AKKASEEDNODESZKROOT + DataSamudayaConstants.FORWARD_SLASH + jobid);
+						+ DataSamudayaConstants.AKKASEEDNODESZKROOT + DataSamudayaConstants.FORWARD_SLASH + jobid);
 			}
 			return Arrays.asList();
 		} catch (Exception ex) {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}
 	}
-	
+
 	/**
 	  Close the curator object for closing the zookeeper connection.
 	 */

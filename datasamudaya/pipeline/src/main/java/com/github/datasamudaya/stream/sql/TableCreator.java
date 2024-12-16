@@ -40,9 +40,9 @@ public class TableCreator {
 	 * @throws Exception
 	 */
 	public static String createAlterTable(String user, String db, String createCommand) throws Exception {
-		Configuration conf = Utils.getHiveConf(user);	      
-		try (Driver driver = new Driver((HiveConf) conf);){	        
-	        driver.run(createCommand);
+		Configuration conf = Utils.getHiveConf(user);
+		try (Driver driver = new Driver((HiveConf) conf);) {
+			driver.run(createCommand);
 			return "Table created/altered";
 		} catch (Exception ex) {
 			try (StringWriter stackTrace = new StringWriter();
@@ -61,9 +61,9 @@ public class TableCreator {
 	 * @throws Exception
 	 */
 	public static String dropTable(String user, String db, String dropCommand) throws Exception {
-		Configuration conf = Utils.getHiveConf(user);	      
-		try (Driver driver = new Driver((HiveConf) conf);){	        
-	        driver.run(dropCommand);
+		Configuration conf = Utils.getHiveConf(user);
+		try (Driver driver = new Driver((HiveConf) conf);) {
+			driver.run(dropCommand);
 			return "Table dropped";
 		} catch (Exception ex) {
 			try (StringWriter stackTrace = new StringWriter();
@@ -76,11 +76,11 @@ public class TableCreator {
 	}
 
 	public static List<String> showTables(String user, String db, String showcommand) throws Exception {
-		Configuration conf = Utils.getHiveConf(user);	 
+		Configuration conf = Utils.getHiveConf(user);
 		HCatClient client = null;
 		try {
 			client = HCatClient.create(conf);
-			return client.listTableNamesByPattern(db, DataSamudayaConstants.ASTERIX);			
+			return client.listTableNamesByPattern(db, DataSamudayaConstants.ASTERIX);
 		} catch (Exception ex) {
 			try (StringWriter stackTrace = new StringWriter();
 				PrintWriter writer = new PrintWriter(stackTrace);) {
@@ -89,7 +89,7 @@ public class TableCreator {
 				return Arrays.asList(stackTrace.toString());
 			}
 		} finally {
-			if(nonNull(client)) {
+			if (nonNull(client)) {
 				client.close();
 			}
 		}
@@ -103,12 +103,12 @@ public class TableCreator {
 	 * @throws Exception
 	 */
 	public static String getColumnMetadataFromTable(String user, String db, String tablename, List<ColumnMetadata> columnMetadatas) throws Exception {
-		Configuration conf = Utils.getHiveConf(user);	 
+		Configuration conf = Utils.getHiveConf(user);
 		HCatClient client = null;
 		try {
 			client = HCatClient.create(conf);
 			HCatTable table = client.getTable(db, tablename);
-			for (HCatFieldSchema col:table.getCols()) {
+			for (HCatFieldSchema col :table.getCols()) {
 				var columnMetadata = new ColumnMetadata(col.getName(),
 						col.getTypeString(), 10, DataSamudayaConstants.EMPTY);
 				columnMetadatas.add(columnMetadata);
@@ -123,7 +123,7 @@ public class TableCreator {
 				return stackTrace.toString();
 			}
 		} finally {
-			if(nonNull(client)) {
+			if (nonNull(client)) {
 				client.close();
 			}
 		}

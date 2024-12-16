@@ -88,8 +88,8 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 	private static final long serialVersionUID = -3824414146677196362L;
 	private static Logger log = LoggerFactory.getLogger(StreamPipelineTaskExecutorIgniteSQL.class);
 	private static Semaphore bytebufferpoollock = new Semaphore(1);
-	private String maxmem; 
-	
+	private String maxmem;
+
 	boolean topersist;
 
 	public StreamPipelineTaskExecutorIgniteSQL(byte[] jobstage, Task task, boolean topersist, String maxmem) {
@@ -110,14 +110,14 @@ public class StreamPipelineTaskExecutorIgniteSQL extends StreamPipelineTaskExecu
 	public double processBlockHDFSMap(BlocksLocation blockslocation, FileSystem hdfs) throws PipelineException {
 		try {
 			bytebufferpoollock.acquire();
-			if(!ByteBufferPoolDirect.isInitialized()) {
+			if (!ByteBufferPoolDirect.isInitialized()) {
 				ByteBufferPoolDirect.init(Long.parseLong(maxmem));
 			}
-		} catch (Exception e) {			
+		} catch (Exception e) {
 		} finally {
 			bytebufferpoollock.release();
 		}
-		
+
 		var starttime = System.currentTimeMillis();
 		log.debug("Entered StreamPipelineTaskExecutor.processBlockHDFSMap");
 		log.debug("BlocksLocation Columns: {}" + blockslocation.getColumns());

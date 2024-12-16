@@ -16,7 +16,9 @@
 package com.github.datasamudaya.stream.examples;
 
 import java.net.URI;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 
@@ -26,7 +28,7 @@ import com.github.datasamudaya.stream.Pipeline;
 import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceLeftOuterJoinInMemoryDiskDivided implements Pipeline {
-	private final Logger log = Logger.getLogger(StreamReduceLeftOuterJoinInMemoryDiskDivided.class);
+	private final Logger log = LogManager.getLogger(StreamReduceLeftOuterJoinInMemoryDiskDivided.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");
@@ -34,7 +36,7 @@ public class StreamReduceLeftOuterJoinInMemoryDiskDivided implements Pipeline {
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		
+
 		pipelineconfig.setBlocksize(args[6]);
 		pipelineconfig.setMaxmem(args[4]);
 		pipelineconfig.setMinmem("512");

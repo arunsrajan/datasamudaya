@@ -19,7 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -42,7 +43,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineSqlBuil
 			SqlTypeName.BIGINT);
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
-	Logger log = Logger.getLogger(StreamPipelineSqlBuilderLocalModeTest.class);
+	Logger log = LogManager.getLogger(StreamPipelineSqlBuilderLocalModeTest.class);
 	List<String> airportsheader = Arrays.asList("iata", "airport", "city", "state", "country", "latitude", "longitude");
 	List<SqlTypeName> airportstype = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
@@ -51,9 +52,9 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineSqlBuil
 	public static void pipelineSetup() throws Exception, Throwable {
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setBlocksize("1");
-		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());		
+		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
 	}
-	
+
 	@After
 	public void resetJobId() {
 		if ("false".equals(pipelineconfig.getLocal())) {

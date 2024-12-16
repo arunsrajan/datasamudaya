@@ -65,7 +65,7 @@ public class StreamPipelineSQLYarnContainer extends AbstractIntegrationYarnConta
 			log.debug("In Client Response Obtained");
 			String jobid = response.getContainerid();
 			log.debug("JobId {}", jobid);
-			String[] args = new String[]{DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG, ((int)(Utils.mpBeanLocalToJVM.getUsage().getMax() * 0.4)) +"", jobid, response.getExecutorordriver().name()};  
+			String[] args = new String[]{DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG, ((int) (Utils.mpBeanLocalToJVM.getUsage().getMax() * 0.4)) + "", jobid, response.getExecutorordriver().name()};
 			method.invoke(null, (Object) args);
 			log.debug("Executing TaskExecutor For JobId {}", jobid);
 			log.debug("In runInternal method Ended");
@@ -76,7 +76,7 @@ public class StreamPipelineSQLYarnContainer extends AbstractIntegrationYarnConta
 			System.exit(-1);
 		}
 	}
-	
+
 	public Map<String, String> getContainerprops() {
 		return containerprops;
 	}

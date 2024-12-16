@@ -7,7 +7,7 @@ import java.io.Serializable;
  * @author arun
  *
  */
-public class DistributedDistinct implements Serializable{
+public class DistributedDistinct implements Serializable {
 	private static final long serialVersionUID = -6202504028850521132L;
 
 }

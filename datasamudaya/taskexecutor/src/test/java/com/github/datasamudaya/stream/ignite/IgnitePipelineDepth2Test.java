@@ -9,12 +9,14 @@
 package com.github.datasamudaya.stream.ignite;
 
 import static org.junit.Assert.assertEquals;
+
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.BeforeClass;
@@ -31,13 +33,12 @@ import com.github.datasamudaya.common.functions.PredicateSerializable;
 import com.github.datasamudaya.common.functions.SortedComparator;
 import com.github.datasamudaya.stream.StreamPipeline;
 
-
-@SuppressWarnings({"unchecked", "serial", "rawtypes"})
+@SuppressWarnings({ "unchecked", "serial", "rawtypes" })
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	boolean toexecute = true;
 	int sum;
-	static Logger log = Logger.getLogger(IgnitePipelineDepth2Test.class);
+	static Logger log = LogManager.getLogger(IgnitePipelineDepth2Test.class);
 
 	@BeforeClass
 	public static void initConfig() {
@@ -49,19 +50,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterFilterSaveToHdfs() throws Throwable {
 		log.info("testFilterFilterSaveToHdfs Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).filter(new PredicateSerializable<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		datapipeline.filter(new PredicateSerializable<String>() {
 			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
-		}).saveAsTextFile(new URI(hdfsfilepath),
-				"/reduceout/FilterFilterSave-" + System.currentTimeMillis());
+		}).filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).saveAsTextFile(new URI(hdfsfilepath), "/reduceout/FilterFilterSave-" + System.currentTimeMillis());
 
 		log.info("testFilterFilterSaveToHdfs After---------------------------------------");
 	}
@@ -69,14 +67,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterFilterCollect() throws Throwable {
 		log.info("testFilterFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).filter(new PredicateSerializable<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).filter(new PredicateSerializable<String>() {
 			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
@@ -94,14 +90,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterFilterCount() throws Throwable {
 		log.info("testFilterFilterCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).filter(new PredicateSerializable<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).filter(new PredicateSerializable<String>() {
 			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
@@ -121,15 +115,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterFilterForEach() throws Throwable {
 		log.info("testFilterFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).filter(new PredicateSerializable<String>() {
+		datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).filter(new PredicateSerializable<String>() {
 			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
@@ -145,20 +137,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterFlatMapCollect() throws Throwable {
 		log.info("testFilterFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -172,20 +160,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterFlatMapCount() throws Throwable {
 		log.info("testFilterFlatMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -201,23 +185,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterFlatMapForEach() throws Throwable {
 		log.info("testFilterFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(45957, sum);
 
@@ -227,20 +207,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapCollect() throws Throwable {
 		log.info("testFilterMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -254,20 +230,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapCount() throws Throwable {
 		log.info("testFilterMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -283,23 +255,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapForEach() throws Throwable {
 		log.info("testFilterMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(45957, sum);
 
@@ -309,21 +277,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapPairCollect() throws Throwable {
 		log.info("testFilterMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -337,21 +300,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapPairCount() throws Throwable {
 		log.info("testFilterMapPairCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -367,24 +325,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapPairForEach() throws Throwable {
 		log.info("testFilterMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(45957, sum);
 
@@ -394,21 +347,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testFilterMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.groupByKey().collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -423,22 +371,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testFilterMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.groupByKey().forEach(lsttuples -> {
+		datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -453,21 +396,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testFilterMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).coalesce(1, (a, b) -> a + b).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).coalesce(1, (a, b) -> a + b).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -481,21 +419,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapPairReduceByKeyCount() throws Throwable {
 		log.info("testFilterMapPairReduceByKeyCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -511,22 +444,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testFilterMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).forEach(lis -> {
+		datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -538,14 +466,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterPeekCollect() throws Throwable {
 		log.info("testFilterPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).peek(val -> System.out.println(val)).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).peek(val -> System.out.println(val)).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -559,14 +485,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterPeekCount() throws Throwable {
 		log.info("testFilterPeekCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).peek(val -> System.out.println(val)).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).peek(val -> System.out.println(val)).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -582,15 +506,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterPeekForEach() throws Throwable {
 		log.info("testFilterPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).peek(val -> System.out.println(val)).forEach(lis -> {
+		datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).peek(val -> System.out.println(val)).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -602,14 +524,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterSampleCollect() throws Throwable {
 		log.info("testFilterSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).sample(46361).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).sample(46361).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -623,14 +543,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterSampleCount() throws Throwable {
 		log.info("testFilterSampleCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).sample(46361).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).sample(46361).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -646,15 +564,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterSampleForEach() throws Throwable {
 		log.info("testFilterSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).sample(46361).forEach(lis -> {
+		datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).sample(46361).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -666,14 +582,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterSortedCollect() throws Throwable {
 		log.info("testFilterSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).sorted(new SortedComparator<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
@@ -691,14 +605,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterSortedCount() throws Throwable {
 		log.info("testFilterSortedCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).sorted(new SortedComparator<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
@@ -718,15 +630,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFilterSortedForEach() throws Throwable {
 		log.info("testFilterSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).sorted(new SortedComparator<String>() {
+		datapipeline.filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
@@ -742,14 +652,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapFilterCollect() throws Throwable {
 		log.info("testFlatMapFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).filter(new PredicateSerializable<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).filter(new PredicateSerializable<String>() {
 			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
@@ -767,14 +675,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapFilterCount() throws Throwable {
 		log.info("testFlatMapFilterCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).filter(new PredicateSerializable<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).filter(new PredicateSerializable<String>() {
 			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
@@ -794,15 +700,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapFilterForEach() throws Throwable {
 		log.info("testFlatMapFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).filter(new PredicateSerializable<String>() {
+		datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).filter(new PredicateSerializable<String>() {
 			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
@@ -818,20 +722,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapFlatMapCollect() throws Throwable {
 		log.info("testFlatMapFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -845,20 +745,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapFlatMapCount() throws Throwable {
 		log.info("testFlatMapFlatMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -874,23 +770,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapFlatMapForEach() throws Throwable {
 		log.info("testFlatMapFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -900,20 +792,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapCollect() throws Throwable {
 		log.info("testFlatMapMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -927,20 +815,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapCount() throws Throwable {
 		log.info("testFlatMapMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -956,23 +840,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapForEach() throws Throwable {
 		log.info("testFlatMapMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -982,21 +862,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapPairCollect() throws Throwable {
 		log.info("testFlatMapMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1010,21 +885,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapPairCount() throws Throwable {
 		log.info("testFlatMapMapPairCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1040,24 +910,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapPairForEach() throws Throwable {
 		log.info("testFlatMapMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -1067,21 +932,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testFlatMapMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.groupByKey().collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -1096,22 +956,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testFlatMapMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.groupByKey().forEach(lsttuples -> {
+		datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -1126,21 +981,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testFlatMapMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1154,21 +1004,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapPairReduceByKeyCount() throws Throwable {
 		log.info("testFlatMapMapPairReduceByKeyCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1184,22 +1029,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testFlatMapMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).forEach(lis -> {
+		datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -1211,14 +1051,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapPeekCollect() throws Throwable {
 		log.info("testFlatMapPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).peek(val -> System.out.println(val)).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).peek(val -> System.out.println(val)).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1232,14 +1070,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapPeekCount() throws Throwable {
 		log.info("testFlatMapPeekCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).peek(val -> System.out.println(val)).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).peek(val -> System.out.println(val)).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1255,15 +1091,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapPeekForEach() throws Throwable {
 		log.info("testFlatMapPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).peek(val -> System.out.println(val)).forEach(lis -> {
+		datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).peek(val -> System.out.println(val)).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -1275,14 +1109,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapSampleCollect() throws Throwable {
 		log.info("testFlatMapSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).sample(46361).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).sample(46361).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1296,14 +1128,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapSampleCount() throws Throwable {
 		log.info("testFlatMapSampleCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).sample(46361).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).sample(46361).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1319,15 +1149,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapSampleForEach() throws Throwable {
 		log.info("testFlatMapSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).sample(46361).forEach(lis -> {
+		datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).sample(46361).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -1339,14 +1167,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapSortedCollect() throws Throwable {
 		log.info("testFlatMapSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).sorted(new SortedComparator<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
@@ -1364,14 +1190,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapSortedCount() throws Throwable {
 		log.info("testFlatMapSortedCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).sorted(new SortedComparator<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
@@ -1391,15 +1215,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testFlatMapSortedForEach() throws Throwable {
 		log.info("testFlatMapSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).sorted(new SortedComparator<String>() {
+		datapipeline.flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
@@ -1415,14 +1237,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapFilterCollect() throws Throwable {
 		log.info("testMapFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).filter(new PredicateSerializable<String[]>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).filter(new PredicateSerializable<String[]>() {
 			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
@@ -1440,14 +1260,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapFilterCount() throws Throwable {
 		log.info("testMapFilterCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).filter(new PredicateSerializable<String[]>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).filter(new PredicateSerializable<String[]>() {
 			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
@@ -1467,15 +1285,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapFilterForEach() throws Throwable {
 		log.info("testMapFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).filter(new PredicateSerializable<String[]>() {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).filter(new PredicateSerializable<String[]>() {
 			public boolean test(String[] value) {
 				return !"NA".equals(value[14]) && !"ArrDelay".equals(value[14]);
 			}
@@ -1491,20 +1307,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapFlatMapCollect() throws Throwable {
 		log.info("testMapFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).flatMap(
-				new FlatMapFunction<String[], String>() {
-					public Stream<String> apply(String[] value) {
-						return Arrays.asList(value[8] + "-" + value[14]).stream();
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
+				return Arrays.asList(value[8] + "-" + value[14]).stream();
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1518,20 +1330,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapFlatMapCount() throws Throwable {
 		log.info("testMapFlatMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).flatMap(
-				new FlatMapFunction<String[], String>() {
-					public Stream<String> apply(String[] value) {
-						return Arrays.asList(value[8] + "-" + value[14]).stream();
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
+				return Arrays.asList(value[8] + "-" + value[14]).stream();
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1547,23 +1355,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapFlatMapForEach() throws Throwable {
 		log.info("testMapFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).flatMap(
-				new FlatMapFunction<String[], String>() {
-					public Stream<String> apply(String[] value) {
-						return Arrays.asList(value[8] + "-" + value[14]).stream();
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).flatMap(new FlatMapFunction<String[], String>() {
+			public Stream<String> apply(String[] value) {
+				return Arrays.asList(value[8] + "-" + value[14]).stream();
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -1573,20 +1377,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapCollect() throws Throwable {
 		log.info("testMapMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).map(
-				new MapFunction<String[], String>() {
-					public String apply(String[] value) {
-						return value[8] + "-" + value[14];
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
+				return value[8] + "-" + value[14];
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1600,20 +1400,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapCount() throws Throwable {
 		log.info("testMapMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).map(
-				new MapFunction<String[], String>() {
-					public String apply(String[] value) {
-						return value[8] + "-" + value[14];
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
+				return value[8] + "-" + value[14];
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1629,23 +1425,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapForEach() throws Throwable {
 		log.info("testMapMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).map(
-				new MapFunction<String[], String>() {
-					public String apply(String[] value) {
-						return value[8] + "-" + value[14];
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).map(new MapFunction<String[], String>() {
+			public String apply(String[] value) {
+				return value[8] + "-" + value[14];
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -1655,20 +1447,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapPairCollect() throws Throwable {
 		log.info("testMapMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).mapToPair(
-				new MapToPairFunction<String[], Tuple2<String, String>>() {
-					public Tuple2 apply(String[] value) {
-						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).mapToPair(new MapToPairFunction<String[], Tuple2<String, String>>() {
+			public Tuple2 apply(String[] value) {
+				return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1682,20 +1470,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapPairCount() throws Throwable {
 		log.info("testMapMapPairCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).mapToPair(
-				new MapToPairFunction<String[], Tuple2<String, String>>() {
-					public Tuple2 apply(String[] value) {
-						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).mapToPair(new MapToPairFunction<String[], Tuple2<String, String>>() {
+			public Tuple2 apply(String[] value) {
+				return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1711,23 +1495,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapPairForEach() throws Throwable {
 		log.info("testMapMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).mapToPair(
-				new MapToPairFunction<String[], Tuple2<String, String>>() {
-					public Tuple2 apply(String[] value) {
-						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).mapToPair(new MapToPairFunction<String[], Tuple2<String, String>>() {
+			public Tuple2 apply(String[] value) {
+				return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -1737,20 +1517,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).mapToPair(
-				new MapToPairFunction<String[], Tuple2<String, String>>() {
-					public Tuple2 apply(String[] value) {
-						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
-					}
-				})
-				.groupByKey().collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).mapToPair(new MapToPairFunction<String[], Tuple2<String, String>>() {
+			public Tuple2 apply(String[] value) {
+				return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
+			}
+		}).groupByKey().collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -1765,21 +1541,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).mapToPair(
-				new MapToPairFunction<String[], Tuple2<String, String>>() {
-					public Tuple2 apply(String[] value) {
-						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
-					}
-				})
-				.groupByKey().forEach(lsttuples -> {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).mapToPair(new MapToPairFunction<String[], Tuple2<String, String>>() {
+			public Tuple2 apply(String[] value) {
+				return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -1794,20 +1566,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).mapToPair(
-				new MapToPairFunction<String[], Tuple2<String, String>>() {
-					public Tuple2 apply(String[] value) {
-						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).mapToPair(new MapToPairFunction<String[], Tuple2<String, String>>() {
+			public Tuple2 apply(String[] value) {
+				return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1821,20 +1589,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapPairReduceByKeyCount() throws Throwable {
 		log.info("testMapMapPairReduceByKeyCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).mapToPair(
-				new MapToPairFunction<String[], Tuple2<String, String>>() {
-					public Tuple2 apply(String[] value) {
-						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).mapToPair(new MapToPairFunction<String[], Tuple2<String, String>>() {
+			public Tuple2 apply(String[] value) {
+				return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1850,21 +1614,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).mapToPair(
-				new MapToPairFunction<String[], Tuple2<String, String>>() {
-					public Tuple2 apply(String[] value) {
-						return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).forEach(lis -> {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).mapToPair(new MapToPairFunction<String[], Tuple2<String, String>>() {
+			public Tuple2 apply(String[] value) {
+				return (Tuple2<String, String>) Tuple.tuple(value[8], value[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -1876,14 +1636,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPeekCollect() throws Throwable {
 		log.info("testMapPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).peek(val -> System.out.println(val)).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).peek(val -> System.out.println(val)).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1897,14 +1655,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPeekCount() throws Throwable {
 		log.info("testMapPeekCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).peek(val -> System.out.println(val)).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).peek(val -> System.out.println(val)).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1920,15 +1676,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPeekForEach() throws Throwable {
 		log.info("testMapPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).peek(val -> System.out.println(val)).forEach(lis -> {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).peek(val -> System.out.println(val)).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -1940,14 +1694,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleCollect() throws Throwable {
 		log.info("testMapSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).sample(46361).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).sample(46361).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -1961,14 +1713,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleCount() throws Throwable {
 		log.info("testMapSampleCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).sample(46361).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).sample(46361).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -1984,15 +1734,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSampleForEach() throws Throwable {
 		log.info("testMapSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).sample(46361).forEach(lis -> {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).sample(46361).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -2004,14 +1752,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedCollect() throws Throwable {
 		log.info("testMapSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).sorted(new SortedComparator<String[]>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).sorted(new SortedComparator<String[]>() {
 			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
@@ -2029,14 +1775,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedCount() throws Throwable {
 		log.info("testMapSortedCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).sorted(new SortedComparator<String[]>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).sorted(new SortedComparator<String[]>() {
 			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
@@ -2056,15 +1800,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapSortedForEach() throws Throwable {
 		log.info("testMapSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).sorted(new SortedComparator<String[]>() {
+		datapipeline.map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).sorted(new SortedComparator<String[]>() {
 			public int compare(String[] value1, String[] value2) {
 				return value1[1].compareTo(value2[1]);
 			}
@@ -2080,20 +1822,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterCollect() throws Throwable {
 		log.info("testMapPairFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).filter(
-				new PredicateSerializable<Tuple2>() {
-					public boolean test(Tuple2 value) {
-						return true;
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
+				return true;
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -2107,20 +1845,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterCount() throws Throwable {
 		log.info("testMapPairFilterCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).filter(
-				new PredicateSerializable<Tuple2>() {
-					public boolean test(Tuple2 value) {
-						return true;
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
+				return true;
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -2136,23 +1870,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFilterForEach() throws Throwable {
 		log.info("testMapPairFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).filter(
-				new PredicateSerializable<Tuple2>() {
-					public boolean test(Tuple2 value) {
-						return true;
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
+				return true;
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -2162,14 +1892,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapCollect() throws Throwable {
 		log.info("testMapPairFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -2183,14 +1911,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapCount() throws Throwable {
 		log.info("testMapPairFlatMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -2206,15 +1932,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairFlatMapForEach() throws Throwable {
 		log.info("testMapPairFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -2226,20 +1950,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().filter(
-				new PredicateSerializable<Tuple2>() {
+				}).groupByKey().filter(new PredicateSerializable<Tuple2>() {
 					public boolean test(Tuple2 value) {
 						return true;
 					}
-				})
-				.collect(toexecute, null);
+				}).collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -2254,26 +1975,22 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFilterForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().filter(
-				new PredicateSerializable<Tuple2>() {
-					public boolean test(Tuple2 value) {
-						return true;
-					}
-				})
-				.forEach(lsttuples -> {
-					for (Tuple2 tuple2 : lsttuples) {
-						sum += ((List) tuple2.v2).size();
-					}
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
+				return true;
+			}
+		}).forEach(lsttuples -> {
+			for (Tuple2 tuple2 : lsttuples) {
+				sum += ((List) tuple2.v2).size();
+			}
 
-				}, null);
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -2283,10 +2000,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -2305,15 +2021,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyFlatMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().forEach(lsttuples -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -2328,10 +2042,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -2350,15 +2063,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().forEach(lsttuples -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -2373,20 +2084,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+				}).groupByKey().mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
 					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
-				})
-				.collect(toexecute, null);
+				}).collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -2401,26 +2109,22 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyMapPairForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.forEach(lsttuples -> {
-					for (Tuple2 tuple2 : lsttuples) {
-						sum += ((List) tuple2.v2).size();
-					}
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).forEach(lsttuples -> {
+			for (Tuple2 tuple2 : lsttuples) {
+				sum += ((List) tuple2.v2).size();
+			}
 
-				}, null);
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -2429,22 +2133,18 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyCollect() throws Throwable {
-		log.info(
-				"testMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		log.info("testMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+				}).groupByKey().mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
 					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
-				})
-				.groupByKey().collect(toexecute, null);
+				}).groupByKey().collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -2458,23 +2158,18 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 
 	@Test
 	public void testMapPairGroupByKeyMapPairGroupByKeyForEach() throws Throwable {
-		log.info(
-				"testMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		log.info("testMapPairGroupByKeyMapPairGroupByKey Before---------------------------------------");
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.groupByKey().forEach(lsttuples -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -2488,22 +2183,18 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyCollect() throws Throwable {
-		log.info(
-				"testMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		log.info("testMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+				}).groupByKey().mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
 					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
-				})
-				.reduceByKey((a, b) -> a + b).collect(toexecute, null);
+				}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -2512,29 +2203,23 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 		}
 		assertEquals(46361, sum);
 
-		log.info(
-				"testMapPairGroupByKeyMapPairReduceByKey After---------------------------------------");
+		log.info("testMapPairGroupByKeyMapPairReduceByKey After---------------------------------------");
 	}
 
 	@Test
 	public void testMapPairGroupByKeyMapPairReduceByKeyForEach() throws Throwable {
-		log.info(
-				"testMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		log.info("testMapPairGroupByKeyMapPairReduceByKey Before---------------------------------------");
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.reduceByKey((a, b) -> a + b).forEach(lsttuples -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -2543,17 +2228,15 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 
 		assertEquals(46361, sum);
 
-		log.info(
-				"testMapPairGroupByKeyMapPairReduceByKey After---------------------------------------");
+		log.info("testMapPairGroupByKeyMapPairReduceByKey After---------------------------------------");
 	}
 
 	@Test
 	public void testMapPairGroupByKeyPeekCollect() throws Throwable {
 		log.info("testMapPairGroupByKeyPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -2572,15 +2255,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeyPeekForEach() throws Throwable {
 		log.info("testMapPairGroupByKeyPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().peek(val -> System.out.println(val)).forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -2595,10 +2276,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -2617,15 +2297,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySampleForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().sample(46361).forEach(lsttuples -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().sample(46361).forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -2640,21 +2318,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedCollect() throws Throwable {
 		log.info("testMapPairGroupByKeySorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).groupByKey().sorted(
-				new SortedComparator<Tuple2>() {
-					public int compare(Tuple2 value1,
-							Tuple2 value2) {
+				}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+					public int compare(Tuple2 value1, Tuple2 value2) {
 						return value1.compareTo(value2);
 					}
-				})
-				.collect(toexecute, null);
+				}).collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -2669,27 +2343,22 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairGroupByKeySortedForEach() throws Throwable {
 		log.info("testMapPairGroupByKeySorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().sorted(
-				new SortedComparator<Tuple2>() {
-					public int compare(Tuple2 value1,
-							Tuple2 value2) {
-						return value1.compareTo(value2);
-					}
-				})
-				.forEach(lsttuples -> {
-					for (Tuple2 tuple2 : lsttuples) {
-						sum += ((List) tuple2.v2).size();
-					}
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
+				return value1.compareTo(value2);
+			}
+		}).forEach(lsttuples -> {
+			for (Tuple2 tuple2 : lsttuples) {
+				sum += ((List) tuple2.v2).size();
+			}
 
-				}, null);
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -2699,14 +2368,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapCollect() throws Throwable {
 		log.info("testMapPairMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -2720,14 +2387,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapCount() throws Throwable {
 		log.info("testMapPairMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -2743,15 +2408,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapForEach() throws Throwable {
 		log.info("testMapPairMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -2763,20 +2426,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairCollect() throws Throwable {
 		log.info("testMapPairMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -2790,20 +2449,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairCount() throws Throwable {
 		log.info("testMapPairMapPairCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -2819,23 +2474,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairForEach() throws Throwable {
 		log.info("testMapPairMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -2845,20 +2496,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testMapPairMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+				}).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
 					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
-				})
-				.groupByKey().collect(toexecute, null);
+				}).groupByKey().collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -2873,21 +2521,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testMapPairMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.groupByKey().forEach(lsttuples -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -2902,20 +2546,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testMapPairMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.reduceByKey((a, b) -> a + b).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -2929,20 +2569,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyCount() throws Throwable {
 		log.info("testMapPairMapPairReduceByKeyCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.reduceByKey((a, b) -> a + b).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).reduceByKey((a, b) -> a + b).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -2958,21 +2594,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testMapPairMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.reduceByKey((a, b) -> a + b).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -2984,14 +2616,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairPeekCollect() throws Throwable {
 		log.info("testMapPairPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).peek(val -> System.out.println(val)).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).peek(val -> System.out.println(val)).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3005,14 +2635,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairPeekCount() throws Throwable {
 		log.info("testMapPairPeekCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).peek(val -> System.out.println(val)).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).peek(val -> System.out.println(val)).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3028,15 +2656,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairPeekForEach() throws Throwable {
 		log.info("testMapPairPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).peek(val -> System.out.println(val)).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).peek(val -> System.out.println(val)).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -3048,20 +2674,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyFilterCollect() throws Throwable {
 		log.info("testMapPairReduceByKeyFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).filter(
-				new PredicateSerializable<Tuple2>() {
-					public boolean test(Tuple2 value) {
-						return true;
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
+				return true;
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3075,20 +2697,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyFilterCount() throws Throwable {
 		log.info("testMapPairReduceByKeyFilterCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).filter(
-				new PredicateSerializable<Tuple2>() {
-					public boolean test(Tuple2 value) {
-						return true;
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
+				return true;
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3104,23 +2722,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyFilterForEach() throws Throwable {
 		log.info("testMapPairReduceByKeyFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).filter(
-				new PredicateSerializable<Tuple2>() {
-					public boolean test(Tuple2 value) {
-						return true;
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).filter(new PredicateSerializable<Tuple2>() {
+			public boolean test(Tuple2 value) {
+				return true;
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(2, sum);
 
@@ -3130,14 +2744,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyFlatMapCollect() throws Throwable {
 		log.info("testMapPairReduceByKeyFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3151,14 +2763,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyFlatMapCount() throws Throwable {
 		log.info("testMapPairReduceByKeyFlatMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3174,15 +2784,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyFlatMapForEach() throws Throwable {
 		log.info("testMapPairReduceByKeyFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -3194,14 +2802,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyMapCollect() throws Throwable {
 		log.info("testMapPairReduceByKeyMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3215,14 +2821,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyMapCount() throws Throwable {
 		log.info("testMapPairReduceByKeyMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3238,15 +2842,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyMapForEach() throws Throwable {
 		log.info("testMapPairReduceByKeyMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -3258,20 +2860,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyMapPairCollect() throws Throwable {
 		log.info("testMapPairReduceByKeyMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3285,20 +2883,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyMapPairCount() throws Throwable {
 		log.info("testMapPairReduceByKeyMapPairCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3314,23 +2908,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyMapPairForEach() throws Throwable {
 		log.info("testMapPairReduceByKeyMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(2, sum);
 
@@ -3339,22 +2929,18 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 
 	@Test
 	public void testMapPairReduceByKeyMapPairGroupByKeyCollect() throws Throwable {
-		log.info(
-				"testMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		log.info("testMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
-				}).reduceByKey((a, b) -> a + b).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+				}).reduceByKey((a, b) -> a + b).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
 					public Tuple2 apply(Tuple2 value) {
 						return (Tuple2<String, String>) value;
 					}
-				})
-				.groupByKey().collect(toexecute, null);
+				}).groupByKey().collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -3363,29 +2949,23 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 		}
 		assertEquals(2, sum);
 
-		log.info(
-				"testMapPairReduceByKeyMapPairGroupByKey After---------------------------------------");
+		log.info("testMapPairReduceByKeyMapPairGroupByKey After---------------------------------------");
 	}
 
 	@Test
 	public void testMapPairReduceByKeyMapPairGroupByKeyForEach() throws Throwable {
-		log.info(
-				"testMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		log.info("testMapPairReduceByKeyMapPairGroupByKey Before---------------------------------------");
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.groupByKey().forEach(lsttuples -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -3394,28 +2974,22 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 
 		assertEquals(2, sum);
 
-		log.info(
-				"testMapPairReduceByKeyMapPairGroupByKey After---------------------------------------");
+		log.info("testMapPairReduceByKeyMapPairGroupByKey After---------------------------------------");
 	}
 
 	@Test
 	public void testMapPairReduceByKeyMapPairReduceByKeyCollect() throws Throwable {
-		log.info(
-				"testMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.reduceByKey((a, b) -> a + b).collect(toexecute, null);
+		log.info("testMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3423,28 +2997,22 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 		}
 		assertEquals(2, sum);
 
-		log.info(
-				"testMapPairReduceByKeyMapPairReduceByKey After---------------------------------------");
+		log.info("testMapPairReduceByKeyMapPairReduceByKey After---------------------------------------");
 	}
 
 	@Test
 	public void testMapPairReduceByKeyMapPairReduceByKeyCount() throws Throwable {
-		log.info(
-				"testMapPairReduceByKeyMapPairReduceByKeyCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.reduceByKey((a, b) -> a + b).count(null);
+		log.info("testMapPairReduceByKeyMapPairReduceByKeyCount Before---------------------------------------");
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).reduceByKey((a, b) -> a + b).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3454,50 +3022,40 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 		}
 		assertEquals(2, sum);
 
-		log.info(
-				"testMapPairReduceByKeyMapPairReduceByKeyCount After---------------------------------------");
+		log.info("testMapPairReduceByKeyMapPairReduceByKeyCount After---------------------------------------");
 	}
 
 	@Test
 	public void testMapPairReduceByKeyMapPairReduceByKeyForEach() throws Throwable {
-		log.info(
-				"testMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		log.info("testMapPairReduceByKeyMapPairReduceByKey Before---------------------------------------");
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).mapToPair(
-				new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
-					public Tuple2 apply(Tuple2 value) {
-						return (Tuple2<String, String>) value;
-					}
-				})
-				.reduceByKey((a, b) -> a + b).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).mapToPair(new MapToPairFunction<Tuple2, Tuple2<String, String>>() {
+			public Tuple2 apply(Tuple2 value) {
+				return (Tuple2<String, String>) value;
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
 		assertEquals(2, sum);
 
-		log.info(
-				"testMapPairReduceByKeyMapPairReduceByKey After---------------------------------------");
+		log.info("testMapPairReduceByKeyMapPairReduceByKey After---------------------------------------");
 	}
 
 	@Test
 	public void testMapPairReduceByKeyPeekCollect() throws Throwable {
 		log.info("testMapPairReduceByKeyPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).peek(val -> System.out.println(val))
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).peek(val -> System.out.println(val)).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3511,14 +3069,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyPeekCount() throws Throwable {
 		log.info("testMapPairReduceByKeyPeekCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).peek(val -> System.out.println(val)).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).peek(val -> System.out.println(val)).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3534,15 +3090,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeyPeekForEach() throws Throwable {
 		log.info("testMapPairReduceByKeyPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).peek(val -> System.out.println(val)).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).peek(val -> System.out.println(val)).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -3554,14 +3108,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeySampleCollect() throws Throwable {
 		log.info("testMapPairReduceByKeySample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).sample(46361).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).sample(46361).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3575,14 +3127,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeySampleCount() throws Throwable {
 		log.info("testMapPairReduceByKeySampleCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).sample(46361).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).sample(46361).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3598,15 +3148,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeySampleForEach() throws Throwable {
 		log.info("testMapPairReduceByKeySample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).sample(46361).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).sample(46361).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -3618,21 +3166,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeySortedCollect() throws Throwable {
 		log.info("testMapPairReduceByKeySorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).sorted(
-				new SortedComparator<Tuple2>() {
-					public int compare(Tuple2 value1,
-							Tuple2 value2) {
-						return value1.compareTo(value2);
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
+				return value1.compareTo(value2);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3646,21 +3189,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeySortedCount() throws Throwable {
 		log.info("testMapPairReduceByKeySortedCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).sorted(
-				new SortedComparator<Tuple2>() {
-					public int compare(Tuple2 value1,
-							Tuple2 value2) {
-						return value1.compareTo(value2);
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
+				return value1.compareTo(value2);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3676,24 +3214,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairReduceByKeySortedForEach() throws Throwable {
 		log.info("testMapPairReduceByKeySorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).sorted(
-				new SortedComparator<Tuple2>() {
-					public int compare(Tuple2 value1,
-							Tuple2 value2) {
-						return value1.compareTo(value2);
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
+				return value1.compareTo(value2);
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(2, sum);
 
@@ -3703,14 +3236,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairSampleCollect() throws Throwable {
 		log.info("testMapPairSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).sample(46361).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).sample(46361).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3724,14 +3255,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairSampleCount() throws Throwable {
 		log.info("testMapPairSampleCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).sample(46361).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).sample(46361).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3747,15 +3276,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairSampleForEach() throws Throwable {
 		log.info("testMapPairSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).sample(46361).forEach(lis -> {
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).sample(46361).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -3767,21 +3294,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairSortedCollect() throws Throwable {
 		log.info("testMapPairSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).sorted(
-				new SortedComparator<Tuple2>() {
-					public int compare(Tuple2 value1,
-							Tuple2 value2) {
-						return value1.compareTo(value2);
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
+				return value1.compareTo(value2);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -3795,21 +3317,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairSortedCount() throws Throwable {
 		log.info("testMapPairSortedCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).sorted(
-				new SortedComparator<Tuple2>() {
-					public int compare(Tuple2 value1,
-							Tuple2 value2) {
-						return value1.compareTo(value2);
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
+				return value1.compareTo(value2);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -3825,24 +3342,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testMapPairSortedForEach() throws Throwable {
 		log.info("testMapPairSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).sorted(
-				new SortedComparator<Tuple2>() {
-					public int compare(Tuple2 value1,
-							Tuple2 value2) {
-						return value1.compareTo(value2);
-					}
-				})
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).sorted(new SortedComparator<Tuple2>() {
+			public int compare(Tuple2 value1, Tuple2 value2) {
+				return value1.compareTo(value2);
+			}
+		}).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -3852,8 +3364,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekFilterCollect() throws Throwable {
 		log.info("testPeekFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.peek(val -> System.out.println(val))
 				.filter(new PredicateSerializable<String>() {
 					public boolean test(String value) {
@@ -3873,8 +3384,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekFilterCount() throws Throwable {
 		log.info("testPeekFilterCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val))
 				.filter(new PredicateSerializable<String>() {
 					public boolean test(String value) {
@@ -3896,15 +3406,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekFilterForEach() throws Throwable {
 		log.info("testPeekFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.peek(val -> System.out.println(val))
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).forEach(lis -> {
+		datapipeline.peek(val -> System.out.println(val)).filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -3916,10 +3424,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekFlatMapCollect() throws Throwable {
 		log.info("testPeekFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.peek(val -> System.out.println(val)).flatMap(
-				new FlatMapFunction<String, String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.peek(val -> System.out.println(val))
+				.flatMap(new FlatMapFunction<String, String>() {
 					public Stream<String> apply(String value) {
 						return Arrays.asList(value).stream();
 					}
@@ -3937,10 +3444,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekFlatMapCount() throws Throwable {
 		log.info("testPeekFlatMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val)).flatMap(
-				new FlatMapFunction<String, String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val))
+				.flatMap(new FlatMapFunction<String, String>() {
 					public Stream<String> apply(String value) {
 						return Arrays.asList(value).stream();
 					}
@@ -3960,15 +3466,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekFlatMapForEach() throws Throwable {
 		log.info("testPeekFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.peek(val -> System.out.println(val)).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).forEach(lis -> {
+		datapipeline.peek(val -> System.out.println(val)).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -3980,10 +3484,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapCollect() throws Throwable {
 		log.info("testPeekMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.peek(val -> System.out.println(val)).map(
-				new MapFunction<String, String[]>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.peek(val -> System.out.println(val))
+				.map(new MapFunction<String, String[]>() {
 					public String[] apply(String value) {
 						return value.split(",");
 					}
@@ -4001,10 +3504,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapCount() throws Throwable {
 		log.info("testPeekMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val)).map(
-				new MapFunction<String, String[]>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val))
+				.map(new MapFunction<String, String[]>() {
 					public String[] apply(String value) {
 						return value.split(",");
 					}
@@ -4024,15 +3526,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapForEach() throws Throwable {
 		log.info("testPeekMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.peek(val -> System.out.println(val)).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).forEach(lis -> {
+		datapipeline.peek(val -> System.out.println(val)).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -4044,10 +3544,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapPairCollect() throws Throwable {
 		log.info("testPeekMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.peek(val -> System.out.println(val)).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.peek(val -> System.out.println(val))
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4065,10 +3564,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapPairCount() throws Throwable {
 		log.info("testPeekMapPairCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val)).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val))
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4088,17 +3586,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapPairForEach() throws Throwable {
 		log.info("testPeekMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.peek(val -> System.out.println(val)).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		datapipeline.peek(val -> System.out.println(val))
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).forEach(lis -> {
-			sum += ((List) lis).size();
-		}, null);
+					sum += ((List) lis).size();
+				}, null);
 
 		assertEquals(46361, sum);
 
@@ -4108,10 +3605,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testPeekMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.peek(val -> System.out.println(val)).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline.peek(val -> System.out.println(val))
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4130,20 +3626,19 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testPeekMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.peek(val -> System.out.println(val)).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		datapipeline.peek(val -> System.out.println(val))
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).groupByKey().forEach(lsttuples -> {
-			for (Tuple2 tuple2 : lsttuples) {
-				sum += ((List) tuple2.v2).size();
-			}
+					for (Tuple2 tuple2 : lsttuples) {
+						sum += ((List) tuple2.v2).size();
+					}
 
-		}, null);
+				}, null);
 
 		assertEquals(46361, sum);
 
@@ -4153,10 +3648,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testPeekMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.peek(val -> System.out.println(val)).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.peek(val -> System.out.println(val))
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4174,10 +3668,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapPairReduceByKeyCount() throws Throwable {
 		log.info("testPeekMapPairReduceByKeyCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val)).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val))
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4197,17 +3690,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testPeekMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.peek(val -> System.out.println(val)).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		datapipeline.peek(val -> System.out.println(val))
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
 				}).reduceByKey((a, b) -> a + b).forEach(lis -> {
-			sum += ((List) lis).size();
-		}, null);
+					sum += ((List) lis).size();
+				}, null);
 
 		assertEquals(2, sum);
 
@@ -4217,10 +3709,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekPeekCollect() throws Throwable {
 		log.info("testPeekPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.peek(val -> System.out.println(val))
-				.peek(val -> System.out.println(val)).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.peek(val -> System.out.println(val)).peek(val -> System.out.println(val))
+				.collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -4234,8 +3725,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekPeekCount() throws Throwable {
 		log.info("testPeekPeekCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val))
 				.peek(val -> System.out.println(val)).count(null);
 		long sum = 0;
@@ -4253,13 +3743,11 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekPeekForEach() throws Throwable {
 		log.info("testPeekPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.peek(val -> System.out.println(val)).peek(val -> System.out.println(val))
-				.forEach(lis -> {
-					sum += ((List) lis).size();
-				}, null);
+		datapipeline.peek(val -> System.out.println(val)).peek(val -> System.out.println(val)).forEach(lis -> {
+			sum += ((List) lis).size();
+		}, null);
 
 		assertEquals(46361, sum);
 
@@ -4269,10 +3757,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekSampleCollect() throws Throwable {
 		log.info("testPeekSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.peek(val -> System.out.println(val)).sample(46361)
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.peek(val -> System.out.println(val)).sample(46361).collect(toexecute,
+				null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -4286,10 +3773,8 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekSampleCount() throws Throwable {
 		log.info("testPeekSampleCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data =
-				(List) datapipeline.peek(val -> System.out.println(val)).sample(46361).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val)).sample(46361).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -4305,8 +3790,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekSampleForEach() throws Throwable {
 		log.info("testPeekSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.peek(val -> System.out.println(val)).sample(46361).forEach(lis -> {
 			sum += ((List) lis).size();
@@ -4320,8 +3804,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekSortedCollect() throws Throwable {
 		log.info("testPeekSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.peek(val -> System.out.println(val))
 				.sorted(new SortedComparator<String>() {
 					public int compare(String value1, String value2) {
@@ -4341,8 +3824,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekSortedCount() throws Throwable {
 		log.info("testPeekSortedCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.peek(val -> System.out.println(val))
 				.sorted(new SortedComparator<String>() {
 					public int compare(String value1, String value2) {
@@ -4364,15 +3846,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testPeekSortedForEach() throws Throwable {
 		log.info("testPeekSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.peek(val -> System.out.println(val))
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).forEach(lis -> {
+		datapipeline.peek(val -> System.out.println(val)).sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -4384,14 +3864,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleFilterCollect() throws Throwable {
 		log.info("testSampleFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.sample(46361)
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sample(46361).filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -4405,14 +3883,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleFilterCount() throws Throwable {
 		log.info("testSampleFilterCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.sample(46361)
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sample(46361).filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -4428,15 +3904,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleFilterForEach() throws Throwable {
 		log.info("testSampleFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.sample(46361)
-				.filter(new PredicateSerializable<String>() {
-					public boolean test(String value) {
-						return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
-					}
-				}).forEach(lis -> {
+		datapipeline.sample(46361).filter(new PredicateSerializable<String>() {
+			public boolean test(String value) {
+				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -4448,14 +3922,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleFlatMapCollect() throws Throwable {
 		log.info("testSampleFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.sample(46361).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sample(46361).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -4469,14 +3941,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleFlatMapCount() throws Throwable {
 		log.info("testSampleFlatMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.sample(46361).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sample(46361).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -4492,15 +3962,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleFlatMapForEach() throws Throwable {
 		log.info("testSampleFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.sample(46361).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).forEach(lis -> {
+		datapipeline.sample(46361).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -4512,14 +3980,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapCollect() throws Throwable {
 		log.info("testSampleMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.sample(46361).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sample(46361).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -4533,14 +3999,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapCount() throws Throwable {
 		log.info("testSampleMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.sample(46361).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sample(46361).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -4556,15 +4020,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapForEach() throws Throwable {
 		log.info("testSampleMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.sample(46361).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				}).forEach(lis -> {
+		datapipeline.sample(46361).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -4576,10 +4038,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairCollect() throws Throwable {
 		log.info("testSampleMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.sample(46361).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sample(46361)
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4597,10 +4058,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairCount() throws Throwable {
 		log.info("testSampleMapPairCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sample(46361)
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4620,15 +4080,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairForEach() throws Throwable {
 		log.info("testSampleMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.sample(46361).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).forEach(lis -> {
+		datapipeline.sample(46361).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -4640,10 +4098,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSampleMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline.sample(46361).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline.sample(46361)
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4662,15 +4119,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSampleMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.sample(46361).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().forEach(lsttuples -> {
+		datapipeline.sample(46361).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -4685,10 +4140,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSampleMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.sample(46361).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sample(46361)
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4706,10 +4160,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSampleMapPairReduceByKeyCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.sample(46361).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sample(46361)
+				.mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
 					public Tuple2 apply(String value) {
 						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
 					}
@@ -4729,15 +4182,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSampleMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.sample(46361).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).forEach(lis -> {
+		datapipeline.sample(46361).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -4749,10 +4200,9 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekCollect() throws Throwable {
 		log.info("testSamplePeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val))
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).collect(toexecute,
+				null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -4766,10 +4216,8 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekCount() throws Throwable {
 		log.info("testSamplePeekCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data =
-				(List) datapipeline.sample(46361).peek(val -> System.out.println(val)).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sample(46361).peek(val -> System.out.println(val)).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -4785,8 +4233,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSamplePeekForEach() throws Throwable {
 		log.info("testSamplePeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).peek(val -> System.out.println(val)).forEach(lis -> {
 			sum += ((List) lis).size();
@@ -4800,8 +4247,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleCollect() throws Throwable {
 		log.info("testSampleSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		List<List> data = (List) datapipeline.sample(46361).sample(46361).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
@@ -4816,8 +4262,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleCount() throws Throwable {
 		log.info("testSampleSampleCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		List<List<Long>> data = (List) datapipeline.sample(46361).sample(46361).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
@@ -4834,8 +4279,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSampleForEach() throws Throwable {
 		log.info("testSampleSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sample(46361).sample(46361).forEach(lis -> {
 			sum += ((List) lis).size();
@@ -4849,14 +4293,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedCollect() throws Throwable {
 		log.info("testSampleSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline.sample(46361)
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sample(46361).sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -4870,14 +4312,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedCount() throws Throwable {
 		log.info("testSampleSortedCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline.sample(46361)
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sample(46361).sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -4893,15 +4333,13 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSampleSortedForEach() throws Throwable {
 		log.info("testSampleSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
-		datapipeline.sample(46361)
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).forEach(lis -> {
+		datapipeline.sample(46361).sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -4913,14 +4351,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterCollect() throws Throwable {
 		log.info("testSortedFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).filter(new PredicateSerializable<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).filter(new PredicateSerializable<String>() {
 			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
@@ -4938,14 +4374,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterCount() throws Throwable {
 		log.info("testSortedFilterCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).filter(new PredicateSerializable<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).filter(new PredicateSerializable<String>() {
 			public boolean test(String value) {
 				return !"NA".equals(value.split(",")[14]) && !"ArrDelay".equals(value.split(",")[14]);
 			}
@@ -4965,8 +4399,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFilterForEach() throws Throwable {
 		log.info("testSortedFilter Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
@@ -4988,20 +4421,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapCollect() throws Throwable {
 		log.info("testSortedFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -5015,20 +4444,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapCount() throws Throwable {
 		log.info("testSortedFlatMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -5044,19 +4469,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedFlatMapForEach() throws Throwable {
 		log.info("testSortedFlatMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
-		}).flatMap(
-				new FlatMapFunction<String, String>() {
-					public Stream<String> apply(String value) {
-						return Arrays.asList(value).stream();
-					}
-				}).forEach(lis -> {
+		}).flatMap(new FlatMapFunction<String, String>() {
+			public Stream<String> apply(String value) {
+				return Arrays.asList(value).stream();
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -5068,20 +4491,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapCollect() throws Throwable {
 		log.info("testSortedMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -5095,20 +4514,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapCount() throws Throwable {
 		log.info("testSortedMapCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).map(
-				new MapFunction<String, String[]>() {
-					public String[] apply(String value) {
-						return value.split(",");
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).map(new MapFunction<String, String[]>() {
+			public String[] apply(String value) {
+				return value.split(",");
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -5124,8 +4539,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapForEach() throws Throwable {
 		log.info("testSortedMap Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
@@ -5147,21 +4561,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairCollect() throws Throwable {
 		log.info("testSortedMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -5175,21 +4584,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairCount() throws Throwable {
 		log.info("testSortedMapPairCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -5205,19 +4609,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairForEach() throws Throwable {
 		log.info("testSortedMapPair Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
-		}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).forEach(lis -> {
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -5229,21 +4631,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyCollect() throws Throwable {
 		log.info("testSortedMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Tuple2>> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.groupByKey().collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Tuple2>> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().collect(toexecute, null);
 		int sum = 0;
 		for (List<Tuple2> lsttuples : data) {
 			for (Tuple2 tuple2 : lsttuples) {
@@ -5258,19 +4655,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairGroupByKeyForEach() throws Throwable {
 		log.info("testSortedMapPairGroupByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
-		}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).groupByKey().forEach(lsttuples -> {
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).groupByKey().forEach(lsttuples -> {
 			for (Tuple2 tuple2 : lsttuples) {
 				sum += ((List) tuple2.v2).size();
 			}
@@ -5285,21 +4680,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyCollect() throws Throwable {
 		log.info("testSortedMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -5313,21 +4703,16 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyCount() throws Throwable {
 		log.info("testSortedMapPairReduceByKeyCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8],
-								value.split(",")[14]);
-					}
-				})
-				.reduceByKey((a, b) -> a + b).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -5343,19 +4728,17 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedMapPairReduceByKeyForEach() throws Throwable {
 		log.info("testSortedMapPairReduceByKey Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
-		}).mapToPair(
-				new MapToPairFunction<String, Tuple2<String, String>>() {
-					public Tuple2 apply(String value) {
-						return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
-					}
-				}).reduceByKey((a, b) -> a + b).forEach(lis -> {
+		}).mapToPair(new MapToPairFunction<String, Tuple2<String, String>>() {
+			public Tuple2 apply(String value) {
+				return (Tuple2<String, String>) Tuple.tuple(value.split(",")[8], value.split(",")[14]);
+			}
+		}).reduceByKey((a, b) -> a + b).forEach(lis -> {
 			sum += ((List) lis).size();
 		}, null);
 
@@ -5367,14 +4750,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekCollect() throws Throwable {
 		log.info("testSortedPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).peek(val -> System.out.println(val)).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).peek(val -> System.out.println(val)).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -5388,14 +4769,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekCount() throws Throwable {
 		log.info("testSortedPeekCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).peek(val -> System.out.println(val)).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).peek(val -> System.out.println(val)).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -5411,8 +4790,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedPeekForEach() throws Throwable {
 		log.info("testSortedPeek Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
@@ -5430,14 +4808,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleCollect() throws Throwable {
 		log.info("testSortedSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).sample(46361).collect(toexecute, null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).sample(46361).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
 			log.info(partitioneddata.size());
@@ -5451,14 +4827,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleCount() throws Throwable {
 		log.info("testSortedSampleCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).sample(46361).count(null);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).sample(46361).count(null);
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
@@ -5474,8 +4848,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSampleForEach() throws Throwable {
 		log.info("testSortedSample Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
@@ -5493,14 +4866,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedCollect() throws Throwable {
 		log.info("testSortedSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).sorted(new SortedComparator<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
@@ -5518,14 +4889,12 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedCount() throws Throwable {
 		log.info("testSortedSortedCount Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
-		List<List<Long>> data = (List) datapipeline
-				.sorted(new SortedComparator<String>() {
-					public int compare(String value1, String value2) {
-						return value1.compareTo(value2);
-					}
-				}).sorted(new SortedComparator<String>() {
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		List<List<Long>> data = (List) datapipeline.sorted(new SortedComparator<String>() {
+			public int compare(String value1, String value2) {
+				return value1.compareTo(value2);
+			}
+		}).sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {
 				return value1.compareTo(value2);
 			}
@@ -5545,8 +4914,7 @@ public class IgnitePipelineDepth2Test extends StreamPipelineIgniteBase {
 	@Test
 	public void testSortedSortedForEach() throws Throwable {
 		log.info("testSortedSorted Before---------------------------------------");
-		StreamPipeline<String> datapipeline =
-				StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
+		StreamPipeline<String> datapipeline = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample, pipelineconfig);
 		sum = 0;
 		datapipeline.sorted(new SortedComparator<String>() {
 			public int compare(String value1, String value2) {

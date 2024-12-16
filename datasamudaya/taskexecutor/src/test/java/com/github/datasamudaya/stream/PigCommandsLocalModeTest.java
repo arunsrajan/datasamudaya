@@ -38,7 +38,7 @@ public class PigCommandsLocalModeTest extends PigCommandsTest {
 		queryParserDriver = PigUtils.getQueryParserDriver("pig");
 		pipelineconfig.setLocal("true");
 		pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);		
+		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 	}
 
 	@AfterClass

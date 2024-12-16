@@ -2,7 +2,10 @@ package com.github.datasamudaya.common;
 
 import org.apache.calcite.rel.RelFieldCollation.Direction;
 
+
 import lombok.AllArgsConstructor;
+
+import java.io.Serializable;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,7 +19,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class FieldCollationDirection implements java.io.Serializable{
+public class FieldCollationDirection implements Serializable {
 	private static final long serialVersionUID = -2012790776995115655L;
 	private int fieldindex;
 	private Direction direction;

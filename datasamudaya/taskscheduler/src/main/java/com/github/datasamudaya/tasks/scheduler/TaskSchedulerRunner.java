@@ -1,6 +1,7 @@
 package com.github.datasamudaya.tasks.scheduler;
 
 import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.util.ArrayList;
@@ -11,7 +12,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,9 +41,7 @@ public class TaskSchedulerRunner {
 
 	public static void main(String[] args) throws Exception {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
-		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);		
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
@@ -102,7 +102,7 @@ public class TaskSchedulerRunner {
 		su.start();
 		SQLServerMR.start();
 		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		var essingle = Executors.newSingleThreadExecutor(Thread.ofVirtual().factory());
 

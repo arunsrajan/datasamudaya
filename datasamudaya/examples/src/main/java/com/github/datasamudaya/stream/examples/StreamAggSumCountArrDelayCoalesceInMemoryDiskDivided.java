@@ -17,7 +17,9 @@ package com.github.datasamudaya.stream.examples;
 
 import java.io.Serializable;
 import java.net.URI;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 
@@ -28,7 +30,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamAggSumCountArrDelayCoalesceInMemoryDiskDivided implements Serializable, Pipeline {
 	private static final long serialVersionUID = -1073668309871473457L;
-	private final Logger log = Logger.getLogger(StreamAggSumCountArrDelayCoalesceInMemoryDiskDivided.class);
+	private final Logger log = LogManager.getLogger(StreamAggSumCountArrDelayCoalesceInMemoryDiskDivided.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");
@@ -36,7 +38,7 @@ public class StreamAggSumCountArrDelayCoalesceInMemoryDiskDivided implements Ser
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY_DISK);
-		
+
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem(args[3]);
 		pipelineconfig.setMinmem("512");
@@ -54,7 +56,8 @@ public class StreamAggSumCountArrDelayCoalesceInMemoryDiskDivided implements Ser
 				.filter(dat -> dat != null && !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14]))
 				.mapToPair(dat -> (Tuple2<String, Long>) Tuple.tuple(dat[8], Long.parseLong(dat[14])))
 				.mapValues(mv -> new Tuple2<Long, Long>(mv, 1l))
-				.reduceByValues((tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2))
+				.reduceByValues(
+						(tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2))
 				.coalesce(1, (tuple1, tuple2) -> new Tuple2<Long, Long>(tuple1.v1 + tuple2.v1, tuple1.v2 + tuple2.v2))
 				.saveAsTextFile(new URI(args[0]), args[2] + "/StreamAggSumCount-" + System.currentTimeMillis());
 		log.info("testMapValuesReduceByValues After---------------------------------------");

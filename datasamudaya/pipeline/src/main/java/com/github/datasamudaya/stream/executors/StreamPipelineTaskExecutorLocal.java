@@ -28,7 +28,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ehcache.Cache;
 
 import com.github.datasamudaya.common.ByteBufferInputStream;
@@ -47,31 +48,31 @@ import com.github.datasamudaya.stream.PipelineException;
 
 /**
  * 
- * @author Arun
- * Task executors thread for standalone task executors daemon.  
+ * @author Arun Task executors thread for standalone task executors daemon.
  */
 @SuppressWarnings("rawtypes")
 public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor {
-	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorLocal.class);
+	private static Logger log = LogManager.getLogger(StreamPipelineTaskExecutorLocal.class);
 	protected ConcurrentMap<String, OutputStream> resultstream;
 	public double timetaken = 0.0;
 
-	public StreamPipelineTaskExecutorLocal(JobStage jobstage,
-			ConcurrentMap<String, OutputStream> resultstream, Cache cache) {
+	public StreamPipelineTaskExecutorLocal(JobStage jobstage, ConcurrentMap<String, OutputStream> resultstream,
+			Cache cache) {
 		super(jobstage, cache);
 		this.resultstream = resultstream;
 	}
 
 	/**
 	 * This method returns the output stream from rdf object.
+	 * 
 	 * @param rdf
 	 * @return output stream
 	 * @throws Exception
 	 */
 	public OutputStream getIntermediateInputStreamRDF(RemoteDataFetch rdf) throws Exception {
 		log.debug("Entered MassiveDataStreamTaskExecutorInMemory.getIntermediateInputStreamRDF");
-		var path = rdf.getJobid() + DataSamudayaConstants.HYPHEN
-				+ rdf.getStageid() + DataSamudayaConstants.HYPHEN + rdf.getTaskid();
+		var path = rdf.getJobid() + DataSamudayaConstants.HYPHEN + rdf.getStageid() + DataSamudayaConstants.HYPHEN
+				+ rdf.getTaskid();
 		OutputStream os = resultstream.get(path);
 		log.debug("Exiting MassiveDataStreamTaskExecutorInMemory.getIntermediateInputStreamFS");
 		if (Objects.isNull(os)) {
@@ -86,21 +87,21 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 
 	/**
 	 * Obtains the path using jobid, stageid and taskid.
+	 * 
 	 * @return jobid-stageid-taskid
 	 */
 	@Override
 	public String getIntermediateDataFSFilePath(Task task) {
-		return task.jobid + DataSamudayaConstants.HYPHEN
-				+ task.stageid + DataSamudayaConstants.HYPHEN + task.taskid;
+		return task.jobid + DataSamudayaConstants.HYPHEN + task.stageid + DataSamudayaConstants.HYPHEN + task.taskid;
 	}
-
 
 	/**
 	 * Creates output stream from task object and buffersize.
+	 * 
 	 * @param task
 	 * @param buffersize
 	 * @return output stream
-	 * @throws PipelineException 
+	 * @throws PipelineException
 	 */
 	@Override
 	public OutputStream createIntermediateDataToFS(Task task, int buffersize) throws PipelineException {
@@ -118,12 +119,12 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 		}
 	}
 
-
 	/**
 	 * Creates the input stream from task object.
+	 * 
 	 * @param task
 	 * @return input stream
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	@Override
 	public InputStream getIntermediateInputStreamFS(Task task) throws Exception {
@@ -141,17 +142,17 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 
 	}
 
-
 	/**
-	 * This method call computes the tasks from stages and return 
-	 * whether the tasks are computed successfully.
+	 * This method call computes the tasks from stages and return whether the tasks
+	 * are computed successfully.
 	 */
 	@Override
 	public Boolean call() {
 		starttime = System.currentTimeMillis();
 		log.debug("Entered MassiveDataStreamTaskExecutorInMemory.call");
 		var stageTasks = getStagesTask();
-		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
+		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+				DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 		var configuration = new Configuration();
 		try (var hdfs = FileSystem.newInstance(new URI(hdfsfilepath), configuration);) {
 			log.debug("Submitted Stage " + stageTasks);
@@ -159,7 +160,7 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 			if (task.input != null && task.parentremotedatafetch != null) {
 				if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
 					var numinputs = task.parentremotedatafetch.length;
-					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
+					for (var inputindex = 0; inputindex < numinputs; inputindex++) {
 						var input = task.parentremotedatafetch[inputindex];
 						if (input != null) {
 							var rdf = (RemoteDataFetch) input;
@@ -176,7 +177,7 @@ public class StreamPipelineTaskExecutorLocal extends StreamPipelineTaskExecutor 
 					}
 				} else if (task.input != null && task.input[0] != null) {
 					var numinputs = task.input.length;
-					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
+					for (var inputindex = 0; inputindex < numinputs; inputindex++) {
 						var input = task.input[inputindex];
 						if (input != null && input instanceof Task taskinput) {
 							var is = getIntermediateInputStreamFS(taskinput);

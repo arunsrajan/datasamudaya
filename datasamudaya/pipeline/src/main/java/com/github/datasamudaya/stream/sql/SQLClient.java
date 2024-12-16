@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,7 +26,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.History;
@@ -54,9 +56,16 @@ import com.github.datasamudaya.common.utils.ZookeeperOperations;
  *
  */
 public class SQLClient {
+	
+	static {
+		System.setProperty("log4j.configurationFile", 
+				System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+	}
+	
 	private static final Logger log = LoggerFactory.getLogger(SQLClient.class);
 	private static String currentsqlquery;
 	private static String currentsqloutput;
+
 	/**
 	 * Main method which starts sql client in terminal.
 	 * @param args
@@ -66,9 +75,7 @@ public class SQLClient {
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
 		Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
 				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
-		Utils.initializeOllamaChatClient();
-		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+		Utils.initializeOllamaChatClient();		
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.USERSQL, true, DataSamudayaConstants.USERSQLREQUIRED);
@@ -107,19 +114,19 @@ public class SQLClient {
 		} else {
 			numberofcontainers = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS));
 		}
-		
-		if(numberofcontainers <= 0) {
+
+		if (numberofcontainers <= 0) {
 			throw new SQLClientException("Number of containers cannot be less than 1");
 		}
-		
+
 		boolean isdriverrequired = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.IS_REMOTE_SCHEDULER, DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT));
-		
+
 		if (cmd.hasOption(DataSamudayaConstants.ISDRIVERREQUIRED)) {
 			String driverrequired = cmd.getOptionValue(DataSamudayaConstants.ISDRIVERREQUIRED);
 			isdriverrequired = Boolean.parseBoolean(driverrequired);
 		}
-		
+
 		int cpupercontainer = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUPERCONTAINER);
@@ -132,41 +139,41 @@ public class SQLClient {
 			memorypercontainer = Integer.valueOf(memory);
 
 		}
-		
+
 		int cpudriver = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isdriverrequired) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUDRIVER);
 			cpudriver = Integer.valueOf(cpu);
-		} else if(!isdriverrequired){
+		} else if (!isdriverrequired) {
 			cpudriver = 0;
 		}
 		int memorydriver = 1024;
 		if (cmd.hasOption(DataSamudayaConstants.MEMORYDRIVER) && isdriverrequired) {
 			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYDRIVER);
 			memorydriver = Integer.valueOf(memory);
-		} else if(!isdriverrequired){
+		} else if (!isdriverrequired) {
 			memorydriver = 0;
 		}
-		
+
 		String mode = DataSamudayaConstants.SQLWORKERMODE_DEFAULT;
 		if (cmd.hasOption(DataSamudayaConstants.SQLWORKERMODE)) {
 			mode = cmd.getOptionValue(DataSamudayaConstants.SQLWORKERMODE);
 		}
-		
+
 		String driverlocation = null;
-		boolean isclient=false;
+		boolean isclient = false;
 		ZookeeperOperations zo = null;
 		boolean isyarn = mode.equalsIgnoreCase(DataSamudayaConstants.YARN);
 		boolean isignite = mode.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE);
-		if(isdriverrequired && (mode.equalsIgnoreCase(DataSamudayaConstants.SQLWORKERMODE_DEFAULT) || isyarn || isignite)) {
+		if (isdriverrequired && (mode.equalsIgnoreCase(DataSamudayaConstants.SQLWORKERMODE_DEFAULT) || isyarn || isignite)) {
 			if (cmd.hasOption(DataSamudayaConstants.DRIVER_LOCATION)) {
 				driverlocation = cmd.getOptionValue(DataSamudayaConstants.DRIVER_LOCATION);
 				isclient = driverlocation
-				.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
-				if(isclient) {
+						.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
+				if (isclient) {
 					Utils.startHiveSession(user);
 				}
-				if(isclient && !(isignite)) {
+				if (isclient && !isignite) {
 					cpudriver = 0;
 					memorydriver = 0;
 					zo = new ZookeeperOperations();
@@ -174,14 +181,14 @@ public class SQLClient {
 					zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
 						log.debug("Node Created");
 					});
-					zo.watchNodes();					
+					zo.watchNodes();
 				}
 			} else {
 				driverlocation = DataSamudayaConstants.DRIVER_LOCATION_DEFAULT;
 			}
 		}
-		
-		
+
+
 		StaticComponentContainer.Modules.exportAllToAll();
 		// get the hostname of the sql server
 		String hostName = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST);
@@ -193,8 +200,8 @@ public class SQLClient {
 				.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SO_TIMEOUT, DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
 		String teid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		while (true) {
-			if((isyarn || isignite) && isclient) {
-				if(isyarn) {
+			if ((isyarn || isignite) && isclient) {
+				if (isyarn) {
 					Utils.launchYARNExecutors(teid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
 				}
 				String messagestorefile = DataSamudayaProperties.get().getProperty(
@@ -265,7 +272,7 @@ public class SQLClient {
 				Thread.sleep(2000);
 			}
 		}
-		if(isyarn && isclient) {
+		if (isyarn && isclient) {
 			try {
 				Utils.shutDownYARNContainer(teid);
 			} catch (Exception ex) {
@@ -303,13 +310,13 @@ public class SQLClient {
 		LineReader reader = Utils.getLineReaderTerminal(messagestorefile);
 		String dbdefault = DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.SQLDB, DataSamudayaConstants.SQLMETASTORE_DB);
-		boolean ollamaenable = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.OLLAMA_ENABLE, 
+		boolean ollamaenable = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.OLLAMA_ENABLE,
 				DataSamudayaConstants.OLLAMA_ENABLE_DEFAULT));
 		ServerUtils su = null;
-		if(ollamaenable) {
+		if (ollamaenable) {
 			su = new ServerUtils();
-			int ollamasqlport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.OLLAMA_SQL_QUERY_PORT, 
-					DataSamudayaConstants.OLLAMA_SQL_QUERY_PORT_DEFAULT));			
+			int ollamasqlport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.OLLAMA_SQL_QUERY_PORT,
+					DataSamudayaConstants.OLLAMA_SQL_QUERY_PORT_DEFAULT));
 			su.init(ollamasqlport, new WebResourcesServlet(),
 					DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.ASTERIX,
@@ -321,136 +328,135 @@ public class SQLClient {
 			su.start();
 		}
 		PrintWriter consoleout;
-		if(ollamaenable && !isclient) {
+		if (ollamaenable && !isclient) {
 			consoleout = new PrintWriter(System.out, true);
 		} else {
 			consoleout = out;
-		}	
-		
+		}
+
 		while (true) {
 			String input = readLineWithHistory(reader);
-			if (input.startsWith(("ai"))) {
-				if(ollamaenable) {
+			if (input.startsWith("ai")) {
+				if (ollamaenable) {
 					String[] args = input.split(" ");
-					if(!args[1].equalsIgnoreCase("sql") && !args[1].equalsIgnoreCase("sqlmulti")
-							&& !args[1].equalsIgnoreCase("inference")
-							&& !args[1].equalsIgnoreCase("inferenceexec")
-							&& !args[1].equalsIgnoreCase("asciiarthistogram")
-							&& !args[1].equalsIgnoreCase("inferencequestion")
-							&& !args[1].equalsIgnoreCase("setmodel")
-							&& !args[1].equalsIgnoreCase("setinferencemodel")) {
+					if (!"sql".equalsIgnoreCase(args[1]) && !"sqlmulti".equalsIgnoreCase(args[1])
+							&& !"inference".equalsIgnoreCase(args[1])
+							&& !"inferenceexec".equalsIgnoreCase(args[1])
+							&& !"asciiarthistogram".equalsIgnoreCase(args[1])
+							&& !"inferencequestion".equalsIgnoreCase(args[1])
+							&& !"setmodel".equalsIgnoreCase(args[1])
+							&& !"setinferencemodel".equalsIgnoreCase(args[1])) {
 						consoleout.println();
 						consoleout.println("Provide ai with parameter setmodel or setinferencemodel or sql or sqlmulti or inference or inferenceexec or asciiarthistogram or inferencequestion");
 						continue;
-					}					
-					if(args[1].equalsIgnoreCase("setmodel")) {
+					}
+					if ("setmodel".equalsIgnoreCase(args[1])) {
 						DataSamudayaProperties.get().put(DataSamudayaConstants.OLLAMA_MODEL_NAME,
-												args[2]);
-					} else if(args[1].equalsIgnoreCase("setinferencemodel")) {
+								args[2]);
+					} else if ("setinferencemodel".equalsIgnoreCase(args[1])) {
 						DataSamudayaProperties.get().put(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
 								args[2]);
-					} else if(args[1].equalsIgnoreCase("sql")) {
+					} else if ("sql".equalsIgnoreCase(args[1])) {
 						var columns = new ArrayList<ColumnMetadata>();
 						TableCreator.getColumnMetadataFromTable(user, dbdefault, args[2], columns);
-						List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());				
-						String query = String.format(DataSamudayaConstants.SQL_QUERY_AGG_PROMPT, args[2],columnsNames.toString());
+						List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());
+						String query = String.format(DataSamudayaConstants.SQL_QUERY_AGG_PROMPT, args[2], columnsNames.toString());
 						consoleout.println();
 						consoleout.println(query);
-						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query),
 								OllamaOptions.create()
-								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+										.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
-								.withModel(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
+										.withModel(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
 												DataSamudayaConstants.OLLAMA_MODEL_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
-					}
-					else if(args[1].equalsIgnoreCase("sqlmulti")) {
-						if(!NumberUtils.isCreatable(args[2])) {
+					} else if ("sqlmulti".equalsIgnoreCase(args[1])) {
+						if (!NumberUtils.isCreatable(args[2])) {
 							consoleout.println();
 							consoleout.println("The number of sql generated must be a number");
 							continue;
 						}
 						var columns = new ArrayList<ColumnMetadata>();
 						TableCreator.getColumnMetadataFromTable(user, dbdefault, args[3], columns);
-						List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());				
-						String query = String.format(DataSamudayaConstants.SQL_QUERY_MUL_AGG_PROMPT, args[2],args[3],columnsNames.toString());
+						List<String> columnsNames = columns.stream().map(ColumnMetadata::getColumnName).collect(Collectors.toList());
+						String query = String.format(DataSamudayaConstants.SQL_QUERY_MUL_AGG_PROMPT, args[2], args[3], columnsNames.toString());
 						consoleout.println();
 						consoleout.println(query);
-						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query),
 								OllamaOptions.create()
-								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+										.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
-								.withModel(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
+										.withModel(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
 												DataSamudayaConstants.OLLAMA_MODEL_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
-					} else if(args[1].equalsIgnoreCase("inference")) {
+					} else if ("inference".equalsIgnoreCase(args[1])) {
 						String query = String.format(DataSamudayaConstants.SQL_QUERY_INFERENCE_PROMPT, args[2], currentsqlquery);
 						consoleout.println();
 						consoleout.println(query);
-						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query),
 								OllamaOptions.create()
-								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+										.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
-								.withModel(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
+										.withModel(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
 												DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
-					} else if(args[1].equalsIgnoreCase("asciiarthistogram")) {
+					} else if ("asciiarthistogram".equalsIgnoreCase(args[1])) {
 						String query = String.format(DataSamudayaConstants.SQL_QUERY_ASCII_ART_HISTOGRAM_EXEC_PROMPT, currentsqlquery, currentsqloutput, args[2], args[3], args[4]);
 						consoleout.println();
 						consoleout.println(query);
-						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query),
 								OllamaOptions.create()
-								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+										.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
-								.withModel(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
+										.withModel(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_MODEL_NAME,
 												DataSamudayaConstants.OLLAMA_MODEL_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
-					} else if(args[1].equalsIgnoreCase("inferenceexec")) {
+					} else if ("inferenceexec".equalsIgnoreCase(args[1])) {
 						var sb = new StringBuffer();
-						for (int count = 2; count < args.length; count++) {
+						for (int count = 2;count < args.length;count++) {
 							sb.append(args[count]).append(" ");
 						}
 						String query = String.format(DataSamudayaConstants.SQL_QUERY_INFERENCE_EXEC_PROMPT, sb.toString(), currentsqlquery, currentsqloutput);
 						consoleout.println();
 						consoleout.println(query);
-						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query),
 								OllamaOptions.create()
-								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+										.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
-								.withModel(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
+										.withModel(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
 												DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
-					} else if(args[1].equalsIgnoreCase("inferencequestion")) {
+					} else if ("inferencequestion".equalsIgnoreCase(args[1])) {
 						var inference = new StringBuffer();
 						var columnnames = new StringBuffer();
 						String tablename = args[2];
 						var columns = new ArrayList<ColumnMetadata>();
 						TableCreator.getColumnMetadataFromTable(user, dbdefault, tablename, columns);
-						columns.stream().map(ColumnMetadata::getColumnName).forEach(colname->columnnames.append(colname).append(", "));
-						columnnames.deleteCharAt(columnnames.length()-2);
-						for (int count = 3; count < args.length; count++) {
+						columns.stream().map(ColumnMetadata::getColumnName).forEach(colname -> columnnames.append(colname).append(", "));
+						columnnames.deleteCharAt(columnnames.length() - 2);
+						for (int count = 3;count < args.length;count++) {
 							inference.append(args[count]).append(" ");
 						}
 						String query = String.format(DataSamudayaConstants.SQL_QUERY_PROMPT, inference.toString(), tablename, columnnames.toString());
 						consoleout.println();
 						consoleout.println(query);
-						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query), 
+						ChatResponse response = Utils.ollamaChatClient.call(new Prompt(new UserMessage(query),
 								OllamaOptions.create()
-								.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
+										.withTemperature(Float.parseFloat(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE,
 												DataSamudayaConstants.OLLAMA_MODEL_TEMPERATURE_DEFAULT)))
-								.withModel(DataSamudayaProperties.get().
-										getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
+										.withModel(DataSamudayaProperties.get().
+												getProperty(DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME,
 												DataSamudayaConstants.OLLAMA_INFERENCE_MODEL_NAME_DEFAULT))));
 						consoleout.println(response.getResult().getOutput().getContent());
 					}
@@ -489,13 +495,13 @@ public class SQLClient {
 							+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 					long starttime = System.currentTimeMillis();
 					List<List> results;
-					currentsqlquery = input;					
-					if(isignite) {
-						results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, input, user, jobid, teid, Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+					currentsqlquery = input;
+					if (isignite) {
+						results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, input, user, jobid, teid, Long.valueOf((long) memorypercontainer) * DataSamudayaConstants.MB);
 					} else {
 						results = SelectQueryExecutor.executeSelectQuery(dbdefault, input, user, jobid, teid, false,
-							isyarn, null, false);
-					}					
+								isyarn, null, false);
+					}
 					double timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 					long totalrecords = 0;
 					var buffer = new ByteArrayOutputStream();
@@ -505,7 +511,7 @@ public class SQLClient {
 						totalrecords += Utils.printTableOrError(result, out, JOBTYPE.NORMAL);
 						Utils.printTableOrError(result, sqlwriter, JOBTYPE.NORMAL);
 					}
-					if(totalrecords > 0) {
+					if (totalrecords > 0) {
 						currentsqloutput = new String(buffer.toByteArray());
 					}
 					buffer.close();
@@ -522,10 +528,10 @@ public class SQLClient {
 				if (toquit) {
 					break;
 				}
-			}			
+			}
 			saveHistory(reader.getHistory());
 		}
-		if(ollamaenable && nonNull(su)) {
+		if (ollamaenable && nonNull(su)) {
 			su.stop();
 			su.destroy();
 		}
@@ -542,14 +548,14 @@ public class SQLClient {
 		boolean lineRead = false;
 		while (!lineRead) {
 			try {
-				line =  reader.readLine("SQL> ");
+				line = reader.readLine("SQL> ");
 				lineRead = true;
 			}
-		    catch (UserInterruptException e) {
-		    }
-		    catch (EndOfFileException e) {
-		        break;
-		    }
+			catch (UserInterruptException e) {
+			}
+			catch (EndOfFileException e) {
+				break;
+			}
 		}
 		return line;
 	}

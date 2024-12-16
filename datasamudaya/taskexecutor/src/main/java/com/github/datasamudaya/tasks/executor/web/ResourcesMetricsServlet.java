@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.MBeanServer;
@@ -21,22 +22,23 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 
 /**
  * Resource Metrics servlet to display
+ * 
  * @author Arun
  */
 public class ResourcesMetricsServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 8713220540678338208L;
-	private static final Logger log = Logger.getLogger(ResourcesMetricsServlet.class);
+	private static final Logger log = LogManager.getLogger(ResourcesMetricsServlet.class);
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
 		response.setStatus(HttpServletResponse.SC_OK);
 		response.setContentType("application/json");
@@ -47,8 +49,8 @@ public class ResourcesMetricsServlet extends HttpServlet {
 			double heapusage = heap.getUsed() / (double) heap.getMax() * 100.0;
 			MemoryUsage nonheap = membean.getNonHeapMemoryUsage();
 			double nonheapusage = nonheap.getUsed() / (double) nonheap.getMax() * 100.0;
-			String[] cpuheap = {systemloadaverage + DataSamudayaConstants.EMPTY, heapusage + DataSamudayaConstants.EMPTY,
-					nonheapusage + DataSamudayaConstants.EMPTY};
+			String[] cpuheap = { systemloadaverage + DataSamudayaConstants.EMPTY,
+					heapusage + DataSamudayaConstants.EMPTY, nonheapusage + DataSamudayaConstants.EMPTY };
 
 			writer.write(new ObjectMapper().writeValueAsString(cpuheap));
 			writer.flush();
@@ -61,7 +63,7 @@ public class ResourcesMetricsServlet extends HttpServlet {
 
 		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		ObjectName name = ObjectName.getInstance("java.lang:type=OperatingSystem");
-		AttributeList list = mbs.getAttributes(name, new String[]{"ProcessCpuLoad"});
+		AttributeList list = mbs.getAttributes(name, new String[] { "ProcessCpuLoad" });
 		if (list.isEmpty()) {
 			return Double.NaN;
 		}

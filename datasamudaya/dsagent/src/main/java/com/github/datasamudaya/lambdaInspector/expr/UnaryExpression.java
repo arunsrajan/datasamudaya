@@ -16,7 +16,7 @@ public class UnaryExpression extends Expression {
 
 			@Override
 			public Object eval(Object arg) {
-				return -((Integer) arg);
+				return -(Integer) arg;
 			}
 		},
 		IINC(Integer.TYPE, Opcodes.IINC) {
@@ -105,7 +105,7 @@ public class UnaryExpression extends Expression {
 
 			@Override
 			public Object eval(Object arg) {
-				return -((Float) arg);
+				return -(Float) arg;
 			}
 		},
 		I2F(Float.TYPE, Opcodes.I2F) {
@@ -150,7 +150,7 @@ public class UnaryExpression extends Expression {
 
 			@Override
 			public Object eval(Object arg) {
-				return -((Long) arg);
+				return -(Long) arg;
 			}
 		},
 		I2L(Long.TYPE, Opcodes.I2L) {
@@ -195,7 +195,7 @@ public class UnaryExpression extends Expression {
 
 			@Override
 			public Object eval(Object arg) {
-				return -((Double) arg);
+				return -(Double) arg;
 			}
 		},
 		I2D(Double.TYPE, Opcodes.I2D) {

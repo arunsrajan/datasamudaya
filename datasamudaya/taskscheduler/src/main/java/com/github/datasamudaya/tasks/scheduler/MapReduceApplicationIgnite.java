@@ -42,7 +42,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.protocol.LocatedBlock;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -73,6 +74,7 @@ import com.github.dexecutor.core.task.TaskProvider;
 
 /**
  * Map reduce runs in ignite server.
+ * 
  * @author arun
  *
  */
@@ -97,7 +99,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 	List<BlocksLocation> bls;
 	List<String> nodes;
 	CuratorFramework cf;
-	static Logger log = Logger.getLogger(MapReduceApplicationIgnite.class);
+	static Logger log = LogManager.getLogger(MapReduceApplicationIgnite.class);
 	List<LocatedBlock> locatedBlocks;
 	int executorindex;
 	ExecutorService es;
@@ -127,11 +129,12 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 		try (var ostream = new ByteArrayOutputStream();
 				Output combostream = new Output(ostream);
 				var ostreamr = new ByteArrayOutputStream();
-				Output redostream = new Output(ostreamr);){
+				Output redostream = new Output(ostreamr);) {
 			batchsize = Integer.parseInt(jobconf.getBatchsize());
 			numreducers = Integer.parseInt(jobconf.getNumofreducers());
 			var configuration = new Configuration();
-			hdfs = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
+			hdfs = FileSystem.get(
+					new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
 
 			var mapclzchunkfile = new HashMap<String, Set<Object>>();
@@ -152,7 +155,8 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 
 			var jm = new JobMetrics();
 			jm.setJobstarttime(System.currentTimeMillis());
-			jm.setJobid(DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis());
+			jm.setJobid(DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN
+					+ System.currentTimeMillis());
 			DataSamudayaJobMetrics.put(jm);
 			// Starting the node
 			ignite = DataSamudayaIgniteClient.instanceMR(jobconf);
@@ -167,8 +171,8 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			combostream.flush();
 			byte[] combinerbytes = ostream.toByteArray();
 			for (var hdfsdir : hdfsdirpaths) {
-				var fileStatus = hdfs.listStatus(
-						new Path(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + hdfsdir));
+				var fileStatus = hdfs.listStatus(new Path(
+						DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + hdfsdir));
 				var paths = FileUtil.stat2Paths(fileStatus);
 				blockpath.addAll(Arrays.asList(paths));
 				allfiles.addAll(Utils.getAllFilePaths(blockpath));
@@ -178,9 +182,9 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 				folderfileblocksmap.put(hdfsdir, bls);
 				FileBlocksPartitionerHDFS fbp = new FileBlocksPartitionerHDFS();
 				fbp.getDnXref(bls, false);
-				for (var bl :bls) {
+				for (var bl : bls) {
 					String blkey = Utils.getBlocksLocation(bl);
-					if(!ignitecache.containsKey(blkey)) {
+					if (!ignitecache.containsKey(blkey)) {
 						var databytes = HdfsBlockReader.getBlockDataMR(bl, hdfs);
 						var baos = new ByteArrayOutputStream();
 						var lzfos = new SnappyOutputStream(baos);
@@ -192,14 +196,13 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 					for (var mapperinput : mapclzchunkfile.get(hdfsdir)) {
 						List<Mapper> mappers = new ArrayList<>();
 						mappers.add((Mapper) mapperinput);
-						try (var baosm = new ByteArrayOutputStream();var output = new Output(baosm)){
+						try (var baosm = new ByteArrayOutputStream(); var output = new Output(baosm)) {
 							kryo.writeClassAndObject(output, mappers);
 							output.flush();
-							var datasamudayamc = new IgniteMapperCombiner(bl, baosm.toByteArray(),
-									combinerbytes);
+							var datasamudayamc = new IgniteMapperCombiner(bl, baosm.toByteArray(), combinerbytes);
 							datasamudayamcs.add(datasamudayamc);
-						} catch(Exception ex) {
-							
+						} catch (Exception ex) {
+
 						}
 					}
 				}
@@ -221,27 +224,29 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			log.debug("Waiting for the Reducer to complete------------");
 			var dccctx = new DataCruncherContext();
 			cachemr = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHEMR);
-			for (var mrresult :mrresults) {
+			for (var mrresult : mrresults) {
 				var ctx = (Context) cachemr.get(mrresult.cachekey);
 				dccctx.add(ctx);
 			}
-			var executorser = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
-							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+			var executorser = Executors.newFixedThreadPool(
+					Integer.parseInt(
+							DataSamudayaProperties.get().getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
+									DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)),
+					Thread.ofVirtual().factory());
 			var ctxes = new ArrayList<Future<Context>>();
 			var result = new ArrayList<DataCruncherContext>();
 			kryo.writeClassAndObject(redostream, reducers.get(0));
 			redostream.flush();
 			var datasamudayar = new IgniteReducer(dccctx, ostreamr.toByteArray());
 			ctxes.add(executorser.submit(datasamudayar));
-			for (var res :ctxes) {
+			for (var res : ctxes) {
 				result.add((DataCruncherContext) res.get());
 			}
 
 			log.debug("Reducer completed------------------------------");
 			var sb = new StringBuilder();
 			var partindex = 1;
-			for (var ctxreducerpart :result) {
+			for (var ctxreducerpart : result) {
 				var keysreducers = ctxreducerpart.keys();
 				sb.append(DataSamudayaConstants.NEWLINE);
 				sb.append("Partition ").append(partindex).append("-------------------------------------------------");
@@ -257,9 +262,10 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			}
 			var filename = DataSamudayaConstants.MAPRED + DataSamudayaConstants.HYPHEN + System.currentTimeMillis();
 			log.debug("Writing Results to file: " + filename);
-			try (var fsdos = hdfs.create(new Path(
-					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL) + DataSamudayaConstants.FORWARD_SLASH
-							+ this.outputfolder + DataSamudayaConstants.FORWARD_SLASH + filename));) {
+			try (var fsdos = hdfs
+					.create(new Path(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)
+							+ DataSamudayaConstants.FORWARD_SLASH + this.outputfolder
+							+ DataSamudayaConstants.FORWARD_SLASH + filename));) {
 				fsdos.write(sb.toString().getBytes());
 			} catch (Exception ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
@@ -267,8 +273,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 			jm.setJobcompletiontime(System.currentTimeMillis());
 			jm.setTotaltimetaken((jm.getJobcompletiontime() - jm.getJobstarttime()) / 1000.0);
 			if (!Objects.isNull(jobconf.getOutput())) {
-				Utils.writeToOstream(jobconf.getOutput(),
-						"Completed Job in " + (jm.getTotaltimetaken()) + " seconds");
+				Utils.writeToOstream(jobconf.getOutput(), "Completed Job in " + (jm.getTotaltimetaken()) + " seconds");
 			}
 			return result;
 		} catch (Exception ex) {
@@ -285,17 +290,19 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 	}
 
 	private ExecutorService newExecutor() {
-		return Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		return Executors
+				.newFixedThreadPool(
+						Integer.parseInt(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
+										DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)),
+						Thread.ofVirtual().factory());
 	}
+
 	Semaphore resultsemaphore = new Semaphore(1);
 
-	public class TaskProviderIgniteMapperCombiner
-			implements TaskProvider<IgniteMapperCombiner, Boolean> {
+	public class TaskProviderIgniteMapperCombiner implements TaskProvider<IgniteMapperCombiner, Boolean> {
 
-		public Task<IgniteMapperCombiner, Boolean> provideTask(
-				final IgniteMapperCombiner datasamudayamc) {
+		public Task<IgniteMapperCombiner, Boolean> provideTask(final IgniteMapperCombiner datasamudayamc) {
 
 			return new Task<IgniteMapperCombiner, Boolean>() {
 
@@ -305,7 +312,8 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 					try {
 						semaphore.acquire();
 						var compute = ignite.compute(ignite.cluster().forServers());
-						var mrresult = compute.affinityCall(DataSamudayaConstants.DATASAMUDAYACACHE, datasamudayamc.getBlocksLocation(), datasamudayamc);
+						var mrresult = compute.affinityCall(DataSamudayaConstants.DATASAMUDAYACACHE,
+								datasamudayamc.getBlocksLocation(), datasamudayamc);
 						resultsemaphore.acquire();
 						mrresults.add(mrresult);
 						log.debug(mrresult);

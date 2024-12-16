@@ -53,7 +53,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  */
 public class ProcessReduce extends AbstractBehavior<Command> implements Serializable {
 	Logger log = LoggerFactory.getLogger(ProcessReduce.class);
-	
+
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -81,16 +81,18 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 		log.debug("Exiting ProcessReduce");
 		return functions;
 	}
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessReduce-"+entityId);
+
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessReduce-" + entityId);
 	}
-	
+
 	public static Behavior<Command> create(String entityId, JobStage js, FileSystem hdfs, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
-	return Behaviors.setup(context -> new ProcessReduce(context, js, hdfs, cache, 
-				jobidstageidtaskidcompletedmap, 
+		return Behaviors.setup(context -> new ProcessReduce(context, js, hdfs, cache,
+				jobidstageidtaskidcompletedmap,
 				tasktoprocess, childpipes, terminatingsize));
 	}
+
 	private ProcessReduce(ActorContext<Command> context, JobStage js, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<EntityRef> childpipes,
 			int terminatingsize) {
@@ -103,8 +105,8 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 		this.tasktoprocess = tasktoprocess;
 		this.childpipes = childpipes;
 		this.terminatingsize = terminatingsize;
-		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
-				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));		
+		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
+				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage,
 				DataSamudayaConstants.EMPTY, true, false, false, null, null, 0);
 	}
@@ -118,79 +120,78 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 
 	private Behavior<Command> processReduce(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			if (object.getValue() instanceof ShuffleBlock sb) {								
+			if (object.getValue() instanceof ShuffleBlock sb) {
 				try {
-					Object obj = sb.getData();					
+					Object obj = sb.getData();
 					if (obj instanceof DiskSpillingList dsl) {
 						if (dsl.isSpilled()) {
 							log.debug("ProcessReduce::: Spilled Write Started...");
 							Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 							log.debug("ProcessReduce::: Spilled Write Completed");
 						} else {
-							log.debug("ProcessReduce::: NotSpilled {}",  dsl.isSpilled());
+							log.debug("ProcessReduce::: NotSpilled {}", dsl.isSpilled());
 							diskspilllistinterm.addAll(dsl.getData());
-							log.debug("ProcessReduce::: NotSpilled Completed {}",  dsl.isSpilled());
+							log.debug("ProcessReduce::: NotSpilled Completed {}", dsl.isSpilled());
 						}
 						dsl.clear();
-					} else if (obj instanceof byte[] data){
-						diskspilllistinterm.addAll((Collection<?>)Utils.convertBytesToObjectCompressed(data, null));
+					} else if (obj instanceof byte[] data) {
+						diskspilllistinterm.addAll((Collection<?>) Utils.convertBytesToObjectCompressed(data, null));
 					}
 				} catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
-			} 
-			if(object.getTerminiatingclass() == Dummy.class) {
+			}
+			if (object.getTerminiatingclass() == Dummy.class) {
 				dummysize++;
 				log.debug("ProcessReduce::ShuffleSize {} , Terminating Dummy Size {}", terminatingsize, dummysize);
-			}
-			else if (object.getTerminiatingclass() == DiskSpillingList.class
+			} else if (object.getTerminiatingclass() == DiskSpillingList.class
 					|| object.getTerminiatingclass() == ShuffleBlock.class
 					|| object.getTerminiatingclass() == NodeIndexKey.class
 					|| object.getTerminiatingclass() == DiskSpillingSet.class
 					|| object.getTerminiatingclass() == TreeSet.class) {
-				initialshufflesize++;				
+				initialshufflesize++;
 				log.debug("ProcessReduce::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
 			}
 			if (dummysize == terminatingsize || initialshufflesize == terminatingsize) {
-				if(diskspilllistinterm.isSpilled()) {
+				if (diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
 				if (CollectionUtils.isEmpty(childpipes)) {
-						Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
+					Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
 							? (Stream<Tuple2>) Utils.getStreamData(
 							new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
 									diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
 							: diskspilllistinterm.getData().stream();
-						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
+					try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
 								var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {
-							Utils.getKryo().writeClassAndObject(output, streammap.collect(Collectors.toList()));
-							output.flush();
-							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
-							cacheAble(fsdos);
-						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);
-						}					
+						Utils.getKryo().writeClassAndObject(output, streammap.collect(Collectors.toList()));
+						output.flush();
+						tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
+						cacheAble(fsdos);
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+					}
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				} else {
 					log.debug("Reduce Started");
 					diskspilllist = new DiskSpillingList(tasktoprocess, diskspillpercentage,
 							DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
-						try {
-							Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
-									? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-											diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
-									: diskspilllistinterm.getData().stream();
-							try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
-								streammap.forEach(diskspilllist::add);
+					try {
+						Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
+								? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
+								diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+								: diskspilllistinterm.getData().stream();
+						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
+							streammap.forEach(diskspilllist::add);
 
-							}
-						} catch (Exception e) {
-							log.error(DataSamudayaConstants.EMPTY, e);
 						}
-					
-					if(diskspilllist.isSpilled()) {
+					} catch (Exception e) {
+						log.error(DataSamudayaConstants.EMPTY, e);
+					}
+
+					if (diskspilllist.isSpilled()) {
 						diskspilllist.close();
 					}
 					childpipes.stream().forEach(action -> action

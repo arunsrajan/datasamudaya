@@ -17,8 +17,10 @@ package com.github.datasamudaya.tasks.scheduler.ignite;
 
 import java.util.List;
 import java.util.Set;
+
 import org.apache.ignite.lang.IgniteCallable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataCruncherContext;
@@ -28,7 +30,7 @@ import com.github.datasamudaya.tasks.executor.Combiner;
 public class IgniteCombiner implements IgniteCallable<Context> {
 	private static final long serialVersionUID = -2886619127389224706L;
 
-	static Logger log = Logger.getLogger(IgniteCombiner.class);
+	static Logger log = LogManager.getLogger(IgniteCombiner.class);
 	Context dcc;
 	Combiner cc;
 

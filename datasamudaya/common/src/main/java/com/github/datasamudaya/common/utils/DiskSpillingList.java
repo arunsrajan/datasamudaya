@@ -74,7 +74,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataList = new Vector<>();
-		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((spillexceedpercentage) / 100.0)));
+		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * (spillexceedpercentage / 100.0)));
 		this.left = left;
 		this.right = right;
 		this.appendintermediate = appendintermediate;
@@ -84,7 +84,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		this.numfileperexec = numfileperexec;
 		this.lock = new Semaphore(1);
 		this.filelock = new Semaphore(1);
-		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE, 
+		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE,
 				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
 		this.isclosed = false;
 	}
@@ -114,7 +114,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	public boolean isClosed() {
 		return isclosed;
 	}
-	
+
 	/**
 	 * The method adds the value to the list and spills to disk when memory
 	 * exceeds limit
@@ -128,7 +128,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 			dataList = new Vector<>();
 		}
 		spillToDiskIntermediate(false);
-		dataList.add(value);		
+		dataList.add(value);
 		return true;
 	}
 
@@ -209,13 +209,13 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	public String getDiskfilepath() {
 		return this.diskfilepath;
 	}
-	
+
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
+			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded())
 					&& CollectionUtils.isNotEmpty(dataList)) {
 				filelock.acquire();
-				if (isNull(ostream)) {					
+				if (isNull(ostream)) {
 					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
 					op = new Output(sos);
@@ -223,7 +223,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 				}
 				filelock.release();
 				lock.acquire();
-				if (isspilled && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {					
+				if (isspilled && (dataList.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataList)) {
 					Utils.getKryoInstance().writeClassAndObject(op, dataList);
 					op.flush();
 					dataList.clear();
@@ -255,7 +255,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 				if (nonNull(sos)) {
 					sos.close();
 				}
-				if(nonNull(ostream)) {
+				if (nonNull(ostream)) {
 					ostream.close();
 				}
 				op = null;
@@ -302,7 +302,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 			dataList = null;
 		}
 	}
-	
+
 	@Override
 	public int size() {
 		if (nonNull(bytes)) {

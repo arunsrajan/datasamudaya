@@ -15,7 +15,8 @@
  */
 package com.github.datasamudaya.mr.examples.join;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.tasks.scheduler.Application;
@@ -24,7 +25,7 @@ import com.github.datasamudaya.tasks.scheduler.MapReduceApplication;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationBuilder;
 
 public class MrJobArrivalDelayResourceDividedNormal implements Application {
-	static Logger log = Logger.getLogger(MrJobArrivalDelayResourceDividedNormal.class);
+	static Logger log = LogManager.getLogger(MrJobArrivalDelayResourceDividedNormal.class);
 
 	@Override
 	public void runMRJob(String[] args, JobConfiguration jobconfiguration) {
@@ -32,7 +33,7 @@ public class MrJobArrivalDelayResourceDividedNormal implements Application {
 		jobconfiguration.setNumofreducers("1");
 		jobconfiguration.setGctype(DataSamudayaConstants.ZGC);
 		jobconfiguration.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT);
-		
+
 		jobconfiguration.setContaineralloc(DataSamudayaConstants.CONTAINER_ALLOC_DIVIDED);
 		var datasamudayajob = (MapReduceApplication) MapReduceApplicationBuilder.newBuilder()
 				.addMapper(CarriersDataMapper.class, args[1])

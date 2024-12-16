@@ -16,7 +16,9 @@
 package com.github.datasamudaya.stream.examples;
 
 import java.net.URI;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 
@@ -27,10 +29,10 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceLeftOuterJoinYARN implements Pipeline {
 	private static final long serialVersionUID = 2670336699129016987L;
-	private final Logger log = Logger.getLogger(StreamReduceLeftOuterJoinYARN.class);
+	private final Logger log = LogManager.getLogger(StreamReduceLeftOuterJoinYARN.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		
+
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("true");

@@ -34,15 +34,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ehcache.Cache;
 import org.jgroups.JChannel;
 
-import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.RemoteDataFetcher;
 import com.github.datasamudaya.common.Task;
@@ -53,12 +55,11 @@ import com.github.datasamudaya.common.utils.Utils;
 
 /**
  * 
- * @author Arun 
- * Task executors thread for standalone task executors daemon.
+ * @author Arun Task executors thread for standalone task executors daemon.
  */
 @SuppressWarnings("rawtypes")
 public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecutor {
-	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorJGroups.class);
+	private static Logger log = LogManager.getLogger(StreamPipelineTaskExecutorJGroups.class);
 	private List<Task> tasks;
 	Map<String, JobStage> jsidjsmap;
 	public double timetaken = 0.0;
@@ -71,32 +72,35 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 		this.tasks = tasks;
 		this.port = port;
 	}
+
 	ExecutorService es;
 
 	/**
-	 * This method call computes the tasks from stages and return 
-	 * whether the tasks are computed successfully.
+	 * This method call computes the tasks from stages and return whether the tasks
+	 * are computed successfully.
 	 */
 	@Override
 	public Boolean call() {
 		log.debug("Entered MassiveDataStreamJGroupsTaskExecutor.call");
-		var taskstatusmap = tasks.parallelStream()
-				.map(task -> task.jobid + task.taskid)
+		var taskstatusmap = tasks.parallelStream().map(task -> task.jobid + task.taskid)
 				.collect(Collectors.toMap(key -> key, value -> WhoIsResponse.STATUS.YETTOSTART));
-		var taskstatusconcmapreq = new ConcurrentHashMap<>(
-				taskstatusmap);
+		var taskstatusconcmapreq = new ConcurrentHashMap<>(taskstatusmap);
 		var taskstatusconcmapresp = new ConcurrentHashMap<String, WhoIsResponse.STATUS>();
-		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL);
-		String host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
-		es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		var hdfsfilepath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+				DataSamudayaConstants.HDFSNAMENODEURL);
+		String host = NetworkUtil
+				.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
+		es = Executors
+				.newFixedThreadPool(
+						Integer.parseInt(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
+										DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)),
+						Thread.ofVirtual().factory());
 		Semaphore semaphore = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try (var hdfscompute = FileSystem.newInstance(new URI(hdfsfilepath), new Configuration());) {
 			this.hdfs = hdfscompute;
-			channel = Utils.getChannelTaskExecutor(jobstage.getTejobid(),
-					host,
-					port, taskstatusconcmapreq, taskstatusconcmapresp);
+			channel = Utils.getChannelTaskExecutor(jobstage.getTejobid(), host, port, taskstatusconcmapreq,
+					taskstatusconcmapresp);
 			log.debug("Work in Jgroups agent: " + tasks + " in host: " + host + " port: " + port);
 			var cd = new CountDownLatch(tasks.size());
 			var exec = executor;
@@ -150,7 +154,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 							if (task.input != null && task.parentremotedatafetch != null) {
 								if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
 									var numinputs = task.parentremotedatafetch.length;
-									for (var inputindex = 0;inputindex < numinputs;inputindex++) {
+									for (var inputindex = 0; inputindex < numinputs; inputindex++) {
 										var input = task.parentremotedatafetch[inputindex];
 										log.debug("Task Input " + task.jobid + " rdf:" + input);
 										if (input != null) {
@@ -167,7 +171,7 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 									}
 								} else if (task.input != null && task.input[0] != null) {
 									var numinputs = task.input.length;
-									for (var inputindex = 0;inputindex < numinputs;inputindex++) {
+									for (var inputindex = 0; inputindex < numinputs; inputindex++) {
 										var input = task.input[inputindex];
 										if (input != null && input instanceof Task taskinput) {
 											var os = getIntermediateInputStreamFS(taskinput);
@@ -194,8 +198,8 @@ public class StreamPipelineTaskExecutorJGroups extends StreamPipelineTaskExecuto
 					}
 				});
 			}
-			log.debug("StagePartitionId with Stage Statuses: " + taskstatusconcmapreq
-					+ " WhoIs Response stauses: " + taskstatusconcmapresp);
+			log.debug("StagePartitionId with Stage Statuses: " + taskstatusconcmapreq + " WhoIs Response stauses: "
+					+ taskstatusconcmapresp);
 			cd.await();
 			completed = true;
 		} catch (InterruptedException e) {

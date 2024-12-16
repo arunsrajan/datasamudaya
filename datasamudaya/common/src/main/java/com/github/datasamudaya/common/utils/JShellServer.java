@@ -39,7 +39,7 @@ public class JShellServer {
 	 */
 	public static void startJShell() throws Exception, IOException {
 		ExecutorService executors = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		Integer port = Integer
 				.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SHELLPORT, DataSamudayaConstants.SHELLPORT_DEFAULT));

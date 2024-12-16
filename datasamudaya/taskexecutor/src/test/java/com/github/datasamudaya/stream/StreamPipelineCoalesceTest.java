@@ -31,7 +31,7 @@ public class StreamPipelineCoalesceTest extends StreamPipelineBaseTestCommon {
 	public void testCoalesce() throws Throwable {
 		String pipelineconfigblocksize = pipelineconfig.getBlocksize();
 		pipelineconfig.setBlocksize("1");
-		log.info("{}","testCoalesce Before---------------------------------------");
+		log.info("{}", "testCoalesce Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		List<List> coalesceresult = (List) datastream.map(dat -> dat.split(","))
@@ -43,15 +43,15 @@ public class StreamPipelineCoalesceTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple> tuples : coalesceresult) {
 			for (Tuple tuple : tuples) {
-				log.info("{}",tuple);
+				log.info("{}", tuple);
 				sum += (long) ((Tuple2) tuple).v2;
 			}
-			log.info("{}","");
+			log.info("{}", "");
 		}
 		assertEquals(-63278, sum);
 		pipelineconfig.setBlocksize(pipelineconfigblocksize);
 
-		log.info("{}","testCoalesce After---------------------------------------");
+		log.info("{}", "testCoalesce After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -59,7 +59,7 @@ public class StreamPipelineCoalesceTest extends StreamPipelineBaseTestCommon {
 	public void testCoalesceWithJoin() throws Throwable {
 		String pipelineconfigblocksize = pipelineconfig.getBlocksize();
 		pipelineconfig.setBlocksize("1");
-		log.info("{}","testCoalesceWithJoin Before---------------------------------------");
+		log.info("{}", "testCoalesceWithJoin Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		MapPair<String, Long> coalesce = (MapPair<String, Long>) datastream.map(dat -> dat.split(","))
@@ -79,15 +79,15 @@ public class StreamPipelineCoalesceTest extends StreamPipelineBaseTestCommon {
 		long sum = 0;
 		for (List<Tuple> tuples : coalesceresult) {
 			for (Tuple tuple : tuples) {
-				log.info("{}",tuple);
+				log.info("{}", tuple);
 				sum += (long) ((Tuple2) ((Tuple2) tuple).v2).v2;
 			}
-			log.info("{}","");
+			log.info("{}", "");
 		}
 		assertEquals(-63278, sum);
 		pipelineconfig.setBlocksize(pipelineconfigblocksize);
 
-		log.info("{}","testCoalesceWithJoin After---------------------------------------");
+		log.info("{}", "testCoalesceWithJoin After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -95,7 +95,7 @@ public class StreamPipelineCoalesceTest extends StreamPipelineBaseTestCommon {
 	public void testReduceByKeyCoalesceWithJoin() throws Throwable {
 		String pipelineconfigblocksize = pipelineconfig.getBlocksize();
 		pipelineconfig.setBlocksize("1");
-		log.info("{}","testReduceByKeyCoalesceWithJoin Before---------------------------------------");
+		log.info("{}", "testReduceByKeyCoalesceWithJoin Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		MapPair<String, Long> coalesce = (MapPair<String, Long>) datastream.map(dat -> dat.split(","))
@@ -114,13 +114,13 @@ public class StreamPipelineCoalesceTest extends StreamPipelineBaseTestCommon {
 		for (List<Tuple2<Tuple2<String, Object>, Tuple2<String, Object>>> tuples : coalesceresult) {
 			for (Tuple2<Tuple2<String, Object>, Tuple2<String, Object>> tuple : tuples) {
 				assertTrue(tuple.v1.v1.equals(tuple.v2.v1));
-				log.info("{}",tuple);
+				log.info("{}", tuple);
 			}
-			log.info("{}","");
+			log.info("{}", "");
 		}
 		pipelineconfig.setBlocksize(pipelineconfigblocksize);
 
-		log.info("{}","testReduceByKeyCoalesceWithJoin After---------------------------------------");
+		log.info("{}", "testReduceByKeyCoalesceWithJoin After---------------------------------------");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -128,7 +128,7 @@ public class StreamPipelineCoalesceTest extends StreamPipelineBaseTestCommon {
 	public void testCoalesceReduceByKeyWithJoin() throws Throwable {
 		String pipelineconfigblocksize = pipelineconfig.getBlocksize();
 		pipelineconfig.setBlocksize("1");
-		log.info("{}","testCoalesceReduceByKeyWithJoin Before---------------------------------------");
+		log.info("{}", "testCoalesceReduceByKeyWithJoin Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 				pipelineconfig);
 		MapPair<String, Long> coalesce = (MapPair<String, Long>) datastream.map(dat -> dat.split(","))
@@ -147,12 +147,12 @@ public class StreamPipelineCoalesceTest extends StreamPipelineBaseTestCommon {
 		for (List<Tuple2<Tuple2<String, Object>, Tuple2<String, Object>>> tuples : coalesceresult) {
 			for (Tuple2<Tuple2<String, Object>, Tuple2<String, Object>> tuple : tuples) {
 				assertTrue(tuple.v1.v1.equals(tuple.v2.v1));
-				log.info("{}",tuple);
+				log.info("{}", tuple);
 			}
-			log.info("{}","");
+			log.info("{}", "");
 		}
 		pipelineconfig.setBlocksize(pipelineconfigblocksize);
 
-		log.info("{}","testCoalesceReduceByKeyWithJoin After---------------------------------------");
+		log.info("{}", "testCoalesceReduceByKeyWithJoin After---------------------------------------");
 	}
 }

@@ -131,25 +131,25 @@ public class SQLServer {
 				// Handle different scheduler modes (e.g., YARN, JGroups, etc.)
 				handleSchedulerModes(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
 						cpudriver, memorydriver, scheduler, isdriverrequired, iscontainerlaunched, isyarncontainerlaunched
-						, isjgroups, isignite, isyarn);
+				, isjgroups, isignite, isyarn);
 				out.println("Welcome to the SQL Server!");
 				out.println("Type 'quit' to exit.");
 				out.println("Done");
 				// Start processing commands from the user
 				interactWithUser(out, in, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
-						cpudriver, memorydriver, sessionState,isdriverrequired, iscontainerlaunched, isyarncontainerlaunched, isjgroups, isignite, isyarn);
+						cpudriver, memorydriver, sessionState, isdriverrequired, iscontainerlaunched, isyarncontainerlaunched, isjgroups, isignite, isyarn);
 
 			} catch (Exception ex) {
 				log.error("Error handling client connection", ex);
 			} finally {
 				try {
 					cleanup(iscontainerlaunched, isyarncontainerlaunched, sessionState, user, tejobid);
-				} catch (Exception e) {					
+				} catch (Exception e) {
 				}
 			}
 		});
 	}
-	
+
 	/**
 	 * The method handles scheduler modes
 	 * @param out
@@ -177,34 +177,34 @@ public class SQLServer {
 		out.println("Scheduler mode: " + scheduler);
 
 		String schedulerupcase = scheduler.toLowerCase();
-		
+
 		// Handle different scheduler modes
 		switch (schedulerupcase) {
-		case "yarn":						
-			handleYarnScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver,
-					memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
-			isyarncontainerlaunched.set(true);
-			break;
+			case "yarn":
+				handleYarnScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver,
+						memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
+				isyarncontainerlaunched.set(true);
+				break;
 
-		case "jgroups":			
-			handleJGroupsScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
-					cpudriver, memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
-			break;
+			case "jgroups":
+				handleJGroupsScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
+						cpudriver, memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
+				break;
 
-		case "ignite":
-			handleIgniteScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
-					cpudriver, memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
-			break;
+			case "ignite":
+				handleIgniteScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
+						cpudriver, memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
+				break;
 
-		case "standalone":
-			handleStandaloneScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
-					cpudriver, memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
-			break;
+			case "standalone":
+				handleStandaloneScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
+						cpudriver, memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
+				break;
 
-		default:
-			out.println("Unknown scheduler mode: " + scheduler + "setting default standalone");
-			handleStandaloneScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
-					cpudriver, memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
+			default:
+				out.println("Unknown scheduler mode: " + scheduler + "setting default standalone");
+				handleStandaloneScheduler(out, user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,
+						cpudriver, memorydriver, isdriverrequired, iscontainerlaunched, isjgroups, isignite, isyarn);
 		}
 	}
 
@@ -356,7 +356,7 @@ public class SQLServer {
 		// running locally
 		out.println("Standalone Scheduler: Containers and driver allocation complete.");
 	}
-	
+
 	/**
 	 * The method interacts with user and execute queries 
 	 * @param out
@@ -380,8 +380,8 @@ public class SQLServer {
 			int cpupercontainer,
 			int memorypercontainer, int numberofcontainers, int cpudriver, int memorydriver,
 			SessionState sessionState,
-			AtomicBoolean isdriverrequired, AtomicBoolean iscontainerlaunched, AtomicBoolean isyarncontainerlaunched 
-			, AtomicBoolean isjgroups, 
+			AtomicBoolean isdriverrequired, AtomicBoolean iscontainerlaunched, AtomicBoolean isyarncontainerlaunched
+		, AtomicBoolean isjgroups,
 			AtomicBoolean isignite, AtomicBoolean isyarn) {
 		String inputLine;
 		String dbdefault = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SQLDB,
@@ -391,8 +391,9 @@ public class SQLServer {
 		while (true) {
 			try {
 				inputLine = in.readLine();
-				if (inputLine == null)
+				if (inputLine == null) {
 					break;
+				}
 
 				if ("quit".equalsIgnoreCase(inputLine)) {
 					out.println("Quit");
@@ -402,7 +403,7 @@ public class SQLServer {
 				out.println(Utils.formatDate(new Date()) + "> " + inputLine);
 				inputLine = StringUtils.normalizeSpace(inputLine.trim());
 				handleCommands(out, inputLine, user, atomdbdefault, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver,
-						memorydriver,isdriverrequired, iscontainerlaunched, isyarncontainerlaunched, isjgroups, isignite, isyarn);
+						memorydriver, isdriverrequired, iscontainerlaunched, isyarncontainerlaunched, isjgroups, isignite, isyarn);
 				out.println("Done");
 			} catch (SocketException socketexception) {
 				log.error("SocketException", socketexception);
@@ -437,11 +438,11 @@ public class SQLServer {
 			int cpupercontainer,
 			int memorypercontainer, int numberofcontainers, int cpudriver, int memorydriver,
 			AtomicBoolean isdriverrequired,
-			AtomicBoolean iscontainerlaunched,AtomicBoolean isyarncontainerlaunched, 
+			AtomicBoolean iscontainerlaunched, AtomicBoolean isyarncontainerlaunched,
 			AtomicBoolean isjgroups, AtomicBoolean isignite, AtomicBoolean isyarn) throws Exception {
 		if (inputLine.startsWith("setmode")) {
 			handleSetMode(out, inputLine, user, dbdefault.get(), tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver,
-					memorydriver,isdriverrequired, iscontainerlaunched, isyarncontainerlaunched, isjgroups, isignite, isyarn);
+					memorydriver, isdriverrequired, iscontainerlaunched, isyarncontainerlaunched, isjgroups, isignite, isyarn);
 		} else if (inputLine.startsWith("getmode")) {
 			getMode(out, isjgroups, isignite, isyarn);
 		} else if (inputLine.startsWith("use")) {
@@ -465,8 +466,8 @@ public class SQLServer {
 				out.println(colmetadata);
 			}
 		} else if (inputLine.startsWith("select")) {
-			handleSelect(out, inputLine, user, dbdefault.get(),tejobid,
-					isjgroups,isyarn,isignite,isdriverrequired, memorypercontainer);
+			handleSelect(out, inputLine, user, dbdefault.get(), tejobid,
+					isjgroups, isyarn, isignite, isdriverrequired, memorypercontainer);
 		} else {
 			out.println("Unknown command.");
 		}
@@ -526,13 +527,13 @@ public class SQLServer {
 	 * @throws Exception
 	 */
 	private static void handleSelect(PrintWriter out, String inputLine, String user, String dbdefault, String tejobid,
-			AtomicBoolean isjgroups,AtomicBoolean isyarn, AtomicBoolean isignite,AtomicBoolean isdriverrequired, long memorypercontainer) throws Exception {
+			AtomicBoolean isjgroups, AtomicBoolean isyarn, AtomicBoolean isignite, AtomicBoolean isdriverrequired, long memorypercontainer) throws Exception {
 		long starttime = System.currentTimeMillis();
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		List<List> results = null;
 		if (isignite.get()) {
 			DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
-			results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid, Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+			results = SelectQueryExecutor.executeSelectQueryIgnite(dbdefault, inputLine, user, jobid, tejobid, Long.valueOf((long) memorypercontainer) * DataSamudayaConstants.MB);
 		} else {
 			DataSamudayaMetricsExporter.getNumberOfSqlQueriesCounter().inc();
 			results = SelectQueryExecutor.executeSelectQuery(dbdefault, inputLine, user, jobid, tejobid, isjgroups.get(), isyarn.get(), out, isdriverrequired.get());
@@ -559,7 +560,7 @@ public class SQLServer {
 	 * @param isignite
 	 * @param isyarn
 	 */
-	private static void getMode(PrintWriter out, AtomicBoolean isjgroups, 
+	private static void getMode(PrintWriter out, AtomicBoolean isjgroups,
 			AtomicBoolean isignite, AtomicBoolean isyarn) {
 		if (isignite.get()) {
 			out.println("ignite");
@@ -581,7 +582,7 @@ public class SQLServer {
 	 * @param tejobid
 	 * @throws Exception
 	 */
-	private static void cleanup(AtomicBoolean iscontainerlaunched,AtomicBoolean isyarncontainerlaunched, 
+	private static void cleanup(AtomicBoolean iscontainerlaunched, AtomicBoolean isyarncontainerlaunched,
 			SessionState sessionState, String user, String tejobid)
 			throws Exception {
 		if (iscontainerlaunched.get()) {
@@ -597,7 +598,7 @@ public class SQLServer {
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 		}
-		if(nonNull(sessionState)) {
+		if (nonNull(sessionState)) {
 			try {
 				Utils.endStartHiveSession(sessionState);
 			} catch (Exception ex) {
@@ -632,7 +633,7 @@ public class SQLServer {
 			int cpupercontainer,
 			int memorypercontainer, int numberofcontainers, int cpudriver, int memorydriver,
 			AtomicBoolean isdriverrequired,
-			AtomicBoolean iscontainerlaunched, AtomicBoolean isyarncontainerlaunched, 
+			AtomicBoolean iscontainerlaunched, AtomicBoolean isyarncontainerlaunched,
 			AtomicBoolean isjgroups, AtomicBoolean isignite, AtomicBoolean isyarn) throws ContainerException, InterruptedException, RpcRegistryException {
 		String[] mode = inputLine.split(" ");
 		if (mode.length == 2) {
@@ -651,8 +652,8 @@ public class SQLServer {
 				if (!iscontainerlaunched.get()) {
 					tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 
-					List <LaunchContainers>  containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver, true);
-					Map <String, Object> cpumemory = Utils.getAllocatedContainersResources(containers);
+					List<LaunchContainers>  containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver, true);
+					Map<String, Object> cpumemory = Utils.getAllocatedContainersResources(containers);
 					iscontainerlaunched.set(true);
 					out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 					Utils.printNodesAndContainers(containers, out);
@@ -716,8 +717,8 @@ public class SQLServer {
 				}
 				if (!iscontainerlaunched.get()) {
 					tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-					List <LaunchContainers> containers= Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers,cpudriver, memorydriver, true);
-					Map <String, Object> cpumemory = Utils.getAllocatedContainersResources(containers);
+					List<LaunchContainers> containers = Utils.launchContainersExecutorSpecWithDriverSpec(user, tejobid, cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver, true);
+					Map<String, Object> cpumemory = Utils.getAllocatedContainersResources(containers);
 					iscontainerlaunched.set(true);
 					out.println("User '" + user + "' connected with cpu " + cpumemory.get(DataSamudayaConstants.CPUS) + " and memory " + cpumemory.get(DataSamudayaConstants.MEM) + " mb");
 					Utils.printNodesAndContainers(containers, out);

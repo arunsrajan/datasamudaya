@@ -27,24 +27,26 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * 
- * @author Arun
- * Classloader to load jar bytes dynamically for loading classes.
+ * @author Arun Classloader to load jar bytes dynamically for loading classes.
  */
 public class DataSamudayaMapReducePhaseClassLoader extends ClassLoader {
 
 	private final byte[] jarBytes;
 	private final Set<String> names;
-	private static final Logger log = Logger.getLogger(DataSamudayaMapReducePhaseClassLoader.class);
+	private static final Logger log = LogManager.getLogger(DataSamudayaMapReducePhaseClassLoader.class);
 	@SuppressWarnings("rawtypes")
 	private static List instances = new ArrayList();
 
-	@SuppressWarnings({"unchecked"})
-	public static DataSamudayaMapReducePhaseClassLoader newInstance(byte[] jarBytes, ClassLoader parent) throws IOException {
+	@SuppressWarnings({ "unchecked" })
+	public static DataSamudayaMapReducePhaseClassLoader newInstance(byte[] jarBytes, ClassLoader parent)
+			throws IOException {
 		DataSamudayaMapReducePhaseClassLoader clsloader = new DataSamudayaMapReducePhaseClassLoader(jarBytes, parent);
 		instances.add(clsloader);
 		return clsloader;
@@ -67,6 +69,7 @@ public class DataSamudayaMapReducePhaseClassLoader extends ClassLoader {
 
 	/**
 	 * Loads all the classes names using jar entries.
+	 * 
 	 * @param jarBytes
 	 * @return
 	 * @throws IOException
@@ -76,7 +79,8 @@ public class DataSamudayaMapReducePhaseClassLoader extends ClassLoader {
 		try (ZipInputStream jis = new ZipInputStream(new ByteArrayInputStream(jarBytes))) {
 			ZipEntry entry;
 			while ((entry = jis.getNextEntry()) != null) {
-				set.add(entry.getName().replace(DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.EMPTY + File.separatorChar));
+				set.add(entry.getName().replace(DataSamudayaConstants.FORWARD_SLASH,
+						DataSamudayaConstants.EMPTY + File.separatorChar));
 			}
 		}
 		return Collections.unmodifiableSet(set);
@@ -88,17 +92,18 @@ public class DataSamudayaMapReducePhaseClassLoader extends ClassLoader {
 	@SuppressWarnings("rawtypes")
 	@Override
 	public Class<?> findClass(String name) throws ClassNotFoundException {
-		String file = name.replace(DataSamudayaConstants.DOT, File.separatorChar) + DataSamudayaConstants.DOT + DataSamudayaConstants.CLASS;
+		String file = name.replace(DataSamudayaConstants.DOT, File.separatorChar) + DataSamudayaConstants.DOT
+				+ DataSamudayaConstants.CLASS;
 		byte[] b = null;
 		try {
 
 			InputStream is = getResourceAsStream(file);
 			if (is != null) {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				//Copy the .class file from file stream to obtain bytes array.
+				// Copy the .class file from file stream to obtain bytes array.
 				IOUtils.copy(is, baos);
 				b = baos.toByteArray();
-				//Get the class from .class file which is obtained as bytes from jar file
+				// Get the class from .class file which is obtained as bytes from jar file
 				Class c = defineClass(name, b, 0, b.length);
 				resolveClass(c);
 				return c;
@@ -126,7 +131,9 @@ public class DataSamudayaMapReducePhaseClassLoader extends ClassLoader {
 			jis = new ZipInputStream(new ByteArrayInputStream(jarBytes));
 			ZipEntry entry;
 			while ((entry = jis.getNextEntry()) != null) {
-				if (entry.getName().replace(DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.EMPTY + File.separatorChar).equals(name)) {
+				if (entry.getName()
+						.replace(DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.EMPTY + File.separatorChar)
+						.equals(name)) {
 					found = true;
 					return jis;
 				}

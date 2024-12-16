@@ -110,7 +110,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	TaskInfoYARN tinfo = new TaskInfoYARN();
 	private final Object lock = new Object();
 	SimpleDistributedQueue outputqueue;
-	private PipelineConfig pipelineconfig = null;
+	private PipelineConfig pipelineconfig;
 	private long taskcompleted;
 	private boolean tokillcontainers;
 	private boolean isreadytoexecute;
@@ -120,9 +120,10 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	private ZookeeperOperations zoglobal;
 	private Map<String, StreamPipelineTaskSubmitter> taskmdsthread;
 	List<String> tes;
-	boolean isdriverallocated = false;
-	boolean isdriverrequired = false;
+	boolean isdriverallocated;
+	boolean isdriverrequired;
 	Semaphore executoralloclock = new Semaphore(1);
+
 	/**
 	 * Container initialization.
 	 */
@@ -164,7 +165,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 		if (appmasterservice != null) {
 			// Set the Yarn App master bean to the Yarn App master service object.
 			appmasterservice.setSQLYarnAppMaster(this);
-		}		
+		}
 		super.submitApplication();
 	}
 	Map<String, String> containeridipmap = new ConcurrentHashMap<>();
@@ -174,7 +175,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 		log.debug("Environment: " + getEnvironment());
 		Job job;
 		try (var zo = new ZookeeperOperations();) {
-			zo.connect();		
+			zo.connect();
 			zoglobal = zo;
 			SimpleDistributedQueue inputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.YARN_INPUT_QUEUE
@@ -182,7 +183,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 
 			outputqueue = zo.createDistributedQueue(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.YARN_OUTPUT_QUEUE
-					+ DataSamudayaConstants.FORWARD_SLASH + teid);			
+					+ DataSamudayaConstants.FORWARD_SLASH + teid);
 			ObjectMapper objectMapper = new ObjectMapper();
 			while (!tokillcontainers) {
 				if (inputqueue.peek() != null && !isreadytoexecute) {
@@ -216,23 +217,22 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 									DataSamudayaConstants.MASSIVEDATA_YARNINPUT_TASK_FILE);
 					jsidjsmap = (Map<String, JobStage>) RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS(namenodeurl,
 							yarninputfolder, DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOBSTAGE_FILE);
-					
+
 					pipelineconfig = (PipelineConfig) RemoteDataFetcher
 							.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
 									DataSamudayaConstants.MASSIVEDATA_YARNINPUT_CONFIGFILE);
 					job = (Job) RemoteDataFetcher
 							.readYarnAppmasterServiceDataFromDFS(namenodeurl, yarninputfolder,
 									DataSamudayaConstants.MASSIVEDATA_YARNINPUT_JOB_FILE);
-					
+
 					tasks = graph.vertexSet().stream().map(StreamPipelineTaskSubmitter::getTask).collect(Collectors.toCollection(Vector::new));
-					if(isdriverallocated) {
+					if (isdriverallocated) {
 						RemoteJobScheduler rjs = new RemoteJobScheduler();
 						job.setVertices(new LinkedHashSet<>(graph.vertexSet()));
 						job.setEdges(new LinkedHashSet<>(graph.edgeSet()));
 						job.setJsidjsmap(jsidjsmap);
 						rjs.scheduleJob(job);
-					}
-					else {
+					} else {
 						broadcastJobStageToTaskExecutors(tasks);
 						parallelExecutionAkkaActors(graph);
 					}
@@ -245,28 +245,28 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 					Thread.sleep(1000);
 				}
 			}
-			tes = zo.getTaskExectorsByJobId(teid);			
-			if(isdriverallocated) {
+			tes = zo.getTaskExectorsByJobId(teid);
+			if (isdriverallocated) {
 				tes.addAll(zo.getDriversByJobId(teid));
 			}
-			tes.stream().forEach(hp->destroyTaskExecutors(hp, teid));			
+			tes.stream().forEach(hp -> destroyTaskExecutors(hp, teid));
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 	}
 
 	public void destroyTaskExecutors(String hosthp, String jobid) {
-		
-			try {
-				TaskExecutorShutdown taskExecutorshutdown = new TaskExecutorShutdown();				
-				Utils.getResultObjectByInput(hosthp, taskExecutorshutdown, jobid);
-				log.debug("The chamber case for container {} shattered for the port {} ", jobid, hosthp);
-			} catch (Exception ex) {
-				log.error("Destroy failed for the job " + jobid, ex);
-			}
-		
+
+		try {
+			TaskExecutorShutdown taskExecutorshutdown = new TaskExecutorShutdown();
+			Utils.getResultObjectByInput(hosthp, taskExecutorshutdown, jobid);
+			log.debug("The chamber case for container {} shattered for the port {} ", jobid, hosthp);
+		} catch (Exception ex) {
+			log.error("Destroy failed for the job " + jobid, ex);
+		}
+
 	}
-	
+
 	public void broadcastJobStageToTaskExecutors(List<Task> tasks) throws Exception {
 		Kryo kryo = Utils.getKryoInstance();
 		if (nonNull(pipelineconfig.getClsloader())) {
@@ -280,9 +280,9 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 			try {
 				JobStage js = (JobStage) jsidjsmap.get(key);
 				if (nonNull(js)) {
-					js.setTejobid(finaljobid);				
+					js.setTejobid(finaljobid);
 					for (String te : jobexecutorsmap.get(key)) {
-						if(nonNull(pipelineconfig.getJar())) {
+						if (nonNull(pipelineconfig.getJar())) {
 							Utils.getResultObjectByInput(te, js, finaljobid, DataSamudayaMapReducePhaseClassLoader.newInstance(pipelineconfig.getJar(), Thread.currentThread().getContextClassLoader()));
 						} else {
 							Utils.getResultObjectByInput(te, js, finaljobid);
@@ -294,7 +294,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 			}
 		});
 	}
-	
+
 	public class AkkaActorsScheduler implements TaskProvider<StreamPipelineTaskSubmitter, Boolean> {
 		Logger log = LoggerFactory.getLogger(AkkaActorsScheduler.class);
 		double totaltasks;
@@ -363,6 +363,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 		}
 
 	}
+
 	/**
 	 * The method returns thread pool for the given number of tasks. 
 	 * @param numberoftasks
@@ -370,10 +371,10 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	 */
 	private ExecutorService newExecutor(int numberoftasks) {
 		return Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 	}
-	
+
 	/**
 	 * The SQL execution akka actors
 	 * @param origgraph
@@ -422,14 +423,14 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 					var predecessors = Graphs.predecessorListOf(graphreversed, sptsreverse);
 					var successors = Graphs.successorListOf(graphreversed, sptsreverse);
 					if (CollectionUtils.isEmpty(predecessors)) {
-						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, nonNull(sptsreverse.getTask().parentterminatingsize)?sptsreverse.getTask().parentterminatingsize:successors.size());
+						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size());
 						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 					} else {
 						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
 								.collect(Collectors.toList());
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
-								nonNull(sptsreverse.getTask().parentterminatingsize)?sptsreverse.getTask().parentterminatingsize:successors.size());
+								nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size());
 						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
 						sptsreverse.getTask().setActorselection(task.getActorselection());
 						sptsreverse.setChildactors(childactorsoriggraph);
@@ -479,6 +480,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 		}
 		return lineagegraph;
 	}
+
 	/**
 	 * Set App Master service hosts and port running before the container is
 	 * launched.
@@ -564,10 +566,10 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	 * @return true when jobs available and container not to kill
 	 */
 	public boolean hasJobs() {
-		synchronized (lock) {			
+		synchronized (lock) {
 			boolean hasJobs = isreadytoexecute
 					&& (tasks.size() > 0);
-			log.debug("Has Jobs: {}",hasJobs);
+			log.debug("Has Jobs: {}", hasJobs);
 			return hasJobs || !tokillcontainers;
 
 		}
@@ -580,7 +582,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	public String getTaskExecutorId() {
 		return teid;
 	}
-	
+
 	/**
 	 * Get executor type as driver or executor 
 	 * @return executor type
@@ -588,7 +590,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	public EXECUTORTYPE getExecutorType() {
 		try {
 			executoralloclock.acquire();
-			if(isdriverrequired && !isdriverallocated) {
+			if (isdriverrequired && !isdriverallocated) {
 				isdriverallocated = true;
 				return EXECUTORTYPE.DRIVER;
 			}
@@ -600,14 +602,14 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 		}
 		return EXECUTORTYPE.EXECUTOR;
 	}
-	
+
 	/**
 	 * Check whether the jobs has been completed.
 	 * 
 	 * @return
 	 */
 	private boolean completedJobs() {
-		synchronized (lock) {			
+		synchronized (lock) {
 			return tokillcontainers;
 		}
 	}

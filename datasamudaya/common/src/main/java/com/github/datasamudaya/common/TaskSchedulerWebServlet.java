@@ -27,7 +27,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.util.CollectionUtils;
 
 import com.github.datasamudaya.common.utils.Utils;
@@ -40,7 +41,7 @@ import com.github.datasamudaya.common.utils.Utils;
 public class TaskSchedulerWebServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 8713220540678338208L;
-	private static final Logger log = Logger.getLogger(TaskSchedulerWebServlet.class);
+	private static final Logger log = LogManager.getLogger(TaskSchedulerWebServlet.class);
 
 	/**
 	 * The implementation method doGet of HttpServlet class implements for getting
@@ -332,16 +333,16 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					builder.append("</td>");
 
 					builder.append("<td>");
-					if(isNull(jm.getDriverhp())) {
-					builder.append("<a href=\"" + contextpath + DataSamudayaConstants.FORWARD_SLASH
-							+ DataSamudayaConstants.SUMMARY + "?jobId=" + jm.getJobid() + "\">SUMMARY</a>");
+					if (isNull(jm.getDriverhp())) {
+						builder.append("<a href=\"" + contextpath + DataSamudayaConstants.FORWARD_SLASH
+								+ DataSamudayaConstants.SUMMARY + "?jobId=" + jm.getJobid() + "\">SUMMARY</a>");
 					} else {
 						String[] driverhp = jm.getDriverhp().split(DataSamudayaConstants.UNDERSCORE);
-						String drivercontextpath = request.getScheme() + "://" + driverhp[0] + 
-								DataSamudayaConstants.COLON + 
-								(Integer.parseInt(driverhp[1]) + DataSamudayaConstants.PORT_OFFSET);
+						String drivercontextpath = request.getScheme() + "://" + driverhp[0]
+								+ DataSamudayaConstants.COLON
+								+ (Integer.parseInt(driverhp[1]) + DataSamudayaConstants.PORT_OFFSET);
 						builder.append("<a href=\"" + drivercontextpath + DataSamudayaConstants.FORWARD_SLASH
-								+ DataSamudayaConstants.SUMMARY_DRIVER + "?jobId=" + jm.getJobid() + "\">SUMMARY</a>");						
+								+ DataSamudayaConstants.SUMMARY_DRIVER + "?jobId=" + jm.getJobid() + "\">SUMMARY</a>");
 					}
 					builder.append("</td>");
 					builder.append("</tr>");

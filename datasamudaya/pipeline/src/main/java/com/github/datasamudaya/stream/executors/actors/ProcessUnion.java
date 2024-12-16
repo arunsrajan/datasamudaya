@@ -40,30 +40,30 @@ import akka.cluster.sharding.typed.javadsl.EntityRef;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 public class ProcessUnion extends AbstractBehavior<Command> {
-	Logger log = LoggerFactory.getLogger(ProcessUnion.class);	
+	Logger log = LoggerFactory.getLogger(ProcessUnion.class);
 	int terminatingsize;
-	int initialsize = 0;
+	int initialsize;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	List<EntityRef> childpipes;
 	Task tasktoprocess;
 	Cache cache;
 	JobStage js;
-	private boolean iscacheable = true;
+	private final boolean iscacheable = true;
 	int btreesize;
 	int diskspillpercentage;
 	List ldiskspill;
 
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessUnion-"+entityId);
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessUnion-" + entityId);
 	}
-	
+
 	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
-	return Behaviors.setup(context -> new ProcessUnion(context, js, cache, 
-				jobidstageidtaskidcompletedmap, 
+		return Behaviors.setup(context -> new ProcessUnion(context, js, cache,
+				jobidstageidtaskidcompletedmap,
 				tasktoprocess, childpipes, terminatingsize));
 	}
-	
+
 	public ProcessUnion(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
 		super(context);
@@ -87,7 +87,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 
 	private Behavior<Command> processUnion(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
-			log.debug("processUnion::: {}",object.getValue().getClass());
+			log.debug("processUnion::: {}", object.getValue().getClass());
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				ldiskspill.add(dsl);
 			} else if (object.getValue() instanceof DiskSpillingSet dss) {
@@ -95,7 +95,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 			} else if (object.getValue() instanceof TreeSet<?> ts) {
 				ldiskspill.add(ts);
 			}
-			if (object.getTerminiatingclass() == DiskSpillingList.class		
+			if (object.getTerminiatingclass() == DiskSpillingList.class
 					|| object.getTerminiatingclass() == Dummy.class
 					|| object.getTerminiatingclass() == NodeIndexKey.class
 					|| object.getTerminiatingclass() == DiskSpillingSet.class
@@ -106,13 +106,13 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 				log.debug("processUnion::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}", initialsize,
 						terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
-				if (CollectionUtils.isNotEmpty(childpipes)) {										
-					DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false,false ,false, null, null, 1);
-					for(Object diskspill:ldiskspill) {
+				if (CollectionUtils.isNotEmpty(childpipes)) {
+					DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false, false, false, null, null, 1);
+					for (Object diskspill :ldiskspill) {
 						Stream<?> datastream = null;
-						if(diskspill instanceof DiskSpillingList dsl) {
+						if (diskspill instanceof DiskSpillingList dsl) {
 							datastream = Utils.getStreamData(dsl);
-						} else if(diskspill instanceof DiskSpillingSet dss) {
+						} else if (diskspill instanceof DiskSpillingSet dss) {
 							datastream = Utils.getStreamData(dss);
 						} else if (diskspill instanceof TreeSet<?> ts) {
 							diskspillset.addAll((Set<NodeIndexKey>) ts);
@@ -121,7 +121,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 						}
 						try {
 							AtomicInteger index = new AtomicInteger(0);
-							if(nonNull(datastream)) {
+							if (nonNull(datastream)) {
 								datastream.forEach(obj -> {
 									if (obj instanceof NodeIndexKey nik) {
 										diskspillset.add(nik);
@@ -129,20 +129,20 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 										diskspillset.add(new NodeIndexKey(tasktoprocess.getHostport(),
 												index.getAndIncrement(), null, obj, null, null, null, tasktoprocess));
 									}
-	
+
 								});
 							}
 
-						} catch(Exception ex) {
+						} catch (Exception ex) {
 							log.error(DataSamudayaConstants.EMPTY, ex);
 						}
-						if(diskspill instanceof DiskSpillingList dsl) {
+						if (diskspill instanceof DiskSpillingList dsl) {
 							dsl.clear();
-						} else if(diskspill instanceof DiskSpillingSet dss) {
+						} else if (diskspill instanceof DiskSpillingSet dss) {
 							dss.clear();
 						}
-					}		
-					if(diskspillset.isSpilled()) {
+					}
+					if (diskspillset.isSpilled()) {
 						diskspillset.close();
 					}
 					childpipes.stream().forEach(downstreampipe -> {
@@ -154,7 +154,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 					List<NodeIndexKey> niks = new ArrayList<>();
 					for (Task predecessor : predecessors) {
 						NodeIndexKey nik = new NodeIndexKey(predecessor.getHostport(), index.getAndIncrement(),
-								null,null, null, null, null, predecessor);
+								null, null, null, null, null, predecessor);
 						niks.add(nik);
 					}
 					cache.put(

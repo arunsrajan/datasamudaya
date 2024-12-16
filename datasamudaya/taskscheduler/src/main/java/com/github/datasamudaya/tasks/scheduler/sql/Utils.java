@@ -31,7 +31,7 @@ import com.github.datasamudaya.common.utils.sql.SimpleTable;
  * Utils for validating and optimizing sql Relational Node 
  */
 public class Utils {
-	
+
 	/**
 	 * Validates and optimizes sql query nd returns Optimized RelNode.
 	 * @param tablecolumnsmap
@@ -78,6 +78,7 @@ public class Utils {
 		relTree = trimUnusedFields(relTree);
 		return optimizer.optimize(relTree, relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
 	}
+
 	/**
 	 * Get simple table given the tablename, fields and types
 	 * 
@@ -95,23 +96,26 @@ public class Utils {
 		}
 		return builder.withRowCount(60000L).build();
 	}
-	
+
 	/**
 	 * Columns Pruning only selected fields.
 	 * @param relNode
 	 * @return RelNode with selected fields.
 	 */
 	private static RelNode trimUnusedFields(RelNode relNode) {
-	    final List<RelOptTable> relOptTables = RelOptUtil.findAllTables(relNode);
-	    RelOptSchema relOptSchema = null;
-	    if (relOptTables.size() != 0) {
-	      relOptSchema = relOptTables.get(0).getRelOptSchema();
-	    }
-	    final RelBuilder relBuilder = RelFactories.LOGICAL_BUILDER.create(
-	        relNode.getCluster(), relOptSchema);
-	    final RelFieldTrimmer relFieldTrimmer = new RelFieldTrimmer(null, relBuilder);
-	    final RelNode rel = relFieldTrimmer.trim(relNode);
-	    return rel;
-	  
+		final List<RelOptTable> relOptTables = RelOptUtil.findAllTables(relNode);
+		RelOptSchema relOptSchema = null;
+		if (relOptTables.size() != 0) {
+			relOptSchema = relOptTables.get(0).getRelOptSchema();
+		}
+		final RelBuilder relBuilder = RelFactories.LOGICAL_BUILDER.create(
+				relNode.getCluster(), relOptSchema);
+		final RelFieldTrimmer relFieldTrimmer = new RelFieldTrimmer(null, relBuilder);
+		final RelNode rel = relFieldTrimmer.trim(relNode);
+		return rel;
+
+	}
+
+	private Utils() {
 	}
 }

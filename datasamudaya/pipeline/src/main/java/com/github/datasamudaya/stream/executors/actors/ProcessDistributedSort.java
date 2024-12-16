@@ -46,29 +46,29 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 	Logger log = LoggerFactory.getLogger(ProcessCoalesce.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 	int terminatingsize;
-	int initialsize = 0;
+	int initialsize;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	List<EntityRef> childpipes;
 	Task tasktoprocess;
 	Cache cache;
 	JobStage js;
-	private boolean iscacheable = true;
+	private final boolean iscacheable = true;
 	int btreesize;
 	int diskspillpercentage;
 	DiskSpillingList diskspilllistinterm;
 	List ldiskspill;
-	
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessDistributedSort-"+entityId);
+
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessDistributedSort-" + entityId);
 	}
-	
+
 	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
-	return Behaviors.setup(context -> new ProcessDistributedSort(context, js, cache, jobidstageidtaskidcompletedmap, 
-			tasktoprocess, 
-			childpipes, terminatingsize));
+		return Behaviors.setup(context -> new ProcessDistributedSort(context, js, cache, jobidstageidtaskidcompletedmap,
+				tasktoprocess,
+				childpipes, terminatingsize));
 	}
-	
+
 	public ProcessDistributedSort(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
 		super(context);
@@ -101,7 +101,7 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 			} else if (object.getValue() instanceof TreeSet<?> ts) {
 				ldiskspill.add(ts);
 			}
-			if (object.getTerminiatingclass() == DiskSpillingList.class	
+			if (object.getTerminiatingclass() == DiskSpillingList.class
 					|| object.getTerminiatingclass() == Dummy.class
 					|| object.getTerminiatingclass() == NodeIndexKey.class
 					|| object.getTerminiatingclass() == DiskSpillingSet.class
@@ -111,12 +111,12 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 			if (initialsize == terminatingsize) {
 				log.debug("processDistributedSort::Started InitialSize {} , Terminating Size {}", initialsize,
 						terminatingsize);
-				if(diskspilllistinterm.isSpilled()) {
-					diskspilllistinterm.close();		
+				if (diskspilllistinterm.isSpilled()) {
+					diskspilllistinterm.close();
 				}
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
-				List<FieldCollationDirection> fcsc = (List<FieldCollationDirection>) tasktoprocess.getFcsc();				
-				Stream<?> datastream = null;				
+				List<FieldCollationDirection> fcsc = (List<FieldCollationDirection>) tasktoprocess.getFcsc();
+				Stream<?> datastream = null;
 				NodeIndexKey root = null;
 				BTree btree = new BTree(btreesize);
 				String key = Utils.getIntermediateResultFS(tasktoprocess);
@@ -143,7 +143,7 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 							}
 						});
 					}
-				}				
+				}
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					DiskSpillingList rootniks = new DiskSpillingList<>(tasktoprocess, diskspillpercentage, null, false,
 							false, false, null, null, 0);
@@ -170,7 +170,7 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);
 			}
 		}
-		return this; 
+		return this;
 	}
 
 	/**

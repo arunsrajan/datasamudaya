@@ -17,7 +17,9 @@ package com.github.datasamudaya.stream.examples;
 
 import java.io.Serializable;
 import java.net.URI;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 
@@ -28,10 +30,10 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceJGroups implements Serializable, Pipeline {
 	private static final long serialVersionUID = -7001849661976107123L;
-	private final Logger log = Logger.getLogger(StreamReduceJGroups.class);
+	private final Logger log = LogManager.getLogger(StreamReduceJGroups.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		
+
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");
@@ -40,7 +42,7 @@ public class StreamReduceJGroups implements Serializable, Pipeline {
 		testReduce(args, pipelineconfig);
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void testReduce(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("StreamReduceJGroups.testReduce Before---------------------------------------");
 		var datastream = StreamPipeline.newStreamHDFS(args[0], args[1], pipelineconfig);
@@ -48,8 +50,7 @@ public class StreamReduceJGroups implements Serializable, Pipeline {
 				.filter(dat -> !"ArrDelay".equals(dat[14]) && !"NA".equals(dat[14]))
 				.mapToPair(dat -> Tuple.tuple(dat[8], Long.parseLong(dat[14])));
 
-		var airlinesamples = mappair1.reduceByKey((dat1, dat2) -> dat1 + dat2).coalesce(1,
-				(dat1, dat2) -> dat1 + dat2);
+		var airlinesamples = mappair1.reduceByKey((dat1, dat2) -> dat1 + dat2).coalesce(1, (dat1, dat2) -> dat1 + dat2);
 
 		var datastream1 = StreamPipeline.newStreamHDFS(args[0], args[2], pipelineconfig);
 

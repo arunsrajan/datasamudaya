@@ -76,10 +76,10 @@ public class TaskExecutorCombiner implements Callable<Context> {
 	@Override
 	public Context call() {
 		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		var esresult = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
@@ -92,11 +92,11 @@ public class TaskExecutorCombiner implements Callable<Context> {
 				var ctx = new DataCruncherContext();
 				int index = 0;
 				for (var appstgtaskids : (Collection<String>) tuple5.v2) {
-					Task remotetask = ((List<Task>)tuple5.v5).get(index);
-					remotetask.setHostport((String) ((List)tuple5.v3).get(index));
+					Task remotetask = ((List<Task>) tuple5.v5).get(index);
+					remotetask.setHostport((String) ((List) tuple5.v3).get(index));
 					if (appstgtaskcontextmap.get(appstgtaskids) != null) {
 						currentctx = (DiskSpillingContext) appstgtaskcontextmap.get(tuple5.v1.toString() + appstgtaskids);
-						if(currentctx.isSpilled()) {
+						if (currentctx.isSpilled()) {
 							Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple5.v1, remotetask, false);
 						} else {
 							ctx.addAll(tuple5.v1, currentctx.get(tuple5.v1));
@@ -106,13 +106,13 @@ public class TaskExecutorCombiner implements Callable<Context> {
 								(TaskExecutorMapper) apptaskexecutormap.get(appstgtaskids);
 						if (temc == null) {
 							log.debug("Mapper Task Is Remote To TE");
-							currentctx = new DiskSpillingContext(task, tuple5.v1.toString() + appstgtaskids);							
-							Utils.copySpilledContextToDestination(null, Arrays.asList(ctx,currentctx), tuple5.v1, remotetask, true);
+							currentctx = new DiskSpillingContext(task, tuple5.v1.toString() + appstgtaskids);
+							Utils.copySpilledContextToDestination(null, Arrays.asList(ctx, currentctx), tuple5.v1, remotetask, true);
 						} else {
 							log.debug("Mapper Task Is Local To TE");
 							currentctx = (DiskSpillingContext) temc.ctx;
 							log.debug("Mapper Task Is Local To TE Is Spilled {}", currentctx.isSpilled());
-							if(currentctx.isSpilled()) {
+							if (currentctx.isSpilled()) {
 								Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple5.v1, remotetask, false);
 							} else {
 								log.debug("Size Of Unspilled Data {}", currentctx.get(tuple5.v1).size());
@@ -121,7 +121,7 @@ public class TaskExecutorCombiner implements Callable<Context> {
 							log.debug("Combiner Task Is Local To TE Completed");
 						}
 						appstgtaskcontextmap.put(tuple5.v1.toString() + appstgtaskids, currentctx);
-					}					
+					}
 					index++;
 				}
 				var datasamudayar = new CombinerExecutor(ctx, combiner, task);
@@ -131,9 +131,9 @@ public class TaskExecutorCombiner implements Callable<Context> {
 					try {
 						lock.acquire();
 						results = (DiskSpillingContext) fc.get();
-						if(results.isSpilled()) {
-							results.keys().forEach(key->
-							Utils.copySpilledContextToDestination(results, Arrays.asList(complete), key, task, false));
+						if (results.isSpilled()) {
+							results.keys().forEach(key ->
+									Utils.copySpilledContextToDestination(results, Arrays.asList(complete), key, task, false));
 						} else {
 							complete.add(results);
 						}
@@ -146,10 +146,10 @@ public class TaskExecutorCombiner implements Callable<Context> {
 				});
 			}
 			cdl.await();
-			if(complete.isSpilled()) {
+			if (complete.isSpilled()) {
 				complete.close();
 			}
-			log.debug("Combiner Result Keys {}",complete.keys());
+			log.debug("Combiner Result Keys {}", complete.keys());
 			ctx = complete;
 			log.debug("Submitted Reducer Completed:" + task.getJobid() + task.getStageid() + task.getTaskid());
 		} catch (Throwable ex) {
@@ -165,7 +165,7 @@ public class TaskExecutorCombiner implements Callable<Context> {
 			if (es != null) {
 				es.shutdown();
 			}
-			if(esresult != null) {
+			if (esresult != null) {
 				esresult.shutdown();
 			}
 		}

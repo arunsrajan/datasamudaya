@@ -41,7 +41,8 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -72,14 +73,16 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 	static ConcurrentMap<String, List<Thread>> tes;
 	static ServerSocket ss;
 	static List<Registry> containerlauncher = new ArrayList<>();
-	static Logger log = Logger.getLogger(FileBlocksPartitionerHDFSTest.class);
+	static Logger log = LogManager.getLogger(FileBlocksPartitionerHDFSTest.class);
 	private static Registry server;
 	private static ZookeeperOperations zo;
 
 	@BeforeClass
 	public static void launchNodes() throws Exception {
-		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
+		Utils.initializeProperties(
+				DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+						+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
+				"datasamudayatest.properties");
 		containers = new ConcurrentHashMap<>();
 		tes = new ConcurrentHashMap<>();
 		es = Executors.newWorkStealingPool();
@@ -88,15 +91,15 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		var containerprocesses = new ConcurrentHashMap<String, Map<String, Process>>();
 		var containeridthreads = new ConcurrentHashMap<String, Map<String, List<Thread>>>();
 		var containeridports = new ConcurrentHashMap<String, List<Integer>>();
-		for (int nodeindex = 0;nodeindex < NOOFNODES;nodeindex++) {
+		for (int nodeindex = 0; nodeindex < NOOFNODES; nodeindex++) {
 			server = Utils.getRPCRegistry(30000 + nodeindex, new StreamDataCruncher() {
 				public Object postObject(Object object) throws RemoteException {
 					try {
 						if (object instanceof byte[] bytes) {
 							object = Utils.convertBytesToObjectCompressed(bytes, null);
 						}
-						var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER, containerprocesses, hdfs,
-								containeridthreads, containeridports, object, zo);
+						var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER, containerprocesses,
+								hdfs, containeridthreads, containeridports, object, zo);
 						Future<Object> containerallocated = escontainer.submit(container);
 						Object returnresultobject = containerallocated.get();
 						log.info("Containers Allocated: " + returnresultobject);
@@ -142,7 +145,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		
+
 		fbp.isyarn = false;
 		fbp.ismesos = false;
 		fbp.islocal = false;
@@ -170,7 +173,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		
+
 		fbp.isyarn = false;
 		fbp.ismesos = false;
 		fbp.islocal = false;
@@ -195,7 +198,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		
+
 		fbp.isyarn = false;
 		fbp.ismesos = false;
 		fbp.islocal = false;
@@ -216,7 +219,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		
+
 		List<BlocksLocation> bls = fbp.getBlocks(null);
 		ConcurrentMap<String, Resources> noderesourcesmap = new ConcurrentHashMap<>();
 		Resources resource = new Resources();
@@ -244,7 +247,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		
+
 		List<BlocksLocation> bls = fbp.getBlocks(null);
 		ConcurrentMap<String, Resources> noderesourcesmap = new ConcurrentHashMap<>();
 		Resources resource = new Resources();
@@ -288,7 +291,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.filepaths = Arrays.asList(paths);
-		
+
 		fbp.hdfs = hdfs;
 		List<BlocksLocation> bls = fbp.getBlocks(null);
 		fbp.getDnXref(bls, false);
@@ -319,7 +322,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 			fbp.hdfs = hdfs;
 			FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 			Path[] paths = FileUtil.stat2Paths(fileStatus);
-			
+
 			fbp.hdfs = hdfs;
 			fbp.filepaths = Arrays.asList(paths);
 			List<BlocksLocation> bls = fbp.getBlocks(null);
@@ -357,7 +360,7 @@ public class FileBlocksPartitionerHDFSTest extends StreamPipelineBaseTestCommon 
 		FileStatus[] fileStatus = hdfs.listStatus(new Path(hdfsfilepath + airlinesample));
 		Path[] paths = FileUtil.stat2Paths(fileStatus);
 		fbp.hdfs = hdfs;
-		
+
 		fbp.filepaths = Arrays.asList(paths);
 		List<BlocksLocation> bls = fbp.getBlocks(null);
 		fbp.getDnXref(bls, false);

@@ -18,7 +18,8 @@ package com.github.datasamudaya.stream;
 import java.util.List;
 import java.util.function.IntUnaryOperator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.functions.AtomicBiConsumer;
 import com.github.datasamudaya.common.functions.AtomicIntegerSupplier;
@@ -32,20 +33,21 @@ import com.github.datasamudaya.common.functions.SummaryStatistics;
 
 /**
  * This class is used to calculate the integer functions using stream pipeline
+ * 
  * @author arun
  *
  * @param <I1>
  */
 public final class PipelineIntStream<I1> extends StreamPipeline {
-	private static final Logger log = Logger.getLogger(PipelineIntStream.class);
+	private static final Logger log = LogManager.getLogger(PipelineIntStream.class);
 
 	/**
 	 * Constructor for integer function.
+	 * 
 	 * @param root
 	 * @param tointfunction
 	 */
-	PipelineIntStream(AbstractPipeline parent,
-			Object tointfunction) {
+	PipelineIntStream(AbstractPipeline parent, Object tointfunction) {
 		this.parents.add(parent);
 		parent.childs.add(this);
 		tasks.add(tointfunction);
@@ -54,33 +56,33 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 		this.json = parent.json;
 	}
 
-
 	/**
-	 * The public constructor for integer unary operator. 
+	 * The public constructor for integer unary operator.
+	 * 
 	 * @param intunaryoperator
 	 * @return
 	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public PipelineIntStream<I1> map(IntUnaryOperator intunaryoperator) {
 		var map = new PipelineIntStream(this, intunaryoperator);
 		return map;
 	}
 
-
 	/**
-	 * The public constructor for distinct function. 
+	 * The public constructor for distinct function.
+	 * 
 	 * @return integer stream pipeline object
 	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public PipelineIntStream<I1> distinct() {
 		var distinct = new Distinct();
 		var map = new PipelineIntStream(this, distinct);
 		return map;
 	}
 
-
 	/**
-	 * The collect function which starts execution and provide results. 
+	 * The collect function which starts execution and provide results.
+	 * 
 	 * @param <R>
 	 * @param toexecute
 	 * @param supplier
@@ -89,13 +91,11 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 	 * @return list of results.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public <R> List collect(boolean toexecute, AtomicIntegerSupplier<R> supplier,
-			AtomicObjIntConsumer<R> objintconsumer,
-			AtomicBiConsumer<R, R> biconsumer) throws PipelineException {
+			AtomicObjIntConsumer<R> objintconsumer, AtomicBiConsumer<R, R> biconsumer) throws PipelineException {
 		log.debug("Collect task begin...");
-		var pintstr = new PipelineIntStream(this, new PipelineIntStreamCollect(supplier,
-				objintconsumer, biconsumer));
+		var pintstr = new PipelineIntStream(this, new PipelineIntStreamCollect(supplier, objintconsumer, biconsumer));
 		var result = pintstr.collect(toexecute, null);
 		log.debug("Collect task ended.");
 		return result;
@@ -103,10 +103,11 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 
 	/**
 	 * The statistical summary for the integer pipeline.
+	 * 
 	 * @return statistics
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public List summaryStatistics() throws PipelineException {
 		log.debug("Summary Statistics task begin...");
 		var map = new PipelineIntStream(this, new SummaryStatistics());
@@ -117,10 +118,11 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 
 	/**
 	 * The sum function for integer pipeline.
+	 * 
 	 * @return results in list
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public List sum() throws PipelineException {
 		log.debug("Sum task begin...");
 		var map = new PipelineIntStream(this, new Sum());
@@ -131,10 +133,11 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 
 	/**
 	 * The max function for integer pipeline.
+	 * 
 	 * @return results in list
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public List max() throws PipelineException {
 		log.debug("Max task begin...");
 		var map = new PipelineIntStream(this, new Max());
@@ -145,10 +148,11 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 
 	/**
 	 * The min function for integer pipeline.
+	 * 
 	 * @return results in list
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public List min() throws PipelineException {
 		log.debug("Min task begin...");
 		var map = new PipelineIntStream(this, new Min());
@@ -159,10 +163,11 @@ public final class PipelineIntStream<I1> extends StreamPipeline {
 
 	/**
 	 * The standardDeviation function for integer pipeline.
+	 * 
 	 * @return results in list
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public List standardDeviation() throws PipelineException {
 		log.debug("StandardDeviation task begin...");
 		var map = new PipelineIntStream(this, new StandardDeviation());

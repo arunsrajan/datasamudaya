@@ -17,8 +17,9 @@ import org.apache.calcite.util.Optionality;
  */
 public class Functions {
 
-	private Functions() {}
-	
+	private Functions() {
+	}
+
 	/**
 	 * The function returns all the supported sql functions
 	 * 
@@ -28,14 +29,14 @@ public class Functions {
 
 		SqlFunction sqrtFunction = new SqlFunction("sqrt", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
 				OperandTypes.ANY, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
-		
+
+
 		SqlFunction secantfunction = new SqlFunction("sec", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
 				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction cosecantfunction = new SqlFunction("cosec", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
 				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction cotangentfunction = new SqlFunction("cot", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE, null,
 				OperandTypes.NUMERIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
@@ -56,22 +57,22 @@ public class Functions {
 
 		SqlFunction uppercase = new SqlFunction("uppercase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction ucase = new SqlFunction("ucase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction reverse = new SqlFunction("reverse", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
 		SqlFunction lowercase = new SqlFunction("lowercase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction ltrim = new SqlFunction("ltrim", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction rtrim = new SqlFunction("rtrim", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction lcase = new SqlFunction("lcase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
@@ -98,52 +99,53 @@ public class Functions {
 
 		SqlFunction currentisodate = new SqlFunction("currentisodate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction curdate = new SqlFunction("curdate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction curtime = new SqlFunction("curtime", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction now = new SqlFunction("now", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction currenttimemillis = new SqlFunction("current_timemillis", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction pii = new SqlFunction("pii", SqlKind.OTHER_FUNCTION, ReturnTypes.DOUBLE,
 				null, OperandTypes.NILADIC, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 
 		SqlFunction concat = new SqlFunction("concat", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
-		
+
+
 		SqlFunction insertstr = new SqlFunction("insertstr", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_STRING_INTEGER_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
-		
+
+
 		SqlFunction leftchars = new SqlFunction("leftchars", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction rightchars = new SqlFunction("rightchars", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction locate = new SqlFunction("locate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlFunction charfunction = new SqlFunction("charac", SqlKind.OTHER_FUNCTION, ReturnTypes.CHAR, null,
 				OperandTypes.INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
-		
+
 		SqlAggFunction groupconcat = new SqlAggFunction("group_concat",
-	            null,
-	            SqlKind.OTHER_FUNCTION,
-	            ReturnTypes.VARCHAR_4, 
-	            null,
-	            OperandTypes.STRING_STRING, 
-	            SqlFunctionCategory.USER_DEFINED_FUNCTION,
-	            false,
-	            false,
-	            Optionality.FORBIDDEN) {};	            
+				null,
+				SqlKind.OTHER_FUNCTION,
+				ReturnTypes.VARCHAR_4,
+				null,
+				OperandTypes.STRING_STRING,
+				SqlFunctionCategory.USER_DEFINED_FUNCTION,
+				false,
+				false,
+				Optionality.FORBIDDEN) {
+		};
 
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, base64encode, base64decode,
 				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, currentisodate, concat,
@@ -152,5 +154,5 @@ public class Functions {
 				ltrim, rtrim, curdate, now, curtime);
 
 	}
-	
+
 }

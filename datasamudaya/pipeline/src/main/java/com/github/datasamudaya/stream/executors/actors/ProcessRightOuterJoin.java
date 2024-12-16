@@ -71,17 +71,17 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
 
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessRightOuterJoin-"+entityId);
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessRightOuterJoin-" + entityId);
 	}
-	
+
 	public static Behavior<Command> create(String entityId, RightOuterJoinPredicate rojp, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
-	return Behaviors.setup(context -> new ProcessRightOuterJoin(context, rojp, pipelines, terminatingsize,
-			jobidstageidtaskidcompletedmap, cache, task));
+		return Behaviors.setup(context -> new ProcessRightOuterJoin(context, rojp, pipelines, terminatingsize,
+				jobidstageidtaskidcompletedmap, cache, task));
 	}
-	
-	private ProcessRightOuterJoin(ActorContext<Command> context,RightOuterJoinPredicate rojp, List<EntityRef> pipelines, int terminatingsize,
+
+	private ProcessRightOuterJoin(ActorContext<Command> context, RightOuterJoinPredicate rojp, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
 		super(context);
 		this.rojp = rojp;
@@ -90,7 +90,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
 		diskspilllistinterm = new DiskSpillingList(task, diskspillpercentage, null, true, false, false, null, null, 0);
@@ -126,10 +126,10 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
 				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
 				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
-			if(diskspilllistintermleft.isSpilled()) {
+			if (diskspilllistintermleft.isSpilled()) {
 				diskspilllistintermleft.close();
 			}
-			if(diskspilllistintermright.isSpilled()) {
+			if (diskspilllistintermright.isSpilled()) {
 				diskspilllistintermright.close();
 			}
 			final boolean leftvalue = isNull(task.joinpos) ? false
@@ -160,7 +160,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 				for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
 					nullobjarr[1][numvalues] = true;
 				}
-				if(diskspilllistinterm.isSpilled()) {
+				if (diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
 				Stream diskspilllistintermstream = diskspilllistinterm.isSpilled()
@@ -176,7 +176,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 					}
 					return maprec;
 				}).forEach(diskspilllist::add);
-				if(diskspilllist.isSpilled()) {
+				if (diskspilllist.isSpilled()) {
 					diskspilllist.close();
 				}
 				try {
@@ -203,8 +203,8 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 							log.error("Error in putting output in cache", ex);
 						}
 					}
-				} catch(Exception ex) {
-					
+				} catch (Exception ex) {
+
 				}
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);

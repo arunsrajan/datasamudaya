@@ -17,7 +17,9 @@ package com.github.datasamudaya.stream.examples;
 
 import java.io.Serializable;
 import java.net.URI;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 
@@ -28,7 +30,7 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamAggSumCountArrDelayDisk implements Serializable, Pipeline {
 	private static final long serialVersionUID = 6834009845802448401L;
-	private final Logger log = Logger.getLogger(StreamAggSumCountArrDelayDisk.class);
+	private final Logger log = LogManager.getLogger(StreamAggSumCountArrDelayDisk.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		pipelineconfig.setLocal("false");
@@ -36,7 +38,7 @@ public class StreamAggSumCountArrDelayDisk implements Serializable, Pipeline {
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.DISK);
-		
+
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem(args[3]);
 		pipelineconfig.setMinmem("512");
@@ -46,7 +48,7 @@ public class StreamAggSumCountArrDelayDisk implements Serializable, Pipeline {
 		testMapValuesReduceByValues(args, pipelineconfig);
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void testMapValuesReduceByValues(String[] args, PipelineConfig pipelineconfig) throws Exception {
 		log.info("testMapValuesReduceByValues Before---------------------------------------");
 		StreamPipeline<String> datastream = StreamPipeline.newStreamHDFS(args[0], args[1], pipelineconfig);

@@ -41,11 +41,11 @@ import lombok.ToString;
 public class DataCruncherContext<K, V> implements Context<K, V>, Serializable {
 
 	private String contextid = UUID.randomUUID().toString();
-	
+
 	private Map<K, Collection<V>> htkv = new Hashtable<>();
 
 	private AtomicLong valuescounter = new AtomicLong(0);
-	
+
 	@Override
 	public void put(K k, V v) {
 		if (htkv.get(k) == null) {
@@ -96,25 +96,25 @@ public class DataCruncherContext<K, V> implements Context<K, V>, Serializable {
 	public String getContextid() {
 		return contextid;
 	}
-	
+
 	@Override
 	public long size() {
 		return htkv.size();
 	}
-	
+
 	@Override
 	public long valuesSize() {
 		return valuescounter.get();
 	}
 
 	@Override
-	public void clear() {		
+	public void clear() {
 		htkv.clear();
 	}
 
 	@Override
-	public Set<Entry<K, Collection<V>>> entries() {		
+	public Set<Entry<K, Collection<V>>> entries() {
 		return htkv.entrySet();
 	}
-	
+
 }

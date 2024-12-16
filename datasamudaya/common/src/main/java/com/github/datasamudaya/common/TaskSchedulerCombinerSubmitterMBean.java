@@ -15,8 +15,6 @@
  */
 package com.github.datasamudaya.common;
 
-import org.apache.curator.framework.CuratorFramework;
-
 /**
  * Interface for the TaskScheduler combiner submitter.
  * @author arun

@@ -87,7 +87,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	private Integer cputaskexecutor;
 	private Integer memorytaskexceutor;
 	private Integer numtaskexecutors;
-	
+
 	public void setOutput(OutputStream  output) {
 		this.output = output;
 	}
@@ -246,7 +246,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	public Set<Class<?>> getCustomclasses() {
 		return customclasses;
 	}
-	
+
 	public String getMode() {
 		if (nonNull(mode)) {
 			return mode;
@@ -405,7 +405,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 		return Boolean.parseBoolean(nonNull(DataSamudayaProperties.get()) ? DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR, DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT) : DataSamudayaConstants.TOPERSISTYOSEGICOLUMNAR_DEFAULT);
 	}
 
-	
+
 	public boolean isWindowspushnotification() {
 		if (nonNull(windowspushnotification)) {
 			return windowspushnotification;
@@ -416,7 +416,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	public void setWindowspushnotification(boolean windowspushnotification) {
 		this.windowspushnotification = windowspushnotification;
 	}
-	
+
 	public Boolean getIspodcidrtonodemappingenabled() {
 		if (nonNull(ispodcidrtonodemappingenabled)) {
 			return ispodcidrtonodemappingenabled;
@@ -427,7 +427,7 @@ public class PipelineConfig implements Serializable, Cloneable {
 	public void setIspodcidrtonodemappingenabled(Boolean ispodcidrtonodemappingenabled) {
 		this.ispodcidrtonodemappingenabled = ispodcidrtonodemappingenabled;
 	}
-	
+
 	public int getCpudriver() {
 		if (nonNull(cpudriver)) {
 			return cpudriver;

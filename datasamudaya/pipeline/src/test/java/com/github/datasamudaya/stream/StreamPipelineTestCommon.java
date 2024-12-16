@@ -30,7 +30,8 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.ehcache.Cache;
 import org.junit.AfterClass;
@@ -58,19 +59,19 @@ public class StreamPipelineTestCommon {
 	protected static String airlinesampleunion2 = "/airlinesampleunion2";
 	protected static String githubevents = "/githubevents";
 	protected static String csvfileextn = ".csv";
-	protected String[] hdfsdirpaths1 = {"/airlinesample"};
-	protected String[] hdfsdirpaths2 = {"/airlinesampleintersection"};
-	protected String[] hdfsdirpaths3 = {"/airlinesampleunion1"};
-	protected String[] hdfsdirpaths4 = {"/airlinesampleunion2"};
-	protected String[] githubevents1 = {"/githubevents"};
+	protected String[] hdfsdirpaths1 = { "/airlinesample" };
+	protected String[] hdfsdirpaths2 = { "/airlinesampleintersection" };
+	protected String[] hdfsdirpaths3 = { "/airlinesampleunion1" };
+	protected String[] hdfsdirpaths4 = { "/airlinesampleunion2" };
+	protected String[] githubevents1 = { "/githubevents" };
 	protected static String jsonfileextn = ".json";
-	protected  static String hdfsurl = "hdfs://127.0.0.1:9000";
-	protected String[] airlineheader = new String[]{"Year", "Month", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime",
-			"ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime",
-			"AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut", "Cancelled",
-			"CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
-			"LateAircraftDelay"};
-	static Logger log = Logger.getLogger(StreamPipelineTestCommon.class);
+	protected static String hdfsurl = "hdfs://127.0.0.1:9000";
+	protected String[] airlineheader = new String[] { "Year", "Month", "DayofMonth", "DayOfWeek", "DepTime",
+			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime",
+			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
+			"Cancelled", "CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
+			"LateAircraftDelay" };
+	static Logger log = LogManager.getLogger(StreamPipelineTestCommon.class);
 	protected static ExecutorService es;
 
 	@BeforeClass
@@ -90,16 +91,18 @@ public class StreamPipelineTestCommon {
 		StaticComponentContainer.Modules.exportAllToAll();
 		System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
 		Configuration conf = new Configuration();
-		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatest.properties");
-		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE, DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
-				DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.CACHEBLOCKS);
+		Utils.initializeProperties(
+				DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+						+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
+				"datasamudayatest.properties");
+		CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
+				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
+						DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+						+ DataSamudayaConstants.CACHEBLOCKS);
 		CacheUtils.initBlockMetadataCache(DataSamudayaConstants.BLOCKCACHE);
 		hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
 		cache = (Cache<String, byte[]>) DataSamudayaCache.get();
-		hdfs = FileSystem.newInstance(new URI(hdfsurl),
-				conf);
+		hdfs = FileSystem.newInstance(new URI(hdfsurl), conf);
 		uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
 		uploadfile(hdfs, airlinesampleintersection, airlinesampleintersection + csvfileextn);
 		uploadfile(hdfs, airlinesampleunion1, airlinesampleunion1 + csvfileextn);

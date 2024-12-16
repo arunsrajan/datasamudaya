@@ -34,9 +34,10 @@ import com.github.datasamudaya.common.utils.Utils;
  */
 public class TaskSchedulerCombinerSubmitter implements TaskSchedulerMapperCombinerSubmitterMBean {
 
-	private ApplicationTask apptask;
-	private String executorid;
-	private CombinerValues cv;
+	private final ApplicationTask apptask;
+	private final String executorid;
+	private final CombinerValues cv;
+
 	TaskSchedulerCombinerSubmitter(CombinerValues cv,
 			ApplicationTask apptask, String executorid) {
 		this.cv = cv;

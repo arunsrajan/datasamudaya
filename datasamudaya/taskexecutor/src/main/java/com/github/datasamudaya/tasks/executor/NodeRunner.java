@@ -151,12 +151,12 @@ public class NodeRunner implements Callable<Object> {
 							thr.start();
 							threads.get(tuple.v1).add(thr);
 						});
-				if(containeridcontainerthreads.containsKey(lc.getJobid())) {
+				if (containeridcontainerthreads.containsKey(lc.getJobid())) {
 					containeridcontainerthreads.get(lc.getJobid()).putAll(threads);
 				} else {
 					containeridcontainerthreads.put(lc.getJobid(), threads);
 				}
-				if(containerprocesses.containsKey(lc.getJobid())) {
+				if (containerprocesses.containsKey(lc.getJobid())) {
 					containerprocesses.get(lc.getJobid()).putAll(processes);
 				} else {
 					containerprocesses.put(lc.getJobid(), processes);
@@ -190,7 +190,7 @@ public class NodeRunner implements Callable<Object> {
 						log.debug("Eradicate the chamber case: " + entry);
 						destroyProcess(entry.getKey(), entry.getValue(), dc.getJobid());
 					});
-				}				
+				}
 			} else if (deserobj instanceof DestroyContainer dc) {
 				log.debug("Destroying the Container with id: " + dc.getJobid());
 				Map<String, Process> processes = containerprocesses.get(dc.getJobid());
@@ -267,8 +267,8 @@ public class NodeRunner implements Callable<Object> {
 						Utils.getResultObjectByInput(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST)
 								+ DataSamudayaConstants.UNDERSCORE + port, taskExecutorshutdown, jobid);
 						Thread.sleep(500);
-					} catch(Exception ex) {
-						
+					} catch (Exception ex) {
+
 					}
 				}
 				log.debug("The chamber case {} shattered for the port {} ", proc, port);

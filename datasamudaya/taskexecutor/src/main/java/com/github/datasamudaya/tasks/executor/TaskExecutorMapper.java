@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
@@ -37,7 +38,7 @@ import com.github.datasamudaya.common.Task;
  *
  */
 public class TaskExecutorMapper implements Callable {
-	static Logger log = Logger.getLogger(TaskExecutorMapper.class);
+	static Logger log = LogManager.getLogger(TaskExecutorMapper.class);
 	BlocksLocation blockslocation;
 	@SuppressWarnings("rawtypes")
 	List<Mapper> cm = new ArrayList<>();

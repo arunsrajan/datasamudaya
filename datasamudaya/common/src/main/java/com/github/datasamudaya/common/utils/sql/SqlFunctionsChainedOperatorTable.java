@@ -16,9 +16,9 @@ public class SqlFunctionsChainedOperatorTable extends ChainedSqlOperatorTable {
 	public SqlFunctionsChainedOperatorTable(List<SqlOperatorTable> sqlOperatorsList) {
 		this(ImmutableList.copyOf(sqlOperatorsList));
 	}
-	
+
 	protected SqlFunctionsChainedOperatorTable(ImmutableList<SqlOperatorTable> tableList) {
-		super(tableList);		
+		super(tableList);
 	}
 
 }

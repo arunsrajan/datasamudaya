@@ -35,8 +35,8 @@ public class ByteBufferPoolDirect {
 	private static final Logger log = LoggerFactory.getLogger(ByteBufferPoolDirect.class);
 
 	private static transient GenericObjectPool<ByteBuffer> pool;
-	static long directmemory = 0;
-	private static boolean initialized = false;
+	static long directmemory;
+	private static boolean initialized;
 
 	/**
 	 * Initialize the bytebuffer heapsize and direct memory size
@@ -47,12 +47,12 @@ public class ByteBufferPoolDirect {
 		GenericObjectPoolConfig config = new GenericObjectPoolConfig();
 		config.setMaxIdle(DataSamudayaConstants.BYTEBUFFERPOOLMAXIDLE);
 		config.setBlockWhenExhausted(false);
-        config.setMaxTotal((int) (directmemory / DataSamudayaConstants.BYTEBUFFERSIZE));
-        pool = new GenericObjectPool<>(new ByteBufferFactory(DataSamudayaConstants.BYTEBUFFERSIZE), config);
-        var abandoned = new AbandonedConfig();
-        abandoned.setRemoveAbandonedOnBorrow(false);
-        pool.setAbandonedConfig(abandoned);
-        initialized = true;
+		config.setMaxTotal((int) (directmemory / DataSamudayaConstants.BYTEBUFFERSIZE));
+		pool = new GenericObjectPool<>(new ByteBufferFactory(DataSamudayaConstants.BYTEBUFFERSIZE), config);
+		var abandoned = new AbandonedConfig();
+		abandoned.setRemoveAbandonedOnBorrow(false);
+		pool.setAbandonedConfig(abandoned);
+		initialized = true;
 	}
 
 	/**
@@ -74,16 +74,16 @@ public class ByteBufferPoolDirect {
 	 * Destroys the Buffer Pool
 	 */
 	public static void destroyPool() {
-        if (pool != null && !pool.isClosed()) {
-            try {
-                pool.close();
-                pool = null;
-            } catch (Exception e) {
-                // Handle exception, possibly logging it
-            }
-        }
-    }
-	
+		if (pool != null && !pool.isClosed()) {
+			try {
+				pool.close();
+				pool = null;
+			} catch (Exception e) {
+				// Handle exception, possibly logging it
+			}
+		}
+	}
+
 	/**
 	 * Unallocate direct byte buffer to reuse the memory 
 	 * @param bb
@@ -100,5 +100,5 @@ public class ByteBufferPoolDirect {
 	public static boolean isInitialized() {
 		return initialized;
 	}
-	
+
 }

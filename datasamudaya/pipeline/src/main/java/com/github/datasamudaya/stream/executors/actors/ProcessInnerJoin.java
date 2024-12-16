@@ -47,7 +47,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  */
 public class ProcessInnerJoin extends AbstractBehavior<Command> implements Serializable {
 	Logger log = LoggerFactory.getLogger(ProcessInnerJoin.class);
-	
+
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -64,18 +64,18 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
-	
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessInnerJoin-"+entityId);
+
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessInnerJoin-" + entityId);
 	}
-	
+
 	public static Behavior<Command> create(String entityId, JoinPredicate jp, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
-	return Behaviors.setup(context -> new ProcessInnerJoin(context, jp, pipelines, terminatingsize,
-			jobidstageidtaskidcompletedmap, cache, task));
+		return Behaviors.setup(context -> new ProcessInnerJoin(context, jp, pipelines, terminatingsize,
+				jobidstageidtaskidcompletedmap, cache, task));
 	}
-	
-	
+
+
 	private ProcessInnerJoin(ActorContext<Command> context, JoinPredicate jp, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
 		super(context);
@@ -85,7 +85,7 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
 	}
@@ -97,8 +97,8 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 				.build();
 	}
 
-	private Behavior<Command> processInnerJoin(OutputObject oo) throws Exception {		
-		if (oo.isLeft()) {			
+	private Behavior<Command> processInnerJoin(OutputObject oo) throws Exception {
+		if (oo.isLeft()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				log.debug("In process Inner Join Left {} {}", oo.isLeft(), getIntermediateDataFSFilePath(task));
 				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
@@ -108,7 +108,7 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 					diskspilllistintermleft.addAll(dsl.getData());
 				}
 			}
-		} else if (oo.isRight()) {			
+		} else if (oo.isRight()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				log.debug("In process Inner Join Right {} {}", oo.isRight(), getIntermediateDataFSFilePath(task));
 				diskspilllistintermright = new DiskSpillingList(task, diskspillpercentage, null, true, false, true, null, null, 0);
@@ -122,10 +122,10 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
 				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
 				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
-			if(diskspilllistintermleft.isSpilled()) {
+			if (diskspilllistintermleft.isSpilled()) {
 				diskspilllistintermleft.close();
 			}
-			if(diskspilllistintermright.isSpilled()) {
+			if (diskspilllistintermright.isSpilled()) {
 				diskspilllistintermright.close();
 			}
 			final boolean leftvalue = isNull(task.joinpos) ? false
@@ -146,14 +146,14 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 					var seq2 = Seq.seq(datastreamright);
 					var join = seq1.innerJoin(seq2, jp);) {
 				join.forEach(diskspilllist::add);
-				if(diskspilllist.isSpilled()) {
+				if (diskspilllist.isSpilled()) {
 					diskspilllist.close();
 				}
 				if (Objects.nonNull(pipelines)) {
 					pipelines.forEach(downstreampipe -> {
 						try {
 							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class));
-						} catch(Exception ex) {
+						} catch (Exception ex) {
 							log.error(DataSamudayaConstants.EMPTY, ex);
 						}
 					});

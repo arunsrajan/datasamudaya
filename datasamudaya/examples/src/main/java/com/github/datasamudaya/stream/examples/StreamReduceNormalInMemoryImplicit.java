@@ -17,7 +17,9 @@ package com.github.datasamudaya.stream.examples;
 
 import java.io.Serializable;
 import java.net.URI;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 
@@ -28,10 +30,10 @@ import com.github.datasamudaya.stream.StreamPipeline;
 
 public class StreamReduceNormalInMemoryImplicit implements Serializable, Pipeline {
 	private static final long serialVersionUID = -681856073825969510L;
-	private final Logger log = Logger.getLogger(StreamReduceNormalInMemoryImplicit.class);
+	private final Logger log = LogManager.getLogger(StreamReduceNormalInMemoryImplicit.class);
 
 	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
-		
+
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");

@@ -23,7 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -34,10 +35,12 @@ import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 
 public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestCommon {
-	List<String> githubeventsheader = Arrays.asList("id", "type", "actor", "repo", "payload",
-			"public", "created_at", "org");
-	List<SqlTypeName> githubeventsheadertypes = Arrays.asList(SqlTypeName.BIGINT, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.BOOLEAN, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
-	Logger log = Logger.getLogger(StreamPipelineSqlBuilderJsonTest.class);
+	List<String> githubeventsheader = Arrays.asList("id", "type", "actor", "repo", "payload", "public", "created_at",
+			"org");
+	List<SqlTypeName> githubeventsheadertypes = Arrays.asList(SqlTypeName.BIGINT, SqlTypeName.VARCHAR,
+			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.BOOLEAN, SqlTypeName.VARCHAR,
+			SqlTypeName.VARCHAR);
+	Logger log = LogManager.getLogger(StreamPipelineSqlBuilderJsonTest.class);
 
 	@BeforeClass
 	public static void pipelineSetup() {
@@ -46,7 +49,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumns() throws Exception {
 		log.info("In testAllColumns() method Entry");
@@ -70,7 +73,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumns() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsWithWhere() throws Exception {
 		log.info("In testAllColumnsWithWhere() method Entry");
@@ -95,7 +98,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumns() throws Exception {
 		log.info("In testRequiredColumns() method Entry");
@@ -119,7 +122,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumns() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhere() throws Exception {
 		log.info("In testRequiredColumnsWithWhere() method Entry");
@@ -143,7 +146,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereGreaterThan() throws Exception {
 		log.info("In testRequiredColumnsWithWhereGreaterThan() method Entry");
@@ -171,7 +174,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsWithWhereGreaterThan() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLessThan() throws Exception {
 		log.info("In testRequiredColumnsWithWhereLessThan() method Entry");
@@ -200,7 +203,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsWithWhereLessThan() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereGreaterThanEquals() throws Exception {
 		log.info("In testRequiredColumnsWithWhereGreaterThanEquals() method Entry");
@@ -228,7 +231,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsWithWhereGreaterThanEquals() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLessThanEquals() throws Exception {
 		log.info("In testRequiredColumnsWithWhereLessThanEquals() method Entry");
@@ -256,7 +259,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsWithWhereLessThanEquals() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLiteralFirst() throws Exception {
 		log.info("In testRequiredColumnsWithWhereLiteralFirst() method Entry");
@@ -283,7 +286,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsWithWhereLiteralFirst() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereColumnEquals() throws Exception {
 		log.info("In testRequiredColumnsWithWhereColumnEquals() method Entry");
@@ -310,7 +313,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsWithWhereColumnEquals() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsCount() throws Exception {
 		log.info("In testRequiredColumnsCount() method Entry");
@@ -326,7 +329,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsCount() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsCountWithWhere() throws Exception {
 		log.info("In testRequiredColumnsCountWithWhere() method Entry");
@@ -343,7 +346,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnsCountWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsSumWithWhere() throws Exception {
 		log.info("In testAllColumnsSumWithWhere() method Entry");
@@ -360,7 +363,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsSumWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsMinWithWhere() throws Exception {
 		log.info("In testAllColumnsMinWithWhere() method Entry");
@@ -376,7 +379,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsMinWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsMaxWithWhere() throws Exception {
 		log.info("In testAllColumnsMaxWithWhere() method Entry");
@@ -392,7 +395,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsMaxWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testMultipleAllColumnsAndOrCondition() throws Exception {
 		log.info("In testMultipleAllColumnsAndOrCondition() method Entry");
@@ -418,7 +421,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testMultipleAllColumnsAndOrCondition() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testMultipleAllColumnsOrAndCondition() throws Exception {
 		log.info("In testMultipleAllColumnsOrAndCondition() method Entry");
@@ -444,7 +447,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testMultipleAllColumnsOrAndCondition() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testNumberOfRecordsEventType() throws Exception {
 		log.info("In testNumberOfRecordsEventType() method Entry");
@@ -466,7 +469,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testNumberOfRecordsEventType() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testNumberOfPushEventsWithWhere() throws Exception {
 		log.info("In testNumberOfPushEventsWithWhere() method Entry");
@@ -487,7 +490,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testNumberOfPushEventsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testSumByEventType() throws Exception {
 		log.info("In testSumByEventType() method Entry");
@@ -509,7 +512,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testSumByEventType() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testSumTotalIdRecordCount() throws Exception {
 		log.info("In testSumTotalIdRecordCount() method Entry");
@@ -534,7 +537,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testSumTotalIdRecordCount() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testSumIdAvgIdEventType() throws Exception {
 		log.info("In testSumIdAvgIdEventType() method Entry");
@@ -559,7 +562,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testSumIdAvgIdEventType() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testEventTypeOrderBy() throws Exception {
 		log.info("In testEventTypeOrderBy() method Entry");
@@ -583,7 +586,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testEventTypeOrderBy() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testDistinctEventsType() throws Exception {
 		log.info("In testDistinctEventsType() method Entry");
@@ -605,7 +608,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testDistinctEventsType() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testDistinctEventTypesWithWhere() throws Exception {
 		log.info("In testDistinctEventTypesWithWhere() method Entry");
@@ -649,7 +652,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testDistinctIdTypeWithWhereAndOrder() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsAvg() throws Exception {
 		log.info("In testAllColumnsAvg() method Entry");
@@ -666,7 +669,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsAvg() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsAvgIdPerType() throws Exception {
 		log.info("In testAllColumnsAvgIdPerType() method Entry");
@@ -693,7 +696,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsAvgIdPerType() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsAvgIdPerTypeWithWhere() throws Exception {
 		log.info("In testAllColumnsAvgIdPerTypeWithWhere() method Entry");
@@ -720,7 +723,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllColumnsAvgIdPerTypeWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsAvgIdPerTypeSumAvgCountMinMax() throws Exception {
 		log.info("In testAllColumnsAvgIdPerTypeSumAvgCountMinMax() method Entry");
@@ -771,7 +774,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testAllAvgIdPerTypeSumAvgCountMinMax() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnLength() throws Exception {
 		log.info("In testColumnLength() method Entry");
@@ -791,7 +794,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testColumnLength() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnWithLength() throws Exception {
 		log.info("In testRequiredColumnWithLength() method Entry");
@@ -811,7 +814,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnWithLength() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnWithMultipleLengths() throws Exception {
 		log.info("In testRequiredColumnWithMultipleLengths() method Entry");
@@ -831,7 +834,7 @@ public class StreamPipelineSqlBuilderJsonTest extends StreamPipelineBaseTestComm
 		log.info("In testRequiredColumnWithMultipleLengths() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnWithLengthsAndLowercase() throws Exception {
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Entry");

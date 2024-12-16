@@ -124,7 +124,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 							}
 
 							var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-									.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+									.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 											DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 							var datasamudayamc = new MapperCombinerExecutor(
 									mc.blockslocation, CacheUtils.getBlockData(mc.blockslocation, hdfs), cm, cc);
@@ -148,7 +148,7 @@ public class MapReduceYarnContainer extends AbstractIntegrationYarnContainer {
 						var apptaskcontextmap = new ConcurrentHashMap<String, Context>();
 						Context currentctx;
 						var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-								.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+								.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 										DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 						for (var tuple2 : (List<Tuple2>) red.tuples) {
 							var ctx = new DataCruncherContext();

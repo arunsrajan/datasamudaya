@@ -1,6 +1,7 @@
 package com.github.datasamudaya.stream.scheduler;
 
 import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URL;
@@ -17,7 +18,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgroups.JChannel;
 import org.slf4j.Logger;
@@ -25,10 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.io.Input;
 import com.github.datasamudaya.common.CacheUtils;
-import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.DataSamudayaCacheManager;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.ServerUtils;
 import com.github.datasamudaya.common.TaskSchedulerWebServlet;
@@ -45,6 +47,12 @@ import com.github.datasamudaya.stream.utils.PipelineGraphWebServlet;
  * @author Arun
  */
 public class StreamPipelineTaskSchedulerRunner {
+	
+	static {
+		System.setProperty("log4j.configurationFile", 
+				System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+	}
+	
 	static Logger log = LoggerFactory.getLogger(StreamPipelineTaskSchedulerRunner.class);
 	static ServerSocket ss;
 	static ExecutorService esstream;
@@ -61,9 +69,7 @@ public class StreamPipelineTaskSchedulerRunner {
 	public static void main(String[] args) throws Exception {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 		// Load log4j properties.
-		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);		
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
@@ -119,7 +125,7 @@ public class StreamPipelineTaskSchedulerRunner {
 
 		var esstream = Executors.newFixedThreadPool(1, Thread.ofVirtual().factory());
 		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		var su = new ServerUtils();
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_WEB_PORT)),

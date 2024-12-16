@@ -42,7 +42,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.ignite.IgniteCache;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.github.datasamudaya.common.AllocateContainers;
@@ -52,7 +53,6 @@ import com.github.datasamudaya.common.ContainerLaunchAttributes;
 import com.github.datasamudaya.common.ContainerResources;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
-import com.github.datasamudaya.common.LaunchContainers.MODE;
 import com.github.datasamudaya.common.DataSamudayaIgniteClient;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -67,12 +67,12 @@ import com.github.datasamudaya.common.HDFSBlockUtils;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.LaunchContainers;
+import com.github.datasamudaya.common.LaunchContainers.MODE;
 import com.github.datasamudaya.common.LoadJar;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.Stage;
-import com.github.datasamudaya.common.exceptions.ZookeeperException;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.AbstractPipeline;
@@ -82,7 +82,7 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.StreamPipeline;
 
 public class FileBlocksPartitionerHDFS {
-	private static final Logger log = Logger.getLogger(FileBlocksPartitionerHDFS.class);
+	private static final Logger log = LogManager.getLogger(FileBlocksPartitionerHDFS.class);
 	protected long totallength;
 	protected FileSystem hdfs;
 	protected List<Path> filepaths = new ArrayList<>();
@@ -149,7 +149,7 @@ public class FileBlocksPartitionerHDFS {
 	 * @throws IOException
 	 * @throws Exception
 	 */
-	@SuppressWarnings({"rawtypes"})
+	@SuppressWarnings({ "rawtypes" })
 	public void getJobStageBlocks(Job job, IntSupplier supplier, String protocol, Set<Stage> rootstages,
 			Collection<AbstractPipeline> mdsroots, PipelineConfig pc)
 			throws PipelineException, IOException, URISyntaxException {
@@ -179,9 +179,11 @@ public class FileBlocksPartitionerHDFS {
 			List<String> folderstolbcontainers = new ArrayList<>();
 			for (var rootstage : rootstages) {
 				var obj = roots.next();
-				if (!CollectionUtils.isEmpty(rootstage.tasks) && rootstage.tasks.get(0) instanceof CsvOptionsSQL csvOptionsSQL) {
+				if (!CollectionUtils.isEmpty(rootstage.tasks)
+						&& rootstage.tasks.get(0) instanceof CsvOptionsSQL csvOptionsSQL) {
 					columns = csvOptionsSQL.getRequiredcolumns();
-				} else if (!CollectionUtils.isEmpty(rootstage.tasks) && rootstage.tasks.get(0) instanceof JsonSQL jsonSQL) {
+				} else if (!CollectionUtils.isEmpty(rootstage.tasks)
+						&& rootstage.tasks.get(0) instanceof JsonSQL jsonSQL) {
 					columns = jsonSQL.getRequiredcolumns();
 				}
 				if (obj instanceof StreamPipeline mdp) {
@@ -192,7 +194,8 @@ public class FileBlocksPartitionerHDFS {
 					continue;
 				}
 				if (isNull(hdfspath)) {
-					hdfspath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
+					hdfspath = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL,
+							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT);
 				}
 				try (var hdfs = FileSystem.newInstance(new URI(hdfspath), new Configuration());) {
 					this.hdfs = hdfs;
@@ -201,10 +204,11 @@ public class FileBlocksPartitionerHDFS {
 					this.filepaths.addAll(newpaths);
 					job.getJm().setTotalfilesize(
 							job.getJm().getTotalfilesize() + Utils.getTotalLengthByFiles(hdfs, filepaths));
-					if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors() 
+					if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors()
 							&& nonNull(pc.getTejobid())
 							&& nonNull(GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder))) {
-						Set<Path> pathtoprocess = GlobalJobFolderBlockLocations.compareCurrentPathsNewPathsAndStore(pc.getTejobid(), folder, newpaths, hdfs);
+						Set<Path> pathtoprocess = GlobalJobFolderBlockLocations
+								.compareCurrentPathsNewPathsAndStore(pc.getTejobid(), folder, newpaths, hdfs);
 						List<BlocksLocation> bls = GlobalJobFolderBlockLocations.get(pc.getTejobid(), folder);
 						if (CollectionUtils.isNotEmpty(pathtoprocess)) {
 							this.filepaths.clear();
@@ -215,10 +219,12 @@ public class FileBlocksPartitionerHDFS {
 								getContainersGlobal();
 								allocateContainersLoadBalanced(blsnew);
 							}
-							List<String> files = newpaths.parallelStream().map(path -> path.toUri().toString()).toList();
-							List<String> filestoprocess = pathtoprocess.parallelStream().map(path -> path.toUri().toString()).toList();
+							List<String> files = newpaths.parallelStream().map(path -> path.toUri().toString())
+									.toList();
+							List<String> filestoprocess = pathtoprocess.parallelStream()
+									.map(path -> path.toUri().toString()).toList();
 							List<BlocksLocation> currentbls = new ArrayList<>(bls);
-							for (BlocksLocation bltoremove :currentbls) {
+							for (BlocksLocation bltoremove : currentbls) {
 								Block[] block = bltoremove.getBlock();
 								if (!files.contains(block[0].getFilename())
 										|| filestoprocess.contains(block[0].getFilename())) {
@@ -228,9 +234,10 @@ public class FileBlocksPartitionerHDFS {
 							blsnew.stream().forEach(blocks -> blocks.setToreprocess(true));
 							bls.addAll(blsnew);
 						} else {
-							List<String> files = newpaths.parallelStream().map(path -> path.toUri().toString()).toList();
+							List<String> files = newpaths.parallelStream().map(path -> path.toUri().toString())
+									.toList();
 							List<BlocksLocation> currentbls = new ArrayList<>(bls);
-							for (BlocksLocation bltoremove :currentbls) {
+							for (BlocksLocation bltoremove : currentbls) {
 								Block[] block = bltoremove.getBlock();
 								bltoremove.setToreprocess(false);
 								if (!files.contains(block[0].getFilename())) {
@@ -253,7 +260,7 @@ public class FileBlocksPartitionerHDFS {
 							if (supplier instanceof IntSupplier) {
 								this.supplier = supplier;
 								blocks = getHDFSParitions();
-								if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors() 
+								if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors()
 										&& nonNull(pc.getTejobid())) {
 									GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
 									GlobalJobFolderBlockLocations.putPaths(pc.getTejobid(), folder, newpaths, hdfs);
@@ -265,7 +272,7 @@ public class FileBlocksPartitionerHDFS {
 							} else {
 								// Get block if HDFS protocol.
 								blocks = getBlocks(columns);
-								if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors() 
+								if (nonNull(pc.getUseglobaltaskexecutors()) && pc.getUseglobaltaskexecutors()
 										&& nonNull(pc.getTejobid())) {
 									GlobalJobFolderBlockLocations.put(pc.getTejobid(), folder, blocks);
 									GlobalJobFolderBlockLocations.putPaths(pc.getTejobid(), folder, newpaths, hdfs);
@@ -299,39 +306,40 @@ public class FileBlocksPartitionerHDFS {
 			} else if (isjgroups || !islocal && !isyarn && !ismesos) {
 				getDnXref(totalblockslocation, true);
 				if (!pc.getUseglobaltaskexecutors()) {
-					if(isNull(pc.getTejobid())) {
+					if (isNull(pc.getTejobid())) {
 						pipelineconfig.setTejobid(job.getId());
-						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),pipelineconfig.getTejobid()
-								, pipelineconfig.getCputaskexecutor(), pipelineconfig.getMemorytaskexceutor(),
-								pipelineconfig.getNumtaskexecutors(), pipelineconfig.getCpudriver(),
-								pipelineconfig.getMemorydriver(), false);
-					}					
+						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),
+								pipelineconfig.getTejobid(), pipelineconfig.getCputaskexecutor(),
+								pipelineconfig.getMemorytaskexceutor(), pipelineconfig.getNumtaskexecutors(),
+								pipelineconfig.getCpudriver(), pipelineconfig.getMemorydriver(), false);
+					}
 					getContainersGlobal();
 					allocateContainersLoadBalanced(totalblockslocation);
 				} else {
 					boolean isteidnull = false;
-					if(isNull(pc.getTejobid())) {
+					if (isNull(pc.getTejobid())) {
 						isteidnull = true;
-						pipelineconfig.setTejobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
-						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),pipelineconfig.getTejobid()
-								, pipelineconfig.getCputaskexecutor(), pipelineconfig.getMemorytaskexceutor(),
-								pipelineconfig.getNumtaskexecutors(), pipelineconfig.getCpudriver(),
-								pipelineconfig.getMemorydriver(), false);
+						pipelineconfig.setTejobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN
+								+ System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
+						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),
+								pipelineconfig.getTejobid(), pipelineconfig.getCputaskexecutor(),
+								pipelineconfig.getMemorytaskexceutor(), pipelineconfig.getNumtaskexecutors(),
+								pipelineconfig.getCpudriver(), pipelineconfig.getMemorydriver(), false);
 					}
 					getContainersGlobal();
 					for (String foldertolb : folderstolbcontainers) {
-						allocateContainersLoadBalanced(GlobalJobFolderBlockLocations.get(isteidnull?job.getId():pc.getTejobid()
-								,foldertolb));
+						allocateContainersLoadBalanced(GlobalJobFolderBlockLocations
+								.get(isteidnull ? job.getId() : pc.getTejobid(), foldertolb));
 					}
 				}
 				job.getJm().setNodes(nodeschoosen);
 				job.getJm().setContainersallocated(new ConcurrentHashMap<>());
 			} else if (islocal || ismesos) {
 				getDnXref(totalblockslocation, false);
-			} else if(isyarn) {
+			} else if (isyarn) {
 				getDnXref(totalblockslocation, false);
 				if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
-					try(ZookeeperOperations zo=new ZookeeperOperations();){
+					try (ZookeeperOperations zo = new ZookeeperOperations();) {
 						zo.connect();
 						getYarnContainers(zo);
 						allocateContainersLoadBalanced(totalblockslocation);
@@ -348,20 +356,21 @@ public class FileBlocksPartitionerHDFS {
 			log.debug("Partitioning of Blocks ended.");
 		} catch (Exception ex) {
 			log.error(PipelineConstants.FILEBLOCKSPARTITIONINGERROR, ex);
-			destroyTaskExecutors();			
+			destroyTaskExecutors();
 			throw new PipelineException(PipelineConstants.FILEBLOCKSPARTITIONINGERROR, ex);
 		}
 	}
 
 	/**
 	 * Get Yarn Containers Launched through YARN Node Manager
+	 * 
 	 * @param zo
 	 * @throws Exception
 	 */
 	public void getYarnContainers(ZookeeperOperations zo) throws Exception {
 		containers = zo.getTaskExectorsByJobId(pipelineconfig.getTejobid());
 		List<LaunchContainers> lcsl = new ArrayList<>();
-		if (pipelineconfig.getIsremotescheduler()) {			
+		if (pipelineconfig.getIsremotescheduler()) {
 			List<String> drivers = zo.getDriversByJobId(pipelineconfig.getTejobid());
 			containers.add(0, drivers.get(0));
 			Map<String, Set<String>> hosthpsmap = containers.stream()
@@ -441,7 +450,7 @@ public class FileBlocksPartitionerHDFS {
 							crs.setExecutortype(EXECUTORTYPE.EXECUTOR);
 							cla.getCr().add(crs);
 						}
-					}					
+					}
 				}
 			}
 			job.setLcs(lcsl);
@@ -475,8 +484,7 @@ public class FileBlocksPartitionerHDFS {
 						nodeportselected = rand.nextInt(65534);
 					}
 					portnodeselected.add(nodeportselected);
-					lcs.setNodehostport(
-							hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
+					lcs.setNodehostport(hosthpsentry.getKey() + DataSamudayaConstants.UNDERSCORE + nodeportselected);
 					for (; ports.hasNext();) {
 						ContainerResources crs = new ContainerResources();
 						String hp = ports.next();
@@ -579,7 +587,8 @@ public class FileBlocksPartitionerHDFS {
 							Utils.getResultObjectByInput(node, dc, DataSamudayaConstants.EMPTY);
 							ContainerResources cr = chpcres.remove(te);
 							Resources allocresources = DataSamudayaNodesResources.get().get(node);
-							if (!pipelineconfig.getContaineralloc().equals(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE)) {
+							if (!pipelineconfig.getContaineralloc()
+									.equals(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE)) {
 								long maxmemory = cr.getMaxmemory();
 								long directheap = cr.getDirectheap();
 								allocresources.setFreememory(allocresources.getFreememory() + maxmemory + directheap);
@@ -664,12 +673,17 @@ public class FileBlocksPartitionerHDFS {
 	protected void allocateContainersLoadBalanced(List<BlocksLocation> bls) throws PipelineException {
 		log.debug("Entered FileBlocksPartitionerHDFS.getContainersBalanced");
 		var hostcontainermap = containers.stream()
-				.collect(Collectors.groupingBy(key -> pipelineconfig.getIspodcidrtonodemappingenabled()?
-						Utils.getNodeIPByPodIP(key.split(DataSamudayaConstants.UNDERSCORE)[0]).get()
-						:key.split(DataSamudayaConstants.UNDERSCORE)[0],
-						Collectors.mapping(container -> container, Collectors.toCollection(ArrayList::new))));
+				.collect(
+						Collectors
+								.groupingBy(
+										key -> pipelineconfig.getIspodcidrtonodemappingenabled()
+												? Utils.getNodeIPByPodIP(key.split(DataSamudayaConstants.UNDERSCORE)[0])
+														.get()
+												: key.split(DataSamudayaConstants.UNDERSCORE)[0],
+										Collectors.mapping(container -> container,
+												Collectors.toCollection(ArrayList::new))));
 		var containerallocatecount = (Map<String, Long>) containers.stream()
-				.collect(Collectors.toMap(container -> container, container -> 0l, (val1, val2)->val1+val2));
+				.collect(Collectors.toMap(container -> container, container -> 0l, (val1, val2) -> val1 + val2));
 		List<String> hostportcontainer;
 		// Iterate over the blocks location
 		for (var b : bls) {
@@ -708,12 +722,12 @@ public class FileBlocksPartitionerHDFS {
 		var dnxrefs = bls.stream().parallel().flatMap(bl -> {
 			var xrefs = new LinkedHashSet<String>();
 			Iterator<Set<String>> xref = bl.getBlock()[0].getDnxref().values().iterator();
-			for (;xref.hasNext();) {
+			for (; xref.hasNext();) {
 				xrefs.addAll(xref.next());
 			}
 			if (bl.getBlock().length > 1 && !Objects.isNull(bl.getBlock()[1])) {
 				xref = bl.getBlock()[0].getDnxref().values().iterator();
-				for (;xref.hasNext();) {
+				for (; xref.hasNext();) {
 					xrefs.addAll(xref.next());
 				}
 			}
@@ -729,8 +743,10 @@ public class FileBlocksPartitionerHDFS {
 		if (issa) {
 			resources = DataSamudayaNodesResources.get();
 			// Obtain all the nodes.
-			var computingnodes = resources.keySet().stream().map(node -> pipelineconfig.getIspodcidrtonodemappingenabled()?Utils.getNodeIPByPodIP(node.split(DataSamudayaConstants.UNDERSCORE)[0]).get():
-					node.split(DataSamudayaConstants.UNDERSCORE)[0])
+			var computingnodes = resources.keySet().stream()
+					.map(node -> pipelineconfig.getIspodcidrtonodemappingenabled()
+							? Utils.getNodeIPByPodIP(node.split(DataSamudayaConstants.UNDERSCORE)[0]).get()
+							: node.split(DataSamudayaConstants.UNDERSCORE)[0])
 					.collect(Collectors.toList());
 			// Iterate the blocks location and assigned the balanced allocated datanode
 			// hostport to blocks
@@ -883,7 +899,7 @@ public class FileBlocksPartitionerHDFS {
 				}
 				Resources allocresources = resources.get(node);
 				// Iterate containers to add the containers to global allocation.
-				for (int containercount = 0;containercount < ports.size();containercount++) {
+				for (int containercount = 0; containercount < ports.size(); containercount++) {
 					ContainerResources crs = contres.get(containercount);
 					if (!pipelineconfig.getContaineralloc().equals(DataSamudayaConstants.CONTAINER_ALLOC_USERSHARE)) {
 						long maxmemory = crs.getMaxmemory();
@@ -925,7 +941,6 @@ public class FileBlocksPartitionerHDFS {
 		}
 	}
 
-
 	private void setContainerResources() {
 		job.getJm().setContainerresources(job.getLcs().stream().flatMap(lc -> {
 			var crs = lc.getCla().getCr();
@@ -935,12 +950,14 @@ public class FileBlocksPartitionerHDFS {
 				var maxmemory = cr.getMaxmemory();
 				var directmemory = cr.getDirectheap();
 				var port = cr.getPort();
-				return DataSamudayaConstants.BR + node + DataSamudayaConstants.UNDERSCORE + port + DataSamudayaConstants.COLON
-						+ DataSamudayaConstants.BR + DataSamudayaConstants.CPUS + DataSamudayaConstants.EQUAL + cpu + DataSamudayaConstants.BR
-						+ DataSamudayaConstants.MEM + DataSamudayaConstants.EQUAL + maxmemory + DataSamudayaConstants.ROUNDED_BRACKET_OPEN
+				return DataSamudayaConstants.BR + node + DataSamudayaConstants.UNDERSCORE + port
+						+ DataSamudayaConstants.COLON + DataSamudayaConstants.BR + DataSamudayaConstants.CPUS
+						+ DataSamudayaConstants.EQUAL + cpu + DataSamudayaConstants.BR + DataSamudayaConstants.MEM
+						+ DataSamudayaConstants.EQUAL + maxmemory + DataSamudayaConstants.ROUNDED_BRACKET_OPEN
 						+ (Math.floor(maxmemory / (double) (maxmemory + directmemory) * 100.0))
-						+ DataSamudayaConstants.ROUNDED_BRACKET_CLOSE + DataSamudayaConstants.BR + DataSamudayaConstants.DIRECTMEM
-						+ DataSamudayaConstants.EQUAL + directmemory + DataSamudayaConstants.ROUNDED_BRACKET_OPEN
+						+ DataSamudayaConstants.ROUNDED_BRACKET_CLOSE + DataSamudayaConstants.BR
+						+ DataSamudayaConstants.DIRECTMEM + DataSamudayaConstants.EQUAL + directmemory
+						+ DataSamudayaConstants.ROUNDED_BRACKET_OPEN
 						+ (Math.floor(directmemory / (double) (maxmemory + directmemory) * 100.0))
 						+ DataSamudayaConstants.ROUNDED_BRACKET_CLOSE;
 
@@ -956,8 +973,8 @@ public class FileBlocksPartitionerHDFS {
 		// Get containers
 		LaunchContainers launchcontainer = job.getLcs().get(0);
 		ContainerResources continerresources = launchcontainer.getCla().getCr().get(0);
-		if(continerresources.getExecutortype() == EXECUTORTYPE.DRIVER) {
-			if(launchcontainer.getCla().getCr().size()>1) {
+		if (continerresources.getExecutortype() == EXECUTORTYPE.DRIVER) {
+			if (launchcontainer.getCla().getCr().size() > 1) {
 				LaunchContainers lcs = new LaunchContainers();
 				lcs.setAppid(launchcontainer.getAppid());
 				lcs.setJobid(launchcontainer.getJobid());
@@ -1041,7 +1058,8 @@ public class FileBlocksPartitionerHDFS {
 			} else {
 				return 1;
 			}
-		}).map(entry -> entry.getKey()).filter(key -> nodeswithhostonly.contains(key.split(DataSamudayaConstants.UNDERSCORE)[0]))
+		}).map(entry -> entry.getKey())
+				.filter(key -> nodeswithhostonly.contains(key.split(DataSamudayaConstants.UNDERSCORE)[0]))
 				.collect(Collectors.toList());
 	}
 
@@ -1125,7 +1143,8 @@ public class FileBlocksPartitionerHDFS {
 			var numberofimplicitcontainercpu = Integer.valueOf(pipelineconfig.getImplicitcontainercpu());
 			var numberofimplicitcontainermemory = pipelineconfig.getImplicitcontainermemory();
 			var numberofimplicitcontainermemorysize = Long.valueOf(pipelineconfig.getImplicitcontainermemorysize());
-			var memorysize = "GB".equals(numberofimplicitcontainermemory) ? DataSamudayaConstants.GB : DataSamudayaConstants.MB;
+			var memorysize = "GB".equals(numberofimplicitcontainermemory) ? DataSamudayaConstants.GB
+					: DataSamudayaConstants.MB;
 			var memoryrequired = numberofimplicitcontainermemorysize * memorysize;
 			if (actualmemory < memoryrequired * numberofimplicitcontainers) {
 				throw new PipelineException(PipelineConstants.INSUFFMEMORYALLOCATIONERROR);
@@ -1133,7 +1152,7 @@ public class FileBlocksPartitionerHDFS {
 			if (cpu < numberofimplicitcontainercpu * numberofimplicitcontainers) {
 				throw new PipelineException(PipelineConstants.INSUFFCPUALLOCATIONERROR);
 			}
-			for (var count = 0;count < numberofimplicitcontainers;count++) {
+			for (var count = 0; count < numberofimplicitcontainers; count++) {
 				var res = new ContainerResources();
 				res.setCpu(numberofimplicitcontainercpu);
 				var heapmem = memoryrequired * Integer.valueOf(pipelineconfig.getHeappercent()) / 100;
@@ -1154,8 +1173,7 @@ public class FileBlocksPartitionerHDFS {
 			var usersshare = DataSamudayaUsers.get();
 			var user = usersshare.get(pipelineconfig.getUser());
 			if (isNull(user)) {
-				throw new PipelineException(
-						PipelineConstants.USERNOTCONFIGURED.formatted(pipelineconfig.getUser()));
+				throw new PipelineException(PipelineConstants.USERNOTCONFIGURED.formatted(pipelineconfig.getUser()));
 			}
 			cpu = cpu * user.getPercentage() / 100;
 			res.setCpu(cpu);

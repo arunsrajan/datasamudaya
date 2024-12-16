@@ -57,6 +57,7 @@ public class MapReduceSqlBuilderIgniteTest {
 	String hdfsfilepath = "hdfs://127.0.0.1:9000";
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
+
 	@BeforeClass
 	public static void igniteInit() throws Exception {
 		Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
@@ -65,7 +66,7 @@ public class MapReduceSqlBuilderIgniteTest {
 		igniteserver = DataSamudayaIgniteServer.instance();
 		jc = JobConfigurationBuilder.newBuilder()
 				.setIsuseglobalte(true)
-				.setUser("arun")				
+				.setUser("arun")
 				.setExecmode(DataSamudayaConstants.EXECMODE_IGNITE)
 				.build();
 		hdfsLocalCluster = HadoopTestUtilities.initHdfsCluster(9000, 9870, 2);
@@ -75,7 +76,7 @@ public class MapReduceSqlBuilderIgniteTest {
 		uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
 		uploadfile(hdfs, carriers, carriers + csvfileextn);
 	}
-	
+
 	@Test
 	public void testAllFunction() throws Exception {
 		log.info("In testAllFunction() method Entry");
@@ -132,7 +133,7 @@ public class MapReduceSqlBuilderIgniteTest {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -153,7 +154,7 @@ public class MapReduceSqlBuilderIgniteTest {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -174,7 +175,7 @@ public class MapReduceSqlBuilderIgniteTest {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -196,7 +197,7 @@ public class MapReduceSqlBuilderIgniteTest {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -217,7 +218,7 @@ public class MapReduceSqlBuilderIgniteTest {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -239,7 +240,7 @@ public class MapReduceSqlBuilderIgniteTest {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -261,7 +262,7 @@ public class MapReduceSqlBuilderIgniteTest {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(2, values.length);					
+					assertEquals(2, values.length);
 				}
 			});
 		});
@@ -309,7 +310,7 @@ public class MapReduceSqlBuilderIgniteTest {
 		});
 		log.info("In testRequiredColumns() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionRound() throws Exception {
 		log.info("In testNonAggFunctionRound() method Entry");
@@ -324,13 +325,13 @@ public class MapReduceSqlBuilderIgniteTest {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(3, values.length);					
+					assertEquals(3, values.length);
 				}
 			});
 		});
 		log.info("In testNonAggFunctionRound() method Exit");
 	}
-	
+
 	@Test
 	public void testColumnLength() throws Exception {
 		log.info("In testColumnLength() method Entry");
@@ -345,15 +346,15 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(1, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(1, values.length);
+				}
 			});
 		});
 		log.info("In testColumnLength() method Exit");
 	}
 
-	
+
 	@Test
 	public void testRequiredColumnWithLength() throws Exception {
 		log.info("In testRequiredColumnWithLength() method Entry");
@@ -368,15 +369,15 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnWithLength() method Exit");
 	}
 
-	
+
 	@Test
 	public void testRequiredColumnWithMultipleLengths() throws Exception {
 		log.info("In testRequiredColumnWithMultipleLengths() method Entry");
@@ -391,15 +392,15 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(3, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(3, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnWithMultipleLengths() method Exit");
 	}
 
-	
+
 	@Test
 	public void testRequiredColumnWithLengthsAndLowercase() throws Exception {
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Entry");
@@ -414,9 +415,9 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(4, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Exit");
@@ -436,9 +437,9 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(4, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnWithLengthsAndUppercase() method Exit");
@@ -458,9 +459,9 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnTrim() method Exit");
@@ -480,9 +481,9 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnBase64Encode() method Exit");
@@ -502,9 +503,9 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnSubStringAlias() method Exit");
@@ -524,15 +525,15 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(4, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnSubStringPos() method Exit");
 	}
 
-	
+
 	@Test
 	public void testRequiredColumnSubStringPosLength() throws Exception {
 		log.info("In testRequiredColumnSubString() method Entry");
@@ -547,9 +548,9 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(4, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnSubString() method Exit");
@@ -569,9 +570,9 @@ public class MapReduceSqlBuilderIgniteTest {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnNormailizeSpaces() method Exit");
@@ -593,7 +594,7 @@ public class MapReduceSqlBuilderIgniteTest {
 					log.info("{}", Arrays.toString(values));
 					assertEquals(3, values.length);
 					assertEquals(12l, values[1]);
-					assert((long)values[2]>25);
+					assert((long) values[2] > 25);
 				}
 			});
 		});
@@ -643,7 +644,7 @@ public class MapReduceSqlBuilderIgniteTest {
 		});
 		log.info("In testRequiredColumnsWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testRequiredColumnsInOrder() throws Exception {
 		log.info("In testRequiredColumnsInOrder() method Entry");
@@ -680,13 +681,13 @@ public class MapReduceSqlBuilderIgniteTest {
 		is.close();
 		fsdos.close();
 	}
-	
+
 	@AfterClass
 	public static void igniteShutdown() {
-		if(nonNull(igniteserver)) {
+		if (nonNull(igniteserver)) {
 			igniteserver.close();
 		}
-		if(nonNull(hdfsLocalCluster)) {
+		if (nonNull(hdfsLocalCluster)) {
 			hdfsLocalCluster.close();
 		}
 	}

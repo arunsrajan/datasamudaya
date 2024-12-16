@@ -27,7 +27,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -43,12 +44,12 @@ import com.github.datasamudaya.common.utils.Utils;
 
 public class StreamPipelineIgniteBase {
 	static MiniDFSCluster hdfsLocalCluster;
-	String[] airlineheader = new String[]{"Year", "Month", "DayofMonth", "DayOfWeek", "DepTime",
-			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum",
-			"ActualElapsedTime", "CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest",
-			"Distance", "TaxiIn", "TaxiOut", "Cancelled", "CancellationCode", "Diverted", "CarrierDelay",
-			"WeatherDelay", "NASDelay", "SecurityDelay", "LateAircraftDelay"};
-	String[] carrierheader = {"Code", "Description"};
+	String[] airlineheader = new String[] { "Year", "Month", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime",
+			"ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime",
+			"AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut", "Cancelled",
+			"CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
+			"LateAircraftDelay" };
+	String[] carrierheader = { "Code", "Description" };
 	static String hdfsfilepath = "hdfs://127.0.0.1:9000";
 	String airlines = "/airlines";
 	String airline = "/airline";
@@ -91,17 +92,19 @@ public class StreamPipelineIgniteBase {
 	static FileSystem hdfs;
 	static ConcurrentMap<String, List<Process>> containerprocesses = new ConcurrentHashMap<>();
 	protected static PipelineConfig pipelineconfig = new PipelineConfig();
-	static Logger log = Logger.getLogger(StreamPipelineIgniteBase.class);
+	static Logger log = LogManager.getLogger(StreamPipelineIgniteBase.class);
 	private static TestingServer testingserver;
 	static Ignite igniteserver;
 	static IgniteCache<Object, byte[]> ignitecache;
 
-	@SuppressWarnings({"unused"})
+	@SuppressWarnings({ "unused" })
 	@BeforeClass
 	public static void setServerUp() throws Exception {
 		try {
-			Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
-					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+			Utils.initializeProperties(
+					DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
+					DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 			try {
 				StaticComponentContainer.Modules.exportAllToAll();
 			} catch (Exception ex) {
@@ -113,8 +116,9 @@ public class StreamPipelineIgniteBase {
 			igniteserver = DataSamudayaIgniteServer.instance();
 			ignitecache = igniteserver.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
-					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH, DataSamudayaConstants.CACHEDISKPATH_DEFAULT)
-							+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.CACHEBLOCKS);
+					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
+							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.CACHEBLOCKS);
 			CacheUtils.initBlockMetadataCache(DataSamudayaConstants.BLOCKCACHE);
 			try {
 				System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
@@ -126,7 +130,8 @@ public class StreamPipelineIgniteBase {
 			pipelineconfig.setLocal("false");
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
 			Configuration configuration = new Configuration();
-			hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
+			hdfs = FileSystem.newInstance(
+					new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
 			uploadfile(hdfs, airlinesamplesqlucs, airlinesamplesqlucs + csvfileextn);
 			uploadfile(hdfs, airports, airports + csvfileextn);

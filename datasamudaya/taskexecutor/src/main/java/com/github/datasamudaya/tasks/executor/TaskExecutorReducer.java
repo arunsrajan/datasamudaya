@@ -22,7 +22,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple4;
 
 import com.github.datasamudaya.common.Context;
@@ -43,7 +44,7 @@ import com.github.datasamudaya.common.utils.Utils;
  *
  */
 public class TaskExecutorReducer implements Callable<Context> {
-	static Logger log = Logger.getLogger(TaskExecutorReducer.class);
+	static Logger log = LogManager.getLogger(TaskExecutorReducer.class);
 	@SuppressWarnings("rawtypes")
 	Reducer cr;
 	ReducerValues rv;
@@ -78,10 +79,10 @@ public class TaskExecutorReducer implements Callable<Context> {
 	@Override
 	public Context call() {
 		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		var esresult = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
@@ -91,14 +92,14 @@ public class TaskExecutorReducer implements Callable<Context> {
 			DiskSpillingContext currentctx;
 			var cdl = new CountDownLatch(rv.getTuples().size());
 			for (var tuple4 : (List<Tuple4>) rv.getTuples()) {
-				var ctx = new DataCruncherContext();				
+				var ctx = new DataCruncherContext();
 				int index = 0;
 				for (var appstgtaskids : (Collection<String>) tuple4.v2) {
-					Task remotetask = ((List<Task>)tuple4.v4).get(index);
-					remotetask.setHostport((String) ((List)tuple4.v3).get(index));
+					Task remotetask = ((List<Task>) tuple4.v4).get(index);
+					remotetask.setHostport((String) ((List) tuple4.v3).get(index));
 					if (apptaskcontextmap.get(tuple4.v1.toString() + appstgtaskids) != null) {
 						currentctx = apptaskcontextmap.get(tuple4.v1.toString() + appstgtaskids);
-						if(currentctx.isSpilled()) {
+						if (currentctx.isSpilled()) {
 							Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple4.v1, remotetask, false);
 						} else {
 							ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
@@ -108,18 +109,17 @@ public class TaskExecutorReducer implements Callable<Context> {
 								(Object) apptaskexecutormap.get(appstgtaskids);
 						if (object == null) {
 							currentctx = new DiskSpillingContext(task, tuple4.v1.toString() + appstgtaskids);
-							Utils.copySpilledContextToDestination(null, Arrays.asList(ctx,currentctx), tuple4.v1, remotetask, true);													
-						}
-						else if(object instanceof TaskExecutorMapper tem) {
+							Utils.copySpilledContextToDestination(null, Arrays.asList(ctx, currentctx), tuple4.v1, remotetask, true);
+						} else if (object instanceof TaskExecutorMapper tem) {
 							currentctx = (DiskSpillingContext) tem.ctx;
-							if(currentctx.isSpilled()) {
+							if (currentctx.isSpilled()) {
 								Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple4.v1, remotetask, false);
 							} else {
 								ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
 							}
-						} else if(object instanceof TaskExecutorCombiner tec){
+						} else if (object instanceof TaskExecutorCombiner tec) {
 							currentctx = (DiskSpillingContext) tec.ctx;
-							if(currentctx.isSpilled()) {
+							if (currentctx.isSpilled()) {
 								Utils.copySpilledContextToDestination(currentctx, Arrays.asList(ctx), tuple4.v1, remotetask, false);
 							} else {
 								ctx.addAll(tuple4.v1, currentctx.get(tuple4.v1));
@@ -128,7 +128,7 @@ public class TaskExecutorReducer implements Callable<Context> {
 							currentctx = null;
 						}
 						apptaskcontextmap.put(tuple4.v1.toString() + appstgtaskids, currentctx);
-					}					
+					}
 					index++;
 				}
 				var datasamudayar = new ReducerExecutor(ctx, cr, tuple4.v1, task);
@@ -138,10 +138,10 @@ public class TaskExecutorReducer implements Callable<Context> {
 					try {
 						lock.acquire();
 						results = (DiskSpillingContext) fc.get();
-						if(results.isSpilled()) {
+						if (results.isSpilled()) {
 							results.close();
-							results.keys().forEach(key->
-							Utils.copySpilledContextToDestination(results, Arrays.asList(complete), key, task, false));
+							results.keys().forEach(key ->
+									Utils.copySpilledContextToDestination(results, Arrays.asList(complete), key, task, false));
 						} else {
 							complete.add(results);
 						}
@@ -169,7 +169,7 @@ public class TaskExecutorReducer implements Callable<Context> {
 			if (es != null) {
 				es.shutdown();
 			}
-			if(esresult != null) {
+			if (esresult != null) {
 				esresult.shutdown();
 			}
 		}

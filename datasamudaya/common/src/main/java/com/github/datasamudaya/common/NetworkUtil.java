@@ -18,18 +18,22 @@ package com.github.datasamudaya.common;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Collections;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Class to obtain the network address
+ * 
  * @author arunsrajan
  *
  */
 public class NetworkUtil {
-	private static final Logger log = Logger.getLogger(NetworkUtil.class);
+	private static final Logger log = LogManager.getLogger(NetworkUtil.class);
 
 	/**
-	 * This functions returns listenable host address passing the host information. 
+	 * This functions returns listenable host address passing the host information.
+	 * 
 	 * @param host
 	 * @return host address.
 	 */
@@ -37,7 +41,7 @@ public class NetworkUtil {
 		log.debug("Entered NetworkUtil.getNetworkAddress()");
 		try {
 			var netinfs = NetworkInterface.getNetworkInterfaces();
-			for (var netinf :Collections.list(netinfs)) {
+			for (var netinf : Collections.list(netinfs)) {
 				var inetAddresses = netinf.getInetAddresses();
 				for (var inetAddress : Collections.list(inetAddresses)) {
 					if (inetAddress.getHostAddress().equals(host)) {

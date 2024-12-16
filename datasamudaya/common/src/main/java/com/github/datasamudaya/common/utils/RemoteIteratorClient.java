@@ -30,13 +30,13 @@ import net.jpountz.lz4.LZ4BlockInputStream;
  * @param <T>
  */
 public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(RemoteIteratorClient.class);
-	
+
 	private InputStream inputStream;
 	private LZ4BlockInputStream lbis;
 	private Input input;
-	private boolean isclosed=false;
+	private boolean isclosed;
 	private OutputStream outputStream;
 	private Output output;
 	private int sorterport;
@@ -46,8 +46,9 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 	Kryo kryo = Utils.getKryo();
 	RemoteIteratorHasNext hasnext = new RemoteIteratorHasNext();
 	RemoteIteratorNext nextelem = new RemoteIteratorNext();
+
 	public RemoteIteratorClient(Task task, String appendwithpath, boolean appendintermediate, boolean left, boolean right, List<FieldCollationDirection> fcsc, RequestType requesttype, IteratorType iteratortype, boolean ismr, Object key) throws Exception {
-		try {			
+		try {
 			log.debug("Trying to split host and port {}", task.getHostport());
 			String[] hostport = task.getHostport().split(DataSamudayaConstants.UNDERSCORE);
 			log.debug("Connecting To Host {} And Port {} For Fetching And Sorting with task executor id {}", hostport[0], hostport[1], task.teid);
@@ -91,19 +92,19 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 	public void close() throws IOException {
 		kryo.writeClassAndObject(output, new RemoteIteratorClose());
 		output.flush();
-		if(nonNull(input)) {
+		if (nonNull(input)) {
 			input.close();
 		}
-		if(nonNull(lbis)) {
+		if (nonNull(lbis)) {
 			lbis.close();
 		}
-		if(nonNull(inputStream)) {
+		if (nonNull(inputStream)) {
 			inputStream.close();
 		}
-		if(nonNull(output)) {
+		if (nonNull(output)) {
 			output.close();
 		}
-		if(nonNull(outputStream)) {
+		if (nonNull(outputStream)) {
 			outputStream.close();
 		}
 
@@ -113,9 +114,9 @@ public class RemoteIteratorClient<T> implements Iterator<T>, Closeable {
 		}
 		isclosed = true;
 	}
-	
+
 	public boolean isclosed() {
 		return isclosed;
 	}
-	
+
 }

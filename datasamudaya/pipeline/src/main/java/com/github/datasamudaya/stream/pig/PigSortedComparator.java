@@ -14,13 +14,13 @@ import com.github.datasamudaya.stream.utils.SQLUtils;
 public class PigSortedComparator implements SortedComparator<Object[]>,Serializable {
 	private static final long serialVersionUID = 1792691650779378129L;
 	List<SortOrderColumns> columnssortorder;
-	
+
 	public PigSortedComparator(List<SortOrderColumns> sortordercolumns) {
 		this.columnssortorder = sortordercolumns;
 	}
-	
+
 	@Override
-	public int compare(Object[] obj1, Object[] obj2) {		
+	public int compare(Object[] obj1, Object[] obj2) {
 
 		for (int i = 0;i < columnssortorder.size();i++) {
 			Integer index = columnssortorder.get(i).getColumn();
@@ -36,7 +36,7 @@ public class PigSortedComparator implements SortedComparator<Object[]>,Serializa
 			}
 		}
 		return 0;
-	
+
 	}
 
 	public List<SortOrderColumns> getCso() {

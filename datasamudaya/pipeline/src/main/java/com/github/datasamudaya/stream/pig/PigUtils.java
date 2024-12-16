@@ -292,6 +292,7 @@ public class PigUtils {
 		StreamPipeline<Object[]> spdistinct = spparent
 				.map(new MapFunction<Object[], List<Object>>(){
 					private static final long serialVersionUID = 4839257897910999653L;
+
 					@Override
 					public List<Object> apply(Object[] distobj) {
 						return Arrays.asList(((Object[]) distobj[0]));
@@ -299,6 +300,7 @@ public class PigUtils {
 				}).distinct()
 				.mapToPair(new MapToPairFunction<List<Object>, Tuple2<List<Object>, Double>>() {
 					private static final long serialVersionUID = -6412672309048067129L;
+
 					@Override
 					public Tuple2<List<Object>, Double> apply(List<Object> record) {
 						return new Tuple2<>(record, 1.0d);
@@ -380,6 +382,7 @@ public class PigUtils {
 			List<String> allcolright = allcolsright;
 			List<String> alileft = aliasleft;
 			List<String> aliright = aliasright;
+
 			public boolean test(Object[] rowleft, Object[] rowright) {
 				for (int columnindex = 0;columnindex < leftablecol.size();columnindex++) {
 					String leftcol = leftablecol.get(columnindex);
@@ -515,6 +518,7 @@ public class PigUtils {
 				private static final long serialVersionUID = 1042338514393215380L;
 				List<String> aliascolumns = aliasorcolumns;
 				LogicalExpression[] headera = lexp;
+
 				public boolean test(Object[] obj) {
 					try {
 						boolean toevaluateexpression = true;
@@ -534,6 +538,7 @@ public class PigUtils {
 				private static final long serialVersionUID = -2439404591638356925L;
 				LogicalExpression[] lexpression = lexp;
 				List<String> aliascolumns = aliasorcolumns;
+
 				@Override
 				public Object[] apply(Object[] obj) {
 					Object[] formattedvalues = new Object[lexpression.length];
@@ -569,6 +574,7 @@ public class PigUtils {
 					List<FunctionParams> nonagg = new ArrayList<>(nonaggfunctions);
 					LogicalExpression[] grpby = headers;
 					List<String> aliasorcols = aliasorcolumns;
+
 					@Override
 					public Object[] apply(Object[] mapvalues) {
 						Object[] nonaggfnvalues = new Object[2];
@@ -622,6 +628,7 @@ public class PigUtils {
 					LogicalExpression[] grpby = headers;
 					List<List<String>> columnsevaluation = columnstoeval;
 					List<String> aliascolumns = aliasorcolumns;
+
 					@Override
 					public Tuple2<Tuple, Tuple> apply(Object[] mapvalues) {
 						List<Object> fnobj = new ArrayList<>();
@@ -694,6 +701,7 @@ public class PigUtils {
 					List<FunctionParams> functionParam = aggfunctions;
 					List<String> grpby = new ArrayList<>(grpbyheader);
 					List<String> alias = aliases;
+
 					@Override
 					public Object[] apply(Tuple2<Tuple, Tuple> tuple2) {
 						Object[] valueobject = new Object[2];

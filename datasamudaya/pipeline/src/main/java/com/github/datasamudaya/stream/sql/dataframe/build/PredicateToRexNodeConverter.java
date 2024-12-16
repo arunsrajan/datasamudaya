@@ -25,7 +25,7 @@ public class PredicateToRexNodeConverter {
 
 	/**
 	  The function which converts predicate to rexnode recursively
-	  @param predicate
+		@param predicate
 		 @return
 		*/
 	private RexNode convertPredicateToRexNodeRecursive(Predicate predicate) {

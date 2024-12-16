@@ -73,11 +73,11 @@ public class SelectQueryExecutorMR {
 							DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setDb(defaultdb).setJobConfiguration(jc).setSql(selectquery);
 			for (String table : tables) {
-				var columnMetadatas = new ArrayList<ColumnMetadata>();				
+				var columnMetadatas = new ArrayList<ColumnMetadata>();
 				String hdfslocation = TableCreator.getColumnMetadataFromTable(user, defaultdb, table, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+				for (ColumnMetadata columnMetadata : columnMetadatas) {
 					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}
@@ -89,7 +89,7 @@ public class SelectQueryExecutorMR {
 			} else if (isyarn && mraobj instanceof MapReduceApplicationYarn mray) {
 				return (List) mray.call();
 			}
-			
+
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
 			errors.add(ExceptionUtils.getRootCauseMessage(ex));
@@ -124,7 +124,7 @@ public class SelectQueryExecutorMR {
 				TableCreator.getColumnMetadataFromTable(user, dbdefault, tablename, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+				for (ColumnMetadata columnMetadata : columnMetadatas) {
 					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}
@@ -183,11 +183,11 @@ public class SelectQueryExecutorMR {
 					.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT))
 					.setDb(defaultdb).setJobConfiguration(jc).setSql(selectquery);
 			for (String table : tables) {
-				var columnMetadatas = new ArrayList<ColumnMetadata>();				
+				var columnMetadatas = new ArrayList<ColumnMetadata>();
 				String hdfslocation = TableCreator.getColumnMetadataFromTable(user, defaultdb, table, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+				for (ColumnMetadata columnMetadata : columnMetadatas) {
 					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}

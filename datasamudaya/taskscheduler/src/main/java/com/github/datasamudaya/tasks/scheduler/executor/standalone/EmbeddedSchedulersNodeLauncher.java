@@ -1,6 +1,7 @@
 package com.github.datasamudaya.tasks.scheduler.executor.standalone;
 
 import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URI;
@@ -26,7 +27,8 @@ import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +43,8 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.ServerUtils;
-import com.github.datasamudaya.common.SummaryWebServlet;
 import com.github.datasamudaya.common.StreamDataCruncher;
+import com.github.datasamudaya.common.SummaryWebServlet;
 import com.github.datasamudaya.common.TaskSchedulerWebServlet;
 import com.github.datasamudaya.common.WebResourcesServlet;
 import com.github.datasamudaya.common.utils.JShellServer;
@@ -73,6 +75,12 @@ import io.prometheus.client.hotspot.DefaultExports;
  *
  */
 public class EmbeddedSchedulersNodeLauncher {
+	
+	static {
+		System.setProperty("log4j.configurationFile", 
+				System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+	}
+	
 	static Logger log = LoggerFactory.getLogger(EmbeddedSchedulersNodeLauncher.class);
 
 	public static final String STOPPINGANDCLOSECONNECTION = "Stopping and closes all the connections...";
@@ -81,9 +89,7 @@ public class EmbeddedSchedulersNodeLauncher {
 
 	public static void main(String[] args) throws Exception {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
-		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);		
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();
@@ -181,7 +187,7 @@ public class EmbeddedSchedulersNodeLauncher {
 			var port = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
 			var host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
 			var escontainer = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 			Resources resource = new Resources();
 			resource.setNodeport(host + DataSamudayaConstants.UNDERSCORE + port);
@@ -296,7 +302,7 @@ public class EmbeddedSchedulersNodeLauncher {
 		cdlstream.await();
 		var esstream = Executors.newFixedThreadPool(1, Thread.ofVirtual().factory());
 		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		var su = new ServerUtils();
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_WEB_PORT)),
@@ -444,10 +450,10 @@ public class EmbeddedSchedulersNodeLauncher {
 		su.start();
 		SQLServerMR.start();
 		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		var essingle = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		var ss = new ServerSocket(
 				Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PORT)));

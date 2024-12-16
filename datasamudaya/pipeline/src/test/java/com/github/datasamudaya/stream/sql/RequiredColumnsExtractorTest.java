@@ -24,7 +24,7 @@ import com.github.datasamudaya.common.utils.sql.SimpleSchema;
 import com.github.datasamudaya.common.utils.sql.SimpleTable;
 
 public class RequiredColumnsExtractorTest {
-	private static Logger log = LoggerFactory.getLogger(RequiredColumnsExtractorTest.class);
+	private static final Logger log = LoggerFactory.getLogger(RequiredColumnsExtractorTest.class);
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
 			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime",
 			"CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut",
@@ -43,7 +43,7 @@ public class RequiredColumnsExtractorTest {
 			"longitude");
 	List<SqlTypeName> airportstype = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
-	
+
 	@Test
 	public void testAllColumns() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -51,7 +51,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		assertEquals(29, tablereqcolumnsmap.get("airline").size());
 	}
-	
+
 	@Test
 	public void testAllColumnsWithWhere() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -59,24 +59,24 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		assertEquals(29, tablereqcolumnsmap.get("airline").size());
 	}
-	
+
 	@Test
 	public void testRequiredColumns() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
 				.getRequiredColumnsByTable(buildSqlRelNode("SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DepDelay FROM airline"));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(3, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("8"));
 		assertEquals(Boolean.TRUE, columns.contains("14"));
 		assertEquals(Boolean.TRUE, columns.contains("15"));
 	}
-	
+
 	@Test
 	public void testRequiredColumnsWithWhere() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
 				.getRequiredColumnsByTable(buildSqlRelNode("SELECT airline.UniqueCarrier,airline.ArrDelay,airline.DepDelay FROM airline WHERE airline.DayofMonth=8 and airline.MonthOfYear=12"));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(5, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("8"));
@@ -85,8 +85,8 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 		assertEquals(Boolean.TRUE, columns.contains("2"));
 	}
-	
-	
+
+
 	@Test
 	public void testRequiredColumnsWithWhereGreaterThan() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -95,7 +95,7 @@ public class RequiredColumnsExtractorTest {
 						FROM airline
 						WHERE airline.DayofMonth>8 and airline.MonthOfYear>6
 						"""));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(4, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("8"));
@@ -103,7 +103,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 		assertEquals(Boolean.TRUE, columns.contains("2"));
 	}
-	
+
 	@Test
 	public void testRequiredColumnsWithWhereLessThan() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -112,7 +112,7 @@ public class RequiredColumnsExtractorTest {
 						FROM airline
 						WHERE airline.DayofMonth<8 and airline.MonthOfYear<6
 						"""));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(4, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("8"));
@@ -120,7 +120,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 		assertEquals(Boolean.TRUE, columns.contains("2"));
 	}
-	
+
 	@Test
 	public void testRequiredColumnsWithWhereGreaterThanEquals() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -129,7 +129,7 @@ public class RequiredColumnsExtractorTest {
 						FROM airline
 						WHERE airline.DayofMonth>=8 and airline.MonthOfYear>=6
 						"""));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(4, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("8"));
@@ -137,7 +137,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 		assertEquals(Boolean.TRUE, columns.contains("2"));
 	}
-	
+
 	@Test
 	public void testRequiredColumnsWithWhereLessThanEquals() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -146,7 +146,7 @@ public class RequiredColumnsExtractorTest {
 						FROM airline
 						WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6
 						"""));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(4, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("8"));
@@ -154,7 +154,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 		assertEquals(Boolean.TRUE, columns.contains("2"));
 	}
-	
+
 	@Test
 	public void testRequiredColumnsWithWhereLessThanEqualsAndCase() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -165,7 +165,7 @@ public class RequiredColumnsExtractorTest {
 						FROM airline
 						WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6
 						"""));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(4, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("8"));
@@ -173,7 +173,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 		assertEquals(Boolean.TRUE, columns.contains("2"));
 	}
-	
+
 	@Test
 	public void testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhen() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -184,7 +184,7 @@ public class RequiredColumnsExtractorTest {
 						FROM airline
 						WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6
 						"""));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(4, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("8"));
@@ -192,7 +192,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 		assertEquals(Boolean.TRUE, columns.contains("2"));
 	}
-	
+
 	@Test
 	public void testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhenExpression() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -203,7 +203,7 @@ public class RequiredColumnsExtractorTest {
 						FROM airline \
 						WHERE airline.DayofMonth<=8 and airline.MonthOfYear<=6\
 						"""));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(4, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("8"));
@@ -211,7 +211,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 		assertEquals(Boolean.TRUE, columns.contains("2"));
 	}
-	
+
 	@Test
 	public void testRequiredColumnsUnion() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -219,7 +219,7 @@ public class RequiredColumnsExtractorTest {
 						select sum(abs(length(concat(Origin , Dest)))) FROM airline where MonthOfYear between 11 and 12 and Origin like 'HNL' and  Dest like 'OGG' union select sum(abs(length(concat(Origin , Dest)))) FROM airlinesample where MonthOfYear between 11 and 12 and Origin like 'HNL' and  Dest like 'OGG'
 						"""));
 		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airlinesample"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airlinesample"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(3, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("16"));
@@ -231,7 +231,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("17"));
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 	}
-	
+
 	@Test
 	public void testJoin() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -239,7 +239,7 @@ public class RequiredColumnsExtractorTest {
 						select airline.origin,airports.airport,count(*) FROM airline inner join airports on airports.iata = airline.origin GROUP BY airline.origin,airports.airport
 						"""));
 		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airports"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airports"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(1, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("16"));
@@ -248,7 +248,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(Boolean.TRUE, columns.contains("0"));
 		assertEquals(Boolean.TRUE, columns.contains("1"));
 	}
-	
+
 	@Test
 	public void testMultiJoin() throws Exception {
 		Map<String, Set<String>> tablereqcolumnsmap = new RequiredColumnsExtractor()
@@ -257,7 +257,7 @@ public class RequiredColumnsExtractorTest {
 						"""));
 		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airline"));
 		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("airports"));
-		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("carriers"));		
+		assertEquals(Boolean.TRUE, tablereqcolumnsmap.containsKey("carriers"));
 		Set<String> columns = tablereqcolumnsmap.get("airline");
 		assertEquals(2, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("16"));
@@ -270,7 +270,7 @@ public class RequiredColumnsExtractorTest {
 		assertEquals(1, columns.size());
 		assertEquals(Boolean.TRUE, columns.contains("0"));
 	}
-	
+
 	private static SimpleTable getSimpleTable(String tablename, String[] fields, SqlTypeName[] types) {
 		SimpleTable.Builder builder = SimpleTable.newBuilder(tablename);
 		int typecount = 0;
@@ -280,6 +280,7 @@ public class RequiredColumnsExtractorTest {
 		}
 		return builder.withRowCount(60000L).build();
 	}
+
 	private RelNode buildSqlRelNode(String sql) throws Exception {
 		SimpleSchema.Builder builder = SimpleSchema.newBuilder("airschema");
 		builder.addTable(getSimpleTable("airline", airlineheader.toArray(new String[0]),
@@ -294,8 +295,8 @@ public class RequiredColumnsExtractorTest {
 		Optimizer optimizer = Optimizer.create(schema);
 		SqlNode sqlTree = optimizer.parse(sql);
 		sqlTree = optimizer.validate(sqlTree);
-		log.info("{}",sqlTree);	
-		RelNode relTree = optimizer.convert(sqlTree);		
+		log.info("{}", sqlTree);
+		RelNode relTree = optimizer.convert(sqlTree);
 		RuleSet rules = RuleSets.ofList(
 				CoreRules.FILTER_TO_CALC, CoreRules.PROJECT_TO_CALC, CoreRules.FILTER_MERGE,
 				CoreRules.FILTER_CALC_MERGE, CoreRules.PROJECT_CALC_MERGE,
@@ -304,15 +305,16 @@ public class RequiredColumnsExtractorTest {
 				EnumerableRules.ENUMERABLE_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_SORT_RULE,
 				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_JOIN_RULE,
 				EnumerableRules.ENUMERABLE_UNION_RULE, EnumerableRules.ENUMERABLE_INTERSECT_RULE
-				);
+		);
 
 		RelNode optimizerRelTree = optimizer.optimize(relTree,
 				relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
-		
+
 		traverseRelNode(optimizerRelTree, 0);
-		
+
 		return optimizerRelTree;
 	}
+
 	private void traverseRelNode(RelNode relNode, int depth) {
 		// Print information about the current node
 		printNodeInfo(relNode, depth);
@@ -334,7 +336,7 @@ public class RequiredColumnsExtractorTest {
 	private String getIndent(int depth) {
 		// Create an indentation string based on the depth
 		StringBuilder indent = new StringBuilder();
-		for (int i = 0; i < depth; i++) {
+		for (int i = 0;i < depth;i++) {
 			indent.append("  ");
 		}
 		return indent.toString();

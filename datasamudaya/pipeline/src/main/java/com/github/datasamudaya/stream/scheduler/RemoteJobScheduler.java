@@ -55,10 +55,10 @@ public class RemoteJobScheduler {
 			if (pipelineconfig.getUseglobaltaskexecutors() && nonNull(pipelineconfig.getTejobid())) {
 				jobid = pipelineconfig.getTejobid();
 			}
-			if(!Boolean.parseBoolean(pipelineconfig.getYarn())) {
+			if (!Boolean.parseBoolean(pipelineconfig.getYarn())) {
 				for (var lc : job.getLcs()) {
 					List<Integer> ports = null;
-					if (pipelineconfig.getUseglobaltaskexecutors() && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL ) {
+					if (pipelineconfig.getUseglobaltaskexecutors() && pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
 						ports = lc.getCla().getCr().stream().map(cr -> {
 							return cr.getPort();
 						}).collect(Collectors.toList());
@@ -83,8 +83,8 @@ public class RemoteJobScheduler {
 					}
 				}
 			}
-			var tes = zo.getTaskExectorsByJobId(jobid);	
-			if(pipelineconfig.getStorage() != STORAGE.COLUMNARSQL) {
+			var tes = zo.getTaskExectorsByJobId(jobid);
+			if (pipelineconfig.getStorage() != STORAGE.COLUMNARSQL) {
 				List<Integer> driverports = (List<Integer>) Utils.getResultObjectByInput(job.getDriver().getNodehostport(), job.getDriver(), DataSamudayaConstants.EMPTY);
 				int index = 0;
 				String tehost = job.getDriver().getNodehostport().split("_")[0];
@@ -116,7 +116,7 @@ public class RemoteJobScheduler {
 					}
 				});
 			}
-			if(CollectionUtils.isEmpty(job.getTaskexecutors())) {
+			if (CollectionUtils.isEmpty(job.getTaskexecutors())) {
 				job.setTaskexecutors(tes);
 			}
 			job.getTaskexecutors().addAll(0, drivers);
@@ -154,16 +154,17 @@ public class RemoteJobScheduler {
 			String jobid = job.getId();
 			if (job.getPipelineconfig().getUseglobaltaskexecutors()) {
 				jobid = job.getPipelineconfig().getTejobid();
-			};
+			}
+			;
 			String choosente = getDriverNode(zo, jobid);
 			job.getJm().setDriverhp(choosente);
-			log.debug("Choosen Task Executor Host Port {}", choosente);			
+			log.debug("Choosen Task Executor Host Port {}", choosente);
 			Object output = null;
-			if(nonNull(job.getPipelineconfig().getJar())) {
+			if (nonNull(job.getPipelineconfig().getJar())) {
 				output = Utils.getResultObjectByInput(choosente, job, jobid, DataSamudayaMapReducePhaseClassLoader.newInstance(job.getPipelineconfig().getJar(), Thread.currentThread().getContextClassLoader()));
 			} else {
-				if(Boolean.parseBoolean(job.getPipelineconfig().getYarn())) {
-					job.getPipelineconfig().setYarn(Boolean.FALSE+DataSamudayaConstants.EMPTY);
+				if (Boolean.parseBoolean(job.getPipelineconfig().getYarn())) {
+					job.getPipelineconfig().setYarn(Boolean.FALSE + DataSamudayaConstants.EMPTY);
 				}
 				output = Utils.getResultObjectByInput(choosente, job, jobid);
 			}
@@ -179,7 +180,7 @@ public class RemoteJobScheduler {
 		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		} finally {
-			if(job.getPipelineconfig().getStorage() != STORAGE.COLUMNARSQL) {
+			if (job.getPipelineconfig().getStorage() != STORAGE.COLUMNARSQL) {
 				Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
 			}
 		}
@@ -194,7 +195,7 @@ public class RemoteJobScheduler {
 	 * @throws Exception
 	 */
 	protected String getDriverNode(ZookeeperOperations zo, String jobid) throws Exception {
-		return zo.getDriversByJobId(jobid).stream().filter(hp->taskexecutors.contains(hp)).findFirst().get();
+		return zo.getDriversByJobId(jobid).stream().filter(hp -> taskexecutors.contains(hp)).findFirst().get();
 	}
-	
+
 }

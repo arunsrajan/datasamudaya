@@ -8,6 +8,8 @@
  */
 package com.github.datasamudaya.stream.scheduler;
 
+import static java.util.Objects.nonNull;
+
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.List;
@@ -15,7 +17,8 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.ExecuteTaskActor;
@@ -25,15 +28,14 @@ import com.github.datasamudaya.common.StreamPipelineTaskSubmitterMBean;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.Utils;
 
-import static java.util.Objects.nonNull;
-
 /**
  * The task scheduler thread for submitting tasks using jobstage object.
- * @author Arun 
+ * 
+ * @author Arun
  */
 public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterMBean, Callable<Object> {
 
-	static Logger log = Logger.getLogger(StreamPipelineTaskSubmitter.class);
+	static Logger log = LogManager.getLogger(StreamPipelineTaskSubmitter.class);
 	private int level;
 	private Task task;
 	private String hp;
@@ -80,8 +82,8 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 			}
 			String hostport[] = hp.split(DataSamudayaConstants.UNDERSCORE);
 			Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
-			StreamDataCruncher sdc = (StreamDataCruncher) registry.lookup(DataSamudayaConstants.BINDTESTUB
-					+ DataSamudayaConstants.HYPHEN + jobid);
+			StreamDataCruncher sdc = (StreamDataCruncher) registry
+					.lookup(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + jobid);
 			return sdc.postObject(task);
 		} catch (Exception ex) {
 			log.error("Unable to connect and submit tasks to executor with host and port: " + hp, ex);
@@ -91,6 +93,7 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 
 	/**
 	 * Execute Akka Actors
+	 * 
 	 * @return result
 	 * @throws Exception
 	 */
@@ -102,10 +105,11 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 			}
 			String hostport[] = hp.split(DataSamudayaConstants.UNDERSCORE);
 			Registry registry = LocateRegistry.getRegistry(hostport[0], Integer.parseInt(hostport[1]));
-			StreamDataCruncher sdc = (StreamDataCruncher) registry.lookup(DataSamudayaConstants.BINDTESTUB
-					+ DataSamudayaConstants.HYPHEN + jobid);
+			StreamDataCruncher sdc = (StreamDataCruncher) registry
+					.lookup(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + jobid);
 			if (CollectionUtils.isNotEmpty(task.getShufflechildactors())) {
-				childactors = task.getShufflechildactors().stream().map(task -> task.actorselection).collect(Collectors.toList());
+				childactors = task.getShufflechildactors().stream().map(task -> task.actorselection)
+						.collect(Collectors.toList());
 			}
 			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors, taskexecutors.indexOf(hostport) * 3);
 			task.setTeid(jobid);

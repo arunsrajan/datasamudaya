@@ -31,8 +31,9 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
-import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.burningwave.core.assembler.StaticComponentContainer;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -40,15 +41,15 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.stream.PipelineException;
-import com.github.datasamudaya.stream.sql.SQLClientException;
 
 /**
  * Submit the stream pipelining API jobs.
+ * 
  * @author Arun
  */
 public class StreamPipelineJobSubmitter {
 
-	static Logger log = Logger.getLogger(StreamPipelineJobSubmitter.class);
+	static Logger log = LogManager.getLogger(StreamPipelineJobSubmitter.class);
 
 	/**
 	 * Main method for sumbitting the MR jobs.
@@ -59,8 +60,9 @@ public class StreamPipelineJobSubmitter {
 	public static void main(String[] args) throws Exception {
 		URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+		PropertyConfigurator.configure(
+				datasamudayahome + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER
+						+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.JAR, true, DataSamudayaConstants.EMPTY);
@@ -82,23 +84,24 @@ public class StreamPipelineJobSubmitter {
 			Utils.initializeProperties(DataSamudayaConstants.EMPTY, config);
 		} else {
 			Utils.initializeProperties(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
+					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
+					DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 		}
-		
+
 		String jarpath;
 		if (cmd.hasOption(DataSamudayaConstants.JAR)) {
 			jarpath = cmd.getOptionValue(DataSamudayaConstants.JAR);
 		} else {
 			throw new PipelineException("User Jar is Required");
 		}
-		
+
 		String classtoexecute;
 		if (cmd.hasOption(DataSamudayaConstants.CLASS)) {
 			classtoexecute = cmd.getOptionValue(DataSamudayaConstants.CLASS);
 		} else {
 			throw new PipelineException("Class Name Required");
 		}
-		
+
 		String[] argumentsarray;
 		if (cmd.hasOption(DataSamudayaConstants.ARGS)) {
 			String arguments = cmd.getOptionValue(DataSamudayaConstants.ARGS);
@@ -106,28 +109,29 @@ public class StreamPipelineJobSubmitter {
 		} else {
 			argumentsarray = null;
 		}
-		
+
 		int numberofcontainers = 1;
 		if (cmd.hasOption(DataSamudayaConstants.NUMBERCONTAINERS)) {
 			String containers = cmd.getOptionValue(DataSamudayaConstants.NUMBERCONTAINERS);
 			numberofcontainers = Integer.valueOf(containers);
 
 		} else {
-			numberofcontainers = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS));
+			numberofcontainers = Integer
+					.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS));
 		}
-		
-		if(numberofcontainers <= 0) {
+
+		if (numberofcontainers <= 0) {
 			throw new PipelineException("Number of containers cannot be less than 1");
 		}
-		
+
 		boolean isdriverrequired = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.IS_REMOTE_SCHEDULER, DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT));
-		
+
 		if (cmd.hasOption(DataSamudayaConstants.ISDRIVERREQUIRED)) {
 			String driverrequired = cmd.getOptionValue(DataSamudayaConstants.ISDRIVERREQUIRED);
 			isdriverrequired = Boolean.parseBoolean(driverrequired);
 		}
-		
+
 		int cpupercontainer = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUPERCONTAINER);
@@ -140,19 +144,19 @@ public class StreamPipelineJobSubmitter {
 			memorypercontainer = Integer.valueOf(memory);
 
 		}
-		
+
 		int cpudriver = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isdriverrequired) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUDRIVER);
 			cpudriver = Integer.valueOf(cpu);
-		} else if(!isdriverrequired){
+		} else if (!isdriverrequired) {
 			cpudriver = 0;
 		}
 		int memorydriver = 1024;
 		if (cmd.hasOption(DataSamudayaConstants.MEMORYDRIVER) && isdriverrequired) {
 			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYDRIVER);
 			memorydriver = Integer.valueOf(memory);
-		} else if(!isdriverrequired){
+		} else if (!isdriverrequired) {
 			memorydriver = 0;
 		}
 		String user;
@@ -180,8 +184,8 @@ public class StreamPipelineJobSubmitter {
 				log.debug("Adopting job scheduler for host with port: " + currenttaskscheduler);
 				var mrjarpath = args[0];
 				var ts = currenttaskscheduler.split(DataSamudayaConstants.UNDERSCORE);
-				writeToTaskScheduler(ts, jarpath, classtoexecute, argumentsarray, user, 
-						cpupercontainer, memorypercontainer, numberofcontainers, cpudriver, memorydriver, isdriverrequired);
+				writeToTaskScheduler(ts, jarpath, classtoexecute, argumentsarray, user, cpupercontainer,
+						memorypercontainer, numberofcontainers, cpudriver, memorydriver, isdriverrequired);
 			}
 		} catch (Exception ex) {
 			log.error("Exception in submit Jar to Task Scheduler", ex);
@@ -190,25 +194,20 @@ public class StreamPipelineJobSubmitter {
 
 	/**
 	 * Submit the job to task scheduler.
+	 * 
 	 * @param ts
 	 * @param mrjarpath
 	 * @param args
 	 */
-	public static void writeToTaskScheduler(String[] ts, String mrjarpath
-			,String classname, String[] args,
-			String user,
-			int cpupercontainer, 
-			int memorypercontainer, 
-			int numberofcontainers, 
-			int cpudriver, 
-			int memorydriver,
+	public static void writeToTaskScheduler(String[] ts, String mrjarpath, String classname, String[] args, String user,
+			int cpupercontainer, int memorypercontainer, int numberofcontainers, int cpudriver, int memorydriver,
 			boolean isdriverrequired) {
 		try (var s = new Socket(ts[0], Integer.parseInt(ts[1]));
 				var is = s.getInputStream();
 				var os = s.getOutputStream();
 				var baos = new ByteArrayOutputStream();
 				var fisjarpath = new FileInputStream(mrjarpath);
-				var br = new BufferedReader(new InputStreamReader(is));) {			
+				var br = new BufferedReader(new InputStreamReader(is));) {
 			int ch;
 			while ((ch = fisjarpath.read()) != -1) {
 				baos.write(ch);
@@ -218,15 +217,15 @@ public class StreamPipelineJobSubmitter {
 			// File name is sent to scheduler.
 			Utils.writeDataStream(os, new File(mrjarpath).getName().getBytes());
 			Utils.writeDataStream(os, classname.getBytes());
-			Utils.writeDataStream(os, (cpupercontainer+"").getBytes());
-			Utils.writeDataStream(os, (memorypercontainer+"").getBytes());
-			Utils.writeDataStream(os, (numberofcontainers+"").getBytes());
-			Utils.writeDataStream(os, (cpudriver+"").getBytes());
-			Utils.writeDataStream(os, (memorydriver+"").getBytes());
-			Utils.writeDataStream(os, (user+"").getBytes());
-			Utils.writeDataStream(os, (isdriverrequired+"").getBytes());
+			Utils.writeDataStream(os, (cpupercontainer + "").getBytes());
+			Utils.writeDataStream(os, (memorypercontainer + "").getBytes());
+			Utils.writeDataStream(os, (numberofcontainers + "").getBytes());
+			Utils.writeDataStream(os, (cpudriver + "").getBytes());
+			Utils.writeDataStream(os, (memorydriver + "").getBytes());
+			Utils.writeDataStream(os, (user + "").getBytes());
+			Utils.writeDataStream(os, (isdriverrequired + "").getBytes());
 			if (args.length > 0) {
-				for (var argsindex = 0;argsindex < args.length;argsindex++) {
+				for (var argsindex = 0; argsindex < args.length; argsindex++) {
 					var arg = args[argsindex];
 					log.debug("Dispatching arguments to application: " + arg);
 					Utils.writeDataStream(os, arg.getBytes());

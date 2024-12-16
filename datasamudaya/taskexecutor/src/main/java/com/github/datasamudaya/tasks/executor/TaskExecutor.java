@@ -297,13 +297,14 @@ public class TaskExecutor implements Callable<Object> {
 			} else if (deserobj instanceof List objects) {
 				var object = objects.get(0);
 				if (object instanceof FreeResourcesCompletedJob) {
-					for(int taskindex=1;taskindex<objects.size()-1;taskindex++) {
+					for (int taskindex = 1;taskindex < objects.size() - 1;taskindex++) {
 						Task task = (Task) objects.get(1);
 						var appstgtaskid = task.getJobid() + task.getStageid() + task.getTaskid();
 						apptaskexecutormap.remove(appstgtaskid);
 					}
 					return TaskStatus.COMPLETED;
-				} if (object instanceof DeleteTemporaryApplicationDir deletedir) {
+				}
+				if (object instanceof DeleteTemporaryApplicationDir deletedir) {
 					var appid = (String) objects.get(1);
 					Utils.deleteJobDir(appid);
 					return TaskStatus.COMPLETED;

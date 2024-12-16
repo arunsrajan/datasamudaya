@@ -15,24 +15,26 @@
  */
 package com.github.datasamudaya.common;
 
+import static java.util.Objects.isNull;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import org.apache.log4j.Logger;
 
-import static java.util.Objects.isNull;
-
-import java.util.ArrayList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Holds LaunchContainer object globally.
+ * 
  * @author arun
  *
  */
 public class GlobalContainerLaunchers {
 
-	private static final Logger log = Logger.getLogger(GlobalContainerLaunchers.class);
+	private static final Logger log = LogManager.getLogger(GlobalContainerLaunchers.class);
 
 	private GlobalContainerLaunchers() {
 	}
@@ -40,7 +42,9 @@ public class GlobalContainerLaunchers {
 	private static final Map<String, Map<String, List<LaunchContainers>>> lcsmap = new ConcurrentHashMap<>();
 
 	/**
-	 * The put method for holding userid as key, jobid and list of LaunchContainers object as values.
+	 * The put method for holding userid as key, jobid and list of LaunchContainers
+	 * object as values.
+	 * 
 	 * @param userid
 	 * @param jobid
 	 * @param lcs
@@ -58,14 +62,17 @@ public class GlobalContainerLaunchers {
 
 	/**
 	 * Get all the containers of all the users.
+	 * 
 	 * @return
 	 */
 	public static List<LaunchContainers> getAll() {
-		return lcsmap.keySet().stream().flatMap(userid -> lcsmap.get(userid).entrySet().stream()).flatMap(es -> es.getValue().stream()).collect(Collectors.toList());
+		return lcsmap.keySet().stream().flatMap(userid -> lcsmap.get(userid).entrySet().stream())
+				.flatMap(es -> es.getValue().stream()).collect(Collectors.toList());
 	}
 
 	/**
 	 * Get All Users Job Containers Map for printing in web console
+	 * 
 	 * @return map of User Job Containers
 	 */
 	public static Map<String, Map<String, List<LaunchContainers>>> getUserContainersMap() {
@@ -73,7 +80,8 @@ public class GlobalContainerLaunchers {
 	}
 
 	/**
-	 * Thie method returns list of LaunchContainers objects for a given userid.  
+	 * Thie method returns list of LaunchContainers objects for a given userid.
+	 * 
 	 * @param userid
 	 * @return list of LaunchContainers object.
 	 */
@@ -83,6 +91,7 @@ public class GlobalContainerLaunchers {
 
 	/**
 	 * Removes the entry of key and its values for the given userid.
+	 * 
 	 * @param userid
 	 */
 	public static void remove(String userid) {
@@ -91,6 +100,7 @@ public class GlobalContainerLaunchers {
 
 	/**
 	 * Get the entries for the given userid
+	 * 
 	 * @param userid
 	 * @return Container entries for the user
 	 */
@@ -100,6 +110,7 @@ public class GlobalContainerLaunchers {
 
 	/**
 	 * Remove entries for given userid and jobid
+	 * 
 	 * @param userid
 	 * @param jobid
 	 */

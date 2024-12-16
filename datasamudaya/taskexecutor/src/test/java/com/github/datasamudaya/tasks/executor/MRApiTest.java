@@ -142,9 +142,9 @@ public class MRApiTest extends StreamPipelineBaseTestCommon {
 				TaskExecutorMapper(bls, lzis, task, Thread.currentThread().getContextClassLoader(), 12121);
 		mdtemc.call();
 		Map<String, Object> apptaskexecutormap = new ConcurrentHashMap<>();
-		apptaskexecutormap.put(task.getJobid()+task.getStageid()+task.getTaskid(), mdtemc);
+		apptaskexecutormap.put(task.getJobid() + task.getStageid() + task.getTaskid(), mdtemc);
 		CombinerValues combinervalues = new CombinerValues();
-		combinervalues.setTuples(Arrays.asList(new Tuple5<>("AQ", Arrays.asList(task.getJobid()+task.getStageid()+task.getTaskid()), Arrays.asList("127.0.0.1_1000"),Arrays.asList("1000"), Arrays.asList(task))));
+		combinervalues.setTuples(Arrays.asList(new Tuple5<>("AQ", Arrays.asList(task.getJobid() + task.getStageid() + task.getTaskid()), Arrays.asList("127.0.0.1_1000"), Arrays.asList("1000"), Arrays.asList(task))));
 		combinervalues.setAppid(task.getJobid());
 		Constructor cons = AirlineDataMapper.class.getDeclaredConstructor();
 		combinervalues.setCombiner(cons.newInstance(new Object[cons.getParameterCount()]));
@@ -179,9 +179,9 @@ public class MRApiTest extends StreamPipelineBaseTestCommon {
 				TaskExecutorMapper(bls, lzis, task, Thread.currentThread().getContextClassLoader(), 12121);
 		mdtemc.call();
 		Map<String, Object> apptaskexecutormap = new ConcurrentHashMap<>();
-		apptaskexecutormap.put(task.getJobid()+task.getStageid()+task.getTaskid(), mdtemc);
+		apptaskexecutormap.put(task.getJobid() + task.getStageid() + task.getTaskid(), mdtemc);
 		ReducerValues reducervalues = new ReducerValues();
-		reducervalues.setTuples(Arrays.asList(new Tuple4<>("AQ", Arrays.asList(task.getJobid()+task.getStageid()+task.getTaskid()), Arrays.asList("127.0.0.1_1000"), Arrays.asList(task))));
+		reducervalues.setTuples(Arrays.asList(new Tuple4<>("AQ", Arrays.asList(task.getJobid() + task.getStageid() + task.getTaskid()), Arrays.asList("127.0.0.1_1000"), Arrays.asList(task))));
 		reducervalues.setAppid(task.getJobid());
 		Constructor cons = AirlineDataMapper.class.getDeclaredConstructor();
 		reducervalues.setReducer(cons.newInstance(new Object[cons.getParameterCount()]));

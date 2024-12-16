@@ -74,7 +74,6 @@ public class JobResponse extends BaseResponseObject {
 	}
 
 
-
 	public enum State {
 		DIE,
 		STANDBY,

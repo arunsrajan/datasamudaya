@@ -36,7 +36,7 @@ public class RemoteJobSchedulerTest extends StreamPipelineBaseTestCommon impleme
 
 	@Test
 	public void testFilterFilterCollect() throws Throwable {
-		log.info("{}","testFilterFilter Before---------------------------------------");
+		log.info("{}", "testFilterFilter Before---------------------------------------");
 		PipelineConfig pc = new PipelineConfig();
 		pc.setMode(DataSamudayaConstants.MODE_NORMAL);
 		pc.setNumberofcontainers("1");
@@ -59,17 +59,17 @@ public class RemoteJobSchedulerTest extends StreamPipelineBaseTestCommon impleme
 		}).collect(toexecute, null);
 		int sum = 0;
 		for (List partitioneddata : data) {
-			log.info("{}",partitioneddata.size());
+			log.info("{}", partitioneddata.size());
 			sum += partitioneddata.size();
 		}
 		assertEquals(45957, sum);
 
-		log.info("{}","testFilterFilter After---------------------------------------");
+		log.info("{}", "testFilterFilter After---------------------------------------");
 	}
 
 	@Test
 	public void testFilterFilterCount() throws Throwable {
-		log.info("{}","testFilterFilterCount Before---------------------------------------");
+		log.info("{}", "testFilterFilterCount Before---------------------------------------");
 		PipelineConfig pc = new PipelineConfig();
 		pc.setMode(DataSamudayaConstants.MODE_NORMAL);
 		pc.setNumberofcontainers("1");
@@ -93,13 +93,13 @@ public class RemoteJobSchedulerTest extends StreamPipelineBaseTestCommon impleme
 		long sum = 0;
 		for (List<Long> partitioneddata : data) {
 			for (Long count : partitioneddata) {
-				log.info("{}",count);
+				log.info("{}", count);
 				sum += count;
 			}
 		}
 		assertEquals(45957, sum);
 
-		log.info("{}","testFilterFilterCount After---------------------------------------");
+		log.info("{}", "testFilterFilterCount After---------------------------------------");
 	}
 
 }

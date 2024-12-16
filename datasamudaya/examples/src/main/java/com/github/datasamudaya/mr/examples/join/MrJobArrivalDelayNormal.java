@@ -15,16 +15,17 @@
  */
 package com.github.datasamudaya.mr.examples.join;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.tasks.scheduler.Application;
-import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplication;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationBuilder;
 
 public class MrJobArrivalDelayNormal implements Application {
-	static Logger log = Logger.getLogger(MrJobArrivalDelayNormal.class);
+	static Logger log = LogManager.getLogger(MrJobArrivalDelayNormal.class);
 
 	@Override
 	public void runMRJob(String[] args, JobConfiguration jobconfiguration) {
@@ -32,16 +33,11 @@ public class MrJobArrivalDelayNormal implements Application {
 		jobconfiguration.setNumofreducers("1");
 		jobconfiguration.setGctype(DataSamudayaConstants.ZGC);
 		jobconfiguration.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT);
-		
+
 		var datasamudayajob = (MapReduceApplication) MapReduceApplicationBuilder.newBuilder()
-				.addMapper(new CarriersDataMapper(), args[1])
-				.addMapper(new AirlineArrDelayDataMapper(), args[0])
-				.addMapper(new AirlineDepDelayDataMapper(), args[0])
-				.addCombiner(new CarriersDataMapper())
-				.addReducer(new CarriersDataMapper())
-				.setOutputfolder(args[2])
-				.setJobConf(jobconfiguration)
-				.build();
+				.addMapper(new CarriersDataMapper(), args[1]).addMapper(new AirlineArrDelayDataMapper(), args[0])
+				.addMapper(new AirlineDepDelayDataMapper(), args[0]).addCombiner(new CarriersDataMapper())
+				.addReducer(new CarriersDataMapper()).setOutputfolder(args[2]).setJobConf(jobconfiguration).build();
 
 		var ctx = datasamudayajob.call();
 		log.info(ctx);

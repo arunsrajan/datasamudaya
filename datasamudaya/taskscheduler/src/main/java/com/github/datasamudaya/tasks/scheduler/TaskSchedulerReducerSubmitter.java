@@ -20,7 +20,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.ReducerValues;
@@ -36,7 +37,7 @@ import com.github.datasamudaya.common.utils.Utils;
 @SuppressWarnings("rawtypes")
 public class TaskSchedulerReducerSubmitter
 		implements TaskSchedulerReducerSubmitterMBean, Callable<Context> {
-	private static Logger log = Logger.getLogger(TaskSchedulerReducerSubmitter.class);
+	private static Logger log = LogManager.getLogger(TaskSchedulerReducerSubmitter.class);
 	ReducerValues rv;
 	String hp;
 	String applicationid;

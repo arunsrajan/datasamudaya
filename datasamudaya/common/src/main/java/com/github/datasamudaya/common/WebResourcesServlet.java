@@ -17,7 +17,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static java.util.Objects.isNull;
 
@@ -30,7 +31,7 @@ import static java.util.Objects.isNull;
 public class WebResourcesServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 8713220540678338208L;
-	private static final Logger log = Logger.getLogger(WebResourcesServlet.class);
+	private static final Logger log = LogManager.getLogger(WebResourcesServlet.class);
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws IOException {

@@ -44,7 +44,7 @@ public class SQLServerMR {
 	 */
 	public static void start() throws Exception {
 		ExecutorService executors = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.SQLPORTMR, DataSamudayaConstants.SQLPORTMR_DEFAULT)));
@@ -265,7 +265,7 @@ public class SQLServerMR {
 								}
 								isyarncontainerlaunched = false;
 							}
-							if(nonNull(sessionState)) {
+							if (nonNull(sessionState)) {
 								try {
 									Utils.endStartHiveSession(sessionState);
 								} catch (Exception ex) {

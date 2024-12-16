@@ -75,7 +75,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataSet = new HashSet();
-		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((spillexceedpercentage) / 100.0)));
+		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * (spillexceedpercentage / 100.0)));
 		this.left = left;
 		this.right = right;
 		this.appendintermediate = appendintermediate;
@@ -85,7 +85,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		this.numfileperexec = numfileperexec;
 		this.lock = new Semaphore(1);
 		this.filelock = new Semaphore(1);
-		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE, 
+		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE,
 				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
 	}
 
@@ -120,7 +120,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = new HashSet();
 		}
 		spillToDiskIntermediate(false);
-		dataSet.add(value);		
+		dataSet.add(value);
 		return true;
 	}
 
@@ -140,7 +140,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			values.stream().forEach(this::add);
 		}
 	}
-	
+
 	/**
 	 * The method which returns the task of the spilled data to disk
 	 * @return task
@@ -207,13 +207,13 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	public String getDiskfilepath() {
 		return this.diskfilepath;
 	}
-	
+
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
+			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded())
 					&& CollectionUtils.isNotEmpty(dataSet)) {
 				filelock.acquire();
-				if (isNull(ostream)) {					
+				if (isNull(ostream)) {
 					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
 					op = new Output(sos);
@@ -221,7 +221,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 				}
 				filelock.release();
 				lock.acquire();
-				if (isspilled && (dataSet.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataSet)) {					
+				if (isspilled && (dataSet.size() >= batchsize) || isfstoclose && CollectionUtils.isNotEmpty(dataSet)) {
 					Utils.getKryoInstance().writeClassAndObject(op, dataSet);
 					op.flush();
 					dataSet.clear();
@@ -253,9 +253,9 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 				if (nonNull(sos)) {
 					sos.close();
 				}
-				if(nonNull(ostream)) {
+				if (nonNull(ostream)) {
 					ostream.close();
-				}				
+				}
 				op = null;
 				sos = null;
 				ostream = null;
@@ -299,7 +299,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = null;
 		}
 	}
-	
+
 	@Override
 	public int size() {
 		if (nonNull(bytes)) {
@@ -309,13 +309,13 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	}
 
 	@Override
-	public Iterator<T> iterator() {		
+	public Iterator<T> iterator() {
 		return dataSet.iterator();
 	}
 
 	@Override
 	public boolean addAll(Collection<? extends T> c) {
-		addAll((Set<T>)c);
+		addAll((Set<T>) c);
 		return true;
 	}
 

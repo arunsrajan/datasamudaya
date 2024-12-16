@@ -95,7 +95,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(3, obj.length);
 			}
 		}
@@ -121,7 +121,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(8, obj.length);
 			}
 		}
@@ -145,7 +145,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(3, obj.length);
 			}
 		}
@@ -168,7 +168,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(29, obj.length);
 				assertTrue((int) obj[1] > 11 && (int) obj[2] >= 6);
 			}
@@ -208,7 +208,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertTrue((int) obj[1] > 11 && (int) obj[2] >= 6 && (int) obj[3] > 1);
 				assertEquals(29, obj.length);
 			}
@@ -234,13 +234,13 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(29, obj.length);
 			}
 		}
 		assertEquals(3389, totalrecords);
 		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
-		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "filtered_data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -248,13 +248,13 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(29, obj.length);
 			}
 		}
 		assertTrue(totalrecords < 3389);
 		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
-		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -262,7 +262,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(1, obj.length);
 				assertTrue(nonNull(obj[0]));
 			}
@@ -290,15 +290,15 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertTrue((int) obj[1] > 11 && (int) obj[2] >= 6);
 				assertEquals(29, obj.length);
 			}
 		}
 		assertEquals(3389, totalrecords);
-		
+
 		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
-		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "filtered_data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -306,15 +306,15 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertTrue((int) obj[1] > 11 && (int) obj[2] >= 6 && (int) obj[3] > 1);
 				assertEquals(29, obj.length);
 			}
 		}
 		assertTrue(totalrecords < 3389);
-		
+
 		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
-		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data1",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -322,15 +322,15 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(1, obj.length);
 			}
 		}
 		assertEquals(1, totalrecords);
-		
+
 		jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
-		+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
-		
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+
 		results = (List<List<Object[]>>) PigUtils.executeCollect(
 				lp, "data2",
 				pipelineconfig.getUser(), jobid, tejobid, pipelineconfig);
@@ -338,7 +338,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(1, obj.length);
 			}
 		}
@@ -363,7 +363,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(1, obj.length);
 				assertTrue(((int) obj[0] < 1000));
 			}
@@ -438,7 +438,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertTrue(((int) obj[1]) < 1000);
 			}
@@ -465,7 +465,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(3, obj.length);
 			}
 		}
@@ -494,7 +494,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.asList(obj));
+				log.info("{}", Arrays.asList(obj));
 				assertEquals(3, obj.length);
 			}
 		}
@@ -521,11 +521,11 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 		for (List<Object[]> recordspart : results) {
 			totalrecords += recordspart.size();
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.asList(obj));
+				log.info("{}", Arrays.asList(obj));
 				assertEquals(3, obj.length);
 			}
 		}
-		log.info("{}",totalrecords);
+		log.info("{}", totalrecords);
 	}
 
 	@Test
@@ -542,7 +542,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(1, obj.length);
 				assertEquals(46361, obj[0]);
 			}
@@ -563,7 +563,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				if ((int) obj[1] == 1) {
 					assertEquals("UniqueCarrier", obj[0]);
@@ -593,8 +593,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
-	
+
+
 	@Test
 	public void testPigLoadSumAvgCount() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
@@ -610,8 +610,8 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
-				assertEquals(6, obj.length);				
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(6, obj.length);
 			}
 		}
 	}
@@ -651,7 +651,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				if ((int) obj[1] == 0) {
 					assertEquals("UniqueCarrier", obj[0]);
@@ -676,7 +676,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(1, obj.length);
 				assertEquals(-1.3768957938942925, obj[0]);
 			}
@@ -697,7 +697,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				if ((double) obj[1] == 0) {
 					assertEquals("UniqueCarrier", obj[0]);
@@ -723,7 +723,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(obj[1], Math.abs((int) obj[0]));
 			}
@@ -744,7 +744,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(Long.valueOf(((String) obj[0]).length()), obj[1]);
 			}
@@ -766,7 +766,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals("Test Test Test Testd", obj[1]);
 			}
@@ -788,7 +788,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(1, obj.length);
 				assertEquals("Test Test Test Testd", obj[0]);
 			}
@@ -810,7 +810,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(3, obj.length);
 				assertEquals(((int) obj[0]) + ((int) obj[1]), obj[2]);
 			}
@@ -832,7 +832,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(3, obj.length);
 				assertEquals(((int) obj[0]) - ((int) obj[1]), obj[2]);
 			}
@@ -854,7 +854,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(3, obj.length);
 				assertEquals(((int) obj[0]) * ((int) obj[1]), obj[2]);
 			}
@@ -876,7 +876,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(3, obj.length);
 				assertEquals(
 						((int) obj[0])
@@ -901,7 +901,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(4, obj.length);
 				assertEquals(((int) obj[0])
 						/ (Double.valueOf(obj[1] + DataSamudayaConstants.EMPTY))
@@ -926,7 +926,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(((String) obj[0]).toUpperCase(), obj[1]);
 			}
@@ -949,7 +949,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(((String) obj[0]).toLowerCase(), obj[1]);
 			}
@@ -972,7 +972,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(Base64.getEncoder().encodeToString(((String) obj[0]).getBytes()), obj[1]);
 			}
@@ -997,7 +997,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(obj[0], obj[1]);
 			}
@@ -1018,7 +1018,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(Math.pow(((int) obj[0]), 2), obj[1]);
 			}
@@ -1041,7 +1041,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(Math.ceil(((int) obj[0])), obj[1]);
 			}
@@ -1063,7 +1063,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(Math.floor(((int) obj[0])), obj[1]);
 			}
@@ -1084,7 +1084,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(Math.sqrt(((int) obj[0])), obj[1]);
 			}
@@ -1106,7 +1106,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(Math.exp(((int) obj[0])), obj[1]);
 			}
@@ -1128,7 +1128,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(Math.log(((int) obj[0])), obj[1]);
 			}
@@ -1151,7 +1151,7 @@ public class PigCommandsTest extends StreamPipelineBaseTestCommon {
 				jobid, tejobid, pipelineconfig);
 		for (List<Object[]> recordspart : results) {
 			for (Object[] obj : recordspart) {
-				log.info("{}",Arrays.toString(obj));
+				log.info("{}", Arrays.toString(obj));
 				assertEquals(2, obj.length);
 				assertEquals(Math.exp(((int) obj[0])), obj[1]);
 			}

@@ -99,7 +99,7 @@ public class Optimizer {
 		List<SqlFunction> sqlFunctions = Functions.getAllSqlFunctions();
 
 		SqlOperatorTable customSqlOperatorTable = SqlOperatorTables.of(sqlFunctions);
-		SqlOperatorTable operatorTable = new SqlFunctionsChainedOperatorTable(Arrays.asList(sqlStdOperatorTable,customSqlOperatorTable));
+		SqlOperatorTable operatorTable = new SqlFunctionsChainedOperatorTable(Arrays.asList(sqlStdOperatorTable, customSqlOperatorTable));
 
 
 		SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
@@ -133,9 +133,9 @@ public class Optimizer {
 	public SqlNode parse(String sql) throws Exception {
 		SqlParser.Config parserConfig = SqlParser.config();
 		parserConfig = parserConfig.withCaseSensitive(config.caseSensitive()).
-		withUnquotedCasing(config.unquotedCasing()).
-		withQuotedCasing(config.quotedCasing()).
-		withConformance(config.conformance());
+				withUnquotedCasing(config.unquotedCasing()).
+				withQuotedCasing(config.quotedCasing()).
+				withConformance(config.conformance());
 
 		SqlParser parser = SqlParser.create(sql, parserConfig);
 

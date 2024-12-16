@@ -55,7 +55,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 public class ProcessShuffle extends AbstractBehavior<Command> implements Serializable {
 	Logger log = LoggerFactory.getLogger(ProcessShuffle.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
-	
+
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -73,17 +73,18 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 	Kryo kryo = Utils.getKryo();
 	Semaphore lock = new Semaphore(1);
 
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessShuffle-"+entityId);
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessShuffle-" + entityId);
 	}
-	
-	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, 
-											List<EntityRef> childpipes) {
-		return Behaviors.setup(context -> new ProcessShuffle(context, 
-				jobidstageidtaskidcompletedmap, 
+
+	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
+			List<EntityRef> childpipes) {
+		return Behaviors.setup(context -> new ProcessShuffle(context,
+				jobidstageidtaskidcompletedmap,
 				tasktoprocess, childpipes));
 	}
-	private ProcessShuffle(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, 
+
+	private ProcessShuffle(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
 			List<EntityRef> childpipes) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -107,7 +108,7 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof TerminatingActorValue tav) {
 				this.terminatingsize = tav.getTerminatingval();
-			} else if (object.getValue() instanceof ShuffleBlock sb) {				
+			} else if (object.getValue() instanceof ShuffleBlock sb) {
 				FilePartitionId fpid = (FilePartitionId) Utils.convertBytesToObject(sb.getPartitionId());
 				lock.acquire();
 				if (isNull(fileblockpath.get(fpid.getPartitionNumber()))) {
@@ -131,10 +132,10 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 							Utils.copySpilledDataSourceToFileShuffle(dsl, output);
 							log.debug("processShuffle::: Spilled Write Completed");
 						} else {
-							log.debug("processShuffle::: NotSpilled {}",  dsl.getData().size());
+							log.debug("processShuffle::: NotSpilled {}", dsl.getData().size());
 							Utils.getKryo().writeClassAndObject(output, dsl.getData());
 							output.flush();
-							log.debug("processShuffle::: NotSpilled Completed size {}",  dsl.getData().size());
+							log.debug("processShuffle::: NotSpilled Completed size {}", dsl.getData().size());
 						}
 						dsl.clear();
 					} else {
@@ -145,9 +146,8 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 					}
 				} catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);
-				} finally {
 				}
-			} else if (object.getValue() instanceof Dummy) {				
+			} else if (object.getValue() instanceof Dummy) {
 				initialshufflesize++;
 				log.debug("processShuffle::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
 			}

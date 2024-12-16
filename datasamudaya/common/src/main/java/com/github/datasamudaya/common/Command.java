@@ -1,3 +1,4 @@
 package com.github.datasamudaya.common;
 
-public interface Command {}
+public interface Command {
+}

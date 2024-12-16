@@ -15,18 +15,18 @@
  */
 package com.github.datasamudaya.mr.examples.join;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import org.apache.log4j.Logger;
-
+import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.JobConfiguration;
 import com.github.datasamudaya.tasks.scheduler.Application;
-import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationBuilder;
 import com.github.datasamudaya.tasks.scheduler.MapReduceApplicationYarn;
 
 public class MrJobArrivalDelayYARN implements Application {
 	static String heapsize = "1024";
-	static Logger log = Logger.getLogger(MrJobArrivalDelayYARN.class);
+	static Logger log = LogManager.getLogger(MrJobArrivalDelayYARN.class);
 
 	@Override
 	public void runMRJob(String[] args, JobConfiguration jobconfiguration) {
@@ -37,14 +37,9 @@ public class MrJobArrivalDelayYARN implements Application {
 		jobconfiguration.setMaxmem(args[4]);
 		jobconfiguration.setExecmode(DataSamudayaConstants.EXECMODE_YARN);
 		var datasamudayajob = (MapReduceApplicationYarn) MapReduceApplicationBuilder.newBuilder()
-				.addMapper(new CarriersDataMapper(), args[1])
-				.addMapper(new AirlineArrDelayDataMapper(), args[0])
-				.addMapper(new AirlineDepDelayDataMapper(), args[0])
-				.addCombiner(new CarriersDataMapper())
-				.addReducer(new CarriersDataMapper())
-				.setOutputfolder(args[2])
-				.setJobConf(jobconfiguration)
-				.build();
+				.addMapper(new CarriersDataMapper(), args[1]).addMapper(new AirlineArrDelayDataMapper(), args[0])
+				.addMapper(new AirlineDepDelayDataMapper(), args[0]).addCombiner(new CarriersDataMapper())
+				.addReducer(new CarriersDataMapper()).setOutputfolder(args[2]).setJobConf(jobconfiguration).build();
 		var ctx = datasamudayajob.call();
 		log.info(ctx);
 	}

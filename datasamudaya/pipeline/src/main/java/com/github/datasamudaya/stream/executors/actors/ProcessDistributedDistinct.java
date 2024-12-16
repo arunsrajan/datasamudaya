@@ -35,24 +35,25 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 	Logger log = LoggerFactory.getLogger(ProcessDistributedDistinct.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 	int terminatingsize;
-	int initialsize = 0;
+	int initialsize;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	List<EntityRef> childpipes;
 	Task tasktoprocess;
 	int diskspillpercentage;
 	DiskSpillingSet diskspillset;
 
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessDistributedDistinct-"+entityId);
-	}	
-	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, 
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessDistributedDistinct-" + entityId);
+	}
+
+	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
 			List<EntityRef> childpipes, int terminatingsize) {
-	return Behaviors.setup(context -> new ProcessDistributedDistinct(context, 
-				jobidstageidtaskidcompletedmap, 
+		return Behaviors.setup(context -> new ProcessDistributedDistinct(context,
+				jobidstageidtaskidcompletedmap,
 				tasktoprocess, childpipes, terminatingsize));
 	}
-	
-	
+
+
 	public ProcessDistributedDistinct(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
 		super(context);
@@ -71,7 +72,7 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 		return newReceiveBuilder().onMessage(OutputObject.class, this::processDistributedDistinct).build();
 	}
 
-	private Behavior<Command> processDistributedDistinct(OutputObject object) throws PipelineException, Exception {		
+	private Behavior<Command> processDistributedDistinct(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				log.debug("In Distributed Distinct {} {} {} {} {}", object, dsl.size(), dsl.isSpilled(), dsl.getTask(), terminatingsize);
@@ -80,18 +81,18 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 				} else {
 					diskspillset.addAll(dsl.getData());
 				}
-				dsl.clear();				
-			} 
-			if(object.getTerminiatingclass() == DiskSpillingList.class || object.getTerminiatingclass() == Dummy.class) {
+				dsl.clear();
+			}
+			if (object.getTerminiatingclass() == DiskSpillingList.class || object.getTerminiatingclass() == Dummy.class) {
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
 				log.debug("processDistributedDistinct::Started InitialSize {} , Terminating Size {} childPipes {} Task {}", initialsize,
 						terminatingsize, childpipes, diskspillset.getTask());
-				if(diskspillset.isSpilled()) {
-					diskspillset.close();			
+				if (diskspillset.isSpilled()) {
+					diskspillset.close();
 				}
-				if (CollectionUtils.isNotEmpty(childpipes)) {															
+				if (CollectionUtils.isNotEmpty(childpipes)) {
 					log.debug("processDistributedDistinct::DiskSpill intermediate Set Is Spilled {} Task {}", diskspillset.isSpilled(), diskspillset.getTask());
 					childpipes.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class));

@@ -46,7 +46,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements Serializable {
-	private static Logger log =LoggerFactory.getLogger(ProcessLeftOuterJoin.class);
+	private static final Logger log = LoggerFactory.getLogger(ProcessLeftOuterJoin.class);
 
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
@@ -67,17 +67,17 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
-	
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessLeftOuterJoin-"+entityId);
+
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessLeftOuterJoin-" + entityId);
 	}
-	
+
 	public static Behavior<Command> create(String entityId, LeftOuterJoinPredicate lojp, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
-	return Behaviors.setup(context -> new ProcessLeftOuterJoin(context, lojp, pipelines, terminatingsize,
-			jobidstageidtaskidcompletedmap, cache, task));
+		return Behaviors.setup(context -> new ProcessLeftOuterJoin(context, lojp, pipelines, terminatingsize,
+				jobidstageidtaskidcompletedmap, cache, task));
 	}
-	
+
 	private ProcessLeftOuterJoin(ActorContext<Command> context, LeftOuterJoinPredicate lojp, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
 		super(context);
@@ -87,7 +87,7 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
 		diskspilllistinterm = new DiskSpillingList(task, diskspillpercentage, null, true, false, false, null, null, 0);
@@ -125,10 +125,10 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
 				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
 			log.debug("Left Outer Join Task {} from hostport {}", task, task.hostport);
-			if(diskspilllistintermleft.isSpilled()) {
+			if (diskspilllistintermleft.isSpilled()) {
 				diskspilllistintermleft.close();
 			}
-			if(diskspilllistintermright.isSpilled()) {
+			if (diskspilllistintermright.isSpilled()) {
 				diskspilllistintermright.close();
 			}
 			final boolean leftvalue = isNull(task.joinpos) ? false
@@ -149,7 +149,7 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 					var seq2 = Seq.seq(datastreamright);
 					var join = seq1.leftOuterJoin(seq2, lojp)) {
 				join.forEach(diskspilllistinterm::add);
-				if(diskspilllistinterm.isSpilled()) {
+				if (diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
 				Stream datastreamrightfirstelem = diskspilllistintermright.isSpilled()
@@ -158,22 +158,22 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 								diskspilllistintermright.getLeft(), diskspilllistintermright.getRight()))) : diskspilllistintermright.getData().stream();
 				Optional optionalfirstelement = datastreamrightfirstelem.findFirst();
 				Object[][] nullobjarr;
-				if(optionalfirstelement.isPresent()) {
-					Object[] origobjarray = (Object[]) optionalfirstelement.get();			
+				if (optionalfirstelement.isPresent()) {
+					Object[] origobjarray = (Object[]) optionalfirstelement.get();
 					nullobjarr = new Object[2][((Object[]) origobjarray[0]).length];
 					for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
 						nullobjarr[1][numvalues] = true;
-					}					
+					}
 				} else {
 					nullobjarr = new Object[2][1];
 					for (int numvalues = 0;numvalues < nullobjarr[0].length;numvalues++) {
 						nullobjarr[1][numvalues] = true;
-					}	
-				}				
+					}
+				}
 				Stream diskspilllistintermstream = diskspilllistinterm.isSpilled()
 						? (Stream<Tuple2>) Utils.getStreamData(
-								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null,
-										true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null,
+								true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
 						: diskspilllistinterm.getData().stream();
 				diskspilllistintermstream.filter(val -> val instanceof Tuple2).map(value -> {
 					Tuple2 maprec = (Tuple2) value;
@@ -211,13 +211,13 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 							log.error("Error in putting output in cache", ex);
 						}
 					}
-				} catch(Exception ex) {
+				} catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
 				return this;
-			} catch(Exception ex) {
+			} catch (Exception ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 		}

@@ -51,7 +51,8 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ehcache.Cache;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple;
@@ -103,8 +104,9 @@ import com.pivovarit.collectors.ParallelCollectors;
  * @author Arun Task executors thread for standalone task executors daemon.
  */
 @SuppressWarnings("rawtypes")
-public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelineTaskExecutorInMemory permits StreamPipelineTaskExecutorInMemoryDiskSQL {
-	private static Logger log = Logger.getLogger(StreamPipelineTaskExecutorInMemoryDisk.class);
+public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelineTaskExecutorInMemory
+		permits StreamPipelineTaskExecutorInMemoryDiskSQL {
+	private static Logger log = LogManager.getLogger(StreamPipelineTaskExecutorInMemoryDisk.class);
 
 	public StreamPipelineTaskExecutorInMemoryDisk(JobStage jobstage, ConcurrentMap<String, OutputStream> resultstream,
 			Cache cache) throws Exception {
@@ -146,7 +148,8 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 	 */
 	public byte[] getCachedRDF(RemoteDataFetch rdf) throws Exception {
 		log.debug("Entered StreamPipelineTaskExecutorInMemoryDisk.getIntermediateInputStreamRDF");
-		var path = rdf.getJobid() + DataSamudayaConstants.HYPHEN + rdf.getStageid() + DataSamudayaConstants.HYPHEN + rdf.getTaskid();
+		var path = rdf.getJobid() + DataSamudayaConstants.HYPHEN + rdf.getStageid() + DataSamudayaConstants.HYPHEN
+				+ rdf.getTaskid();
 		return (byte[]) cache.get(path);
 	}
 
@@ -159,7 +162,8 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 	 */
 	public byte[] getCachedTask(Task task) throws Exception {
 		log.debug("Entered StreamPipelineTaskExecutorInMemoryDisk.getIntermediateInputStreamTask");
-		var path = task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid();
+		var path = task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid() + DataSamudayaConstants.HYPHEN
+				+ task.getTaskid();
 		return (byte[]) cache.get(path);
 	}
 
@@ -198,9 +202,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			Object result = cf.get();
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv((List) result, os);
 				}
 				return (System.currentTimeMillis() - starttime) / 1000.0;
@@ -234,7 +238,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 	 * @return timetaken in seconds
 	 * @throws Exception
 	 */
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	public double processBlockHDFSIntersection(Set<InputStream> fsstreamfirst, List<BlocksLocation> blockssecond,
 			FileSystem hdfs) throws Exception {
 		var starttime = System.currentTimeMillis();
@@ -260,9 +264,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			Object result = cf.get();
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv((List) result, os);
 				}
 				return (System.currentTimeMillis() - starttime) / 1000.0;
@@ -295,7 +299,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 	 * @return timetaken in seconds.
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	public double processBlockHDFSIntersection(List<InputStream> fsstreamfirst, List<InputStream> fsstreamsecond)
 			throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -307,7 +311,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var inputfirst = new Input(fsstreamfirst.iterator().next());
 				var inputsecond = new Input(fsstreamsecond.iterator().next());
 
-				) {
+		) {
 
 			var datafirst = (List) Utils.getKryo().readClassAndObject(inputfirst);
 			var datasecond = (List) Utils.getKryo().readClassAndObject(inputsecond);
@@ -318,9 +322,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			Object result = cf.get();
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					Utils.convertToCsv((List) result, os);
 				}
 				return (System.currentTimeMillis() - starttime) / 1000.0;
@@ -365,7 +369,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	public double processBlockHDFSUnion(BlocksLocation blocksfirst, BlocksLocation blockssecond, FileSystem hdfs)
 			throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -387,12 +391,12 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			List result;
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
-						os.write(("" + Stream.concat(streamfirst, streamsecond).distinct().count())
-								.getBytes());
+						os.write(("" + Stream.concat(streamfirst, streamsecond).distinct().count()).getBytes());
 					} else {
 						Stream.concat(streamfirst, streamsecond).distinct().forEach(val -> {
 							try {
@@ -446,7 +450,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	public double processBlockHDFSUnion(Set<InputStream> fsstreamfirst, List<BlocksLocation> blockssecond,
 			FileSystem hdfs) throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -467,13 +471,12 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
-						os.write((""
-								+ Stream.concat(datafirst.stream(), streamsecond).distinct().count())
-								.getBytes());
+						os.write(("" + Stream.concat(datafirst.stream(), streamsecond).distinct().count()).getBytes());
 					} else {
 						Stream.concat(datafirst.stream(), streamsecond).distinct().forEach(val -> {
 							try {
@@ -526,7 +529,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 	 * @return timetaken in seconds
 	 * @throws PipelineException
 	 */
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	public double processBlockHDFSUnion(List<InputStream> fsstreamfirst, List<InputStream> fsstreamsecond)
 			throws PipelineException {
 		var starttime = System.currentTimeMillis();
@@ -547,21 +550,21 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
-						os.write(("" + Stream.concat(datafirst.stream(), datasecond.stream())
-								.distinct().count()).getBytes());
+						os.write(("" + Stream.concat(datafirst.stream(), datasecond.stream()).distinct().count())
+								.getBytes());
 					} else {
-						Stream.concat(datafirst.stream(), datasecond.stream()).distinct()
-								.forEach(val -> {
-									try {
-										os.write(val.toString().getBytes());
-										os.write(ch);
-									} catch (IOException e) {
-									}
-								});
+						Stream.concat(datafirst.stream(), datasecond.stream()).distinct().forEach(val -> {
+							try {
+								os.write(val.toString().getBytes());
+								os.write(ch);
+							} catch (IOException e) {
+							}
+						});
 					}
 				}
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
@@ -569,12 +572,10 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (terminalCount) {
 				result = new ArrayList<>();
-				result.add(Stream.concat(datafirst.parallelStream(), datasecond.parallelStream())
-						.distinct().count());
+				result.add(Stream.concat(datafirst.parallelStream(), datasecond.parallelStream()).distinct().count());
 			} else {
 				// parallel stream union operation result
-				var cf = (CompletableFuture) Stream.concat(datafirst.stream(), datasecond.stream())
-						.distinct()
+				var cf = (CompletableFuture) Stream.concat(datafirst.stream(), datasecond.stream()).distinct()
 						.collect(ParallelCollectors.parallel(value -> value, Collectors.toCollection(Vector::new),
 								executor, Runtime.getRuntime().availableProcessors()));
 				result = (List) cf.get();
@@ -824,8 +825,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 
 						} else if (finaltask instanceof StandardDeviation) {
 							out = new Vector<>();
-							CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap)
-									.boxed()
+							CompletableFuture<List> cf = (CompletableFuture) ((IntStream) streammap).boxed()
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
@@ -906,8 +906,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
 						os.write(("" + stringdata.limit(numofsample).count()).getBytes());
@@ -979,8 +980,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
 						os.write(("" + datafirst.parallelStream().limit(numofsample).count()).getBytes());
@@ -1050,7 +1052,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			if (task.input != null && task.parentremotedatafetch != null) {
 				if (task.parentremotedatafetch != null && task.parentremotedatafetch[0] != null) {
 					var numinputs = task.parentremotedatafetch.length;
-					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
+					for (var inputindex = 0; inputindex < numinputs; inputindex++) {
 						var input = task.parentremotedatafetch[inputindex];
 						if (input != null) {
 							var rdf = (RemoteDataFetch) input;
@@ -1065,7 +1067,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 					}
 				} else if (task.input != null && task.input[0] != null) {
 					var numinputs = task.input.length;
-					for (var inputindex = 0;inputindex < numinputs;inputindex++) {
+					for (var inputindex = 0; inputindex < numinputs; inputindex++) {
 						var input = task.input[inputindex];
 						if (input != null && input instanceof Task taskinput) {
 							var btarray = getCachedTask(taskinput);
@@ -1132,7 +1134,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			final List<Tuple2> inputs1, inputs2;
 			;
@@ -1163,8 +1165,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
 						os.write(("" + joinpairs.count()).getBytes());
@@ -1238,7 +1241,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			final List<Tuple2> inputs1, inputs2;
 			;
@@ -1272,8 +1275,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
 						os.write(("" + joinpairs.count()).getBytes());
@@ -1347,7 +1351,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			final List<Tuple2> inputs1, inputs2;
 			;
@@ -1381,8 +1385,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (terminalCount) {
 						os.write(("" + joinpairs.count()).getBytes());
@@ -1457,7 +1462,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			List inputs1 = null, inputs2 = null;
 			;
@@ -1481,8 +1486,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));
 						var seq1 = Seq.of(inputs1.toArray());
 						var seq2 = Seq.of(inputs2.toArray());
 						var seqinnerjoin = seq1.innerJoin(seq2, joinpredicate);) {
@@ -1529,24 +1535,24 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 										Object rec2 = csvrec.v2;
 										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
 									}).map((Object rec) -> {
-								try {
-									Tuple2 csvrec = (Tuple2) rec;
-									CSVRecord rec1 = (CSVRecord) csvrec.v1;
-									CSVRecord rec2 = (CSVRecord) csvrec.v2;
-									Map<String, String> keyvalue = rec1.toMap();
-									keyvalue.putAll(rec2.toMap());
-									List<String> keys = new ArrayList<>(keyvalue.keySet());
-									CSVRecord recordmutated = CSVParser
-											.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
-													CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
-															.withHeader(keys.toArray(new String[keys.size()])))
-											.getRecords().get(0);
-									return recordmutated;
-								} catch (IOException e) {
+										try {
+											Tuple2 csvrec = (Tuple2) rec;
+											CSVRecord rec1 = (CSVRecord) csvrec.v1;
+											CSVRecord rec2 = (CSVRecord) csvrec.v2;
+											Map<String, String> keyvalue = rec1.toMap();
+											keyvalue.putAll(rec2.toMap());
+											List<String> keys = new ArrayList<>(keyvalue.keySet());
+											CSVRecord recordmutated = CSVParser
+													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
+															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
+																	.withHeader(keys.toArray(new String[keys.size()])))
+													.getRecords().get(0);
+											return recordmutated;
+										} catch (IOException e) {
 
-								}
-								return null;
-							})
+										}
+										return null;
+									})
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
@@ -1605,7 +1611,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			List inputs1 = null, inputs2 = null;
 			;
@@ -1629,8 +1635,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));
 						var seq1 = Seq.of(inputs1.toArray());
 						var seq2 = Seq.of(inputs2.toArray());
 						var seqleftouterjoin = seq1.leftOuterJoin(seq2, leftouterjoinpredicate);) {
@@ -1677,24 +1684,24 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 										Object rec2 = csvrec.v2;
 										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
 									}).map((Object rec) -> {
-								try {
-									Tuple2 csvrec = (Tuple2) rec;
-									CSVRecord rec1 = (CSVRecord) csvrec.v1;
-									CSVRecord rec2 = (CSVRecord) csvrec.v2;
-									Map<String, String> keyvalue = rec1.toMap();
-									keyvalue.putAll(rec2.toMap());
-									List<String> keys = new ArrayList<>(keyvalue.keySet());
-									CSVRecord recordmutated = CSVParser
-											.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
-													CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
-															.withHeader(keys.toArray(new String[keys.size()])))
-											.getRecords().get(0);
-									return recordmutated;
-								} catch (IOException e) {
+										try {
+											Tuple2 csvrec = (Tuple2) rec;
+											CSVRecord rec1 = (CSVRecord) csvrec.v1;
+											CSVRecord rec2 = (CSVRecord) csvrec.v2;
+											Map<String, String> keyvalue = rec1.toMap();
+											keyvalue.putAll(rec2.toMap());
+											List<String> keys = new ArrayList<>(keyvalue.keySet());
+											CSVRecord recordmutated = CSVParser
+													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
+															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
+																	.withHeader(keys.toArray(new String[keys.size()])))
+													.getRecords().get(0);
+											return recordmutated;
+										} catch (IOException e) {
 
-								}
-								return null;
-							})
+										}
+										return null;
+									})
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
@@ -1770,7 +1777,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 				var buffreader1 = isinputfirstblocks ? new BufferedReader(new InputStreamReader(streamfirst)) : null;
 				var buffreader2 = isinputsecondblocks ? new BufferedReader(new InputStreamReader(streamsecond)) : null;
 
-				) {
+		) {
 
 			List inputs1 = null, inputs2 = null;
 			;
@@ -1794,8 +1801,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));
 						var seq1 = Seq.of(inputs1.toArray());
 						var seq2 = Seq.of(inputs2.toArray());
 						var seqrightouterjoin = seq1.rightOuterJoin(seq2, rightouterjoinpredicate);) {
@@ -1842,24 +1850,24 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 										Object rec2 = csvrec.v2;
 										return rec1 instanceof CSVRecord && rec2 instanceof CSVRecord;
 									}).map((Object rec) -> {
-								try {
-									Tuple2 csvrec = (Tuple2) rec;
-									CSVRecord rec1 = (CSVRecord) csvrec.v1;
-									CSVRecord rec2 = (CSVRecord) csvrec.v2;
-									Map<String, String> keyvalue = rec1.toMap();
-									keyvalue.putAll(rec2.toMap());
-									List<String> keys = new ArrayList<>(keyvalue.keySet());
-									CSVRecord recordmutated = CSVParser
-											.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
-													CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
-															.withHeader(keys.toArray(new String[keys.size()])))
-											.getRecords().get(0);
-									return recordmutated;
-								} catch (IOException e) {
+										try {
+											Tuple2 csvrec = (Tuple2) rec;
+											CSVRecord rec1 = (CSVRecord) csvrec.v1;
+											CSVRecord rec2 = (CSVRecord) csvrec.v2;
+											Map<String, String> keyvalue = rec1.toMap();
+											keyvalue.putAll(rec2.toMap());
+											List<String> keys = new ArrayList<>(keyvalue.keySet());
+											CSVRecord recordmutated = CSVParser
+													.parse(keyvalue.values().stream().collect(Collectors.joining(",")),
+															CSVFormat.DEFAULT.withQuote('"').withEscape('\\')
+																	.withHeader(keys.toArray(new String[keys.size()])))
+													.getRecords().get(0);
+											return recordmutated;
+										} catch (IOException e) {
 
-								}
-								return null;
-							})
+										}
+										return null;
+									})
 									.collect(ParallelCollectors.parallel(value -> value,
 											Collectors.toCollection(Vector::new), executor,
 											Runtime.getRuntime().availableProcessors()));
@@ -1946,8 +1954,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (!allpairs.isEmpty()) {
 						var processedgroupbykey = Seq.of(allpairs.toArray(new Tuple2[allpairs.size()])).groupBy(
@@ -2056,8 +2065,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			var foldbykey = (FoldByKey) jobstage.getStage().tasks.get(0);
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (!allpairs.isEmpty()) {
 						var processedgroupbykey = Seq.of(allpairs.toArray(new Tuple2[allpairs.size()])).groupBy(
@@ -2172,8 +2182,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (!allpairs.isEmpty()) {
 						var processedcountbykey = (Map) allpairs.parallelStream()
@@ -2266,8 +2277,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (!allpairs.isEmpty()) {
 						var processedcountbyvalue = (Map) allpairs.parallelStream()
@@ -2375,8 +2387,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (out instanceof List) {
 						out.parallelStream().forEach(obj -> {
@@ -2479,7 +2492,7 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 						.collect(Collectors.groupingBy(tup2 -> tup2.v1.hashCode() % partitionnumber, HashMap::new,
 								Collectors.mapping(tup2 -> tup2, Collectors.toList())));
 				output = new ArrayList<Tuple2<Integer, List<Tuple2>>>();
-				for (int partitionindex = 0;partitionindex < partitionnumber;partitionindex++) {
+				for (int partitionindex = 0; partitionindex < partitionnumber; partitionindex++) {
 					output.add(new Tuple2<Integer, List<Tuple2>>(Integer.valueOf(partitionindex),
 							mappartitoned.get(partitionindex)));
 				}
@@ -2487,8 +2500,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (output instanceof List) {
 						output.parallelStream().forEach(obj -> {
@@ -2571,8 +2585,9 @@ public sealed class StreamPipelineTaskExecutorInMemoryDisk extends StreamPipelin
 			}
 			if (task.finalphase && task.saveresulttohdfs) {
 				try (OutputStream os = hdfs.create(new Path(task.hdfsurl + task.filepath),
-						Short.parseShort(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
-								DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
+						Short.parseShort(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DFSOUTPUTFILEREPLICATION,
+										DataSamudayaConstants.DFSOUTPUTFILEREPLICATION_DEFAULT)));) {
 					int ch = (int) '\n';
 					if (output instanceof List) {
 						output.parallelStream().forEach(obj -> {

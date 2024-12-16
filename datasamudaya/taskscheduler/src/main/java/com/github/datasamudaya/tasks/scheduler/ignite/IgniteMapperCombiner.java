@@ -37,9 +37,10 @@ public class IgniteMapperCombiner extends IgniteMapper implements IgniteCallable
 	List<Combiner> crunchcombiners;
 	byte[] combinerbytes;
 	Logger log = LoggerFactory.getLogger(IgniteMapperCombiner.class);
+
 	public IgniteMapperCombiner(BlocksLocation blockslocation, byte[] mapperbytes,
-			byte[] combinerbytes) {		
-		super(blockslocation, mapperbytes);		
+			byte[] combinerbytes) {
+		super(blockslocation, mapperbytes);
 		this.combinerbytes = combinerbytes;
 	}
 
@@ -47,13 +48,13 @@ public class IgniteMapperCombiner extends IgniteMapper implements IgniteCallable
 	@Override
 	public MapReduceResult call() throws Exception {
 		Kryo kryo = Utils.getKryoInstance();
-		try(var baism = new ByteArrayInputStream(mapperbytes);
+		try (var baism = new ByteArrayInputStream(mapperbytes);
 				Input inputm = new Input(baism);
 				var baisc = new ByteArrayInputStream(combinerbytes);
-				Input inputc = new Input(baisc);){
-			this.crunchmappers = (List<Mapper>) kryo.readClassAndObject(inputm);		
+				Input inputc = new Input(baisc);) {
+			this.crunchmappers = (List<Mapper>) kryo.readClassAndObject(inputm);
 			this.crunchcombiners = (List<Combiner>) kryo.readClassAndObject(inputc);
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 		}
 		var starttime = System.currentTimeMillis();

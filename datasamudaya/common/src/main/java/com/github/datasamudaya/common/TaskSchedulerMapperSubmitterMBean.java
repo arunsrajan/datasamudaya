@@ -15,8 +15,6 @@
  */
 package com.github.datasamudaya.common;
 
-import org.apache.curator.framework.CuratorFramework;
-
 /**
  * Interface for the task scheduler mapper submitter.
  * @author arun

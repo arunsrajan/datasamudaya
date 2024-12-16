@@ -35,12 +35,14 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
  *
  */
 public class ZookeeperMain {
+	static {
+		System.setProperty("log4j.configurationFile", 
+				System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+	}
 	static Logger log = LoggerFactory.getLogger(ZookeeperMain.class);
 
 	public static void main(String[] args) throws Exception {
-		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);		
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		var parser = new DefaultParser();

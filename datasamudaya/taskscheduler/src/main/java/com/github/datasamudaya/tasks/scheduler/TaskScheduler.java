@@ -20,7 +20,8 @@ import java.io.FileOutputStream;
 import java.net.Socket;
 import java.util.Arrays;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.JobConfigurationBuilder;
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -33,7 +34,7 @@ import com.github.datasamudaya.common.utils.Utils;
  *
  */
 public class TaskScheduler implements Runnable {
-	static Logger log = Logger.getLogger(TaskScheduler.class);
+	static Logger log = LogManager.getLogger(TaskScheduler.class);
 	byte[] mrjar;
 	Socket tss;
 	String[] args;

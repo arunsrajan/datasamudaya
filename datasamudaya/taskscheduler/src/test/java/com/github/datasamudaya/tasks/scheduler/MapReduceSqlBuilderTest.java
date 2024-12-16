@@ -86,7 +86,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -107,7 +107,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -128,7 +128,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -150,7 +150,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -171,7 +171,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -193,7 +193,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(5, values.length);					
+					assertEquals(5, values.length);
 				}
 			});
 		});
@@ -215,7 +215,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(2, values.length);					
+					assertEquals(2, values.length);
 				}
 			});
 		});
@@ -263,7 +263,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		});
 		log.info("In testRequiredColumns() method Exit");
 	}
-	
+
 	@Test
 	public void testNonAggFunctionRound() throws Exception {
 		log.info("In testNonAggFunctionRound() method Entry");
@@ -278,13 +278,13 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
 					log.info("{}", Arrays.toString(values));
-					assertEquals(3, values.length);					
+					assertEquals(3, values.length);
 				}
 			});
 		});
 		log.info("In testNonAggFunctionRound() method Exit");
 	}
-	
+
 	@Test
 	public void testColumnLength() throws Exception {
 		log.info("In testColumnLength() method Entry");
@@ -299,15 +299,15 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(1, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(1, values.length);
+				}
 			});
 		});
 		log.info("In testColumnLength() method Exit");
 	}
 
-	
+
 	@Test
 	public void testRequiredColumnWithLength() throws Exception {
 		log.info("In testRequiredColumnWithLength() method Entry");
@@ -322,15 +322,15 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnWithLength() method Exit");
 	}
 
-	
+
 	@Test
 	public void testRequiredColumnWithMultipleLengths() throws Exception {
 		log.info("In testRequiredColumnWithMultipleLengths() method Entry");
@@ -345,15 +345,15 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(3, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(3, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnWithMultipleLengths() method Exit");
 	}
 
-	
+
 	@Test
 	public void testRequiredColumnWithLengthsAndLowercase() throws Exception {
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Entry");
@@ -368,9 +368,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(4, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Exit");
@@ -390,9 +390,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(4, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnWithLengthsAndUppercase() method Exit");
@@ -412,9 +412,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnTrim() method Exit");
@@ -434,9 +434,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnBase64Encode() method Exit");
@@ -456,9 +456,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnSubStringAlias() method Exit");
@@ -478,15 +478,15 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(4, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnSubStringPos() method Exit");
 	}
 
-	
+
 	@Test
 	public void testRequiredColumnSubStringPosLength() throws Exception {
 		log.info("In testRequiredColumnSubString() method Entry");
@@ -501,9 +501,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(4, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(4, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnSubString() method Exit");
@@ -523,9 +523,9 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			context.keys().stream().forEach(key -> {
 				List<Object[]> rec = (List<Object[]>) context.get(key);
 				for (Object[] values : rec) {
-				log.info("{}",Arrays.toString(values));
-				assertEquals(2, values.length);
-			}
+					log.info("{}", Arrays.toString(values));
+					assertEquals(2, values.length);
+				}
 			});
 		});
 		log.info("In testRequiredColumnNormailizeSpaces() method Exit");
@@ -547,7 +547,7 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 					log.info("{}", Arrays.toString(values));
 					assertEquals(3, values.length);
 					assertEquals(12l, values[1]);
-					assert((long)values[2]>25);
+					assert((long) values[2] > 25);
 				}
 			});
 		});

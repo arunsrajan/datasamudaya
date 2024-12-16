@@ -19,7 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -43,7 +44,7 @@ public class StreamPipelineSqlBuilderNoDriverTest extends StreamPipelineSqlBuild
 			SqlTypeName.BIGINT);
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
-	Logger log = Logger.getLogger(StreamPipelineSqlBuilderNoDriverTest.class);
+	Logger log = LogManager.getLogger(StreamPipelineSqlBuilderNoDriverTest.class);
 	List<String> airportsheader = Arrays.asList("iata", "airport", "city", "state", "country", "latitude", "longitude");
 	List<SqlTypeName> airportstype = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
@@ -57,11 +58,11 @@ public class StreamPipelineSqlBuilderNoDriverTest extends StreamPipelineSqlBuild
 			pipelineconfig.setUseglobaltaskexecutors(true);
 			pipelineconfig.setIsremotescheduler(false);
 			pipelineconfig.setTejobid(tejobid);
-			Utils.launchContainersExecutorSpecWithDriverSpec("arun", tejobid, 3, 3000, 2, 0, 0, true);			
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", tejobid, 3, 3000, 2, 0, 0, true);
 			pipelineconfig.setUser("arun");
 		}
 	}
-	
+
 	@After
 	public void resetJobId() {
 		if ("false".equals(pipelineconfig.getLocal())) {

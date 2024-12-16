@@ -18,6 +18,7 @@ package com.github.datasamudaya.stream;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
@@ -42,7 +43,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -68,6 +70,10 @@ import com.github.datasamudaya.common.utils.ZookeeperOperations;
 import com.github.datasamudaya.tasks.executor.NodeRunner;
 
 public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
+	static {
+		System.setProperty("log4j.configurationFile", 
+				System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+	}
 	static Registry server;
 	static Logger log = LoggerFactory.getLogger(StreamPipelineBaseTestCommon.class);
 	protected static ZookeeperOperations zo;
@@ -83,8 +89,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, DataSamudayaConstants.DATASAMUDAYA_PROPERTIES);
 			StaticComponentContainer.Modules.exportAllToAll();
-			PropertyConfigurator.configure(System.getProperty(DataSamudayaConstants.USERDIR) + DataSamudayaConstants.FORWARD_SLASH
-					+ DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
+			String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);			
 			var out = System.out;
 			pipelineconfig = new PipelineConfig();
 			pipelineconfig.setOutput(out);
@@ -93,7 +98,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 			pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
 			pipelineconfig.setNumberofcontainers("1");
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-			pipelineconfig.setBatchsize("4");			
+			pipelineconfig.setBatchsize("4");
 			tejobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 			pipelineconfig.setTejobid(tejobid);
 			pipelineconfig.setUser("arun");
@@ -134,8 +139,8 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 				resource.setTotaldisksize(Utils.totaldiskspace());
 				resource.setUsabledisksize(Utils.usablediskspace());
 				resource.setPhysicalmemorysize(Utils.getPhysicalMemory());
-				ConcurrentMap<String, Resources> mapres = new ConcurrentHashMap<>();				
-				mapres.put(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource);		
+				ConcurrentMap<String, Resources> mapres = new ConcurrentHashMap<>();
+				mapres.put(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource);
 				DataSamudayaNodesResources.put(mapres);
 				zo.createNodesNode(host + DataSamudayaConstants.UNDERSCORE + nodeport, resource, event -> {
 					log.info("{}", event);
@@ -159,7 +164,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 									if (object instanceof byte[] bytes) {
 										object = Utils.convertBytesToObjectCompressed(bytes, null);
 									}
-									log.info("Allocate Or Launch: object {}",object);
+									log.info("Allocate Or Launch: object {}", object);
 									var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
 											containerprocesses, hdfs, containeridthreads, containeridports, object, zo);
 									Future<Object> containerallocated = threadpool.submit(container);
@@ -251,20 +256,20 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 		if (testingserver != null) {
 			testingserver.close();
 		}
-		
-		if(CollectionUtils.isNotEmpty(sss)) {
-			sss.stream().forEach(server->{
+
+		if (CollectionUtils.isNotEmpty(sss)) {
+			sss.stream().forEach(server -> {
 				try {
 					server.unbind(DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + DataSamudayaConstants.EMPTY);
 					UnicastRemoteObject.unexportObject(server, true);
 				} catch (RemoteException | NotBoundException e) {
-					log.info("Cannot Unbind: "+DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + DataSamudayaConstants.EMPTY);
+					log.info("Cannot Unbind: " + DataSamudayaConstants.BINDTESTUB + DataSamudayaConstants.HYPHEN + DataSamudayaConstants.EMPTY);
 				}
 			});
 			sss.clear();
 			server = null;
 		}
-		
+
 		containerprocesses.keySet().stream().forEach(key -> {
 			containerprocesses.get(key).keySet().stream().forEach(port -> {
 				Process proc = containerprocesses.get(key).get(port);

@@ -19,10 +19,12 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.util.List;
+
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.resources.IgniteInstanceResource;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xerial.snappy.SnappyInputStream;
 
 import com.github.datasamudaya.common.BlocksLocation;
@@ -40,10 +42,11 @@ public class IgniteMapper {
 	public IgniteMapper() {
 	}
 
-	static Logger log = Logger.getLogger(IgniteMapper.class);
+	static Logger log = LogManager.getLogger(IgniteMapper.class);
 	BlocksLocation blockslocation;
 	List<Mapper> crunchmappers;
 	byte[] mapperbytes;
+
 	public IgniteMapper(BlocksLocation blockslocation, byte[] mapperbytes) {
 		this.blockslocation = blockslocation;
 		this.mapperbytes = mapperbytes;
@@ -51,9 +54,9 @@ public class IgniteMapper {
 
 	public Context execute() throws Exception {
 		try (IgniteCache<Object, byte[]> cache = ignite.getOrCreateCache(DataSamudayaConstants.DATASAMUDAYACACHE);
-				var compstream = new SnappyInputStream(new ByteArrayInputStream(cache.get(Utils.getBlocksLocation(blockslocation))));
-				var br =
-						new BufferedReader(new InputStreamReader(compstream));) {
+				var compstream = new SnappyInputStream(
+						new ByteArrayInputStream(cache.get(Utils.getBlocksLocation(blockslocation))));
+				var br = new BufferedReader(new InputStreamReader(compstream));) {
 			var ctx = new DataCruncherContext();
 			br.lines().parallel().forEachOrdered(line -> {
 				for (Mapper crunchmapper : crunchmappers) {
@@ -61,13 +64,11 @@ public class IgniteMapper {
 				}
 			});
 			return ctx;
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 			throw ex;
 		}
 
 	}
-
 
 }

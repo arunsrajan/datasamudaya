@@ -24,7 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -33,8 +34,8 @@ import org.junit.Test;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.utils.Utils;
-import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
+import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 
 public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
@@ -51,7 +52,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			SqlTypeName.BIGINT);
 	List<String> carrierheader = Arrays.asList("Code", "Description");
 	List<SqlTypeName> carrierheadertypes = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
-	Logger log = Logger.getLogger(StreamPipelineSqlBuilderTest.class);
+	Logger log = LogManager.getLogger(StreamPipelineSqlBuilderTest.class);
 	List<String> airportsheader = Arrays.asList("iata", "airport", "city", "state", "country", "latitude", "longitude");
 	List<SqlTypeName> airportstype = Arrays.asList(SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR);
@@ -65,11 +66,11 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			pipelineconfig.setUseglobaltaskexecutors(true);
 			pipelineconfig.setIsremotescheduler(true);
 			pipelineconfig.setTejobid(tejobid);
-			Utils.launchContainersExecutorSpecWithDriverSpec("arun", tejobid, 1, 3000, 2, 1, 3000, true);			
+			Utils.launchContainersExecutorSpecWithDriverSpec("arun", tejobid, 1, 3000, 2, 1, 3000, true);
 			pipelineconfig.setUser("arun");
 		}
 	}
-	
+
 	@After
 	public void resetJobId() {
 		if ("false".equals(pipelineconfig.getLocal())) {
@@ -77,7 +78,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		}
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumns() throws Exception {
 		log.info("In testAllColumns() method Entry");
@@ -101,7 +102,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumns() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsWithWhere() throws Exception {
 		log.info("In testAllColumnsWithWhere() method Entry");
@@ -125,7 +126,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumns() throws Exception {
 		log.info("In testRequiredColumns() method Entry");
@@ -149,7 +150,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumns() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhere() throws Exception {
 		log.info("In testRequiredColumnsWithWhere() method Entry");
@@ -173,7 +174,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereGreaterThan() throws Exception {
 		log.info("In testRequiredColumnsWithWhereGreaterThan() method Entry");
@@ -200,7 +201,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereGreaterThan() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLessThan() throws Exception {
 		log.info("In testRequiredColumnsWithWhereLessThan() method Entry");
@@ -227,7 +228,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereLessThan() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereGreaterThanEquals() throws Exception {
 		log.info("In testRequiredColumnsWithWhereGreaterThanEquals() method Entry");
@@ -254,7 +255,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereGreaterThanEquals() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLessThanEquals() throws Exception {
 		log.info("In testRequiredColumnsWithWhereLessThanEquals() method Entry");
@@ -281,8 +282,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereLessThanEquals() method Exit");
 	}
 
-
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLessThanEqualsAndCase() throws Exception {
 		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCase() method Entry");
@@ -311,8 +311,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCase() method Exit");
 	}
 
-
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhen() throws Exception {
 		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhen() method Entry");
@@ -341,7 +340,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhen() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhenExpression() throws Exception {
 		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhenExpression() method Entry");
@@ -370,7 +369,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereLessThanEqualsAndCaseMultipleWhenExpression() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereLiteralFirst() throws Exception {
 		log.info("In testRequiredColumnsWithWhereLiteralFirst() method Entry");
@@ -398,7 +397,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereLiteralFirst() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereColumnEquals() throws Exception {
 		log.info("In testRequiredColumnsWithWhereColumnEquals() method Entry");
@@ -425,7 +424,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereColumnEquals() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsCount() throws Exception {
 		log.info("In testRequiredColumnsCount() method Entry");
@@ -441,8 +440,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsCount() method Exit");
 	}
 
-	
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsCountCountAllSubquery() throws Exception {
 		log.info("In testAllColumnsCountCountAllSubquery() method Entry");
@@ -463,7 +461,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, records.size());
 		log.info("In testAllColumnsCountCountAllSubquery() method Exit");
 	}
-	
+
 	@Test
 	public void testAllColumnsCountAllCountAllSubquery() throws Exception {
 		log.info("In testAllColumnsCountAllCountAllSubquery() method Entry");
@@ -505,8 +503,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, records.size());
 		log.info("In testAllColumnsCountAllCountAllSubqueryWhereIn() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsCountSum() throws Exception {
 		log.info("In testAllColumnsCountSum() method Entry");
@@ -523,7 +521,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsCountSum() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsCountWithWhere() throws Exception {
 		log.info("In testRequiredColumnsCountWithWhere() method Entry");
@@ -541,7 +539,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsCountWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsSumWithWhere() throws Exception {
 		log.info("In testAllColumnsSumWithWhere() method Entry");
@@ -558,7 +556,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsSumWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsMinWithWhere() throws Exception {
 		log.info("In testAllColumnsMinWithWhere() method Entry");
@@ -574,7 +572,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsMinWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsMaxWithWhere() throws Exception {
 		log.info("In testAllColumnsMaxWithWhere() method Entry");
@@ -590,7 +588,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsMaxWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsJoin() throws Exception {
 		log.info("In testRequiredColumnsJoin() method Entry");
@@ -620,8 +618,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsJoin() method Exit");
 	}
 
-	
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsUnion() throws Exception {
 		log.info("In testRequiredColumnsUnion() method Entry");
@@ -646,8 +643,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		}
 		log.info("In testRequiredColumnsUnion() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsUnionUnion() throws Exception {
 		log.info("In testRequiredColumnsUnionUnion() method Entry");
@@ -673,9 +670,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		}
 		log.info("In testRequiredColumnsUnionUnion() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsUnionUnionSum() throws Exception {
 		log.info("In testRequiredColumnsUnionUnionSum() method Entry");
@@ -700,8 +696,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, totalrecords);
 		log.info("In testRequiredColumnsUnionUnionSum() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsUnionUnionSumGroupBy() throws Exception {
 		log.info("In testRequiredColumnsUnionUnionSumGroupBy() method Entry");
@@ -726,8 +722,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, totalrecords);
 		log.info("In testRequiredColumnsUnionUnionSumGroupBy() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsIntersection() throws Exception {
 		log.info("In testRequiredColumnsIntersection() method Entry");
@@ -753,8 +749,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, totalrecords);
 		log.info("In testRequiredColumnsIntersection() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsDistinctIntersection() throws Exception {
 		log.info("In testRequiredColumnsDistinctIntersection() method Entry");
@@ -779,8 +775,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertEquals(201, totalrecords);
 		log.info("In testRequiredColumnsDistinctIntersection() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAggregateIntersection() throws Exception {
 		log.info("In testAggregateIntersection() method Entry");
@@ -806,9 +802,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, totalrecords);
 		log.info("In testAggregateIntersection() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsIntersectionIntersection() throws Exception {
 		log.info("In testRequiredColumnsIntersectionIntersection() method Entry");
@@ -835,7 +830,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, totalrecords);
 		log.info("In testRequiredColumnsIntersectionIntersection() method Exit");
 	}
-	
+
 	@Test
 	public void testRequiredColumnsJoinCarrierSpecific() throws Exception {
 		log.info("In testRequiredColumnsJoinCarrierSpecific() method Entry");
@@ -896,7 +891,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 
 		String statement = """
 				select sum(airline.arrdelay) as sumadelay,avg(airline.arrdelay) as adelay
-				,avg(airline.depdelay) as ddelay,count(*) as recordcnt 
+				,avg(airline.depdelay) as ddelay,count(*) as recordcnt
 				from airline group by airline.uniquecarrier
 				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
@@ -944,15 +939,15 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 
 		log.info("In testPrintAllColumnsCountWithWhereAndJoin() method Exit");
 	}
-	
+
 	@Test
 	public void testPrintAvgDelayWithDelayPercentageByUniqueCarrier() throws Exception {
 		log.info("In testPrintAvgDelayWithDelayPercentageByUniqueCarrier() method Entry");
 
 		String statement = """
 				select uniquecarrier,avg(arrdelay),
-				sum(arrdelay)*100.0/(select sum(arrdelay+depdelay) 
-				from airline) 
+				sum(arrdelay)*100.0/(select sum(arrdelay+depdelay)
+				from airline)
 				from airline_1 group by uniquecarrier order by uniquecarrier
 				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
@@ -974,7 +969,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testPrintAvgDelayWithDelayPercentageByUniqueCarrier() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsJoinTwoTables() throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTables() method Entry");
@@ -1001,7 +996,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsJoinTwoTables() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsJoinTwoTablesWhere() throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesWhere() method Entry");
@@ -1029,7 +1024,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsJoinTwoTablesWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsJoinTwoTablesCount() throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesCount() method Entry");
@@ -1056,7 +1051,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsJoinTwoTablesCount() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsJoinTwoTablesCountWhere() throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesCountWhere() method Entry");
@@ -1224,7 +1219,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredMultipleColumnsJoinTwoTablesColumnMaxWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsJoinTwoTablesColumnSumWhereNoFilter() throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumWhereNoFilter() method Entry");
@@ -1249,7 +1244,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumWhereNoFilter() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter() throws Exception {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter() method Entry");
@@ -1281,7 +1276,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testMultipleRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter() throws Exception {
 		log.info("In testMultipleRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter() method Entry");
@@ -1312,7 +1307,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testMultipleRequiredColumnsJoinTwoTablesColumnSumCountMinMaxWhereNoFilter() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testMultipleAllColumnsOrCondition() throws Exception {
 		log.info("In testMultipleAllColumnsOrCondition() method Entry");
@@ -1338,7 +1333,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testMultipleAllColumnsOrCondition() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testNumberOfFlightsByCarrier() throws Exception {
 		log.info("In testNumberOfFlightsByCarrier() method Entry");
@@ -1360,7 +1355,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testNumberOfFlightsByCarrier() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testNumberOfFlightsByDayOfWeek() throws Exception {
 		log.info("In testNumberOfFlightsByDayOfWeek() method Entry");
@@ -1382,7 +1377,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testNumberOfFlightsByDayOfWeek() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testNumberOfFlightsCancelled() throws Exception {
 		log.info("In testNumberOfFlightsCancelled() method Entry");
@@ -1403,7 +1398,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testNumberOfFlightsCancelled() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testNumberOfFlightsDiverted() throws Exception {
 		log.info("In testNumberOfFlightsDiverted() method Entry");
@@ -1424,7 +1419,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testNumberOfFlightsDiverted() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testTotalDistanceFlownByCarrier() throws Exception {
 		log.info("In testTotalDistanceFlownByCarrier() method Entry");
@@ -1446,7 +1441,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testTotalDistanceFlownByCarrier() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testDayOfWeekWithMostFlights() throws Exception {
 		log.info("In testDayOfWeekWithMostFlights() method Entry");
@@ -1468,7 +1463,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testDayOfWeekWithMostFlights() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testMonthOfYearWithMostFlights() throws Exception {
 		log.info("In testMonthOfYearWithMostFlights() method Entry");
@@ -1490,7 +1485,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testMonthOfYearWithMostFlights() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAirportsWithDepartures() throws Exception {
 		log.info("In testAirportsWithDepartures() method Entry");
@@ -1512,7 +1507,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAirportsWithDepartures() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAirportsWithArrivals() throws Exception {
 		log.info("In testAirportsWithArrivals() method Entry");
@@ -1534,7 +1529,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAirportsWithArrivals() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testDelayTimeByDayOfWeek() throws Exception {
 		log.info("In testDelayTimeByDayOfWeek() method Entry");
@@ -1559,7 +1554,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testDelayTimeByDayOfWeek() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testTotalDelayTimeByMonthOfYear() throws Exception {
 		log.info("In testTotalDelayTimeByMonthOfYear() method Entry");
@@ -1584,7 +1579,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testTotalDelayTimeByMonthOfYear() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAverageDelayByDestinationAirport() throws Exception {
 		log.info("In testAverageDelayByDestinationAirport() method Entry");
@@ -1609,7 +1604,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAverageDelayByDestinationAirport() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsCancelledAndCancellationCode() throws Exception {
 		log.info("In testFlightsCancelledAndCancellationCode() method Entry");
@@ -1632,7 +1627,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testFlightsCancelledAndCancellationCode() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsCancelledDueToWeather() throws Exception {
 		log.info("In testFlightsCancelledDueToWeather() method Entry");
@@ -1655,7 +1650,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testFlightsCancelledDueToWeather() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsDivertedDueToWeather() throws Exception {
 		log.info("In testFlightsDivertedDueToWeather() method Entry");
@@ -1678,7 +1673,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testFlightsDivertedDueToWeather() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsDivertedDueToWeatherSortBy() throws Exception {
 		log.info("In testFlightsDivertedDueToWeatherSortBy() method Entry");
@@ -1698,7 +1693,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testFlightsDivertedDueToWeatherSortBy() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsjoinGroupBy() throws Exception {
 		log.info("In testFlightsjoinGroupBy() method Entry");
@@ -1721,7 +1716,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testFlightsjoinGroupBy() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsDistinctUniqueCarrier() throws Exception {
 		log.info("In testFlightsDistinctUniqueCarrier() method Entry");
@@ -1743,8 +1738,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testFlightsDistinctUniqueCarrier() method Exit");
 	}
 
-
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsDistinctUniqueCarrierArrDelayDepDelay() throws Exception {
 		log.info("In testFlightsDistinctUniqueCarrierArrDelayDepDelay() method Entry");
@@ -1767,7 +1761,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testFlightsDistinctUniqueCarrierArrDelayDepDelay() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsDistinctUniqueCarrierFlightnumOriginDest() throws Exception {
 		log.info("In testFlightsDistinctUniqueCarrierFlightnumOriginDest() method Entry");
@@ -1789,9 +1783,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, sum);
 		log.info("In testFlightsDistinctUniqueCarrierFlightnumOriginDest() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsDistinctUniqueCarrierWithWhere() throws Exception {
 		log.info("In testFlightsDistinctUniqueCarrierWithWhere() method Entry");
@@ -1855,7 +1848,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testFlightsRequiredColumnsDistinctUniqueCarrierWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsAvg() throws Exception {
 		log.info("In testAllColumnsAvg() method Entry");
@@ -1872,7 +1865,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsAvg() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsAvgArrDelayPlusArrDelay() throws Exception {
 		log.info("In testAllColumnsAvgArrDelayPlusArrDelay() method Entry");
@@ -1889,7 +1882,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsAvgArrDelayPlusArrDelay() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsAvgArrDelayPerCarrier() throws Exception {
 		log.info("In testAllColumnsAvgArrDelayPerCarrier() method Entry");
@@ -1907,7 +1900,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsAvgArrDelayPerCarrier() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsAvgArrDelayPerCarrierWithWhere() throws Exception {
 		log.info("In testAllColumnsAvgArrDelayPerCarrierWithWhere() method Entry");
@@ -1925,7 +1918,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsAvgArrDelayPerCarrierWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsMonthDayAvgArrDelayPerCarrier() throws Exception {
 		log.info("In testRequiredColumnsMonthDayAvgArrDelayPerCarrier() method Entry");
@@ -1976,7 +1969,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testCountAvgMinMaxSumArrDelayPerCarrier() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnLength() throws Exception {
 		log.info("In testColumnLength() method Entry");
@@ -1996,7 +1989,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnLength() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnWithLength() throws Exception {
 		log.info("In testRequiredColumnWithLength() method Entry");
@@ -2016,7 +2009,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnWithLength() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnWithMultipleLengths() throws Exception {
 		log.info("In testRequiredColumnWithMultipleLengths() method Entry");
@@ -2036,7 +2029,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnWithMultipleLengths() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnWithLengthsAndLowercase() throws Exception {
 		log.info("In testRequiredColumnWithLengthsAndLowercase() method Entry");
@@ -2151,7 +2144,6 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnSubStringPos() method Exit");
 	}
 
-	
 	@Test
 	public void testRequiredColumnSubStringPosLength() throws Exception {
 		log.info("In testRequiredColumnSubString() method Entry");
@@ -2269,7 +2261,6 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertEquals(-155192l, records.get(0).get(0)[0]);
 		log.info("In testSumWithSubtraction() method Exit");
 	}
-
 
 	@Test
 	public void testSum() throws Exception {
@@ -2413,7 +2404,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 
-		pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
+		pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 		statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (11)";
 		spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
@@ -2429,7 +2421,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 
-		pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
+		pipelineconfig.setJobid(DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID());
 		statement = "SELECT sum(airline.ArrDelay) FROM airline where airline.MonthOfYear in (12)";
 		spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
@@ -2638,7 +2631,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSelectSumWithNestedAbsAndLengthFunctions() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnAbs() throws Exception {
 		log.info("In testColumnAbs() method Entry");
@@ -2658,7 +2651,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnAbs() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnRound() throws Exception {
 		log.info("In testColumnRound() method Entry");
@@ -2678,7 +2671,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnRound() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnCeil() throws Exception {
 		log.info("In testColumnCeil() method Entry");
@@ -2698,7 +2691,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnCeil() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnFloor() throws Exception {
 		log.info("In testColumnFloor() method Entry");
@@ -2718,7 +2711,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnFloor() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnPower() throws Exception {
 		log.info("In testColumnPower() method Entry");
@@ -2738,7 +2731,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnPower() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnSqrt() throws Exception {
 		log.info("In testColumnSqrt() method Entry");
@@ -2758,7 +2751,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnSqrt() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnExponential() throws Exception {
 		log.info("In testColumnExponential() method Entry");
@@ -2778,7 +2771,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnExponential() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnLoge() throws Exception {
 		log.info("In testColumnloge() method Entry");
@@ -2945,7 +2938,6 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSelectSumWithNestedloge() method Exit");
 	}
 
-
 	@Test
 	public void testSelectConcatGroupBy() throws Exception {
 		log.info("In testSelectConcatGroupBy() method Entry");
@@ -2963,7 +2955,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		}
 		log.info("In testSelectConcatGroupBy() method Exit");
 	}
-	
+
 	public void testSelectGroupConcatGroupBy() throws Exception {
 		log.info("In testSelectGroupConcatGroupBy() method Entry");
 		String statement = "SELECT airline.DayofMonth, group_concat(airline.TailNum, ',') FROM airline where airline.MonthOfYear between 10 and 13 and airline.Origin like 'HNL' and  airline.Dest like 'OGG' group by airline.DayofMonth";
@@ -2981,7 +2973,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testSelectGroupConcatGroupBy() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnLengthWithExp() throws Exception {
 		log.info("In testColumnLengthWithExp() method Entry");
@@ -3001,7 +2993,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnLengthWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnAbsLengthWithExp() throws Exception {
 		log.info("In testColumnAbsLengthWithExp() method Entry");
@@ -3021,7 +3013,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnAbsLengthWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnRoundLengthWithExp() throws Exception {
 		log.info("In testColumnRoundLengthWithExp() method Entry");
@@ -3041,7 +3033,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnRoundLengthWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnRoundLengthWithExpWithInc() throws Exception {
 		log.info("In testColumnRoundLengthWithExpWithInc() method Entry");
@@ -3061,7 +3053,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnRoundLengthWithExpWithInc() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnCeilLengthWithExpWithInc() throws Exception {
 		log.info("In testColumnCeilLengthWithExpWithInc() method Entry");
@@ -3081,7 +3073,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnCeilLengthWithExpWithInc() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnCeilLengthWithExp() throws Exception {
 		log.info("In testColumnCeilLengthWithExp() method Entry");
@@ -3101,7 +3093,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnCeilLengthWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnFloorLengthWithExpWithInc() throws Exception {
 		log.info("In testColumnFloorLengthWithExpWithInc() method Entry");
@@ -3121,7 +3113,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnFloorLengthWithExpWithInc() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnFloorLengthWithExp() throws Exception {
 		log.info("In testColumnFloorLengthWithExp() method Entry");
@@ -3141,7 +3133,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnFloorLengthWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnLengthWithParanthesisExp() throws Exception {
 		log.info("In testColumnLengthWithParanthesisExp() method Entry");
@@ -3161,7 +3153,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnLengthWithParanthesisExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnPowerLengthWithExp() throws Exception {
 		log.info("In testColumnPowerLengthWithExp() method Entry");
@@ -3181,7 +3173,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnPowerLengthWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnSqrtLengthWithExp() throws Exception {
 		log.info("In testColumnSqrtLengthWithExp() method Entry");
@@ -3202,7 +3194,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnSqrtLengthWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnExpLengthWithExp() throws Exception {
 		log.info("In testColumnExpLengthWithExp() method Entry");
@@ -3222,7 +3214,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnExpLengthWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnLogLengthWithExp() throws Exception {
 		log.info("In testColumnLogLengthWithExp() method Entry");
@@ -3242,7 +3234,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnLogLengthWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnLowerCaseWithUpperCaseWithExp() throws Exception {
 		log.info("In testColumnLowerCaseWithUpperCaseWithExp() method Entry");
@@ -3262,7 +3254,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnLowerCaseWithUpperCaseWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnUpperCaseWithLowerCaseWithExp() method Entry");
@@ -3282,7 +3274,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnUpperCaseWithLowerCaseWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnTrimUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnTrimUpperCaseWithLowerCaseWithExp() method Entry");
@@ -3302,7 +3294,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnTrimUpperCaseWithLowerCaseWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnBase64_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnBase64_EncUpperCaseWithLowerCaseWithExp() method Entry");
@@ -3322,7 +3314,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnBase64_EncUpperCaseWithLowerCaseWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
@@ -3342,7 +3334,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
@@ -3362,7 +3354,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnNormSpacesBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
@@ -3382,7 +3374,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() throws Exception {
 		log.info("In testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Entry");
@@ -3402,7 +3394,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testColumnNormSubStringBase64_Dec_EncUpperCaseWithLowerCaseWithExp() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsLeftJoin() throws Exception {
 		log.info("In testRequiredColumnsLeftJoin() method Entry");
@@ -3430,7 +3422,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsLeftJoin() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsRightJoin() throws Exception {
 		log.info("In testRequiredColumnsRightJoin() method Entry");
@@ -3458,7 +3450,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsRightJoin() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOr() throws Exception {
 		log.info("In testFlightsAndOr() method Entry");
@@ -3474,14 +3466,13 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) == 8 && ((Long) rec[1]) == 12
-						|| ((Long) rec[3]) == 3);
+				assertTrue(((Long) rec[2]) == 8 && ((Long) rec[1]) == 12 || ((Long) rec[3]) == 3);
 			}
 		}
 		log.info("In testFlightsAndOr() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOrAnd() throws Exception {
 		log.info("In testFlightsAndOrAnd() method Entry");
@@ -3497,14 +3488,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) == 8 && ((Long) rec[1]) == 12
-						|| ((Long) rec[3]) == 3 && ((Long) rec[2]) == 1);
+				assertTrue(
+						((Long) rec[2]) == 8 && ((Long) rec[1]) == 12 || ((Long) rec[3]) == 3 && ((Long) rec[2]) == 1);
 			}
 		}
 		log.info("In testFlightsAndOrAnd() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOrAndParanthesis() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesis() method Entry");
@@ -3520,14 +3511,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) == 8 && ((Long) rec[1]) == 12
-						|| ((Long) rec[3]) == 3 && ((Long) rec[2]) == 1);
+				assertTrue(
+						((Long) rec[2]) == 8 && ((Long) rec[1]) == 12 || ((Long) rec[3]) == 3 && ((Long) rec[2]) == 1);
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesis() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOrAndParanthesisOr() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOr() method Entry");
@@ -3543,15 +3534,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) == 8
-						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+				assertTrue(((Long) rec[2]) == 8 && (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
 						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOr() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthPlus2() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2() method Entry");
@@ -3567,15 +3557,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) == 6
-						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+				assertTrue(((Long) rec[2]) == 6 && (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
 						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthPlus2ColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2ColumnRight() method Entry");
@@ -3591,15 +3580,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) == 6
-						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+				assertTrue(((Long) rec[2]) == 6 && (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
 						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlus2ColumnRight() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthPlusDayOfWeekMultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlusDayOfWeekMultipleColumnRight() method Entry");
@@ -3615,15 +3603,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) + ((Long) rec[3]) == 8
-						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+				assertTrue(((Long) rec[2]) + ((Long) rec[3]) == 8 && (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
 						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthPlusDayOfWeekMultipleColumnRight() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthMinus2MultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMinus2MultipleColumnRight() method Entry");
@@ -3639,15 +3626,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) == 10
-						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+				assertTrue(((Long) rec[2]) == 10 && (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
 						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMinus2MultipleColumnRight() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthMultiply2MultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMultiply2MultipleColumnRight() method Entry");
@@ -3663,15 +3649,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) == 4
-						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+				assertTrue(((Long) rec[2]) == 4 && (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
 						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthMultiply2MultipleColumnRight() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testFlightsAndOrAndParanthesisOrDayOfMonthDivideBy2MultipleColumnRight() throws Exception {
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthDivideBy2MultipleColumnRight() method Entry");
@@ -3687,15 +3672,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 				log.info(Arrays.toString(rec));
 				assertTrue(rec.length == 29);
 				sum++;
-				assertTrue(((Long) rec[2]) >= 8
-						&& (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
+				assertTrue(((Long) rec[2]) >= 8 && (((Long) rec[1]) == 12 || ((Long) rec[3]) == 3)
 						&& "LIH".equals(((String) rec[16])));
 			}
 		}
 		log.info("In testFlightsAndOrAndParanthesisOrDayOfMonthDivideBy2MultipleColumnRight() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsSubSelect() throws Exception {
 		log.info("In testRequiredColumnsSubSelect() method Entry");
@@ -3719,7 +3703,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsSubSelect() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsFunctionsSubSelect() throws Exception {
 		log.info("In testRequiredColumnsFunctionsSubSelect() method Entry");
@@ -3740,8 +3724,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		}
 		log.info("In testRequiredColumnsFunctionsSubSelect() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsCurrentTimeMillisFunction() throws Exception {
 		log.info("In testRequiredColumnsCurrentTimeMillisFunction() method Entry");
@@ -3763,8 +3747,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsCurrentTimeMillisFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsRandFunction() throws Exception {
 		log.info("In testRequiredColumnsRandFunction() method Entry");
@@ -3787,8 +3771,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsRandFunction() method Exit");
 	}
 
-	
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsRandIntegerFunction() throws Exception {
 		log.info("In testRequiredColumnsRandIntegerFunction() method Entry");
@@ -3810,8 +3793,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsRandIntegerFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsAcosFunction() throws Exception {
 		log.info("In testRequiredColumnsAcosFunction() method Entry");
@@ -3833,9 +3816,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsAcosFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsAsinFunction() throws Exception {
 		log.info("In testRequiredColumnsAsinFunction() method Entry");
@@ -3857,9 +3839,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsAsinFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsCubeRootFunction() throws Exception {
 		log.info("In testRequiredColumnsCubeRootFunction() method Entry");
@@ -3881,8 +3862,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsCubeRootFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsCubeRootPIFunction() throws Exception {
 		log.info("In testRequiredColumnsCubeRootPIFunction() method Entry");
@@ -3904,8 +3885,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsCubeRootPIFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsDegreesFunction() throws Exception {
 		log.info("In testRequiredColumnsDegreesFunction() method Entry");
@@ -3927,8 +3908,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsDegreesFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsRadiansFunction() throws Exception {
 		log.info("In testRequiredColumnsRadiansFunction() method Entry");
@@ -3950,8 +3931,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsRadiansFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsCosineFunction() throws Exception {
 		log.info("In testRequiredColumnsCosineFunction() method Entry");
@@ -3973,9 +3954,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsCosineFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsSineFunction() throws Exception {
 		log.info("In testRequiredColumnsSineFunction() method Entry");
@@ -3997,8 +3977,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsSineFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsTanFunction() throws Exception {
 		log.info("In testRequiredColumnsTanFunction() method Entry");
@@ -4020,9 +4000,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsTanFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsSecantFunction() throws Exception {
 		log.info("In testRequiredColumnsSecantFunction() method Entry");
@@ -4044,9 +4023,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsSecantFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsCosecFunction() throws Exception {
 		log.info("In testRequiredColumnsCosecFunction() method Entry");
@@ -4068,8 +4046,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsCosecFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsCotangentFunction() throws Exception {
 		log.info("In testRequiredColumnsCotangentFunction() method Entry");
@@ -4090,9 +4068,9 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		}
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsCotangentFunction() method Exit");
-	}	
-	
-	@SuppressWarnings({"unchecked"})
+	}
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsAtanFunction() throws Exception {
 		log.info("In testRequiredColumnsAtanFunction() method Entry");
@@ -4114,8 +4092,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsAtanFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsCharLengthFunction() throws Exception {
 		log.info("In testRequiredColumnsCharLengthFunction() method Entry");
@@ -4137,8 +4115,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsCharLengthFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsUpperFunction() throws Exception {
 		log.info("In testRequiredColumnsUpperFunction() method Entry");
@@ -4160,9 +4138,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsUpperFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsLowerFunction() throws Exception {
 		log.info("In testRequiredColumnsLowerFunction() method Entry");
@@ -4184,8 +4161,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsLowerFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsPositionSubInStrFunction() throws Exception {
 		log.info("In testRequiredColumnsPositionSubInStrFunction() method Entry");
@@ -4207,8 +4184,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsPositionSubInStrFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsPositionSubInStrFromStartIndexFunction() throws Exception {
 		log.info("In testRequiredColumnsPositionSubInStrFromStartIndexFunction() method Entry");
@@ -4230,9 +4207,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsPositionSubInStrFromStartIndexFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsTrimLeadingTrailingBothFunction() throws Exception {
 		log.info("In testRequiredColumnsTrimLeadingTrailingBothFunction() method Entry");
@@ -4254,9 +4230,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsTrimLeadingTrailingBothFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsOverlayPosFunction() throws Exception {
 		log.info("In testRequiredColumnsOverlayPosFunction() method Entry");
@@ -4278,9 +4253,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsOverlayPosFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsInitcapFunction() throws Exception {
 		log.info("In testRequiredColumnsInitcapFunction() method Entry");
@@ -4302,8 +4276,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsInitcapFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsOverlayPosLengthFunction() throws Exception {
 		log.info("In testRequiredColumnsOverlayPosLengthFunction() method Entry");
@@ -4325,9 +4299,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsOverlayPosLengthFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsAsciiFunction() throws Exception {
 		log.info("In testRequiredColumnsAsciiFunction() method Entry");
@@ -4349,8 +4322,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsAsciiFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsCharacFunction() throws Exception {
 		log.info("In testRequiredColumnsCharacFunction() method Entry");
@@ -4372,8 +4345,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsCharacFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsInsertFunction() throws Exception {
 		log.info("In testRequiredColumnsInsertFunction() method Entry");
@@ -4395,8 +4368,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsInsertFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsInsertLengthLessFunction() throws Exception {
 		log.info("In testRequiredColumnsInsertLengthLessFunction() method Entry");
@@ -4418,8 +4391,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsInsertLengthLessFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsUcaseFunction() throws Exception {
 		log.info("In testRequiredColumnsUcaseFunction() method Entry");
@@ -4441,9 +4414,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsUcaseFunction() method Exit");
 	}
-	
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsLcaseFunction() throws Exception {
 		log.info("In testRequiredColumnsLcaseFunction() method Entry");
@@ -4465,8 +4437,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsLcaseFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsLeftcharsFunction() throws Exception {
 		log.info("In testRequiredColumnsLeftcharsFunction() method Entry");
@@ -4488,8 +4460,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsLeftcharsFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsRightcharsFunction() throws Exception {
 		log.info("In testRequiredColumnsRightcharsFunction() method Entry");
@@ -4511,8 +4483,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsRightcharsFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsLocateFunction() throws Exception {
 		log.info("In testRequiredColumnsLocateFunction() method Entry");
@@ -4534,8 +4506,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsLocateFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsLtrimFunction() throws Exception {
 		log.info("In testRequiredColumnsLtrimFunction() method Entry");
@@ -4557,8 +4529,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsLtrimFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsRtrimFunction() throws Exception {
 		log.info("In testRequiredColumnsRtrimFunction() method Entry");
@@ -4580,8 +4552,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsRtrimFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsCurdateNowCurtimeFunction() throws Exception {
 		log.info("In testRequiredColumnsCurdateNowCurtimeFunction() method Entry");
@@ -4597,14 +4569,14 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			for (Object[] record : recs) {
 				total++;
 				log.info(Arrays.toString(record));
-				assertTrue(record.length == 4);				
+				assertTrue(record.length == 4);
 			}
 		}
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsCurdateNowCurtimeFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsReverseFunction() throws Exception {
 		log.info("In testRequiredColumnsReverseFunction() method Entry");
@@ -4626,8 +4598,8 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		assertNotEquals(0, total);
 		log.info("In testRequiredColumnsReverseFunction() method Exit");
 	}
-	
-	@SuppressWarnings({"unchecked"})
+
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsSubSelectFunctions() throws Exception {
 		log.info("In testRequiredColumnsSubSelectFunctions() method Entry");
@@ -4649,7 +4621,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsSubSelectFunctions() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsSubSelectFunctionsSumCount() throws Exception {
 		log.info("In testRequiredColumnsSubSelectFunctionsSumCount() method Entry");
@@ -4671,7 +4643,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsSubSelectFunctionsSumCount() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsFunctionsAvgSubSelect() throws Exception {
 		log.info("In testRequiredColumnsFunctionsAvgSubSelect() method Entry");
@@ -4693,7 +4665,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsFunctionsAvgSubSelect() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsFunctionsAvgSumCountSubSelect() throws Exception {
 		log.info("In testRequiredColumnsFunctionsAvgSumCountSubSelect() method Entry");
@@ -4715,7 +4687,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsFunctionsAvgSumCountSubSelect() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsFunctionAvgDelayFunctionsAvgSumCountSubSelect() throws Exception {
 		log.info("In testRequiredColumnsFunctionsAvgSumCountSubSelect() method Entry");
@@ -4737,7 +4709,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsFunctionsAvgSumCountSubSelect() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsSubSelectAllColumns() throws Exception {
 		log.info("In testAllColumnsSubSelectAllColumns() method Entry");
@@ -4761,7 +4733,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsSubSelectAllColumns() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsSubSelectAllColumnsWithWhere() throws Exception {
 		log.info("In testAllColumnsSubSelectAllColumnsWithWhere() method Entry");
@@ -4786,7 +4758,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsSubSelectAllColumnsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testAllColumnsWithWhereSubSelectAllColumnsWithWhere() throws Exception {
 		log.info("In testAllColumnsWithWhereSubSelectAllColumnsWithWhere() method Entry");
@@ -4811,7 +4783,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testAllColumnsWithWhereSubSelectAllColumnsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() throws Exception {
 		log.info("In testRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Entry");
@@ -4839,7 +4811,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testNonAggSqrtAggAvgFunctionWithWhereSubSelectAllColumnsWithWhere() throws Exception {
 		log.info("In testNonAggSqrtAggAvgFunctionWithWhereSubSelectAllColumnsWithWhere() method Entry");
@@ -4862,7 +4834,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testNonAggSqrtAggAvgFunctionWithWhereSubSelectAllColumnsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsJoinSubSelect() throws Exception {
 		log.info("In testRequiredColumnsJoinSubSelect() method Entry");
@@ -4892,7 +4864,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsJoinSubSelect() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsJoinSubSelectAliasTable() throws Exception {
 		log.info("In testRequiredColumnsJoinSubSelectAliasTable() method Entry");
@@ -4922,7 +4894,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsJoinSubSelectAliasTable() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsInnerJoinSubSelectInnerJoinAliasTable() throws Exception {
 		log.info("In testRequiredColumnsInnerJoinSubSelectInnerJoinAliasTable() method Entry");
@@ -4953,7 +4925,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsInnerJoinSubSelectInnerJoinAliasTable() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() throws Exception {
 		log.info("In testRequiredColumnsRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Entry");
@@ -4981,7 +4953,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 		log.info("In testRequiredColumnsRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Exit");
 	}
 
-	@SuppressWarnings({"unchecked"})
+	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsWithWhereRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() throws Exception {
 		log.info("In testRequiredColumnsWithWhereRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Entry");
@@ -5000,8 +4972,7 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 			for (Object[] record : recs) {
 				total++;
 				assertTrue(record.length == 4);
-				assertTrue((Long) record[1] == 12 && (Long) record[2] == 3
-						&& (Long) record[3] == 12);
+				assertTrue((Long) record[1] == 12 && (Long) record[2] == 3 && (Long) record[3] == 12);
 				log.info(Arrays.toString(record));
 			}
 		}
@@ -5009,28 +4980,27 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 
 		log.info("In testRequiredColumnsWithWhereRequiredColumnsWithWhereSubSelectAllColumnsWithWhere() method Exit");
 	}
-	
+
 	@Test
 	public void testJoinWithCount() throws Exception {
 		log.info("In testJoinWithCount() method Entry");
 		String statement = """
-				select airline.origin,airports.airport,count(*) FROM airline 
-				inner join airports on airports.iata = airline.origin 
+				select airline.origin,airports.airport,count(*) FROM airline
+				inner join airports on airports.iata = airline.origin
 				GROUP BY airline.origin,airports.airport
 				""";
 
 		int total = 0;
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
-				.add(airportssample, "airports", airportsheader, airportstype)
-				.setHdfs(hdfsfilepath)
+				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 		for (List<Object[]> recs : records) {
 			for (Object[] record : recs) {
 				total++;
-				assertTrue(record.length == 3);				
+				assertTrue(record.length == 3);
 				log.info(Arrays.toString(record));
 			}
 		}
@@ -5038,7 +5008,6 @@ public class StreamPipelineSqlBuilderTest extends StreamPipelineBaseTestCommon {
 
 		log.info("In testJoinWithCount() method Exit");
 	}
-	
 
 	@AfterClass
 	public static void pipelineConfigReset() throws Exception {

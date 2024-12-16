@@ -91,7 +91,7 @@ public class SelectQueryExecutor {
 				String fileformat = DataSamudayaConstants.CSV;
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+				for (ColumnMetadata columnMetadata : columnMetadatas) {
 					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}
@@ -145,7 +145,7 @@ public class SelectQueryExecutor {
 				TableCreator.getColumnMetadataFromTable(user, dbdefault, tablename, columnMetadatas);
 				List<String> tablecolumn = new ArrayList<>();
 				List<SqlTypeName> tablecolumnDataType = new ArrayList<>();
-				for (ColumnMetadata columnMetadata : columnMetadatas) {					
+				for (ColumnMetadata columnMetadata : columnMetadatas) {
 					tablecolumn.add(columnMetadata.getColumnName().toLowerCase());
 					tablecolumnDataType.add(SQLUtils.getHiveSQLTypeName(columnMetadata.getDataType()));
 				}

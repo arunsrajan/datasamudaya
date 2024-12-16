@@ -28,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.curator.test.TestingServer;
 import org.apache.hadoop.conf.Configuration;
@@ -35,7 +36,8 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -52,12 +54,12 @@ import com.github.datasamudaya.tasks.executor.NodeRunner;
 
 public class StreamPipelineBaseException {
 	static MiniDFSCluster hdfsLocalCluster;
-	String[] airlineheader = new String[]{"Year", "Month", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime",
+	String[] airlineheader = new String[] { "Year", "Month", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime",
 			"ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime",
 			"AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut", "Cancelled",
 			"CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
-			"LateAircraftDelay"};
-	String[] carrierheader = {"Code", "Description"};
+			"LateAircraftDelay" };
+	String[] carrierheader = { "Code", "Description" };
 	static String hdfsfilepath = "hdfs://127.0.0.1:9000";
 	String airlines = "/airlines";
 	String airline = "/airline";
@@ -92,7 +94,7 @@ public class StreamPipelineBaseException {
 	static int namenodeport = 9000;
 	static int namenodehttpport = 60070;
 	private static String host;
-	static Logger log = Logger.getLogger(StreamPipelineBaseException.class);
+	static Logger log = LogManager.getLogger(StreamPipelineBaseException.class);
 	static List<Registry> sss = new ArrayList<>();
 	static ExecutorService threadpool, executorpool;
 	static int numberofnodes = 1;
@@ -106,7 +108,7 @@ public class StreamPipelineBaseException {
 	private static Registry server;
 	private static ZookeeperOperations zo;
 
-	@SuppressWarnings({"unused"})
+	@SuppressWarnings({ "unused" })
 	@BeforeClass
 	public static void setServerUp() throws Exception {
 		try {
@@ -118,8 +120,10 @@ public class StreamPipelineBaseException {
 			pipelineconfig.setNumberofcontainers("3");
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
 			System.setProperty("HADOOP_HOME", "C:\\DEVELOPMENT\\hadoop\\hadoop-3.3.4");
-			Utils.initializeProperties(DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
-					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "datasamudayatestexception.properties");
+			Utils.initializeProperties(
+					DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH,
+					"datasamudayatestexception.properties");
 			CacheUtils.initCache(DataSamudayaConstants.BLOCKCACHE,
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
@@ -130,17 +134,22 @@ public class StreamPipelineBaseException {
 			zo = new ZookeeperOperations();
 			zo.connect();
 			Configuration configuration = new Configuration();
-			hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
+			hdfs = FileSystem.newInstance(
+					new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 					configuration);
 			Boolean islocal = Boolean.parseBoolean(pipelineconfig.getLocal());
 			if (numberofnodes > 0) {
 				int rescheduledelay = Integer
 						.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.rescheduledelay"));
-				int initialdelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.initialdelay"));
-				int pingdelay = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.pingdelay"));
-				host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskschedulerstream.host"));
+				int initialdelay = Integer
+						.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.initialdelay"));
+				int pingdelay = Integer
+						.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.pingdelay"));
+				host = NetworkUtil
+						.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskschedulerstream.host"));
 				port = Integer.parseInt(DataSamudayaProperties.get().getProperty("taskschedulerstream.port"));
-				int nodeport = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
+				int nodeport = Integer
+						.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
 				threadpool = Executors.newWorkStealingPool();
 				executorpool = Executors.newWorkStealingPool();
 				ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -149,32 +158,31 @@ public class StreamPipelineBaseException {
 				CountDownLatch cdl = new CountDownLatch(numberofnodes);
 				ConcurrentMap<String, Map<String, Process>> containerprocesses = new ConcurrentHashMap<>();
 				ConcurrentMap<String, Map<String, List<Thread>>> containeridthreads = new ConcurrentHashMap<>();
-				hdfste = FileSystem.get(new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
+				hdfste = FileSystem.get(
+						new URI(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.HDFSNAMENODEURL)),
 						configuration);
 				var containeridports = new ConcurrentHashMap<String, List<Integer>>();
 				while (executorsindex < numberofnodes) {
 					host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty("taskexecutor.host"));
-					server = Utils.getRPCRegistry(nodeport,
-							new StreamDataCruncher() {
-								public Object postObject(Object object) {
-									try {
-										var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
-												containerprocesses, hdfs, containeridthreads, containeridports,
-												object, zo);
-										Future<Object> containerallocated = threadpool.submit(container);
-										Object returnobject = containerallocated.get();
-										log.info("Containers Allocated: " + returnobject);
-										return returnobject;
-									} catch (InterruptedException e) {
-										log.warn("Interrupted!", e);
-										// Restore interrupted state...
-										Thread.currentThread().interrupt();
-									} catch (Exception e) {
-										log.error(DataSamudayaConstants.EMPTY, e);
-									}
-									return null;
-								}
-							}, DataSamudayaConstants.EMPTY);
+					server = Utils.getRPCRegistry(nodeport, new StreamDataCruncher() {
+						public Object postObject(Object object) {
+							try {
+								var container = new NodeRunner(DataSamudayaConstants.PROPLOADERCONFIGFOLDER,
+										containerprocesses, hdfs, containeridthreads, containeridports, object, zo);
+								Future<Object> containerallocated = threadpool.submit(container);
+								Object returnobject = containerallocated.get();
+								log.info("Containers Allocated: " + returnobject);
+								return returnobject;
+							} catch (InterruptedException e) {
+								log.warn("Interrupted!", e);
+								// Restore interrupted state...
+								Thread.currentThread().interrupt();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+							return null;
+						}
+					}, DataSamudayaConstants.EMPTY);
 					sss.add(server);
 					port += 100;
 					executorsindex++;
@@ -195,7 +203,6 @@ public class StreamPipelineBaseException {
 			uploadfile(hdfs, airlinemultiplefilesfolder, airlinesample + csvfileextn);
 			uploadfile(hdfs, airlinemultiplefilesfolder, airlinenoheader + csvfileextn);
 			uploadfile(hdfs, githubevents, githubevents + jsonfileextn);
-
 
 		} catch (Throwable e) {
 			log.info("Error Uploading file", e);
@@ -218,7 +225,6 @@ public class StreamPipelineBaseException {
 		is.close();
 		fsdos.close();
 	}
-
 
 	@AfterClass
 	public static void closeResources() throws Exception {

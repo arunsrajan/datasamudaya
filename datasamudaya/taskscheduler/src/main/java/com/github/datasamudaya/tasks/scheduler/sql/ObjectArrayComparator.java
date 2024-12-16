@@ -23,7 +23,7 @@ public class ObjectArrayComparator implements Comparator<Object[]>,Serializable 
 	@Override
 	public int compare(Object[] obj1, Object[] obj2) {
 
-		for (int i = 0; i < rfcs.size(); i++) {
+		for (int i = 0;i < rfcs.size();i++) {
 			RelFieldCollation fc = rfcs.get(i);
 			String sortOrder = fc.getDirection().name();
 			Object value1 = obj1[0].getClass() == Object[].class ? ((Object[]) obj1[0])[fc.getFieldIndex()]
@@ -59,6 +59,5 @@ public class ObjectArrayComparator implements Comparator<Object[]>,Serializable 
 	public List<RelFieldCollation> getRfcs() {
 		return rfcs;
 	}
-	
-}
 
+}

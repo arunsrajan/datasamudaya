@@ -3,6 +3,7 @@ package com.github.datasamudaya.stream.pig;
 import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -18,7 +19,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.pig.newplan.logical.relational.LogicalPlan;
 import org.apache.pig.parser.QueryParserDriver;
 import org.burningwave.core.assembler.StaticComponentContainer;
@@ -46,7 +48,14 @@ import com.github.datasamudaya.common.utils.ZookeeperOperations;
  *
  */
 public class PigQueryClient {
+	
+	static {
+		System.setProperty("log4j.configurationFile", 
+				System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+	}
+	
 	private static final Logger log = LoggerFactory.getLogger(PigQueryClient.class);
+
 	/**
 	 * Main method which starts sql client in terminal.
 	 * 
@@ -55,8 +64,6 @@ public class PigQueryClient {
 	 */
 	public static void main(String[] args) throws Exception {
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.USERPIG, true, DataSamudayaConstants.USERPIGREQUIRED);
@@ -96,19 +103,19 @@ public class PigQueryClient {
 			numberofcontainers = Integer
 					.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NUMBEROFCONTAINERS));
 		}
-		
-		if(numberofcontainers <= 0) {
+
+		if (numberofcontainers <= 0) {
 			throw new PigClientException("Number of containers cannot be less than 1");
 		}
-		
+
 		boolean isdriverrequired = Boolean.parseBoolean(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.IS_REMOTE_SCHEDULER, DataSamudayaConstants.IS_REMOTE_SCHEDULER_DEFAULT));
-		
+
 		if (cmd.hasOption(DataSamudayaConstants.ISDRIVERREQUIRED)) {
 			String driverrequired = cmd.getOptionValue(DataSamudayaConstants.ISDRIVERREQUIRED);
 			isdriverrequired = Boolean.parseBoolean(driverrequired);
 		}
-		
+
 		int cpupercontainer = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUPERCONTAINER)) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUPERCONTAINER);
@@ -121,38 +128,38 @@ public class PigQueryClient {
 			memorypercontainer = Integer.valueOf(memory);
 
 		}
-		
+
 		int cpudriver = 1;
 		if (cmd.hasOption(DataSamudayaConstants.CPUDRIVER) && isdriverrequired) {
 			String cpu = cmd.getOptionValue(DataSamudayaConstants.CPUDRIVER);
 			cpudriver = Integer.valueOf(cpu);
-		} else if(!isdriverrequired){
+		} else if (!isdriverrequired) {
 			cpudriver = 0;
 		}
 		int memorydriver = 1024;
 		if (cmd.hasOption(DataSamudayaConstants.MEMORYDRIVER) && isdriverrequired) {
 			String memory = cmd.getOptionValue(DataSamudayaConstants.MEMORYDRIVER);
 			memorydriver = Integer.valueOf(memory);
-		} else if(!isdriverrequired){
+		} else if (!isdriverrequired) {
 			memorydriver = 0;
 		}
-		
+
 		String mode = DataSamudayaConstants.PIGWORKERMODE_DEFAULT;
 		if (cmd.hasOption(DataSamudayaConstants.PIGWORKERMODE)) {
 			mode = cmd.getOptionValue(DataSamudayaConstants.PIGWORKERMODE);
 		}
-		
+
 		String driverlocation = null;
-		boolean isclient=false;
+		boolean isclient = false;
 		ZookeeperOperations zo = null;
 		boolean isyarn = mode.equalsIgnoreCase(DataSamudayaConstants.YARN);
 		boolean isignite = mode.equalsIgnoreCase(DataSamudayaConstants.EXECMODE_IGNITE);
-		if(isdriverrequired && (mode.equalsIgnoreCase(DataSamudayaConstants.PIGWORKERMODE_DEFAULT) || isyarn || isignite)) {
+		if (isdriverrequired && (mode.equalsIgnoreCase(DataSamudayaConstants.PIGWORKERMODE_DEFAULT) || isyarn || isignite)) {
 			if (cmd.hasOption(DataSamudayaConstants.DRIVER_LOCATION)) {
 				driverlocation = cmd.getOptionValue(DataSamudayaConstants.DRIVER_LOCATION);
 				isclient = driverlocation
-				.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
-				if(isclient && !(isignite)) {
+						.equalsIgnoreCase(DataSamudayaConstants.DRIVER_LOCATION_CLIENT);
+				if (isclient && !isignite) {
 					cpudriver = 0;
 					memorydriver = 0;
 					zo = new ZookeeperOperations();
@@ -160,13 +167,13 @@ public class PigQueryClient {
 					zo.createSchedulersLeaderNode(DataSamudayaConstants.EMPTY.getBytes(), event -> {
 						log.debug("Node Created");
 					});
-					zo.watchNodes();					
+					zo.watchNodes();
 				}
 			} else {
 				driverlocation = DataSamudayaConstants.DRIVER_LOCATION_DEFAULT;
 			}
 		}
-		
+
 		StaticComponentContainer.Modules.exportAllToAll();
 		// get the hostname of the sql server
 		String hostName = DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_HOST);
@@ -178,15 +185,15 @@ public class PigQueryClient {
 				DataSamudayaConstants.SO_TIMEOUT_DEFAULT));
 		String teid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
 		while (true) {
-			if((isyarn || isignite) && isclient) {
-				if(isyarn) {
+			if ((isyarn || isignite) && isclient) {
+				if (isyarn) {
 					Utils.launchYARNExecutors(teid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
 				}
 				String messagestorefile = DataSamudayaProperties.get().getProperty(
 						DataSamudayaConstants.PIGMESSAGESSTORE,
 						DataSamudayaConstants.PIGMESSAGESSTORE_DEFAULT) + DataSamudayaConstants.UNDERSCORE
 						+ user;
-				processMessage(new PrintWriter(System.out, true), 
+				processMessage(new PrintWriter(System.out, true),
 						new BufferedReader(new InputStreamReader(System.in)), messagestorefile, isclient, teid, user, isyarn, isignite, memorypercontainer);
 				break;
 			} else {
@@ -243,7 +250,7 @@ public class PigQueryClient {
 				Thread.sleep(2000);
 			}
 		}
-		if(isyarn && isclient) {
+		if (isyarn && isclient) {
 			try {
 				Utils.shutDownYARNContainer(teid);
 			} catch (Exception ex) {
@@ -278,7 +285,7 @@ public class PigQueryClient {
 	 * @param user
 	 * @throws Exception
 	 */
-	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid, 
+	public static void processMessage(PrintWriter out, BufferedReader in, String messagestorefile, boolean isclient, String teid,
 			String user, boolean isyarn, boolean isignite, long memorypercontainer) throws Exception {
 		LineReader reader = Utils.getLineReaderTerminal(messagestorefile);
 		List<String> pigQueriesToExecute = new ArrayList<>();
@@ -286,14 +293,14 @@ public class PigQueryClient {
 		PipelineConfig pipelineconfig = new PipelineConfig();
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setYarn("false");
-		if(isyarn) {
+		if (isyarn) {
 			pipelineconfig.setYarn("true");
 		}
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setJgroups("false");
-		if(isignite) {
+		if (isignite) {
 			pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
-			String memstr = String.valueOf(Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+			String memstr = String.valueOf(Long.valueOf((long) memorypercontainer) * DataSamudayaConstants.MB);
 			pipelineconfig.setMinmem(memstr);
 			pipelineconfig.setMaxmem(memstr);
 		} else {
@@ -306,7 +313,7 @@ public class PigQueryClient {
 		pipelineconfig.setJobname(DataSamudayaConstants.PIG);
 		QueryParserDriver queryParserDriver = PigUtils.getQueryParserDriver("pig");
 		while (true) {
-			String inputLine = readLineWithHistory(reader);			
+			String inputLine = readLineWithHistory(reader);
 			if (isclient) {
 				if ("quit".equalsIgnoreCase(inputLine.trim())) {
 					break;
@@ -377,14 +384,14 @@ public class PigQueryClient {
 		boolean lineRead = false;
 		while (!lineRead) {
 			try {
-				line =  reader.readLine("PIG> ");
+				line = reader.readLine("PIG> ");
 				lineRead = true;
 			}
-		    catch (UserInterruptException e) {
-		    }
-		    catch (EndOfFileException e) {
-		        break;
-		    }
+			catch (UserInterruptException e) {
+			}
+			catch (EndOfFileException e) {
+				break;
+			}
 		}
 		return line;
 	}
@@ -400,7 +407,7 @@ public class PigQueryClient {
 		System.out.println("\nProcessing input: " + input);
 		out.println(input);
 	}
-	
+
 	/**
 	 * saves the history
 	 * @param history

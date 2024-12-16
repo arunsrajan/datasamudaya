@@ -64,7 +64,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  */
 public class ProcessMapperByStream extends AbstractBehavior<Command> implements Serializable {
 	Logger log = LoggerFactory.getLogger(ProcessMapperByStream.class);
-	private static Logger logger = LoggerFactory.getLogger(ProcessMapperByStream.class);
+	private static final Logger logger = LoggerFactory.getLogger(ProcessMapperByStream.class);
 
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
@@ -96,18 +96,18 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 		return functions;
 	}
 
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessMapperByStream-"+entityId);
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessMapperByStream-" + entityId);
 	}
-		
+
 	public static Behavior<Command> create(String entityId, JobStage js, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<EntityRef> childpipes,
 			Map<Integer, FilePartitionId> shufflerectowrite, Map<Integer, EntityRef> pipeline,
 			int terminatingsize) {
-	return Behaviors.setup(context -> new ProcessMapperByStream(context, js, hdfs,
-			cache, jobidstageidtaskidcompletedmap, tasktoprocess, childpipes, shufflerectowrite, pipeline, terminatingsize));
+		return Behaviors.setup(context -> new ProcessMapperByStream(context, js, hdfs,
+				cache, jobidstageidtaskidcompletedmap, tasktoprocess, childpipes, shufflerectowrite, pipeline, terminatingsize));
 	}
-	
+
 	private ProcessMapperByStream(ActorContext<Command> context, JobStage js, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<EntityRef> childpipes,
 			Map<Integer, FilePartitionId> shufflerectowrite, Map<Integer, EntityRef> pipeline,
@@ -140,8 +140,8 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	private Behavior<Command> processMapperByStream(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
-				if(!dsl.isClosed()) {
-					if (dsl.isSpilled()) {					
+				if (!dsl.isClosed()) {
+					if (dsl.isSpilled()) {
 						Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 						dsl.close();
 						dsl.clear();
@@ -151,23 +151,23 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 						dsl.clear();
 					}
 				} else {
-					if (dsl.isSpilled()) {					
+					if (dsl.isSpilled()) {
 						Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 					} else {
 						diskspilllistinterm.addAll(dsl.getData());
 					}
-				}				
+				}
 				dsl.clear();
 			} else if (object.getValue() instanceof DiskSpillingSet dss) {
-				if (dss.isSpilled()) {					
+				if (dss.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dss, diskspilllistinterm);
 				} else {
 					diskspilllistinterm.addAll(dss.getData());
 				}
 				dss.clear();
-			} else if (object.getValue() instanceof TreeSet treeset) {				
-					diskspilllistinterm.addAll(treeset);
-					treeset.clear();
+			} else if (object.getValue() instanceof TreeSet treeset) {
+				diskspilllistinterm.addAll(treeset);
+				treeset.clear();
 			}
 			if (object.getTerminiatingclass() == DiskSpillingList.class
 					|| object.getTerminiatingclass() == Dummy.class
@@ -177,7 +177,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
-				if(diskspilllistinterm.isSpilled()) {
+				if (diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
 				log.debug("processMapStream InitialSize {} , Terminating Size {} and Terminating Class {}", initialsize,
@@ -189,17 +189,17 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
 						final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
 								: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true
-										: false;
+								: false;
 						Stream<NodeIndexKey> datastream = diskspilllistinterm.isSpilled()
 								? (Stream<NodeIndexKey>) Utils.getStreamData(
-										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
-												null, true, false, false)))
+								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
+										null, true, false, false)))
 								: diskspilllistinterm.getData().stream();
 						Map<String, RemoteIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>();
 						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
 								datastream.map(nik -> {
-									try {										
-										if(isNull(nik.getTask().getHostport()) || !diskspilllistinterm.isSpilled()) {
+									try {
+										if (isNull(nik.getTask().getHostport()) || !diskspilllistinterm.isSpilled()) {
 											return nik.getValue();
 										}
 										String jstid = Utils.getIntermediateInputStreamTask(nik.getTask());
@@ -207,9 +207,9 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 											taskrlistiterclientmap.put(jstid, new RemoteIteratorClient<>(
 													nik.getTask(), null, false, false, false, null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION, false, null));
 										}
-										if(!taskrlistiterclientmap.get(jstid).isclosed() && taskrlistiterclientmap.get(jstid).hasNext()) {
+										if (!taskrlistiterclientmap.get(jstid).isclosed() && taskrlistiterclientmap.get(jstid).hasNext()) {
 											Object value = taskrlistiterclientmap.get(jstid).next().getValue();
-											if(value instanceof NodeIndexKey nikwithvalue) {
+											if (value instanceof NodeIndexKey nikwithvalue) {
 												return nikwithvalue.getValue();
 											}
 											return value;
@@ -237,7 +237,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 																leftvalue, rightvalue, TerminatingActorValue.class)));
 								results.entrySet().forEach(entry -> {
 									try {
-										if(entry.getValue().isSpilled()) {
+										if (entry.getValue().isSpilled()) {
 											entry.getValue().close();
 										}
 									} catch (Exception ex) {
@@ -245,27 +245,27 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 									}
 									pipeline.get(
 											entry.getKey()).tell(
-													new OutputObject(
-															new ShuffleBlock(null,
-																	Utils.convertObjectToBytes(
-																			shufflerectowrite.get(entry.getKey())),
-																	entry.getValue()),
-															leftvalue, rightvalue, null));
+											new OutputObject(
+													new ShuffleBlock(null,
+															Utils.convertObjectToBytes(
+																	shufflerectowrite.get(entry.getKey())),
+															entry.getValue()),
+													leftvalue, rightvalue, null));
 								});
-								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
 										DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-								pipeline.keySet().stream().filter(key->key%numfileperexec==0)
+								pipeline.keySet().stream().filter(key -> key % numfileperexec == 0)
 										.forEach(key -> pipeline.get(key).tell(
 												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class)));
 							} else {
 								streammap.forEach(diskspilllist::add);
-								if(diskspilllist.isSpilled()) {
+								if (diskspilllist.isSpilled()) {
 									diskspilllist.close();
 								}
 								childpipes.stream().forEach(action -> action.tell(
 										new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class)));
 							}
-							taskrlistiterclientmap.values().forEach(client->{
+							taskrlistiterclientmap.values().forEach(client -> {
 								try {
 									client.close();
 								} catch (IOException e) {
@@ -278,10 +278,10 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 					} else {
 						Stream<NodeIndexKey> datastream = diskspilllistinterm.isSpilled()
 								? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
-										Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-												diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+								Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
+										diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
 								: diskspilllistinterm.getData().stream();
-						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream.map(nik->nik.getValue()));
+						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream.map(nik -> nik.getValue()));
 								var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {
@@ -297,20 +297,20 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 						}
 					}
 				} else {
-					log.debug("Is Terminating Class DiskSpillingList Is Shuffle Records {} Is Empty {} and intermediate Spilled ? {}",shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite),diskspilllistinterm.isSpilled());
+					log.debug("Is Terminating Class DiskSpillingList Is Shuffle Records {} Is Empty {} and intermediate Spilled ? {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite), diskspilllistinterm.isSpilled());
 					if (CollectionUtils.isNotEmpty(childpipes)) {
 						final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
 						final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
 								: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true
-										: false;
+								: false;
 						Stream datastream = diskspilllistinterm.isSpilled()
 								? (Stream) Utils.getStreamData(
-										new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
-												null, true, false, false)))
+								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
+										null, true, false, false)))
 								: diskspilllistinterm.getData().stream();
-						if(object.getTerminiatingclass() == DiskSpillingSet.class) {
-							datastream = ((Stream<NodeIndexKey>)datastream).map(nik->nik.getValue());
+						if (object.getTerminiatingclass() == DiskSpillingSet.class) {
+							datastream = ((Stream<NodeIndexKey>) datastream).map(nik -> nik.getValue());
 						}
 						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
 							if (MapUtils.isNotEmpty(shufflerectowrite)) {
@@ -331,7 +331,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 																leftvalue, rightvalue, TerminatingActorValue.class)));
 								results.entrySet().forEach(entry -> {
 									try {
-										if(entry.getValue().isSpilled()) {
+										if (entry.getValue().isSpilled()) {
 											entry.getValue().close();
 										}
 									} catch (Exception ex) {
@@ -339,23 +339,23 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 									}
 									pipeline.get(
 											entry.getKey()).tell(
-													new OutputObject(
-															new ShuffleBlock(null,
-																	Utils.convertObjectToBytes(
-																			shufflerectowrite.get(entry.getKey())),
-																	entry.getValue()),
-															leftvalue, rightvalue, null));
+											new OutputObject(
+													new ShuffleBlock(null,
+															Utils.convertObjectToBytes(
+																	shufflerectowrite.get(entry.getKey())),
+															entry.getValue()),
+													leftvalue, rightvalue, null));
 								});
-								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC, 
+								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
 										DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-								pipeline.keySet().stream().filter(key->key%numfileperexec==0)
+								pipeline.keySet().stream().filter(key -> key % numfileperexec == 0)
 										.forEach(key -> pipeline.get(key).tell(
 												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class)));
 							} else {
 								log.debug("Is Disk Spilling List Spilled {} stream processing for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								streammap.forEach(diskspilllist::add);
 								log.debug("Is Disk Spilling List Spilled {} Close for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
-								if(diskspilllist.isSpilled()) {
+								if (diskspilllist.isSpilled()) {
 									diskspilllist.close();
 								}
 								log.debug("Is Disk Spilling List Spilled {} for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
@@ -368,11 +368,11 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 					} else {
 						Stream datastream = diskspilllistinterm.isSpilled()
 								? (Stream) Utils.getStreamData(new FileInputStream(
-										Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-												diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+								Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
+										diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
 								: diskspilllistinterm.getData().stream();
-						if(object.getTerminiatingclass() == DiskSpillingSet.class) {
-							datastream = ((Stream<NodeIndexKey>)datastream).map(nik->nik.getValue());
+						if (object.getTerminiatingclass() == DiskSpillingSet.class) {
+							datastream = ((Stream<NodeIndexKey>) datastream).map(nik -> nik.getValue());
 						}
 						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
 								var fsdos = new ByteArrayOutputStream();

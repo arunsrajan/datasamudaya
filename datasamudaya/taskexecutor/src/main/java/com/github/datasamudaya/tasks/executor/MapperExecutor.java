@@ -20,28 +20,32 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.concurrent.Callable;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Context;
-import com.github.datasamudaya.common.DataCruncherContext;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingContext;
 
 /**
  * Executor for mapper.
+ * 
  * @author arun
  *
  */
 @SuppressWarnings("rawtypes")
 public class MapperExecutor implements Callable<Context> {
-	static Logger log = Logger.getLogger(MapperExecutor.class);
+	static Logger log = LogManager.getLogger(MapperExecutor.class);
 	BlocksLocation blockslocation;
 	List<Mapper> crunchmappers;
 	InputStream datastream;
-	 Task task;
-	public MapperExecutor(BlocksLocation blockslocation, InputStream datastream, List<Mapper> crunchmappers, Task task) {
+	Task task;
+
+	public MapperExecutor(BlocksLocation blockslocation, InputStream datastream, List<Mapper> crunchmappers,
+			Task task) {
 		this.blockslocation = blockslocation;
 		this.datastream = datastream;
 		this.crunchmappers = crunchmappers;
@@ -54,26 +58,22 @@ public class MapperExecutor implements Callable<Context> {
 	@Override
 	public Context call() throws Exception {
 		var ctx = new DiskSpillingContext(task, DataSamudayaConstants.EMPTY);
-		try (var compstream = datastream;
-				var br =
-						new BufferedReader(new InputStreamReader(compstream));) {			
+		try (var compstream = datastream; var br = new BufferedReader(new InputStreamReader(compstream));) {
 			br.lines().forEach(line -> {
 				for (var crunchmapper : crunchmappers) {
 					crunchmapper.map(0l, line, ctx);
 				}
 			});
 			return ctx;
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			log.error(DataSamudayaConstants.EMPTY, ex);
 			throw ex;
 		} finally {
-			if(ctx.isSpilled()) {
+			if (ctx.isSpilled()) {
 				ctx.close();
 			}
 		}
-		
-	}
 
+	}
 
 }

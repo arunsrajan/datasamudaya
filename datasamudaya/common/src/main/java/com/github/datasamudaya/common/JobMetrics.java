@@ -50,7 +50,7 @@ public class JobMetrics implements Serializable {
 	private double totalfilesize;
 	private List<String> stages;
 	private List<String> containerresources;
-	private Map<String, Double> containersallocated = new ConcurrentHashMap<>();;
+	private Map<String, Double> containersallocated = new ConcurrentHashMap<>();
 	private Set<String> nodes;
 	private long totalblocks;
 	private long jobstarttime;

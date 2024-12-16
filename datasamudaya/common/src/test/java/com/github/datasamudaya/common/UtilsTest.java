@@ -661,6 +661,6 @@ public class UtilsTest {
 		assertTrue(nodeip.isPresent());
 		assertNotNull(nodeip.get());
 	}
-	
-	
+
+
 }

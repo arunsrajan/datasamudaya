@@ -48,7 +48,7 @@ public class PigQueryServer {
 	 */
 	public static void start() throws Exception {
 		ExecutorService executors = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE, 
+				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.PIGPORT, DataSamudayaConstants.PIGPORT_DEFAULT)));
@@ -136,7 +136,7 @@ public class PigQueryServer {
 								isjgroups = false;
 								isignite = true;
 								isyarn = false;
-								String memstr = String.valueOf(Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+								String memstr = String.valueOf(Long.valueOf((long) memorypercontainer) * DataSamudayaConstants.MB);
 								pipelineconfig.setMinmem(memstr);
 								pipelineconfig.setMaxmem(memstr);
 							}
@@ -193,7 +193,7 @@ public class PigQueryServer {
 													pipelineconfig.setMesos("false");
 													pipelineconfig.setJgroups("false");
 													pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
-													String memstr = String.valueOf(Long.valueOf((long)memorypercontainer) * DataSamudayaConstants.MB);
+													String memstr = String.valueOf(Long.valueOf((long) memorypercontainer) * DataSamudayaConstants.MB);
 													pipelineconfig.setMinmem(memstr);
 													pipelineconfig.setMaxmem(memstr);
 													if (isyarncontainerlaunched) {

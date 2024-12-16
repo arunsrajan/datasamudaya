@@ -70,16 +70,18 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
 	DiskSpillingList<Tuple2> diskspilllistinterm;
-	public static EntityTypeKey<Command> createTypeKey(String entityId){ 	
-		return EntityTypeKey.create(Command.class, "ProcessCoalesce-"+entityId);
+
+	public static EntityTypeKey<Command> createTypeKey(String entityId) {
+		return EntityTypeKey.create(Command.class, "ProcessCoalesce-" + entityId);
 	}
-	
+
 	public static Behavior<Command> create(String entityId, Coalesce coalesce, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
-	return Behaviors.setup(context -> new ProcessCoalesce(context, coalesce, pipelines, terminatingsize, 
-				jobidstageidtaskidcompletedmap, 
+		return Behaviors.setup(context -> new ProcessCoalesce(context, coalesce, pipelines, terminatingsize,
+				jobidstageidtaskidcompletedmap,
 				cache, task));
 	}
+
 	private ProcessCoalesce(ActorContext<Command> context, Coalesce coalesce, List<EntityRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
 		super(context);
@@ -89,7 +91,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		int diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+		int diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(task, diskspillpercentage, null, true, false, false, null, null, 0);
 		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
@@ -103,7 +105,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 	}
 
 	private Behavior<Command> processCoalesce(OutputObject object) throws Exception {
-		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {			
+		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
@@ -112,13 +114,13 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 				}
 				dsl.clear();
 			}
-			if(object.getTerminiatingclass() == Dummy.class || object.getTerminiatingclass() == DiskSpillingList.class) {
+			if (object.getTerminiatingclass() == Dummy.class || object.getTerminiatingclass() == DiskSpillingList.class) {
 				initialsize++;
 			}
 			log.debug("processCoalesce::: InitSize {} TermSize {}", initialsize, terminatingsize);
 			if (initialsize == terminatingsize) {
 				log.debug("processCoalesce::: InitSize {} TermSize {}", initialsize, terminatingsize);
-				if(diskspilllistinterm.isSpilled()) {
+				if (diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
 				Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
@@ -132,7 +134,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 						.entrySet().stream()
 						.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
 						.forEach(diskspilllist::add);
-				if(diskspilllist.isSpilled()) {
+				if (diskspilllist.isSpilled()) {
 					diskspilllist.close();
 				}
 				final boolean left = isNull(task.joinpos) ? false

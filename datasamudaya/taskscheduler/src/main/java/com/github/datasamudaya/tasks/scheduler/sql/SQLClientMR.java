@@ -3,6 +3,7 @@ package com.github.datasamudaya.tasks.scheduler.sql;
 import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -12,7 +13,8 @@ import java.net.Socket;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.History;
@@ -32,6 +34,12 @@ import com.github.datasamudaya.common.utils.Utils;
  *
  */
 public class SQLClientMR {
+	
+	static {
+		System.setProperty("log4j.configurationFile", 
+				System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+	}
+	
 	private static final Logger log = LoggerFactory.getLogger(SQLClientMR.class);
 
 	/**
@@ -42,8 +50,6 @@ public class SQLClientMR {
 	 */
 	public static void main(String[] args) throws Exception {
 		String datasamudayahome = System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME);
-		PropertyConfigurator.configure(datasamudayahome + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J_PROPERTIES);
 		var options = new Options();
 		options.addOption(DataSamudayaConstants.CONF, true, DataSamudayaConstants.EMPTY);
 		options.addOption(DataSamudayaConstants.USERSQL, true, DataSamudayaConstants.USERSQLREQUIRED);
@@ -188,14 +194,14 @@ public class SQLClientMR {
 		boolean lineRead = false;
 		while (!lineRead) {
 			try {
-				line =  reader.readLine("SQL> ");
+				line = reader.readLine("SQL> ");
 				lineRead = true;
 			}
-		    catch (UserInterruptException e) {
-		    }
-		    catch (EndOfFileException e) {
-		        break;
-		    }
+			catch (UserInterruptException e) {
+			}
+			catch (EndOfFileException e) {
+				break;
+			}
 		}
 		return line;
 	}

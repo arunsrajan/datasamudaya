@@ -52,6 +52,7 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	private Semaphore lock;
 	private String appendwithpath;
 	private Kryo kryo;
+
 	public DiskSpillingContext() {
 		lock = new Semaphore(1);
 	}
@@ -63,10 +64,10 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 		diskfilepath = Utils.getLocalFilePathForMRTask(task, appendwithpath);
 		context = new DataCruncherContext<T, U>();
 		this.keys = new LinkedHashSet<>();
-		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE, 
+		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT))) / 100.0)));
 		this.lock = new Semaphore(1);
-		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE, 
+		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE,
 				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
 		this.isclosed = false;
 	}
@@ -96,7 +97,7 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	public boolean isClosed() {
 		return isclosed;
 	}
-	
+
 	/**
 	 * The function returns append string with path
 	 * @return returns append string with path
@@ -113,9 +114,9 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	 * @return 
 	 */
 	@Override
-	public void put(T key, U value) {		
+	public void put(T key, U value) {
 		spillToDiskIntermediate(false);
-		context.put(key, value);	
+		context.put(key, value);
 		keys.add(key);
 	}
 
@@ -125,8 +126,8 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	 * @param value
 	 */
 	public void addKeyCollection(T key, Collection<U> values) {
-		if (nonNull(key)&&CollectionUtils.isNotEmpty(values)) {			
-			values.stream().forEach(value->put(key, value));
+		if (nonNull(key) && CollectionUtils.isNotEmpty(values)) {
+			values.stream().forEach(value -> put(key, value));
 		}
 	}
 
@@ -156,19 +157,19 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	public String getDiskfilepath() {
 		return this.diskfilepath;
 	}
-	
+
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
 			lock.acquire();
-			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded()) 
-					&& context.valuesSize()>0) {
-				if (isNull(ostream)) {					
+			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded())
+					&& context.valuesSize() > 0) {
+				if (isNull(ostream)) {
 					ostream = new FileOutputStream(new File(diskfilepath), true);
 					sos = new SnappyOutputStream(ostream);
 					op = new Output(sos);
 					isspilled = true;
 				}
-				if (isspilled && (context.valuesSize() >= batchsize) || isfstoclose && context.valuesSize()>0) {
+				if (isspilled && (context.valuesSize() >= batchsize) || isfstoclose && context.valuesSize() > 0) {
 					kryo.writeClassAndObject(op, context);
 					op.flush();
 					context.clear();
@@ -197,7 +198,7 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 				if (nonNull(sos)) {
 					sos.close();
 				}
-				if(nonNull(ostream)) {
+				if (nonNull(ostream)) {
 					ostream.close();
 				}
 				op = null;
@@ -212,15 +213,15 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 
 	@Override
 	public void clear() {
-		if (context.valuesSize()>0) {
+		if (context.valuesSize() > 0) {
 			context.clear();
 			context = null;
 		}
 	}
-	
+
 	@Override
 	public long size() {
-		if(!isspilled && nonNull(context)){
+		if (!isspilled && nonNull(context)) {
 			return (int) (isNull(context) ? 0 : context.valuesSize());
 		}
 		return 0;
@@ -228,15 +229,15 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 
 	@Override
 	public Collection<U> get(T key) {
-		if(!isspilled && nonNull(context)) {
+		if (!isspilled && nonNull(context)) {
 			return context.get(key);
 		}
 		return new ArrayList<>();
 	}
-	
+
 	@Override
 	public Set<Entry<T, Collection<U>>> entries() {
-		if(!isspilled && nonNull(context)) {
+		if (!isspilled && nonNull(context)) {
 			return context.entries();
 		}
 		return new LinkedHashSet<>();
@@ -247,10 +248,10 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 			put(key, v);
 		});
 	}
-	
+
 	@Override
-	public void putAll(Set<T> k, U v) {		
-		if(nonNull(context)) {
+	public void putAll(Set<T> k, U v) {
+		if (nonNull(context)) {
 			putCollectionValue(k, v);
 		}
 	}
@@ -262,21 +263,21 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 
 	@Override
 	public void addAll(T k, Collection<U> v) {
-		if(nonNull(context)) {
+		if (nonNull(context)) {
 			addKeyCollection(k, v);
 		}
 	}
 
 	@Override
 	public void add(Context<T, U> ctx) {
-		if(nonNull(context)) {
+		if (nonNull(context)) {
 			ctx.keys().stream().forEach(key -> addAll(key, ctx.get(key)));
 		}
 	}
 
 	@Override
 	public long valuesSize() {
-		if(nonNull(context)) {
+		if (nonNull(context)) {
 			return context.valuesSize();
 		}
 		return 0;
