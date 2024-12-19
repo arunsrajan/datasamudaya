@@ -330,6 +330,7 @@ public class RemoteDataFetcher {
 		log.debug("Remote data recover with hp: " + rdf.getHp());
 		var rdfwithdata = (RemoteDataFetch) Utils.getResultObjectByInput(rdf.getHp(), rdf, rdf.getTejobid());
 		rdf.setData(rdfwithdata.getData());
+		rdf.setIsresultavailable(rdfwithdata.isIsresultavailable());
 		log.debug("Exiting RemoteDataFetcher.remoteInMemoryDataFetch");
 	}
 

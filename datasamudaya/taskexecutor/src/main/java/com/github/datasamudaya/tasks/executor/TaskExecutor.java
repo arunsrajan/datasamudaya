@@ -250,11 +250,9 @@ public class TaskExecutor implements Callable<Object> {
 				log.debug("Task Executor Remote Data Fetch {} Mode {} Storage {} {}", taskexecutor, rdf.getMode(), rdf.getStorage(), jobidstageidtaskidcompletedmap);
 				if (rdf.getMode().equals(DataSamudayaConstants.STANDALONE)) {
 					if (rdf.getStorage() == STORAGE.COLUMNARSQL) {
-						var path = Utils.getIntermediateInputStreamRDF(rdf);
-						while (isNull(jobidstageidtaskidcompletedmap.get(path)) || !jobidstageidtaskidcompletedmap.get(path)) {
-							Thread.sleep(1000);
-						}
+						var path = Utils.getIntermediateInputStreamRDF(rdf);					
 						rdf.setData((byte[]) inmemorycache.get(path));
+						rdf.setIsresultavailable(isNull(jobidstageidtaskidcompletedmap.get(path)) || !jobidstageidtaskidcompletedmap.get(path));
 						return rdf;
 					} else if (taskexecutor != null) {
 						Task task = mdstde.getTask();

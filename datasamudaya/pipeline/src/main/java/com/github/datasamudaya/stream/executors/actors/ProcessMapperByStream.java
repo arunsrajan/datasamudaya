@@ -21,10 +21,10 @@ import java.util.stream.Stream;
 import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
@@ -63,8 +63,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessMapperByStream extends AbstractBehavior<Command> implements Serializable {
-	Logger log = LoggerFactory.getLogger(ProcessMapperByStream.class);
-	private static final Logger logger = LoggerFactory.getLogger(ProcessMapperByStream.class);
+	private static final Logger logger = LogManager.getLogger(ProcessMapperByStream.class);
 
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
@@ -86,13 +85,13 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	int diskspillpercentage;
 
 	protected List getFunctions() {
-		log.debug("Entered ProcessMapperByStream");
+		logger.debug("Entered ProcessMapperByStream");
 		var tasks = jobstage.getStage().tasks;
 		var functions = new ArrayList<>();
 		for (var task : tasks) {
 			functions.add(task);
 		}
-		log.debug("Exiting ProcessMapperByStream");
+		logger.debug("Exiting ProcessMapperByStream");
 		return functions;
 	}
 
@@ -180,10 +179,10 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 				if (diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
-				log.debug("processMapStream InitialSize {} , Terminating Size {} and Terminating Class {}", initialsize,
+				logger.debug("processMapStream InitialSize {} , Terminating Size {} and Terminating Class {}", initialsize,
 						terminatingsize, object.getTerminiatingclass());
 				if (object.getTerminiatingclass() == NodeIndexKey.class) {
-					log.debug("Is Terminating Class NodeIndexKey Shuffle Records {} isEmpty {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite));
+					logger.debug("Is Terminating Class NodeIndexKey Shuffle Records {} isEmpty {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite));
 					if (CollectionUtils.isNotEmpty(childpipes)) {
 						final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
@@ -215,7 +214,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 											return value;
 										}
 									} catch (Exception ex) {
-										log.error("{}", ex);
+										logger.error("{}", ex);
 									}
 									return null;
 								}).filter(Objects::nonNull));) {
@@ -241,7 +240,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 											entry.getValue().close();
 										}
 									} catch (Exception ex) {
-										log.error(DataSamudayaConstants.EMPTY, ex);
+										logger.error(DataSamudayaConstants.EMPTY, ex);
 									}
 									pipeline.get(
 											entry.getKey()).tell(
@@ -269,11 +268,11 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 								try {
 									client.close();
 								} catch (IOException e) {
-									log.error("{}", e);
+									logger.error("{}", e);
 								}
 							});
 						} catch (Exception ex) {
-							log.error("{}", ex);
+							logger.error("{}", ex);
 						}
 					} else {
 						Stream<NodeIndexKey> datastream = diskspilllistinterm.isSpilled()
@@ -285,19 +284,19 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 								var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {
-							log.debug("Map assembly deriving");
+							logger.debug("Map assembly deriving");
 							List result = (List) streammap.collect(Collectors.toList());
 							Utils.getKryo().writeClassAndObject(output, result);
 							output.flush();
 							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 							cacheAble(fsdos);
-							log.debug("Map assembly concluded");
+							logger.debug("Map assembly concluded");
 						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);
+							logger.error(DataSamudayaConstants.EMPTY, ex);
 						}
 					}
 				} else {
-					log.debug("Is Terminating Class DiskSpillingList Is Shuffle Records {} Is Empty {} and intermediate Spilled ? {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite), diskspilllistinterm.isSpilled());
+					logger.debug("Is Terminating Class DiskSpillingList Is Shuffle Records {} Is Empty {} and intermediate Spilled ? {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite), diskspilllistinterm.isSpilled());
 					if (CollectionUtils.isNotEmpty(childpipes)) {
 						final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
 								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
@@ -335,7 +334,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 											entry.getValue().close();
 										}
 									} catch (Exception ex) {
-										log.error(DataSamudayaConstants.EMPTY, ex);
+										logger.error(DataSamudayaConstants.EMPTY, ex);
 									}
 									pipeline.get(
 											entry.getKey()).tell(
@@ -352,13 +351,13 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 										.forEach(key -> pipeline.get(key).tell(
 												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class)));
 							} else {
-								log.debug("Is Disk Spilling List Spilled {} stream processing for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
+								logger.debug("Is Disk Spilling List Spilled {} stream processing for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								streammap.forEach(diskspilllist::add);
-								log.debug("Is Disk Spilling List Spilled {} Close for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
+								logger.debug("Is Disk Spilling List Spilled {} Close for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								if (diskspilllist.isSpilled()) {
 									diskspilllist.close();
 								}
-								log.debug("Is Disk Spilling List Spilled {} for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
+								logger.debug("Is Disk Spilling List Spilled {} for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
 								childpipes.stream().forEach(action -> action.tell(
 										new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class)));
 							}
@@ -378,15 +377,18 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 								var fsdos = new ByteArrayOutputStream();
 								var sos = new SnappyOutputStream(fsdos);
 								var output = new Output(sos);) {
-							log.debug("Map assembly deriving");
+							logger.debug("Map assembly deriving");
 							List result = (List) streammap.collect(Collectors.toList());
-							Utils.getKryo().writeClassAndObject(output, result);
+							Utils.getKryoInstance().writeClassAndObject(output, result);
 							output.flush();
+							if(nonNull(fsdos.toByteArray())) {
+								logger.info("{}", fsdos.toByteArray().length);
+							}
 							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
 							cacheAble(fsdos);
-							log.debug("Map assembly concluded");
+							logger.debug("Map assembly concluded");
 						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);
+							logger.error(DataSamudayaConstants.EMPTY, ex);
 						}
 					}
 				}

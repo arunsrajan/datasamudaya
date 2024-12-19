@@ -100,7 +100,7 @@ public class NodeRunner implements Callable<Object> {
 					if (Objects.isNull(proc)) {
 						proc = ContainerLauncher.spawnDataSamudayaContainer((cr.getPort()) + DataSamudayaConstants.EMPTY,
 								(String) DataSamudayaProperties.get().get(DataSamudayaConstants.CACHEDISKPATH),
-								TaskExecutorRunner.class, proploaderpath, cr, lc.getJobid());
+								TaskExecutorRunner.class, proploaderpath, cr, lc.getJobid(),lc.getTotalnumberofcontainerperuser());
 						processes.put((cr.getPort()) + DataSamudayaConstants.EMPTY, proc);
 						String hp = host + DataSamudayaConstants.UNDERSCORE + cr.getPort();
 					}

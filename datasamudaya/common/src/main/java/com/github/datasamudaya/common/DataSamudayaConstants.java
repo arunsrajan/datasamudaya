@@ -598,7 +598,7 @@ public class DataSamudayaConstants {
 	public static final String AKKA_ROLE = "backend";
 
 	public static final String TOTALFILEPARTSPEREXEC = "disk.spill.file.parts.per.exec";
-	public static final String TOTALFILEPARTSPEREXEC_DEFAULT = "4";
+	public static final String TOTALFILEPARTSPEREXEC_DEFAULT = "3";
 	public static final String DISKSPILLDOWNSTREAMBATCHSIZE = "disk.spill.downstream.batch.size";
 	public static final String DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT = "10000";
 	public static final String BTREEELEMENTSNUMBER = "btree.elements.number";

@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.calcite.rex.RexNode;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
 import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessShuffle extends AbstractBehavior<Command> implements Serializable {
-	Logger log = LoggerFactory.getLogger(ProcessShuffle.class);
+	org.apache.logging.log4j.Logger log = LogManager.getLogger(ProcessShuffle.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 
 	protected JobStage jobstage;

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -82,9 +83,12 @@ import com.typesafe.config.Config;
 import akka.actor.Address;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.scaladsl.Behaviors;
+import akka.cluster.Member;
+import akka.cluster.MemberStatus;
 import akka.cluster.sharding.typed.javadsl.ClusterSharding;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import akka.cluster.typed.Cluster;
+import akka.cluster.typed.Join;
 import akka.cluster.typed.JoinSeedNodes;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
@@ -94,6 +98,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
+import scala.collection.JavaConverters;
 
 /**
  * Launches the task executor.
@@ -128,7 +133,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {
 			URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
-			if (args == null || args.length != 4) {
+			if (args == null || args.length != 5) {
 				log.debug("Args" + args);
 				if (args != null) {
 					log.debug("Args Not of Length 2!=" + args.length);
@@ -138,7 +143,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 				}
 				System.exit(1);
 			}
-			if (args.length == 4) {
+			if (args.length == 5) {
 				log.debug("Args = ");
 				for (var arg : args) {
 					log.debug(arg);
@@ -174,9 +179,10 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
 							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), virtualThreadFactory);
 			shuffleFileServer = Utils.startShuffleRecordsServer();
+			int numberofexecutor = Integer.parseInt(args[4]);
 			var ter = new TaskExecutorRunner();
 			ter.init(zo, jobid, executortype);
-			ter.start(zo, jobid, executortype, args);
+			ter.start(zo, jobid, executortype, args, numberofexecutor);
 			int metricsport = Utils.getRandomPort();
 			DefaultExports.initialize(); // Initialize JVM metrics
 			PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT,
@@ -254,7 +260,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	 */
 	@SuppressWarnings({})
 	@Override
-	public void start(ZookeeperOperations zo, String jobid, String executortype, String[] args) throws Exception {
+	public void start(ZookeeperOperations zo, String jobid, String executortype, String[] args, int numberofexecutors) throws Exception {
 		var port = Integer.parseInt(System.getProperty(DataSamudayaConstants.TASKEXECUTOR_PORT));
 		log.debug("TaskExecutor Port: {}" + port);
 		var su = new ServerUtils();
@@ -303,7 +309,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					, DataSamudayaConstants.AKKA_HOST_DEFAULT)
 					, Utils.getRandomPort(),
 							args[0]);
-					system = ActorSystem.create(Behaviors.empty(), DataSamudayaConstants.ACTORUSERNAME, config);
+					system = ActorSystem.create(Behaviors.ignore(), DataSamudayaConstants.ACTORUSERNAME, config);
 					break;
 				} catch (Exception ex) {
 					log.error("Unable To Create Akka Actors System...", ex);
@@ -322,7 +328,22 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			log.debug("Seed Nodes {}" + akkahostport);
 			var seednodeaddress = new Address(DataSamudayaConstants.AKKA_URL_SCHEME, DataSamudayaConstants.ACTORUSERNAME, addressarray[0], Integer.parseInt(addressarray[1]));
 			log.debug("Seed Nodes Address {}" + seednodeaddress);
-			cluster.manager().tell(new JoinSeedNodes(Arrays.asList(seednodeaddress)));
+			cluster.manager().tell(new Join(seednodeaddress));
+			boolean up = false;
+			Set<Member> members = JavaConverters.setAsJavaSetConverter(cluster.state().members()).asJava();
+			while (members.size() < numberofexecutors || !up) {
+				Thread.sleep(1000);
+				members = JavaConverters.setAsJavaSetConverter(cluster.state().members()).asJava();
+				if (members.size() < numberofexecutors)
+					continue;
+				up = true;
+				for (Member member : members) {
+					if (member.status() != MemberStatus.up()) {
+						up = false;
+						break;
+					}
+				}
+			}
 			log.debug("Joining Seed Nodes Address {}" + seednodeaddress);
 			log.debug("Cluster Members {}" + cluster.state().members());
 			sharding = ClusterSharding.get(system);

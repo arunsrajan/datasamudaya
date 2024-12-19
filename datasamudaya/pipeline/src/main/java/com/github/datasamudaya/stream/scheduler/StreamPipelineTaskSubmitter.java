@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.ExecuteTaskActor;
 import com.github.datasamudaya.common.PipelineConfig;
 import com.github.datasamudaya.common.StreamDataCruncher;
@@ -111,7 +112,9 @@ public class StreamPipelineTaskSubmitter implements StreamPipelineTaskSubmitterM
 				childactors = task.getShufflechildactors().stream().map(task -> task.actorselection)
 						.collect(Collectors.toList());
 			}
-			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors, taskexecutors.indexOf(hostport) * 3);
+			int nooffilepartitions = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
+					DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+			ExecuteTaskActor eta = new ExecuteTaskActor(task, childactors, taskexecutors.indexOf(hostport) * nooffilepartitions);
 			task.setTeid(jobid);
 			byte[] objbytes = Utils.convertObjectToBytesCompressed(eta, null);
 			return sdc.postObject(objbytes);

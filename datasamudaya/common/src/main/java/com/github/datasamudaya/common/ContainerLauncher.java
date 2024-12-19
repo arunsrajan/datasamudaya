@@ -35,7 +35,7 @@ public class ContainerLauncher {
  * @return process object
 	 */
 	public static Process spawnDataSamudayaContainer(String port, String diskcache, Class<?> cls, String prop,
-			ContainerResources cr, String jobid) {
+			ContainerResources cr, String jobid, int numberofexecutors) {
 
 		try {
 			var host = (String) DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST);
@@ -73,6 +73,7 @@ public class ContainerLauncher {
 			argumentsForSpawn.add("" + cr.getDirectheap());
 			argumentsForSpawn.add(jobid);
 			argumentsForSpawn.add(DataSamudayaConstants.EMPTY + cr.getExecutortype());
+			argumentsForSpawn.add(DataSamudayaConstants.EMPTY + numberofexecutors);
 			log.debug("Launching Container Daemon Process: " + argumentsForSpawn);
 			//Spawning the process for running task executor
 			Process process = Runtime.getRuntime()

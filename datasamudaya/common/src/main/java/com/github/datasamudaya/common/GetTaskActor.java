@@ -22,4 +22,5 @@ public class GetTaskActor implements Serializable {
 	private Task task;
 	private List<String> childtaskactors;
 	private int terminatingparentcount;
+	private boolean tostartdummy;
 }

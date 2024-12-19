@@ -10,7 +10,17 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -139,6 +149,7 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.cluster.Cluster;
+import akka.cluster.sharding.ConsistentHashingShardAllocationStrategy;
 import akka.cluster.sharding.external.ExternalShardAllocation;
 import akka.cluster.sharding.external.ExternalShardAllocationStrategy;
 import akka.cluster.sharding.external.javadsl.ExternalShardAllocationClient;
@@ -187,7 +198,6 @@ import net.sf.jsqlparser.statement.select.PlainSelect;
 public class SQLUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(SQLUtils.class);
-	private static final org.apache.log4j.Logger logger = org.apache.log4j.LogManager.getLogger(SQLUtils.class);
 
 	private SQLUtils() {
 	}
@@ -3744,7 +3754,7 @@ public class SQLUtils {
 	 * @param hdfs
 	 * @param inmemorycache
 	 * @param jobidstageidtaskidcompletedmap
-	 * @param actorsystemurl
+	 * @param hostport
 	 * @param cluster
 	 * @param teid
 	 * @param actors
@@ -3753,7 +3763,7 @@ public class SQLUtils {
 	 */
 	public static Task getAkkaActor(ActorSystem system, Object obj, Map<String, JobStage> jobidstageidjobstagemap,
 			FileSystem hdfs, Cache inmemorycache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			String actorsystemurl, akka.cluster.sharding.typed.javadsl.ClusterSharding clustersharding, String teid,
+			String hostport, akka.cluster.sharding.typed.javadsl.ClusterSharding clustersharding, String teid,
 			Map<String, EntityTypeKey> eref, Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap,
 			String shardid) {
 		try {
@@ -3763,345 +3773,389 @@ public class SQLUtils {
 				JobStage js = jobidstageidjobstagemap.get(jobstageid);
 				taskactor.getTask().setTeid(teid);
 				if (js.getStage().tasks.get(0) instanceof CsvOptionsSQL cosql) {
-					logger.debug("Creating Actor for task {} using system {} " + taskactor.getTask() + system);
+					log.debug("Creating Actor for task {} using system {} " + taskactor.getTask() + system);
 					EntityTypeKey<Command> entityKey = ProcessMapperByBlocksLocation
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
-					ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-							.of(entityKey,
-									ctx -> ProcessMapperByBlocksLocation.create(ctx.getEntityId(), hdfs, inmemorycache,
-											jobidstageidtaskidcompletedmap, taskactor.getTask(),
-											blockspartitionfilterskipmap))
-							.withRole(DataSamudayaConstants.AKKA_ROLE)
-							.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
-					EntityRef<Command> processmapblocks = clustersharding.entityRefFor(entityKey, entityKey.name());
-					eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
-					return taskactor.getTask();
-				} else if (js.getStage().tasks.get(0) instanceof ShuffleStage shuffle) {
-					List<EntityRef> childactors = new ArrayList<>();
-					getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
+							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
+					} else {
+						setShardLocation(system, shardid, entityKey, hostport);
+						ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+								.of(entityKey,
+										ctx -> ProcessMapperByBlocksLocation.create(ctx.getEntityId(), hdfs, inmemorycache,
+												jobidstageidtaskidcompletedmap, taskactor.getTask(),
+												blockspartitionfilterskipmap))
+								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
+						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
+						return taskactor.getTask();
+					}
+				} else if (js.getStage().tasks.get(0) instanceof ShuffleStage shuffle) {					
 					EntityTypeKey<Command> entityKey = ProcessShuffle
 							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
 					log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
-					ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-							.of(entityKey,
-									ctx -> ProcessShuffle.create(ctx.getEntityId(), jobidstageidtaskidcompletedmap,
-											taskactor.getTask(), childactors))
-							.withRole(DataSamudayaConstants.AKKA_ROLE)
-							.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
-					EntityRef<Command> shuffleproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-					eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
+					} else {
+						setShardLocation(system, shardid, entityKey, hostport);
+						List<EntityRef> childactors = new ArrayList<>();
+						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+						ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+								.of(entityKey,
+										ctx -> ProcessShuffle.create(ctx.getEntityId(), jobidstageidtaskidcompletedmap,
+												taskactor.getTask(), childactors))
+								
+								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
+						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
-				} else if (js.getStage().tasks.get(0) instanceof DistributedDistinct dd) {
-					List<EntityRef> childactors = new ArrayList<>();
-					getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
+					}
+				} else if (js.getStage().tasks.get(0) instanceof DistributedDistinct dd) {					
 					log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
 					EntityTypeKey<Command> entityKey = ProcessDistributedDistinct
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
-					ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity.of(entityKey,
-							ctx -> ProcessDistributedDistinct.create(ctx.getEntityId(), jobidstageidtaskidcompletedmap,
-									taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()))
-							.withRole(DataSamudayaConstants.AKKA_ROLE)
-							.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
-
-					EntityRef<Command> ddproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-					eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
+					} else {
+						setShardLocation(system, shardid, entityKey, hostport);
+						List<EntityRef> childactors = new ArrayList<>();
+						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+						ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity.of(entityKey,
+								ctx -> ProcessDistributedDistinct.create(ctx.getEntityId(), jobidstageidtaskidcompletedmap,
+										taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()))
+								
+								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));	
+						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
+					}
 					return taskactor.getTask();
 				} else if (js.getStage().tasks.get(0) instanceof UnionFunction
-						|| js.getStage().tasks.get(0) instanceof IntersectionFunction) {
-					List<EntityRef> childactors = new ArrayList<>();
-					getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
+						|| js.getStage().tasks.get(0) instanceof IntersectionFunction) {					
 					final Class<?> cls;
-					if (js.getStage().tasks.get(0) instanceof UnionFunction) {
-						EntityTypeKey<Command> entityKey = ProcessUnion
-								.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-						setShardLocation(system, shardid, entityKey, actorsystemurl);
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessUnion.create(ctx.getEntityId(), js, inmemorycache,
-												jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
-												taskactor.getTerminatingparentcount()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> unionproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-						taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+					if (js.getStage().tasks.get(0) instanceof UnionFunction) {						EntityTypeKey<Command> entityKey = ProcessUnion
+								.createTypeKey(jobstageid + taskactor.getTask().getTaskid());						
+						if(taskactor.isTostartdummy()) {
+							startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+							return taskactor.getTask();
+						} else {
+							setShardLocation(system, shardid, entityKey, hostport);
+							List<EntityRef> childactors = new ArrayList<>();
+							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessUnion.create(ctx.getEntityId(), js, inmemorycache,
+													jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
+													taskactor.getTerminatingparentcount()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+							taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
+						}
 					} else {
 						EntityTypeKey<Command> entityKey = ProcessIntersection
 								.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-						setShardLocation(system, shardid, entityKey, actorsystemurl);
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessIntersection.create(ctx.getEntityId(), js, inmemorycache,
-												jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
-												taskactor.getTerminatingparentcount()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> intersectionproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-						taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+						if(taskactor.isTostartdummy()) {
+							startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+							return taskactor.getTask();
+						} else {
+							setShardLocation(system, shardid, entityKey, hostport);
+							List<EntityRef> childactors = new ArrayList<>();
+							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessIntersection.create(ctx.getEntityId(), js, inmemorycache,
+													jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
+													taskactor.getTerminatingparentcount()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+							taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
+						}
 					}
 					log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
 					return taskactor.getTask();
 				} else if (js.getStage().tasks.get(0) instanceof ReduceByKeyFunction rbkf) {
-					List<EntityRef> childactors = new ArrayList<>();
-					getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
 					log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
 					EntityTypeKey<Command> entityKey = ProcessReduce
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
-					ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity.of(entityKey,
-							ctx -> ProcessReduce.create(ctx.getEntityId(), jobidstageidjobstagemap.get(jobstageid),
-									hdfs, inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(),
-									childactors, taskactor.getTerminatingparentcount()))
-							.withRole(DataSamudayaConstants.AKKA_ROLE)
-							.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
-					EntityRef<Command> rbkfproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-
-					eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
+					} else {
+						setShardLocation(system, shardid, entityKey, hostport);
+						List<EntityRef> childactors = new ArrayList<>();
+						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+						ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity.of(entityKey,
+								ctx -> ProcessReduce.create(ctx.getEntityId(), jobidstageidjobstagemap.get(jobstageid),
+										hdfs, inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(),
+										childactors, taskactor.getTerminatingparentcount()))
+								
+								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
+						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
+					}
 					return taskactor.getTask();
 				} else if (js.getStage().getTasks().get(0) instanceof Coalesce coalesce) {
 					EntityTypeKey<Command> entityKey = ProcessCoalesce
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
-					if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-						List<EntityRef> childactors = new ArrayList<>();
-						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessCoalesce.create(ctx.getEntityId(), coalesce, childactors,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> coalesceproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-						log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
 					} else {
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessCoalesce.create(ctx.getEntityId(), coalesce, null,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> coalesceproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
+						setShardLocation(system, shardid, entityKey, hostport);
+						if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+							List<EntityRef> childactors = new ArrayList<>();
+							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessCoalesce.create(ctx.getEntityId(), coalesce, childactors,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+							log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						} else {
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessCoalesce.create(ctx.getEntityId(), coalesce, null,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						}
 					}
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+					taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
 				} else if (js.getStage().getTasks().get(0) instanceof ProcessDistributedSort ds) {
 					EntityTypeKey<Command> entityKey = ProcessDistributedSort
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
-					if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-						List<EntityRef> childactors = new ArrayList<>();
-						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessDistributedSort.create(ctx.getEntityId(),
-												jobidstageidjobstagemap.get(jobstageid), inmemorycache,
-												jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
-												taskactor.getTerminatingparentcount()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> dsproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-						log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
-
+							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
 					} else {
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessDistributedSort.create(ctx.getEntityId(),
-												jobidstageidjobstagemap.get(jobstageid), inmemorycache,
-												jobidstageidtaskidcompletedmap, taskactor.getTask(), null,
-												taskactor.getTerminatingparentcount()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> dsproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
+						setShardLocation(system, shardid, entityKey, hostport);
+						if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+							List<EntityRef> childactors = new ArrayList<>();
+							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessDistributedSort.create(ctx.getEntityId(),
+													jobidstageidjobstagemap.get(jobstageid), inmemorycache,
+													jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
+													taskactor.getTerminatingparentcount()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+							log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+	
+						} else {
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessDistributedSort.create(ctx.getEntityId(),
+													jobidstageidjobstagemap.get(jobstageid), inmemorycache,
+													jobidstageidtaskidcompletedmap, taskactor.getTask(), null,
+													taskactor.getTerminatingparentcount()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						}
 					}
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+					taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
 				} else if (js.getStage().getTasks().get(0) instanceof JoinPredicate joinpred) {
 					EntityTypeKey<Command> entityKey = ProcessInnerJoin
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
-					if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-						List<EntityRef> childactors = new ArrayList<>();
-						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessInnerJoin.create(ctx.getEntityId(), joinpred, childactors,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> joinproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
+							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
 					} else {
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessInnerJoin.create(ctx.getEntityId(), joinpred, null,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> joinproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
+						setShardLocation(system, shardid, entityKey, hostport);
+						if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+							List<EntityRef> childactors = new ArrayList<>();
+							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessInnerJoin.create(ctx.getEntityId(), joinpred, childactors,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						} else {
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessInnerJoin.create(ctx.getEntityId(), joinpred, null,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						}
 					}
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+					taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
 				} else if (js.getStage().getTasks().get(0) instanceof RightOuterJoinPredicate rojoinpred) {
 					EntityTypeKey<Command> entityKey = ProcessRightOuterJoin
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
-					if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-						List<EntityRef> childactors = new ArrayList<>();
-						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rojoinpred, childactors,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> rojproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
+							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
 					} else {
-						log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rojoinpred, null,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> rojproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
+						setShardLocation(system, shardid, entityKey, hostport);
+						if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+							List<EntityRef> childactors = new ArrayList<>();
+							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rojoinpred, childactors,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						} else {
+							log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rojoinpred, null,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						}
 					}
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+					taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
 				} else if (js.getStage().getTasks().get(0) instanceof LeftOuterJoinPredicate lojoinpred) {
 					EntityTypeKey<Command> entityKey = ProcessLeftOuterJoin
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
-					if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-						List<EntityRef> childactors = new ArrayList<>();
-						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), lojoinpred, childactors,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> lojproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
+							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
 					} else {
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), lojoinpred, null,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> lojproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-
+						setShardLocation(system, shardid, entityKey, hostport);
+						if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+							List<EntityRef> childactors = new ArrayList<>();
+							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), lojoinpred, childactors,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						} else {
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), lojoinpred, null,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+	
+						}
 					}
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+					taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
 				} else if (js.getStage().getTasks().get(0) instanceof FullOuterJoin) {
 					EntityTypeKey<Command> entityKey = ProcessFullOuterJoin
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					setShardLocation(system, shardid, entityKey, actorsystemurl);
-					if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-						List<EntityRef> childactors = new ArrayList<>();
-						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessFullOuterJoin.create(ctx.getEntityId(), childactors,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> fojproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
+							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
+					if(taskactor.isTostartdummy()) {
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
 					} else {
-						ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-								.of(entityKey,
-										ctx -> ProcessFullOuterJoin.create(ctx.getEntityId(), null,
-												taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-												inmemorycache, taskactor.getTask()))
-								.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-								ExternalShardAllocationStrategy.create(system, entityKey.name())));
-						EntityRef<Command> fojproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-						eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-
-					}
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
-					return taskactor.getTask();
-				} else {
-					List<EntityRef> childactors = new ArrayList<>();
-					int totalfilepartspernode = Integer.parseInt(
-							DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
-									DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-					int indexfilepartpernode = 0;
-					if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
-						log.debug("Mapper By Stream ChildActors {}", taskactor.getChildtaskactors());
-						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), actorsystemurl);
-					}
-					final Map<Integer, EntityRef> actorselections = new ConcurrentHashMap<>();
-					if (CollectionUtils.isNotEmpty(taskactor.getTask().getShufflechildactors())) {
-
-						log.debug("Mapper By Stream ShuffleChildActors {}",
-								taskactor.getTask().getShufflechildactors());
-						for (Task actortask : taskactor.getTask().getShufflechildactors()) {
-							log.debug("Mapper By Stream Actors Selected {}", actortask.getActorselection());
-							EntityTypeKey entityKeyactorsel = eref.get(actortask.getActorselection());
-							if (isNull(entityKeyactorsel)) {
-								String[] hpshardidentitykeyname = extractAkkaActorHostPortShardIdEntityTypeKey(actortask.getActorselection());
-								entityKeyactorsel = EntityTypeKey.create(Command.class, hpshardidentitykeyname[2]);
-								setShardLocation(system, hpshardidentitykeyname[1], entityKeyactorsel, hpshardidentitykeyname[0]);
-								clustersharding.init(Entity.of(entityKeyactorsel, ctx -> Behaviors.same())
-										.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-										ExternalShardAllocationStrategy.create(system, entityKeyactorsel.name())));
-								eref.put(getEntityUrl(hpshardidentitykeyname[0], hpshardidentitykeyname[1], entityKeyactorsel.name()), entityKeyactorsel);
-							}
-							EntityRef actorselection = clustersharding
-									.entityRefFor(eref.get(actortask.getActorselection()), entityKeyactorsel.name());
-							for (int filepartcount = 0;filepartcount < totalfilepartspernode;filepartcount++) {
-								actorselections.put(filepartcount + indexfilepartpernode, actorselection);
-							}
-							log.debug("Mapper By Stream FilePartitions Selected {}",
-									taskactor.getTask().getFilepartitionsid());
-							indexfilepartpernode += totalfilepartspernode;
+						setShardLocation(system, shardid, entityKey, hostport);
+						if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+							List<EntityRef> childactors = new ArrayList<>();
+							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessFullOuterJoin.create(ctx.getEntityId(), childactors,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						} else {
+							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+									.of(entityKey,
+											ctx -> ProcessFullOuterJoin.create(ctx.getEntityId(), null,
+													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
+													inmemorycache, taskactor.getTask()))
+									.withAllocationStrategy(
+									ExternalShardAllocationStrategy.create(system, entityKey.name())));
+							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+	
 						}
-					}
-					log.debug("Mapper By Stream Actor Creation Started {}...", childactors);
-					log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
-					EntityTypeKey<Command> entityKey = ProcessMapperByStream
-							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
-					ActorRef<ShardingEnvelope<Command>> shardRegion = clustersharding.init(Entity
-							.of(entityKey,
-									ctx -> ProcessMapperByStream.create(ctx.getEntityId(), js, hdfs, inmemorycache,
-											jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
-											taskactor.getTask().getFilepartitionsid(), actorselections,
-											taskactor.getTerminatingparentcount()))
-							.withRole(DataSamudayaConstants.AKKA_ROLE)
-							.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
-					EntityRef<Command> pmbsproc = clustersharding.entityRefFor(entityKey, entityKey.name());
-					eref.put(getEntityUrl(actorsystemurl, shardid, entityKey.name()), entityKey);
-					log.debug("Mapper By Stream Actor Creation Ended...");
-					taskactor.getTask().setActorselection(getEntityUrl(actorsystemurl, shardid, entityKey.name()));
+					taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
+					}
+				} else {
+					if(taskactor.isTostartdummy()) {
+						EntityTypeKey<Command> entityKey = ProcessMapperByStream
+								.createTypeKey(jobstageid + taskactor.getTask().getTaskid());						
+						startDummyActor(system, clustersharding, entityKey, eref, hostport, shardid);
+						return taskactor.getTask();
+					} else {
+						List<EntityRef> childactors = new ArrayList<>();
+						int totalfilepartspernode = Integer.parseInt(
+								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
+										DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+						int indexfilepartpernode = 0;
+						if (CollectionUtils.isNotEmpty(taskactor.getChildtaskactors())) {
+							log.debug("Mapper By Stream ChildActors {}", taskactor.getChildtaskactors());
+							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
+						}
+						final Map<Integer, EntityRef> actorselections = new ConcurrentHashMap<>();
+						if (CollectionUtils.isNotEmpty(taskactor.getTask().getShufflechildactors())) {
+	
+							log.debug("Mapper By Stream ShuffleChildActors {}",
+									taskactor.getTask().getShufflechildactors());
+							for (Task actortask : taskactor.getTask().getShufflechildactors()) {
+								log.debug("Mapper By Stream Actors Selected {}", actortask.getActorselection());
+								EntityTypeKey entityKeyactorsel = eref.get(actortask.getActorselection());
+								if (isNull(entityKeyactorsel)) {
+									String[] hpshardidentitykeyname = extractAkkaActorHostPortShardIdEntityTypeKey(actortask.getActorselection());
+									entityKeyactorsel = EntityTypeKey.create(Command.class, hpshardidentitykeyname[2]);
+									ClusterSharding.get(system).init(Entity.of(entityKeyactorsel, ctx -> Behaviors.same())
+											.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKeyactorsel.name())));
+									eref.put(getEntityUrl(hpshardidentitykeyname[0], hpshardidentitykeyname[1], entityKeyactorsel.name()), entityKeyactorsel);
+								}
+								EntityRef actorselection = ClusterSharding.get(system)
+										.entityRefFor(eref.get(actortask.getActorselection()), entityKeyactorsel.name());
+								for (int filepartcount = 0;filepartcount < totalfilepartspernode;filepartcount++) {
+									actorselections.put(filepartcount + indexfilepartpernode, actorselection);
+								}
+								log.debug("Mapper By Stream FilePartitions Selected {}",
+										taskactor.getTask().getFilepartitionsid());
+								indexfilepartpernode += totalfilepartspernode;
+							}
+						}
+						log.debug("Mapper By Stream Actor Creation Started {}...", childactors);
+						log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
+						EntityTypeKey<Command> entityKey = ProcessMapperByStream
+								.createTypeKey(jobstageid + taskactor.getTask().getTaskid());
+						setShardLocation(system, shardid, entityKey, hostport);
+						ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
+								.of(entityKey,
+										ctx -> ProcessMapperByStream.create(ctx.getEntityId(), js, hdfs, inmemorycache,
+												jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
+												taskactor.getTask().getFilepartitionsid(), actorselections,
+												taskactor.getTerminatingparentcount()))
+								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
+						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
+						log.debug("Mapper By Stream Actor Creation Ended...");
+						taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
+						return taskactor.getTask();
+					}
 				}
 			} else if (obj instanceof ExecuteTaskActor exectaskactor) {
 				String jobstageid = exectaskactor.getTask().getJobid() + exectaskactor.getTask().getStageid();
@@ -4110,12 +4164,12 @@ public class SQLUtils {
 						.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
 								DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
 				int indexfilepartpernode = 0;
-				logger.debug("Executing Task " + exectaskactor.getTask() + " " + actorsystemurl);
+				log.debug("Executing Task " + exectaskactor.getTask() + " " + hostport);
 				List<EntityRef> childactors = new ArrayList<>();
 				if (CollectionUtils.isNotEmpty(exectaskactor.getChildtaskactors())) {
-					logger.debug("Before Child Actors" + childactors);
-					getChildActors(system, clustersharding, childactors, eref, exectaskactor.getChildtaskactors(), actorsystemurl);
-					logger.debug("Child Actors" + childactors);
+					log.debug("Before Child Actors" + childactors);
+					getChildActors(system, clustersharding, childactors, eref, exectaskactor.getChildtaskactors(), hostport, shardid);
+					log.debug("Child Actors" + childactors);
 				}
 				Map<Integer, EntityRef> actorselections = null;
 				if (CollectionUtils.isNotEmpty(exectaskactor.getTask().getShufflechildactors())) {
@@ -4125,16 +4179,13 @@ public class SQLUtils {
 						if (isNull(entityKeyactorsel)) {
 							String[] hpshardidentitykeyname = extractAkkaActorHostPortShardIdEntityTypeKey(
 									actortask.getActorselection());
-							entityKeyactorsel = EntityTypeKey.create(Command.class, hpshardidentitykeyname[2]);
-							setShardLocation(system, hpshardidentitykeyname[1], entityKeyactorsel,
-									hpshardidentitykeyname[0]);
-							clustersharding.init(Entity.of(entityKeyactorsel, ctx -> Behaviors.empty())
-									.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-									ExternalShardAllocationStrategy.create(system, entityKeyactorsel.name())));
+							entityKeyactorsel = EntityTypeKey.create(Command.class, hpshardidentitykeyname[2]);							
+							ClusterSharding.get(system).init(Entity.of(entityKeyactorsel, ctx -> Behaviors.same())
+									.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKeyactorsel.name())));
 							eref.put(getEntityUrl(hpshardidentitykeyname[0], hpshardidentitykeyname[1],
 									entityKeyactorsel.name()), entityKeyactorsel);
-						}
-						EntityRef actorselection = clustersharding.entityRefFor(entityKeyactorsel,
+						}						
+						EntityRef actorselection = ClusterSharding.get(system).entityRefFor(entityKeyactorsel,
 								entityKeyactorsel.name());
 						for (int filepartcount = 0;filepartcount < totalfilepartspernode;filepartcount++) {
 							actorselections.put(filepartcount + indexfilepartpernode, actorselection);
@@ -4142,43 +4193,57 @@ public class SQLUtils {
 						indexfilepartpernode += totalfilepartspernode;
 					}
 				}
-				logger.debug("Before Child Actors" + actorselections + " " + eref);
+				log.debug("Before Child Actors" + actorselections + " " + eref);
 				ProcessMapperByBlocksLocation.BlocksLocationRecord blr = new ProcessMapperByBlocksLocation.BlocksLocationRecord(
-						(BlocksLocation) exectaskactor.getTask().getInput()[0], hdfs,
+						(BlocksLocation) exectaskactor.getTask().getInput()[0],
 						exectaskactor.getTask().getFilepartitionsid(), childactors, actorselections,
 						jobidstageidjobstagemap.get(jobstageid));
 				String[] hpshardidentitytypekey = extractAkkaActorHostPortShardIdEntityTypeKey(
 						exectaskactor.getTask().getActorselection());
-				final EntityRef mapreducetask = clustersharding
+				final EntityRef mapreducetask = ClusterSharding.get(system)
 						.entityRefFor(eref.get(exectaskactor.getTask().getActorselection()), hpshardidentitytypekey[2]);
-				logger.debug("Cluster Seed Nodes " + Cluster.get(system).state().members());
-				logger.debug("Map Reduce Task " + mapreducetask.getEntityId() + mapreducetask.getTypeKey() + blr);
-				logger.debug("Processing Blocks {} actors {}" + exectaskactor.getTask().getInput()
+				log.debug("Cluster Seed Nodes " + Cluster.get(system).state().members());
+				log.debug("Map Reduce Task " + mapreducetask.getEntityId() + mapreducetask.getTypeKey() + blr);
+				log.debug("Processing Blocks {} actors {}" + exectaskactor.getTask().getInput()
 						+ exectaskactor.getTask().getActorselection());
 				var path = Utils.getIntermediateInputStreamTask(exectaskactor.getTask());
-				logger.debug("Job Stage Completed Map" + jobidstageidtaskidcompletedmap);
+				log.debug("Job Stage Completed Map" + jobidstageidtaskidcompletedmap);
 				mapreducetask.tell(blr);
 				while (isNull(jobidstageidtaskidcompletedmap.get(path)) || !jobidstageidtaskidcompletedmap.get(path)) {
 					try {
 						Thread.sleep(1000);
-						logger.debug("Job Stage Completed Map ..." + jobidstageidtaskidcompletedmap);
+						log.debug("Job Stage Completed Map ..." + jobidstageidtaskidcompletedmap);
 					} catch (Exception e) {
-						logger.error(DataSamudayaConstants.EMPTY, e);
+						log.error(DataSamudayaConstants.EMPTY, e);
 					}
 				}
 				Task tasktoexecute = exectaskactor.getTask();
-				logger.debug("Task Executed {} with status {}" + tasktoexecute + jobidstageidtaskidcompletedmap);
+				log.debug("Task Executed {} with status {}" + tasktoexecute + jobidstageidtaskidcompletedmap);
 				tasktoexecute.taskstatus = TaskStatus.COMPLETED;
 				tasktoexecute.tasktype = TaskType.EXECUTEUSERTASK;
 				return tasktoexecute;
 			}
 		} catch (Exception ex) {
-			logger.error("{}", ex);
+			log.error("{}", ex);
 			throw ex;
 		}
 		return null;
 	}
 
+	/**
+	 * The method create dummy entity in current actor system cluster sharding
+	 * @param entityTypeKey
+	 * @param eref
+	 */
+	public static void startDummyActor(ActorSystem actorsystem, 
+			ClusterSharding clustersharding, 
+			EntityTypeKey entityTypeKey, 
+			Map<String, EntityTypeKey> eref, String hostport, String shardid) {
+		ClusterSharding.get(actorsystem).init(Entity.of(entityTypeKey, ctx -> Behaviors.same())
+				.withAllocationStrategy(ExternalShardAllocationStrategy.create(actorsystem, entityTypeKey.name())));
+		eref.put(getEntityUrl(hostport, shardid, entityTypeKey.name()), entityTypeKey);
+	}
+	
 	/**
 	 * THe method gathers child EntityRef objects
 	 * 
@@ -4189,20 +4254,18 @@ public class SQLUtils {
 	 * @param eref
 	 * @param taskactor
 	 */
-	public static void getChildActors(ActorSystem system, ClusterSharding clustersharding, List<EntityRef> childactors,
-			Map<String, EntityTypeKey> eref, List<String> taskactors, String actorsystemurl) {
+	public static void getChildActors(ActorSystem actorsystem, ClusterSharding clustersharding, List<EntityRef> childactors,
+			Map<String, EntityTypeKey> eref, List<String> taskactors, String hostport, String shardid) {
 		for (String actorselectionurl : taskactors) {
 			EntityTypeKey entityKeyactorsel = eref.get(actorselectionurl);
 			if (isNull(entityKeyactorsel)) {
 				String[] hpshardidentitykeyname = extractAkkaActorHostPortShardIdEntityTypeKey(actorselectionurl);
 				entityKeyactorsel = EntityTypeKey.create(Command.class, hpshardidentitykeyname[2]);
-				setShardLocation(system, hpshardidentitykeyname[1], entityKeyactorsel, hpshardidentitykeyname[0]);
-				clustersharding.init(Entity.of(entityKeyactorsel, ctx -> Behaviors.same())
-						.withRole(DataSamudayaConstants.AKKA_ROLE).withAllocationStrategy(
-						ExternalShardAllocationStrategy.create(system, entityKeyactorsel.name())));
+				ClusterSharding.get(actorsystem).init(Entity.of(entityKeyactorsel, ctx -> Behaviors.same())
+						.withAllocationStrategy(ExternalShardAllocationStrategy.create(actorsystem, entityKeyactorsel.name())));
 				eref.put(getEntityUrl(hpshardidentitykeyname[0], hpshardidentitykeyname[1], entityKeyactorsel.name()), entityKeyactorsel);
 			}
-			EntityRef actorselection = clustersharding.entityRefFor(entityKeyactorsel, entityKeyactorsel.name());
+			EntityRef actorselection = ClusterSharding.get(actorsystem).entityRefFor(entityKeyactorsel, entityKeyactorsel.name());
 			childactors.add(actorselection);
 		}
 	}
@@ -4225,8 +4288,8 @@ public class SQLUtils {
 	 * @param entitykey
 	 * @return entity url
 	 */
-	public static String getEntityUrl(String hostport, String jobid, String entitykey) {
-		return hostport + DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+	public static String getEntityUrl(String hostport, String shardid, String entitykey) {
+		return hostport + DataSamudayaConstants.FORWARD_SLASH + shardid + DataSamudayaConstants.FORWARD_SLASH
 				+ entitykey;
 	}
 
@@ -4240,7 +4303,7 @@ public class SQLUtils {
 	 * @param hostport
 	 */
 	public static void setShardLocation(ActorSystem system, String shardid, EntityTypeKey typeKey, String hostport) {
-		logger.debug("Set Shard Location Actor System " + system + " " + shardid + " " + typeKey + hostport);
+		log.debug("Set Shard Location Actor System " + system + " " + shardid + " " + typeKey + hostport);
 		ExternalShardAllocationClient client = ExternalShardAllocation.get(system).getClient(typeKey.name());
 		String[] hp = hostport.split(DataSamudayaConstants.COLON);
 		client.setShardLocation(shardid, new Address(DataSamudayaConstants.AKKA_URL_SCHEME,

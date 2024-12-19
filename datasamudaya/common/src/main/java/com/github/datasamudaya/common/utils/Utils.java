@@ -1545,6 +1545,7 @@ public class Utils {
 			lc.setCla(cla);
 			lc.setNodehostport(restolaunch.getNodeport());
 			lc.setJobid(jobid);
+			lc.setTotalnumberofcontainerperuser(numberofcontainers);
 			globallaunchcontainers.add(lc);
 			List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
 					lc, DataSamudayaConstants.EMPTY);
@@ -1638,6 +1639,7 @@ public class Utils {
 				EXECUTORTYPE.EXECUTOR);
 		if (tolaunchcontainer) {
 			for (LaunchContainers lc : globallaunchcontainers) {
+				lc.setTotalnumberofcontainerperuser(numberofcontainers);
 				List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
 						lc, DataSamudayaConstants.EMPTY);
 				String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];

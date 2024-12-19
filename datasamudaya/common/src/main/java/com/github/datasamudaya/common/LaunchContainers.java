@@ -47,7 +47,7 @@ public class LaunchContainers implements Serializable, Cloneable {
 	private String jobid;
 	private MODE mode;
 	private ContainerLaunchAttributes cla;
-
+	private int totalnumberofcontainerperuser;
 
 	@Override
 	public Object clone() throws CloneNotSupportedException {

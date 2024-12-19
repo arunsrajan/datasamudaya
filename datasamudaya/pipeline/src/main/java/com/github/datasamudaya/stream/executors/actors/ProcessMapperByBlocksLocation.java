@@ -32,13 +32,13 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
@@ -87,8 +87,7 @@ import lombok.Setter;
  */
 public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> implements Serializable {
 
-	Logger log = LoggerFactory.getLogger(ProcessMapperByBlocksLocation.class);
-	org.apache.log4j.Logger logger = org.apache.log4j.LogManager.getLogger(ProcessMapperByBlocksLocation.class);
+	org.apache.logging.log4j.Logger logger = LogManager.getLogger(ProcessMapperByBlocksLocation.class);
 
 	protected FileSystem hdfs;
 	protected boolean completed;
@@ -143,7 +142,6 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 	public static class BlocksLocationRecord implements Command,Serializable {
 		private static final long serialVersionUID = -4918434381808493015L;
 		BlocksLocation bl;
-		FileSystem hdfs;
 		Map<Integer,
 				FilePartitionId> filespartitions;
 		List<EntityRef> childactors;
@@ -359,6 +357,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 							if (entry.getValue().isSpilled()) {
 								entry.getValue().close();
 							}
+							logger.debug("Downstream Pipeline Total Ranges {} {}",  blr.pipeline.get(entry.getKey() % totalranges), entry.getKey() % totalranges);
 							blr.pipeline.get(entry.getKey() % totalranges).tell(new OutputObject(new ShuffleBlock(null,
 									Utils.convertObjectToBytes(blr.filespartitions.get(entry.getKey() % totalranges)), entry.getValue()), left, right, null));
 						} catch (Exception e) {

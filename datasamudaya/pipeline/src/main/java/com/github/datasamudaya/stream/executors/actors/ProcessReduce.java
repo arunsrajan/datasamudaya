@@ -16,10 +16,10 @@ import java.util.stream.Stream;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
@@ -52,7 +52,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessReduce extends AbstractBehavior<Command> implements Serializable {
-	Logger log = LoggerFactory.getLogger(ProcessReduce.class);
+	Logger log = LogManager.getLogger(ProcessReduce.class);
 
 	protected JobStage jobstage;
 	protected FileSystem hdfs;
@@ -125,13 +125,13 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 					Object obj = sb.getData();
 					if (obj instanceof DiskSpillingList dsl) {
 						if (dsl.isSpilled()) {
-							log.debug("ProcessReduce::: Spilled Write Started...");
+							log.debug("ProcessReduce::: Spilled Write Started..."+tasktoprocess);
 							Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
-							log.debug("ProcessReduce::: Spilled Write Completed");
+							log.debug("ProcessReduce::: Spilled Write Completed"+tasktoprocess);
 						} else {
-							log.debug("ProcessReduce::: NotSpilled {}", dsl.isSpilled());
+							log.debug("ProcessReduce::: NotSpilled {} {}", dsl.isSpilled(), tasktoprocess);
 							diskspilllistinterm.addAll(dsl.getData());
-							log.debug("ProcessReduce::: NotSpilled Completed {}", dsl.isSpilled());
+							log.debug("ProcessReduce::: NotSpilled Completed {} {}", dsl.isSpilled(), tasktoprocess);
 						}
 						dsl.clear();
 					} else if (obj instanceof byte[] data) {
@@ -143,7 +143,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 			}
 			if (object.getTerminiatingclass() == Dummy.class) {
 				dummysize++;
-				log.debug("ProcessReduce::ShuffleSize {} , Terminating Dummy Size {}", terminatingsize, dummysize);
+				log.debug("ProcessReduce::ShuffleSize {} , Terminating Dummy Size {} {}", terminatingsize, dummysize, tasktoprocess);
 			} else if (object.getTerminiatingclass() == DiskSpillingList.class
 					|| object.getTerminiatingclass() == ShuffleBlock.class
 					|| object.getTerminiatingclass() == NodeIndexKey.class
@@ -175,7 +175,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 					}
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				} else {
-					log.debug("Reduce Started");
+					log.debug("Reduce Started {}", tasktoprocess);
 					diskspilllist = new DiskSpillingList(tasktoprocess, diskspillpercentage,
 							DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
 					try {
@@ -197,7 +197,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 					childpipes.stream().forEach(action -> action
 							.tell(new OutputObject(diskspilllist, false, false, DiskSpillingList.class)));
 					jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
-					log.debug("Reduce Completed");
+					log.debug("Reduce Completed {}", tasktoprocess);
 				}
 			}
 

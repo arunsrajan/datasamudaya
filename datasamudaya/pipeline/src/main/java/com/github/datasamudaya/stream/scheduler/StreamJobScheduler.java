@@ -1029,7 +1029,7 @@ public class StreamJobScheduler {
 					var predecessors = Graphs.predecessorListOf(graphreversed, sptsreverse);
 					var successors = Graphs.successorListOf(graphreversed, sptsreverse);
 					if (CollectionUtils.isEmpty(predecessors)) {
-						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, successors.size());
+						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, successors.size(), false);
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor, jsidjsmap, hdfs, cache,
 								jobidstageidtaskidcompletedmap, actorsystemurl, sharding, null, actorrefs,
 								blockspartitionfilterskipmap, shardid);
@@ -1038,7 +1038,7 @@ public class StreamJobScheduler {
 						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
 								.collect(Collectors.toList());
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
-								successors.size());
+								successors.size(), false);
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor, jsidjsmap, hdfs, cache,
 								jobidstageidtaskidcompletedmap, actorsystemurl, sharding, null, actorrefs,
 								blockspartitionfilterskipmap, shardid);
@@ -1228,16 +1228,31 @@ public class StreamJobScheduler {
 					var predecessors = Graphs.predecessorListOf(graphreversed, sptsreverse);
 					var successors = Graphs.successorListOf(graphreversed, sptsreverse);
 					if (CollectionUtils.isEmpty(predecessors)) {
-						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size());
+						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size(), false);
 						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
-						sptsreverse.getTask().setActorselection(task.getActorselection());
+						String actorselection = task.getActorselection();
+						for(String hport : job.getTaskexecutors()) {
+							if(!sptsreverse.getHostPort().equals(hport)) {
+								gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size(), false);
+								task = (Task) Utils.getResultObjectByInput(hport, gettaskactor, jobid);
+							}
+						}
+						sptsreverse.getTask().setActorselection(actorselection);
 					} else {
 						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
 								.collect(Collectors.toList());
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
-								nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size());
+								nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size(), false);
 						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
-						sptsreverse.getTask().setActorselection(task.getActorselection());
+						String actorselection = task.getActorselection();
+						for(String hport : job.getTaskexecutors()) {
+							if(!sptsreverse.getHostPort().equals(hport)) {
+								gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
+										nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size(), false);
+								task = (Task) Utils.getResultObjectByInput(hport, gettaskactor, jobid);
+							}
+						}
+						sptsreverse.getTask().setActorselection(actorselection);
 						sptsreverse.setChildactors(childactorsoriggraph);
 					}
 					if (CollectionUtils.isEmpty(successors)) {
@@ -2548,6 +2563,17 @@ public class StreamJobScheduler {
 						boolean isJGroups = Boolean.parseBoolean(pipelineconfig.getJgroups());
 						rdf.setMode(isJGroups ? DataSamudayaConstants.JGROUPS : DataSamudayaConstants.STANDALONE);
 						RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
+						outer: 
+						while(isNull(rdf.getData())) {
+							Thread.sleep(1000);
+							for(String te:job.getTaskexecutors()) {
+								rdf.setHp(te);
+								RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
+								if(nonNull(rdf.getData())) {
+									break outer;
+								}
+							}
+						}
 						try (var input = new Input(pipelineconfig.getStorage() == STORAGE.INMEMORY || isjgroups
 								? new ByteArrayInputStream(rdf.getData())
 								: new SnappyInputStream(new ByteArrayInputStream(rdf.getData())));) {

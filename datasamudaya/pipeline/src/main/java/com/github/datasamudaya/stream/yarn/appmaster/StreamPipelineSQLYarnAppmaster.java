@@ -423,16 +423,30 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 					var predecessors = Graphs.predecessorListOf(graphreversed, sptsreverse);
 					var successors = Graphs.successorListOf(graphreversed, sptsreverse);
 					if (CollectionUtils.isEmpty(predecessors)) {
-						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size());
+						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size(), false);
 						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
-						sptsreverse.getTask().setActorselection(task.getActorselection());
+						String actorselection = task.getActorselection();
+						for(String hport : tes) {
+							if(!sptsreverse.getHostPort().equals(hport)) {
+								gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, 0 , true);
+								Utils.getResultObjectByInput(hport, gettaskactor, jobid);
+							}
+						}
+						sptsreverse.getTask().setActorselection(actorselection);
 					} else {
 						var childactorsoriggraph = predecessors.stream().map(spts -> spts.getTask().getActorselection())
 								.collect(Collectors.toList());
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
-								nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size());
+								nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size(), false);
 						Task task = (Task) Utils.getResultObjectByInput(sptsreverse.getHostPort(), gettaskactor, jobid);
-						sptsreverse.getTask().setActorselection(task.getActorselection());
+						String actorselection = task.getActorselection();
+						for(String hport : tes) {
+							if(!sptsreverse.getHostPort().equals(hport)) {
+								gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, 0 , true);
+								Utils.getResultObjectByInput(hport, gettaskactor, jobid);
+							}
+						}
+						sptsreverse.getTask().setActorselection(actorselection);
 						sptsreverse.setChildactors(childactorsoriggraph);
 					}
 					if (CollectionUtils.isEmpty(successors)) {

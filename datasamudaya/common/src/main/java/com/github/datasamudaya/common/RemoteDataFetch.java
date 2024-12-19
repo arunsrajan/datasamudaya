@@ -48,4 +48,5 @@ public class RemoteDataFetch implements Serializable {
 	private String mode;
 	private STORAGE storage;
 	private String shufflefilepath;
+	private boolean isresultavailable;
 }
