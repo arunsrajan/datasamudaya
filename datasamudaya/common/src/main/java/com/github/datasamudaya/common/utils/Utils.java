@@ -47,6 +47,7 @@ import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -226,7 +227,6 @@ import com.typesafe.config.ConfigFactory;
 import com.univocity.parsers.csv.CsvWriter;
 
 import akka.actor.typed.ActorSystem;
-import akka.cluster.sharding.typed.javadsl.EntityRef;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import de.javakaffee.kryoserializers.ArraysAsListSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
@@ -4090,4 +4090,20 @@ public class Utils {
 	public static void endStartHiveSession(SessionState sessionState) throws Exception {
 		SessionState.endStart(sessionState);
 	}
+	
+	/**
+	 * The function writes the classpath to a file
+	 */
+	public static void gatherClasspathDependenciesToFile(String folderPath, String fileName) {
+		  // Get the classpath from the system properties
+        String classpath = System.getProperty("java.class.path");
+        
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(folderPath, fileName))) {
+           writer.append(classpath);
+           log.info("Classpath written to {}", fileName);
+        } catch (IOException e) {
+        	log.error("Error writing to classpath.txt: ", e);
+        }
+	}
+	
 }

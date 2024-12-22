@@ -8,10 +8,14 @@
  */
 package com.github.datasamudaya.common;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.datasamudaya.common.utils.Utils;
 
 /**
  * 
@@ -42,9 +46,12 @@ public class ContainerLauncher {
 			var argumentsForSpawn = new ArrayList<String>();
 			// Java home from task scheduler with java executable path 
 			argumentsForSpawn.add(System.getProperty("java.home").replace("\\", "/") + "/bin/java");
-			argumentsForSpawn.add("-classpath");
-			//Class path from task scheduler
-			argumentsForSpawn.add(System.getProperty("java.class.path"));
+			//Java Class path
+			argumentsForSpawn.add("-cp");
+			String uniquefilename = String.format(DataSamudayaConstants.CLASSPATHFILE, System.currentTimeMillis());
+			Utils.gatherClasspathDependenciesToFile(System.getProperty(DataSamudayaConstants.TMPDIR), uniquefilename);
+			argumentsForSpawn.add("\"" + DataSamudayaConstants.AT + System.getProperty(DataSamudayaConstants.TMPDIR)+
+					uniquefilename+ "\"");
 			//Minimum memory 256MB
 			argumentsForSpawn.add("-Xms" + cr.getMinmemory());
 			//Maximum heap to launch container.
@@ -78,7 +85,10 @@ public class ContainerLauncher {
 			//Spawning the process for running task executor
 			Process process = Runtime.getRuntime()
 					.exec(argumentsForSpawn.toArray(new String[argumentsForSpawn.size()]));
-			log.debug("Process {} started", process);
+			if(!process.isAlive()) {
+				log.debug("Process {} started", IOUtils.toString(process.getErrorStream(), Charset.defaultCharset()));	
+			}
+			
 			return process;
 
 

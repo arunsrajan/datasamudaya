@@ -26,6 +26,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 import com.github.datasamudaya.common.utils.Utils;
 
@@ -51,6 +52,7 @@ public class StreamPipelineSqlBuilderNoDriverTest extends StreamPipelineSqlBuild
 
 	@BeforeClass
 	public static void pipelineSetup() throws Exception, Throwable {
+		DataSamudayaProperties.get().setProperty(DataSamudayaConstants.CLASSPATHFOLDER, DataSamudayaConstants.CLASSPATHFOLDER_DEFAULT);
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setBlocksize("1");
 		pipelineconfig.setBatchsize(DataSamudayaConstants.EMPTY + Runtime.getRuntime().availableProcessors());

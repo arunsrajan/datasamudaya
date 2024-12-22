@@ -675,4 +675,9 @@ public class DataSamudayaConstants {
 	public static final String THRIFT_HOST_DEFAULT = "127.0.0.1";
 	public static final String THRIFT_PORT = "thrift.port";
 	public static final String THRIFT_PORT_DEFAULT = "10000";
+	
+	public static final String CLASSPATHFOLDER = "java.classpath.folder";
+	public static final String CLASSPATHFOLDER_DEFAULT = "./target";
+	public static final String AT = "@";
+	public static final String CLASSPATHFILE = "classpath-%s.txt";
 }

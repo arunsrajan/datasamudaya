@@ -12,10 +12,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.NodeCacheListener;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache.StartMode;
+import org.apache.curator.framework.recipes.cache.CuratorCache;
+import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
@@ -291,76 +290,61 @@ public class ZookeeperOperations implements AutoCloseable {
 		}
 	}
 
-	public void watchTaskNode(String jobid, String path) throws ZookeeperException {
-		try {
-			NodeCache cache = new NodeCache(curator, DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
-					+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH + path);
-			cache.start();
-			cache.getListenable().addListener(new NodeCacheListener() {
-				@Override
-				public void nodeChanged() throws Exception {
-					ChildData data = cache.getCurrentData();
-					if (data != null) {
-						log.debug("Task executor node changed: {}", new String(data.getData()));
-					} else {
-						log.debug("Task executor node deleted: {}", path);
-					}
-				}
-			});
-		} catch (Exception ex) {
-			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
-		}
-	}
-
 	/**
 	  This method creates the watcher for the nodes added and updates the global resources.
 		@throws Exception
 		*/
 	public void watchNodes() throws ZookeeperException {
 		try {
-			PathChildrenCache cache = new PathChildrenCache(curator,
-					DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.NODESZK, true);
-			cache.start(StartMode.POST_INITIALIZED_EVENT);
-			cache.getListenable().addListener(new PathChildrenCacheListener() {
-				@Override
-				public void childEvent(CuratorFramework curator, PathChildrenCacheEvent event) throws Exception {
-					Type type = event.getType();
+			CuratorCache cache = CuratorCache.build(curator,
+					DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.NODESZK);
+			cache.start();
+			cache.listenable().addListener((type, oldData, data)-> {
+				try {
 					switch (type) {
-						case CHILD_ADDED:
-							String[] nodeadded = event.getData().getPath().split("/");
-							if (isNull(DataSamudayaNodesResources.get())) {
-								DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
+						case NODE_CREATED:
+							byte[] changeddata = data.getData();
+							String resourcejson = new String(changeddata);
+							if(!resourcejson.equals(DataSamudayaConstants.EMPTY)){								
+								String[] nodeadded = data.getPath().split("/");
+								if (isNull(DataSamudayaNodesResources.get())) {
+									DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
+								}
+								if (isNull(DataSamudayaNodesResources.getAllocatedResources())) {
+									DataSamudayaNodesResources.putAllocatedResources(new ConcurrentHashMap<>());
+								}
+								String currentnode = nodeadded[nodeadded.length - 1];
+								Resources resources = objectMapper.readValue(changeddata, Resources.class);
+								DataSamudayaNodesResources.get().put(currentnode, resources);
+								if (isNull(DataSamudayaNodesResources.getAllocatedResources().get(currentnode))) {
+									DataSamudayaNodesResources.getAllocatedResources().put(currentnode,
+											new ConcurrentHashMap<>());
+								}
+								Utils.allocateResourcesByUser(resources,
+										DataSamudayaNodesResources.getAllocatedResources().get(currentnode));
 							}
-							if (isNull(DataSamudayaNodesResources.getAllocatedResources())) {
-								DataSamudayaNodesResources.putAllocatedResources(new ConcurrentHashMap<>());
-							}
-							String currentnode = nodeadded[nodeadded.length - 1];
-							Resources resources = objectMapper.readValue(event.getData().getData(), Resources.class);
-							DataSamudayaNodesResources.get().put(currentnode, resources);
-							if (isNull(DataSamudayaNodesResources.getAllocatedResources().get(currentnode))) {
-								DataSamudayaNodesResources.getAllocatedResources().put(currentnode,
-										new ConcurrentHashMap<>());
-							}
-							Utils.allocateResourcesByUser(resources,
-									DataSamudayaNodesResources.getAllocatedResources().get(currentnode));
-							log.debug("Master node added: {}", event.getData().getPath());
+							log.debug("Master node added: {}", data.getPath());
 							break;
-						case CHILD_REMOVED:
-							String[] nodetoberemoved = event.getData().getPath().split("/");
-							if (isNull(DataSamudayaNodesResources.get())) {
-								DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
-							}
-							String nodetoremove = nodetoberemoved[nodetoberemoved.length - 1];
-							DataSamudayaNodesResources.get().remove(nodetoremove);
-							DataSamudayaNodesResources.getAllocatedResources().remove(nodetoremove);
-
-							log.debug("Master node removed: {}", event.getData().getPath());
+						case NODE_DELETED:
+							String noderemovaljson = nonNull(data)?data.getPath():DataSamudayaConstants.EMPTY;
+							if(!noderemovaljson.equals(DataSamudayaConstants.EMPTY)){
+								String[] nodetoberemoved = data.getPath().split("/");
+								if (isNull(DataSamudayaNodesResources.get())) {
+									DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
+								}
+								String nodetoremove = nodetoberemoved[nodetoberemoved.length - 1];
+								DataSamudayaNodesResources.get().remove(nodetoremove);
+								DataSamudayaNodesResources.getAllocatedResources().remove(nodetoremove);
+								log.debug("Master node removed: {}",data.getPath());
+							}							
 							break;
 						default:
 							break;
 					}
+				} catch (Exception ex) {
+					log.error(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 				}
-			});
+				});
 		} catch (Exception ex) {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}

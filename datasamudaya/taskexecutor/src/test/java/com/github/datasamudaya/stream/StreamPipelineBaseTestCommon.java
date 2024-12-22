@@ -18,7 +18,6 @@ package com.github.datasamudaya.stream;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
@@ -43,13 +42,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
-import org.apache.logging.log4j.core.config.ConfigurationSource;
-import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.LogManager;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.ByteBufferPoolDirect;
 import com.github.datasamudaya.common.ByteBufferPoolDirectOld;
@@ -72,10 +68,11 @@ import com.github.datasamudaya.tasks.executor.NodeRunner;
 public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 	static {
 		System.setProperty("log4j.configurationFile", 
-				System.getenv(DataSamudayaConstants.DATASAMUDAYA_HOME) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+				System.getProperty(DataSamudayaConstants.USERDIR) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
 	}
 	static Registry server;
-	static Logger log = LoggerFactory.getLogger(StreamPipelineBaseTestCommon.class);
+	static org.apache.logging.log4j.Logger log = LogManager.getLogger(StreamPipelineBaseTestCommon.class);
 	protected static ZookeeperOperations zo;
 	protected static String tejobid;
 
