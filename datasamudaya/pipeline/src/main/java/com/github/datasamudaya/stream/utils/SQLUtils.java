@@ -149,7 +149,6 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.cluster.Cluster;
-import akka.cluster.sharding.ConsistentHashingShardAllocationStrategy;
 import akka.cluster.sharding.external.ExternalShardAllocation;
 import akka.cluster.sharding.external.ExternalShardAllocationStrategy;
 import akka.cluster.sharding.external.javadsl.ExternalShardAllocationClient;
@@ -3719,6 +3718,56 @@ public class SQLUtils {
 					str2 = (String) evaluateRexNode(rexnode2, values);
 					number = (Integer) evaluateRexNode(rexnode3, values);
 					return StringUtils.leftPad(str1, number, str2);
+				case "remove":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);					
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.remove(str1, str2);
+				case "removeend":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);					
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.removeEnd(str1, str2);
+				case "removeendignorecase":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);					
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.removeEndIgnoreCase(str1, str2);
+				case "removeignorecase":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);					
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.removeIgnoreCase(str1, str2);
+				case "removestart":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);					
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.removeStart(str1, str2);
+				case "removestartignorecase":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);					
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.removeStartIgnoreCase(str1, str2);
+				case "repeat":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);					
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					number = (int) evaluateRexNode(rexnode2, values);
+					return StringUtils.repeat(str1, number);
+				case "repeatseparator":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					rexnode3 = call.getOperands().get(2);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					number = (int) evaluateRexNode(rexnode3, values);
+					return StringUtils.repeat(str1, str2, number);
 			}
 		} else if (node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction) {
 			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null,

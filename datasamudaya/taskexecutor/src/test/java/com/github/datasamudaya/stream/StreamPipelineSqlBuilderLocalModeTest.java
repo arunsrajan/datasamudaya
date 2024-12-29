@@ -2810,6 +2810,198 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 	
 	@SuppressWarnings({ "unchecked" })
 	@Test
+	public void testRequiredColumnsRemoveAllFunction() throws Exception {
+		log.info("In testRequiredColumnsRemoveAllFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,origin,dest,remove(origin, origin) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				assertEquals(DataSamudayaConstants.EMPTY, record[3]);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRemoveAllFunction() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsRemoveEndFunction() throws Exception {
+		log.info("In testRequiredColumnsRemoveEndFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,origin,dest,removeend(origin, origin) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				assertEquals(DataSamudayaConstants.EMPTY, record[3]);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRemoveEndFunction() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsRemoveEndIgnoreCaseFunction() throws Exception {
+		log.info("In testRequiredColumnsRemoveEndIgnoreCaseFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,origin,dest,removeendignorecase(origin, lowercase(origin)) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				assertEquals(DataSamudayaConstants.EMPTY, record[3]);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRemoveEndIgnoreCaseFunction() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsRemoveAllIgnoreCaseFunction() throws Exception {
+		log.info("In testRequiredColumnsRemoveAllIgnoreCaseFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,origin,dest,removeignorecase(origin, lowercase(origin)) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				assertEquals(DataSamudayaConstants.EMPTY, record[3]);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRemoveAllIgnoreCaseFunction() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsRemoveStartFunction() throws Exception {
+		log.info("In testRequiredColumnsRemoveStartFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,origin,dest,removestart(origin, origin) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				assertEquals(DataSamudayaConstants.EMPTY, record[3]);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRemoveStartFunction() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsRemoveStartIgnoreCaseFunction() throws Exception {
+		log.info("In testRequiredColumnsRemoveStartIgnoreCaseFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,origin,dest,removestartignorecase(origin, lowercase(origin)) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				assertEquals(DataSamudayaConstants.EMPTY, record[3]);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRemoveStartIgnoreCaseFunction() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsRepeatFunction() throws Exception {
+		log.info("In testRequiredColumnsRepeatFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,origin,dest,repeat(origin, 3) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				assertEquals(record[1]+DataSamudayaConstants.EMPTY+record[1]+record[1], record[3]);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRepeatFunction() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsRepeatSeparatorFunction() throws Exception {
+		log.info("In testRequiredColumnsRepeatSeparatorFunction() method Entry");
+		String statement = "SELECT UniqueCarrier,origin,dest,repeatseparator(origin,dest, 3) FROM airline";
+
+		int total = 0;
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes).setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			for (Object[] record : recs) {
+				total++;
+				assertTrue(record.length == 4);
+				assertEquals(record[1]+DataSamudayaConstants.EMPTY+record[2]+record[1]+record[2]+record[1], record[3]);
+				log.info(Arrays.toString(record));
+			}
+		}
+		assertNotEquals(0, total);
+		log.info("In testRequiredColumnsRepeatSeparatorFunction() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
 	public void testRequiredColumnsInitcapFunction() throws Exception {
 		log.info("In testRequiredColumnsInitcapFunction() method Entry");
 		String statement = "SELECT UniqueCarrier,initcap(lower(concat(origin,dest))) FROM airline";

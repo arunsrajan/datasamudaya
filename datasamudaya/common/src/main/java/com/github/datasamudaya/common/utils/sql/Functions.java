@@ -183,6 +183,30 @@ public class Functions {
 		
 		SqlFunction leftpadstring = new SqlFunction("leftpadstring", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction removestring = new SqlFunction("remove", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction removeendstring = new SqlFunction("removeend", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction removeendignorecasestring = new SqlFunction("removeendignorecase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction removeignorecasestring = new SqlFunction("removeignorecase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction removestartstring = new SqlFunction("removestart", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction removestartignorecasestring = new SqlFunction("removestartignorecase", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction repeatstring = new SqlFunction("repeat", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction repeatseparatorstring = new SqlFunction("repeatseparator", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		//Commons lang functions end
 		
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, base64encode, base64decode,
@@ -191,7 +215,9 @@ public class Functions {
 				charfunction, insertstr, ucase, lcase, leftchars, rightchars, reverse, locate,
 				ltrim, rtrim, curdate, now, curtime, indexof, indexofstartpos, indexofany, indexofanybut,
 				indexofdiff, indexofignorecase, indexofignorecasestartpos, lastindexof,
-				lastindexofstartpos, lastindexofany, leftpad, leftpadstring);
+				lastindexofstartpos, lastindexofany, leftpad, leftpadstring, 
+				removestring, removeendstring, removeendignorecasestring, removeignorecasestring,
+				removestartstring, removestartignorecasestring, repeatstring, repeatseparatorstring);
 
 	}
 
