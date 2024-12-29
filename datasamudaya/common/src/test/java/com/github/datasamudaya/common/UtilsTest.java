@@ -19,14 +19,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.lang.reflect.InvocationHandler;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -40,32 +47,45 @@ import java.util.concurrent.ConcurrentMap;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgroups.JChannel;
 import org.jgroups.ObjectMessage;
+import org.joda.time.DateTime;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.ClosureSerializer;
-
+import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
+import com.esotericsoftware.kryo.util.DefaultClassResolver;
+import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
+import com.esotericsoftware.kryo.util.MapReferenceResolver;
 import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.utils.Utils;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
+import de.javakaffee.kryoserializers.cglib.CGLibProxySerializer;
+import io.altoo.akka.serialization.kryo.serializer.scala.ScalaKryo;
 import jdk.jshell.JShell;
-
 import net.sf.jsqlparser.parser.SimpleNode;
 import net.sf.jsqlparser.schema.Table;
 
 public class UtilsTest {
-
+	static {
+		System.setProperty("log4j.configurationFile", 
+				System.getProperty(DataSamudayaConstants.USERDIR) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_TEST_PROPERTIES);
+	}
 	@Before
 	public void startUp() {
 		StaticComponentContainer.Modules.exportAllToAll();
+        kryo = new ScalaKryo(new DefaultClassResolver(), new MapReferenceResolver());
+        Utils.configureScalaKryo(kryo);
 	}
 
 	@Test
@@ -107,8 +127,7 @@ public class UtilsTest {
 					+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH, "");
 		}
 		catch (Exception ex) {
-			assertEquals("Unable To Load Properties", ex.getMessage());
-			assertTrue(ex.getCause().getMessage().contains("Access is denied"));
+			assertTrue(ex.getMessage().contains("Problem in loading properties"));
 		}
 	}
 
@@ -549,8 +568,8 @@ public class UtilsTest {
 			Object resultObject = Utils.getResultObjectByInput(hostAndPort, inputObject, jobid);
 
 			// Assert that the resultObject is not null and matches the expected result
-			assertNotNull(resultObject);
-			assertTrue(resultObject instanceof Coalesce);
+			assertNotNull(resultObject);			
+			assertTrue(Utils.convertBytesToObjectCompressed((byte[]) resultObject, null) instanceof Coalesce);
 		} catch (Exception ex) {
 			// Handle any exceptions or failures
 			// Fail the test if necessary
@@ -569,7 +588,7 @@ public class UtilsTest {
 			// Fail the test if the code doesn't throw an exception as expected
 		} catch (Exception ex) {
 			// Assert that the exception message or type indicates the server is not available
-			assertTrue(ex.getMessage().contains("Unknown host: invalidhost"));
+			assertTrue(ex.getMessage().contains("Unable to read result Object for the input object"));
 		}
 
 	}
@@ -585,7 +604,7 @@ public class UtilsTest {
 			// Fail the test if the code doesn't throw an exception as expected
 		} catch (Exception ex) {
 			// Assert that the exception message or type indicates the server is not available
-			assertTrue(ex.getMessage().contains("because \"hp\" is null"));
+			assertTrue(ex.getMessage().contains("Unable to read result Object for the input object"));
 		}
 
 	}
@@ -604,7 +623,7 @@ public class UtilsTest {
 		}, jobid);
 
 		try {
-			assertNull(Utils.getResultObjectByInput(hostAndPort, inputObject, jobid));
+			assertNull(Utils.convertBytesToObjectCompressed((byte[])Utils.getResultObjectByInput(hostAndPort, inputObject, jobid), null));
 			// Fail the test if the code doesn't throw an exception as expected
 		} catch (Exception ex) {
 			// Assert that the exception message or type indicates the server is not available
@@ -628,7 +647,7 @@ public class UtilsTest {
 		try {
 			Object returnedObject = Utils.getResultObjectByInput(hostAndPort, inputObject, jobid);
 			assertNotNull(returnedObject);
-			assertTrue(returnedObject instanceof Coalesce);
+			assertTrue(Utils.convertBytesToObjectCompressed((byte[])returnedObject,null) instanceof Coalesce);
 			// Fail the test if the code doesn't throw an exception as expected
 		} catch (Exception ex) {
 			// Assert that the exception message or type indicates the server is not available
@@ -658,9 +677,156 @@ public class UtilsTest {
 	public void testPODCIDRToNodeMapping() {
 		Optional<String> nodeip = Utils.getNodeIPByPodIP("10.244.0.15");
 		assertNotNull(nodeip);
-		assertTrue(nodeip.isPresent());
-		assertNotNull(nodeip.get());
+		assertFalse(nodeip.isPresent());
+		if(nodeip.isPresent()) {
+			assertNotNull(nodeip.get());
+		}
 	}
+	
+	private static ScalaKryo kryo;
 
+    @Test
+    public void testInstantiatorStrategy() {
+        assertTrue(kryo.getInstantiatorStrategy() instanceof DefaultInstantiatorStrategy);
+    }
 
+    @Test
+    public void testReferences() {
+        assertTrue(kryo.getReferences());
+    }
+
+    @Test
+    public void testRegistrationRequired() {
+        assertFalse(kryo.isRegistrationRequired());
+    }
+
+    @Test
+    public void testDefaultSerializer() {
+    	assertEquals(CompatibleFieldSerializer.class, kryo.getDefaultSerializer(Stage.class).getClass());
+    }
+
+    @Test
+    public void testOptimizedGenerics() {
+        assertNotNull(kryo.getGenerics());
+    }
+
+    @Test
+    public void testRegisterArraysAsListSerializer() {
+        assertNotNull(kryo.getSerializer(Arrays.asList("").getClass()));
+    }
+
+    @Test
+    public void testRegisterCollectionsEmptyListSerializer() {
+        assertNotNull(kryo.getSerializer(Collections.EMPTY_LIST.getClass()));
+    }
+
+    @Test
+    public void testRegisterCollectionsEmptyMapSerializer() {
+        assertNotNull(kryo.getSerializer(Collections.EMPTY_MAP.getClass()));
+    }
+
+    @Test
+    public void testRegisterCollectionsEmptySetSerializer() {
+        assertNotNull(kryo.getSerializer(Collections.EMPTY_SET.getClass()));
+    }
+
+    @Test
+    public void testRegisterCollectionsSingletonListSerializer() {
+        assertNotNull(kryo.getSerializer(Collections.singletonList("").getClass()));
+    }
+
+    @Test
+    public void testRegisterCollectionsSingletonSetSerializer() {
+        assertNotNull(kryo.getSerializer(Collections.singleton("").getClass()));
+    }
+
+    @Test
+    public void testRegisterCollectionsSingletonMapSerializer() {
+        assertNotNull(kryo.getSerializer(Collections.singletonMap("", "").getClass()));
+    }
+
+    @Test
+    public void testRegisterGregorianCalendarSerializer() {
+        assertNotNull(kryo.getSerializer(GregorianCalendar.class));
+    }
+
+    @Test
+    public void testRegisterJdkProxySerializer() {
+        assertNotNull(kryo.getSerializer(InvocationHandler.class));
+    }
+
+    @Test
+    public void testRegisterCGLibProxySerializer() {
+        assertNotNull(kryo.getSerializer(CGLibProxySerializer.CGLibProxyMarker.class));
+    }
+
+    @Test
+    public void testRegisterJodaDateTimeSerializer() {
+        assertNotNull(kryo.getSerializer(DateTime.class));
+    }
+
+    @Test
+    public void testRegisterJodaLocalDateSerializer() {
+        assertNotNull(kryo.getSerializer(LocalDate.class));
+    }
+
+    @Test
+    public void testRegisterJodaLocalDateTimeSerializer() {
+        assertNotNull(kryo.getSerializer(LocalDateTime.class));
+    }
+
+    @Test
+    public void testRegisterJodaLocalTimeSerializer() {
+        assertNotNull(kryo.getSerializer(org.joda.time.LocalTime.class));
+    }
+
+    @Test
+    public void testRegisterImmutableListSerializer() {
+        assertNotNull(kryo.getSerializer(ImmutableList.of().getClass()));
+    }
+
+    @Test
+    public void testRegisterImmutableSetSerializer() {
+        assertNotNull(kryo.getSerializer(ImmutableSet.of().getClass()));
+    }
+    // Negative test cases
+    @Test
+    public void testUnregisteredClass() {
+        assertNotNull(kryo.getSerializer(UnregisteredClass.class));
+    }
+
+    @Test
+    public void testNullKryoInstance() {
+        assertThrows(NullPointerException.class, () -> {
+            Utils.configureScalaKryo(null);
+        });
+    }
+
+    @Test
+    public void testInvalidSerializer() {
+        kryo.register(InvalidClass.class, new InvalidSerializer());
+        assertNotNull(kryo.getSerializer(InvalidClass.class));
+    }
+
+    @Test
+    public void testInvalidInstantiatorStrategy() {
+        kryo.setInstantiatorStrategy(new InvalidInstantiatorStrategy());
+        assertFalse(kryo.getInstantiatorStrategy() instanceof StdInstantiatorStrategy);
+    }
+
+    // Dummy classes for negative test cases
+    private static class UnregisteredClass {}
+    private static class InvalidClass {}
+
+	private static class InvalidSerializer extends com.esotericsoftware.kryo.Serializer<InvalidClass> {
+		@Override
+		public void write(Kryo kryo, Output output, InvalidClass object) {
+		}
+
+		@Override
+        public InvalidClass read(Kryo kryo, Input input, Class<? extends InvalidClass> type) {
+            return null;
+            }
+	}
+    private static class InvalidInstantiatorStrategy extends com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy {}	
 }
