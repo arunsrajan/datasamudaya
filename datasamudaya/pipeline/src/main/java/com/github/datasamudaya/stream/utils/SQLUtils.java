@@ -3645,6 +3645,80 @@ public class SQLUtils {
 						}
 					}
 					return "";
+				case "indexof":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.indexOf(str1, str2);
+				case "indexofstartpos":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					rexnode3 = call.getOperands().get(2);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					int startpos = (Integer) evaluateRexNode(rexnode3, values);
+					return StringUtils.indexOf(str1, str2, startpos);
+				case "indexofany":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.indexOfAny(str1, str2);
+				case "indexofanybut":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.indexOfAnyBut(str1, str2);
+				case "indexofdiff":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.indexOfDifference(str1, str2);
+				case "indexofignorecase":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.indexOfIgnoreCase(str1, str2);
+				case "indexofignorecasestartpos":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					rexnode3 = call.getOperands().get(2);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					startpos = (Integer) evaluateRexNode(rexnode3, values);
+					return StringUtils.indexOfIgnoreCase(str1, str2, startpos);
+				case "lastindexof":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.lastIndexOf(str1, str2);
+				case "lastindexofstartpos":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					rexnode3 = call.getOperands().get(2);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					startpos = (Integer) evaluateRexNode(rexnode3, values);
+					return StringUtils.lastIndexOf(str1, str2, startpos);
+				case "leftpad":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					int number = (Integer) evaluateRexNode(rexnode2, values);
+					return StringUtils.leftPad(str1, number);
+				case "leftpadstring":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					rexnode3 = call.getOperands().get(2);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					number = (Integer) evaluateRexNode(rexnode3, values);
+					return StringUtils.leftPad(str1, number, str2);
 			}
 		} else if (node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction) {
 			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null,

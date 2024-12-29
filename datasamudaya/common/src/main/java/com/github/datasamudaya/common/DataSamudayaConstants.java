@@ -60,6 +60,7 @@ public class DataSamudayaConstants {
 	public static final String NORMAL = "Normal";
 	public static final String NODES = "nodes";
 	public static final String LOG4J2_PROPERTIES = "log4j2.properties";
+	public static final String LOG4J2_TEST_PROPERTIES = "log4j2-test.properties";
 	public static final String BURNINGWAVE_PROPERTIES = "burningwave.properties.path";
 	public static final String BURNINGWAVE_PROPERTIES_DEFAULT = "burningwave.properties";
 	public static final String TASKSCHEDULERSTREAM = "taskschedulerstream";

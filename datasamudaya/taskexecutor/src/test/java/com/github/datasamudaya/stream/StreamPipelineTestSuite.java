@@ -17,8 +17,8 @@ import com.github.datasamudaya.tasks.executor.MRApiTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-		PigCommandsLocalModeTest.class,
 		PigCommandsNoDriverTest.class,
+		PigCommandsLocalModeTest.class,		
 		PigCommandsTest.class,
 		LaunchContainersTest.class,
 		FileBlocksPartitionerHDFSTest.class,

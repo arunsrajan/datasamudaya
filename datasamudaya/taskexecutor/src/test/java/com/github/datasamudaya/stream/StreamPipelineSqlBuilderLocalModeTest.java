@@ -16,6 +16,7 @@
 package com.github.datasamudaya.stream;
 
 import java.util.Arrays;
+
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -24,10 +25,14 @@ import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
 
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineSqlBuilderTest {
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
 			"CRSDepTime", "ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime",

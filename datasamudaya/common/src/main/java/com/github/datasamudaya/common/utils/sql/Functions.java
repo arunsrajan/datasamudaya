@@ -147,11 +147,51 @@ public class Functions {
 				Optionality.FORBIDDEN) {
 		};
 
+		//Commons lang functions start
+		SqlFunction indexof = new SqlFunction("indexof", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction indexofstartpos = new SqlFunction("indexofstartpos", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction indexofany = new SqlFunction("indexofany", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction indexofanybut = new SqlFunction("indexofanybut", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction indexofdiff = new SqlFunction("indexofdiff", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction indexofignorecase = new SqlFunction("indexofignorecase", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction indexofignorecasestartpos = new SqlFunction("indexofignorecasestartpos", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction lastindexof = new SqlFunction("lastindexof", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction lastindexofstartpos = new SqlFunction("lastindexofstartpos", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction lastindexofany = new SqlFunction("lastindexofany", SqlKind.OTHER_FUNCTION, ReturnTypes.INTEGER, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction leftpad = new SqlFunction("leftpad", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction leftpadstring = new SqlFunction("leftpadstring", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		//Commons lang functions end
+		
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, base64encode, base64decode,
 				uppercase, lowercase, loge, pow, exp, ceil, floor, round, abs, currentisodate, concat,
 				trimFunction, groupconcat, currenttimemillis, pii, secantfunction, cosecantfunction, cotangentfunction,
 				charfunction, insertstr, ucase, lcase, leftchars, rightchars, reverse, locate,
-				ltrim, rtrim, curdate, now, curtime);
+				ltrim, rtrim, curdate, now, curtime, indexof, indexofstartpos, indexofany, indexofanybut,
+				indexofdiff, indexofignorecase, indexofignorecasestartpos, lastindexof,
+				lastindexofstartpos, lastindexofany, leftpad, leftpadstring);
 
 	}
 

@@ -69,7 +69,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 	static {
 		System.setProperty("log4j.configurationFile", 
 				System.getProperty(DataSamudayaConstants.USERDIR) + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.PREV_FOLDER + DataSamudayaConstants.FORWARD_SLASH
-				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_PROPERTIES);
+				+ DataSamudayaConstants.DIST_CONFIG_FOLDER + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.LOG4J2_TEST_PROPERTIES);
 	}
 	static Registry server;
 	static org.apache.logging.log4j.Logger log = LogManager.getLogger(StreamPipelineBaseTestCommon.class);
