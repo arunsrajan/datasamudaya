@@ -3768,6 +3768,56 @@ public class SQLUtils {
 					str2 = (String) evaluateRexNode(rexnode2, values);
 					number = (int) evaluateRexNode(rexnode3, values);
 					return StringUtils.repeat(str1, str2, number);
+				case "chop":
+					rexnode1 = call.getOperands().get(0);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					return StringUtils.chop(str1);
+				case "getdigits":
+					rexnode1 = call.getOperands().get(0);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					return StringUtils.getDigits(str1);
+				case "rightpad":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					number = (Integer) evaluateRexNode(rexnode2, values);
+					return StringUtils.rightPad(str1, number);
+				case "rightpadstring":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					rexnode3 = call.getOperands().get(2);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					number = (Integer) evaluateRexNode(rexnode3, values);
+					return StringUtils.rightPad(str1, number, str2);
+				case "rotate":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					number = (Integer) evaluateRexNode(rexnode2, values);
+					return StringUtils.rotate(str1, number);
+				case "wrap":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.wrap(str1, str2);
+				case "wrapifmissing":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.wrapIfMissing(str1, str2);
+				case "unwrap":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.unwrap(str1, str2);
+				case "uncapitalize":
+					rexnode1 = call.getOperands().get(0);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					return StringUtils.uncapitalize(str1);
 			}
 		} else if (node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction) {
 			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null,

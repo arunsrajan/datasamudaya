@@ -206,7 +206,34 @@ public class Functions {
 				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		
 		SqlFunction repeatseparatorstring = new SqlFunction("repeatseparator", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);		
+		
+		SqlFunction chop = new SqlFunction("chop", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction getdigits = new SqlFunction("getdigits", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction rightpad = new SqlFunction("rightpad", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction rightpadstring = new SqlFunction("rightpadstring", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
 				OperandTypes.STRING_STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction rotate = new SqlFunction("rotate", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_INTEGER, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction wrap = new SqlFunction("wrap", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction wrapifmissing = new SqlFunction("wrapifmissing", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction unwrap = new SqlFunction("unwrap", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING_STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
+		
+		SqlFunction uncapitalize = new SqlFunction("uncapitalize", SqlKind.OTHER_FUNCTION, ReturnTypes.VARCHAR_4, null,
+				OperandTypes.STRING, SqlFunctionCategory.USER_DEFINED_FUNCTION);
 		//Commons lang functions end
 		
 		return Arrays.asList(sqrtFunction, lengthFunction, normalizespaces, base64encode, base64decode,
@@ -217,7 +244,8 @@ public class Functions {
 				indexofdiff, indexofignorecase, indexofignorecasestartpos, lastindexof,
 				lastindexofstartpos, lastindexofany, leftpad, leftpadstring, 
 				removestring, removeendstring, removeendignorecasestring, removeignorecasestring,
-				removestartstring, removestartignorecasestring, repeatstring, repeatseparatorstring);
+				removestartstring, removestartignorecasestring, repeatstring, repeatseparatorstring,
+				chop, getdigits, rightpad, rightpadstring, rotate, wrap, wrapifmissing, unwrap, uncapitalize);
 
 	}
 
