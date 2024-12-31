@@ -35,10 +35,10 @@
 		              <addClasspath>true</addClasspath>		              
 		            </manifest>
 		            <manifestEntries>
-						<Agent-Class>com.github.datasamudaya.lambdaInspector.LambdaInspectorAgent</Agent-Class>
+						<Agent-Class>com.github.datasamudaya.lambdaInspector.LambdaSerializableAgent</Agent-Class>
 						<Can-Redefine-Classes>true</Can-Redefine-Classes>
 						<Can-Retransform-Classes>true</Can-Retransform-Classes>
-						<PreMain-Class>com.github.datasamudaya.lambdaInspector.LambdaInspectorAgent</PreMain-Class>
+						<PreMain-Class>com.github.datasamudaya.lambdaInspector.LambdaSerializableAgent</PreMain-Class>
 					</manifestEntries>
 		          </archive>
 		        </configuration>
