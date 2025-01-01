@@ -3633,7 +3633,7 @@ public class SQLUtils {
 					} catch (Exception e) {
 						log.error(DataSamudayaConstants.EMPTY, e);
 					}
-					return calendar.get(Calendar.MONTH);
+					return calendar.get(Calendar.DAY_OF_MONTH);
 				case "case":
 					List<RexNode> rexnodes = call.getOperands();
 					for (int numnodes = 0;numnodes < rexnodes.size();numnodes += 2) {

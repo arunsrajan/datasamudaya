@@ -136,6 +136,130 @@ public class PigUtils {
 			pigServer.registerFunction("base64decode", funcSpec);
 			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.NormalizeSpacesUDF");
 			pigServer.registerFunction("normalizespaces", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.CurrentISODateUDF");
+			pigServer.registerFunction("currentisodate", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RandUDF");
+			pigServer.registerFunction("rand", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.ACosUDF");
+			pigServer.registerFunction("acos", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.ASinUDF");
+			pigServer.registerFunction("asin", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.ATanUDF");
+			pigServer.registerFunction("atan", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.SinUDF");
+			pigServer.registerFunction("sin", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.CosUDF");
+			pigServer.registerFunction("cos", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.TanUDF");
+			pigServer.registerFunction("tan", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.CosecUDF");
+			pigServer.registerFunction("cosec", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.SecUDF");
+			pigServer.registerFunction("sec", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.CotUDF");
+			pigServer.registerFunction("cot", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.CbrtUDF");
+			pigServer.registerFunction("cbrt", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.PiiUDF");
+			pigServer.registerFunction("pii", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.DegreesUDF");
+			pigServer.registerFunction("degrees", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RadiansUDF");
+			pigServer.registerFunction("radians", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.TrimstrUDF");
+			pigServer.registerFunction("trimstr", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.SubstringUDF");
+			pigServer.registerFunction("substring", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.OverlayUDF");
+			pigServer.registerFunction("overlay", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.LocateUDF");
+			pigServer.registerFunction("locate", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.ConcatUDF");
+			pigServer.registerFunction("concat", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.PositionUDF");
+			pigServer.registerFunction("position", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.InitcapUDF");
+			pigServer.registerFunction("initcap", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.AsciiUDF");
+			pigServer.registerFunction("ascii", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.CharacterUDF");
+			pigServer.registerFunction("character", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.InsertstrUDF");
+			pigServer.registerFunction("insertstr", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.LeftcharsUDF");
+			pigServer.registerFunction("leftchars", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RightcharsUDF");
+			pigServer.registerFunction("rightchars", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.ReverseUDF");
+			pigServer.registerFunction("reverse", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.LtrimUDF");
+			pigServer.registerFunction("ltrim", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RtrimUDF");
+			pigServer.registerFunction("rtrim", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.NowUDF");
+			pigServer.registerFunction("now", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.YearUDF");
+			pigServer.registerFunction("year", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.MonthUDF");
+			pigServer.registerFunction("month", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.DayUDF");
+			pigServer.registerFunction("day", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.IndexOfUDF");
+			pigServer.registerFunction("indexof", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.IndexOfStartPosUDF");
+			pigServer.registerFunction("indexofstartpos", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.IndexOfAnyUDF");
+			pigServer.registerFunction("indexofany", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.IndexOfAnyButUDF");
+			pigServer.registerFunction("indexofanybut", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.IndexOfDiffUDF");
+			pigServer.registerFunction("indexofdiff", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.IndexOfIgnoreCaseUDF");
+			pigServer.registerFunction("indexofignorecase", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.IndexOfIgnoreCaseStartPosUDF");
+			pigServer.registerFunction("indexofignorecasestartpos", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.LastIndexOfUDF");
+			pigServer.registerFunction("lastindexof", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.LastIndexOfStartPosUDF");
+			pigServer.registerFunction("lastindexofstartpos", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.LeftPadUDF");
+			pigServer.registerFunction("leftpad", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.LeftPadStringUDF");
+			pigServer.registerFunction("leftpadstring", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RemoveUDF");
+			pigServer.registerFunction("remove", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RemoveEndUDF");
+			pigServer.registerFunction("removeend", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RemoveEndIgnoreCaseUDF");
+			pigServer.registerFunction("removeendignorecase", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RemoveIgnoreCaseUDF");
+			pigServer.registerFunction("removeignorecase", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RemoveStartUDF");
+			pigServer.registerFunction("removestart", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RemoveStartIgnoreCaseUDF");
+			pigServer.registerFunction("removestartignorecase", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RepeatUDF");
+			pigServer.registerFunction("repeat", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RepeatSeparatorUDF");
+			pigServer.registerFunction("repeatseparator", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.ChopUDF");
+			pigServer.registerFunction("chop", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.GetDigitsUDF");
+			pigServer.registerFunction("getdigits", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RightPadUDF");
+			pigServer.registerFunction("rightpad", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RightPadStringUDF");
+			pigServer.registerFunction("rightpadstring", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.RotateUDF");
+			pigServer.registerFunction("rotate", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.WrapUDF");
+			pigServer.registerFunction("wrap", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.WrapIfMissingUDF");
+			pigServer.registerFunction("wrapifmissing", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.UnWrapUDF");
+			pigServer.registerFunction("unwrap", funcSpec);
+			funcSpec = new FuncSpec("com.github.datasamudaya.stream.pig.udf.UncapitalizeUDF");
+			pigServer.registerFunction("uncapitalize", funcSpec);
 			GlobalPigServer.setPigServer(pigServer);
 		}
 		Map<String, String> filenamemap = new HashMap<>();
@@ -759,62 +883,94 @@ public class PigUtils {
 		if (expression instanceof UserFuncExpression fn) {
 			switch (name) {
 				case "sum":
+					Object[] values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)}; 
 					// Get the absolute value of the first parameter	               
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "sum", fn.getEvalFunc());
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "count":
-					// Get the absolute value of the first parameter	               
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "count", fn.getEvalFunc());
+					// Get the absolute value of the first parameter
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "avg":
 					// Get the absolute value of the first parameter	               
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "avg", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "abs":
 					// Get the absolute value of the first parameter	               
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "abs", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values,name, fn.getEvalFunc());
 				case "length":
 					// Get the length of string value	                
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "length", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "round":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "round", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "ceil":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "ceil", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "floor":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "floor", fn.getEvalFunc());
-				case "pow":
-					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), evaluateBinaryExpression(fn.getArguments().get(1), row, name, aliasorcolname), "pow", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());				
 				case "sqrt":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "sqrt", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "exp":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "exp", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "loge":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "loge", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "lowercase":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "lowercase", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "uppercase":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "uppercase", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "base64encode":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "base64encode", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "base64decode":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "base64decode", fn.getEvalFunc());
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "normalizespaces":
 					// Get the absolute value of the first parameter
-					return evaluateFunctionsWithType(evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname), null, "normalizespaces", fn.getEvalFunc());
-				case "substring":
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname)};
+					return evaluateFunctionsWithType(values, "normalizespaces", fn.getEvalFunc());
+				case "pow","concat", "leftchars", "rightchars", "indexof":
+				case "indexofany", "indexofanybut", "indexofdiff", "indexofignorecase":
+				case "leftpad", "leftpadstring", "remove", "removeend", "removeendignorecase":
+				case "removeignorecase", "removestart", "removestartignorecase", "repeat":
+				case "rightpad", "rotate", "wrap", "wrapifmissing", "unwrap":
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname),
+							evaluateBinaryExpression(fn.getArguments().get(1), row, name, aliasorcolname)};
 					// Get the absolute value of the first parameter
-					ConstantExpression pos = (ConstantExpression) fn.getArguments().get(1);
-					ConstantExpression length = (ConstantExpression) fn.getArguments().get(2);
-					String val = (String) evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname);
-					return val.substring((int) pos.getValue(), Math.min(((String) val).length(), (int) pos.getValue() + (int) length.getValue()));
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
+				case "substring", "position", "indexofstartpos", "indexofignorecasestartpos":
+				case "rightpadstring", "repeatseparator":
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname),
+							evaluateBinaryExpression(fn.getArguments().get(1), row, name, aliasorcolname),
+							evaluateBinaryExpression(fn.getArguments().get(2), row, name, aliasorcolname)};
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
+				case "overlay", "locate", "insertstr":
+					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, name, aliasorcolname),
+							evaluateBinaryExpression(fn.getArguments().get(1), row, name, aliasorcolname),
+							evaluateBinaryExpression(fn.getArguments().get(2), row, name, aliasorcolname),
+							evaluateBinaryExpression(fn.getArguments().get(3), row, name, aliasorcolname)};
+					// Get the absolute value of the first parameter
+					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
+				case "currentisodate", "rand", "pii", "now":
+					return evaluateFunctionsWithType(null, name, fn.getEvalFunc());
 			}
 		} else if (expression instanceof BinaryExpression bex) {
 			String operator = expression.getName();
@@ -915,44 +1071,58 @@ public class PigUtils {
 	 * @return evaluated value
 	 * @throws Exception
 	 */
-	public static Object evaluateFunctionsWithType(Object value, Object powerval, String name, EvalFunc<?> evalfunc) throws Exception {
+	public static Object evaluateFunctionsWithType(Object[] value, String name, EvalFunc<?> evalfunc) throws Exception {
 		switch (name) {
-			case "sum":
-			case "avg":
-			case "count":
-				return value;
-			case "abs":
-			// Get the absolute value of the first parameter			
+		case "sum":
+		case "avg":
+		case "count":
+			return value[0];
+		case "abs":
 		case "length":
-			// Get the length of string value
 		case "round":
-			// Get the absolute value of the first parameter			
 		case "ceil":
-			// Get the absolute value of the first parameter			
 		case "floor":
-			// Get the absolute value of the first parameter
 		case "sqrt":
-			// Get the absolute value of the first parameter			
 		case "exp":
-			// Get the absolute value of the first parameter\			
 		case "loge":
-			// Get the absolute value of the first parameter			
 		case "lowercase":
-			// Get the absolute value of the first parameter			
 		case "uppercase":
-			// Get the absolute value of the first parameter
 		case "base64encode":
-			// Get the absolute value of the first parameter			
 		case "base64decode":
-			// Get the absolute value of the first parameter
 		case "normalizespaces":
-				// Get the absolute value of the first parameter
-				org.apache.pig.data.Tuple tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value));
-				return evalfunc.exec(tuple);
-			case "pow":
-				// Get the absolute value of the first parameter
-				tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value, powerval));
-				return evalfunc.exec(tuple);
+		case "acos", "asin", "atan":
+		case "cos", "sin", "tan", "cosec", "sec", "cot":
+		case "cbrt":
+		case "degrees", "radians":
+		case "trimstr":
+		case "initcap", "ascii", "character":
+		case "reverse":
+		case "ltrim", "rtrim":
+		case "year", "month", "day":
+		case "getdigits", "chop", "uncapitalize":
+			// Get the absolute value of the first parameter
+			org.apache.pig.data.Tuple tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value[0]));
+			return evalfunc.exec(tuple);
+		case "pow", "concat", "leftchars", "rightchars", "indexof":
+		case "indexofany", "indexofanybut", "indexofdiff", "indexofignorecase":
+		case "leftpad", "leftpadstring", "remove", "removeend", "removeendignorecase":
+		case "removeignorecase", "removestart", "removestartignorecase", "repeat":
+		case "rightpad", "rotate", "wrap", "wrapifmissing", "unwrap":	
+			// Get the absolute value of the first parameter
+			tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value[0], value[1]));
+			return evalfunc.exec(tuple);
+		case "substring", "position", "indexofstartpos", "indexofignorecasestartpos":
+		case "rightpadstring", "repeatseparator":	
+			// Get the absolute value of the first parameter
+			tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value[0], value[1], value[2]));
+			return evalfunc.exec(tuple);
+		case "overlay", "locate", "insertstr":
+			// Get the absolute value of the first parameter
+			tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value[0], value[1], value[2], value[3]));
+			return evalfunc.exec(tuple);
+		case "currentisodate", "rand", "pii", "now":
+			tuple = TupleFactory.getInstance().newTuple(null);
+			return evalfunc.exec(tuple);
 		}
 		return name;
 	}
@@ -1280,6 +1450,67 @@ public class PigUtils {
 				|| fp.getFunctionName().equals("base64encode")
 				|| fp.getFunctionName().equals("base64decode")
 				|| fp.getFunctionName().equals("normalizespaces")
+				|| fp.getFunctionName().equals("concat")
+				|| fp.getFunctionName().equals("leftchars")
+				|| fp.getFunctionName().equals("rightchars")
+				|| fp.getFunctionName().equals("indexof")
+				|| fp.getFunctionName().equals("indexofany")
+				|| fp.getFunctionName().equals("indexofanybut")
+				|| fp.getFunctionName().equals("indexofdiff")
+				|| fp.getFunctionName().equals("indexofignorecase")
+				|| fp.getFunctionName().equals("leftpad")
+				|| fp.getFunctionName().equals("leftpadstring")
+				|| fp.getFunctionName().equals("remove")
+				|| fp.getFunctionName().equals("removeend")
+				|| fp.getFunctionName().equals("removeendignorecase")
+				|| fp.getFunctionName().equals("removeignorecase")
+				|| fp.getFunctionName().equals("removestart")
+				|| fp.getFunctionName().equals("removestartignorecase")
+				|| fp.getFunctionName().equals("normalizespaces")
+				|| fp.getFunctionName().equals("repeat")
+				|| fp.getFunctionName().equals("rightpad")
+				|| fp.getFunctionName().equals("rotate")
+				|| fp.getFunctionName().equals("wrap")
+				|| fp.getFunctionName().equals("wrapifmissing")
+				|| fp.getFunctionName().equals("unwrap")
+				|| fp.getFunctionName().equals("substring")
+				|| fp.getFunctionName().equals("position")
+				|| fp.getFunctionName().equals("indexofstartpos")
+				|| fp.getFunctionName().equals("indexofignorecasestartpos")
+				|| fp.getFunctionName().equals("rightpadstring")
+				|| fp.getFunctionName().equals("repeatseparator")
+				|| fp.getFunctionName().equals("overlay")
+				|| fp.getFunctionName().equals("locate")
+				|| fp.getFunctionName().equals("insertstr")
+				|| fp.getFunctionName().equals("currentisodate")
+				|| fp.getFunctionName().equals("rand")
+				|| fp.getFunctionName().equals("pii")
+				|| fp.getFunctionName().equals("now")
+				|| fp.getFunctionName().equals("acos")
+				|| fp.getFunctionName().equals("asin")
+				|| fp.getFunctionName().equals("atan")
+				|| fp.getFunctionName().equals("cos")
+				|| fp.getFunctionName().equals("sin")
+				|| fp.getFunctionName().equals("tan")
+				|| fp.getFunctionName().equals("cosec")
+				|| fp.getFunctionName().equals("sec")
+				|| fp.getFunctionName().equals("cot")
+				|| fp.getFunctionName().equals("cbrt")
+				|| fp.getFunctionName().equals("degrees")
+				|| fp.getFunctionName().equals("radians")
+				|| fp.getFunctionName().equals("trimstr")
+				|| fp.getFunctionName().equals("initcap")
+				|| fp.getFunctionName().equals("ascii")
+				|| fp.getFunctionName().equals("character")
+				|| fp.getFunctionName().equals("reverse")
+				|| fp.getFunctionName().equals("ltrim")
+				|| fp.getFunctionName().equals("rtrim")
+				|| fp.getFunctionName().equals("year")
+				|| fp.getFunctionName().equals("month")
+				|| fp.getFunctionName().equals("day")
+				|| fp.getFunctionName().equals("getdigits")
+				|| fp.getFunctionName().equals("chop")
+				|| fp.getFunctionName().equals("uncapitalize")
 		)).collect(Collectors.toList());
 		return functions;
 	}
@@ -1362,6 +1593,192 @@ public class PigUtils {
 							} else if ("com.github.datasamudaya.stream.pig.udf.UppercaseUDF"
 									.equals(funcExpression.getFuncSpec().getClassName())) {
 								param.setFunctionName("uppercase");
+							} else if ("com.github.datasamudaya.stream.pig.udf.CurrentISODateUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("currentisodate");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RandUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("rand");
+							} else if ("com.github.datasamudaya.stream.pig.udf.ACosUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("acos");
+							} else if ("com.github.datasamudaya.stream.pig.udf.ASinUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("asin");
+							} else if ("com.github.datasamudaya.stream.pig.udf.ATanUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("atan");
+							} else if ("com.github.datasamudaya.stream.pig.udf.CosUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("cos");
+							} else if ("com.github.datasamudaya.stream.pig.udf.SinUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("sin");
+							} else if ("com.github.datasamudaya.stream.pig.udf.TanUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("tan");
+							} else if ("com.github.datasamudaya.stream.pig.udf.CosecUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("cosec");
+							} else if ("com.github.datasamudaya.stream.pig.udf.SecUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("sec");
+							} else if ("com.github.datasamudaya.stream.pig.udf.CotUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("cot");
+							} else if ("com.github.datasamudaya.stream.pig.udf.CbrtUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("cbrt");
+							} else if ("com.github.datasamudaya.stream.pig.udf.PiiUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("pii");
+							} else if ("com.github.datasamudaya.stream.pig.udf.DegreesUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("degrees");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RadiansUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("radians");
+							} else if ("com.github.datasamudaya.stream.pig.udf.TrimstrUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("trimstr");
+							} else if ("com.github.datasamudaya.stream.pig.udf.SubstringUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("substring");
+							} else if ("com.github.datasamudaya.stream.pig.udf.OverlayUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("overlay");
+							} else if ("com.github.datasamudaya.stream.pig.udf.LocateUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("locate");
+							} else if ("com.github.datasamudaya.stream.pig.udf.ConcatUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("concat");
+							} else if ("com.github.datasamudaya.stream.pig.udf.PositionUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("position");
+							} else if ("com.github.datasamudaya.stream.pig.udf.InitcapUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("initcap");
+							} else if ("com.github.datasamudaya.stream.pig.udf.AsciiUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("ascii");
+							} else if ("com.github.datasamudaya.stream.pig.udf.CharacterUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("charac");
+							} else if ("com.github.datasamudaya.stream.pig.udf.InsertstrUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("insertstr");
+							} else if ("com.github.datasamudaya.stream.pig.udf.LeftcharsUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("leftchars");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RightcharsUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("rightchars");
+							} else if ("com.github.datasamudaya.stream.pig.udf.ReverseUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("reverse");
+							} else if ("com.github.datasamudaya.stream.pig.udf.LtrimUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("ltrim");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RtrimUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("rtrim");
+							} else if ("com.github.datasamudaya.stream.pig.udf.NowUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("now");
+							} else if ("com.github.datasamudaya.stream.pig.udf.YearUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("year");
+							} else if ("com.github.datasamudaya.stream.pig.udf.MonthUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("month");
+							} else if ("com.github.datasamudaya.stream.pig.udf.DayUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("day");
+							} else if ("com.github.datasamudaya.stream.pig.udf.IndexOfUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("indexof");
+							} else if ("com.github.datasamudaya.stream.pig.udf.IndexOfStartPosUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("indexofstartpos");
+							} else if ("com.github.datasamudaya.stream.pig.udf.IndexOfAnyUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("indexofany");
+							} else if ("com.github.datasamudaya.stream.pig.udf.IndexOfAnyButUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("indexofanybut");
+							} else if ("com.github.datasamudaya.stream.pig.udf.IndexOfDiffUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("indexofdiff");
+							} else if ("com.github.datasamudaya.stream.pig.udf.IndexOfIgnoreCaseUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("indexofignorecase");
+							} else if ("com.github.datasamudaya.stream.pig.udf.IndexOfIgnoreCaseStartPosUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("indexofignorecasestartpos");
+							} else if ("com.github.datasamudaya.stream.pig.udf.LastIndexOfUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("lastindexof");
+							} else if ("com.github.datasamudaya.stream.pig.udf.LastIndexOfStartPosUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("lastindexofstartpos");
+							} else if ("com.github.datasamudaya.stream.pig.udf.LeftPadUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("leftpad");
+							} else if ("com.github.datasamudaya.stream.pig.udf.LeftPadStringUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("leftpadstr");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RemoveUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("remove");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RemoveEndUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("removeend");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RemoveEndIgnoreCaseUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("removeendignorecase");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RemoveIgnoreCaseUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("removeignorecase");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RemoveStartUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("removestart");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RemoveStartIgnoreCaseUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("removestartignorecase");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RepeatUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("repeat");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RepeatSeparatorUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("repeatseparator");
+							} else if ("com.github.datasamudaya.stream.pig.udf.ChopUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("chop");
+							} else if ("com.github.datasamudaya.stream.pig.udf.GetDigitsUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("getdigits");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RightPadUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("rightpad");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RightPadStringUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("rightpadstring");
+							} else if ("com.github.datasamudaya.stream.pig.udf.RotateUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("rotate");
+							} else if ("com.github.datasamudaya.stream.pig.udf.WrapUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("wrap");
+							} else if ("com.github.datasamudaya.stream.pig.udf.WrapIfMissingUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("wrapifmissing");
+							} else if ("com.github.datasamudaya.stream.pig.udf.UnWrapUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("unwrap");
+							} else if ("com.github.datasamudaya.stream.pig.udf.UncapitalizeUDF"
+									.equals(funcExpression.getFuncSpec().getClassName())) {
+								param.setFunctionName("uncapitalize");
 							}
 						}
 					}
