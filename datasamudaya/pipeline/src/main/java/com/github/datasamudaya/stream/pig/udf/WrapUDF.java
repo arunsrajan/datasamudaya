@@ -8,10 +8,17 @@ import org.apache.pig.data.Tuple;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * The UDF class wraps a String with another String.
  */
-public class WrapUDF extends EvalFunc<Object> {
+@Getter
+@AllArgsConstructor
+public class WrapUDF extends EvalFunc<Object> implements EvalFuncName {
+	
+	String name;
 
 	@Override
 	public Object exec(Tuple input) throws IOException {

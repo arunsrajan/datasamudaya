@@ -32,6 +32,7 @@ import com.github.datasamudaya.common.Task;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
 
 /**
  * The class which spills the data to disk when the memory exceeds the
@@ -59,7 +60,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	private transient Kryo kryo;
 	private transient SnappyOutputStream sos;
 	private String appendwithpath;
-	private Map<Integer, ActorSelection> downstreampipelines;
+	private Map<Integer, EntityRef> downstreampipelines;
 	private Map<Integer, FilePartitionId> filepartids;
 	int numfileperexec;
 	private Semaphore lock;
@@ -70,7 +71,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		filelock = new Semaphore(1);
 	}
 
-	public DiskSpillingList(Task task, int spillexceedpercentage, String appendwithpath, boolean appendintermediate, boolean left, boolean right, Map<Integer, FilePartitionId> filepartids, Map<Integer, ActorSelection> downstreampipelines, int numfileperexec) {
+	public DiskSpillingList(Task task, int spillexceedpercentage, String appendwithpath, boolean appendintermediate, boolean left, boolean right, Map<Integer, FilePartitionId> filepartids, Map<Integer, EntityRef> downstreampipelines, int numfileperexec) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataList = new Vector<>();
@@ -286,10 +287,9 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		} else {
 			filetransferindex = Math.abs(obj.hashCode()) % numfileperexec;
 		}
-		ActorSelection actorselection = downstreampipelines.get(filetransferindex);
+		EntityRef actorselection = downstreampipelines.get(filetransferindex);
 		actorselection.tell(new OutputObject(new ShuffleBlock(null,
-						Utils.convertObjectToBytes(filepartids.get(filetransferindex)), Utils.convertObjectToBytesCompressed(dataList, null)), left, right, null),
-				ActorRef.noSender());
+						Utils.convertObjectToBytes(filepartids.get(filetransferindex)), Utils.convertObjectToBytesCompressed(dataList, null)), left, right, null));
 		dataList.clear();
 	}
 

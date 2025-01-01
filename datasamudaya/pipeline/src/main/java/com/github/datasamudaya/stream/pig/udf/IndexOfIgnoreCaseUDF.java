@@ -6,11 +6,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * The UDF class returns Case in-sensitive find of the first index within a CharSequence
  */
-public class IndexOfIgnoreCaseUDF extends EvalFunc<Object> {
+@Getter
+@AllArgsConstructor
+public class IndexOfIgnoreCaseUDF extends EvalFunc<Object> implements EvalFuncName {
 
+	String name;
+	
 	@Override
 	public Object exec(Tuple input) throws IOException {
 		if (input == null || input.size() == 0) {

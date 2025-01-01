@@ -6,11 +6,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * The UDF class extracts index from text for given search text
  */
-public class IndexOfUDF extends EvalFunc<Object> {
+@Getter
+@AllArgsConstructor
+public class IndexOfUDF extends EvalFunc<Object> implements EvalFuncName {
 
+	String name;
+	
 	@Override
 	public Object exec(Tuple input) throws IOException {
 		if (input == null || input.size() == 0) {

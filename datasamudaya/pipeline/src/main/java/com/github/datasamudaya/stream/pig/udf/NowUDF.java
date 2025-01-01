@@ -7,10 +7,17 @@ import java.util.Date;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
 
+import lombok.Getter;
+
 /**
  * The UDF class gets the current date and time in date format
  */
-public class NowUDF extends EvalFunc<Object> {
+@Getter
+public class NowUDF extends EvalFunc<Object> implements EvalFuncName {
+	String name;
+	public NowUDF() {
+		this.name = name;
+	}
 	static SimpleDateFormat dateExtract = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	@Override
 	public Object exec(Tuple input) throws IOException {

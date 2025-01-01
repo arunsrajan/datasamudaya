@@ -7,11 +7,18 @@ import org.apache.pig.data.Tuple;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * The UDF class gets character from ascii value
  */
-public class CharacterUDF extends EvalFunc<Object> {
+@Getter
+@AllArgsConstructor
+public class CharacterUDF extends EvalFunc<Object> implements EvalFuncName {
 
+	String name;
+	
 	@Override
 	public Object exec(Tuple input) throws IOException {
 		if (input == null || input.size() == 0) {

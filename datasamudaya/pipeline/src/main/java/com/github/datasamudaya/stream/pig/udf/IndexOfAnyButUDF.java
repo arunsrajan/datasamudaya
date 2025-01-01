@@ -6,11 +6,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * The UDF class extracts  first index of any character not in the given set of characters. 
  */
-public class IndexOfAnyButUDF extends EvalFunc<Object> {
+@Getter
+@AllArgsConstructor
+public class IndexOfAnyButUDF extends EvalFunc<Object> implements EvalFuncName {
 
+	String name;
+	
 	@Override
 	public Object exec(Tuple input) throws IOException {
 		if (input == null || input.size() == 0) {

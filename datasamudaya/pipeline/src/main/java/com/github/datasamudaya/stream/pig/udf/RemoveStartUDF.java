@@ -6,11 +6,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * The UDF class removes a substring only if it is at the beginning of a source string,otherwise returns the source string.
  */
-public class RemoveStartUDF extends EvalFunc<Object> {
+@Getter
+@AllArgsConstructor
+public class RemoveStartUDF extends EvalFunc<Object> implements EvalFuncName {
 
+	String name;
+	
 	@Override
 	public Object exec(Tuple input) throws IOException {
 		if (input == null || input.size() == 0) {

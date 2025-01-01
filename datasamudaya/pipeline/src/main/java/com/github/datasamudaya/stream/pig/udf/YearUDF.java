@@ -10,10 +10,17 @@ import org.apache.pig.data.Tuple;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 
+import lombok.Getter;
+
 /**
  * The UDF class extracts year from a given date
  */
-public class YearUDF extends EvalFunc<Object> {
+@Getter
+public class YearUDF extends EvalFunc<Object> implements EvalFuncName {
+	String name;
+	public YearUDF(String name) {
+		this.name = name;
+	}
 	static SimpleDateFormat dateExtract = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	@Override
 	public Object exec(Tuple input) throws IOException {
