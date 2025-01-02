@@ -32,7 +32,7 @@ public class OverlayUDF extends EvalFunc<Object> implements EvalFuncName {
 				.replaceAll(
 						text.substring(
 								pos, Math
-										.min(((String) overlaytext).length(),
+										.min(pos+((String) overlaytext).length(),
 												pos	+ length)),
 						overlaytext);
 	}

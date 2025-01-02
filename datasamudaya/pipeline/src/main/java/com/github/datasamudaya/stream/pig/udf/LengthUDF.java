@@ -25,6 +25,6 @@ public class LengthUDF extends EvalFunc<Object> implements EvalFuncName {
 		Object value = (Object) input.get(0);
 		String val = (String) value;
 		// return the result to the stack
-		return Long.valueOf(val.length());
+		return Integer.valueOf(val.length());
 	}
 }

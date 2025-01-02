@@ -965,13 +965,13 @@ public class PigUtils {
 					// Get the absolute value of the first parameter
 					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
 				case "substring", "position", "indexofstartpos", "indexofignorecasestartpos":
-				case "rightpadstring", "repeatseparator":
+				case "rightpadstring", "repeatseparator","locate":
 					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, aliasorcolname),
 							evaluateBinaryExpression(fn.getArguments().get(1), row, aliasorcolname),
 							evaluateBinaryExpression(fn.getArguments().get(2), row, aliasorcolname)};
 					// Get the absolute value of the first parameter
 					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
-				case "overlay", "locate", "insertstr":
+				case "overlay", "insertstr":
 					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, aliasorcolname),
 							evaluateBinaryExpression(fn.getArguments().get(1), row, aliasorcolname),
 							evaluateBinaryExpression(fn.getArguments().get(2), row, aliasorcolname),
@@ -1121,16 +1121,16 @@ public class PigUtils {
 			tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value[0], value[1]));
 			return evalfunc.exec(tuple);
 		case "substring", "position", "indexofstartpos", "indexofignorecasestartpos":
-		case "rightpadstring", "repeatseparator":	
+		case "rightpadstring", "repeatseparator", "locate":	
 			// Get the absolute value of the first parameter
 			tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value[0], value[1], value[2]));
 			return evalfunc.exec(tuple);
-		case "overlay", "locate", "insertstr":
+		case "overlay", "insertstr":
 			// Get the absolute value of the first parameter
 			tuple = TupleFactory.getInstance().newTuple(Arrays.asList(value[0], value[1], value[2], value[3]));
 			return evalfunc.exec(tuple);
 		case "currentisodate", "rand", "pii", "now":
-			tuple = TupleFactory.getInstance().newTuple(null);
+			tuple = TupleFactory.getInstance().newTuple(Arrays.asList());
 			return evalfunc.exec(tuple);
 		}
 		return name;

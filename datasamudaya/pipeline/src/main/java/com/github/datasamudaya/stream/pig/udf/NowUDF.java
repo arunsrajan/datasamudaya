@@ -15,7 +15,7 @@ import lombok.Getter;
 @Getter
 public class NowUDF extends EvalFunc<Object> implements EvalFuncName {
 	String name;
-	public NowUDF() {
+	public NowUDF(String name) {
 		this.name = name;
 	}
 	static SimpleDateFormat dateExtract = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
