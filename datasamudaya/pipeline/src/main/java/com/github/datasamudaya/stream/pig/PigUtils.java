@@ -951,7 +951,8 @@ public class PigUtils {
 					// Get the absolute value of the first parameter
 					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, aliasorcolname)};
 					return evaluateFunctionsWithType(values, name, fn.getEvalFunc());
-				case "normalizespaces":
+				case "normalizespaces", "year", "month", "day", "chop", "getdigits":
+				case "ltrim", "reverse", "rtrim", "trimstr", "uncapitalize", "ascii", "initcap":
 					// Get the absolute value of the first parameter
 					values = new Object[] {evaluateBinaryExpression(fn.getArguments().get(0), row, aliasorcolname)};
 					return evaluateFunctionsWithType(values, "normalizespaces", fn.getEvalFunc());

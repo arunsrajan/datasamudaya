@@ -34,7 +34,7 @@ public class MonthUDF extends EvalFunc<Object> implements EvalFuncName {
 		} catch (Exception e) {
 			log.error(DataSamudayaConstants.EMPTY, e);
 		}
-		return calendar.get(Calendar.MONTH);
+		return calendar.get(Calendar.MONTH)+1;
 	}
 
 }

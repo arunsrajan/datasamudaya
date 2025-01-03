@@ -25,7 +25,7 @@ public class AsciiUDF extends EvalFunc<Object> implements EvalFuncName {
 			return DataSamudayaConstants.EMPTY;
 		}
 		String text = (String) input.get(0);		
-		return text.charAt(0);
+		return (int) text.charAt(0);
 	}
 
 }

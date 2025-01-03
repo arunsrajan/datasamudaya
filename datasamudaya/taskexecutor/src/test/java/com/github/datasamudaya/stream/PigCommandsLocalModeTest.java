@@ -1887,6 +1887,561 @@ public class PigCommandsLocalModeTest extends StreamPipelineBaseTestCommon {
 	}
 	
 	@Test
+	public void testPigLoadACos() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, acos(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadASin() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, asin(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadATan() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, atan(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadSin() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, sin(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadCos() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, cos(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadTan() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, tan(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadCosec() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, cosec(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadSec() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, sec(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	
+	@Test
+	public void testPigLoadCot() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, cot(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadCbrt() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, cbrt(MonthOfyear) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadDegrees() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, degrees(radians(180)) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadRadians() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, radians(180) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertNotNull(obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadTrimstr() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, trimstr(concat('   ',Origin)) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertEquals(obj[1],obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadInitcap() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, initcap(lowercase(Origin)) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				String origin = (String) obj[1];
+				assertEquals(Character.toUpperCase(origin.charAt(0))+origin.substring(1).toLowerCase(),obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadAscii() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, ascii(Origin) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				String origin = (String) obj[1];
+				assertEquals((int)origin.charAt(0),obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadCharacter() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, character('65') as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertEquals('A',obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadReverse() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, reverse('admin') as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertEquals("nimda",obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadLtrim() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, ltrim(concat('   ',Origin)) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertEquals(obj[1],obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadRtrim() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, rtrim(concat(Origin, '   ')) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertEquals(obj[1],obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadYear() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, year('2021-09-06 12:12:12') as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertEquals(2021,obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadMonth() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, month('2021-09-06 12:12:12') as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertEquals(9,obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadDay() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, day('2021-09-06 12:12:12') as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertEquals(6,obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadGetDigits() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, getdigits(concat(Origin,'1A2B3C')) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				assertEquals("123",obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadChop() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, chop(Origin) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				String origin = (String) obj[1];
+				assertEquals(origin.substring(0,origin.length()-1),obj[3]);
+			}
+		}
+	}
+	
+	@Test
+	public void testPigLoadUncapitalize() throws Exception {
+		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
+				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+		pigQueriesToExecute.clear();
+		pigQueriesToExecute.add(
+				"data = LOAD '/airlinesample' AS (AirlineYear: int ,MonthOfYear: int ,DayofMonth: int ,DayOfWeek: int ,DepTime: int ,CRSDepTime: int ,ArrTime: int ,CRSArrTime: int ,UniqueCarrier: chararray ,FlightNum: int ,TailNum: chararray ,ActualElapsedTime: int ,CRSElapsedTime: int ,AirTime: int ,ArrDelay: int ,DepDelay: int ,Origin: chararray ,Dest: chararray ,Distance: int ,TaxiIn: int ,TaxiOut: int ,Cancelled: int ,CancellationCode: chararray ,Diverted: int ,CarrierDelay: int ,WeatherDelay: int ,NASDelay: int ,SecurityDelay: int ,LateAircraftDelay: int);");
+		pigQueriesToExecute.add("data1 = FOREACH data GENERATE DayofMonth, Origin, UniqueCarrier, uncapitalize(Origin) as origindest;");
+		LogicalPlan lp = PigUtils.getLogicalPlan(pigQueriesToExecute, queryParserDriver);
+
+		List<List<Object[]>> results = (List<List<Object[]>>) PigUtils.executeCollect(
+				lp, "data1", pipelineconfig.getUser(),
+				jobid, tejobid, pipelineconfig);
+		for (List<Object[]> recordspart : results) {
+			for (Object[] obj : recordspart) {
+				log.info("{}", Arrays.toString(obj));
+				assertEquals(4, obj.length);
+				String origin = (String) obj[1];
+				assertEquals(Character.toLowerCase(origin.charAt(0))+origin.substring(1),obj[3]);
+			}
+		}
+	}
+	
+	@Test
 	public void testPigLoadMultipleAssignment() throws Exception {
 		String jobid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis()
 				+ DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
