@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -18,11 +19,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.pig.PigServer;
 import org.apache.pig.newplan.logical.relational.LogicalPlan;
 import org.apache.pig.parser.QueryParserDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.yarn.YarnSystemConstants;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
@@ -55,17 +56,18 @@ public class PigQueryServer {
 		queryParserDriver = PigUtils.getQueryParserDriver("pig");
 		executors.execute(() -> {
 			while (true) {
-				Socket sock;
+				Socket sock;				
 				try {
 					sock = serverSocket.accept();
 					executors.execute(() -> {
+						PigServer pigServer = null;
 						PipelineConfig pipelineconfig = new PipelineConfig();
 						pipelineconfig.setLocal("false");
 						pipelineconfig.setYarn("false");
 						pipelineconfig.setMesos("false");
 						pipelineconfig.setJgroups("false");
 						pipelineconfig.setMode(DataSamudayaConstants.MODE_NORMAL);
-						pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
+						pipelineconfig.setStorage(STORAGE.COLUMNARSQL);						
 						String user = "";
 						int numberofcontainers = 1;
 						int cpupercontainer = 1;
@@ -83,8 +85,10 @@ public class PigQueryServer {
 						try (Socket clientSocket = sock;
 								OutputStream ostream = clientSocket.getOutputStream();
 								PrintWriter out = new PrintWriter(ostream, true);
+								PrintStream streamout = new PrintStream(ostream, true);
 								BufferedReader in = new BufferedReader(
 										new InputStreamReader(clientSocket.getInputStream()));) {
+							pigServer = PigUtils.getPigServer();
 							pipelineconfig.setPigoutput(ostream);
 							pipelineconfig.setWriter(out);
 							pipelineconfig.setJobname(DataSamudayaConstants.PIG);
@@ -277,6 +281,11 @@ public class PigQueryServer {
 											} else {
 												out.println("standalone");
 											}
+										} else if (StringUtils.startsWithIgnoreCase(inputLine,"explain")) {
+											if (nonNull(pigServer)) {
+												String[] explainwithalias = StringUtils.normalizeSpace(inputLine).split(" ");
+												pigServer.explain(explainwithalias[1], streamout);
+											}
 										} else if (inputLine.startsWith("dump") || inputLine.startsWith("DUMP")) {
 											if (nonNull(pipelineconfig)) {
 												pipelineconfig.setSqlpigquery(inputLine);
@@ -312,6 +321,7 @@ public class PigQueryServer {
 												}
 												pigQueries.add(inputLine);
 												pigQueries.add("\n");
+												pigServer.registerQuery(inputLine);
 											} else {
 												out.println(String.format("Error In Pig Query for the current line: %s ", inputLine));
 											}
@@ -348,6 +358,9 @@ public class PigQueryServer {
 								} catch (Exception ex) {
 									log.error(DataSamudayaConstants.EMPTY, ex);
 								}
+							}
+							if(nonNull(pigServer)) {
+                                pigServer.shutdown();
 							}
 						}
 					});
