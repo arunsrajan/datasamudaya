@@ -70,7 +70,7 @@ public class AggregateFunctionBuilder {
 					functions.add(builder.avg(false, function.getAlias(),  FunctionBuilder.getOperands(builder, function.getOperands())[0]));
 					break;
 				case "count":
-					functions.add(builder.countStar("cnt"));
+					functions.add(builder.countStar(function.getAlias()));
 					break;
 				default:
 			}

@@ -1,6 +1,7 @@
 package com.github.datasamudaya.stream.sql.dataframe.build;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -355,6 +356,29 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				assertTrue(((String) values[1]).length() == (long) values[3]);
 				assertTrue(((String) values[2]).length() == (long) values[4]);
 				assertEquals(5, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateAbs() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
+				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
+				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		df.select("UniqueCarrier", "ArrDelay", "DepDelay");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
+				.addFunction("abs", "absarrdelay", new Object[] { new Column("ArrDelay") })
+				.addFunction("abs", "depdelay", new Object[] { new Column("DepDelay") });
+		df.selectWithFunc(nonaggfuncbuilder).aggregate(AggregateFunctionBuilder.builder()
+				.sum("sumarrdelay", new Object[]{new Column("absarrdelay")})
+				.sum("sumdepdelay", new Object[]{new Column("depdelay")}), "UniqueCarrier");
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertNotNull(values[1]);
+				assertNotNull(values[2]);
+				assertEquals(3, values.length);
 			}
 		}
 	}

@@ -65,55 +65,123 @@ public class FunctionBuilder {
 			if (nonNull(function.getName())) {
 				switch (function.getName()) {
 					case "abs":
-						functiontocall.add(builder.call(sqlfunctions.get(13),getOperands(builder, function.getOperands())));
+						RexNode abs = builder.call(sqlfunctions.get(13),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							abs = builder.alias(abs, function.getAlias());
+						}
+						functiontocall.add(abs);
 						break;
 					case "length":
-						functiontocall.add(builder.call(sqlfunctions.get(1),getOperands(builder, function.getOperands())));
+						RexNode length = builder.call(sqlfunctions.get(1),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							length = builder.alias(length, function.getAlias());
+						}
+						functiontocall.add(length);
 						break;
 					case "round":
-						functiontocall.add(builder.call(sqlfunctions.get(12),getOperands(builder, function.getOperands())));
-						break;
+						RexNode round = builder.call(sqlfunctions.get(12),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							round = builder.alias(round, function.getAlias());
+						}
+						functiontocall.add(round);
+						break;						
 					case "ceil":
-						functiontocall.add(builder.call(sqlfunctions.get(10),getOperands(builder, function.getOperands())));
+						RexNode ceil = builder.call(sqlfunctions.get(10),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							ceil = builder.alias(ceil, function.getAlias());
+						}
+						functiontocall.add(ceil);
 						break;
 					case "floor":
-						functiontocall.add(builder.call(sqlfunctions.get(11),getOperands(builder, function.getOperands())));
+						RexNode floor = builder.call(sqlfunctions.get(11),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							floor = builder.alias(floor, function.getAlias());
+						}
+						functiontocall.add(floor);
 						break;
 					case "pow":
-						functiontocall.add(builder.call(sqlfunctions.get(8),getOperands(builder, function.getOperands())));
+						RexNode pow = builder.call(sqlfunctions.get(8),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							pow = builder.alias(pow, function.getAlias());
+						}
+						functiontocall.add(pow);
 						break;
 					case "sqrt":
-						functiontocall.add(builder.call(sqlfunctions.get(0),getOperands(builder, function.getOperands())));
+						RexNode sqrt = builder.call(sqlfunctions.get(0),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							sqrt = builder.alias(sqrt, function.getAlias());
+						}
+						functiontocall.add(sqrt);
 						break;
 					case "exp":
-						functiontocall.add(builder.call(sqlfunctions.get(9),getOperands(builder, function.getOperands())));
+						RexNode exp = builder.call(sqlfunctions.get(9),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							exp = builder.alias(exp, function.getAlias());
+						}
+						functiontocall.add(exp);
 						break;
 					case "loge":
-						functiontocall.add(builder.call(sqlfunctions.get(7),getOperands(builder, function.getOperands())));
+						RexNode loge = builder.call(sqlfunctions.get(7),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							loge = builder.alias(loge, function.getAlias());
+						}
+						functiontocall.add(loge);
 						break;
 					case "lowercase":
-						functiontocall.add(builder.call(sqlfunctions.get(6),getOperands(builder, function.getOperands())));
+						RexNode lowercase = builder.call(sqlfunctions.get(6),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							lowercase = builder.alias(lowercase, function.getAlias());
+						}
+						functiontocall.add(lowercase);
 						break;
 					case "uppercase":
-						functiontocall.add(builder.call(sqlfunctions.get(5),getOperands(builder, function.getOperands())));
+						RexNode uppercase = builder.call(sqlfunctions.get(5),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							uppercase = builder.alias(uppercase, function.getAlias());
+						}
+						functiontocall.add(uppercase);
 						break;
 					case "base64encode":
-						functiontocall.add(builder.call(sqlfunctions.get(3),getOperands(builder, function.getOperands())));
+						RexNode base64encode = builder.call(sqlfunctions.get(3),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							base64encode = builder.alias(base64encode, function.getAlias());
+						}
+						functiontocall.add(base64encode);
 						break;
 					case "base64decode":
-						functiontocall.add(builder.call(sqlfunctions.get(4),getOperands(builder, function.getOperands())));
+						RexNode base64decode = builder.call(sqlfunctions.get(4),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							base64decode = builder.alias(base64decode, function.getAlias());
+						}
+						functiontocall.add(base64decode);
 						break;
 					case "normalizespaces":
-						functiontocall.add(builder.call(sqlfunctions.get(2),getOperands(builder, function.getOperands())));
+						RexNode normalizespaces = builder.call(sqlfunctions.get(2),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							normalizespaces = builder.alias(normalizespaces, function.getAlias());
+						}
+						functiontocall.add(normalizespaces);
 						break;
 					case "currentisodate":
-						functiontocall.add(builder.call(sqlfunctions.get(14),getOperands(builder, function.getOperands())));
+						RexNode currentisodate = builder.call(sqlfunctions.get(14),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							currentisodate = builder.alias(currentisodate, function.getAlias());
+						}
+						functiontocall.add(currentisodate);
 						break;
 					case "trimstr":
-						functiontocall.add(builder.call(sqlfunctions.get(16),getOperands(builder, function.getOperands())));
-						break;					
+						RexNode trimstr = builder.call(sqlfunctions.get(13),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							trimstr = builder.alias(trimstr, function.getAlias());
+						}
+						functiontocall.add(trimstr);
+						break;
 					case "grpconcat":
-						functiontocall.add(builder.call(sqlfunctions.get(15),getOperands(builder, function.getOperands())));
+						RexNode grpconcat = builder.call(sqlfunctions.get(12),getOperands(builder, function.getOperands()));
+						if(nonNull(function.getAlias())) {
+							grpconcat = builder.alias(grpconcat, function.getAlias());
+						}
+						functiontocall.add(grpconcat);
 						break;
 					default:
 						throw new UnsupportedOperationException("SQL Function Not Supported");
