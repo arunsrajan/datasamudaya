@@ -185,24 +185,24 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 					executorsindex++;
 				}
 			}
-			uploadfile(hdfs, airlinesamplecsv, airlinesamplecsv + csvfileextn);
-			uploadfile(hdfs, airportssample, airportssample + csvfileextn);
-			uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
-			uploadfile(hdfs, airlinesamplesql, airlinesamplesql + csvfileextn);
-			uploadfile(hdfs, airlinesamplesqlucs, airlinesamplesqlucs + csvfileextn);
-			uploadfile(hdfs, airlinesamplejoin, airlinesamplejoin + csvfileextn);
-			uploadfile(hdfs, carriers, carriers + csvfileextn);
-			uploadfile(hdfs, airline1987, airline1987 + csvfileextn);
-			uploadfile(hdfs, bicyclecrash, bicyclecrash + csvfileextn);
-			uploadfile(hdfs, population, population + csvfileextn);
-			uploadfile(hdfs, airlinepairjoin, airlinepairjoin + csvfileextn);
-			uploadfile(hdfs, airlinenoheader, airlinenoheader + csvfileextn);
-			uploadfile(hdfs, airlinesamplenoheader, airlinesamplenoheader + csvfileextn);
-			uploadfile(hdfs, cars, cars + txtfileextn);
-			uploadfile(hdfs, wordcount, wordcount + txtfileextn);
-			uploadfile(hdfs, airlinemultiplefilesfolder, airlinesample + csvfileextn);
-			uploadfile(hdfs, airlinemultiplefilesfolder, airlinenoheader + csvfileextn);
-			uploadfile(hdfs, githubevents, githubevents + jsonfileextn);
+			Utils.uploadfile(hdfs, airlinesamplecsv, airlinesamplecsv + csvfileextn);
+			Utils.uploadfile(hdfs, airportssample, airportssample + csvfileextn);
+			Utils.uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
+			Utils.uploadfile(hdfs, airlinesamplesql, airlinesamplesql + csvfileextn);
+			Utils.uploadfile(hdfs, airlinesamplesqlucs, airlinesamplesqlucs + csvfileextn);
+			Utils.uploadfile(hdfs, airlinesamplejoin, airlinesamplejoin + csvfileextn);
+			Utils.uploadfile(hdfs, carriers, carriers + csvfileextn);
+			Utils.uploadfile(hdfs, airline1987, airline1987 + csvfileextn);
+			Utils.uploadfile(hdfs, bicyclecrash, bicyclecrash + csvfileextn);
+			Utils.uploadfile(hdfs, population, population + csvfileextn);
+			Utils.uploadfile(hdfs, airlinepairjoin, airlinepairjoin + csvfileextn);
+			Utils.uploadfile(hdfs, airlinenoheader, airlinenoheader + csvfileextn);
+			Utils.uploadfile(hdfs, airlinesamplenoheader, airlinesamplenoheader + csvfileextn);
+			Utils.uploadfile(hdfs, cars, cars + txtfileextn);
+			Utils.uploadfile(hdfs, wordcount, wordcount + txtfileextn);
+			Utils.uploadfile(hdfs, airlinemultiplefilesfolder, airlinesample + csvfileextn);
+			Utils.uploadfile(hdfs, airlinemultiplefilesfolder, airlinenoheader + csvfileextn);
+			Utils.uploadfile(hdfs, githubevents, githubevents + jsonfileextn);
 
 		} catch (Throwable e) {
 			log.info("Error Uploading file", e);
@@ -210,21 +210,7 @@ public class StreamPipelineBaseTestCommon extends StreamPipelineBase {
 		setupdone = true;
 	}
 
-	public static void uploadfile(FileSystem hdfs, String dir, String filename) throws Throwable {
-		InputStream is = StreamPipelineBaseTestCommon.class.getResourceAsStream(filename);
-		String jobpath = dir;
-		String filepath = jobpath + filename;
-		Path jobpathurl = new Path(jobpath);
-		if (!hdfs.exists(jobpathurl)) {
-			hdfs.mkdirs(jobpathurl);
-		}
-		Path filepathurl = new Path(filepath);
-		FSDataOutputStream fsdos = hdfs.create(filepathurl);
-		IOUtils.copy(is, fsdos);
-		fsdos.hflush();
-		is.close();
-		fsdos.close();
-	}
+	
 
 	@AfterClass
 	public static void closeResources() throws Exception {

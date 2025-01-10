@@ -28,7 +28,7 @@ public class AggregateFunctionBuilder {
 	 * @param expression
 	 * @return aggfunction builder object
 	 */
-	public AggregateFunctionBuilder sum(String alias, String expression) {
+	public AggregateFunctionBuilder sum(String alias, Object[] expression) {
 		functioncalls.add(new Function("sum", alias, expression));
 		return this;
 	}
@@ -39,7 +39,7 @@ public class AggregateFunctionBuilder {
 	 * @param expression
 	 * @return aggfunction builder object
 	 */
-	public AggregateFunctionBuilder avg(String alias, String expression) {
+	public AggregateFunctionBuilder avg(String alias, Object[] expression) {
 		functioncalls.add(new Function("avg", alias, expression));
 		return this;
 	}
@@ -50,7 +50,7 @@ public class AggregateFunctionBuilder {
 	 * @return aggfunction builder object
 	 */
 	public AggregateFunctionBuilder count(String alias) {
-		functioncalls.add(new Function("count", alias, "*"));
+		functioncalls.add(new Function("count", alias, new Object[]{"*"}));
 		return this;
 	}
 
@@ -64,10 +64,10 @@ public class AggregateFunctionBuilder {
 		for (Function function :functioncalls) {
 			switch (function.getName()) {
 				case "sum":
-					functions.add(builder.sum(false, function.getAlias(), builder.field(function.getExpression())));
+					functions.add(builder.sum(false, function.getAlias(), FunctionBuilder.getOperands(builder, function.getOperands())[0]));
 					break;
 				case "avg":
-					functions.add(builder.avg(false, function.getAlias(), builder.field(function.getExpression())));
+					functions.add(builder.avg(false, function.getAlias(),  FunctionBuilder.getOperands(builder, function.getOperands())[0]));
 					break;
 				case "count":
 					functions.add(builder.countStar("cnt"));

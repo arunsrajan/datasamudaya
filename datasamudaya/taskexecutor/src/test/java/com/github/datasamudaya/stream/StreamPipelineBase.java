@@ -34,21 +34,21 @@ import com.github.datasamudaya.common.PipelineConfig;
 
 public class StreamPipelineBase {
 	static MiniDFSCluster hdfsLocalCluster;
-	String[] airlineheader = new String[] { "Year", "Month", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime",
+	protected String[] airlineheader = new String[] { "Year", "Month", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime",
 			"ArrTime", "CRSArrTime", "UniqueCarrier", "FlightNum", "TailNum", "ActualElapsedTime", "CRSElapsedTime",
 			"AirTime", "ArrDelay", "DepDelay", "Origin", "Dest", "Distance", "TaxiIn", "TaxiOut", "Cancelled",
 			"CancellationCode", "Diverted", "CarrierDelay", "WeatherDelay", "NASDelay", "SecurityDelay",
 			"LateAircraftDelay" };
-	String[] carrierheader = { "Code", "Description" };
-	static SqlTypeName[] airsqltype = { SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
+	protected String[] carrierheader = { "Code", "Description" };
+	protected static SqlTypeName[] airsqltype = { SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR };
-	static String[] airportsheader = { "iata", "airport", "city", "state", "country", "latitude", "longitude" };
-	static SqlTypeName[] airportstype = { SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
+	protected static String[] airportsheader = { "iata", "airport", "city", "state", "country", "latitude", "longitude" };
+	protected static SqlTypeName[] airportstype = { SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR,
 			SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR, SqlTypeName.VARCHAR };
 	protected static String hdfsfilepath = "hdfs://127.0.0.1:9000";
 	protected static String airlines = "/airlines";

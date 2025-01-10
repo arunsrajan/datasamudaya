@@ -230,7 +230,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
 				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
 		df.select("AirlineYear", "MonthOfYear", "ArrDelay").filter(new OrPredicate(
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
@@ -251,7 +251,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
 				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
 		df.select("AirlineYear", "MonthOfYear", "ArrDelay").filter(new OrPredicate(
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
@@ -271,7 +271,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
 				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
 		df.select("AirlineYear", "MonthOfYear", "DayofMonth", "ArrDelay").filter(new OrPredicate(
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
@@ -295,7 +295,7 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
 				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
 		df.select("AirlineYear", "MonthOfYear", "DayofMonth", "ArrDelay").filter(new OrPredicate(
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
@@ -318,14 +318,14 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
 				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", "ArrDelay").avg("avgdelay", "ArrDelay").count("cnt");
+		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
 		df.select("AirlineYear", "MonthOfYear", "ArrDelay").filter(new OrPredicate(
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
 				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
 				.aggregate(builder, "AirlineYear", "MonthOfYear").select("avgdelay", "sumdelay", "cnt");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "avgdelay" })
 				.addField(null, new String[] { "sumdelay" }).addField(null, new String[] { "cnt" })
-				.addFunction("loge", "logfunc", new String[] { "cnt" });
+				.addFunction("loge", "logfunc", new Object[] { new Column("cnt") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
@@ -345,8 +345,8 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
 				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
-				.addFunction("length", "lengthorigin", new String[] { "Origin" })
-				.addFunction("length", "lengthdest", new String[] { "Dest" });
+				.addFunction("length", "lengthorigin", new Object[] { new Column("Origin") })
+				.addFunction("length", "lengthdest", new Object[] { new Column("Dest") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {

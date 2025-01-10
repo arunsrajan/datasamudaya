@@ -97,6 +97,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
@@ -4104,6 +4105,28 @@ public class Utils {
         } catch (IOException e) {
         	log.error("Error writing to classpath.txt: ", e);
         }
+	}
+	/**
+	 * Uploads a file to HDFS
+	 * @param hdfs
+	 * @param dir
+	 * @param filename
+	 * @throws Throwable
+	 */
+	public static void uploadfile(FileSystem hdfs, String dir, String filename) throws Throwable {
+		InputStream is = Utils.class.getResourceAsStream(filename);
+		String jobpath = dir;
+		String filepath = jobpath + filename;
+		Path jobpathurl = new Path(jobpath);
+		if (!hdfs.exists(jobpathurl)) {
+			hdfs.mkdirs(jobpathurl);
+		}
+		Path filepathurl = new Path(filepath);
+		FSDataOutputStream fsdos = hdfs.create(filepathurl);
+		IOUtils.copy(is, fsdos);
+		fsdos.hflush();
+		is.close();
+		fsdos.close();
 	}
 	
 }

@@ -8,5 +8,5 @@ import lombok.Getter;
 public class Function {
 	private String name;
 	private String alias;
-	private String expression;
+	private Object[] operands;
 }
