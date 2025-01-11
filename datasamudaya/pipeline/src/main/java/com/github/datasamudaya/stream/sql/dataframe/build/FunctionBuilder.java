@@ -170,18 +170,18 @@ public class FunctionBuilder {
 						functiontocall.add(currentisodate);
 						break;
 					case "trimstr":
-						RexNode trimstr = builder.call(sqlfunctions.get(13),getOperands(builder, function.getOperands()));
+						RexNode trimstr = builder.call(sqlfunctions.get(16),getOperands(builder, function.getOperands()));
 						if(nonNull(function.getAlias())) {
 							trimstr = builder.alias(trimstr, function.getAlias());
 						}
 						functiontocall.add(trimstr);
 						break;
-					case "grpconcat":
-						RexNode grpconcat = builder.call(sqlfunctions.get(12),getOperands(builder, function.getOperands()));
+					case "concat":
+						RexNode concat = builder.call(sqlfunctions.get(15),getOperands(builder, function.getOperands()));
 						if(nonNull(function.getAlias())) {
-							grpconcat = builder.alias(grpconcat, function.getAlias());
+							concat = builder.alias(concat, function.getAlias());
 						}
-						functiontocall.add(grpconcat);
+						functiontocall.add(concat);
 						break;
 					default:
 						throw new UnsupportedOperationException("SQL Function Not Supported");
