@@ -2,18 +2,18 @@ package com.github.datasamudaya.stream.sql.dataframe.build;
 
 import java.util.function.Predicate;
 
-public class NumericExpressionPredicate implements Predicate {
-	private final NumericOperator operator;
+public class Expression implements Predicate {
+	private final Operator operator;
 	private final Object left;
 	private final Object right;
 
-	public NumericExpressionPredicate(NumericOperator operator, Object left, Object right) {
+	public Expression(Operator operator, Object left, Object right) {
 		this.operator = operator;
 		this.left = left;
 		this.right = right;
 	}
 
-	public NumericOperator getOperator() {
+	public Operator getOperator() {
 		return operator;
 	}
 

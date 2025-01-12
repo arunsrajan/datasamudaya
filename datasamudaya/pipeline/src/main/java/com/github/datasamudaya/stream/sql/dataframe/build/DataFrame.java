@@ -12,15 +12,14 @@ import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelFieldCollation.Direction;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
@@ -29,7 +28,6 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.datasamudaya.common.utils.sql.Functions;
 import com.github.datasamudaya.common.utils.sql.SimpleSchema;
 import com.github.datasamudaya.common.utils.sql.SimpleTable;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
@@ -43,25 +41,24 @@ import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 public class DataFrame {
 	DataFrameContext dfcontext;
 	RelBuilder builder;
-	List<String> columns;
 	SimpleSchema simpleschema;
 	private static final Logger log = LoggerFactory.getLogger(DataFrame.class);
 
 	protected DataFrame(DataFrameContext dfcontext) {
-		this.dfcontext = dfcontext;
-		SqlStdOperatorTable sqlStdOperatorTable = SqlStdOperatorTable.instance();
-		List<SqlFunction> sqlFunctions = Functions.getAllSqlFunctions();
-		sqlFunctions.stream().forEach(sqlFunction -> sqlStdOperatorTable.register(sqlFunction));
+		this.dfcontext = dfcontext;		
 		SchemaPlus schemaplus = Frameworks.createRootSchema(true);
 		SimpleSchema.Builder schemabuilder = SimpleSchema.newBuilder(dfcontext.db);
-		schemabuilder.addTable(
-				getSimpleTable(dfcontext.tablename, dfcontext.columns, dfcontext.types.toArray(new SqlTypeName[0])));
+		int tablecount = dfcontext.folder.size();
+		int index = 0;
+		while(index<tablecount) {
+			schemabuilder.addTable(
+					getSimpleTable(dfcontext.tablename.get(index), dfcontext.columns.get(index), dfcontext.types.get(index).toArray(new SqlTypeName[0])));
+			index++;
+		}		
 		simpleschema = schemabuilder.build();
 		// Add your custom schema to the root schema
 		schemaplus.add(dfcontext.db, simpleschema);
 		builder = RelBuilder.create(Frameworks.newConfigBuilder().defaultSchema(schemaplus).build());
-		builder = builder.scan(dfcontext.db, dfcontext.tablename);
-		columns = Arrays.asList(dfcontext.columns);
 	}
 
 	/**
@@ -82,6 +79,16 @@ public class DataFrame {
 	}
 
 	/**
+	 * The function scans the table
+	 * @param tablename
+	 * @return dataframe object
+	 */
+	public DataFrame scantable(String tablename) {
+		builder.scan(dfcontext.db, tablename);
+		return this;
+	}
+	
+	/**
 	 * The function builds only the required columns
 	 * @param requiredcolumns
 	 * @return dataframe object
@@ -98,6 +105,72 @@ public class DataFrame {
 			columnsbuilder.add(builder.field(addedColumns.indexOf(column)));
 		}
 		builder = builder.project(columnsbuilder);
+		return this;
+	}
+	
+	/**
+	 * Inner Join
+	 * @param right
+	 * @param joincondition
+	 * @return dataframe object
+	 */
+	public DataFrame innerjoin(DataFrame right, Predicate<?> joincondition) {
+		RelBuilder joinbuilder = RelBuilder.create(Frameworks.newConfigBuilder().build());
+		joinbuilder.push(builder.build());
+		joinbuilder.push(right.builder.build());
+		int tablecount = right.dfcontext.folder.size();
+		int index = 0;
+		while(index<tablecount) {
+			dfcontext.addTable(right.dfcontext.folder.get(index), right.dfcontext.columns.get(index), right.dfcontext.tablename.get(index),right.dfcontext.types.get(index));
+			index++;
+		}
+		PredicateToRexNodeConverter predtorex = new PredicateToRexNodeConverter(joinbuilder, true);
+		RexNode joinconditionnode = predtorex.convertPredicateToRexNode(joincondition);		
+		builder = joinbuilder.join(JoinRelType.INNER, joinconditionnode);
+		return this;
+	}
+	
+	/**
+	 * Left Join
+	 * @param right
+	 * @param joincondition
+	 * @return dataframe object
+	 */
+	public DataFrame leftjoin(DataFrame right, Predicate<?> joincondition) {
+		RelBuilder joinbuilder = RelBuilder.create(Frameworks.newConfigBuilder().build());
+		joinbuilder.push(builder.build());
+		joinbuilder.push(right.builder.build());
+		int tablecount = right.dfcontext.folder.size();
+		int index = 0;
+		while(index<tablecount) {
+			dfcontext.addTable(right.dfcontext.folder.get(index), right.dfcontext.columns.get(index), right.dfcontext.tablename.get(index),right.dfcontext.types.get(index));
+			index++;
+		}
+		PredicateToRexNodeConverter predtorex = new PredicateToRexNodeConverter(joinbuilder, true);
+		RexNode joinconditionnode = predtorex.convertPredicateToRexNode(joincondition);		
+		builder = joinbuilder.join(JoinRelType.LEFT, joinconditionnode);
+		return this;
+	}
+	
+	/**
+	 * Right Join
+	 * @param right
+	 * @param joincondition
+	 * @return dataframe object
+	 */
+	public DataFrame rightjoin(DataFrame right, Predicate<?> joincondition) {
+		RelBuilder joinbuilder = RelBuilder.create(Frameworks.newConfigBuilder().build());
+		joinbuilder.push(builder.build());
+		joinbuilder.push(right.builder.build());
+		int tablecount = right.dfcontext.folder.size();
+		int index = 0;
+		while(index<tablecount) {
+			dfcontext.addTable(right.dfcontext.folder.get(index), right.dfcontext.columns.get(index), right.dfcontext.tablename.get(index),right.dfcontext.types.get(index));
+			index++;
+		}
+		PredicateToRexNodeConverter predtorex = new PredicateToRexNodeConverter(joinbuilder, true);
+		RexNode joinconditionnode = predtorex.convertPredicateToRexNode(joincondition);		
+		builder = joinbuilder.join(JoinRelType.RIGHT, joinconditionnode);
 		return this;
 	}
 
@@ -170,7 +243,7 @@ public class DataFrame {
 	 * @return dataframe object
 	 */
 	public DataFrame filter(Predicate filtercondition) {
-		PredicateToRexNodeConverter predtorex = new PredicateToRexNodeConverter(builder);
+		PredicateToRexNodeConverter predtorex = new PredicateToRexNodeConverter(builder, false);
 		builder = builder.filter(predtorex.convertPredicateToRexNode(filtercondition));
 		return this;
 	}
@@ -196,14 +269,20 @@ public class DataFrame {
 		RelNode relnode = builder.build();
 		String sql = convertRelNodeToSqlString(relnode, SqlDialect.DatabaseProduct.H2.getDialect());
 		log.debug("SQL From DataFrame Builder {}", sql);
-		StreamPipelineSql sps = StreamPipelineSqlBuilder.newBuilder()
-				.add(dfcontext.folder, dfcontext.tablename,
-						Arrays.asList(dfcontext.columns), dfcontext.types)
-				.setSql(sql)
+		StreamPipelineSqlBuilder spsb = StreamPipelineSqlBuilder.newBuilder().setSql(sql)
 				.setFileformat(dfcontext.fileformat)
 				.setDb(dfcontext.db)
-				.setPipelineConfig(dfcontext.pipelineconfig)
-				.build();
+				.setPipelineConfig(dfcontext.pipelineconfig);
+		int index = 0;
+		int tablecount = dfcontext.folder.size();
+		while(index<tablecount) {
+			spsb.add(dfcontext.folder.get(index), dfcontext.tablename.get(index),
+					Arrays.asList(dfcontext.columns.get(index)), dfcontext.types.get(index));
+			index++;
+		}
+		
+				
+		StreamPipelineSql sps = spsb.build();
 
 		return sps.collect(true, null);
 	}

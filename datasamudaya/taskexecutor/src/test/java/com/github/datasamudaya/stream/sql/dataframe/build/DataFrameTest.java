@@ -39,9 +39,10 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameAllColumns() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -53,12 +54,13 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameAllColumnsWithFilter() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
-		List<List<Object[]>> output = (List<List<Object[]>>) df.filter(new OrPredicate(
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		List<List<Object[]>> output = (List<List<Object[]>>) df
+				.filter(new OrPredicate(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
+						new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
 				.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -71,12 +73,13 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameAllColumnsWithFilterOrSelect() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
-		List<List<Object[]>> output = (List<List<Object[]>>) df.filter(new OrPredicate(
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		List<List<Object[]>> output = (List<List<Object[]>>) df
+				.filter(new OrPredicate(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
+						new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
 				.select("DayofMonth", "MonthOfYear", "AirlineYear").execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -89,9 +92,10 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameRequiredColumns() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("AirlineYear", "MonthOfYear");
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
@@ -104,11 +108,12 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameRequiredColumnsWithFilterWithEqualsCondition() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
-		df.select("AirlineYear", "MonthOfYear").filter(
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)));
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("AirlineYear", "MonthOfYear")
+				.filter(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -121,11 +126,12 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameRequiredColumnsWithFilterWithGreaterThanCondition() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
-		df.select("AirlineYear", "MonthOfYear").filter(new NumericExpressionPredicate(NumericOperator.GREATER_THAN,
-				new Column("MonthOfYear"), new Literal(10)));
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("AirlineYear", "MonthOfYear")
+				.filter(new Expression(Operator.GREATER_THAN, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -138,11 +144,12 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameRequiredColumnsWithFilterWithGreaterThanEqualsCondition() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
-		df.select("AirlineYear", "MonthOfYear").filter(new NumericExpressionPredicate(
-				NumericOperator.GREATER_THAN_EQUALS, new Column("MonthOfYear"), new Literal(10)));
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("AirlineYear", "MonthOfYear")
+				.filter(new Expression(Operator.GREATER_THAN_EQUALS, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -155,11 +162,12 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameRequiredColumnsWithFilterWithLessThanCondition() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
-		df.select("AirlineYear", "MonthOfYear").filter(
-				new NumericExpressionPredicate(NumericOperator.LESS_THAN, new Column("MonthOfYear"), new Literal(10)));
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("AirlineYear", "MonthOfYear")
+				.filter(new Expression(Operator.LESS_THAN, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -172,11 +180,12 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameRequiredColumnsWithFilterWithLessThanEqualsCondition() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
-		df.select("AirlineYear", "MonthOfYear").filter(new NumericExpressionPredicate(NumericOperator.LESS_THAN_EQUALS,
-				new Column("MonthOfYear"), new Literal(10)));
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("AirlineYear", "MonthOfYear")
+				.filter(new Expression(Operator.LESS_THAN_EQUALS, new Column("MonthOfYear"), new Literal(10)));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -189,15 +198,13 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameRequiredColumnsWithFilterAndExpression() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("AirlineYear", "MonthOfYear")
-				.filter(new AndPredicate(
-						new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"),
-								new Literal(10)),
-						new NumericExpressionPredicate(NumericOperator.LESS_THAN_EQUALS, new Column("MonthOfYear"),
-								new Literal(11))));
+				.filter(new AndPredicate(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
+						new Expression(Operator.LESS_THAN_EQUALS, new Column("MonthOfYear"), new Literal(11))));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -210,12 +217,13 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameRequiredColumnsWithFilterOrExpression() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
-		df.select("AirlineYear", "MonthOfYear").filter(new OrPredicate(
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))));
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("AirlineYear", "MonthOfYear")
+				.filter(new OrPredicate(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
+						new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(11))));
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -228,14 +236,16 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameAggregateFunction() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
-		df.select("AirlineYear", "MonthOfYear", "ArrDelay").filter(new OrPredicate(
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
+		builder.sum("sumdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdelay", new Object[] { new Column("ArrDelay") }).count("cnt");
+		df.select("AirlineYear", "MonthOfYear", "ArrDelay")
+				.filter(new OrPredicate(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
+						new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
 				.aggregate(builder, "AirlineYear", "MonthOfYear").select(0, 1, 2, 3, 4);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
@@ -249,14 +259,16 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameAggregateFunctionAliasOrColumnInSelect() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
-		df.select("AirlineYear", "MonthOfYear", "ArrDelay").filter(new OrPredicate(
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
+		builder.sum("sumdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdelay", new Object[] { new Column("ArrDelay") }).count("cnt");
+		df.select("AirlineYear", "MonthOfYear", "ArrDelay")
+				.filter(new OrPredicate(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
+						new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
 				.aggregate(builder, "AirlineYear", "MonthOfYear").select("avgdelay", "sumdelay", "cnt");
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
@@ -269,14 +281,16 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameAggregateFunctionSort() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
-		df.select("AirlineYear", "MonthOfYear", "DayofMonth", "ArrDelay").filter(new OrPredicate(
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
+		builder.sum("sumdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdelay", new Object[] { new Column("ArrDelay") }).count("cnt");
+		df.select("AirlineYear", "MonthOfYear", "DayofMonth", "ArrDelay")
+				.filter(new OrPredicate(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
+						new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
 				.aggregate(builder, "AirlineYear", "MonthOfYear", "DayofMonth")
 				.sortBy(new Tuple2<String, String>("AirlineYear", "ASC"),
 						new Tuple2<String, String>("DayofMonth", "DESC"),
@@ -293,14 +307,16 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameAggregateFunctionSortOrdinal() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
-		df.select("AirlineYear", "MonthOfYear", "DayofMonth", "ArrDelay").filter(new OrPredicate(
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
+		builder.sum("sumdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdelay", new Object[] { new Column("ArrDelay") }).count("cnt");
+		df.select("AirlineYear", "MonthOfYear", "DayofMonth", "ArrDelay")
+				.filter(new OrPredicate(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
+						new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
 				.aggregate(builder, "AirlineYear", "MonthOfYear", "DayofMonth")
 				.sortByOrdinal(new Tuple2<Integer, String>(0, "ASC"), new Tuple2<Integer, String>(1, "DESC"),
 						new Tuple2<Integer, String>(5, "ASC"));
@@ -316,14 +332,16 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameAggregateFunctionAndNonAggregateLoge() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
-		builder.sum("sumdelay", new Object[]{new Column("ArrDelay")}).avg("avgdelay", new Object[]{new Column("ArrDelay")}).count("cnt");
-		df.select("AirlineYear", "MonthOfYear", "ArrDelay").filter(new OrPredicate(
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
-				new NumericExpressionPredicate(NumericOperator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
+		builder.sum("sumdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdelay", new Object[] { new Column("ArrDelay") }).count("cnt");
+		df.select("AirlineYear", "MonthOfYear", "ArrDelay")
+				.filter(new OrPredicate(new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(10)),
+						new Expression(Operator.EQUALS, new Column("MonthOfYear"), new Literal(11))))
 				.aggregate(builder, "AirlineYear", "MonthOfYear").select("avgdelay", "sumdelay", "cnt");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "avgdelay" })
 				.addField(null, new String[] { "sumdelay" }).addField(null, new String[] { "cnt" })
@@ -341,9 +359,10 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 
 	@Test
 	public void testDataFrameNonAggregateLength() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
 				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
@@ -360,19 +379,21 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameAggregateAbsNonAggSum() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "ArrDelay", "DepDelay");
-		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
 				.addFunction("abs", "absarrdelay", new Object[] { new Column("ArrDelay") })
 				.addFunction("abs", "absdepdelay", new Object[] { new Column("DepDelay") });
-		df.selectWithFunc(nonaggfuncbuilder).aggregate(AggregateFunctionBuilder.builder()
-				.sum("sumarrdelay", new Object[]{new Column("absarrdelay")})
-				.sum("sumdepdelay", new Object[]{new Column("absdepdelay")}), "UniqueCarrier");
+		df.selectWithFunc(nonaggfuncbuilder)
+				.aggregate(AggregateFunctionBuilder.builder()
+						.sum("sumarrdelay", new Object[] { new Column("absarrdelay") })
+						.sum("sumdepdelay", new Object[] { new Column("absdepdelay") }), "UniqueCarrier");
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -383,19 +404,21 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateRoundAggSum() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "ArrDelay", "DepDelay");
-		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
 				.addFunction("round", "roundarrdelay", new Object[] { new Column("ArrDelay") })
 				.addFunction("round", "rounddepdelay", new Object[] { new Column("DepDelay") });
-		df.selectWithFunc(nonaggfuncbuilder).aggregate(AggregateFunctionBuilder.builder()
-				.sum("sumarrdelay", new Object[]{new Column("roundarrdelay")})
-				.sum("sumdepdelay", new Object[]{new Column("rounddepdelay")}), "UniqueCarrier");
+		df.selectWithFunc(nonaggfuncbuilder)
+				.aggregate(AggregateFunctionBuilder.builder()
+						.sum("sumarrdelay", new Object[] { new Column("roundarrdelay") })
+						.sum("sumdepdelay", new Object[] { new Column("rounddepdelay") }), "UniqueCarrier");
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -406,20 +429,20 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateCeilAggAvg() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "ArrDelay", "DepDelay");
-		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
 				.addFunction("ceil", "ceilavgarrdelay", new Object[] { new Column("avgarrdelay") })
 				.addFunction("ceil", "ceilavgdepdelay", new Object[] { new Column("avgdepdelay") });
-		df.aggregate(AggregateFunctionBuilder.builder()
-				.avg("avgarrdelay", new Object[]{new Column("ArrDelay")})
-				.avg("avgdepdelay", new Object[]{new Column("DepDelay")}), "UniqueCarrier")
-		.selectWithFunc(nonaggfuncbuilder);
+		df.aggregate(AggregateFunctionBuilder.builder().avg("avgarrdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdepdelay", new Object[] { new Column("DepDelay") }), "UniqueCarrier")
+				.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -430,20 +453,20 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateFloorAggAvg() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "ArrDelay", "DepDelay");
-		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
 				.addFunction("floor", "flooravgarrdelay", new Object[] { new Column("avgarrdelay") })
 				.addFunction("floor", "flooravgdepdelay", new Object[] { new Column("avgdepdelay") });
-		df.aggregate(AggregateFunctionBuilder.builder()
-				.avg("avgarrdelay", new Object[]{new Column("ArrDelay")})
-				.avg("avgdepdelay", new Object[]{new Column("DepDelay")}), "UniqueCarrier")
-		.selectWithFunc(nonaggfuncbuilder);
+		df.aggregate(AggregateFunctionBuilder.builder().avg("avgarrdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdepdelay", new Object[] { new Column("DepDelay") }), "UniqueCarrier")
+				.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -454,21 +477,20 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
-	
+
 	@Test
 	public void testDataFrameNonAggregatePowAggAvg() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "ArrDelay", "DepDelay");
-		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
 				.addFunction("pow", "powavgarrdelay", new Object[] { new Column("avgarrdelay"), new Literal(2) })
 				.addFunction("pow", "powavgdepdelay", new Object[] { new Column("avgdepdelay"), new Literal(2) });
-		df.aggregate(AggregateFunctionBuilder.builder()
-				.avg("avgarrdelay", new Object[]{new Column("ArrDelay")})
-				.avg("avgdepdelay", new Object[]{new Column("DepDelay")}), "UniqueCarrier")
-		.selectWithFunc(nonaggfuncbuilder);
+		df.aggregate(AggregateFunctionBuilder.builder().avg("avgarrdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdepdelay", new Object[] { new Column("DepDelay") }), "UniqueCarrier")
+				.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -479,23 +501,23 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregatePowSqrtAggAvg() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "ArrDelay", "DepDelay");
-		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
 				.addFunction("pow", "powavgarrdelay", new Object[] { new Column("avgarrdelay"), new Literal(2) })
 				.addFunction("pow", "powavgdepdelay", new Object[] { new Column("avgdepdelay"), new Literal(2) });
-		df.aggregate(AggregateFunctionBuilder.builder()
-				.avg("avgarrdelay", new Object[]{new Column("ArrDelay")})
-				.avg("avgdepdelay", new Object[]{new Column("DepDelay")}), "UniqueCarrier")
-		.selectWithFunc(nonaggfuncbuilder);
-		nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
-				.addFunction("sqrt", "sqrtpowavgarrdelay", new Object[] { new Column("powavgarrdelay")})
-				.addFunction("sqrt", "sqrtpowavgdepdelay", new Object[] { new Column("powavgdepdelay")});
+		df.aggregate(AggregateFunctionBuilder.builder().avg("avgarrdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdepdelay", new Object[] { new Column("DepDelay") }), "UniqueCarrier")
+				.selectWithFunc(nonaggfuncbuilder);
+		nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addFunction("sqrt", "sqrtpowavgarrdelay", new Object[] { new Column("powavgarrdelay") })
+				.addFunction("sqrt", "sqrtpowavgdepdelay", new Object[] { new Column("powavgdepdelay") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
@@ -507,20 +529,20 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateExpAggAvg() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "ArrDelay", "DepDelay");
-		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
-				.addFunction("exp", "expavgarrdelay", new Object[] { new Column("avgarrdelay")})
-				.addFunction("exp", "expavgdepdelay", new Object[] { new Column("avgdepdelay")});
-		df.aggregate(AggregateFunctionBuilder.builder()
-				.avg("avgarrdelay", new Object[]{new Column("ArrDelay")})
-				.avg("avgdepdelay", new Object[]{new Column("DepDelay")}), "UniqueCarrier")
-		.selectWithFunc(nonaggfuncbuilder);
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addFunction("exp", "expavgarrdelay", new Object[] { new Column("avgarrdelay") })
+				.addFunction("exp", "expavgdepdelay", new Object[] { new Column("avgdepdelay") });
+		df.aggregate(AggregateFunctionBuilder.builder().avg("avgarrdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdepdelay", new Object[] { new Column("DepDelay") }), "UniqueCarrier")
+				.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -531,21 +553,20 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
-	
+
 	@Test
 	public void testDataFrameNonAggregateLnAggAvg() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "ArrDelay", "DepDelay");
-		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })				
-				.addFunction("loge", "lnavgarrdelay", new Object[] { new Column("avgarrdelay")})
-				.addFunction("loge", "lnavgdepdelay", new Object[] { new Column("avgdepdelay")});
-		df.aggregate(AggregateFunctionBuilder.builder()
-				.avg("avgarrdelay", new Object[]{new Column("ArrDelay")})
-				.avg("avgdepdelay", new Object[]{new Column("DepDelay")}), "UniqueCarrier")
-		.selectWithFunc(nonaggfuncbuilder);
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addFunction("loge", "lnavgarrdelay", new Object[] { new Column("avgarrdelay") })
+				.addFunction("loge", "lnavgdepdelay", new Object[] { new Column("avgdepdelay") });
+		df.aggregate(AggregateFunctionBuilder.builder().avg("avgarrdelay", new Object[] { new Column("ArrDelay") })
+				.avg("avgdepdelay", new Object[] { new Column("DepDelay") }), "UniqueCarrier")
+				.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -556,70 +577,69 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateLowercase() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("lowercase", "lcorigin", new Object[] { new Column("Origin")})
-				.addFunction("lowercase", "lcdest", new Object[] { new Column("Dest")});		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("lowercase", "lcorigin", new Object[] { new Column("Origin") })
+				.addFunction("lowercase", "lcdest", new Object[] { new Column("Dest") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
 				log.info(Arrays.toString(values));
-				assertEquals(((String)values[1]).toLowerCase(), values[3]);
-				assertEquals(((String)values[2]).toLowerCase(), values[4]);
+				assertEquals(((String) values[1]).toLowerCase(), values[3]);
+				assertEquals(((String) values[2]).toLowerCase(), values[4]);
 				assertEquals(5, values.length);
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateBase64encode() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("base64encode", "b64encorigin", new Object[] { new Column("Origin")})
-				.addFunction("base64encode", "b64encdest", new Object[] { new Column("Dest")});		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("base64encode", "b64encorigin", new Object[] { new Column("Origin") })
+				.addFunction("base64encode", "b64encdest", new Object[] { new Column("Dest") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
 				log.info(Arrays.toString(values));
-				assertEquals(Base64.getEncoder().encodeToString(((String)values[1]).getBytes()), values[3]);
-				assertEquals(Base64.getEncoder().encodeToString(((String)values[2]).getBytes()), values[4]);
+				assertEquals(Base64.getEncoder().encodeToString(((String) values[1]).getBytes()), values[3]);
+				assertEquals(Base64.getEncoder().encodeToString(((String) values[2]).getBytes()), values[4]);
 				assertEquals(5, values.length);
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateBase64decode() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("base64encode", "b64encorigin", new Object[] { new Column("Origin")})
-				.addFunction("base64encode", "b64encdest", new Object[] { new Column("Dest")});		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("base64encode", "b64encorigin", new Object[] { new Column("Origin") })
+				.addFunction("base64encode", "b64encdest", new Object[] { new Column("Dest") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("base64decode", "b64decb64encorigin", new Object[] { new Column("b64encorigin")})
-				.addFunction("base64decode", "b64decb64encdest", new Object[] { new Column("b64encdest")});
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("base64decode", "b64decb64encorigin", new Object[] { new Column("b64encorigin") })
+				.addFunction("base64decode", "b64decb64encdest", new Object[] { new Column("b64encdest") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
@@ -631,25 +651,24 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateNormalizespaces() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("concat", "concatorigin", new Object[] { new Column("Origin"), new Literal("     ")})
-				.addFunction("concat", "concatdest", new Object[] { new Column("Dest"), new Literal("     ")});		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("concat", "concatorigin", new Object[] { new Column("Origin"), new Literal("     ") })
+				.addFunction("concat", "concatdest", new Object[] { new Column("Dest"), new Literal("     ") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("normalizespaces", "normspacesorigin", new Object[] { new Column("concatorigin")})
-				.addFunction("normalizespaces", "normspacesdest", new Object[] { new Column("concatdest")});		
-		df.selectWithFunc(nonaggfuncbuilder);		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("normalizespaces", "normspacesorigin", new Object[] { new Column("concatorigin") })
+				.addFunction("normalizespaces", "normspacesdest", new Object[] { new Column("concatdest") });
+		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -660,18 +679,18 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateCurrentIsoDate() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("currentisodate", "isodate", new Object[] {});		
-		df.selectWithFunc(nonaggfuncbuilder);		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("currentisodate", "isodate", new Object[] {});
+		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
@@ -683,47 +702,46 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateConcat() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("concat", "concatorigin", new Object[] { new Column("Origin"), new Literal("ABC")})
-				.addFunction("concat", "concatdest", new Object[] { new Column("Dest"), new Literal("XYZ")});		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("concat", "concatorigin", new Object[] { new Column("Origin"), new Literal("ABC") })
+				.addFunction("concat", "concatdest", new Object[] { new Column("Dest"), new Literal("XYZ") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
 				log.info(Arrays.toString(values));
-				assertEquals(values[1]+"ABC", values[3]);
-				assertEquals(values[2]+"XYZ", values[4]);
+				assertEquals(values[1] + "ABC", values[3]);
+				assertEquals(values[2] + "XYZ", values[4]);
 				assertEquals(5, values.length);
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateTrimstring() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("concat", "concatorigin", new Object[] { new Column("Origin"), new Literal("   ")})
-				.addFunction("concat", "concatdest", new Object[] { new Column("Dest"), new Literal("   ")});		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("concat", "concatorigin", new Object[] { new Column("Origin"), new Literal("   ") })
+				.addFunction("concat", "concatdest", new Object[] { new Column("Dest"), new Literal("   ") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("trimstr", "trimstrorigin", new Object[] { new Column("concatorigin")})
-				.addFunction("trimstr", "trimstrdest", new Object[] { new Column("concatdest")});		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("trimstr", "trimstrorigin", new Object[] { new Column("concatorigin") })
+				.addFunction("trimstr", "trimstrdest", new Object[] { new Column("concatdest") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
@@ -735,27 +753,98 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testDataFrameNonAggregateUppercase() throws Exception {
-		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig).setTablename("airline").setDb("db")
-				.setColumns(airlineheader.toArray(new String[0])).setFileFormat("csv").setHdfs(hdfsfilepath)
-				.setFolder(airlinesamplesql).setTypes(airlineheadertypes).build();
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
 		df.select("UniqueCarrier", "Origin", "Dest");
 		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
-				.addField(null, new String[] { "Origin"})
-				.addField(null, new String[] { "Dest" })
-				.addFunction("uppercase", "ucorigin", new Object[] { new Column("Origin")})
-				.addFunction("uppercase", "ucdest", new Object[] { new Column("Dest")});		
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" })
+				.addFunction("uppercase", "ucorigin", new Object[] { new Column("Origin") })
+				.addFunction("uppercase", "ucdest", new Object[] { new Column("Dest") });
 		df.selectWithFunc(nonaggfuncbuilder);
 		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
 		for (List<Object[]> valuel : output) {
 			for (Object[] values : valuel) {
 				log.info(Arrays.toString(values));
-				assertEquals(((String)values[1]).toUpperCase(), values[3]);
-				assertEquals(((String)values[2]).toUpperCase(), values[4]);
+				assertEquals(((String) values[1]).toUpperCase(), values[3]);
+				assertEquals(((String) values[2]).toUpperCase(), values[4]);
 				assertEquals(5, values.length);
 			}
 		}
 	}
+
+	@Test
+	public void testDataFrameJoin() throws Exception {
+		DataFrame dfleft = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes).setDb("db")
+				.setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		DataFrame dfright = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(carriers, carrierheader.toArray(new String[0]), "carriers", carrierheadertypes).setDb("db")
+				.setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		dfleft.scantable("airlines");
+		dfleft.select("UniqueCarrier", "Origin", "Dest");
+		dfright.scantable("carriers");
+		dfright.select("Code", "Description");
+		dfleft.innerjoin(dfright, new Expression(Operator.EQUALS, new Column("UniqueCarrier"), new Column("Code")));
+		dfleft.select("UniqueCarrier", "Origin", "Dest", "Description");
+		List<List<Object[]>> output = (List<List<Object[]>>) dfleft.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	
+	@Test
+	public void testDataFrameLeftJoin() throws Exception {
+		DataFrame dfleft = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes).setDb("db")
+				.setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		DataFrame dfright = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(carriers, carrierheader.toArray(new String[0]), "carriers", carrierheadertypes).setDb("db")
+				.setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		dfleft.scantable("airlines");
+		dfleft.select("UniqueCarrier", "Origin", "Dest");
+		dfright.scantable("carriers");
+		dfright.select("Code", "Description");
+		dfleft.leftjoin(dfright, new Expression(Operator.EQUALS, new Column("UniqueCarrier"), new Column("Code")));
+		dfleft.select("UniqueCarrier", "Origin", "Dest", "Description");
+		List<List<Object[]>> output = (List<List<Object[]>>) dfleft.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameRightJoin() throws Exception {
+		DataFrame dfleft = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes).setDb("db")
+				.setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		DataFrame dfright = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(carriers, carrierheader.toArray(new String[0]), "carriers", carrierheadertypes).setDb("db")
+				.setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		dfleft.scantable("airlines");
+		dfleft.select("UniqueCarrier", "Origin", "Dest");
+		dfright.scantable("carriers");
+		dfright.select("Code", "Description");
+		dfleft.rightjoin(dfright, new Expression(Operator.EQUALS, new Column("UniqueCarrier"), new Column("Code")));
+		dfleft.select("UniqueCarrier", "Origin", "Dest", "Description");
+		List<List<Object[]>> output = (List<List<Object[]>>) dfleft.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
 }

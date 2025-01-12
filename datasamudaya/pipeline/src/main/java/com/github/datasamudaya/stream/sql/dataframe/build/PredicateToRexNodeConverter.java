@@ -14,9 +14,10 @@ import org.apache.calcite.tools.RelBuilder;
 public class PredicateToRexNodeConverter {
 
 	private final RelBuilder relBuilder;
-
-	public PredicateToRexNodeConverter(RelBuilder relBuilder) {
+	private boolean isjoin = false;
+	public PredicateToRexNodeConverter(RelBuilder relBuilder, boolean isjoin) {
 		this.relBuilder = relBuilder;
+		this.isjoin = isjoin;
 	}
 
 	public RexNode convertPredicateToRexNode(Predicate predicate) {
@@ -41,10 +42,10 @@ public class PredicateToRexNodeConverter {
 			RexNode leftNode = convertPredicateToRexNodeRecursive(orPredicate.getLeftPredicate());
 			RexNode rightNode = convertPredicateToRexNodeRecursive(orPredicate.getRightPredicate());
 			return relBuilder.call(SqlStdOperatorTable.OR, leftNode, rightNode);
-		} else if (predicate instanceof NumericExpressionPredicate numericPredicate) {
-			RexNode fieldRef = numericPredicate.getLeft() instanceof Column column ? relBuilder.field(column.getName()) : relBuilder.literal(((Literal) numericPredicate.getLeft()).getValue());
-			RexNode literal = numericPredicate.getRight() instanceof Column column ? relBuilder.field(column.getName()) : relBuilder.literal(((Literal) numericPredicate.getRight()).getValue());
-			switch (numericPredicate.getOperator()) {
+		} else if (predicate instanceof Expression expression) {
+			RexNode fieldRef = expression.getLeft() instanceof Column column ? isjoin?relBuilder.field(2, 0, column.getName()) : relBuilder.field(column.getName()) : relBuilder.literal(((Literal) expression.getLeft()).getValue());
+			RexNode literal = expression.getRight() instanceof Column column ? isjoin?relBuilder.field(2, 1, column.getName()) : relBuilder.field(column.getName()) : relBuilder.literal(((Literal) expression.getRight()).getValue());
+			switch (expression.getOperator()) {
 				case EQUALS:
 					return relBuilder.call(SqlStdOperatorTable.EQUALS, fieldRef, literal);
 				case GREATER_THAN:
@@ -57,7 +58,7 @@ public class PredicateToRexNodeConverter {
 					return relBuilder.call(SqlStdOperatorTable.GREATER_THAN_OR_EQUAL, fieldRef, literal);
 				// Add more cases as needed
 				default:
-					throw new IllegalArgumentException("Unsupported operator: " + numericPredicate.getOperator());
+					throw new IllegalArgumentException("Unsupported operator: " + expression.getOperator());
 			}
 		} else {
 			throw new IllegalArgumentException("Unsupported predicate type: " + predicate.getClass().getName());

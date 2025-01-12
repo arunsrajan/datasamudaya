@@ -2,6 +2,7 @@ package com.github.datasamudaya.stream.sql.dataframe.build;
 
 import com.github.datasamudaya.common.PipelineConfig;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -16,11 +17,15 @@ public class DataFrameContext {
 
 	private DataFrameContext(PipelineConfig pipelineconfig) {
 		this.pipelineconfig = pipelineconfig;
+		folder = new ArrayList<>();
+		columns = new ArrayList<>();
+		tablename = new ArrayList<>();
+		types = new ArrayList<>();
 	}
-	protected String folder;
-	protected String[] columns;
-	protected String tablename;
-	protected List<SqlTypeName> types;
+	protected List<String> folder;
+	protected List<String[]> columns;
+	protected List<String> tablename;
+	protected List<List<SqlTypeName>> types;
 	protected String db;
 	protected String fileformat;
 	protected String hdfs;
@@ -29,23 +34,11 @@ public class DataFrameContext {
 		return new DataFrameContext(pipelineconfig);
 	}
 
-	public DataFrameContext setFolder(String folder) {
-		this.folder = folder;
-		return this;
-	}
-
-	public DataFrameContext setColumns(String[] columns) {
-		this.columns = columns;
-		return this;
-	}
-
-	public DataFrameContext setTablename(String tablename) {
-		this.tablename = tablename;
-		return this;
-	}
-
-	public DataFrameContext setTypes(List<SqlTypeName> types) {
-		this.types = types;
+	public DataFrameContext addTable(String folder, String[] columns, String tablename, List<SqlTypeName> types) {
+		this.folder.add(folder);
+		this.columns.add(columns);
+		this.tablename.add(tablename);
+		this.types.add(types);
 		return this;
 	}
 

@@ -1,6 +1,6 @@
 package com.github.datasamudaya.stream.sql.dataframe.build;
 
-public enum NumericOperator {
+public enum Operator {
 	EQUALS,
 	GREATER_THAN,
 	LESS_THAN,
