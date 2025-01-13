@@ -847,4 +847,78 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 		}
 	}
 	
+	@Test
+	public void testDataFrameNonAggregateTrimConcatstring() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "Origin", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("trimstr", "trimstrconcatorigin", 
+				new Object[] {nonaggfuncbuilder
+						.getNestedFunction("concat", new Object[] { new Column("Origin"), new Literal("   ") })});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(values[1], values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateLengthConcatstring() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "Origin", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("length", "lengthconcatorigin", 
+				new Object[] {nonaggfuncbuilder
+						.getNestedFunction("concat", new Object[] { new Column("Origin"), new Literal("   ") })});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(6l, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameAggSumNonAggregateLengthConcatstring() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "Origin", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("length", "lengthconcatorigin", 
+				new Object[] {nonaggfuncbuilder
+						.getNestedFunction("concat", new Object[] { new Column("Origin"), new Literal("   ") })});
+		df.selectWithFunc(nonaggfuncbuilder);
+		AggregateFunctionBuilder builder = AggregateFunctionBuilder.builder();
+		builder.sum("sumlength", new Object[] { new Column("lengthconcatorigin") });
+		df.aggregate(builder, "UniqueCarrier");
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(278160l, values[1]);
+				assertEquals(2, values.length);
+			}
+		}
+	}
 }

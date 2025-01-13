@@ -3,8 +3,11 @@ package com.github.datasamudaya.stream.sql.dataframe.build;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.tools.RelBuilder.AggCall;
+
+import com.github.datasamudaya.common.utils.sql.Functions;
 
 /**
  * The class builds the aggregate function
@@ -61,13 +64,14 @@ public class AggregateFunctionBuilder {
 	 */
 	protected List<AggCall> build(RelBuilder builder) {
 		List<AggCall> functions = new ArrayList<>();
+		List<SqlFunction> sqlfunctions = Functions.getAllSqlFunctions();
 		for (Function function :functioncalls) {
 			switch (function.getName()) {
 				case "sum":
-					functions.add(builder.sum(false, function.getAlias(), FunctionBuilder.getOperands(builder, function.getOperands())[0]));
+					functions.add(builder.sum(false, function.getAlias(), FunctionBuilder.getOperands(builder, function.getOperands(), sqlfunctions)[0]));
 					break;
 				case "avg":
-					functions.add(builder.avg(false, function.getAlias(),  FunctionBuilder.getOperands(builder, function.getOperands())[0]));
+					functions.add(builder.avg(false, function.getAlias(),  FunctionBuilder.getOperands(builder, function.getOperands(), sqlfunctions)[0]));
 					break;
 				case "count":
 					functions.add(builder.countStar(function.getAlias()));

@@ -255,7 +255,7 @@ public class DataFrame {
 	 * @return dataframe object
 	 */
 	public DataFrame aggregate(AggregateFunctionBuilder aggfunctionbuilder, String... groupby) {
-		List<AggCall> aggfunctions = aggfunctionbuilder.build(builder);
+		List<AggCall> aggfunctions = aggfunctionbuilder.build(builder);		
 		builder.aggregate(builder.groupKey(groupby), aggfunctions.toArray(new AggCall[0]));
 		return this;
 	}
