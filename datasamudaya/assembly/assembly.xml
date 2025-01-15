@@ -121,6 +121,12 @@
 			<outputDirectory>keystore</outputDirectory>
 		</fileSet>
 		<fileSet>
+			<directory>${project.basedir}/target/lib</directory>
+			<outputDirectory>yarnlib</outputDirectory>
+			<fileMode>0777</fileMode>
+			<directoryMode>0777</directoryMode>
+		</fileSet>
+		<fileSet>
 			<directory>${project.parent.basedir}/lib</directory>
 			<outputDirectory>jars</outputDirectory>
 			<fileMode>0777</fileMode>
