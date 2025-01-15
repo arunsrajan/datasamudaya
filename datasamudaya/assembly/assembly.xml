@@ -1,15 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3 http://maven.apache.org/xsd/assembly-1.1.3.xsd">
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd">
 	<id>jdk21</id>
 	<formats>
 		<format>tar.gz</format>
 	</formats>
 	<includeBaseDirectory>false</includeBaseDirectory>
+	<moduleSets>
+		<moduleSet>
+			<useAllReactorProjects>true</useAllReactorProjects>
+			<includes>
+				<include>com.github.datasamudaya:common</include>
+				<include>com.github.datasamudaya:pipeline</include>
+				<include>com.github.datasamudaya:taskexecutor</include>
+				<include>com.github.datasamudaya:taskscheduler</include>
+				<include>com.github.datasamudaya:dsagent</include>
+			</includes>
+			<binaries>
+				<outputDirectory>jars</outputDirectory>
+				<unpack>false</unpack>
+			</binaries>
+		</moduleSet>
+	</moduleSets>
 	<dependencySets>
 		<dependencySet>
-			<useProjectArtifact>true</useProjectArtifact>
+			<useProjectArtifact>false</useProjectArtifact>
 			<outputDirectory>jars</outputDirectory>
 			<useTransitiveDependencies>true</useTransitiveDependencies>
 			<unpack>false</unpack>
@@ -21,251 +37,118 @@
 				<exclude>org.springframework.boot:*</exclude>
 				<exclude>org.springframework.batch:*</exclude>
 				<exclude>org.springframework.cloud:*</exclude>
-            	<exclude>org.springframework.retry:*</exclude>
-            	<exclude>org.springframework.statemachine:*</exclude>
+				<exclude>org.springframework.retry:*</exclude>
+				<exclude>org.springframework.statemachine:*</exclude>
 			</excludes>
 		</dependencySet>
 		<dependencySet>
 			<useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>ailib</outputDirectory>
-            <useTransitiveDependencies>true</useTransitiveDependencies>
-            <unpack>false</unpack>
-            <includes>
-            	<include>org.springframework.ai:spring-ai-core</include> 
-            	<include>org.springframework.ai:spring-ai-ollama</include>
-            	<include>org.springframework.boot:spring-boot</include>
-            	<include>org.springframework:spring-web</include>
-            	<include>org.springframework:spring-webflux</include>
-            	<include>org.springframework:spring-context</include>
-            	<include>org.springframework:spring-core</include>
-            	<include>org.springframework:spring-beans</include>
-            	<include>org.springframework:spring-web</include>            	
-            	<include>com.fasterxml.jackson.core:jackson-databind</include>
-            	<include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310</include>
-            </includes>
-        </dependencySet>
-        <dependencySet>
+			<outputDirectory>ailib</outputDirectory>
+			<useTransitiveDependencies>true</useTransitiveDependencies>
+			<unpack>false</unpack>
+			<includes>
+				<include>org.springframework.ai:spring-ai-core</include>
+				<include>org.springframework.ai:spring-ai-ollama</include>
+				<include>org.springframework.boot:spring-boot</include>
+				<include>org.springframework:spring-web</include>
+				<include>org.springframework:spring-webflux</include>
+				<include>org.springframework:spring-context</include>
+				<include>org.springframework:spring-core</include>
+				<include>org.springframework:spring-beans</include>
+				<include>org.springframework:spring-web</include>
+				<include>com.fasterxml.jackson.core:jackson-databind</include>
+				<include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310
+				</include>
+			</includes>
+		</dependencySet>
+		<dependencySet>
 			<useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>yarnlib</outputDirectory>
-            <useTransitiveDependencies>true</useTransitiveDependencies>
-            <unpack>false</unpack>
-            <scope>runtime</scope>
-            <includes>
-            	<include>org.springframework.data:spring-yarn-core</include>
-            	<include>org.springframework.data:spring-data-hadoop-core</include>
-            	<include>org.springframework.data:spring-data-hadoop-config</include>
-            	<include>org.springframework.data:spring-yarn-batch</include>
-            	<include>org.springframework.data:spring-yarn-integration</include>
-            	<include>org.springframework:spring-jdbc</include>
-            	<include>org.springframework:spring-messaging</include>
-            	<include>org.springframework.integration:spring-integration-core</include>
-            	<include>org.springframework.integration:spring-integration-ip</include>
-            	<include>org.springframework.batch:spring-batch-core</include>
-            	<include>org.springframework.batch:spring-batch-infrastructure</include>
-            	<include>org.springframework.boot:*</include>
-            	<include>org.springframework.cloud:*</include>
-            	<include>org.springframework.retry:*</include>
-            	<include>org.springframework.statemachine:*</include>
-            	<include>org.springframework:spring-expression</include>
-            </includes>
-        </dependencySet>
+			<outputDirectory>yarnlib</outputDirectory>
+			<useTransitiveDependencies>true</useTransitiveDependencies>
+			<unpack>false</unpack>
+			<scope>runtime</scope>
+			<includes>
+				<include>org.springframework.data:spring-yarn-core</include>
+				<include>org.springframework.data:spring-data-hadoop-core</include>
+				<include>org.springframework.data:spring-data-hadoop-config
+				</include>
+				<include>org.springframework.data:spring-yarn-batch</include>
+				<include>org.springframework.data:spring-yarn-integration</include>
+				<include>org.springframework:spring-jdbc</include>
+				<include>org.springframework:spring-messaging</include>
+				<include>org.springframework.integration:spring-integration-core
+				</include>
+				<include>org.springframework.integration:spring-integration-ip
+				</include>
+				<include>org.springframework.batch:spring-batch-core</include>
+				<include>org.springframework.batch:spring-batch-infrastructure
+				</include>
+				<include>org.springframework.boot:*</include>
+				<include>org.springframework.cloud:*</include>
+				<include>org.springframework.retry:*</include>
+				<include>org.springframework.statemachine:*</include>
+				<include>org.springframework:spring-expression</include>
+			</includes>
+		</dependencySet>
 	</dependencySets>
 	<fileSets>
 		<fileSet>
-			<directory>scripts</directory>
+			<directory>${project.parent.basedir}/scripts</directory>
 			<outputDirectory>bin</outputDirectory>
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 		</fileSet>
 		<fileSet>
-			<directory>target/site/apidocs</directory>
+			<directory>${project.parent.basedir}/target/site/apidocs</directory>
 			<outputDirectory>docs</outputDirectory>
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 		</fileSet>
 		<fileSet>
-			<directory>dockerdatasamudayacontainer</directory>
-			<outputDirectory>devops/docker/dockerdatasamudayacontainer</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-			<includes>
-				<include>Dockerfile</include>
-				<include>datasamudayates.properties</include>
-				<include>container.sh</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>dockerdatasamudayats</directory>
-			<outputDirectory>devops/docker/dockerdatasamudayats</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-			<includes>
-				<include>Dockerfile</include>
-				<include>datasamudayats.properties</include>
-				<include>taskscheduler.sh</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>dockerdatasamudayatss</directory>
-			<outputDirectory>devops/docker/dockerdatasamudayatss</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-			<includes>
-				<include>Dockerfile</include>
-				<include>datasamudayatss.properties</include>
-				<include>taskschedulerstream.sh</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>dockeryarntss</directory>
-			<outputDirectory>devops/docker/dockeryarntss</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>dockerzk</directory>
-			<outputDirectory>devops/docker/dockerzk</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>kubermultipod</directory>
-			<outputDirectory>devops/kubernetes/kubermultipod</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>kubernetesmesos</directory>
-			<outputDirectory>devops/kubernetes/kubernetesmesos</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>kubersinglepod</directory>
-			<outputDirectory>devops/kubernetes/kubersinglepod</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>openshift</directory>
-			<outputDirectory>devops/openshift/openshift</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>config</directory>
+			<directory>${project.parent.basedir}/config</directory>
 			<outputDirectory>config</outputDirectory>
-		</fileSet>		
+		</fileSet>
 		<fileSet>
-			<directory>yarn</directory>
+			<directory>${project.parent.basedir}/yarn</directory>
 			<outputDirectory>yarn</outputDirectory>
 		</fileSet>
 		<fileSet>
-			<directory>jshell</directory>
+			<directory>${project.parent.basedir}/jshell</directory>
 			<outputDirectory>javashellexamples</outputDirectory>
 		</fileSet>
 		<fileSet>
-			<directory>keystore</directory>
+			<directory>${project.parent.basedir}/keystore</directory>
 			<outputDirectory>keystore</outputDirectory>
 		</fileSet>
 		<fileSet>
-			<directory>lib</directory>
+			<directory>${project.parent.basedir}/lib</directory>
 			<outputDirectory>jars</outputDirectory>
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 		</fileSet>
 		<fileSet>
-			<directory>jars</directory>
-			<outputDirectory>jars</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/common/target</directory>
-			<outputDirectory>jars</outputDirectory>
-			<includes>
-                <include>common-*.jar</include>
-            </includes>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/pipeline/target</directory>
-			<outputDirectory>jars</outputDirectory>
-			<includes>
-                <include>pipeline-*.jar</include>
-            </includes>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/taskscheduler/target</directory>
-			<outputDirectory>jars</outputDirectory>
-			<includes>
-                <include>taskscheduler-*.jar</include>
-            </includes>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/taskexecutor/target</directory>
-			<outputDirectory>jars</outputDirectory>
-			<includes>
-                <include>taskexecutor-*.jar</include>
-            </includes>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>ailib</directory>
-			<outputDirectory>ailib</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>yarnlib</directory>
-			<outputDirectory>yarnlib</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>${project.basedir}/target/lib</directory>
-			<outputDirectory>yarnlib</outputDirectory>
-			<fileMode>0777</fileMode>
-			<directoryMode>0777</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>bin</directory>
+			<directory>${project.parent.basedir}/bin</directory>
 			<outputDirectory>bin</outputDirectory>
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 		</fileSet>
 		<fileSet>
-			<directory>sbin</directory>
+			<directory>${project.parent.basedir}/sbin</directory>
 			<outputDirectory>sbin</outputDirectory>
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 		</fileSet>
 		<fileSet>
-			<directory>web</directory>
+			<directory>${project.parent.basedir}/web</directory>
 			<outputDirectory>web</outputDirectory>
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 		</fileSet>
 		<fileSet>
-			<directory>./</directory>
+			<directory>${project.parent.basedir}/</directory>
 			<outputDirectory>./</outputDirectory>
 			<includes>
 				<include>README.md</include>
-			</includes>
-			<fileMode>0755</fileMode>
-			<directoryMode>0755</directoryMode>
-		</fileSet>
-		<fileSet>
-			<directory>${basedir}/pipeline/target</directory>
-			<outputDirectory>mesos</outputDirectory>
-			<includes>
-				<include>%regex[pipeline-.*-shaded.jar]</include>
 			</includes>
 			<fileMode>0755</fileMode>
 			<directoryMode>0755</directoryMode>

@@ -218,7 +218,7 @@ public class FunctionBuilder {
 				case "position":
 					RexNode position = builder.call(SqlStdOperatorTable.POSITION,getOperands(builder, function.getOperands(), sqlFunctions));
 					if(nonNull(function.getAlias())) {
-						initcap = builder.alias(position, function.getAlias());
+						position = builder.alias(position, function.getAlias());
 					}
 					return position;				
 				default:

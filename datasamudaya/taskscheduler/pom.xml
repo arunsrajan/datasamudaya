@@ -13,7 +13,6 @@
 	<name>taskscheduler</name>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<skip.assemblyxml>true</skip.assemblyxml>
 		<maven.dependency.skip>true</maven.dependency.skip>
 		<skipDockerBuild>true</skipDockerBuild>
 		<main.basedir>${basedir}/../</main.basedir>

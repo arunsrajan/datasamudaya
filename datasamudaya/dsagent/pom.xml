@@ -10,7 +10,7 @@
   <packaging>jar</packaging>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<skip.assemblyxml>true</skip.assemblyxml>
+		<assembly.skipAssembly>true</assembly.skipAssembly>
 		<skip.dependency>true</skip.dependency>
 		<skipDockerBuild>false</skipDockerBuild>
 		<main.basedir>${basedir}/../</main.basedir>
