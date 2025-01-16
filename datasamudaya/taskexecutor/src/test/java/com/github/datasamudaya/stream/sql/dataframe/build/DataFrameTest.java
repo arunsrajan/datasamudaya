@@ -9,6 +9,7 @@ import java.util.Base64;
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jooq.lambda.tuple.Tuple2;
@@ -921,4 +922,372 @@ public class DataFrameTest extends StreamPipelineBaseTestCommon {
 			}
 		}
 	}
+	
+	@Test
+	public void testDataFrameNonAggregateOverlay() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "Origin", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("overlay", "overlayorigin", 
+				new Object[] {new Column("Origin"), new Literal("ABC"),new Literal(0), new Literal(3)});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals("ABC", values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateInitcap() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "Origin", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("initcap", "initcaporigin", 
+				new Object[] {new Column("Origin")});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				String origin = (String) values[1];
+				assertEquals((origin.charAt(0)+"").toUpperCase() + origin.substring(1), values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregatePosition() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "Origin", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "Origin" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("position", "position", 
+				new Object[] {new Column("Origin"), new Column("Origin")});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(0, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateAcos() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("acos", "acos", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double acos = Math.acos(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(acos, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateAsin() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("asin", "asin", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double asin = Math.asin(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(asin, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateATan() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("atan", "atan", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double atan = Math.atan(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(atan, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateCos() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("cos", "cos", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double cos = Math.cos(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(cos, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateSin() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("sin", "sin", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double sin = Math.sin(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(sin, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateTan() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("tan", "tan", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double tan = Math.tan(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(tan, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateCosec() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("cosec", "cosec", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double cosec = 1.0/Math.sin(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(cosec, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateSec() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("sec", "sec", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double sec = 1.0/Math.cos(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(sec, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateCot() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("cot", "cot", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double cot = 1.0/Math.tan(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(cot, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateCbrt() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("cbrt", "cbrt", new Object[] {nonaggfuncbuilder.getNestedFunction("abs", new Object[] {new Column("MonthOfYear")})});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double cbrt = Math.cbrt(Double.valueOf(String.valueOf(values[1])));
+				assertEquals(cbrt, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregatePii() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("pii", "pii", new Object[] {});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				double pii = Math.PI;
+				assertEquals(pii, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateDegrees() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("degrees", "degrees", new Object[] {new Column("MonthOfYear")});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(Double.valueOf(String.valueOf(values[1])) / Math.PI * 180, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
+	@Test
+	public void testDataFrameNonAggregateRadians() throws Exception {
+		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
+				.addTable(airlinesamplesql, airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
+				.setDb("db").setFileFormat("csv").setHdfs(hdfsfilepath).build();
+		df.scantable("airlines");
+		df.select("UniqueCarrier", "MonthOfYear", "Dest");
+		FunctionBuilder nonaggfuncbuilder = FunctionBuilder.builder().addField(null, new String[] { "UniqueCarrier" })
+				.addField(null, new String[] { "MonthOfYear" }).addField(null, new String[] { "Dest" });
+		nonaggfuncbuilder
+		.addFunction("radians", "radians", new Object[] {new Column("MonthOfYear")});
+		df.selectWithFunc(nonaggfuncbuilder);
+		List<List<Object[]>> output = (List<List<Object[]>>) df.execute();
+		for (List<Object[]> valuel : output) {
+			for (Object[] values : valuel) {
+				log.info(Arrays.toString(values));
+				assertEquals(Double.valueOf(String.valueOf(values[1])) / 180 * Math.PI, values[3]);
+				assertEquals(4, values.length);
+			}
+		}
+	}
+	
 }
