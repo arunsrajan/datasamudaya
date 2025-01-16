@@ -22,6 +22,7 @@ import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
@@ -89,9 +90,16 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 
 	@Override
 	public Receive<Command> createReceive() {
-		return newReceiveBuilder().onMessage(OutputObject.class, this::processDistributedSort).build();
+		return newReceiveBuilder()
+				.onMessage(OutputObject.class, this::processDistributedSort)
+				.onMessage(EntityRefStop.class, this::behaviorStop)
+				.build();
 	}
 
+	private Behavior<Command> behaviorStop(EntityRefStop stop) {
+		return Behaviors.stopped();
+	}
+	
 	private Behavior<Command> processDistributedSort(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList<?> dsl) {

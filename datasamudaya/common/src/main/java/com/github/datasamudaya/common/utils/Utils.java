@@ -184,6 +184,7 @@ import com.github.datasamudaya.common.DestroyContainer;
 import com.github.datasamudaya.common.DestroyContainers;
 import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.EXECUTORTYPE;
+import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.FieldCollationDirection;
 import com.github.datasamudaya.common.GlobalContainerAllocDealloc;
 import com.github.datasamudaya.common.GlobalContainerLaunchers;
@@ -228,6 +229,8 @@ import com.typesafe.config.ConfigFactory;
 import com.univocity.parsers.csv.CsvWriter;
 
 import akka.actor.typed.ActorSystem;
+import akka.cluster.sharding.typed.javadsl.ClusterSharding;
+import akka.cluster.sharding.typed.javadsl.EntityRef;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import de.javakaffee.kryoserializers.ArraysAsListSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
@@ -3588,11 +3591,24 @@ public class Utils {
 	 * @throws Exception 
 	 */
 	public static boolean cleanupTaskActorFromSystem(ActorSystem actorsystem, Map<String, EntityTypeKey> actors, String jobid) throws Exception {
-		for (EntityTypeKey actor :actors.values()) {
+		for (Entry<String, EntityTypeKey> entity :actors.entrySet()) {
+			String[] hpshardentitykey = extractAkkaActorHostPortShardIdEntityTypeKey(entity.getKey());
+			final EntityRef entityRef = ClusterSharding.get(actorsystem)
+					.entityRefFor(entity.getValue(), hpshardentitykey[2]);
+			entityRef.tell(EntityRefStop.STOP);;
 		}
 		deleteJobDir(jobid);
 		actors.clear();
 		return true;
+	}
+	
+	/**
+	 * The function returns host port of actor system shardid and entityid
+	 * @param entityurl
+	 * @return entity url splitted in array
+	 */
+	public static String[] extractAkkaActorHostPortShardIdEntityTypeKey(String entityurl) {
+		return entityurl.split(DataSamudayaConstants.FORWARD_SLASH);
 	}
 
 	/**

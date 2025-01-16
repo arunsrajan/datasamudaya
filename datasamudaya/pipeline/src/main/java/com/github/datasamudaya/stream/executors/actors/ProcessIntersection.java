@@ -23,6 +23,7 @@ import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
@@ -83,7 +84,14 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 
 	@Override
 	public Receive<Command> createReceive() {
-		return newReceiveBuilder().onMessage(OutputObject.class, this::processIntersection).build();
+		return newReceiveBuilder()
+				.onMessage(OutputObject.class, this::processIntersection)
+				.onMessage(EntityRefStop.class, this::behaviorStop)
+				.build();
+	}
+	
+	private Behavior<Command> behaviorStop(EntityRefStop stop) {
+		return Behaviors.stopped();
 	}
 
 	private Behavior<Command> processIntersection(OutputObject object) throws PipelineException, Exception {

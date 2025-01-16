@@ -25,6 +25,7 @@ import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
@@ -94,9 +95,14 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 	public Receive<Command> createReceive() {
 		return newReceiveBuilder()
 				.onMessage(OutputObject.class, this::processInnerJoin)
+				.onMessage(EntityRefStop.class, this::behaviorStop)
 				.build();
 	}
 
+	private Behavior<Command> behaviorStop(EntityRefStop stop) {
+		return Behaviors.stopped();
+	}
+	
 	private Behavior<Command> processInnerJoin(OutputObject oo) throws Exception {
 		if (oo.isLeft()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {

@@ -25,6 +25,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
@@ -94,7 +95,12 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 	public Receive<Command> createReceive() {
 		return newReceiveBuilder()
 				.onMessage(OutputObject.class, this::processFullOuterJoin)
+				.onMessage(EntityRefStop.class, this::behaviorStop)
 				.build();
+	}
+	
+	private Behavior<Command> behaviorStop(EntityRefStop stop) {
+		return Behaviors.stopped();
 	}
 
 	private Behavior<Command> processFullOuterJoin(OutputObject oo) throws Exception {

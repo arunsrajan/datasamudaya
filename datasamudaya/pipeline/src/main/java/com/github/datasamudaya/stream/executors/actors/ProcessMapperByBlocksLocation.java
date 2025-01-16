@@ -47,6 +47,7 @@ import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.HdfsBlockReader;
 import com.github.datasamudaya.common.JobStage;
@@ -153,9 +154,14 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 	public Receive<Command> createReceive() {
 		return newReceiveBuilder()
 				.onMessage(BlocksLocationRecord.class, this::processBlocksLocationRecord)
+				.onMessage(EntityRefStop.class, this::behaviorStop)
 				.build();
 	}
 
+	private Behavior<Command> behaviorStop(EntityRefStop stop) {
+		return Behaviors.stopped();
+	}
+	
 	private Behavior<Command> processBlocksLocationRecord(BlocksLocationRecord blr) {
 		BlocksLocation blockslocation = blr.bl;
 		logger.debug("processing {}" + blr.bl);

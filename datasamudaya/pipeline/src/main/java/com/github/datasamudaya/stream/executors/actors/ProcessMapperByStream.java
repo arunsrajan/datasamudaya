@@ -32,6 +32,7 @@ import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
+import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
@@ -133,9 +134,16 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 
 	@Override
 	public Receive<Command> createReceive() {
-		return newReceiveBuilder().onMessage(OutputObject.class, this::processMapperByStream).build();
+		return newReceiveBuilder()
+				.onMessage(OutputObject.class, this::processMapperByStream)
+				.onMessage(EntityRefStop.class, this::behaviorStop)
+				.build();
 	}
 
+	private Behavior<Command> behaviorStop(EntityRefStop stop) {
+		return Behaviors.stopped();
+	}
+	
 	private Behavior<Command> processMapperByStream(OutputObject object) throws PipelineException, Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
