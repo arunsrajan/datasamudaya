@@ -317,12 +317,6 @@ public class FunctionBuilder {
 						cast = builder.alias(cast, function.getAlias());
 					}
 					return cast;
-				case "group_concat":
-					RexNode groupconcat = builder.call(sqlFunctions.get(17),getOperands(builder, function.getOperands(), sqlFunctions));
-					if(nonNull(function.getAlias())) {
-						groupconcat = builder.alias(groupconcat, function.getAlias());
-					}
-					return groupconcat;
 				case "ascii":
 					RexNode ascii = builder.call(SqlStdOperatorTable.ASCII,getOperands(builder, function.getOperands(), sqlFunctions));
 					if(nonNull(function.getAlias())) {
