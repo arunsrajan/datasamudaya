@@ -3696,6 +3696,12 @@ public class SQLUtils {
 					str1 = (String) evaluateRexNode(rexnode1, values);
 					str2 = (String) evaluateRexNode(rexnode2, values);
 					return StringUtils.lastIndexOf(str1, str2);
+				case "lastindexofany":
+					rexnode1 = call.getOperands().get(0);
+					rexnode2 = call.getOperands().get(1);
+					str1 = (String) evaluateRexNode(rexnode1, values);
+					str2 = (String) evaluateRexNode(rexnode2, values);
+					return StringUtils.lastIndexOfAny(str1, str2);
 				case "lastindexofstartpos":
 					rexnode1 = call.getOperands().get(0);
 					rexnode2 = call.getOperands().get(1);
