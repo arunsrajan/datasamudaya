@@ -45,6 +45,7 @@ import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.ServerUtils;
 import com.github.datasamudaya.common.StreamDataCruncher;
 import com.github.datasamudaya.common.SummaryWebServlet;
+import com.github.datasamudaya.common.TaskExecutorDestroyServlet;
 import com.github.datasamudaya.common.TaskSchedulerWebServlet;
 import com.github.datasamudaya.common.WebResourcesServlet;
 import com.github.datasamudaya.common.utils.JShellServer;
@@ -312,7 +313,9 @@ public class EmbeddedSchedulersNodeLauncher {
 				new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH, new SummaryWebServlet(),
 				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY + DataSamudayaConstants.FORWARD_SLASH
 						+ DataSamudayaConstants.ASTERIX,
-				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
+				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON,
+				new TaskExecutorDestroyServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.KILL_EXECUTOR_URL + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.ASTERIX);
 		su.start();
 		var lbq = new LinkedBlockingQueue<StreamPipelineTaskScheduler>(Integer.valueOf(
 				DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE, DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE_DEFAULT)));

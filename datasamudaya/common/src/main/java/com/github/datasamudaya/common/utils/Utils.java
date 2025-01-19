@@ -2486,6 +2486,79 @@ public class Utils {
 	}
 
 	/**
+	 * The function shuts containers for a given user, container id, node and executor
+	 * @param user
+	 * @param jobid
+	 * @param nodehp
+	 * @param executorhp
+	 * @throws ContainerException
+	 */
+	public static synchronized void destroyContainer(String user, String jobid, String nodehp, String executorhp) throws ContainerException {
+		var dc = new DestroyContainer();
+		dc.setJobid(jobid);
+		var usersshare = DataSamudayaUsers.get();
+		if (isNull(usersshare)) {
+			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+		}
+		String[] hostport = executorhp.split(DataSamudayaConstants.UNDERSCORE);
+		int executorport = Integer.parseInt(hostport[1]) ;
+		var lcs = GlobalContainerLaunchers.get(user, jobid);
+		var itemtoremove = new ArrayList<Integer>();
+		for(int lcindex=0;lcindex<lcs.size();lcindex++) {
+			LaunchContainers lc = lcs.get(lcindex);
+			if (lc.getNodehostport().equals(nodehp)) {
+				try {
+					ConcurrentMap<String, Resources> nodesresallocated = DataSamudayaNodesResources
+							.getAllocatedResources().get(lc.getNodehostport());
+
+					Resources resallocated = nodesresallocated.get(user);					
+					ContainerResources crtodestroy = null;
+					boolean iscontaineravailabletodestroy = false;
+					for (ContainerResources cr : lc.getCla().getCr()) {
+						if (cr.getPort() == executorport) {
+							iscontaineravailabletodestroy = true;
+							crtodestroy = cr;
+							dc.setContainerhp(executorhp);
+							Utils.getResultObjectByInput(lc.getNodehostport(), dc, DataSamudayaConstants.EMPTY);
+							try {
+								resallocated.setFreememory(
+										resallocated.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
+								resallocated.setNumberofprocessors(resallocated.getNumberofprocessors() + cr.getCpu());
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+							break;
+						}
+					}
+					if(iscontaineravailabletodestroy) {
+						lc.getCla().getCr().remove(crtodestroy);
+						if (CollectionUtils.isEmpty(lc.getCla().getCr())) {
+							itemtoremove.add(lcindex);
+						}
+						GlobalJobFolderBlockLocations.remove(jobid);
+						break;
+					}					
+				} catch (Exception e) {
+					log.error(DataSamudayaConstants.EMPTY, e);
+				}
+			}
+		}
+		if(!CollectionUtils.isEmpty(itemtoremove)) {
+			for(Integer item:itemtoremove) {
+				lcs.remove(item);
+			}
+		}
+		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsDeAllocatedCounter().inc(1);
+		if(CollectionUtils.isEmpty(lcs)) {
+			GlobalContainerLaunchers.remove(user, jobid);
+		}		
+		Map<String, List<LaunchContainers>> jobcontainermap = GlobalContainerLaunchers.get(user);
+		if (MapUtils.isEmpty(jobcontainermap)) {
+			GlobalContainerLaunchers.remove(user);
+		}
+	}
+	
+	/**
 	 * Formats date from util date object
 	 * 
 	 * @param date

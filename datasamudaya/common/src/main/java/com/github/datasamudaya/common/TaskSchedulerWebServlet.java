@@ -63,17 +63,22 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					<head>
 					<link href="%s/resources/datatables/DataTables-1.13.8/css/jquery.dataTables.css" rel="stylesheet">
 					<link href="%s/resources/datatables/Buttons-2.4.2/css/buttons.dataTables.css" rel="stylesheet">
-
-					<script src="%s/resources/jquery-3.7.0.js"></script>
+					<link href="%s/resources/jqueryui/jquery-ui.css" rel="stylesheet">
+					<style>
+						.no-close .ui-dialog-titlebar-close {
+						  display: none;
+						}
+					</style>
 					<script src="%s/resources/datatables/jQuery-1.12.4/jquery-1.12.4.js"></script>
+					<script src="%s/resources/jqueryui/jquery-ui.js"></script>
 					<script src="%s/resources/datatables/JSZip-3.10.1/jszip.js"></script>
 					<script src="%s/resources/datatables/pdfmake-0.2.7/pdfmake.js"></script>
 					<script src="%s/resources/datatables/pdfmake-0.2.7/vfs_fonts.js"></script>
 					<script src="%s/resources/datatables/DataTables-1.13.8/js/jquery.dataTables.js"></script>
 					<script src="%s/resources/datatables/Buttons-2.4.2/js/dataTables.buttons.js"></script>
-					<script src="%s/resources/datatables/Buttons-2.4.2/js/buttons.html5.js"></script>
+					<script src="%s/resources/datatables/Buttons-2.4.2/js/buttons.html5.js"></script>					
 					""".formatted(contextpath, contextpath, contextpath, contextpath, contextpath, contextpath, contextpath,
-					contextpath, contextpath, contextpath));
+					contextpath, contextpath, contextpath, contextpath, contextpath));
 			builder.append("""
 					   <script>
 						$(document).ready(function(){
@@ -219,16 +224,41 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					usercontainersmap.keySet().forEach(jobid -> {
 						builder.append("<br/>");
 						builder.append("""
-										  			<script language="Javascript" type="text/javascript">
+										  	<script language="Javascript" type="text/javascript">
 										  		$(document).ready(function(){
 										  			var te%s = $('#taskexecutors%s').DataTable({
+										  				select: true,
 										  			    dom: 'Bflrtip',
-										    buttons: [
-										        'copy', 'excel', 'pdf'
-										    ]
-										});
-										  		});
-										      </script>
+													    buttons: [
+													        'copy', 'excel', 'pdf'
+													    ]
+													});
+													$("#taskexecutors%s tbody").delegate("tr", "click", function() {
+															$(this).toggleClass('selected');
+														});
+													 $('#btn%s').button({
+														  icon: "ui-icon-gear"
+														}).click( function () {
+														        console.log(te%s.rows('.selected').data());
+									        					te%s.rows('.selected').data().each(function (value, index) {
+																console.log(value);
+																					var user = value[0];
+																					var eid = value[1];
+								                                                   	var node = value[2];
+								                                                   	var executor = value[3];
+								                                                   	$.ajax({
+								                                                   		type: "GET",
+								                                                   		url: "/killtaskexecutor",
+								                                                   		data: {user: user, eid: eid, node: node, executor: executor},
+								                                                   		success: function(data) {
+								                                                   			console.log(data);
+								                                                   		}
+								                                                   	});
+								                                                   });
+														    });
+												  		});
+										      </script>	
+										      			<button id="btn%s">Kill The Selected Executors</button>						      
 										              <table style="color:#000000;border-collapse:collapse;width:800px;height:30px" align="center" border="1.0" id="taskexecutors%s" class="display">
 										              <thead>
 										              <th>User</th>
@@ -240,8 +270,8 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 										              <th>Status<BR/>(UP/DOWN)</th>
 										              </thead>
 										              <tbody>""".formatted(
-								aint.get(), aint.get(), aint.getAndIncrement()));
-						summaryTes(user, jobid, usercontainersmap.get(jobid), builder);
+								aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get()));
+						summaryTes(user, jobid, usercontainersmap.get(jobid), builder, aint.getAndIncrement());
 						builder.append("</tbody></table>");
 						builder.append("<br/>");
 					});
@@ -365,11 +395,11 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 	 * @param lcs
 	 * @param buffer
 	 */
-	private void summaryTes(String user, String execid, List<LaunchContainers> lcs, StringBuilder buffer) {
+	private void summaryTes(String user, String execid, List<LaunchContainers> lcs, StringBuilder buffer, int tableindex) {
 		for (LaunchContainers lc : lcs) {
 			List<ContainerResources> crsalloc = lc.getCla().getCr();
-			for (ContainerResources crs : crsalloc) {
-				buffer.append("<tr>");
+			for (ContainerResources crs : crsalloc) {				
+				buffer.append("<tr>");				
 				buffer.append("<td>");
 				buffer.append(user);
 				buffer.append("</td>");
@@ -398,7 +428,6 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 
 		}
 	}
-
 	/**
 	 * Return status of task executor whether it is UP or DOWN
 	 * @param hp
