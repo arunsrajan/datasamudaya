@@ -71,6 +71,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 					</style>
 					<script src="%s/resources/datatables/jQuery-1.12.4/jquery-1.12.4.js"></script>
 					<script src="%s/resources/jqueryui/jquery-ui.js"></script>
+					<script src="%s/resources/jquery.blockUI.js"></script>
 					<script src="%s/resources/datatables/JSZip-3.10.1/jszip.js"></script>
 					<script src="%s/resources/datatables/pdfmake-0.2.7/pdfmake.js"></script>
 					<script src="%s/resources/datatables/pdfmake-0.2.7/vfs_fonts.js"></script>
@@ -240,7 +241,14 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 														  icon: "ui-icon-gear"
 														}).click( function () {
 														        console.log(te%s.rows('.selected').data());
-									        					te%s.rows('.selected').data().each(function (value, index) {
+														        var data = te%s.rows('.selected').data();
+														        var totalrows = data.length;
+														        var rows = 0;
+														        $.blockUI({
+												                    message: "<h3>Task Executors Killing...<h3>", 
+												                    css: { color: 'green', borderColor: 'green' } 
+												                }); 
+									        					data.each(function (value, index) {
 																console.log(value);
 																					var user = value[0];
 																					var eid = value[1];
@@ -251,7 +259,24 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 								                                                   		url: "/killtaskexecutor",
 								                                                   		data: {user: user, eid: eid, node: node, executor: executor},
 								                                                   		success: function(data) {
-								                                                   			console.log(data);
+								                                                   			rows++;
+								                                                   			if(rows == totalrows){	
+								                                                   				$.unblockUI();
+								                                                   				$('<div></div').dialog({
+																							    modal: true,
+																							    title: "Confirmation",
+																							    open: function() {
+																							      var markup = 'Selected Task Executors Killed Successfully';
+																							      $(this).html(markup);
+																							    },
+																							    buttons: {
+																							      Ok: function() {
+																							        $( this ).dialog( "close" );
+																							      }
+																							    }   
+																							   }
+																							);
+								                                                   			}
 								                                                   		}
 								                                                   	});
 								                                                   });
@@ -270,7 +295,7 @@ public class TaskSchedulerWebServlet extends HttpServlet {
 										              <th>Status<BR/>(UP/DOWN)</th>
 										              </thead>
 										              <tbody>""".formatted(
-								aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get()));
+								aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get(), aint.get()));
 						summaryTes(user, jobid, usercontainersmap.get(jobid), builder, aint.getAndIncrement());
 						builder.append("</tbody></table>");
 						builder.append("<br/>");
