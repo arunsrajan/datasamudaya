@@ -18,8 +18,21 @@
 				<include>com.github.datasamudaya:dsagent</include>
 			</includes>
 			<binaries>
+				<includeDependencies>false</includeDependencies>
 				<outputDirectory>jars</outputDirectory>
 				<unpack>false</unpack>
+			</binaries>
+		</moduleSet>
+		<moduleSet>
+			<useAllReactorProjects>true</useAllReactorProjects>
+			<includes>
+				<include>com.github.datasamudaya:examples:jar:*</include>
+			</includes>
+			<binaries>
+				<includeDependencies>false</includeDependencies>
+				<outputDirectory>examples</outputDirectory>
+				<unpack>false</unpack>
+				<outputFileNameMapping>${artifact.artifactId}-${artifact.version}.${artifact.extension}</outputFileNameMapping>
 			</binaries>
 		</moduleSet>
 	</moduleSets>
