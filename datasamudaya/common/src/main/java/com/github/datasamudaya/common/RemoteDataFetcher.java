@@ -105,8 +105,8 @@ public class RemoteDataFetcher {
 
 		try (var fsdos = hdfs.create(filepathurl); var output = new Output(fsdos);) {
 
-			Utils.getKryo().writeClassAndObject(output, new LinkedHashSet<>(serobj.keys()));
-			Utils.getKryo().writeClassAndObject(output, serobj);
+			Utils.getKryoInstance().writeClassAndObject(output, new LinkedHashSet<>(serobj.keys()));
+			Utils.getKryoInstance().writeClassAndObject(output, serobj);
 			output.flush();
 		} catch (Exception ex) {
 			log.error(RemoteDataFetcherException.INTERMEDIATEPHASEWRITEERROR, ex);
@@ -127,7 +127,7 @@ public class RemoteDataFetcher {
 			throws RemoteDataFetcherException {
 		log.debug("Entered RemoteDataFetcher.createFile");
 		try (var fsdos = hdfs.create(filepathurl); var output = new Output(fsdos);) {
-			Kryo kryo = Utils.getKryo();
+			Kryo kryo = Utils.getKryoInstance();
 			ClassLoader clsloader = null;
 			if (config instanceof PipelineConfig pc) {
 				if (nonNull(pc.getClsloader())) {
@@ -207,7 +207,7 @@ public class RemoteDataFetcher {
 				var dis = fs.getClient().open(new Path(path).toUri().getPath());
 				var in = new Input(dis);) {
 			log.debug("Exiting RemoteDataFetcher.readYarnAppmasterServiceDataFromDFS");
-			return Utils.getKryo().readClassAndObject(in);
+			return Utils.getKryoInstance().readClassAndObject(in);
 		} catch (Exception ioe) {
 			log.error(RemoteDataFetcherException.INTERMEDIATEPHASEREADERROR, ioe);
 			throw new RemoteDataFetcherException(RemoteDataFetcherException.INTERMEDIATEPHASEREADERROR, ioe);
@@ -234,12 +234,12 @@ public class RemoteDataFetcher {
 		try (var hdfs = FileSystem.newInstance(new URI(DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.HDFSNAMENODEURL, DataSamudayaConstants.HDFSNAMENODEURL_DEFAULT)),
 				configuration); var dis = hdfs.open(new Path(path)); var in = new Input(dis);) {
-			var keysobj = Utils.getKryo().readClassAndObject(in);
+			var keysobj = Utils.getKryoInstance().readClassAndObject(in);
 			if (keys) {
 				return keysobj;
 			}
 			log.debug("Exiting RemoteDataFetcher.readIntermediatePhaseOutputFromDFS");
-			return Utils.getKryo().readClassAndObject(in);
+			return Utils.getKryoInstance().readClassAndObject(in);
 		} catch (Exception ioe) {
 			log.error(RemoteDataFetcherException.INTERMEDIATEPHASEREADERROR, ioe);
 			throw new RemoteDataFetcherException(RemoteDataFetcherException.INTERMEDIATEPHASEREADERROR, ioe);

@@ -64,6 +64,7 @@
 				<include>org.springframework.ai:spring-ai-ollama</include>
 				<include>org.springframework.boot:spring-boot</include>
 				<include>org.springframework:spring-web</include>
+				<include>org.springframework:spring-expression</include>
 				<include>org.springframework:spring-webflux</include>
 				<include>org.springframework:spring-context</include>
 				<include>org.springframework:spring-core</include>
@@ -100,7 +101,6 @@
 				<include>org.springframework.cloud:*</include>
 				<include>org.springframework.retry:*</include>
 				<include>org.springframework.statemachine:*</include>
-				<include>org.springframework:spring-expression</include>
 			</includes>
 		</dependencySet>
 	</dependencySets>

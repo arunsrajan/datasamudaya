@@ -122,6 +122,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	List<String> tes;
 	boolean isdriverallocated;
 	boolean isdriverrequired;
+	Integer containercount;
 	Semaphore executoralloclock = new Semaphore(1);
 
 	/**
@@ -147,21 +148,22 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 			es = Executors.newFixedThreadPool(1, Thread.ofVirtual().factory());
 			teid = getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
 			isdriverrequired = Boolean.parseBoolean(getEnvironment().get(DataSamudayaConstants.ISDRIVERREQUIREDYARN));
+			containercount = Integer.parseInt(getParameters().getProperty("container-count"));
 			es.execute(() -> pollQueue());
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);
 			ByteBufferPoolDirect.init(2 * DataSamudayaConstants.GB);
 			var containerallocator = (DefaultContainerAllocator) getAllocator();
-			log.debug("Parameters: " + getParameters());
-			log.debug("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
-			log.debug("Container-Cpu: " + getParameters().getProperty("container-cpu", "1"));
+			log.info("Parameters: " + getParameters());
+			log.info("Container-Memory: " + getParameters().getProperty("container-memory", "1024"));
+			log.info("Container-Cpu: " + getParameters().getProperty("container-cpu", "1"));
 			containerallocator.setVirtualcores(Integer.parseInt(getParameters().getProperty("container-cpu", "1")));
 			containerallocator.setMemory(Integer.parseInt(getParameters().getProperty("container-memory", "1024")));
 		} catch (Exception ex) {
-			log.debug("Submit Application Error, See cause below \n", ex);
+			log.info("Submit Application Error, See cause below \n", ex);
 		}
 		var appmasterservice = (StreamPipelineSQLYarnAppmasterService) getAppmasterService();
-		log.debug("In SubmitApplication Setting AppMaster Service: " + appmasterservice);
+		log.info("In SubmitApplication Setting AppMaster Service: " + appmasterservice);
 		if (appmasterservice != null) {
 			// Set the Yarn App master bean to the Yarn App master service object.
 			appmasterservice.setSQLYarnAppMaster(this);
@@ -172,7 +174,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 
 	@SuppressWarnings("unchecked")
 	protected void pollQueue() {
-		log.debug("Environment: " + getEnvironment());
+		log.info("Environment: " + getEnvironment());
 		Job job;
 		try (var zo = new ZookeeperOperations();) {
 			zo.connect();
@@ -199,8 +201,8 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 					}
 					var yarninputfolder = DataSamudayaConstants.YARNINPUTFOLDER + DataSamudayaConstants.FORWARD_SLASH
 							+ tinfo.getJobid();
-					log.debug("Yarn Input Folder: " + yarninputfolder);
-					log.debug("AppMaster HDFS: " + getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
+					log.info("Yarn Input Folder: " + yarninputfolder);
+					log.info("AppMaster HDFS: " + getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
 					var namenodeurl = getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL);
 					System.setProperty(DataSamudayaConstants.HDFSNAMENODEURL,
 							getConfiguration().get(DataSamudayaConstants.HDFSNAMENODEURL));
@@ -227,16 +229,19 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 
 					tasks = graph.vertexSet().stream().map(StreamPipelineTaskSubmitter::getTask).collect(Collectors.toCollection(Vector::new));
 					if (isdriverallocated) {
+						log.info("In Driver Allocated");
 						RemoteJobScheduler rjs = new RemoteJobScheduler();
 						job.setVertices(new LinkedHashSet<>(graph.vertexSet()));
 						job.setEdges(new LinkedHashSet<>(graph.edgeSet()));
 						job.setJsidjsmap(jsidjsmap);
+						job.setPipelineconfig(pipelineconfig);
 						rjs.scheduleJob(job);
 					} else {
+						log.info("In Broadcast JS {}",tasks);
 						broadcastJobStageToTaskExecutors(tasks);
 						parallelExecutionAkkaActors(graph);
 					}
-					log.debug("tasks size:" + tasks.size());
+					log.info("tasks size:" + tasks.size());
 					tasks.clear();
 					ObjectMapper objMapper = new ObjectMapper();
 					tinfo.setIsresultavailable(true);
@@ -260,7 +265,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 		try {
 			TaskExecutorShutdown taskExecutorshutdown = new TaskExecutorShutdown();
 			Utils.getResultObjectByInput(hosthp, taskExecutorshutdown, jobid);
-			log.debug("The chamber case for container {} shattered for the port {} ", jobid, hosthp);
+			log.info("The chamber case for container {} shattered for the port {} ", jobid, hosthp);
 		} catch (Exception ex) {
 			log.error("Destroy failed for the job " + jobid, ex);
 		}
@@ -288,6 +293,8 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 							Utils.getResultObjectByInput(te, js, finaljobid);
 						}
 					}
+				} else {
+					log.info("Job Stage Null For key {} {}", key, jsidjsmap);
 				}
 			} catch (Exception e) {
 				log.error(DataSamudayaConstants.EMPTY, e);
@@ -327,7 +334,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 						if (!spts.isCompletedexecution() && shouldcontinueprocessing.get()) {
 							spts.setTaskexecutors(zoglobal.getTaskExectorsByJobId(teid));
 							Task result = (Task) spts.actors();
-							log.debug("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
+							log.info("Task Status for task {} is {}", result.getTaskid(), result.taskstatus);
 							printresult.acquire();
 							counttaskscomp++;
 							double percentagecompleted = Math.floor((counttaskscomp / totaltasks) * 100.0);
@@ -508,8 +515,8 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 				containeridipmap.put(container.getId().toString().trim(), container.getNodeId().getHost());
 				var port = service.getPort();
 				var address = InetAddress.getLocalHost().getHostAddress();
-				log.debug("App Master Service Ip Address: " + address);
-				log.debug("App Master Service Port: " + port);
+				log.info("App Master Service Ip Address: " + address);
+				log.info("App Master Service Port: " + port);
 				env = new HashMap<>(context.getEnvironment());
 				// Set the service port to the environment object.
 				env.put(YarnSystemConstants.AMSERVICE_PORT, Integer.toString(port));
@@ -517,7 +524,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 				// Set the service host to the environment object.
 				env.put(YarnSystemConstants.AMSERVICE_HOST, address);
 			} catch (Exception ex) {
-				log.debug("Container Prelaunch error, See cause below \n", ex);
+				log.info("Container Prelaunch error, See cause below \n", ex);
 			}
 			context.setEnvironment(env);
 			return context;
@@ -533,12 +540,12 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	@Override
 	protected void onContainerCompleted(ContainerStatus status) {
 		synchronized (lock) {
-			log.debug("Before Container {} completed: {} {} {}", status.getContainerId(), status.getContainerSubState(), status.getExitStatus(), status.getState());
+			log.info("Before Container {} completed: {} {} {}", status.getContainerId(), status.getContainerSubState(), status.getExitStatus(), status.getState());
 			status.setState(ContainerState.COMPLETE);
 			status.setContainerSubState(ContainerSubState.DONE);
 			status.setExitStatus(0);
 			super.onContainerCompleted(status);
-			log.debug("Container completed: " + status.getContainerId());
+			log.info("Container completed: " + status.getContainerId());
 			if (containertaskmap.get(status.getContainerId().toString()) != null) {
 				var jobidstageidjs = containertaskmap.get(status.getContainerId().toString());
 				pendingtasks.keySet().removeAll(jobidstageidjs.keySet());
@@ -553,12 +560,12 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	@Override
 	protected boolean onContainerFailed(ContainerStatus status) {
 		synchronized (lock) {
-			log.debug("Container failed: " + status.getContainerId());
+			log.info("Container failed: " + status.getContainerId());
 			if (containertaskmap.get(status.getContainerId().toString()) != null) {
 				pendingtasks.putAll(containertaskmap.get(status.getContainerId().toString()));
 			}
 			if (hasJobs()) {
-				log.debug("Container failed: " + "Has jobs reallocating container for: " + status.getContainerId());
+				log.info("Container failed: " + "Has jobs reallocating container for: " + status.getContainerId());
 				getAllocator().allocateContainers(1);
 			}
 			return true;
@@ -583,7 +590,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 		synchronized (lock) {
 			boolean hasJobs = isreadytoexecute
 					&& (tasks.size() > 0);
-			log.debug("Has Jobs: {}", hasJobs);
+			log.info("Has Jobs: {}", hasJobs);
 			return hasJobs || !tokillcontainers;
 
 		}
@@ -615,6 +622,18 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 			executoralloclock.release();
 		}
 		return EXECUTORTYPE.EXECUTOR;
+	}
+	
+	
+	/**
+	 * The function returns number of containers.
+	 * @return num of containers
+	 */
+	public Integer getContainercount() {
+		if(isdriverrequired) {
+			return containercount-2;
+		}
+		return containercount;
 	}
 
 	/**

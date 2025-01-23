@@ -84,6 +84,7 @@ public class StreamPipelineSQLYarnAppmasterService extends MindAppmasterService 
 			if (request.getState().equals(JobRequest.State.GETTASKEXECUTORID)) {
 				response.setContainerid(sqlYarnAppMaster.getTaskExecutorId());
 				response.setExecutorordriver(sqlYarnAppMaster.getExecutorType());
+				response.setNumberofcontainers(sqlYarnAppMaster.getContainercount());
 				return response;
 			}
 		}

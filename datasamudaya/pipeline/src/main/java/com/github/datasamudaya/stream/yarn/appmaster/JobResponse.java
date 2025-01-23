@@ -30,6 +30,7 @@ public class JobResponse extends BaseResponseObject {
 	private byte[] job;
 	private String containerid;
 	private EXECUTORTYPE executorordriver;
+	private Integer numberofcontainers; 
 
 	public JobResponse() {
 	}
@@ -72,6 +73,15 @@ public class JobResponse extends BaseResponseObject {
 	public void setExecutorordriver(EXECUTORTYPE executorordriver) {
 		this.executorordriver = executorordriver;
 	}
+
+	public Integer getNumberofcontainers() {
+		return numberofcontainers;
+	}
+
+	public void setNumberofcontainers(Integer numberofcontainers) {
+		this.numberofcontainers = numberofcontainers;
+	}
+
 
 
 	public enum State {

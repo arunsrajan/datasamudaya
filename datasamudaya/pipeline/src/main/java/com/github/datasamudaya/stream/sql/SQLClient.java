@@ -202,7 +202,7 @@ public class SQLClient {
 		while (true) {
 			if ((isyarn || isignite) && isclient) {
 				if (isyarn) {
-					Utils.launchYARNExecutors(teid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, isdriverrequired);
+					Utils.launchYARNExecutors(teid, cpupercontainer, memorypercontainer, numberofcontainers, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, false);
 				}
 				String messagestorefile = DataSamudayaProperties.get().getProperty(
 						DataSamudayaConstants.SQLMESSAGESSTORE,

@@ -640,33 +640,33 @@ public class Utils {
 		kryo.register(WhoAreRequest.class);
 		kryo.register(WhoAreResponse.class);
 		kryo.register(Tuple2Serializable.class);
-		kryo.register(WhoIsResponse.STATUS.class, new EnumSerializer(WhoIsResponse.STATUS.class));
-		kryo.register(Coalesce.class, new CompatibleFieldSerializer<Coalesce>(kryo, Coalesce.class));
-		kryo.register(JobStage.class, new CompatibleFieldSerializer<JobStage>(kryo, JobStage.class));
-		kryo.register(Stage.class, new CompatibleFieldSerializer<Stage>(kryo, Stage.class));
+		kryo.register(WhoIsResponse.STATUS.class, new EnumSerializer(WhoIsResponse.STATUS.class),20000);
+		kryo.register(Coalesce.class, new CompatibleFieldSerializer<Coalesce>(kryo, Coalesce.class),20001);
+		kryo.register(JobStage.class, new CompatibleFieldSerializer<JobStage>(kryo, JobStage.class),20002);
+		kryo.register(Stage.class, new CompatibleFieldSerializer<Stage>(kryo, Stage.class),20003);
 		kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
-		kryo.register(Table.class, new CompatibleFieldSerializer<Table>(kryo, Table.class));
-		kryo.register(SimpleNode.class, new CompatibleFieldSerializer<SimpleNode>(kryo, SimpleNode.class));
-		kryo.register(SerializedLambda.class);
-		kryo.register(Tuple1.class, new TupleSerializer());
-		kryo.register(Tuple2.class, new TupleSerializer());
-		kryo.register(Tuple3.class, new TupleSerializer());
-		kryo.register(Tuple4.class, new TupleSerializer());
-		kryo.register(Tuple5.class, new TupleSerializer());
-		kryo.register(Tuple6.class, new TupleSerializer());
-		kryo.register(Tuple7.class, new TupleSerializer());
-		kryo.register(Tuple8.class, new TupleSerializer());
-		kryo.register(Tuple9.class, new TupleSerializer());
-		kryo.register(Tuple10.class, new TupleSerializer());
-		kryo.register(Tuple11.class, new TupleSerializer());
-		kryo.register(Tuple12.class, new TupleSerializer());
-		kryo.register(Tuple13.class, new TupleSerializer());
-		kryo.register(Tuple14.class, new TupleSerializer());
-		kryo.register(Tuple15.class, new TupleSerializer());
-		kryo.register(Tuple16.class, new TupleSerializer());
-		kryo.register(Closure.class, new ClosureSerializer());
-		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class));
-		kryo.register(RemoteDataFetch.class, new CompatibleFieldSerializer<RemoteDataFetch>(kryo, RemoteDataFetch.class));
+		kryo.register(Table.class, new CompatibleFieldSerializer<Table>(kryo, Table.class),20004);
+		kryo.register(SimpleNode.class, new CompatibleFieldSerializer<SimpleNode>(kryo, SimpleNode.class),20005);
+		kryo.register(SerializedLambda.class,20006);
+		kryo.register(Tuple1.class, new TupleSerializer(),20007);
+		kryo.register(Tuple2.class, new TupleSerializer(),20008);
+		kryo.register(Tuple3.class, new TupleSerializer(),20009);
+		kryo.register(Tuple4.class, new TupleSerializer(),20010);
+		kryo.register(Tuple5.class, new TupleSerializer(),20011);
+		kryo.register(Tuple6.class, new TupleSerializer(),20012);
+		kryo.register(Tuple7.class, new TupleSerializer(),20013);
+		kryo.register(Tuple8.class, new TupleSerializer(),20014);
+		kryo.register(Tuple9.class, new TupleSerializer(),20015);
+		kryo.register(Tuple10.class, new TupleSerializer(),20016);
+		kryo.register(Tuple11.class, new TupleSerializer(),20017);
+		kryo.register(Tuple12.class, new TupleSerializer(),20018);
+		kryo.register(Tuple13.class, new TupleSerializer(),20019);
+		kryo.register(Tuple14.class, new TupleSerializer(),20020);
+		kryo.register(Tuple15.class, new TupleSerializer(),20021);
+		kryo.register(Tuple16.class, new TupleSerializer(),20022);
+		kryo.register(Closure.class, new ClosureSerializer(),20023);
+		kryo.register(RexNode.class, new CompatibleFieldSerializer<RexNode>(kryo, RexNode.class),20024);
+		kryo.register(RemoteDataFetch.class, new CompatibleFieldSerializer<RemoteDataFetch>(kryo, RemoteDataFetch.class),20025);
 		return kryo;
 	}
 
@@ -974,7 +974,7 @@ public class Utils {
 			return cruncher.postObject(Utils.convertObjectToBytesCompressed(inputobj, null));
 		} catch (Exception ex) {
 			throw new RpcRegistryException(String.format(
-					"Unable to read result Object for the input object %s from host port %s", inputobj, hp), ex);
+					"Unable to read result Object for the input object %s from host port %s for jobid %s", inputobj, hp, jobid), ex);
 		}
 	}
 
