@@ -125,10 +125,13 @@ public class RemoteJobScheduler {
 			taskexecutors.addAll(tes);
 			while (taskexecutors.size() != job.getTaskexecutors().size()) {
 				Thread.sleep(1000);
-				tes = zo.getTaskExectorsByJobId(jobid);
 				taskexecutors.clear();
+				drivers = zo.getDriversByJobId(jobid);
+				taskexecutors.addAll(drivers);
+				tes = zo.getTaskExectorsByJobId(jobid);				
 				taskexecutors.addAll(tes);
 			}
+			job.setTaskexecutors(zo.getTaskExectorsByJobId(jobid));
 		} catch (InterruptedException e) {
 			log.warn("Interrupted!", e);
 			// Restore interrupted state...

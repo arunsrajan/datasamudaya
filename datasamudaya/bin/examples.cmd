@@ -216,8 +216,10 @@ call mapreducejobsubmitter.cmd -jar ../examples/examples-4.0.jar -arguments "com
 
 REM Running DataFrame examples
 
-call streamjobsubmitter.cmd -jar ../examples/examples-4.0.jar -class com.github.datasamudaya.stream.sql.dataframe.DataFrameAggregate -user arun -numbercontainers 3 -containercpu 2 -containermemory 4096 -drivercpu 3 -drivermemory 4096 -isdriverrequired true -arguments "/flight hdfs://127.0.0.1:9000 536870912"
+call streamjobsubmitter.cmd -jar ../examples/examples-4.0.jar -class com.github.datasamudaya.stream.sql.dataframe.DataFrameAggregate -user arun -numbercontainers 3 -containercpu 2 -containermemory 4096 -drivercpu 3 -drivermemory 4096 -isdriverrequired false -arguments "/flight hdfs://127.0.0.1:9000 536870912 standalone"
 
-call streamjobsubmitter.cmd -jar ../examples/examples-4.0.jar -class com.github.datasamudaya.stream.sql.dataframe.DataFrameAggregateAbs -user arun -numbercontainers 3 -containercpu 2 -containermemory 4096 -drivercpu 3 -drivermemory 4096 -isdriverrequired true -arguments "/flight hdfs://127.0.0.1:9000 536870912"
+call streamjobsubmitter.cmd -jar ../examples/examples-4.0.jar -class com.github.datasamudaya.stream.sql.dataframe.DataFrameAggregate -user arun -numbercontainers 2 -containercpu 2 -containermemory 3072 -drivercpu 3 -drivermemory 4096 -isdriverrequired false -arguments "/flight hdfs://127.0.0.1:9000 2048 yarn"
+
+call streamjobsubmitter.cmd -jar ../examples/examples-4.0.jar -class com.github.datasamudaya.stream.sql.dataframe.DataFrameAggregateAbs -user arun -numbercontainers 3 -containercpu 2 -containermemory 4096 -drivercpu 3 -drivermemory 4096 -isdriverrequired false -arguments "/flight hdfs://127.0.0.1:9000 536870912"
 
 pause

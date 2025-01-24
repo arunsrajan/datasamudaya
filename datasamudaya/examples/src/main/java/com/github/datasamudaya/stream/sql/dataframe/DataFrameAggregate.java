@@ -35,18 +35,26 @@ public class DataFrameAggregate implements Pipeline{
 			SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT, SqlTypeName.BIGINT,
 			SqlTypeName.BIGINT);
 	@Override
-	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {
+	public void runPipeline(String[] args, PipelineConfig pipelineconfig) throws Exception {		
 		pipelineconfig.setLocal("false");
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
+		if(args[3].equals("yarn")) {
+			pipelineconfig.setYarn("true");
+		}
+		if(args[3].equals("jgroups")) {
+			pipelineconfig.setJgroups("true");
+		}
+		if(args[3].equals("local")) {
+			pipelineconfig.setLocal("true");
+		}		
 		pipelineconfig.setStorage(DataSamudayaConstants.STORAGE.INMEMORY);
-
 		pipelineconfig.setBlocksize("128");
 		pipelineconfig.setMaxmem(args[2]);
 		pipelineconfig.setMinmem("536870912");
 		pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
-		pipelineconfig.setMode(DataSamudayaConstants.MODE_DEFAULT);
+		pipelineconfig.setMode(DataSamudayaConstants.EXECMODE_YARN);
 		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
 				.addTable(args[0], airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
 				.setDb("airlines").setFileFormat("csv").setHdfs(args[1]).build();

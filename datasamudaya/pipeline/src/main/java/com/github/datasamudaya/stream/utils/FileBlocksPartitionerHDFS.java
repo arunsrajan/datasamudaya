@@ -13,6 +13,7 @@ import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -341,6 +342,15 @@ public class FileBlocksPartitionerHDFS {
 				if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL) {
 					try (ZookeeperOperations zo = new ZookeeperOperations();) {
 						zo.connect();
+						if(nonNull(pipelineconfig.getJar())) {
+							String teid = DataSamudayaConstants.JOB + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueJobID();
+							pipelineconfig.setTejobid(teid);
+							pipelineconfig.setUseglobaltaskexecutors(true);
+							int numofcontainer = pipelineconfig.getNumtaskexecutors();
+							pipelineconfig.setJobid(job.getId());
+							Utils.launchYARNExecutors(pipelineconfig.getTejobid(),pipelineconfig.getCputaskexecutor(), pipelineconfig.getMemorytaskexceutor(), numofcontainer, DataSamudayaConstants.SQL_YARN_DEFAULT_APP_CONTEXT_FILE, pipelineconfig.getIsremotescheduler());
+							checkDriverAndExecutorIsUp(pipelineconfig.getTejobid(), pipelineconfig.getIsremotescheduler(), zo, pipelineconfig.getIsremotescheduler()?numofcontainer-1:numofcontainer);
+						}
 						getYarnContainers(zo);
 						allocateContainersLoadBalanced(totalblockslocation);
 					}
@@ -358,6 +368,84 @@ public class FileBlocksPartitionerHDFS {
 			log.error(PipelineConstants.FILEBLOCKSPARTITIONINGERROR, ex);
 			destroyTaskExecutors();
 			throw new PipelineException(PipelineConstants.FILEBLOCKSPARTITIONINGERROR, ex);
+		}
+	}
+	
+	/**
+	 * The method checks whether driver and executor is up or down
+	 * @param teid
+	 * @param isdriverrequired
+	 * @param zo
+	 * @param totalnumberofcontainer
+	 * @throws Exception
+	 */
+	public void checkDriverAndExecutorIsUp(String teid, boolean isdriverrequired, ZookeeperOperations zo, int totalnumberofcontainer) throws Exception {
+		int numofiterations = 10;
+		int currentiteration = 0;
+		while(true) {
+			try {
+				List<String> containers = zo.getTaskExectorsByJobId(teid);
+				if(checkContainerIsUp(containers, totalnumberofcontainer)) {
+					break;
+				}
+				currentiteration++;
+				if(currentiteration==numofiterations) {
+					break;
+				}
+			} catch(Exception ex) {
+				Thread.sleep(1000);
+				continue;
+			}
+		}
+		if(isdriverrequired) {
+			currentiteration = 0;
+			while(true) {
+				try {
+					List<String> containers = zo.getDriversByJobId(teid);
+					if(checkContainerIsUp(containers, 1)) {
+						break;
+					}
+					currentiteration++;
+					if(currentiteration==numofiterations) {
+						break;
+					}
+				} catch(Exception ex) {
+					Thread.sleep(1000);
+					continue;
+				}
+			}
+		}
+	}
+	
+	public boolean checkContainerIsUp(List<String> containers, int totalnumberofcontainer) throws InterruptedException {
+		if(containers.size() < totalnumberofcontainer) {
+			Thread.sleep(1000);
+			return false;
+		} else {
+			int index = 0;
+			while (index < containers.size()) {
+				while (true) {
+					String tehostport = containers.get(index);
+					String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
+					try (var sock = new Socket(tehp[0], Integer.parseInt(tehp[1]));) {
+						break;
+					} catch (Exception ex) {
+						try {
+							log.debug("Waiting for chamber {} to replete dispatch....",
+									tehp[0] + DataSamudayaConstants.UNDERSCORE + tehp[1]);
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							log.warn(DataSamudayaConstants.INTERRUPTED, e);
+							// Restore interrupted state...
+							Thread.currentThread().interrupt();
+						} catch (Exception e) {
+							log.error(DataSamudayaConstants.EMPTY, e);
+						}
+					}
+				}
+				index++;
+			}
+			return true;
 		}
 	}
 

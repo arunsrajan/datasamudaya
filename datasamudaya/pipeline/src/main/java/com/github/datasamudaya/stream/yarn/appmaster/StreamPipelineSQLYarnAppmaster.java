@@ -435,8 +435,8 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 						String actorselection = task.getActorselection();
 						for(String hport : tes) {
 							if(!sptsreverse.getHostPort().equals(hport)) {
-								gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, 0 , true);
-								Utils.getResultObjectByInput(hport, gettaskactor, jobid);
+								gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size(), false);
+								task = (Task) Utils.getResultObjectByInput(hport, gettaskactor, jobid);
 							}
 						}
 						sptsreverse.getTask().setActorselection(actorselection);
@@ -449,8 +449,9 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 						String actorselection = task.getActorselection();
 						for(String hport : tes) {
 							if(!sptsreverse.getHostPort().equals(hport)) {
-								gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, 0 , true);
-								Utils.getResultObjectByInput(hport, gettaskactor, jobid);
+								gettaskactor = new GetTaskActor(sptsreverse.getTask(), childactorsoriggraph,
+										nonNull(sptsreverse.getTask().parentterminatingsize) ? sptsreverse.getTask().parentterminatingsize : successors.size(), false);
+								task = (Task) Utils.getResultObjectByInput(hport, gettaskactor, jobid);
 							}
 						}
 						sptsreverse.getTask().setActorselection(actorselection);
