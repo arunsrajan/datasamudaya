@@ -40,8 +40,10 @@ public class DataFrameAggregate implements Pipeline{
 		pipelineconfig.setMesos("false");
 		pipelineconfig.setYarn("false");
 		pipelineconfig.setJgroups("false");
+		pipelineconfig.setMode(DataSamudayaConstants.EXECMODE_DEFAULT);
 		if(args[3].equals("yarn")) {
 			pipelineconfig.setYarn("true");
+			pipelineconfig.setMode(DataSamudayaConstants.EXECMODE_YARN);
 		}
 		if(args[3].equals("jgroups")) {
 			pipelineconfig.setJgroups("true");
@@ -54,7 +56,6 @@ public class DataFrameAggregate implements Pipeline{
 		pipelineconfig.setMaxmem(args[2]);
 		pipelineconfig.setMinmem("536870912");
 		pipelineconfig.setGctype(DataSamudayaConstants.ZGC);
-		pipelineconfig.setMode(DataSamudayaConstants.EXECMODE_YARN);
 		DataFrame df = DataFrameContext.newDataFrameContext(pipelineconfig)
 				.addTable(args[0], airlineheader.toArray(new String[0]), "airlines", airlineheadertypes)
 				.setDb("airlines").setFileFormat("csv").setHdfs(args[1]).build();

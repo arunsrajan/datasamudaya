@@ -312,7 +312,7 @@ public class FileBlocksPartitionerHDFS {
 						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),
 								pipelineconfig.getTejobid(), pipelineconfig.getCputaskexecutor(),
 								pipelineconfig.getMemorytaskexceutor(), pipelineconfig.getNumtaskexecutors(),
-								pipelineconfig.getCpudriver(), pipelineconfig.getMemorydriver(), false);
+								pipelineconfig.getCpudriver(), pipelineconfig.getMemorydriver(), pipelineconfig.getStorage() == STORAGE.COLUMNARSQL?true:false);
 					}
 					getContainersGlobal();
 					allocateContainersLoadBalanced(totalblockslocation);
@@ -325,7 +325,7 @@ public class FileBlocksPartitionerHDFS {
 						Utils.launchContainersExecutorSpecWithDriverSpec(pipelineconfig.getUser(),
 								pipelineconfig.getTejobid(), pipelineconfig.getCputaskexecutor(),
 								pipelineconfig.getMemorytaskexceutor(), pipelineconfig.getNumtaskexecutors(),
-								pipelineconfig.getCpudriver(), pipelineconfig.getMemorydriver(), false);
+								pipelineconfig.getCpudriver(), pipelineconfig.getMemorydriver(), pipelineconfig.getStorage() == STORAGE.COLUMNARSQL?true:false);
 					}
 					getContainersGlobal();
 					for (String foldertolb : folderstolbcontainers) {

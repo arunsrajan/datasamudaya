@@ -613,6 +613,9 @@ public class StreamJobScheduler {
 				for (String tehost :taskexecutors) {
 					Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId()), pipelineconfig.getTejobid());
 				}
+				if (!pipelineconfig.getUseglobaltaskexecutors()) {
+					Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
+				}
 			}
 			if(Boolean.TRUE.equals(isyarn) && nonNull(pipelineconfig.getTejobid()) && nonNull(pipelineconfig.getJar())) {
 				Utils.shutDownYARNContainer(pipelineconfig.getTejobid());
