@@ -231,7 +231,10 @@ public class SQLClient {
 							out.println(isdriverrequired);
 							out.println(mode);
 							out.println(teid);
-							printServerResponse(in);
+							boolean toquit = printServerResponse(in);
+							if (toquit) {
+								break;
+							}
 							String messagestorefile = DataSamudayaProperties.get().getProperty(
 									DataSamudayaConstants.SQLMESSAGESSTORE,
 									DataSamudayaConstants.SQLMESSAGESSTORE_DEFAULT) + DataSamudayaConstants.UNDERSCORE
@@ -248,7 +251,7 @@ public class SQLClient {
 										new BufferedReader(new InputStreamReader(System.in)), messagestorefile,
 										isclient, teid, user, isyarn, isignite, memorypercontainer);
 								processInput("quit", out);
-								boolean toquit = printServerResponse(in);
+								toquit = printServerResponse(in);
 								if (toquit) {
 									break;
 								}

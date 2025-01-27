@@ -3,6 +3,7 @@ package com.github.datasamudaya.stream.sql;
 import static java.util.Objects.nonNull;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -86,11 +87,11 @@ public class SQLServer {
 			AtomicBoolean iscontainerlaunched = new AtomicBoolean(false);
 			AtomicBoolean isyarncontainerlaunched = new AtomicBoolean(false);
 			SessionState sessionState = null;
-
-			try (Socket clientSocket = sock;
-					PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-					BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
-
+			PrintWriter out = null;
+			BufferedReader in = null;
+			try {
+				out = new PrintWriter(sock.getOutputStream(), true);
+				in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 				// Handle initial parameters from the client
 				user = in.readLine();
 				numberofcontainers = Integer.valueOf(in.readLine());
@@ -141,9 +142,20 @@ public class SQLServer {
 
 			} catch (Exception ex) {
 				log.error("Error handling client connection", ex);
+				out.println(ex.getMessage());
+				out.println("Quit");
 			} finally {
 				try {
 					cleanup(iscontainerlaunched, isyarncontainerlaunched, sessionState, user, tejobid);
+					if(nonNull(out)) {
+						out.close();
+					}
+					if(nonNull(in)) {
+						in.close();
+					}
+					if(nonNull(sock)) {
+						sock.close();
+					}
 				} catch (Exception e) {
 				}
 			}

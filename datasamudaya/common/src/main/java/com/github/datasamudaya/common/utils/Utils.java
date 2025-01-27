@@ -1616,71 +1616,82 @@ public class Utils {
 	public static List<LaunchContainers> launchContainersExecutorSpecWithDriverSpec(String user, String jobid, int cpuuser,
 			int memoryexecutor, int numberofcontainers, int cpudriver, int memorydriver, boolean tolaunchcontainer)
 			throws ContainerException, InterruptedException, RpcRegistryException {
-		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
-		long memoryuserbytes = Long.valueOf(memoryexecutor) * DataSamudayaConstants.MB;
-		long memorydriverbytes = Long.valueOf(memorydriver) * DataSamudayaConstants.MB;
-		var nrs = DataSamudayaNodesResources.getAllocatedResources();
-		var resources = nrs.values();
-		int numresavailable = resources.size();
-		var globallaunchcontainers = new ArrayList<LaunchContainers>();
-		var usersshare = DataSamudayaUsers.get();
-		if (isNull(usersshare)) {
-			throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
-		}
-		PipelineConfig pc = new PipelineConfig();
-		List<String> launchedcontainerhostports = new ArrayList<>();
-		if (cpudriver > 0 && memorydriver > 0) {
+		try {
+			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().acquire();
+			long memoryuserbytes = Long.valueOf(memoryexecutor) * DataSamudayaConstants.MB;
+			long memorydriverbytes = Long.valueOf(memorydriver) * DataSamudayaConstants.MB;
+			var nrs = DataSamudayaNodesResources.getAllocatedResources();
+			var resources = nrs.values();
+			var globallaunchcontainers = new ArrayList<LaunchContainers>();
+			var usersshare = DataSamudayaUsers.get();
+			if (isNull(usersshare)) {
+				throw new ContainerException(PipelineConstants.USERNOTCONFIGURED.formatted(user));
+			}
+			PipelineConfig pc = new PipelineConfig();
+			List<String> launchedcontainerhostports = new ArrayList<>();
+			if (cpudriver > 0 && memorydriver > 0) {
+				allocateDriverOrExecutor(user,
+						resources, usersshare,
+						1, cpudriver, memorydriverbytes, jobid,
+						pc, globallaunchcontainers, launchedcontainerhostports,
+						EXECUTORTYPE.DRIVER);
+			}
 			allocateDriverOrExecutor(user,
 					resources, usersshare,
-					1, cpudriver, memorydriverbytes, jobid,
+					numberofcontainers, cpuuser, memoryuserbytes, jobid,
 					pc, globallaunchcontainers, launchedcontainerhostports,
-					EXECUTORTYPE.DRIVER);
-		}
-		allocateDriverOrExecutor(user,
-				resources, usersshare,
-				numberofcontainers, cpuuser, memoryuserbytes, jobid,
-				pc, globallaunchcontainers, launchedcontainerhostports,
-				EXECUTORTYPE.EXECUTOR);
-		if (tolaunchcontainer) {
-			for (LaunchContainers lc : globallaunchcontainers) {
-				lc.setTotalnumberofcontainerperuser(numberofcontainers);
-				List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
-						lc, DataSamudayaConstants.EMPTY);
-				String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
-				launchedcontainerports.stream().map(port -> containerhost + DataSamudayaConstants.UNDERSCORE + port)
-						.forEach(launchedcontainerhostports::add);
-				if (Objects.isNull(launchedcontainerports)) {
-					throw new ContainerException("Task Executor Launch Error From Container");
-				}
-			}
-			int index = 0;
-			while (index < launchedcontainerhostports.size()) {
-				while (true) {
-					String tehostport = launchedcontainerhostports.get(index);
-					String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
-					try (var sock = new Socket(tehp[0], Integer.parseInt(tehp[1]));) {
-						break;
-					} catch (Exception ex) {
-						try {
-							log.debug("Waiting for chamber {} to replete dispatch....",
-									tehp[0] + DataSamudayaConstants.UNDERSCORE + tehp[1]);
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							log.warn(DataSamudayaConstants.INTERRUPTED, e);
-							// Restore interrupted state...
-							Thread.currentThread().interrupt();
-						} catch (Exception e) {
-							log.error(DataSamudayaConstants.EMPTY, e);
-						}
+					EXECUTORTYPE.EXECUTOR);
+			if (tolaunchcontainer) {
+				for (LaunchContainers lc : globallaunchcontainers) {
+					lc.setTotalnumberofcontainerperuser(numberofcontainers);
+					List<Integer> launchedcontainerports = (List<Integer>) Utils.getResultObjectByInput(lc.getNodehostport(),
+							lc, DataSamudayaConstants.EMPTY);
+					String containerhost = lc.getNodehostport().split(DataSamudayaConstants.UNDERSCORE)[0];
+					launchedcontainerports.stream().map(port -> containerhost + DataSamudayaConstants.UNDERSCORE + port)
+							.forEach(launchedcontainerhostports::add);
+					if (Objects.isNull(launchedcontainerports)) {
+						throw new ContainerException("Task Executor Launch Error From Container");
 					}
 				}
-				index++;
+				int index = 0;
+				while (index < launchedcontainerhostports.size()) {
+					while (true) {
+						String tehostport = launchedcontainerhostports.get(index);
+						String[] tehp = tehostport.split(DataSamudayaConstants.UNDERSCORE);
+						try (var sock = new Socket(tehp[0], Integer.parseInt(tehp[1]));) {
+							break;
+						} catch (Exception ex) {
+							try {
+								log.debug("Waiting for chamber {} to replete dispatch....",
+										tehp[0] + DataSamudayaConstants.UNDERSCORE + tehp[1]);
+								Thread.sleep(1000);
+							} catch (InterruptedException e) {
+								log.warn(DataSamudayaConstants.INTERRUPTED, e);
+								// Restore interrupted state...
+								Thread.currentThread().interrupt();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+					}
+					index++;
+				}
 			}
+			DataSamudayaMetricsExporter.getNumberOfTaskExecutorsAllocatedCounter().inc(globallaunchcontainers.size());
+			GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
+			return globallaunchcontainers;
+		} catch (InterruptedException ex) {
+			log.warn(DataSamudayaConstants.INTERRUPTED, ex);
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
+		} catch (ContainerException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			throw new ContainerException("Unable To Allocate And LaunchContainer", ex);
+		} finally {
+			GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
 		}
-		DataSamudayaMetricsExporter.getNumberOfTaskExecutorsAllocatedCounter().inc(globallaunchcontainers.size());
-		GlobalContainerLaunchers.put(user, jobid, globallaunchcontainers);
-		GlobalContainerAllocDealloc.getGlobalcontainerallocdeallocsem().release();
-		return globallaunchcontainers;
+		return new ArrayList<>();		
 	}
 
 	/**
@@ -1719,7 +1730,8 @@ public class Utils {
 				}
 				int cpu = restolaunch.getNumberofprocessors();
 				if (resources.size() == allresourcesallocated.size()) {
-					break outer;
+					deallocateResources(globallaunchcontainers, resources, user);
+					throw new ContainerException(PipelineConstants.INSUFFICIENTRESOURCES.formatted(user, cpuuser, memoryuserbytes, executortype));
 				}
 				if (cpu <= 0 || cpu < cpuuser) {
 					allresourcesallocated.put(restolaunch.getNodeport(), true);
@@ -1742,7 +1754,7 @@ public class Utils {
 				List<Integer> ports = (List<Integer>) Utils.getResultObjectByInput(restolaunch.getNodeport(), ac,
 						DataSamudayaConstants.EMPTY);
 				if (Objects.isNull(ports)) {
-					throw new ContainerException("Port Allocation Error From Container");
+					throw new ContainerException("Port Allocation Error From Node");
 				}
 				log.debug("Chamber alloted with node: {} amidst ports: {}", restolaunch.getNodeport(), ports);
 
@@ -1781,8 +1793,39 @@ public class Utils {
 				}
 				numofcontcount++;
 				if (executortype == EXECUTORTYPE.DRIVER || numofcontcount == numberofcontainers || resources.size() == allresourcesallocated.size()) {
+					if(numofcontcount<numberofcontainers && resources.size() == allresourcesallocated.size()) {
+						deallocateResources(globallaunchcontainers, resources, user);
+						throw new ContainerException(PipelineConstants.INSUFFICIENTRESOURCES.formatted(user, cpuuser, memoryuserbytes, executortype));
+					}
 					allresourcesallocated.clear();
 					break outer;
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Deallocate resources back to user resources map
+	 * @param launchcontainers
+	 * @param resources
+	 * @param user
+	 */
+	private static void deallocateResources(List <LaunchContainers> launchcontainers, Collection<ConcurrentMap<String, Resources>> resources, String user) {
+		for (LaunchContainers lcs : launchcontainers) {
+			String[] nodehostport = lcs.getNodehostport().split(DataSamudayaConstants.UNDERSCORE);			
+			Iterator<ConcurrentMap<String, Resources>> res = resources.iterator();
+			for(ContainerResources cr:lcs.getCla().getCr()) {
+				String conthp = nodehostport[0] + DataSamudayaConstants.UNDERSCORE + cr.getPort();
+				GlobalContainerAllocDealloc.getHportcrs().remove(conthp);
+				GlobalContainerAllocDealloc.getContainernode().remove(conthp);
+				while (res.hasNext()) {
+					ConcurrentMap<String, Resources> noderesmap = res.next();
+					Resources restolaunch = noderesmap.get(user);
+					if(restolaunch.getNodeport().equals(lcs.getNodehostport())); {
+						restolaunch.setFreememory(restolaunch.getFreememory() + cr.getMaxmemory() + cr.getDirectheap());
+						restolaunch.setNumberofprocessors(restolaunch.getNumberofprocessors() + cr.getCpu());
+						break;
+					}
 				}
 			}
 		}
