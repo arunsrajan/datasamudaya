@@ -26,5 +26,8 @@ public class ContainerException extends Exception {
 		super(message);
 	}
 
+	public ContainerException(String message, Exception parent) {
+		super(message, parent);
+	}
 
 }

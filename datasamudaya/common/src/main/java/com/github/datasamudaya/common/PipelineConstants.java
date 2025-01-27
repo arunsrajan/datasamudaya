@@ -106,4 +106,5 @@ public class PipelineConstants {
 	public static final String UNSUPPORTEDMEMORYALLOCATIONMODE = "Unsupported Memory Allocation Mode Error";
 	public static final String USERALLOCATEDSHARE = "User %s has already allocated his share";
 	public static final String USERNOTCONFIGURED = "User %s has no allocation";
+	public static final String INSUFFICIENTRESOURCES = "User %s has insufficient resources for allocating cpu %s or memory %s to %s";
 }
