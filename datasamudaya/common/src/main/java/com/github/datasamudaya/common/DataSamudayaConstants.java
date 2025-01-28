@@ -20,6 +20,7 @@ public class DataSamudayaConstants {
 
 	public static final String DATASAMUDAYA = "DATASAMUDAYA";
 	public static final String NEWLINE = "\n";
+	public static final String OR = " OR ";
 	public static final String HYPHEN = "-";
 	public static final String TAB = "\t";
 	public static final String AMPERSAND = "&";

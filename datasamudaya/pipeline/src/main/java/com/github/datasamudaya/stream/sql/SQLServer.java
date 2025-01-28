@@ -468,7 +468,24 @@ public class SQLServer {
 		} else if (inputLine.startsWith("drop")) {
 			handleDrop(out, inputLine, user, dbdefault.get());
 		} else if (inputLine.startsWith("show")) {
-			Utils.printTableOrError(TableCreator.showTables(user, dbdefault.get(), inputLine), out, JOBTYPE.NORMAL);
+			String tableordatabases = StringUtils.normalizeSpace(inputLine);
+			String tableordb = tableordatabases.split(" ")[1];
+			tableordb = tableordb.replaceAll(DataSamudayaConstants.COLON, DataSamudayaConstants.EMPTY);
+			if(tableordb.equalsIgnoreCase("tables")) {
+				Utils.printTableOrError(TableCreator.showTables(user, dbdefault.get(), inputLine), out, JOBTYPE.NORMAL);
+			} else if(tableordb.equalsIgnoreCase("databases")) {
+				Utils.printTableOrError(TableCreator.showDatabases(user), out, JOBTYPE.NORMAL);	
+			} else {
+				List<String> databases = TableCreator.showDatabases(user);
+				Utils.printTableOrError(databases, out, JOBTYPE.NORMAL);
+				out.println();
+				for(String db : databases) {
+					out.println(db+": ");
+					out.println("-----");
+					Utils.printTableOrError(TableCreator.showTables(user, db, inputLine), out, JOBTYPE.NORMAL);
+					out.println();
+				}
+			}
 		} else if (inputLine.startsWith("explain")) {
 			SelectQueryExecutor.explain(user, dbdefault.get(), inputLine.replaceFirst("explain", ""), out);
 		} else if (inputLine.startsWith("describe")) {

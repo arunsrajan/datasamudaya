@@ -19,6 +19,7 @@ import com.github.datasamudaya.common.ColumnMetadata;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.PipelineConfig;
+import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
@@ -100,6 +101,14 @@ public class SelectQueryExecutor {
 			}
 			StreamPipelineSql mdpsql = builder.build();
 			return (List) mdpsql.collect(true, null);
+		} catch(IllegalStateException ise) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();
+			if(ise.getMessage().equals(PipelineConstants.TABLEMUSHHAVEFIELDS)) {
+				error.add(PipelineConstants.TABLEMUSHHAVEFIELDS + DataSamudayaConstants.OR + DataSamudayaConstants.NEWLINE +PipelineConstants.EITHERTABLEISNOTAVAILABLEINSCHEMAORNOFIELDS.formatted(dbdefault));
+			}
+			errors.add(error);
+			return errors;
 		} catch (PipelineException ex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
@@ -278,6 +287,14 @@ public class SelectQueryExecutor {
 			}
 			StreamPipelineSql ipsql = builder.build();
 			return (List) ipsql.collect(true, null);
+		} catch(IllegalStateException ise) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();
+			if(ise.getMessage().equals(PipelineConstants.TABLEMUSHHAVEFIELDS)) {
+				error.add(PipelineConstants.TABLEMUSHHAVEFIELDS + DataSamudayaConstants.OR + DataSamudayaConstants.NEWLINE +PipelineConstants.EITHERTABLEISNOTAVAILABLEINSCHEMAORNOFIELDS.formatted(dbdefault));
+			}
+			errors.add(error);
+			return errors;
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();

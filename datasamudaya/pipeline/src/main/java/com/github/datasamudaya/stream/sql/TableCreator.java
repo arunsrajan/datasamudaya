@@ -1,29 +1,26 @@
 package com.github.datasamudaya.stream.sql;
 
-import static java.util.Objects.*;
+import static java.util.Objects.nonNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.ql.Driver;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
+import org.apache.hadoop.hive.ql.parse.SemanticException;
+import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hive.hcatalog.api.HCatClient;
 import org.apache.hive.hcatalog.api.HCatTable;
 import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
 
 import com.github.datasamudaya.common.ColumnMetadata;
 import com.github.datasamudaya.common.DataSamudayaConstants;
-import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.utils.Utils;
 
 /**
@@ -42,9 +39,15 @@ public class TableCreator {
 	public static String createAlterTable(String user, String db, String createCommand) throws Exception {
 		Configuration conf = Utils.getHiveConf(user);
 		try (Driver driver = new Driver((HiveConf) conf);) {
-			driver.run(createCommand);
-			return "Table created/altered";
+			CommandProcessorResponse response = driver.run(createCommand);			
+			return response.getMessage();
 		} catch (Exception ex) {
+			if(ex.getCause() instanceof HiveException hex) {
+				return hex.getMessage();
+			}
+			if(ex.getCause() instanceof AlreadyExistsException aex) {
+				return aex.getMessage();
+			}
 			try (StringWriter stackTrace = new StringWriter();
 					PrintWriter writer = new PrintWriter(stackTrace);) {
 				ex.printStackTrace(writer);
@@ -63,9 +66,12 @@ public class TableCreator {
 	public static String dropTable(String user, String db, String dropCommand) throws Exception {
 		Configuration conf = Utils.getHiveConf(user);
 		try (Driver driver = new Driver((HiveConf) conf);) {
-			driver.run(dropCommand);
-			return "Table dropped";
+			CommandProcessorResponse response = driver.run(dropCommand);			
+			return response.getMessage();
 		} catch (Exception ex) {
+			if(ex.getCause() instanceof SemanticException semanticex) {
+				return semanticex.getMessage();
+			}
 			try (StringWriter stackTrace = new StringWriter();
 					PrintWriter writer = new PrintWriter(stackTrace);) {
 				ex.printStackTrace(writer);
@@ -75,6 +81,14 @@ public class TableCreator {
 		}
 	}
 
+	/**
+	 * The function returns all tables for the given schema
+	 * @param user
+	 * @param db
+	 * @param showcommand
+	 * @return tables
+	 * @throws Exception
+	 */
 	public static List<String> showTables(String user, String db, String showcommand) throws Exception {
 		Configuration conf = Utils.getHiveConf(user);
 		HCatClient client = null;
@@ -95,6 +109,34 @@ public class TableCreator {
 		}
 	}
 
+	/**
+	 * The function returns all databases from metastore
+	 * @param user
+	 * @param db
+	 * @param showcommand
+	 * @return databases
+	 * @throws Exception
+	 */
+	public static List<String> showDatabases(String user) throws Exception {
+		Configuration conf = Utils.getHiveConf(user);
+		HCatClient client = null;
+		try {
+			client = HCatClient.create(conf);
+			return client.listDatabaseNamesByPattern(DataSamudayaConstants.ASTERIX);
+		} catch (Exception ex) {
+			try (StringWriter stackTrace = new StringWriter();
+				PrintWriter writer = new PrintWriter(stackTrace);) {
+				ex.printStackTrace(writer);
+				writer.flush();
+				return Arrays.asList(stackTrace.toString());
+			}
+		} finally {
+			if (nonNull(client)) {
+				client.close();
+			}
+		}
+	}
+	
 	/**
 	 * Gets Column metadata from table.
 	 * @param tablename
