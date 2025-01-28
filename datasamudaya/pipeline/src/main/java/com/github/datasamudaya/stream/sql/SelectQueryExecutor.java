@@ -3,15 +3,19 @@ package com.github.datasamudaya.stream.sql;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -29,6 +33,7 @@ import net.sf.jsqlparser.parser.CCJSqlParserManager;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.util.validation.Validation;
 import net.sf.jsqlparser.util.validation.ValidationError;
+import net.sf.jsqlparser.util.validation.ValidationException;
 import net.sf.jsqlparser.util.validation.feature.DatabaseType;
 
 /**
@@ -77,7 +82,15 @@ public class SelectQueryExecutor {
 					DatabaseType.POSTGRESQL, DatabaseType.H2), selectquery);
 			List<ValidationError> errors = validation.validate();
 			if (!CollectionUtils.isEmpty(errors)) {
-				throw new Exception("Syntax error in SQL");
+				StringBuilder builder = new StringBuilder();
+				for(ValidationError validerror:errors) {
+					Set<ValidationException> validexception = validerror.getErrors();
+					for(ValidationException validex:validexception) {
+						builder.append(validex.getMessage());
+						builder.append(DataSamudayaConstants.NEWLINE);
+					}
+				}
+				throw new SQLException("Syntax error in SQL: "+builder.toString());
 			}
 			Statement statement = parserManager.parse(new StringReader(selectquery));
 			var tables = new ArrayList<String>();
@@ -109,10 +122,25 @@ public class SelectQueryExecutor {
 			}
 			errors.add(error);
 			return errors;
+		} catch(CalciteContextException cce) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();		
+			error.add(cce.getMessage());
+			if(cce.getCause() instanceof SqlValidatorException sve) {
+				error.add(sve.getMessage());
+			}
+			errors.add(error);
+			return errors;
 		} catch (PipelineException ex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
 			error.add(ExceptionUtils.getRootCauseMessage(ex));
+			errors.add(error);
+			return errors;
+		} catch(SQLException sqlex) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();
+			error.add(sqlex.getMessage());
 			errors.add(error);
 			return errors;
 		} catch (Exception ex) {
@@ -263,7 +291,15 @@ public class SelectQueryExecutor {
 					DatabaseType.POSTGRESQL, DatabaseType.H2), selectquery);
 			List<ValidationError> errors = validation.validate();
 			if (!CollectionUtils.isEmpty(errors)) {
-				throw new Exception("Syntax error in SQL");
+				StringBuilder builder = new StringBuilder();
+				for(ValidationError validerror:errors) {
+					Set<ValidationException> validexception = validerror.getErrors();
+					for(ValidationException validex:validexception) {
+						builder.append(validex.getMessage());
+						builder.append(DataSamudayaConstants.NEWLINE);
+					}
+				}
+				throw new SQLException("Syntax error in SQL: "+builder.toString());
 			}
 			Statement statement = parserManager.parse(new StringReader(selectquery));
 			var tables = new ArrayList<String>();
@@ -293,6 +329,27 @@ public class SelectQueryExecutor {
 			if(ise.getMessage().equals(PipelineConstants.TABLEMUSHHAVEFIELDS)) {
 				error.add(PipelineConstants.TABLEMUSHHAVEFIELDS + DataSamudayaConstants.OR + DataSamudayaConstants.NEWLINE +PipelineConstants.EITHERTABLEISNOTAVAILABLEINSCHEMAORNOFIELDS.formatted(dbdefault));
 			}
+			errors.add(error);
+			return errors;
+		} catch(CalciteContextException cce) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();		
+			error.add(cce.getMessage());
+			if(cce.getCause() instanceof SqlValidatorException sve) {
+				error.add(sve.getMessage());
+			}
+			errors.add(error);
+			return errors;
+		} catch (PipelineException ex) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();
+			error.add(ExceptionUtils.getRootCauseMessage(ex));
+			errors.add(error);
+			return errors;
+		} catch(SQLException sqlex) {
+			List errors = new ArrayList<>();
+			List error = new ArrayList<>();
+			error.add(sqlex.getMessage());
 			errors.add(error);
 			return errors;
 		} catch (Exception ex) {
