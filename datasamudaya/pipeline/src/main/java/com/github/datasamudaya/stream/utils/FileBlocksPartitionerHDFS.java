@@ -13,6 +13,7 @@ import static java.util.Objects.nonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -132,6 +133,8 @@ public class FileBlocksPartitionerHDFS {
 			var blocksize = totallength / numpartition;
 
 			return getBlocks(null);
+		} catch(PipelineException pex) {
+			throw pex;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.FILEIOERROR, ex);
 			throw new PipelineException(PipelineConstants.FILEIOERROR, ex);
@@ -364,6 +367,8 @@ public class FileBlocksPartitionerHDFS {
 			}
 			job.setAllstageshostport(allstageshostport);
 			log.debug("Partitioning of Blocks ended.");
+		} catch(PipelineException pex) {
+			throw pex;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.FILEBLOCKSPARTITIONINGERROR, ex);
 			destroyTaskExecutors();
@@ -724,9 +729,18 @@ public class FileBlocksPartitionerHDFS {
 			while (fileStatus.hasNext()) {
 				fileStatuses.add(fileStatus.next());
 			}
+			if (CollectionUtils.isEmpty(fileStatuses)) {
+				throw new PipelineException(PipelineConstants.HDFSFILENOTFOUND.formatted(hdfspth + folder));
+			}
 			var paths = FileUtil.stat2Paths(fileStatuses.toArray(new FileStatus[fileStatuses.size()]));
 			return Arrays.asList(paths);
+		} catch(PipelineException pex) {
+			throw pex;
 		} catch (Exception ex) {
+			if(ex.getCause() instanceof ConnectException cex) {
+				log.error(PipelineConstants.HDFSCONNECTERROR.formatted(hdfspth), cex);
+                throw new PipelineException(PipelineConstants.HDFSCONNECTERROR.formatted(hdfspth), cex);
+            }
 			log.error(PipelineConstants.FILEPATHERROR, ex);
 			throw new PipelineException(PipelineConstants.FILEPATHERROR, ex);
 		}
@@ -746,6 +760,8 @@ public class FileBlocksPartitionerHDFS {
 			// Fetch the location of blocks for user defined block size.
 			bls = HDFSBlockUtils.getBlocksLocation(hdfs, filepaths, columns);
 			return bls;
+		} catch(PipelineException pex) {
+			throw pex;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.FILEBLOCKSERROR, ex);
 			throw new PipelineException(PipelineConstants.FILEBLOCKSERROR, ex);

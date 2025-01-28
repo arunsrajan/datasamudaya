@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.ConnectException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -11,9 +12,11 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
+import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
+import org.apache.hadoop.hive.ql.processors.CommandProcessorException;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hive.hcatalog.api.HCatClient;
 import org.apache.hive.hcatalog.api.HCatTable;
@@ -21,7 +24,9 @@ import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
 
 import com.github.datasamudaya.common.ColumnMetadata;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.stream.PipelineException;
 
 /**
  * The SQL class to create table and executes sql queries.
@@ -41,13 +46,18 @@ public class TableCreator {
 		try (Driver driver = new Driver((HiveConf) conf);) {
 			CommandProcessorResponse response = driver.run(createCommand);			
 			return response.getMessage();
-		} catch (Exception ex) {
-			if(ex.getCause() instanceof HiveException hex) {
+		} catch(CommandProcessorException cpex) {			
+			if(cpex.getCause() instanceof HiveException hex) {
+				if(hex.getCause() instanceof MetaException mex) {
+					return mex.getMessage();
+				}
+				if(hex.getCause() instanceof AlreadyExistsException aex) {
+					return aex.getMessage();
+				}
 				return hex.getMessage();
 			}
-			if(ex.getCause() instanceof AlreadyExistsException aex) {
-				return aex.getMessage();
-			}
+			return cpex.getMessage();
+		} catch (Exception ex) {			
 			try (StringWriter stackTrace = new StringWriter();
 					PrintWriter writer = new PrintWriter(stackTrace);) {
 				ex.printStackTrace(writer);

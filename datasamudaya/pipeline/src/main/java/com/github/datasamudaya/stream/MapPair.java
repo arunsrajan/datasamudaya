@@ -620,6 +620,8 @@ public sealed class MapPair<I1, I2> extends AbstractPipeline permits MapValues {
 		try {
 			var sp = new StreamPipeline(this, null);
 			return sp.collect(toexecute, supplier);
+		} catch(PipelineException pex) {
+			throw pex;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.PIPELINECOLLECTERROR, ex);
 			throw new PipelineException(PipelineConstants.PIPELINECOLLECTERROR, ex);

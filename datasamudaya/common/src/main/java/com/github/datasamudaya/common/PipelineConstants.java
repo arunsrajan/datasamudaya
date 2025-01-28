@@ -106,7 +106,10 @@ public class PipelineConstants {
 	public static final String UNSUPPORTEDMEMORYALLOCATIONMODE = "Unsupported Memory Allocation Mode Error";
 	public static final String USERALLOCATEDSHARE = "User %s has already allocated his share";
 	public static final String USERNOTCONFIGURED = "User %s has no allocation";
-	public static final String INSUFFICIENTRESOURCES = "User %s has insufficient resources for allocating cpu %s or memory %s to %s";
+	public static final String INSUFFICIENTRESOURCES = "User '%s' has insufficient resources for allocating cpu %s or memory %s to %s";
 	public static final String TABLEMUSHHAVEFIELDS = "Table must have at least one field";
-	public static final String EITHERTABLEISNOTAVAILABLEINSCHEMAORNOFIELDS = "Table should be present in Schema %s";
+	public static final String EITHERTABLEISNOTAVAILABLEINSCHEMAORNOFIELDS = "Table should be present in Schema '%s'";
+	public static final String HDFSCONNECTERRORGENERIC = "Unable to connect to HDFS";
+	public static final String HDFSCONNECTERROR = "Unable to connect to HDFS at '%s'";
+	public static final String HDFSFILENOTFOUND = "File(s) not found in folder '%s'";
 }

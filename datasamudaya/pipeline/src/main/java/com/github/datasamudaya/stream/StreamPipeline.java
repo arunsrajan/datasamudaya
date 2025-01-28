@@ -1104,6 +1104,8 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			stages.clear();
 			stages = null;
 			log.debug("Induce of DAG ended.");
+		} catch(PipelineException pex) {
+			throw pex;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.DAGERROR, ex);
 			throw new PipelineException(PipelineConstants.DAGERROR, ex);
@@ -1313,6 +1315,8 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 				}
 			}
 			return (List) results;
+		} catch(PipelineException pex) {
+			throw pex;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.CREATEOREXECUTEJOBERROR, ex);
 			throw new PipelineException(PipelineConstants.CREATEOREXECUTEJOBERROR, (Exception) ex);
@@ -1353,6 +1357,8 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			log.debug("Collect task ended.");
 			Utils.writeToOstream(pipelineconfig.getOutput(), "Collect task ended.");
 			return result;
+		} catch(PipelineException pex) {
+			throw pex;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.PIPELINECOLLECTERROR, ex);
 			throw new PipelineException(PipelineConstants.PIPELINECOLLECTERROR, ex);
@@ -1389,6 +1395,8 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 			var result = mdscollect.collect(toexecute, Job.TRIGGER.PIGDUMP);
 			log.debug("Dump task ended.");
 			Utils.writeToOstream(pipelineconfig.getOutput(), "Dump task ended.");
+		} catch(PipelineException pex) {
+			throw pex;
 		} catch (Exception ex) {
 			log.error(PipelineConstants.PIPELINECOLLECTERROR, ex);
 			throw new PipelineException(PipelineConstants.PIPELINECOLLECTERROR, ex);

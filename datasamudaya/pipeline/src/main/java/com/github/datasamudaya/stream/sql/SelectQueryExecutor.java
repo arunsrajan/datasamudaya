@@ -131,10 +131,10 @@ public class SelectQueryExecutor {
 			}
 			errors.add(error);
 			return errors;
-		} catch (PipelineException ex) {
+		} catch (PipelineException pex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
-			error.add(ExceptionUtils.getRootCauseMessage(ex));
+			error.add(pex.getMessage());
 			errors.add(error);
 			return errors;
 		} catch(SQLException sqlex) {
@@ -340,10 +340,10 @@ public class SelectQueryExecutor {
 			}
 			errors.add(error);
 			return errors;
-		} catch (PipelineException ex) {
+		} catch (PipelineException pex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
-			error.add(ExceptionUtils.getRootCauseMessage(ex));
+			error.add(pex.getMessage());
 			errors.add(error);
 			return errors;
 		} catch(SQLException sqlex) {
