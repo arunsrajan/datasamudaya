@@ -9,7 +9,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -65,20 +67,20 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
-
+	ForkJoinPool fjpool;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessInnerJoin-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, JoinPredicate jp, List<EntityRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessInnerJoin(context, jp, pipelines, terminatingsize,
-				jobidstageidtaskidcompletedmap, cache, task));
+				jobidstageidtaskidcompletedmap, cache, task, fjpool));
 	}
 
 
 	private ProcessInnerJoin(ActorContext<Command> context, JoinPredicate jp, List<EntityRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		super(context);
 		this.jp = jp;
 		this.pipelines = pipelines;
@@ -86,6 +88,7 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
+		this.fjpool = fjpool;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
@@ -108,21 +111,25 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				log.debug("In process Inner Join Left {} {}", oo.isLeft(), getIntermediateDataFSFilePath(task));
 				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
+				CompletableFuture.supplyAsync(() -> {
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
 				} else {
 					diskspilllistintermleft.addAll(dsl.getData());
 				}
+				return null;}, fjpool).get();
 			}
 		} else if (oo.isRight()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				log.debug("In process Inner Join Right {} {}", oo.isRight(), getIntermediateDataFSFilePath(task));
 				diskspilllistintermright = new DiskSpillingList(task, diskspillpercentage, null, true, false, true, null, null, 0);
+				CompletableFuture.supplyAsync(() -> {
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
 				} else {
 					diskspilllistintermright.addAll(dsl.getData());
 				}
+				return null;}, fjpool).get();
 			}
 		}
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
@@ -147,39 +154,49 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 					? (Stream<Tuple2>) Utils.getStreamData(
 					new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
 							diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
-					: diskspilllistintermright.getData().stream();
+					: diskspilllistintermright.getData().stream();			
 			try (var seq1 = Seq.seq(datastreamleft);
 					var seq2 = Seq.seq(datastreamright);
 					var join = seq1.innerJoin(seq2, jp);) {
-				join.forEach(diskspilllist::add);
-				if (diskspilllist.isSpilled()) {
-					diskspilllist.close();
-				}
-				if (Objects.nonNull(pipelines)) {
-					pipelines.forEach(downstreampipe -> {
-						try {
-							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class));
-						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);
+				CompletableFuture.supplyAsync(() -> {
+					try {
+						join.forEach(diskspilllist::add);
+						if (diskspilllist.isSpilled()) {
+							diskspilllist.close();
 						}
-					});
-				} else {
-					Stream<Tuple2> datastream = diskspilllist.isSpilled()
-							? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
-							diskspilllist.getTask(), null, true, diskspilllist.getLeft(), diskspilllist.getRight())))
-							: diskspilllist.getData().stream();
-					try (var fsdos = new ByteArrayOutputStream();
-							var sos = new SnappyOutputStream(fsdos);
-							var output = new Output(sos);) {
-						Utils.getKryo().writeClassAndObject(output, datastream.toList());
-						output.flush();
-						task.setNumbytesgenerated(fsdos.toByteArray().length);
-						byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();
-						cache.put(getIntermediateDataFSFilePath(task), bt);
-					} catch (Exception ex) {
-						log.error("Error in putting output in cache", ex);
+						if (Objects.nonNull(pipelines)) {
+							pipelines.forEach(downstreampipe -> {
+								try {
+									downstreampipe
+											.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class));
+								} catch (Exception ex) {
+									log.error(DataSamudayaConstants.EMPTY, ex);
+								}
+							});
+						} else {
+							Stream<Tuple2> datastream = diskspilllist.isSpilled()
+									? (Stream<Tuple2>) Utils.getStreamData(
+											new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(),
+													null, true, diskspilllist.getLeft(), diskspilllist.getRight())))
+									: diskspilllist.getData().stream();
+							try (var fsdos = new ByteArrayOutputStream();
+									var sos = new SnappyOutputStream(fsdos);
+									var output = new Output(sos);) {
+								Utils.getKryo().writeClassAndObject(output, datastream.toList());
+								output.flush();
+								task.setNumbytesgenerated(fsdos.toByteArray().length);
+								byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();
+								cache.put(getIntermediateDataFSFilePath(task), bt);
+							} catch (Exception ex) {
+								log.error("Error in putting output in cache", ex);
+							}
+						}
 					}
+				catch(Exception ex) {
+					log.error("Error in putting output in cache", ex);
 				}
+				return null;
+				}, fjpool).get();
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
 				return this;

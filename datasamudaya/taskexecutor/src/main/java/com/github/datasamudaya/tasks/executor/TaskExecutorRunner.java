@@ -11,7 +11,6 @@ package com.github.datasamudaya.tasks.executor;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -20,7 +19,6 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -42,8 +41,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.ConfigurationSource;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgroups.util.UUID;
 import org.jooq.lambda.tuple.Tuple2;
@@ -89,7 +86,6 @@ import akka.cluster.sharding.typed.javadsl.ClusterSharding;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import akka.cluster.typed.Cluster;
 import akka.cluster.typed.Join;
-import akka.cluster.typed.JoinSeedNodes;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
@@ -129,7 +125,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	static Tuple2<ServerSocket, ExecutorService> shuffleFileServer;
 	static Tuple2<ServerSocket, ExecutorService> sortServer;
 	static String shardId;
-
+	static ForkJoinPool fjpool;
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {
 			URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
@@ -171,6 +167,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			int numberofprocessors = Runtime.getRuntime().availableProcessors();
+			fjpool = new ForkJoinPool(numberofprocessors);
 			ThreadFactory virtualThreadFactory = Thread.ofVirtual().factory();
 			estask = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
 					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
@@ -380,7 +377,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
 								actorsystemurl, clussharding, jobid, jobidentitytypekeymap.get(gettaskactor.getTask().getJobid()),
-								blockspartitionskipmap, shardId);
+								blockspartitionskipmap, shardId, fjpool);
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
 						if (isNull(jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()))) {
 							jobidentitytypekeymap.put(executetaskactor.getTask().getJobid(), new ConcurrentHashMap<String, EntityTypeKey>());
@@ -390,7 +387,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 									jobidstageidjobstagemap, hdfs,
 									inmemorycache, jobidstageidtaskidcompletedmap,
 									actorsystemurl, clussharding, jobid, jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()),
-									blockspartitionskipmap, shardId);
+									blockspartitionskipmap, shardId, fjpool);
 						});
 						return escomputfuture.get();
 					} else if (deserobj instanceof CleanupTaskActors cleanupactors) {

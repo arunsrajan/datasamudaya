@@ -11,7 +11,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -71,20 +73,20 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
 	DiskSpillingList<Tuple2> diskspilllistinterm;
-
+	ForkJoinPool fjpool;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessCoalesce-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, Coalesce coalesce, List<EntityRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessCoalesce(context, coalesce, pipelines, terminatingsize,
 				jobidstageidtaskidcompletedmap,
-				cache, task));
+				cache, task, fjpool));
 	}
 
 	private ProcessCoalesce(ActorContext<Command> context, Coalesce coalesce, List<EntityRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		super(context);
 		this.coalesce = coalesce;
 		this.pipelines = pipelines;
@@ -92,6 +94,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
+		this.fjpool = fjpool;
 		int diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(task, diskspillpercentage, null, true, false, false, null, null, 0);
@@ -113,11 +116,14 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 	private Behavior<Command> processCoalesce(OutputObject object) throws Exception {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
+				CompletableFuture.supplyAsync(() -> {
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
 					diskspilllistinterm.addAll(dsl.getData());
 				}
+				return null;
+				}, fjpool).get();
 				dsl.clear();
 			}
 			if (object.getTerminiatingclass() == Dummy.class || object.getTerminiatingclass() == DiskSpillingList.class) {
@@ -133,13 +139,15 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 						? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
 						Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true, false, false)))
 						: diskspilllistinterm.getData().stream();
-				datastream
-						.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
-								(input1, input2) ->
-										coalesce.getCoalescefunction().apply(input1, input2)))
-						.entrySet().stream()
-						.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
-						.forEach(diskspilllist::add);
+				CompletableFuture.supplyAsync(() -> {
+					datastream
+							.collect(Collectors.toMap(Tuple2::v1, Tuple2::v2,
+									(input1, input2) -> coalesce.getCoalescefunction().apply(input1, input2)))
+							.entrySet().stream()
+							.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
+							.forEach(diskspilllist::add);
+							return null;
+							}, fjpool).get();
 				if (diskspilllist.isSpilled()) {
 					diskspilllist.close();
 				}
@@ -162,8 +170,8 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 							: diskspilllist.getData().stream();
 					try (var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);
-							var output = new Output(sos);) {
-						Utils.getKryo().writeClassAndObject(output, datastreamsplilled.toList());
+							var output = new Output(sos);) {						
+						Utils.getKryo().writeClassAndObject(output, CompletableFuture.supplyAsync(()->datastreamsplilled.toList(), fjpool).get());
 						output.flush();
 						task.setNumbytesgenerated(fsdos.toByteArray().length);
 						byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();

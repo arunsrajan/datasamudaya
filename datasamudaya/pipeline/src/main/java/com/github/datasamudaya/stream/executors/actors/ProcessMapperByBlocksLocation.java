@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Vector;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -99,7 +100,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap;
 	int diskspillpercentage;
-
+	ForkJoinPool fjpool;
 	protected List getFunctions(JobStage jobstage) {
 		logger.debug("Entered ProcessMapperByBlocksLocation.getFunctions");
 		var tasks = jobstage.getStage().tasks;
@@ -117,14 +118,14 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 
 	public static Behavior<Command> create(String entityId, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap) {
+			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessMapperByBlocksLocation(context, entityId, hdfs, cache,
-				jobidstageidtaskidcompletedmap, tasktoprocess, blockspartitionfilterskipmap));
+				jobidstageidtaskidcompletedmap, tasktoprocess, blockspartitionfilterskipmap, fjpool));
 	}
 
 	private ProcessMapperByBlocksLocation(ActorContext<Command> context, String entityId, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap) {
+			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap, ForkJoinPool fjpool) {
 		super(context);
 		this.hdfs = hdfs;
 		this.cache = cache;
@@ -132,6 +133,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 		this.blockspartitionfilterskipmap = blockspartitionfilterskipmap;
 		this.iscacheable = true;
 		this.tasktoprocess = tasktoprocess;
+		this.fjpool = fjpool;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 	}
@@ -350,14 +352,13 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 				logger.debug("Number Of Shuffle Files PerExecutor {}" + numfileperexec);
 				if (MapUtils.isNotEmpty(blr.pipeline)) {
 					int totalranges = blr.pipeline.keySet().size();
-					logger.debug("Total Ranges {}" + totalranges);
-					ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-					Map<Integer, DiskSpillingList> results = fjpool.submit(() -> (Map) ((Stream<Tuple2>) streammap).collect(
+					logger.debug("Total Ranges {}" + totalranges);					
+					Map<Integer, DiskSpillingList> results = CompletableFuture.supplyAsync(() -> (Map) ((Stream<Tuple2>) streammap).collect(
 							Collectors.groupingByConcurrent((Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % totalranges,
 									Collectors.mapping(tup2 -> tup2,
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 													diskspillpercentage,
-													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, totalranges)))))).get();
+													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, totalranges))))),fjpool).get();
 					results.entrySet().forEach(entry -> {
 						try {
 							if (entry.getValue().isSpilled()) {

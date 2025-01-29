@@ -13,8 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -84,7 +86,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	Map<Integer, EntityRef> pipeline;
 	Map<Integer, EntityRef> actorselections;
 	int diskspillpercentage;
-
+	ForkJoinPool fjpool;
 	protected List getFunctions() {
 		logger.debug("Entered ProcessMapperByStream");
 		var tasks = jobstage.getStage().tasks;
@@ -103,15 +105,15 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	public static Behavior<Command> create(String entityId, JobStage js, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<EntityRef> childpipes,
 			Map<Integer, FilePartitionId> shufflerectowrite, Map<Integer, EntityRef> pipeline,
-			int terminatingsize) {
+			int terminatingsize, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessMapperByStream(context, js, hdfs,
-				cache, jobidstageidtaskidcompletedmap, tasktoprocess, childpipes, shufflerectowrite, pipeline, terminatingsize));
+				cache, jobidstageidtaskidcompletedmap, tasktoprocess, childpipes, shufflerectowrite, pipeline, terminatingsize, fjpool));
 	}
 
 	private ProcessMapperByStream(ActorContext<Command> context, JobStage js, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<EntityRef> childpipes,
 			Map<Integer, FilePartitionId> shufflerectowrite, Map<Integer, EntityRef> pipeline,
-			int terminatingsize) {
+			int terminatingsize, ForkJoinPool fjpool) {
 		super(context);
 		this.jobstage = js;
 		this.hdfs = hdfs;
@@ -122,6 +124,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 		this.childpipes = childpipes;
 		this.shufflerectowrite = shufflerectowrite;
 		this.terminatingsize = terminatingsize;
+		this.fjpool = fjpool;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, true, false, false, null,
@@ -148,29 +151,50 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				if (!dsl.isClosed()) {
-					if (dsl.isSpilled()) {
-						Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
-						dsl.close();
-						dsl.clear();
-					} else {
-						diskspilllistinterm.addAll(dsl.getData());
-						dsl.close();
-						dsl.clear();
-					}
+					CompletableFuture.supplyAsync(() -> {
+						try {
+						if (dsl.isSpilled()) {
+							Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
+							dsl.close();
+							dsl.clear();
+						} else {
+							diskspilllistinterm.addAll(dsl.getData());
+							dsl.close();
+							dsl.clear();
+						}
+						} catch(Exception ex) {
+							logger.error(DataSamudayaConstants.EMPTY, ex);	
+						}
+						return null;
+					}, fjpool).get();
 				} else {
-					if (dsl.isSpilled()) {
-						Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
-					} else {
-						diskspilllistinterm.addAll(dsl.getData());
+					CompletableFuture.supplyAsync(() -> {
+					try {
+						if (dsl.isSpilled()) {
+							Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
+						} else {
+							diskspilllistinterm.addAll(dsl.getData());
+						}
+					} catch(Exception ex) {
+						logger.error(DataSamudayaConstants.EMPTY, ex);	
 					}
+					return null;
+				}, fjpool).get();
 				}
 				dsl.clear();
 			} else if (object.getValue() instanceof DiskSpillingSet dss) {
-				if (dss.isSpilled()) {
-					Utils.copySpilledDataSourceToDestination(dss, diskspilllistinterm);
-				} else {
-					diskspilllistinterm.addAll(dss.getData());
+				CompletableFuture.supplyAsync(() -> {
+				try {
+					if (dss.isSpilled()) {
+						Utils.copySpilledDataSourceToDestination(dss, diskspilllistinterm);
+					} else {
+						diskspilllistinterm.addAll(dss.getData());
+					}
+				} catch(Exception ex) {
+					logger.error(DataSamudayaConstants.EMPTY, ex);	
 				}
+				return null;
+			}, fjpool).get();
 				dss.clear();
 			} else if (object.getValue() instanceof TreeSet treeset) {
 				diskspilllistinterm.addAll(treeset);
@@ -189,217 +213,243 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 				}
 				logger.debug("processMapStream InitialSize {} , Terminating Size {} and Terminating Class {}", initialsize,
 						terminatingsize, object.getTerminiatingclass());
-				if (object.getTerminiatingclass() == NodeIndexKey.class) {
-					logger.debug("Is Terminating Class NodeIndexKey Shuffle Records {} isEmpty {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite));
-					if (CollectionUtils.isNotEmpty(childpipes)) {
-						final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
-								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
-						final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
-								: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true
-								: false;
-						Stream<NodeIndexKey> datastream = diskspilllistinterm.isSpilled()
-								? (Stream<NodeIndexKey>) Utils.getStreamData(
-								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
-										null, true, false, false)))
-								: diskspilllistinterm.getData().stream();
-						Map<String, RemoteIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>();
-						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
-								datastream.map(nik -> {
-									try {
-										if (isNull(nik.getTask().getHostport()) || !diskspilllistinterm.isSpilled()) {
-											return nik.getValue();
-										}
-										String jstid = Utils.getIntermediateInputStreamTask(nik.getTask());
-										if (isNull(taskrlistiterclientmap.get(jstid))) {
-											taskrlistiterclientmap.put(jstid, new RemoteIteratorClient<>(
-													nik.getTask(), null, false, false, false, null, RequestType.ELEMENT, IteratorType.SORTORUNIONORINTERSECTION, false, null));
-										}
-										if (!taskrlistiterclientmap.get(jstid).isclosed() && taskrlistiterclientmap.get(jstid).hasNext()) {
-											Object value = taskrlistiterclientmap.get(jstid).next().getValue();
-											if (value instanceof NodeIndexKey nikwithvalue) {
-												return nikwithvalue.getValue();
+				CompletableFuture.supplyAsync(() -> {
+					try {
+						if (object.getTerminiatingclass() == NodeIndexKey.class) {
+							logger.debug("Is Terminating Class NodeIndexKey Shuffle Records {} isEmpty {}",
+									shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite));
+							if (CollectionUtils.isNotEmpty(childpipes)) {
+								final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
+										: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true
+												: false;
+								final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
+										: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true
+												: false;
+								Stream<NodeIndexKey> datastream = diskspilllistinterm.isSpilled()
+										? (Stream<NodeIndexKey>) Utils
+												.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
+														diskspilllistinterm.getTask(), null, true, false, false)))
+										: diskspilllistinterm.getData().stream();
+								Map<String, RemoteIteratorClient<NodeIndexKey>> taskrlistiterclientmap = new ConcurrentHashMap<>();
+								try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
+										datastream.map(nik -> {
+											try {
+												if (isNull(nik.getTask().getHostport())
+														|| !diskspilllistinterm.isSpilled()) {
+													return nik.getValue();
+												}
+												String jstid = Utils.getIntermediateInputStreamTask(nik.getTask());
+												if (isNull(taskrlistiterclientmap.get(jstid))) {
+													taskrlistiterclientmap.put(jstid,
+															new RemoteIteratorClient<>(nik.getTask(), null, false,
+																	false, false, null, RequestType.ELEMENT,
+																	IteratorType.SORTORUNIONORINTERSECTION, false,
+																	null));
+												}
+												if (!taskrlistiterclientmap.get(jstid).isclosed()
+														&& taskrlistiterclientmap.get(jstid).hasNext()) {
+													Object value = taskrlistiterclientmap.get(jstid).next().getValue();
+													if (value instanceof NodeIndexKey nikwithvalue) {
+														return nikwithvalue.getValue();
+													}
+													return value;
+												}
+											} catch (Exception ex) {
+												logger.error("{}", ex);
 											}
-											return value;
-										}
-									} catch (Exception ex) {
-										logger.error("{}", ex);
-									}
-									return null;
-								}).filter(Objects::nonNull));) {
-							if (MapUtils.isNotEmpty(shufflerectowrite)) {
-								int numfilepart = shufflerectowrite.size();
-								Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap)
-										.collect(
-												Collectors.groupingByConcurrent(
+											return null;
+										}).filter(Objects::nonNull));) {
+									if (MapUtils.isNotEmpty(shufflerectowrite)) {
+										int numfilepart = shufflerectowrite.size();
+										Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap)
+												.collect(Collectors.groupingByConcurrent(
 														(Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 														Collectors.mapping(tup2 -> tup2,
 																Collectors.toCollection(() -> new DiskSpillingList(
 																		tasktoprocess, diskspillpercentage,
 																		Utils.getUUID().toString(), false, leftvalue,
 																		rightvalue, null, null, 0)))));
-								pipeline.entrySet().stream()
-										.forEach(
-												entry -> entry.getValue().tell(
-														new OutputObject(new TerminatingActorValue(results.size()),
-																leftvalue, rightvalue, TerminatingActorValue.class)));
-								results.entrySet().forEach(entry -> {
-									try {
-										if (entry.getValue().isSpilled()) {
-											entry.getValue().close();
+										pipeline.entrySet().stream()
+												.forEach(entry -> entry.getValue()
+														.tell(new OutputObject(
+																new TerminatingActorValue(results.size()), leftvalue,
+																rightvalue, TerminatingActorValue.class)));
+										results.entrySet().forEach(entry -> {
+											try {
+												if (entry.getValue().isSpilled()) {
+													entry.getValue().close();
+												}
+											} catch (Exception ex) {
+												logger.error(DataSamudayaConstants.EMPTY, ex);
+											}
+											pipeline.get(
+													entry.getKey()).tell(
+															new OutputObject(
+																	new ShuffleBlock(null,
+																			Utils.convertObjectToBytes(shufflerectowrite
+																					.get(entry.getKey())),
+																			entry.getValue()),
+																	leftvalue, rightvalue, null));
+										});
+										int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(
+												DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
+												DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+										pipeline.keySet().stream().filter(key -> key % numfileperexec == 0)
+												.forEach(key -> pipeline.get(key).tell(new OutputObject(new Dummy(),
+														leftvalue, rightvalue, Dummy.class)));
+									} else {
+										streammap.forEach(diskspilllist::add);
+										if (diskspilllist.isSpilled()) {
+											diskspilllist.close();
 										}
-									} catch (Exception ex) {
-										logger.error(DataSamudayaConstants.EMPTY, ex);
+										childpipes.stream()
+												.forEach(action -> action.tell(new OutputObject(diskspilllist,
+														leftvalue, rightvalue, DiskSpillingList.class)));
 									}
-									pipeline.get(
-											entry.getKey()).tell(
-											new OutputObject(
-													new ShuffleBlock(null,
-															Utils.convertObjectToBytes(
-																	shufflerectowrite.get(entry.getKey())),
-															entry.getValue()),
-													leftvalue, rightvalue, null));
-								});
-								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
-										DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-								pipeline.keySet().stream().filter(key -> key % numfileperexec == 0)
-										.forEach(key -> pipeline.get(key).tell(
-												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class)));
+									taskrlistiterclientmap.values().forEach(client -> {
+										try {
+											client.close();
+										} catch (IOException e) {
+											logger.error("{}", e);
+										}
+									});
+								} catch (Exception ex) {
+									logger.error("{}", ex);
+								}
 							} else {
-								streammap.forEach(diskspilllist::add);
-								if (diskspilllist.isSpilled()) {
-									diskspilllist.close();
+								Stream<NodeIndexKey> datastream = diskspilllistinterm.isSpilled()
+										? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
+												Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
+														diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+										: diskspilllistinterm.getData().stream();
+								try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
+										datastream.map(nik -> nik.getValue()));
+										var fsdos = new ByteArrayOutputStream();
+										var sos = new SnappyOutputStream(fsdos);
+										var output = new Output(sos);) {
+									logger.debug("Map assembly deriving");
+									List result = (List) streammap.collect(Collectors.toList());
+									Utils.getKryo().writeClassAndObject(output, result);
+									output.flush();
+									tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
+									cacheAble(fsdos);
+									logger.debug("Map assembly concluded");
+								} catch (Exception ex) {
+									logger.error(DataSamudayaConstants.EMPTY, ex);
 								}
-								childpipes.stream().forEach(action -> action.tell(
-										new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class)));
 							}
-							taskrlistiterclientmap.values().forEach(client -> {
-								try {
-									client.close();
-								} catch (IOException e) {
-									logger.error("{}", e);
+						} else {
+							logger.debug(
+									"Is Terminating Class DiskSpillingList Is Shuffle Records {} Is Empty {} and intermediate Spilled ? {}",
+									shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite),
+									diskspilllistinterm.isSpilled());
+							if (CollectionUtils.isNotEmpty(childpipes)) {
+								final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
+										: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true
+												: false;
+								final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
+										: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true
+												: false;
+								Stream datastream = diskspilllistinterm.isSpilled()
+										? (Stream) Utils
+												.getStreamData(new FileInputStream(Utils.getLocalFilePathForTask(
+														diskspilllistinterm.getTask(), null, true, false, false)))
+										: diskspilllistinterm.getData().stream();
+								if (object.getTerminiatingclass() == DiskSpillingSet.class) {
+									datastream = ((Stream<NodeIndexKey>) datastream).map(nik -> nik.getValue());
 								}
-							});
-						} catch (Exception ex) {
-							logger.error("{}", ex);
-						}
-					} else {
-						Stream<NodeIndexKey> datastream = diskspilllistinterm.isSpilled()
-								? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
-								Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-										diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
-								: diskspilllistinterm.getData().stream();
-						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream.map(nik -> nik.getValue()));
-								var fsdos = new ByteArrayOutputStream();
-								var sos = new SnappyOutputStream(fsdos);
-								var output = new Output(sos);) {
-							logger.debug("Map assembly deriving");
-							List result = (List) streammap.collect(Collectors.toList());
-							Utils.getKryo().writeClassAndObject(output, result);
-							output.flush();
-							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
-							cacheAble(fsdos);
-							logger.debug("Map assembly concluded");
-						} catch (Exception ex) {
-							logger.error(DataSamudayaConstants.EMPTY, ex);
-						}
-					}
-				} else {
-					logger.debug("Is Terminating Class DiskSpillingList Is Shuffle Records {} Is Empty {} and intermediate Spilled ? {}", shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite), diskspilllistinterm.isSpilled());
-					if (CollectionUtils.isNotEmpty(childpipes)) {
-						final boolean leftvalue = isNull(tasktoprocess.joinpos) ? false
-								: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
-						final boolean rightvalue = isNull(tasktoprocess.joinpos) ? false
-								: nonNull(tasktoprocess.joinpos) && "right".equals(tasktoprocess.joinpos) ? true
-								: false;
-						Stream datastream = diskspilllistinterm.isSpilled()
-								? (Stream) Utils.getStreamData(
-								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(),
-										null, true, false, false)))
-								: diskspilllistinterm.getData().stream();
-						if (object.getTerminiatingclass() == DiskSpillingSet.class) {
-							datastream = ((Stream<NodeIndexKey>) datastream).map(nik -> nik.getValue());
-						}
-						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);) {
-							if (MapUtils.isNotEmpty(shufflerectowrite)) {
-								int numfilepart = shufflerectowrite.size();
-								Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap)
-										.collect(
-												Collectors.groupingByConcurrent(
+								try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
+										datastream);) {
+									if (MapUtils.isNotEmpty(shufflerectowrite)) {
+										int numfilepart = shufflerectowrite.size();
+										Map<Integer, DiskSpillingList> results = (Map) ((Stream<Tuple2>) streammap)
+												.collect(Collectors.groupingByConcurrent(
 														(Tuple2 tup2) -> Math.abs(tup2.v1.hashCode()) % numfilepart,
 														Collectors.mapping(tup2 -> tup2,
 																Collectors.toCollection(() -> new DiskSpillingList(
 																		tasktoprocess, diskspillpercentage,
 																		Utils.getUUID().toString(), false, leftvalue,
 																		rightvalue, null, null, 0)))));
-								pipeline.entrySet().stream()
-										.forEach(
-												entry -> entry.getValue().tell(
-														new OutputObject(new TerminatingActorValue(results.size()),
-																leftvalue, rightvalue, TerminatingActorValue.class)));
-								results.entrySet().forEach(entry -> {
-									try {
-										if (entry.getValue().isSpilled()) {
-											entry.getValue().close();
+										pipeline.entrySet().stream()
+												.forEach(entry -> entry.getValue()
+														.tell(new OutputObject(
+																new TerminatingActorValue(results.size()), leftvalue,
+																rightvalue, TerminatingActorValue.class)));
+										results.entrySet().forEach(entry -> {
+											try {
+												if (entry.getValue().isSpilled()) {
+													entry.getValue().close();
+												}
+											} catch (Exception ex) {
+												logger.error(DataSamudayaConstants.EMPTY, ex);
+											}
+											pipeline.get(
+													entry.getKey()).tell(
+															new OutputObject(
+																	new ShuffleBlock(null,
+																			Utils.convertObjectToBytes(shufflerectowrite
+																					.get(entry.getKey())),
+																			entry.getValue()),
+																	leftvalue, rightvalue, null));
+										});
+										int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(
+												DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
+												DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
+										pipeline.keySet().stream().filter(key -> key % numfileperexec == 0)
+												.forEach(key -> pipeline.get(key).tell(new OutputObject(new Dummy(),
+														leftvalue, rightvalue, Dummy.class)));
+									} else {
+										logger.debug("Is Disk Spilling List Spilled {} stream processing for task {}",
+												diskspilllist.isSpilled(), diskspilllist.getTask());
+										streammap.forEach(diskspilllist::add);
+										logger.debug("Is Disk Spilling List Spilled {} Close for task {}",
+												diskspilllist.isSpilled(), diskspilllist.getTask());
+										if (diskspilllist.isSpilled()) {
+											diskspilllist.close();
 										}
-									} catch (Exception ex) {
-										logger.error(DataSamudayaConstants.EMPTY, ex);
+										logger.debug("Is Disk Spilling List Spilled {} for task {}",
+												diskspilllist.isSpilled(), diskspilllist.getTask());
+										childpipes.stream()
+												.forEach(action -> action.tell(new OutputObject(diskspilllist,
+														leftvalue, rightvalue, DiskSpillingList.class)));
 									}
-									pipeline.get(
-											entry.getKey()).tell(
-											new OutputObject(
-													new ShuffleBlock(null,
-															Utils.convertObjectToBytes(
-																	shufflerectowrite.get(entry.getKey())),
-															entry.getValue()),
-													leftvalue, rightvalue, null));
-								});
-								int numfileperexec = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TOTALFILEPARTSPEREXEC,
-										DataSamudayaConstants.TOTALFILEPARTSPEREXEC_DEFAULT));
-								pipeline.keySet().stream().filter(key -> key % numfileperexec == 0)
-										.forEach(key -> pipeline.get(key).tell(
-												new OutputObject(new Dummy(), leftvalue, rightvalue, Dummy.class)));
-							} else {
-								logger.debug("Is Disk Spilling List Spilled {} stream processing for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
-								streammap.forEach(diskspilllist::add);
-								logger.debug("Is Disk Spilling List Spilled {} Close for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
-								if (diskspilllist.isSpilled()) {
-									diskspilllist.close();
+								} catch (Exception ex) {
+									logger.error(DataSamudayaConstants.EMPTY, ex);
 								}
-								logger.debug("Is Disk Spilling List Spilled {} for task {}", diskspilllist.isSpilled(), diskspilllist.getTask());
-								childpipes.stream().forEach(action -> action.tell(
-										new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class)));
+							} else {
+								Stream datastream = diskspilllistinterm.isSpilled()
+										? (Stream) Utils.getStreamData(new FileInputStream(
+												Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
+														diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+										: diskspilllistinterm.getData().stream();
+								if (object.getTerminiatingclass() == DiskSpillingSet.class) {
+									datastream = ((Stream<NodeIndexKey>) datastream).map(nik -> nik.getValue());
+								}
+								try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
+										datastream);
+										var fsdos = new ByteArrayOutputStream();
+										var sos = new SnappyOutputStream(fsdos);
+										var output = new Output(sos);) {
+									logger.debug("Map assembly deriving");
+									List result = (List) streammap.collect(Collectors.toList());
+									Utils.getKryoInstance().writeClassAndObject(output, result);
+									output.flush();
+									if (nonNull(fsdos.toByteArray())) {
+										logger.info("{}", fsdos.toByteArray().length);
+									}
+									tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
+									cacheAble(fsdos);
+									logger.debug("Map assembly concluded");
+								} catch (Exception ex) {
+									logger.error(DataSamudayaConstants.EMPTY, ex);
+								}
 							}
-						} catch (Exception ex) {
-							logger.error(DataSamudayaConstants.EMPTY, ex);
 						}
-					} else {
-						Stream datastream = diskspilllistinterm.isSpilled()
-								? (Stream) Utils.getStreamData(new FileInputStream(
-								Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-										diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
-								: diskspilllistinterm.getData().stream();
-						if (object.getTerminiatingclass() == DiskSpillingSet.class) {
-							datastream = ((Stream<NodeIndexKey>) datastream).map(nik -> nik.getValue());
-						}
-						try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
-								var fsdos = new ByteArrayOutputStream();
-								var sos = new SnappyOutputStream(fsdos);
-								var output = new Output(sos);) {
-							logger.debug("Map assembly deriving");
-							List result = (List) streammap.collect(Collectors.toList());
-							Utils.getKryoInstance().writeClassAndObject(output, result);
-							output.flush();
-							if(nonNull(fsdos.toByteArray())) {
-								logger.info("{}", fsdos.toByteArray().length);
-							}
-							tasktoprocess.setNumbytesgenerated(fsdos.toByteArray().length);
-							cacheAble(fsdos);
-							logger.debug("Map assembly concluded");
-						} catch (Exception ex) {
-							logger.error(DataSamudayaConstants.EMPTY, ex);
-						}
+					} catch (Exception ex) {
+						logger.error(DataSamudayaConstants.EMPTY, ex);
 					}
-				}
+					return null;
+				}, fjpool).get();
 				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 			}
 		}

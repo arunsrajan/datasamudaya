@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -53,20 +55,20 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 	int btreesize;
 	int diskspillpercentage;
 	List ldiskspill;
-
+	ForkJoinPool fjpool;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessUnion-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessUnion(context, js, cache,
 				jobidstageidtaskidcompletedmap,
-				tasktoprocess, childpipes, terminatingsize));
+				tasktoprocess, childpipes, terminatingsize, fjpool));
 	}
 
 	public ProcessUnion(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
@@ -74,6 +76,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 		this.childpipes = childpipes;
 		this.cache = cache;
 		this.js = js;
+		this.fjpool = fjpool;
 		this.btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
@@ -110,69 +113,80 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 					|| object.getTerminiatingclass() == TreeSet.class) {
 				initialsize++;
 			}
-			if (initialsize == terminatingsize) {
-				log.debug("processUnion::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}", initialsize,
-						terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
-				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
-				if (CollectionUtils.isNotEmpty(childpipes)) {
-					DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false, false, false, null, null, 1);
-					for (Object diskspill :ldiskspill) {
-						Stream<?> datastream = null;
-						if (diskspill instanceof DiskSpillingList dsl) {
-							datastream = Utils.getStreamData(dsl);
-						} else if (diskspill instanceof DiskSpillingSet dss) {
-							datastream = Utils.getStreamData(dss);
-						} else if (diskspill instanceof TreeSet<?> ts) {
-							diskspillset.addAll((Set<NodeIndexKey>) ts);
-							ts.clear();
-							datastream = null;
-						}
-						try {
-							AtomicInteger index = new AtomicInteger(0);
-							if (nonNull(datastream)) {
-								datastream.forEach(obj -> {
-									if (obj instanceof NodeIndexKey nik) {
-										diskspillset.add(nik);
-									} else {
-										diskspillset.add(new NodeIndexKey(tasktoprocess.getHostport(),
-												index.getAndIncrement(), null, obj, null, null, null, tasktoprocess));
-									}
-
-								});
+			CompletableFuture.supplyAsync(() -> {
+				try {
+				if (initialsize == terminatingsize) {
+					log.debug(
+							"processUnion::Started InitialSize {} , Terminating Size {} Predecessors {} childPipes {}",
+							initialsize, terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
+					List<Task> predecessors = tasktoprocess.getTaskspredecessor();
+					if (CollectionUtils.isNotEmpty(childpipes)) {
+						DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess,
+								diskspillpercentage, null, false, false, false, null, null, 1);
+						for (Object diskspill : ldiskspill) {
+							Stream<?> datastream = null;
+							if (diskspill instanceof DiskSpillingList dsl) {
+								datastream = Utils.getStreamData(dsl);
+							} else if (diskspill instanceof DiskSpillingSet dss) {
+								datastream = Utils.getStreamData(dss);
+							} else if (diskspill instanceof TreeSet<?> ts) {
+								diskspillset.addAll((Set<NodeIndexKey>) ts);
+								ts.clear();
+								datastream = null;
 							}
+							try {
+								AtomicInteger index = new AtomicInteger(0);
+								if (nonNull(datastream)) {
+									datastream.forEach(obj -> {
+										if (obj instanceof NodeIndexKey nik) {
+											diskspillset.add(nik);
+										} else {
+											diskspillset.add(new NodeIndexKey(tasktoprocess.getHostport(),
+													index.getAndIncrement(), null, obj, null, null, null,
+													tasktoprocess));
+										}
 
-						} catch (Exception ex) {
-							log.error(DataSamudayaConstants.EMPTY, ex);
+									});
+								}
+
+							} catch (Exception ex) {
+								log.error(DataSamudayaConstants.EMPTY, ex);
+							}
+							if (diskspill instanceof DiskSpillingList dsl) {
+								dsl.clear();
+							} else if (diskspill instanceof DiskSpillingSet dss) {
+								dss.clear();
+							}
 						}
-						if (diskspill instanceof DiskSpillingList dsl) {
-							dsl.clear();
-						} else if (diskspill instanceof DiskSpillingSet dss) {
-							dss.clear();
+						if (diskspillset.isSpilled()) {
+							diskspillset.close();
 						}
+						childpipes.stream().forEach(downstreampipe -> {
+							log.debug("Pushing data to downstream");
+							downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class));
+						});
+					} else {
+						AtomicInteger index = new AtomicInteger(0);
+						List<NodeIndexKey> niks = new ArrayList<>();
+						for (Task predecessor : predecessors) {
+							NodeIndexKey nik = new NodeIndexKey(predecessor.getHostport(), index.getAndIncrement(),
+									null, null, null, null, null, predecessor);
+							niks.add(nik);
+						}
+						cache.put(
+								tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
+										+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(),
+								Utils.convertObjectToBytesCompressed(niks, null));
 					}
-					if (diskspillset.isSpilled()) {
-						diskspillset.close();
-					}
-					childpipes.stream().forEach(downstreampipe -> {
-						log.debug("Pushing data to downstream");
-						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class));
-					});
-				} else {
-					AtomicInteger index = new AtomicInteger(0);
-					List<NodeIndexKey> niks = new ArrayList<>();
-					for (Task predecessor : predecessors) {
-						NodeIndexKey nik = new NodeIndexKey(predecessor.getHostport(), index.getAndIncrement(),
-								null, null, null, null, null, predecessor);
-						niks.add(nik);
-					}
-					cache.put(
-							tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getStageid()
-									+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(),
-							Utils.convertObjectToBytesCompressed(niks, null));
+					jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN
+							+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(),
+							true);
 				}
-				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN
-						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);
-			}
+				} catch(Exception ex) {
+					log.error(DataSamudayaConstants.EMPTY, ex);
+				}
+				return null;
+			}, fjpool).get();
 		}
 		return this;
 	}

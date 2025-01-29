@@ -3,6 +3,8 @@ package com.github.datasamudaya.stream.executors.actors;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -42,26 +44,27 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 	Task tasktoprocess;
 	int diskspillpercentage;
 	DiskSpillingSet diskspillset;
-
+	ForkJoinPool fjpool;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessDistributedDistinct-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			List<EntityRef> childpipes, int terminatingsize) {
+			List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessDistributedDistinct(context,
 				jobidstageidtaskidcompletedmap,
-				tasktoprocess, childpipes, terminatingsize));
+				tasktoprocess, childpipes, terminatingsize, fjpool));
 	}
 
 
 	public ProcessDistributedDistinct(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
 		this.terminatingsize = terminatingsize;
 		this.childpipes = childpipes;
+		this.fjpool = fjpool;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false, false, false, null,
@@ -84,11 +87,14 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				log.debug("In Distributed Distinct {} {} {} {} {}", object, dsl.size(), dsl.isSpilled(), dsl.getTask(), terminatingsize);
-				if (dsl.isSpilled()) {
-					Utils.copySpilledDataSourceToDestination(dsl, diskspillset);
-				} else {
-					diskspillset.addAll(dsl.getData());
-				}
+				CompletableFuture.supplyAsync(() -> {
+					if (dsl.isSpilled()) {
+						Utils.copySpilledDataSourceToDestination(dsl, diskspillset);
+					} else {
+						diskspillset.addAll(dsl.getData());
+					}
+					return null;
+				}, fjpool).get();
 				dsl.clear();
 			}
 			if (object.getTerminiatingclass() == DiskSpillingList.class || object.getTerminiatingclass() == Dummy.class) {
@@ -102,9 +108,11 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 				}
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					log.debug("processDistributedDistinct::DiskSpill intermediate Set Is Spilled {} Task {}", diskspillset.isSpilled(), diskspillset.getTask());
+					CompletableFuture.supplyAsync(() -> {
 					childpipes.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class));
 					});
+					return null;}, fjpool).get();
 				}
 				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN
 						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);

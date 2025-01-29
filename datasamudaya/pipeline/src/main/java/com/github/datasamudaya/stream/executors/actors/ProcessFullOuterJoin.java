@@ -9,7 +9,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -66,25 +68,26 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
-
+	ForkJoinPool fjpool;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessFullOuterJoin-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, List<EntityRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessFullOuterJoin(context, pipelines, terminatingsize,
-				jobidstageidtaskidcompletedmap, cache, task));
+				jobidstageidtaskidcompletedmap, cache, task, fjpool));
 	}
 
 	private ProcessFullOuterJoin(ActorContext<Command> context, List<EntityRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		super(context);
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
+		this.fjpool = fjpool;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
@@ -108,20 +111,24 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 		if (oo.isLeft()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
+				CompletableFuture.supplyAsync(() -> {
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
 				} else {
 					diskspilllistintermleft.addAll(dsl.getData());
 				}
+				return null;}, fjpool).get();
 			}
 		} else if (oo.isRight()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				diskspilllistintermright = new DiskSpillingList(task, diskspillpercentage, null, true, false, true, null, null, 0);
+				CompletableFuture.supplyAsync(() -> {
 				if (dsl.isSpilled()) {
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
 				} else {
 					diskspilllistintermright.addAll(dsl.getData());
 				}
+				return null;}, fjpool).get();
 			}
 		}
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
@@ -159,7 +166,7 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 						? (Stream<Tuple2>) Utils.getStreamData(
 						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
 								diskspilllistintermright.getLeft(), diskspilllistintermright.getRight()))) : diskspilllistintermright.getData().stream();
-				Optional optionalfirstelement = datastreamrightfirstelem.findFirst();
+				Optional optionalfirstelement = CompletableFuture.supplyAsync(() -> datastreamrightfirstelem.findFirst(), fjpool).get();
 				Object[][] nullobjarr;
 				if (optionalfirstelement.isPresent()) {
 					Object[] origobjarray = (Object[]) optionalfirstelement.get();
@@ -178,45 +185,51 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null,
 								true, diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
 						: diskspilllistinterm.getData().stream();
-				diskspilllistintermstream.filter(val -> val instanceof Tuple2).map(value -> {
-					Tuple2 maprec = (Tuple2) value;
-					Object[] rec1 = (Object[]) maprec.v1;
-					Object[] rec2 = (Object[]) maprec.v2;
-					if (rec2 == null) {
-						return new Tuple2(rec1, nullobjarr);
-					}
-					return maprec;
-				}).forEach(diskspilllist::add);
+				CompletableFuture.supplyAsync(() -> {
+					diskspilllistintermstream.filter(val -> val instanceof Tuple2).map(value -> {
+						Tuple2 maprec = (Tuple2) value;
+						Object[] rec1 = (Object[]) maprec.v1;
+						Object[] rec2 = (Object[]) maprec.v2;
+						if (rec2 == null) {
+							return new Tuple2(rec1, nullobjarr);
+						}
+						return maprec;
+					}).forEach(diskspilllist::add);
+					return null;}, fjpool).get();
 				if (diskspilllist.isSpilled()) {
 					diskspilllist.close();
 				}
-				try {
-					log.debug("processFullOuterJoin::: DownStream Pipelines {}", pipelines);
-					if (CollectionUtils.isNotEmpty(pipelines)) {
-						pipelines.stream().forEach(downstreampipe -> {
-							downstreampipe.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class));
-						});
-					} else {
-						Stream<Tuple2> datastream = diskspilllist.isSpilled()
-								? (Stream<Tuple2>) Utils.getStreamData(
-								new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(), null, true,
-										diskspilllist.getLeft(), diskspilllist.getRight())))
-								: diskspilllist.getData().stream();
-						try (var fsdos = new ByteArrayOutputStream();
-								var sos = new SnappyOutputStream(fsdos);
-								var output = new Output(sos);) {
-							Utils.getKryo().writeClassAndObject(output, datastream.toList());
-							output.flush();
-							task.setNumbytesgenerated(fsdos.toByteArray().length);
-							byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();
-							cache.put(getIntermediateDataFSFilePath(task), bt);
-						} catch (Exception ex) {
-							log.error("Error in putting output in cache", ex);
+				CompletableFuture.supplyAsync(() -> {
+					try {
+						log.debug("processFullOuterJoin::: DownStream Pipelines {}", pipelines);
+						if (CollectionUtils.isNotEmpty(pipelines)) {
+							pipelines.stream().forEach(downstreampipe -> {
+								downstreampipe.tell(
+										new OutputObject(diskspilllist, leftvalue, rightvalue, DiskSpillingList.class));
+							});
+						} else {
+							Stream<Tuple2> datastream = diskspilllist.isSpilled()
+									? (Stream<Tuple2>) Utils.getStreamData(
+											new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(),
+													null, true, diskspilllist.getLeft(), diskspilllist.getRight())))
+									: diskspilllist.getData().stream();
+							try (var fsdos = new ByteArrayOutputStream();
+									var sos = new SnappyOutputStream(fsdos);
+									var output = new Output(sos);) {
+								Utils.getKryo().writeClassAndObject(output, datastream.toList());
+								output.flush();
+								task.setNumbytesgenerated(fsdos.toByteArray().length);
+								byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();
+								cache.put(getIntermediateDataFSFilePath(task), bt);
+							} catch (Exception ex) {
+								log.error("Error in putting output in cache", ex);
+							}
 						}
+					} catch (Exception ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
-				} catch (Exception ex) {
-					log.error(DataSamudayaConstants.EMPTY, ex);
-				}
+					return null;
+				}, fjpool).get();
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
 				return this;

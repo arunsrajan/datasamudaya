@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -3944,7 +3945,7 @@ public class SQLUtils {
 			FileSystem hdfs, Cache inmemorycache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			String hostport, akka.cluster.sharding.typed.javadsl.ClusterSharding clustersharding, String teid,
 			Map<String, EntityTypeKey> eref, Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap,
-			String shardid) {
+			String shardid, ForkJoinPool fjpool) {
 		try {
 			if (obj instanceof GetTaskActor taskactor) {
 				String jobid = taskactor.getTask().getJobid();
@@ -3964,7 +3965,7 @@ public class SQLUtils {
 								.of(entityKey,
 										ctx -> ProcessMapperByBlocksLocation.create(ctx.getEntityId(), hdfs, inmemorycache,
 												jobidstageidtaskidcompletedmap, taskactor.getTask(),
-												blockspartitionfilterskipmap))
+												blockspartitionfilterskipmap, fjpool))
 								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
 						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
 						taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
@@ -3984,7 +3985,7 @@ public class SQLUtils {
 						ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
 								.of(entityKey,
 										ctx -> ProcessShuffle.create(ctx.getEntityId(), jobidstageidtaskidcompletedmap,
-												taskactor.getTask(), childactors))
+												taskactor.getTask(), childactors, fjpool))
 								
 								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
 						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4004,7 +4005,7 @@ public class SQLUtils {
 						getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
 						ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity.of(entityKey,
 								ctx -> ProcessDistributedDistinct.create(ctx.getEntityId(), jobidstageidtaskidcompletedmap,
-										taskactor.getTask(), childactors, taskactor.getTerminatingparentcount()))
+										taskactor.getTask(), childactors, taskactor.getTerminatingparentcount(), fjpool))
 								
 								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));	
 						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4027,7 +4028,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessUnion.create(ctx.getEntityId(), js, inmemorycache,
 													jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
-													taskactor.getTerminatingparentcount()))
+													taskactor.getTerminatingparentcount(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4047,7 +4048,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessIntersection.create(ctx.getEntityId(), js, inmemorycache,
 													jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
-													taskactor.getTerminatingparentcount()))
+													taskactor.getTerminatingparentcount(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4070,7 +4071,7 @@ public class SQLUtils {
 						ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity.of(entityKey,
 								ctx -> ProcessReduce.create(ctx.getEntityId(), jobidstageidjobstagemap.get(jobstageid),
 										hdfs, inmemorycache, jobidstageidtaskidcompletedmap, taskactor.getTask(),
-										childactors, taskactor.getTerminatingparentcount()))
+										childactors, taskactor.getTerminatingparentcount(), fjpool))
 								
 								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
 						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4092,7 +4093,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessCoalesce.create(ctx.getEntityId(), coalesce, childactors,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4102,7 +4103,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessCoalesce.create(ctx.getEntityId(), coalesce, null,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4126,7 +4127,7 @@ public class SQLUtils {
 											ctx -> ProcessDistributedSort.create(ctx.getEntityId(),
 													jobidstageidjobstagemap.get(jobstageid), inmemorycache,
 													jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
-													taskactor.getTerminatingparentcount()))
+													taskactor.getTerminatingparentcount(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4138,7 +4139,7 @@ public class SQLUtils {
 											ctx -> ProcessDistributedSort.create(ctx.getEntityId(),
 													jobidstageidjobstagemap.get(jobstageid), inmemorycache,
 													jobidstageidtaskidcompletedmap, taskactor.getTask(), null,
-													taskactor.getTerminatingparentcount()))
+													taskactor.getTerminatingparentcount(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4161,7 +4162,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessInnerJoin.create(ctx.getEntityId(), joinpred, childactors,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4170,7 +4171,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessInnerJoin.create(ctx.getEntityId(), joinpred, null,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4193,7 +4194,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rojoinpred, childactors,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4203,7 +4204,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rojoinpred, null,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4226,7 +4227,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), lojoinpred, childactors,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4235,7 +4236,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), lojoinpred, null,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4259,7 +4260,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessFullOuterJoin.create(ctx.getEntityId(), childactors,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4268,7 +4269,7 @@ public class SQLUtils {
 									.of(entityKey,
 											ctx -> ProcessFullOuterJoin.create(ctx.getEntityId(), null,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
-													inmemorycache, taskactor.getTask()))
+													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
 									ExternalShardAllocationStrategy.create(system, entityKey.name())));
 							eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
@@ -4328,7 +4329,7 @@ public class SQLUtils {
 										ctx -> ProcessMapperByStream.create(ctx.getEntityId(), js, hdfs, inmemorycache,
 												jobidstageidtaskidcompletedmap, taskactor.getTask(), childactors,
 												taskactor.getTask().getFilepartitionsid(), actorselections,
-												taskactor.getTerminatingparentcount()))
+												taskactor.getTerminatingparentcount(), fjpool))
 								.withAllocationStrategy(ExternalShardAllocationStrategy.create(system, entityKey.name())));
 						eref.put(getEntityUrl(hostport, shardid, entityKey.name()), entityKey);
 						log.debug("Mapper By Stream Actor Creation Ended...");

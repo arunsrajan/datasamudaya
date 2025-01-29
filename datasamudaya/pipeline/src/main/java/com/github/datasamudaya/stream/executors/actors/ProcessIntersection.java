@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -54,20 +55,20 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 	int btreesize;
 	int diskspillpercentage;
 	List ldiskspill;
-
+	ForkJoinPool fjpool;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessIntersection-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessIntersection(context, js, cache,
 				jobidstageidtaskidcompletedmap,
-				tasktoprocess, childpipes, terminatingsize));
+				tasktoprocess, childpipes, terminatingsize, fjpool));
 	}
 
 	public ProcessIntersection(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize) {
+			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
@@ -75,6 +76,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 		this.childpipes = childpipes;
 		this.cache = cache;
 		this.js = js;
+		this.fjpool = fjpool;
 		this.btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
