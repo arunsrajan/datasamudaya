@@ -589,6 +589,7 @@ public class DataSamudayaConstants {
 	public static final String TOPERSISTYOSEGICOLUMNAR = "columnar.persist";
 	public static final String TOPERSISTYOSEGICOLUMNAR_DEFAULT = "false";
 	public static final String ACTORUSERNAME = "RemoteActor";
+	public static final String ACTORCLIENTUSERNAME = "ClientActor";
 	public static final String INTERMEDIATE = "intermediate";
 	public static final String INTERMEDIATERESULT = "result";
 	public static final String INTERMEDIATEJOINLEFT = "intermediateleft";

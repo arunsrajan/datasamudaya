@@ -304,8 +304,8 @@ public class ZookeeperOperations implements AutoCloseable {
 					switch (type) {
 						case NODE_CREATED:
 							byte[] changeddata = data.getData();
-							String resourcejson = new String(changeddata);
-							if(!resourcejson.equals(DataSamudayaConstants.EMPTY)){								
+							String resourcetoadd = new String(changeddata);
+							if(!resourcetoadd.equals(DataSamudayaConstants.EMPTY)){								
 								String[] nodeadded = data.getPath().split("/");
 								if (isNull(DataSamudayaNodesResources.get())) {
 									DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
@@ -326,16 +326,16 @@ public class ZookeeperOperations implements AutoCloseable {
 							log.debug("Master node added: {}", data.getPath());
 							break;
 						case NODE_DELETED:
-							String noderemovaljson = nonNull(data)?data.getPath():DataSamudayaConstants.EMPTY;
-							if(!noderemovaljson.equals(DataSamudayaConstants.EMPTY)){
-								String[] nodetoberemoved = data.getPath().split("/");
+							String nodetobedeleted = nonNull(oldData)?oldData.getPath():DataSamudayaConstants.EMPTY;
+							if(!nodetobedeleted.equals(DataSamudayaConstants.EMPTY)){
+								String[] nodetoberemovedarr = nodetobedeleted.split("/");
 								if (isNull(DataSamudayaNodesResources.get())) {
 									DataSamudayaNodesResources.put(new ConcurrentHashMap<>());
 								}
-								String nodetoremove = nodetoberemoved[nodetoberemoved.length - 1];
+								String nodetoremove = nodetoberemovedarr[nodetoberemovedarr.length - 1];
 								DataSamudayaNodesResources.get().remove(nodetoremove);
 								DataSamudayaNodesResources.getAllocatedResources().remove(nodetoremove);
-								log.debug("Master node removed: {}",data.getPath());
+								log.debug("Master node removed: {}",oldData.getPath());
 							}							
 							break;
 						default:
