@@ -19,7 +19,7 @@ echo DATASAMUDAYA home is configured as "%DATASAMUDAYA_HOME%"
 
 set DEBUGPORT=4008
 
-set CLASSPATH=-classpath ".;../jars/*"
+set CLASSPATH=-classpath ".;../yarnlib/*;../jars/*"
 
 set DEBUGCONFIG=-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=%DEBUGPORT%,suspend=n
 
