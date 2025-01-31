@@ -69,7 +69,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	private Semaphore lock;
 	private Semaphore filelock;
 	private boolean istree;
-
+	private SortedComparator sortedcomparator;
 	public DiskSpillingSet() {
 		lock = new Semaphore(1);
 		filelock = new Semaphore(1);
@@ -83,6 +83,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataSet = istree?new TreeSet<>(sortedcomparator):new HashSet();
+		this.sortedcomparator = sortedcomparator;
 		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * (spillexceedpercentage / 100.0)));
 		this.left = left;
 		this.right = right;
@@ -125,7 +126,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	@Override
 	public boolean add(T value) {
 		if (isNull(dataSet)) {
-			dataSet = istree?new TreeSet<>(new ObjectArrayComparator()):new HashSet();
+			dataSet = istree?new TreeSet<>(sortedcomparator):new HashSet();
 		}
 		spillToDiskIntermediate(false);
 		dataSet.add(value);
@@ -205,7 +206,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		if (nonNull(bytes)) {
 			return (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 		}
-		return new HashSet();
+		return istree?new TreeSet<>(sortedcomparator):new HashSet();
 	}
 
 	/**

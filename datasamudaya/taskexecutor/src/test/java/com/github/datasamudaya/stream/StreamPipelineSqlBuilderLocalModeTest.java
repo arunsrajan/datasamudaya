@@ -3376,7 +3376,6 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 		log.info("In testRequiredColumnsIntersectionIntersection() method Exit");
 	}
 	
-	
 	@SuppressWarnings({ "unchecked" })
 	@Test
 	public void testRequiredColumnsIntersectionIntersectionIntersection() throws Exception {
@@ -3404,6 +3403,35 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 		}
 		assertNotEquals(0l, totalrecords);
 		log.info("In testRequiredColumnsIntersectionIntersectionIntersection() method Exit");
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsUnionUnionUnion() throws Exception {
+		log.info("In testRequiredColumnsUnionUnionUnion() method Entry");
+
+		String statement = """
+				select distinct uniquecarrier,monthofyear,dayofmonth,origin from flight where airlineyear in (2007) group by uniquecarrier,monthofyear,dayofmonth,origin union select distinct uniquecarrier,monthofyear,dayofmonth,origin from flight1 where airlineyear in (2007) group by uniquecarrier,monthofyear,dayofmonth,origin union select distinct uniquecarrier,monthofyear,dayofmonth,origin from flight2 where airlineyear in (2007) group by uniquecarrier,monthofyear,dayofmonth,origin union select distinct uniquecarrier,monthofyear,dayofmonth,origin from flight3 where airlineyear in (2007) group by uniquecarrier,monthofyear,dayofmonth,origin
+				""";
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "flight", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "flight1", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "flight2", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "flight3", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		long totalrecords = 0;
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			totalrecords += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(4l, rec.length);
+			}
+		}
+		assertNotEquals(0l, totalrecords);
+		log.info("In testRequiredColumnsUnionUnionUnion() method Exit");
 	}
 
 	@SuppressWarnings({ "unchecked" })
@@ -4548,6 +4576,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 				assertEquals(2l, rec.length);
 			}
 		}
+		assertNotEquals(0, totalrecords);
 		log.info("In testRequiredColumnsUnionUnion() method Exit");
 	}
 
