@@ -1,12 +1,13 @@
 package com.github.datasamudaya.stream.executors.actors;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 
-import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +20,10 @@ import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
+import com.github.datasamudaya.common.utils.ObjectArrayComparator;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
@@ -68,7 +67,7 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false, false, false, null,
-				null, 0);
+				null, 0, true, new ObjectArrayComparator());
 	}
 
 	@Override

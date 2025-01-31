@@ -14,7 +14,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Stream;
 
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.jooq.lambda.tuple.Tuple2;
@@ -31,6 +33,7 @@ import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.functions.SortedComparator;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
@@ -65,16 +68,21 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	int numfileperexec;
 	private Semaphore lock;
 	private Semaphore filelock;
+	private boolean istree;
 
 	public DiskSpillingSet() {
 		lock = new Semaphore(1);
 		filelock = new Semaphore(1);
 	}
 
-	public DiskSpillingSet(Task task, int spillexceedpercentage, String appendwithpath, boolean appendintermediate, boolean left, boolean right, Map<Integer, FilePartitionId> filepartids, Map<Integer, ActorSelection> downstreampipelines, int numfileperexec) {
+	public DiskSpillingSet(Task task, int spillexceedpercentage, 
+			String appendwithpath, boolean appendintermediate, 
+			boolean left, boolean right, Map<Integer, FilePartitionId> filepartids, 
+			Map<Integer, ActorSelection> downstreampipelines, int numfileperexec, boolean istree
+			,SortedComparator sortedcomparator) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
-		dataSet = new HashSet();
+		dataSet = istree?new TreeSet<>(sortedcomparator):new HashSet();
 		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * (spillexceedpercentage / 100.0)));
 		this.left = left;
 		this.right = right;
@@ -117,7 +125,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	@Override
 	public boolean add(T value) {
 		if (isNull(dataSet)) {
-			dataSet = new HashSet();
+			dataSet = istree?new TreeSet<>(new ObjectArrayComparator()):new HashSet();
 		}
 		spillToDiskIntermediate(false);
 		dataSet.add(value);
@@ -311,6 +319,11 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	@Override
 	public Iterator<T> iterator() {
 		return dataSet.iterator();
+	}
+	
+	@Override
+	public Stream<T> stream() {
+		return dataSet.stream();
 	}
 
 	@Override

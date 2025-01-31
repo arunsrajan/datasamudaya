@@ -40,7 +40,6 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSql;
 import com.github.datasamudaya.stream.sql.build.StreamPipelineSqlBuilder;
 
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTestCommon {
 	List<String> airlineheader = Arrays.asList("AirlineYear", "MonthOfYear", "DayofMonth", "DayOfWeek", "DepTime",
@@ -3373,8 +3372,38 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 				assertEquals(2l, rec.length);
 			}
 		}
-		assertNotEquals(0, totalrecords);
+		assertNotEquals(0l, totalrecords);
 		log.info("In testRequiredColumnsIntersectionIntersection() method Exit");
+	}
+	
+	
+	@SuppressWarnings({ "unchecked" })
+	@Test
+	public void testRequiredColumnsIntersectionIntersectionIntersection() throws Exception {
+		log.info("In testRequiredColumnsIntersectionIntersectionIntersection() method Entry");
+
+		String statement = """
+				select distinct uniquecarrier,monthofyear,dayofmonth,origin from flight where airlineyear in (2007) group by uniquecarrier,monthofyear,dayofmonth,origin intersect select distinct uniquecarrier,monthofyear,dayofmonth,origin from flight1 where airlineyear in (2007) group by uniquecarrier,monthofyear,dayofmonth,origin intersect select distinct uniquecarrier,monthofyear,dayofmonth,origin from flight2 where airlineyear in (2007) group by uniquecarrier,monthofyear,dayofmonth,origin intersect select distinct uniquecarrier,monthofyear,dayofmonth,origin from flight3 where airlineyear in (2007) group by uniquecarrier,monthofyear,dayofmonth,origin
+				""";
+		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
+				.add(airlinesamplesql, "flight", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "flight1", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "flight2", airlineheader, airlineheadertypes)
+				.add(airlinesamplesql, "flight3", airlineheader, airlineheadertypes)
+				.setHdfs(hdfsfilepath)
+				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
+				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
+		long totalrecords = 0;
+		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
+		for (List<Object[]> recs : records) {
+			totalrecords += recs.size();
+			for (Object[] rec : recs) {
+				log.info(Arrays.toString(rec));
+				assertEquals(4l, rec.length);
+			}
+		}
+		assertNotEquals(0l, totalrecords);
+		log.info("In testRequiredColumnsIntersectionIntersectionIntersection() method Exit");
 	}
 
 	@SuppressWarnings({ "unchecked" })

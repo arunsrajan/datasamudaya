@@ -122,7 +122,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 					List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 					if (CollectionUtils.isNotEmpty(childpipes)) {
 						DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess,
-								diskspillpercentage, null, false, false, false, null, null, 1);
+								diskspillpercentage, null, false, false, false, null, null, 1, false, null);
 						for (Object diskspill : ldiskspill) {
 							Stream<?> datastream = null;
 							if (diskspill instanceof DiskSpillingList dsl) {

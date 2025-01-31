@@ -2434,7 +2434,7 @@ public class StreamJobScheduler {
 										if (task.isIsunion() || task.isIsintersection()) {
 											int diskexceedpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 													DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
-											DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false, false, false, null, null, 1);
+											DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false, false, false, null, null, 1, false, null);
 											for (NodeIndexKey nik : (List<NodeIndexKey>) lst) {
 												log.debug("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 												try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), null, false, false, false, nik.getTask().getFcsc(),
@@ -2595,7 +2595,7 @@ public class StreamJobScheduler {
 									if (task.isIsunion() || task.isIsintersection()) {
 										int diskexceedpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 												DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
-										DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false, false, false, null, null, 1);
+										DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false, false, false, null, null, 1, false, null);
 										for (NodeIndexKey nik : (List<NodeIndexKey>) lst) {
 											log.debug("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), null, false, false, false, nik.getTask().getFcsc(),

@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +27,7 @@ import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
+import com.github.datasamudaya.common.utils.NodeIndexKeyComparator;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
@@ -119,88 +119,112 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 						initialsize, terminatingsize, tasktoprocess.getTaskspredecessor(), childpipes);
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					int index = 0;
-					Set<NodeIndexKey> diskspillsetresult = null;
-					Set<NodeIndexKey> diskspillsetintm1 = new TreeSet<>();
+					DiskSpillingSet<NodeIndexKey> diskspillsetresult = null;
+					DiskSpillingSet<NodeIndexKey> diskspillsetintm1 = null;
 					Object diskspill = ldiskspill.remove(0);
-					Stream<?> datastream = null;
+					Stream<NodeIndexKey> datastream1 = null;
+					Stream<NodeIndexKey> datastream2 = null;
 					if (diskspill instanceof DiskSpillingList<?> dsl) {
-						datastream = Utils.getStreamData(dsl);
+						datastream1 = (Stream<NodeIndexKey>) Utils.getStreamData(dsl);
 					} else if (diskspill instanceof DiskSpillingSet<?> dss) {
-						datastream = Utils.getStreamData(dss);
+						datastream1 = (Stream<NodeIndexKey>) Utils.getStreamData(dss);
 					} else if (diskspill instanceof TreeSet<?> ts) {
-						diskspillsetintm1 = (Set<NodeIndexKey>) ts;
-						datastream = null;
+						datastream1 = (Stream<NodeIndexKey>) ts.stream();
 					}
 					AtomicInteger atomindex = new AtomicInteger(0);
-					Set<NodeIndexKey> diskspillsetinterm = diskspillsetintm1;
-					if (nonNull(datastream)) {
-						datastream.forEach(obj -> {
-							if (obj instanceof NodeIndexKey nik) {
-								diskspillsetinterm.add(nik);
-							} else {
-								diskspillsetinterm.add(new NodeIndexKey(tasktoprocess.getHostport(),
-										atomindex.getAndIncrement(), null, obj, null, null, null, tasktoprocess));
+					if(CollectionUtils.isNotEmpty(ldiskspill)) {
+						for (Object diskspill1 : ldiskspill) {
+							index++;						
+							if (diskspill1 instanceof DiskSpillingList<?> dsl) {
+								datastream2 = (Stream<NodeIndexKey>) Utils.getStreamData(dsl);
+							} else if (diskspill1 instanceof DiskSpillingSet<?> dss) {
+								datastream2 = (Stream<NodeIndexKey>) Utils.getStreamData(dss);
+							} else if (diskspill1 instanceof TreeSet<?> ts) {
+								datastream2 = (Stream<NodeIndexKey>) ts.stream();
 							}
-						});
-					}
-					for (Object diskspill1 : ldiskspill) {
-						index++;
-						diskspillsetresult = new TreeSet<>();
-						Set<NodeIndexKey> diskspillsetintm2 = new TreeSet<>();
-						Set<NodeIndexKey> diskspillsetinterm2 = diskspillsetintm2;
-						if (diskspill1 instanceof DiskSpillingList<?> dsl) {
-							datastream = Utils.getStreamData(dsl);
-						} else if (diskspill1 instanceof DiskSpillingSet<?> dss) {
-							datastream = Utils.getStreamData(dss);
-						} else if (diskspill1 instanceof TreeSet<?> ts) {
-							diskspillsetintm2 = (Set<NodeIndexKey>) ts;
-							datastream = null;
-						}
-						AtomicInteger atomindex1 = new AtomicInteger(0);
-						if (nonNull(datastream)) {
-							datastream.forEach(obj -> {
-								if (obj instanceof NodeIndexKey nik) {
-									diskspillsetinterm2.add(nik);
+							
+							Iterator<Object> it1 = null;
+							Iterator<Object> it2 = null;
+							
+							if(nonNull(diskspillsetintm1) && diskspillsetintm1.isSpilled()) {
+								diskspillsetintm1.close();
+								datastream1 = (Stream<NodeIndexKey>) Utils.getStreamData(diskspillsetintm1);								
+							} else if(nonNull(diskspillsetintm1) && !diskspillsetintm1.isSpilled()) {
+								datastream1 = diskspillsetintm1.stream();
+							}
+							if(index < ldiskspill.size()) {
+								diskspillsetresult = new DiskSpillingSet(tasktoprocess,
+									diskspillpercentage, index+DataSamudayaConstants.EMPTY, true, false, false, null, null, 1, true, new NodeIndexKeyComparator());
+							} else {
+								diskspillsetresult = new DiskSpillingSet(tasktoprocess,
+										diskspillpercentage, null, false, false, false, null, null, 1, true, new NodeIndexKeyComparator());
+							}
+							it1 = (Iterator) datastream1.iterator();
+							it2 = (Iterator) datastream2.iterator();
+							
+	
+							if (!it1.hasNext() || !it2.hasNext()) {
+								break; // One of the sets is empty
+	
+							}
+							
+							Object obj1 = it1.hasNext()?it1.next():null;
+							Object obj2 = it2.hasNext()?it2.next():null;
+							
+							NodeIndexKey item1 = null;
+							NodeIndexKey item2 = null;
+							
+							while (it1.hasNext() && it2.hasNext() && nonNull(obj1) && nonNull(obj2)) {
+								if(obj1 instanceof NodeIndexKey nik) {
+									item1 = nik;
 								} else {
-									diskspillsetinterm2.add(new NodeIndexKey(tasktoprocess.getHostport(),
-											atomindex1.getAndIncrement(), null, obj, null, null, null, tasktoprocess));
+									item1 = new NodeIndexKey(tasktoprocess.getHostport(),
+											atomindex.getAndIncrement(), null, obj1, null, null, null, tasktoprocess);
 								}
-							});
-						}
-						Iterator<NodeIndexKey> it1 = diskspillsetintm1.iterator();
-						Iterator<NodeIndexKey> it2 = diskspillsetintm2.iterator();
-
-						if (!it1.hasNext() || !it2.hasNext()) {
-							break; // One of the sets is empty
-
-						}
-						NodeIndexKey item1 = it1.next();
-						NodeIndexKey item2 = it2.next();
-
-						while (it1.hasNext() && it2.hasNext()) {
-							int compare = item1.compareTo(item2);
-							if (compare == 0) {
-								// Add to result, advance both
-								diskspillsetresult.add(item1);
-								item1 = it1.next();
-								item2 = it2.next();
-							} else if (compare < 0) {
-								// item1 is smaller, advance it1
-								item1 = it1.next();
-							} else {
-								// item2 is smaller, advance it2
-								item2 = it2.next();
+								if(obj2 instanceof NodeIndexKey nik) {
+									item2 = nik;
+								} else {
+									item2 = new NodeIndexKey(tasktoprocess.getHostport(),
+											atomindex.getAndIncrement(), null, obj2, null, null, null, tasktoprocess);
+								}
+								int compare = item1.compareTo(item2);
+								if (compare == 0) {
+									// Add to result, advance both
+									diskspillsetresult.add(item1);
+									obj1 = it1.hasNext()?it1.next():null;
+									obj2 = it2.hasNext()?it2.next():null;
+								} else if (compare < 0) {
+									// item1 is smaller, advance it1
+									obj1 = it1.hasNext()?it1.next():null;
+								} else {
+									// item2 is smaller, advance it2
+									obj2 = it2.hasNext()?it2.next():null;
+								}
 							}
-						}
-
-						// Check last pair if any
-						if (item1.compareTo(item2) == 0) {
-							diskspillsetresult.add(item1);
-						}
-						diskspillsetintm1 = diskspillsetresult;
+							if(obj1 instanceof NodeIndexKey nik) {
+								item1 = nik;
+							} else {
+								item1 = new NodeIndexKey(tasktoprocess.getHostport(),
+										atomindex.getAndIncrement(), null, obj1, null, null, null, tasktoprocess);
+							}
+							if(obj2 instanceof NodeIndexKey nik) {
+								item2 = nik;
+							} else {
+								item2 = new NodeIndexKey(tasktoprocess.getHostport(),
+										atomindex.getAndIncrement(), null, obj2, null, null, null, tasktoprocess);
+							}
+							// Check last pair if any
+							if (nonNull(item1) && nonNull(item2) && item1.compareTo(item2) == 0) {
+								diskspillsetresult.add(item1);
+							}
+							diskspillsetintm1 = diskspillsetresult;
+						}						
 					}
 					log.debug("Object To be sent to downstream pipeline size {}", diskspillsetresult.size());
-					Set<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
+					DiskSpillingSet<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
+					if(diskspillsetresultfinal.isSpilled()) {
+						diskspillsetresultfinal.close();
+					}
 					childpipes.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspillsetresultfinal, false, false, DiskSpillingSet.class));
 					});
