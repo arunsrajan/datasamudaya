@@ -31,6 +31,7 @@ import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
+import com.github.datasamudaya.common.utils.NodeIndexKeyComparator;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
@@ -122,7 +123,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 					List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 					if (CollectionUtils.isNotEmpty(childpipes)) {
 						DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess,
-								diskspillpercentage, null, false, false, false, null, null, 1, false, null);
+								diskspillpercentage, null, false, false, false, null, null, 1, true, new NodeIndexKeyComparator());
 						for (Object diskspill : ldiskspill) {
 							Stream<?> datastream = null;
 							if (diskspill instanceof DiskSpillingList dsl) {
@@ -130,9 +131,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 							} else if (diskspill instanceof DiskSpillingSet dss) {
 								datastream = Utils.getStreamData(dss);
 							} else if (diskspill instanceof TreeSet<?> ts) {
-								diskspillset.addAll((Set<NodeIndexKey>) ts);
-								ts.clear();
-								datastream = null;
+								datastream = ts.stream();
 							}
 							try {
 								AtomicInteger index = new AtomicInteger(0);

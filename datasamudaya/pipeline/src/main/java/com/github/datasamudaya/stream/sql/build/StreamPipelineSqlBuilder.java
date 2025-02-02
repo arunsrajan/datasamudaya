@@ -779,7 +779,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 
 		if (nonNull(pipeline1.getCsvOptions())) {
 			pipeline1 = pipeline1.map(new MapFunction<Object[], List<Object>>(){
-				private static final long serialVersionUID = -1219246537117693979L;
+				private static final long serialVersionUID = -7543633546486304100L;
 
 				@Override
 				public List<Object> apply(Object[] obj) {
@@ -787,7 +787,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 				}
 			}).distinct()
 					.map(new MapFunction<List<Object>, Object[]>(){
-						private static final long serialVersionUID = 6404372514784230364L;
+						private static final long serialVersionUID = 8488918987655886648L;
 
 						@Override
 						public Object[] apply(List<Object> obj) {
@@ -798,7 +798,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 
 		if (nonNull(pipeline2.getCsvOptions())) {
 			pipeline2 = pipeline2.map(new MapFunction<Object[], List<Object>>(){
-				private static final long serialVersionUID = -1219246537117693979L;
+				private static final long serialVersionUID = -1187784170237815896L;
 
 				@Override
 				public List<Object> apply(Object[] obj) {
@@ -806,7 +806,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 				}
 			}).distinct()
 					.map(new MapFunction<List<Object>, Object[]>(){
-						private static final long serialVersionUID = 6404372514784230364L;
+						private static final long serialVersionUID = -6071041541068678115L;
 
 						@Override
 						public Object[] apply(List<Object> obj) {

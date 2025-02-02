@@ -175,9 +175,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 					try {
 						if (CollectionUtils.isEmpty(childpipes)) {
 							Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
-									? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
-											Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-													diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+									? (Stream<Tuple2>) Utils.getStreamData(diskspilllistinterm)
 									: diskspilllistinterm.getData().stream();
 							try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(), datastream);
 									var fsdos = new ByteArrayOutputStream();
@@ -198,9 +196,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 									DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
 							try {
 								Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
-										? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(
-												Utils.getLocalFilePathForTask(diskspilllistinterm.getTask(), null, true,
-														diskspilllistinterm.getLeft(), diskspilllistinterm.getRight())))
+										? (Stream<Tuple2>) Utils.getStreamData(diskspilllistinterm)
 										: diskspilllistinterm.getData().stream();
 								try (var streammap = (Stream) StreamUtils.getFunctionsToStream(getFunctions(),
 										datastream);) {

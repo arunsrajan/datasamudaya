@@ -104,6 +104,12 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	 * @return dataSet object
 	 */
 	public Set<T> getData() {
+		if (nonNull(bytes)) {
+			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
+			bytes = null;
+		} else {
+			dataSet = nonNull(dataSet)?dataSet:istree?new TreeSet<>(sortedcomparator):new HashSet();
+		}
 		return dataSet;
 	}
 
@@ -313,17 +319,32 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	public int size() {
 		if (nonNull(bytes)) {
 			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
+			bytes = null;
+		} else {
+			dataSet = nonNull(dataSet)?dataSet:istree?new TreeSet<>(sortedcomparator):new HashSet();
 		}
-		return isNull(dataSet) ? 0 : dataSet.size();
+		return dataSet.size();
 	}
 
 	@Override
 	public Iterator<T> iterator() {
+		if (nonNull(bytes)) {
+			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
+			bytes = null;
+		} else {
+			dataSet = nonNull(dataSet)?dataSet:istree?new TreeSet<>(sortedcomparator):new HashSet();
+		}
 		return dataSet.iterator();
 	}
 	
 	@Override
 	public Stream<T> stream() {
+		if (nonNull(bytes)) {
+			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
+			bytes = null;
+		} else {
+			dataSet = nonNull(dataSet)?dataSet:istree?new TreeSet<>(sortedcomparator):new HashSet();
+		}
 		return dataSet.stream();
 	}
 

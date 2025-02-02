@@ -2448,10 +2448,8 @@ public class StreamJobScheduler {
 													}
 												}
 											}
-											List larrayobj = new ArrayList<>();
-											if (diskspillset.isSpilled()) {
-												diskspillset.close();
-											}
+											List larrayobj = new ArrayList<>();											
+											diskspillset.close();
 											Stream<NodeIndexKey> datastream = diskspillset.isSpilled()
 													? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
 													Utils.getLocalFilePathForTask(diskspillset.getTask(), null, false, false, false)))
@@ -2610,9 +2608,7 @@ public class StreamJobScheduler {
 											}
 										}
 										List larrayobj = new ArrayList<>();
-										if (diskspillset.isSpilled()) {
-											diskspillset.close();
-										}
+										diskspillset.close();
 										Stream<NodeIndexKey> datastream = diskspillset.isSpilled()
 												? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
 												Utils.getLocalFilePathForTask(diskspillset.getTask(), null, false, false, false)))

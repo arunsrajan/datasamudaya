@@ -121,6 +121,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 					int index = 0;
 					DiskSpillingSet<NodeIndexKey> diskspillsetresult = null;
 					DiskSpillingSet<NodeIndexKey> diskspillsetintm1 = null;
+					int totalelements = ldiskspill.size();
 					Object diskspill = ldiskspill.remove(0);
 					Stream<NodeIndexKey> datastream1 = null;
 					Stream<NodeIndexKey> datastream2 = null;
@@ -131,7 +132,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 					} else if (diskspill instanceof TreeSet<?> ts) {
 						datastream1 = (Stream<NodeIndexKey>) ts.stream();
 					}
-					AtomicInteger atomindex = new AtomicInteger(0);
+					AtomicInteger atomindex = new AtomicInteger(0);					
 					if(CollectionUtils.isNotEmpty(ldiskspill)) {
 						for (Object diskspill1 : ldiskspill) {
 							index++;						
@@ -152,7 +153,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 							} else if(nonNull(diskspillsetintm1) && !diskspillsetintm1.isSpilled()) {
 								datastream1 = diskspillsetintm1.stream();
 							}
-							if(index < ldiskspill.size()) {
+							if(index < totalelements - 1) {
 								diskspillsetresult = new DiskSpillingSet(tasktoprocess,
 									diskspillpercentage, index+DataSamudayaConstants.EMPTY, true, false, false, null, null, 1, true, new NodeIndexKeyComparator());
 							} else {

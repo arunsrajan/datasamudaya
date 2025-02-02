@@ -179,7 +179,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 		List<SqlTypeName> sqltypenamel = null;
 		final String[] headers;
 		boolean iscsv = false;
-		final boolean isfilterexist;
+		final AtomicBoolean isfilterexist = new AtomicBoolean(false);
 		final AtomicBoolean toskipartition;
 		RexNode filter;
 		final boolean left = isNull(tasktoprocess.joinpos) ? false
@@ -208,18 +208,18 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 								.findFirst() : Optional.empty();
 						if (toskippartitionoptional.isPresent()) {
 							toskipartition = (AtomicBoolean) toskippartitionoptional.get();
-							isfilterexist = true;
+							isfilterexist.set(true);
 						} else if (nonNull(filter)) {
-							isfilterexist = false;
+							isfilterexist.set(false);
 							Map<RexNode, AtomicBoolean> filterskipmap = blockspartitionfilterskipmap.get(blkey);
 							if (isNull(filterskipmap)) {
 								filterskipmap = new ConcurrentHashMap<>();
 								blockspartitionfilterskipmap.put(blkey, filterskipmap);
 							}
-							toskipartition = new AtomicBoolean(true);
+							toskipartition = new AtomicBoolean(false);
 							filterskipmap.put(filter, toskipartition);
 						} else {
-							isfilterexist = false;
+							isfilterexist.set(false);
 							toskipartition = new AtomicBoolean(false);
 						}
 
@@ -231,12 +231,12 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 						headers = jsql.getHeader();
 						iscsv = false;
 						toskipartition = new AtomicBoolean(false);
-						isfilterexist = true;
+						isfilterexist.set(true);
 						filter = null;
 					} else {
 						headers = null;
 						toskipartition = new AtomicBoolean(false);
-						isfilterexist = true;
+						isfilterexist.set(true);
 						filter = null;
 					}
 					byte[] yosegibytes = new byte[1];
@@ -252,7 +252,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 							Map<String, SqlTypeName> sqltypename = SQLUtils.getColumnTypesByColumn(sqltypenamel,
 									Arrays.asList(headers));
 							if (iscsv) {
-								if (isfilterexist && toskipartition.get()) {
+								if (isfilterexist.get() && toskipartition.get()) {
 									intermediatestreamobject = Arrays.asList().stream();
 								} else {
 									CsvCallbackHandler<NamedCsvRecord> callbackHandler = new NamedCsvRecordHandler(
@@ -273,8 +273,9 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 										} catch (Exception ex) {
 											logger.error(DataSamudayaConstants.EMPTY, ex);
 										}
-										if (nonNull(filter) && !isfilterexist && toskipartition.get()) {
+										if (nonNull(filter) && !isfilterexist.get()) {
 											if (SQLUtils.evaluateExpression(filter, valuesobject)) {
+												isfilterexist.set(true);
 												toskipartition.set(false);
 											}
 										}
@@ -409,6 +410,9 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 					logger.debug("Writing To Cache Ended with total bytes {}... " + fsdos.toByteArray().length);
 				}
 				logger.debug("Map assembly concluded");
+				if(!isfilterexist.get()) {
+					 toskipartition.set(true);
+				}
 				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 				logger.debug("Exiting ProcessMapperByBlocksLocation.processBlocksLocationRecord");
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;

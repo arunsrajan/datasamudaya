@@ -96,6 +96,10 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	 * @return datalist object
 	 */
 	public List<T> getData() {
+		if (nonNull(bytes)) {
+			dataList = (List) Utils.convertBytesToObjectCompressed(bytes, null);
+			bytes = null;
+		}
 		return dataList;
 	}
 
@@ -307,6 +311,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	public int size() {
 		if (nonNull(bytes)) {
 			dataList = (List) Utils.convertBytesToObjectCompressed(bytes, null);
+			bytes = null;
 		}
 		return isNull(dataList) ? 0 : dataList.size();
 	}
