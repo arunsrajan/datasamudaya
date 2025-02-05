@@ -31,6 +31,7 @@ public class MrJobArrivalDelayResourceDividedNormal implements Application {
 	public void runMRJob(String[] args, JobConfiguration jobconfiguration) {
 		jobconfiguration.setBatchsize(args[4]);
 		jobconfiguration.setNumofreducers("1");
+		jobconfiguration.setIsuseglobalte(false);
 		jobconfiguration.setGctype(DataSamudayaConstants.ZGC);
 		jobconfiguration.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT);
 
@@ -38,7 +39,6 @@ public class MrJobArrivalDelayResourceDividedNormal implements Application {
 		var datasamudayajob = (MapReduceApplication) MapReduceApplicationBuilder.newBuilder()
 				.addMapper(CarriersDataMapper.class, args[1])
 				.addMapper(AirlineArrDelayDataMapper.class, args[0])
-				.addMapper(AirlineDepDelayDataMapper.class, args[0])
 				.addCombiner(CarriersDataMapper.class)
 				.addReducer(CarriersDataMapper.class)
 				.setOutputfolder(args[2])

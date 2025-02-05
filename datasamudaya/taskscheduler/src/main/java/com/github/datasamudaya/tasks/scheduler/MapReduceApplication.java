@@ -657,12 +657,12 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					tasks.add(task);
 					taskexecutortasks.putIfAbsent(mdtstm.getHostPort(), tasks);
 
-					apptaskhp.put(apptask.getApplicationid() + apptask.getStageid() + apptask.getTaskid(), mdtstm.getHostPort());
+					apptaskhp.put(apptask.getApplicationid() + DataSamudayaConstants.UNDERSCORE + apptask.getStageid() + DataSamudayaConstants.UNDERSCORE + apptask.getTaskid(), mdtstm.getHostPort());
 					List<String> apptasks = folderapptasksmap.getOrDefault(folder, new ArrayList<>());
 					folderapptasksmap.put(folder, apptasks);
-					apptasks.add(applicationid + taskid);
+					apptasks.add(apptask.getApplicationid() + DataSamudayaConstants.UNDERSCORE + apptask.getStageid() + DataSamudayaConstants.UNDERSCORE + apptask.getTaskid());
 					var dcc = new DataCruncherContext();
-					dccmapphases.put(apptask.getApplicationid() + apptask.getStageid() + apptask.getTaskid(), dcc);
+					dccmapphases.put(apptask.getApplicationid() + DataSamudayaConstants.UNDERSCORE + apptask.getStageid() + DataSamudayaConstants.UNDERSCORE + apptask.getTaskid(), dcc);
 					globaldccport.put(dcc.getContextid(), mdtstm.getHostPort());
 					mrtaskcount++;
 				}
@@ -807,7 +807,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					taskexecutortasks.putIfAbsent((String) currentexecutor, tasks);
 					var tscs = new TaskSchedulerCombinerSubmitter(
 							cv, apptask, teappid);
-					apptaskhp.put(apptask.getApplicationid() + apptask.getStageid() + apptask.getTaskid(), apptask.getHp());
+					apptaskhp.put(apptask.getApplicationid() + DataSamudayaConstants.UNDERSCORE + apptask.getStageid() + DataSamudayaConstants.UNDERSCORE + apptask.getTaskid(), apptask.getHp());
 					log.debug("Combiner: Submitting " + mrtaskcount + " App And Task:"
 							+ applicationid + taskid + cv.getTuples());
 					if (!Objects.isNull(jobconf.getOutput())) {
@@ -944,20 +944,6 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 			log.error("Unable To Execute Job, See Cause Below:", ex);
 		} finally {
 			try {
-				if (nonNull(esmap)) {
-					esmap.shutdown();
-				}
-				if (isNull(jobconf.isIsuseglobalte())
-						|| (nonNull(jobconf.isIsuseglobalte())
-						&& !jobconf.isIsuseglobalte())) {
-					destroyContainers(applicationid);
-				}
-				if (!Objects.isNull(cf)) {
-					cf.close();
-				}
-				if (!Objects.isNull(es)) {
-					es.shutdown();
-				}
 				if (MapUtils.isNotEmpty(taskexecutortasks)) {
 					taskexecutortasks.entrySet().stream().forEach(entry -> {
 						try {
@@ -974,6 +960,20 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 						}
 					});
 				}
+				if (nonNull(esmap)) {
+					esmap.shutdown();
+				}
+				if (isNull(jobconf.isIsuseglobalte())
+						|| (nonNull(jobconf.isIsuseglobalte())
+						&& !jobconf.isIsuseglobalte())) {
+					destroyContainers(applicationid);
+				}
+				if (!Objects.isNull(cf)) {
+					cf.close();
+				}
+				if (!Objects.isNull(es)) {
+					es.shutdown();
+				}				
 			} catch (Exception ex) {
 				log.debug("Resource Release Error", ex);
 			}
@@ -1082,7 +1082,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
 						Utils.writeToOstream(jobconf.getOutput(), "\nPercentage Completed TE("
 								+ tsmcsl.getHostPort() + ") " + percentagecompleted + "% \n");
-						dccmapphase.get(rk.applicationid + rk.stageid + rk.taskid).putAll(rk.keys, rk.applicationid + DataSamudayaConstants.UNDERSCORE + rk.stageid + DataSamudayaConstants.UNDERSCORE + rk.taskid);
+						dccmapphase.get(rk.applicationid + DataSamudayaConstants.UNDERSCORE + rk.stageid + DataSamudayaConstants.UNDERSCORE + rk.taskid).putAll(rk.keys, rk.applicationid + DataSamudayaConstants.UNDERSCORE + rk.stageid + DataSamudayaConstants.UNDERSCORE + rk.taskid);
 						log.debug("Combiner Keys: {}", rk);
 						resultmerge.release();
 						semaphorebatch.release();

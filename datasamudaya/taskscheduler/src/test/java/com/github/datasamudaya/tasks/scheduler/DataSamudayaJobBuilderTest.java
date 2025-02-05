@@ -18,12 +18,26 @@ package com.github.datasamudaya.tasks.scheduler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import java.util.List;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.datasamudaya.common.DataCruncherContext;
+import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.JobConfigurationBuilder;
 
 public class DataSamudayaJobBuilderTest extends MassiveDataMRJobBase {
 
+	@BeforeClass
+	public static void initConfig() {
+		jc = JobConfigurationBuilder.newBuilder()
+				.setIsuseglobalte(false)
+				.setUser(null)
+				.setTeappid(null)
+				.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT)
+				.build();
+	}
+	
 	@Test
 	public void testDataSamudayaJobBuilder() {
 		MapReduceApplication datasamudayajob = (MapReduceApplication) MapReduceApplicationBuilder.newBuilder()
@@ -31,6 +45,7 @@ public class DataSamudayaJobBuilderTest extends MassiveDataMRJobBase {
 				.addMapper(AirlineDataMapper.class, "/airlines")
 				.addCombiner(AirlineDataMapper.class)
 				.addReducer(AirlineDataMapper.class)
+				.setJobConf(jc)
 				.setOutputfolder("/aircararrivaldelay")
 				.build();
 		assertTrue(datasamudayajob.mappers.get(0).crunchmapper == AirlineDataMapper.class);
@@ -49,6 +64,7 @@ public class DataSamudayaJobBuilderTest extends MassiveDataMRJobBase {
 				.addMapper(new AirlineDataMapper(), "/airlinesample")
 				.addCombiner(new AirlineDataMapper())
 				.addReducer(new AirlineDataMapper())
+				.setJobConf(jc)
 				.setOutputfolder("/aircararrivaldelay")
 				.build();
 		assertTrue(datasamudayajob.mappers.get(0).crunchmapper instanceof AirlineDataMapper);

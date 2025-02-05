@@ -197,14 +197,6 @@ public class MassiveDataMRJobBase {
 					executorsindex++;
 				}
 			}
-			teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
-			Utils.launchContainersUserSpec("arun", teappid, 4, 4096, 3);
-			jc = JobConfigurationBuilder.newBuilder()
-					.setIsuseglobalte(true)
-					.setUser("arun")
-					.setTeappid(teappid)
-					.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT)
-					.build();
 			uploadfile(hdfs, airlinesample, airlinesample + csvfileextn);
 			uploadfile(hdfs, carriers, carriers + csvfileextn);
 		} catch (Exception ex) {

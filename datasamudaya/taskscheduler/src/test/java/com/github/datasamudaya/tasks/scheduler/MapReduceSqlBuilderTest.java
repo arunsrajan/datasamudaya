@@ -6,12 +6,17 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.datasamudaya.common.ContainerException;
 import com.github.datasamudaya.common.Context;
 import com.github.datasamudaya.common.DataSamudayaConstants;
+import com.github.datasamudaya.common.JobConfigurationBuilder;
+import com.github.datasamudaya.common.exceptions.RpcRegistryException;
+import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.tasks.scheduler.sql.MapReduceApplicationSqlBuilder;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -30,6 +35,18 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 			SqlTypeName.BIGINT);
 	static Logger log = LoggerFactory.getLogger(MapReduceSqlBuilderTest.class);
 
+	@BeforeClass
+	public static void setupTaskExecutors() throws ContainerException, InterruptedException, RpcRegistryException {
+		teappid = DataSamudayaConstants.DATASAMUDAYAAPPLICATION + DataSamudayaConstants.HYPHEN + System.currentTimeMillis() + DataSamudayaConstants.HYPHEN + Utils.getUniqueAppID();
+		Utils.launchContainersUserSpec("arun", teappid, 4, 4096, 3);
+		jc = JobConfigurationBuilder.newBuilder()
+				.setIsuseglobalte(true)
+				.setUser("arun")
+				.setTeappid(teappid)
+				.setExecmode(DataSamudayaConstants.EXECMODE_DEFAULT)
+				.build();
+	}
+	
 	@Test
 	public void testAllFunction() throws Exception {
 		log.info("In testAllFunction() method Entry");
@@ -618,6 +635,4 @@ public class MapReduceSqlBuilderTest extends MassiveDataMRJobBase {
 		});
 		log.info("In testRequiredColumnsInOrder() method Exit");
 	}
-
-
 }
