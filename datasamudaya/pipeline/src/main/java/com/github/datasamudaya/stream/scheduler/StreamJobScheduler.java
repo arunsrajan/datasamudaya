@@ -2445,15 +2445,14 @@ public class StreamJobScheduler {
 														List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 																.convertBytesToObjectCompressed((byte[]) client.next(), null);
 														log.debug("Next List From Remote Server with size {}", niks.size());
-														niks.stream().parallel().forEach(diskspillset::add);
+														niks.stream().forEach(diskspillset::add);
 													}
 												}
 											}
 											List larrayobj = new ArrayList<>();											
 											diskspillset.close();
 											Stream<NodeIndexKey> datastream = diskspillset.isSpilled()
-													? (Stream<NodeIndexKey>) Utils.getStreamData(new FileInputStream(
-													Utils.getLocalFilePathForTask(diskspillset.getTask(), null, false, false, false)))
+													? (Stream<NodeIndexKey>) Utils.getStreamData(diskspillset)
 													: diskspillset.getData().stream();
 											datastream.map(nik -> nik.getKey()).map(new MapFunction<Object[], Object[]>(){
 												private static final long serialVersionUID = -6478016520828716284L;
@@ -2604,7 +2603,7 @@ public class StreamJobScheduler {
 													List<NodeIndexKey> niks = (List<NodeIndexKey>) Utils
 															.convertBytesToObjectCompressed((byte[]) client.next(), null);
 													log.debug("Next List From Remote Server with size {}", niks.size());
-													niks.stream().parallel().forEach(diskspillset::add);
+													niks.stream().forEach(diskspillset::add);
 												}
 											}
 										}

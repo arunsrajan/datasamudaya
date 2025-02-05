@@ -138,6 +138,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 								if (nonNull(datastream)) {
 									datastream.forEach(obj -> {
 										if (obj instanceof NodeIndexKey nik) {
+											nik.setIndex(index.getAndIncrement());
 											diskspillset.add(nik);
 										} else {
 											diskspillset.add(new NodeIndexKey(tasktoprocess.getHostport(),

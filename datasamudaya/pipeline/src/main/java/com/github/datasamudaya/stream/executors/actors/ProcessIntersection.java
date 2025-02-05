@@ -132,7 +132,8 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 					} else if (diskspill instanceof TreeSet<?> ts) {
 						datastream1 = (Stream<NodeIndexKey>) ts.stream();
 					}
-					AtomicInteger atomindex = new AtomicInteger(0);					
+					AtomicInteger atomindexleft = new AtomicInteger(0);
+					AtomicInteger atomindexright = new AtomicInteger(0);	
 					if(CollectionUtils.isNotEmpty(ldiskspill)) {
 						for (Object diskspill1 : ldiskspill) {
 							index++;						
@@ -180,13 +181,13 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 									item1 = nik;
 								} else {
 									item1 = new NodeIndexKey(tasktoprocess.getHostport(),
-											atomindex.getAndIncrement(), null, obj1, null, null, null, tasktoprocess);
+											atomindexleft.getAndIncrement(), null, obj1, null, null, null, tasktoprocess);
 								}
 								if(obj2 instanceof NodeIndexKey nik) {
 									item2 = nik;
 								} else {
 									item2 = new NodeIndexKey(tasktoprocess.getHostport(),
-											atomindex.getAndIncrement(), null, obj2, null, null, null, tasktoprocess);
+											atomindexright.getAndIncrement(), null, obj2, null, null, null, tasktoprocess);
 								}
 								int compare = item1.compareTo(item2);
 								if (compare == 0) {
@@ -206,13 +207,13 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 								item1 = nik;
 							} else {
 								item1 = new NodeIndexKey(tasktoprocess.getHostport(),
-										atomindex.getAndIncrement(), null, obj1, null, null, null, tasktoprocess);
+										atomindexleft.getAndIncrement(), null, obj1, null, null, null, tasktoprocess);
 							}
 							if(obj2 instanceof NodeIndexKey nik) {
 								item2 = nik;
 							} else {
 								item2 = new NodeIndexKey(tasktoprocess.getHostport(),
-										atomindex.getAndIncrement(), null, obj2, null, null, null, tasktoprocess);
+										atomindexright.getAndIncrement(), null, obj2, null, null, null, tasktoprocess);
 							}
 							// Check last pair if any
 							if (nonNull(item1) && nonNull(item2) && item1.compareTo(item2) == 0) {

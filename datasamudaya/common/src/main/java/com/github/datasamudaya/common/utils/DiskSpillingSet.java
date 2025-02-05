@@ -10,8 +10,8 @@ import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,7 +84,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			,SortedComparator sortedcomparator) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
-		dataSet = istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
+		dataSet = istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new LinkedHashSet());
 		this.sortedcomparator = sortedcomparator;
 		this.spillpercentage = spillexceedpercentage / 100.0;
 		this.left = left;
@@ -110,7 +110,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 			bytes = null;
 		} else {
-			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
+			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new LinkedHashSet());
 		}
 		return dataSet;
 	}
@@ -134,7 +134,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	@Override
 	public boolean add(T value) {
 		if (isNull(dataSet)) {
-			dataSet = istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
+			dataSet = istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new LinkedHashSet());
 		}
 		spillToDiskIntermediate(false);
 		dataSet.add(value);
@@ -214,7 +214,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		if (nonNull(bytes)) {
 			return (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 		}
-		return istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
+		return istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new LinkedHashSet());
 	}
 
 	/**
@@ -323,7 +323,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 			bytes = null;
 		} else {
-			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
+			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new LinkedHashSet());
 		}
 		return dataSet.size();
 	}
@@ -334,7 +334,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 			bytes = null;
 		} else {
-			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
+			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new LinkedHashSet());
 		}
 		return dataSet.iterator();
 	}
@@ -345,7 +345,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 			bytes = null;
 		} else {
-			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
+			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new LinkedHashSet());
 		}
 		return dataSet.stream();
 	}
