@@ -145,6 +145,7 @@ import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
 import com.github.datasamudaya.common.utils.IteratorType;
+import com.github.datasamudaya.common.utils.NodeIndexKeyComparator;
 import com.github.datasamudaya.common.utils.RemoteIteratorClient;
 import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
@@ -2434,7 +2435,7 @@ public class StreamJobScheduler {
 										if (task.isIsunion() || task.isIsintersection()) {
 											int diskexceedpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 													DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
-											DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false, false, false, null, null, 1, false, null);
+											DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false, false, false, null, null, 1, true, new NodeIndexKeyComparator());
 											for (NodeIndexKey nik : (List<NodeIndexKey>) lst) {
 												log.debug("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 												try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), null, false, false, false, nik.getTask().getFcsc(),
@@ -2593,7 +2594,7 @@ public class StreamJobScheduler {
 									if (task.isIsunion() || task.isIsintersection()) {
 										int diskexceedpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 												DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
-										DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false, false, false, null, null, 1, false, null);
+										DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(task, diskexceedpercentage, null, false, false, false, null, null, 1, true, new NodeIndexKeyComparator());
 										for (NodeIndexKey nik : (List<NodeIndexKey>) lst) {
 											log.debug("Getting Next List From Remote Server with FCD {}", nik.getTask().getFcsc());
 											try (RemoteIteratorClient client = new RemoteIteratorClient(nik.getTask(), null, false, false, false, nik.getTask().getFcsc(),

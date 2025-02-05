@@ -65,7 +65,7 @@ public class StreamPipelineSQLYarnContainer extends AbstractIntegrationYarnConta
 			log.debug("In Client Response Obtained");
 			String jobid = response.getContainerid();
 			log.debug("JobId {}", jobid);
-			String[] args = new String[]{DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG, ((int) (Utils.mpBeanLocalToJVM.getUsage().getMax() * 0.4)) + "", jobid, response.getExecutorordriver().name(), DataSamudayaConstants.EMPTY+response.getNumberofcontainers()};
+			String[] args = new String[]{DataSamudayaConstants.TEPROPLOADCLASSPATHCONFIG, ((int) (Runtime.getRuntime().maxMemory() * 0.8)) + "", jobid, response.getExecutorordriver().name(), DataSamudayaConstants.EMPTY+response.getNumberofcontainers()};
 			method.invoke(null, (Object) args);
 			log.debug("Executing TaskExecutor For JobId {}", jobid);
 			log.debug("In runInternal method Ended");

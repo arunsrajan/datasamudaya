@@ -763,7 +763,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 						}
 					});
 		}
-		return pipeline1.union(pipeline2);
+		return pipeline1.sorted(new ObjectArrayComparator()).union(pipeline2.sorted(new ObjectArrayComparator()));
 	}
 
 	/**
@@ -793,7 +793,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 						public Object[] apply(List<Object> obj) {
 							return obj.toArray();
 						}
-					}).sorted(new ObjectArrayComparator());
+					});
 		}
 
 		if (nonNull(pipeline2.getCsvOptions())) {
@@ -812,9 +812,9 @@ public class StreamPipelineSqlBuilder implements Serializable {
 						public Object[] apply(List<Object> obj) {
 							return obj.toArray();
 						}
-					}).sorted(new ObjectArrayComparator());
+					});
 		}
-		return pipeline1.intersection(pipeline2);
+		return pipeline1.sorted(new ObjectArrayComparator()).intersection(pipeline2.sorted(new ObjectArrayComparator()));
 	}
 
 

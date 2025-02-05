@@ -52,6 +52,7 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	private Semaphore lock;
 	private String appendwithpath;
 	private Kryo kryo;
+	private double spillpercentage;
 
 	public DiskSpillingContext() {
 		lock = new Semaphore(1);
@@ -64,8 +65,8 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 		diskfilepath = Utils.getLocalFilePathForMRTask(task, appendwithpath);
 		context = new DataCruncherContext<T, U>();
 		this.keys = new LinkedHashSet<>();
-		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * ((Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
-				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT))) / 100.0)));
+		this.spillpercentage = (Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
+				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT))) / 100.0;
 		this.lock = new Semaphore(1);
 		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE,
 				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
@@ -161,7 +162,7 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
 			lock.acquire();
-			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded())
+			if ((isspilled || Utils.isMemoryUsageHigh(spillpercentage))
 					&& context.valuesSize() > 0) {
 				if (isNull(ostream)) {
 					ostream = new FileOutputStream(new File(diskfilepath), true);

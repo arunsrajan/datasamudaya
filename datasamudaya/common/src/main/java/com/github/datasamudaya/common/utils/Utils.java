@@ -297,6 +297,18 @@ public class Utils {
 			}
 		}
 	}
+	
+	/**
+	 * The function returns true when memory usage is high.
+	 * @return true or false
+	 */
+	public static boolean isMemoryUsageHigh(double spillexceedthreshold) {
+        Runtime runtime = Runtime.getRuntime();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        long maxMemory = runtime.maxMemory();
+        double usagePercentage = (double) usedMemory / maxMemory;
+        return usagePercentage > spillexceedthreshold; // 80% threshold
+    }
 
 	/**
 	 * Shutdown hook

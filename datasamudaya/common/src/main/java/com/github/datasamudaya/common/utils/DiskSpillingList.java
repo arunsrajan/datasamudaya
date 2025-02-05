@@ -65,7 +65,9 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 	int numfileperexec;
 	private Semaphore lock;
 	private Semaphore filelock;
-
+	private double spillpercentage;
+	
+	
 	public DiskSpillingList() {
 		lock = new Semaphore(1);
 		filelock = new Semaphore(1);
@@ -75,7 +77,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataList = new Vector<>();
-		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * (spillexceedpercentage / 100.0)));
+		this.spillpercentage = spillexceedpercentage / 100.0d;
 		this.left = left;
 		this.right = right;
 		this.appendintermediate = appendintermediate;
@@ -217,7 +219,7 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded())
+			if ((isspilled || Utils.isMemoryUsageHigh(spillpercentage))
 					&& CollectionUtils.isNotEmpty(dataList)) {
 				filelock.acquire();
 				if (isNull(ostream)) {

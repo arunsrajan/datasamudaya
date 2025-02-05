@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +29,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
-import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.FilePartitionId;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.ShuffleBlock;
@@ -70,6 +70,8 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	private Semaphore filelock;
 	private boolean istree;
 	private SortedComparator sortedcomparator;
+	private double spillpercentage;
+	
 	public DiskSpillingSet() {
 		lock = new Semaphore(1);
 		filelock = new Semaphore(1);
@@ -82,9 +84,9 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			,SortedComparator sortedcomparator) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
-		dataSet = istree?new TreeSet<>(sortedcomparator):new HashSet();
+		dataSet = istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
 		this.sortedcomparator = sortedcomparator;
-		Utils.mpBeanLocalToJVM.setUsageThreshold((long) Math.floor(Utils.mpBeanLocalToJVM.getUsage().getMax() * (spillexceedpercentage / 100.0)));
+		this.spillpercentage = spillexceedpercentage / 100.0;
 		this.left = left;
 		this.right = right;
 		this.appendintermediate = appendintermediate;
@@ -108,7 +110,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 			bytes = null;
 		} else {
-			dataSet = nonNull(dataSet)?dataSet:istree?new TreeSet<>(sortedcomparator):new HashSet();
+			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
 		}
 		return dataSet;
 	}
@@ -132,7 +134,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	@Override
 	public boolean add(T value) {
 		if (isNull(dataSet)) {
-			dataSet = istree?new TreeSet<>(sortedcomparator):new HashSet();
+			dataSet = istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
 		}
 		spillToDiskIntermediate(false);
 		dataSet.add(value);
@@ -212,7 +214,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		if (nonNull(bytes)) {
 			return (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 		}
-		return istree?new TreeSet<>(sortedcomparator):new HashSet();
+		return istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
 	}
 
 	/**
@@ -225,7 +227,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if ((isspilled || Utils.mpBeanLocalToJVM.isUsageThresholdExceeded())
+			if ((isspilled || Utils.isMemoryUsageHigh(spillpercentage))
 					&& CollectionUtils.isNotEmpty(dataSet)) {
 				filelock.acquire();
 				if (isNull(ostream)) {
@@ -321,7 +323,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 			bytes = null;
 		} else {
-			dataSet = nonNull(dataSet)?dataSet:istree?new TreeSet<>(sortedcomparator):new HashSet();
+			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
 		}
 		return dataSet.size();
 	}
@@ -332,7 +334,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 			bytes = null;
 		} else {
-			dataSet = nonNull(dataSet)?dataSet:istree?new TreeSet<>(sortedcomparator):new HashSet();
+			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
 		}
 		return dataSet.iterator();
 	}
@@ -343,7 +345,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			dataSet = (Set) Utils.convertBytesToObjectCompressed(bytes, null);
 			bytes = null;
 		} else {
-			dataSet = nonNull(dataSet)?dataSet:istree?new TreeSet<>(sortedcomparator):new HashSet();
+			dataSet = nonNull(dataSet)?dataSet:istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new HashSet());
 		}
 		return dataSet.stream();
 	}
