@@ -36,6 +36,7 @@ import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -49,6 +50,9 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements Serializable {
+
+	private static final long serialVersionUID = 956808253755215237L;
+
 	private static final Logger log = LoggerFactory.getLogger(ProcessLeftOuterJoin.class);
 
 	protected JobStage jobstage;
@@ -60,7 +64,7 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 	LeftOuterJoinPredicate lojp;
 	int terminatingsize;
 	int initialsize;
-	List<EntityRef> pipelines;
+	List<RecipientRef> pipelines;
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	OutputObject left;
@@ -75,13 +79,13 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 		return EntityTypeKey.create(Command.class, "ProcessLeftOuterJoin-" + entityId);
 	}
 
-	public static Behavior<Command> create(String entityId, LeftOuterJoinPredicate lojp, List<EntityRef> pipelines, int terminatingsize,
+	public static Behavior<Command> create(String entityId, LeftOuterJoinPredicate lojp, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessLeftOuterJoin(context, lojp, pipelines, terminatingsize,
 				jobidstageidtaskidcompletedmap, cache, task, fjpool));
 	}
 
-	private ProcessLeftOuterJoin(ActorContext<Command> context, LeftOuterJoinPredicate lojp, List<EntityRef> pipelines, int terminatingsize,
+	private ProcessLeftOuterJoin(ActorContext<Command> context, LeftOuterJoinPredicate lojp, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		super(context);
 		this.lojp = lojp;

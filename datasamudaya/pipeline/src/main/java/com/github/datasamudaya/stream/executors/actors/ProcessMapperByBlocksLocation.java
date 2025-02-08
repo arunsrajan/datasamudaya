@@ -66,6 +66,7 @@ import com.github.datasamudaya.stream.utils.StreamUtils;
 import com.google.common.collect.Maps;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -88,6 +89,8 @@ import lombok.Setter;
  *
  */
 public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> implements Serializable {
+
+	private static final long serialVersionUID = -8454163993061220293L;
 
 	org.apache.logging.log4j.Logger logger = LogManager.getLogger(ProcessMapperByBlocksLocation.class);
 
@@ -147,7 +150,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 		BlocksLocation bl;
 		Map<Integer,
 				FilePartitionId> filespartitions;
-		List<EntityRef> childactors;
+		List<RecipientRef> childactors;
 		Map<Integer, EntityRef> pipeline;
 		JobStage jobstage;
 	}

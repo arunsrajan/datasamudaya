@@ -35,11 +35,11 @@ import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
-import akka.cluster.sharding.typed.javadsl.EntityRef;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
@@ -48,6 +48,9 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements Serializable {
+
+	private static final long serialVersionUID = -7563821518114793264L;
+
 	private static final Logger log = LoggerFactory.getLogger(ProcessFullOuterJoin.class);
 
 	protected JobStage jobstage;
@@ -58,7 +61,7 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 	ExecutorService executor;
 	int terminatingsize;
 	int initialsize;
-	List<EntityRef> pipelines;
+	List<RecipientRef> pipelines;
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	OutputObject left;
@@ -73,13 +76,13 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 		return EntityTypeKey.create(Command.class, "ProcessFullOuterJoin-" + entityId);
 	}
 
-	public static Behavior<Command> create(String entityId, List<EntityRef> pipelines, int terminatingsize,
+	public static Behavior<Command> create(String entityId, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessFullOuterJoin(context, pipelines, terminatingsize,
 				jobidstageidtaskidcompletedmap, cache, task, fjpool));
 	}
 
-	private ProcessFullOuterJoin(ActorContext<Command> context, List<EntityRef> pipelines, int terminatingsize,
+	private ProcessFullOuterJoin(ActorContext<Command> context, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		super(context);
 		this.pipelines = pipelines;

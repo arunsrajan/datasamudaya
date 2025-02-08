@@ -40,12 +40,12 @@ import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import akka.cluster.Cluster;
-import akka.cluster.sharding.typed.javadsl.EntityRef;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
@@ -68,7 +68,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 	Coalesce coalesce;
 	int terminatingsize;
 	int initialsize;
-	List<EntityRef> pipelines;
+	List<RecipientRef> pipelines;
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
@@ -78,14 +78,14 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 		return EntityTypeKey.create(Command.class, "ProcessCoalesce-" + entityId);
 	}
 
-	public static Behavior<Command> create(String entityId, Coalesce coalesce, List<EntityRef> pipelines, int terminatingsize,
+	public static Behavior<Command> create(String entityId, Coalesce coalesce, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessCoalesce(context, coalesce, pipelines, terminatingsize,
 				jobidstageidtaskidcompletedmap,
 				cache, task, fjpool));
 	}
 
-	private ProcessCoalesce(ActorContext<Command> context, Coalesce coalesce, List<EntityRef> pipelines, int terminatingsize,
+	private ProcessCoalesce(ActorContext<Command> context, Coalesce coalesce, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		super(context);
 		this.coalesce = coalesce;

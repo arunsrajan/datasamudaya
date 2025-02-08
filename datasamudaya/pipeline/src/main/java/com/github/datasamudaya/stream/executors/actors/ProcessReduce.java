@@ -1,7 +1,6 @@
 package com.github.datasamudaya.stream.executors.actors;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -42,6 +41,7 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -55,6 +55,8 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessReduce extends AbstractBehavior<Command> implements Serializable {
+	private static final long serialVersionUID = -6858596398737990355L;
+
 	Logger log = LogManager.getLogger(ProcessReduce.class);
 
 	protected JobStage jobstage;
@@ -66,7 +68,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 	ExecutorService executor;
 	private final boolean topersist = false;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<EntityRef> childpipes;
+	List<RecipientRef> childpipes;
 	int dummysize;
 	int terminatingsize;
 	int initialshufflesize;
@@ -90,14 +92,14 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 	}
 
 	public static Behavior<Command> create(String entityId, JobStage js, FileSystem hdfs, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessReduce(context, js, hdfs, cache,
 				jobidstageidtaskidcompletedmap,
 				tasktoprocess, childpipes, terminatingsize, fjpool));
 	}
 
 	private ProcessReduce(ActorContext<Command> context, JobStage js, FileSystem hdfs, Cache cache,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<EntityRef> childpipes,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<RecipientRef> childpipes,
 			int terminatingsize, ForkJoinPool fjpool) {
 		super(context);
 		this.jobstage = js;

@@ -36,6 +36,7 @@ import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -50,6 +51,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements Serializable {
+	private static final long serialVersionUID = -3413388366098283314L;
 	Logger log = LoggerFactory.getLogger(ProcessRightOuterJoin.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 
@@ -63,7 +65,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 	RightOuterJoinPredicate rojp;
 	int terminatingsize;
 	int initialsize;
-	List<EntityRef> pipelines;
+	List<RecipientRef> pipelines;
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	OutputObject left;
@@ -78,13 +80,13 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 		return EntityTypeKey.create(Command.class, "ProcessRightOuterJoin-" + entityId);
 	}
 
-	public static Behavior<Command> create(String entityId, RightOuterJoinPredicate rojp, List<EntityRef> pipelines, int terminatingsize,
+	public static Behavior<Command> create(String entityId, RightOuterJoinPredicate rojp, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessRightOuterJoin(context, rojp, pipelines, terminatingsize,
 				jobidstageidtaskidcompletedmap, cache, task, fjpool));
 	}
 
-	private ProcessRightOuterJoin(ActorContext<Command> context, RightOuterJoinPredicate rojp, List<EntityRef> pipelines, int terminatingsize,
+	private ProcessRightOuterJoin(ActorContext<Command> context, RightOuterJoinPredicate rojp, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		super(context);
 		this.rojp = rojp;

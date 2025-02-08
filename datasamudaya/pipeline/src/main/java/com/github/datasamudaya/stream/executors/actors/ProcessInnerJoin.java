@@ -36,6 +36,7 @@ import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -49,6 +50,8 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessInnerJoin extends AbstractBehavior<Command> implements Serializable {
+	private static final long serialVersionUID = -7346719449401289317L;
+
 	Logger log = LoggerFactory.getLogger(ProcessInnerJoin.class);
 
 	protected JobStage jobstage;
@@ -60,7 +63,7 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 	JoinPredicate jp;
 	int terminatingsize;
 	int initialsize;
-	List<EntityRef> pipelines;
+	List<RecipientRef> pipelines;
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
@@ -72,14 +75,14 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 		return EntityTypeKey.create(Command.class, "ProcessInnerJoin-" + entityId);
 	}
 
-	public static Behavior<Command> create(String entityId, JoinPredicate jp, List<EntityRef> pipelines, int terminatingsize,
+	public static Behavior<Command> create(String entityId, JoinPredicate jp, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessInnerJoin(context, jp, pipelines, terminatingsize,
 				jobidstageidtaskidcompletedmap, cache, task, fjpool));
 	}
 
 
-	private ProcessInnerJoin(ActorContext<Command> context, JoinPredicate jp, List<EntityRef> pipelines, int terminatingsize,
+	private ProcessInnerJoin(ActorContext<Command> context, JoinPredicate jp, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
 		super(context);
 		this.jp = jp;

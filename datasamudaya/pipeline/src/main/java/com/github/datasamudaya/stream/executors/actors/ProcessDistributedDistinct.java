@@ -1,6 +1,5 @@
 package com.github.datasamudaya.stream.executors.actors;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,12 +24,12 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import akka.cluster.Cluster;
-import akka.cluster.sharding.typed.javadsl.EntityRef;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
@@ -39,7 +38,7 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 	int terminatingsize;
 	int initialsize;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<EntityRef> childpipes;
+	List<RecipientRef> childpipes;
 	Task tasktoprocess;
 	int diskspillpercentage;
 	DiskSpillingSet diskspillset;
@@ -49,7 +48,7 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 	}
 
 	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessDistributedDistinct(context,
 				jobidstageidtaskidcompletedmap,
 				tasktoprocess, childpipes, terminatingsize, fjpool));
@@ -57,7 +56,7 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 
 
 	public ProcessDistributedDistinct(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;

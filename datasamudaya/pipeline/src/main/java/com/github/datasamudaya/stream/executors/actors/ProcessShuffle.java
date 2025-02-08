@@ -13,15 +13,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.calcite.rex.RexNode;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.shaded.org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
-import org.ehcache.Cache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -39,16 +34,14 @@ import com.github.datasamudaya.common.TerminatingActorValue;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
-import akka.actor.AbstractActor;
-import akka.actor.Actor;
 import akka.actor.ActorSelection;
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import akka.cluster.Cluster;
-import akka.cluster.sharding.typed.javadsl.EntityRef;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
@@ -57,6 +50,7 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessShuffle extends AbstractBehavior<Command> implements Serializable {
+	private static final long serialVersionUID = -3022437719020754534L;
 	org.apache.logging.log4j.Logger log = LogManager.getLogger(ProcessShuffle.class);
 	Cluster cluster = Cluster.get(getContext().getSystem());
 
@@ -67,7 +61,7 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 	boolean iscacheable;
 	ExecutorService executor;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<EntityRef> childpipes;
+	List<RecipientRef> childpipes;
 	int terminatingsize;
 	int initialsize;
 	int initialshufflesize;
@@ -82,14 +76,14 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 	}
 
 	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			List<EntityRef> childpipes, ForkJoinPool fjpool) {
+			List<RecipientRef> childpipes, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessShuffle(context,
 				jobidstageidtaskidcompletedmap,
 				tasktoprocess, childpipes, fjpool));
 	}
 
 	private ProcessShuffle(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			List<EntityRef> childpipes,ForkJoinPool fjpool) {
+			List<RecipientRef> childpipes,ForkJoinPool fjpool) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.iscacheable = true;

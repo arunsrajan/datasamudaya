@@ -10,10 +10,12 @@ import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Semaphore;
@@ -69,7 +71,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 	private Semaphore lock;
 	private Semaphore filelock;
 	private boolean istree;
-	private SortedComparator sortedcomparator;
+	private Comparator sortedcomparator;
 	private double spillpercentage;
 	
 	public DiskSpillingSet() {
@@ -81,7 +83,7 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 			String appendwithpath, boolean appendintermediate, 
 			boolean left, boolean right, Map<Integer, FilePartitionId> filepartids, 
 			Map<Integer, ActorSelection> downstreampipelines, int numfileperexec, boolean istree
-			,SortedComparator sortedcomparator) {
+			,Comparator sortedcomparator) {
 		this.task = task;
 		diskfilepath = Utils.getLocalFilePathForTask(task, appendwithpath, appendintermediate, left, right);
 		dataSet = istree?Collections.synchronizedSet(new TreeSet<>(sortedcomparator)):Collections.synchronizedSet(new LinkedHashSet());
@@ -356,4 +358,24 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 		return true;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + Objects.hash(task);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DiskSpillingSet other = (DiskSpillingSet) obj;
+		return Objects.equals(task, other.task);
+	}
+	
 }

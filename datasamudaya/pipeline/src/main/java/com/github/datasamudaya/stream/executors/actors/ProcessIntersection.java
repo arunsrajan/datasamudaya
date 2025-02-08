@@ -35,6 +35,7 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -47,7 +48,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 	int terminatingsize;
 	int initialsize;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<EntityRef> childpipes;
+	List<RecipientRef> childpipes;
 	Task tasktoprocess;
 	Cache cache;
 	JobStage js;
@@ -61,14 +62,14 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 	}
 
 	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessIntersection(context, js, cache,
 				jobidstageidtaskidcompletedmap,
 				tasktoprocess, childpipes, terminatingsize, fjpool));
 	}
 
 	public ProcessIntersection(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<EntityRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;

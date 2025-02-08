@@ -52,6 +52,7 @@ import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -66,6 +67,9 @@ import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
  *
  */
 public class ProcessMapperByStream extends AbstractBehavior<Command> implements Serializable {
+
+	private static final long serialVersionUID = -2007886152090388864L;
+
 	private static final Logger logger = LogManager.getLogger(ProcessMapperByStream.class);
 
 	protected JobStage jobstage;
@@ -77,7 +81,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	ExecutorService executor;
 	private final boolean topersist = false;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
-	List<EntityRef> childpipes;
+	List<RecipientRef> childpipes;
 	int terminatingsize;
 	int initialsize;
 	DiskSpillingList diskspilllistinterm;
@@ -103,7 +107,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	}
 
 	public static Behavior<Command> create(String entityId, JobStage js, FileSystem hdfs, Cache cache,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<EntityRef> childpipes,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<RecipientRef> childpipes,
 			Map<Integer, FilePartitionId> shufflerectowrite, Map<Integer, EntityRef> pipeline,
 			int terminatingsize, ForkJoinPool fjpool) {
 		return Behaviors.setup(context -> new ProcessMapperByStream(context, js, hdfs,
@@ -111,7 +115,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	}
 
 	private ProcessMapperByStream(ActorContext<Command> context, JobStage js, FileSystem hdfs, Cache cache,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<EntityRef> childpipes,
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<RecipientRef> childpipes,
 			Map<Integer, FilePartitionId> shufflerectowrite, Map<Integer, EntityRef> pipeline,
 			int terminatingsize, ForkJoinPool fjpool) {
 		super(context);
