@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -58,7 +58,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 	int btreesize;
 	int diskspillpercentage;
 	List ldiskspill;
-	ForkJoinPool fjpool;
+	ExecutorService es;
 
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessUnion-" + entityId);
@@ -66,14 +66,14 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 
 	public static Behavior<Command> create(String entityId, JobStage js, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<RecipientRef> childpipes,
-			int terminatingsize, ForkJoinPool fjpool) {
+			int terminatingsize, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessUnion(context, js, cache, jobidstageidtaskidcompletedmap,
-				tasktoprocess, childpipes, terminatingsize, fjpool));
+				tasktoprocess, childpipes, terminatingsize, es));
 	}
 
 	public ProcessUnion(ActorContext<Command> context, JobStage js, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<RecipientRef> childpipes,
-			int terminatingsize, ForkJoinPool fjpool) {
+			int terminatingsize, ExecutorService es) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
@@ -81,7 +81,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 		this.childpipes = childpipes;
 		this.cache = cache;
 		this.js = js;
-		this.fjpool = fjpool;
+		this.es = es;
 		this.btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
@@ -189,7 +189,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 					log.error(DataSamudayaConstants.EMPTY, ex);
 				}
 				return null;
-			}, fjpool).get();
+			}, es).get();
 		} else {
 			if (object.getTerminiatingclass() == DiskSpillingList.class || object.getTerminiatingclass() == Dummy.class
 					|| object.getTerminiatingclass() == NodeIndexKey.class

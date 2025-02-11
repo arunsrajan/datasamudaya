@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -71,26 +71,26 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
-	ForkJoinPool fjpool;
+	ExecutorService es;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessFullOuterJoin-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, List<RecipientRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessFullOuterJoin(context, pipelines, terminatingsize,
-				jobidstageidtaskidcompletedmap, cache, task, fjpool));
+				jobidstageidtaskidcompletedmap, cache, task, es));
 	}
 
 	private ProcessFullOuterJoin(ActorContext<Command> context, List<RecipientRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
 		super(context);
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		this.fjpool = fjpool;
+		this.es = es;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
@@ -120,7 +120,7 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 				} else {
 					diskspilllistintermleft.addAll(dsl.getData());
 				}
-				return null;}, fjpool).get();
+				return null;}, es).get();
 			}
 		} else if (oo.isRight()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
@@ -131,7 +131,7 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 				} else {
 					diskspilllistintermright.addAll(dsl.getData());
 				}
-				return null;}, fjpool).get();
+				return null;}, es).get();
 			}
 		}
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
@@ -169,7 +169,7 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 						? (Stream<Tuple2>) Utils.getStreamData(
 						new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
 								diskspilllistintermright.getLeft(), diskspilllistintermright.getRight()))) : diskspilllistintermright.getData().stream();
-				Optional optionalfirstelement = CompletableFuture.supplyAsync(() -> datastreamrightfirstelem.findFirst(), fjpool).get();
+				Optional optionalfirstelement = CompletableFuture.supplyAsync(() -> datastreamrightfirstelem.findFirst(), es).get();
 				Object[][] nullobjarr;
 				if (optionalfirstelement.isPresent()) {
 					Object[] origobjarray = (Object[]) optionalfirstelement.get();
@@ -198,7 +198,7 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 						}
 						return maprec;
 					}).forEach(diskspilllist::add);
-					return null;}, fjpool).get();
+					return null;}, es).get();
 				if (diskspilllist.isSpilled()) {
 					diskspilllist.close();
 				}
@@ -232,7 +232,7 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
 					return null;
-				}, fjpool).get();
+				}, es).get();
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
 				return this;

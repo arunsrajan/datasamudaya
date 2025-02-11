@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -75,19 +75,19 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
-	ForkJoinPool fjpool;
+	ExecutorService es;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessRightOuterJoin-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, RightOuterJoinPredicate rojp, List<RecipientRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessRightOuterJoin(context, rojp, pipelines, terminatingsize,
-				jobidstageidtaskidcompletedmap, cache, task, fjpool));
+				jobidstageidtaskidcompletedmap, cache, task, es));
 	}
 
 	private ProcessRightOuterJoin(ActorContext<Command> context, RightOuterJoinPredicate rojp, List<RecipientRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
 		super(context);
 		this.rojp = rojp;
 		this.pipelines = pipelines;
@@ -95,7 +95,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		this.fjpool = fjpool;
+		this.es = es;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
@@ -138,7 +138,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 				}
 			}
 			return null;
-		}, fjpool).get();
+		}, es).get();
 		CompletableFuture.supplyAsync(() -> {
 			try {
 				if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
@@ -236,7 +236,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 			return null;
-		}, fjpool).get();
+		}, es).get();
 		return this;
 	}
 

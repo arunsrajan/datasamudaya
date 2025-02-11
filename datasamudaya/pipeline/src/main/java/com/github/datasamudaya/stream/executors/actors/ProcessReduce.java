@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -75,7 +75,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 	DiskSpillingList diskspilllist;
 	DiskSpillingList diskspilllistinterm;
 	int diskspillpercentage;
-	ForkJoinPool fjpool;
+	ExecutorService es;
 	protected List getFunctions() {
 		log.debug("Entered ProcessReduce");
 		var tasks = jobstage.getStage().tasks;
@@ -92,15 +92,15 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 	}
 
 	public static Behavior<Command> create(String entityId, JobStage js, FileSystem hdfs, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessReduce(context, js, hdfs, cache,
 				jobidstageidtaskidcompletedmap,
-				tasktoprocess, childpipes, terminatingsize, fjpool));
+				tasktoprocess, childpipes, terminatingsize, es));
 	}
 
 	private ProcessReduce(ActorContext<Command> context, JobStage js, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<RecipientRef> childpipes,
-			int terminatingsize, ForkJoinPool fjpool) {
+			int terminatingsize, ExecutorService es) {
 		super(context);
 		this.jobstage = js;
 		this.hdfs = hdfs;
@@ -110,7 +110,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 		this.tasktoprocess = tasktoprocess;
 		this.childpipes = childpipes;
 		this.terminatingsize = terminatingsize;
-		this.fjpool = fjpool;
+		this.es = es;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage,
@@ -152,7 +152,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 									.addAll((Collection<?>) Utils.convertBytesToObjectCompressed(data, null));
 						}
 						return null;
-					}, fjpool).get();							
+					}, es).get();							
 					
 				} catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);
@@ -222,7 +222,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 						log.error(DataSamudayaConstants.EMPTY, ex);
 					}
 					return null;
-				}, fjpool).get();
+				}, es).get();
 			}
 
 		}

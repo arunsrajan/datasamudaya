@@ -7,7 +7,8 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -49,7 +50,7 @@ public class ProcessUnionIntersectionTest {
 	private static Task task4;
 	private static Task task;
 	private static Integer diskspillpercentage;
-	private static ForkJoinPool fjpool = new ForkJoinPool();
+	private static ExecutorService es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("ProcessUnionIntersectionTest-", 0).factory());
 	EntityTypeKey<Command> entityKey;
 
 	@BeforeClass
@@ -109,7 +110,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingList diskspilllist = new DiskSpillingList(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1);
@@ -124,7 +125,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingSet diskspillingset = new DiskSpillingSet(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1, true, new NodeIndexKeyComparator());
@@ -139,7 +140,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object = new OutputObject(new TreeSet<>(), false, false, TreeSet.class);
 		processUnion.tell(object);
@@ -152,7 +153,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object = new OutputObject(new Dummy(), false, false, Dummy.class);
 		processUnion.tell(object);
@@ -165,7 +166,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object = new OutputObject(new NodeIndexKey(), false, false, NodeIndexKey.class);
 		processUnion.tell(object);
@@ -178,7 +179,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingList diskspilllist1 = new DiskSpillingList(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1);
@@ -198,7 +199,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingSet diskspillingset1 = new DiskSpillingSet(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1, true, new NodeIndexKeyComparator());
@@ -217,7 +218,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object1 = new OutputObject(new TreeSet<>(), false, false, TreeSet.class);
 		OutputObject object2 = new OutputObject(new TreeSet<>(), false, false, TreeSet.class);
@@ -232,7 +233,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object1 = new OutputObject(new Dummy(), false, false, Dummy.class);
 		OutputObject object2 = new OutputObject(new Dummy(), false, false, Dummy.class);
@@ -247,7 +248,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object1 = new OutputObject(new NodeIndexKey(), false, false, NodeIndexKey.class);
 		OutputObject object2 = new OutputObject(new NodeIndexKey(), false, false, NodeIndexKey.class);
@@ -262,7 +263,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 3, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 3, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingList diskspilllist1 = new DiskSpillingList(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1);
@@ -282,7 +283,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingList diskspilllist1 = new DiskSpillingList(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1);
@@ -298,7 +299,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingSet diskspillingset = new DiskSpillingSet(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1, true, new NodeIndexKeyComparator());
@@ -314,7 +315,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object = new OutputObject(new TreeSet<>(), false, false, TreeSet.class);
 		((TreeSet<?>) object.getValue()).clear();
@@ -328,7 +329,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object = new OutputObject(new Dummy(), false, false, Dummy.class);
 		processUnion.tell(object);
@@ -341,7 +342,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object = new OutputObject(new NodeIndexKey(), false, false, NodeIndexKey.class);
 		processUnion.tell(object);
@@ -354,7 +355,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object = new OutputObject(new Object(), false, false, Dummy.class);
 		processUnion.tell(object);
@@ -367,7 +368,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		OutputObject object = new OutputObject(null, false, false, Dummy.class);
 		processUnion.tell(object);
@@ -380,7 +381,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 1, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingSet diskspillingset = new DiskSpillingSet(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1, true, new NodeIndexKeyComparator());
@@ -396,7 +397,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingList diskspilllist1 = new DiskSpillingList(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1);
@@ -422,7 +423,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		DiskSpillingList diskspilllist1 = new DiskSpillingList(task1, diskspillpercentage, null, false, false, false,
 				null, null, 1);
@@ -453,7 +454,7 @@ public class ProcessUnionIntersectionTest {
 		name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		processUnion.tell(object3);
 		processUnion.tell(oo3);
@@ -469,7 +470,7 @@ public class ProcessUnionIntersectionTest {
 		String name = "ProcessIntersection-" + System.currentTimeMillis();
 		entityKey = ProcessIntersection.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessIntersection.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task, Arrays.asList(probe.ref()), 2, es)));
 		EntityRef<Command> processIntersection = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		
 		DiskSpillingList diskspilllist1 = new DiskSpillingList(task1, diskspillpercentage, null, false, false, false,
@@ -504,7 +505,7 @@ public class ProcessUnionIntersectionTest {
 		name = "ProcessUnion-" + System.currentTimeMillis();
 		entityKey = ProcessUnion.createTypeKey(name);
 		ClusterSharding.get(testKit.system()).init(Entity.of(entityKey, ctx -> ProcessUnion.create(ctx.getEntityId(),
-				null, null, new ConcurrentHashMap<>(), task4, Arrays.asList(probe.ref()), 2, fjpool)));
+				null, null, new ConcurrentHashMap<>(), task4, Arrays.asList(probe.ref()), 2, es)));
 		processUnion = ClusterSharding.get(testKit.system()).entityRefFor(entityKey, name);
 		int totalrec = (((DiskSpillingSet)object3.getValue()).size()+ ((DiskSpillingSet)oo3.getValue()).size());
 		processUnion.tell(object3);

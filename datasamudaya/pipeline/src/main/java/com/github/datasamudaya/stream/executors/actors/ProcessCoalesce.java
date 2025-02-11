@@ -73,20 +73,20 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
 	DiskSpillingList<Tuple2> diskspilllistinterm;
-	ForkJoinPool fjpool;
+	ExecutorService es;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessCoalesce-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, Coalesce coalesce, List<RecipientRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessCoalesce(context, coalesce, pipelines, terminatingsize,
 				jobidstageidtaskidcompletedmap,
-				cache, task, fjpool));
+				cache, task, es));
 	}
 
 	private ProcessCoalesce(ActorContext<Command> context, Coalesce coalesce, List<RecipientRef> pipelines, int terminatingsize,
-			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ForkJoinPool fjpool) {
+			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
 		super(context);
 		this.coalesce = coalesce;
 		this.pipelines = pipelines;
@@ -94,7 +94,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.cache = cache;
 		this.task = task;
-		this.fjpool = fjpool;
+		this.es = es;
 		int diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(task, diskspillpercentage, null, true, false, false, null, null, 0);
@@ -123,7 +123,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 					diskspilllistinterm.addAll(dsl.getData());
 				}
 				return null;
-				}, fjpool).get();
+				}, es).get();
 				dsl.clear();
 			}
 			if (object.getTerminiatingclass() == Dummy.class || object.getTerminiatingclass() == DiskSpillingList.class) {
@@ -147,7 +147,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 							.map(entry -> Tuple.tuple(((Entry) entry).getKey(), ((Entry) entry).getValue()))
 							.forEach(diskspilllist::add);
 							return null;
-							}, fjpool).get();
+							}, es).get();
 				if (diskspilllist.isSpilled()) {
 					diskspilllist.close();
 				}
@@ -171,7 +171,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 					try (var fsdos = new ByteArrayOutputStream();
 							var sos = new SnappyOutputStream(fsdos);
 							var output = new Output(sos);) {						
-						Utils.getKryo().writeClassAndObject(output, CompletableFuture.supplyAsync(()->datastreamsplilled.toList(), fjpool).get());
+						Utils.getKryo().writeClassAndObject(output, CompletableFuture.supplyAsync(()->datastreamsplilled.toList(), es).get());
 						output.flush();
 						task.setNumbytesgenerated(fsdos.toByteArray().length);
 						byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();

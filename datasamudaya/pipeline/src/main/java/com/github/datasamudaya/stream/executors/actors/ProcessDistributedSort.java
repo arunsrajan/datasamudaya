@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -60,20 +60,20 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 	int diskspillpercentage;
 	DiskSpillingList diskspilllistinterm;
 	List ldiskspill;
-	ForkJoinPool fjpool;
+	ExecutorService es;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessDistributedSort-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessDistributedSort(context, js, cache, jobidstageidtaskidcompletedmap,
 				tasktoprocess,
-				childpipes, terminatingsize, fjpool));
+				childpipes, terminatingsize, es));
 	}
 
 	public ProcessDistributedSort(ActorContext<Command> context, JobStage js, Cache cache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ExecutorService es) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
@@ -81,7 +81,7 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 		this.childpipes = childpipes;
 		this.cache = cache;
 		this.js = js;
-		this.fjpool = fjpool;
+		this.es = es;
 		this.btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
@@ -155,7 +155,7 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 							}
 						});
 					}
-				}; return null;}, fjpool).get();
+				}; return null;}, es).get();
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					DiskSpillingList rootniks = new DiskSpillingList<>(tasktoprocess, diskspillpercentage, null, false,
 							false, false, null, null, 0);
@@ -172,7 +172,7 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 							downstreampipe.tell(new OutputObject(rootniks, false, false, NodeIndexKey.class));
 						});
 						return null;
-					}, fjpool).get();
+					}, es).get();
 				} else {
 					List<NodeIndexKey> cachesort = new ArrayList<>();
 					CompletableFuture.supplyAsync(() -> {
@@ -182,7 +182,7 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 										+ DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(),
 								Utils.convertObjectToBytesCompressed(cachesort, null));
 						return null;
-					}, fjpool).get();
+					}, es).get();
 				}
 				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN
 						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);

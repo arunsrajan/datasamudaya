@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -42,27 +42,27 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 	Task tasktoprocess;
 	int diskspillpercentage;
 	DiskSpillingSet diskspillset;
-	ForkJoinPool fjpool;
+	ExecutorService es;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessDistributedDistinct-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			List<RecipientRef> childpipes, int terminatingsize, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessDistributedDistinct(context,
 				jobidstageidtaskidcompletedmap,
-				tasktoprocess, childpipes, terminatingsize, fjpool));
+				tasktoprocess, childpipes, terminatingsize, es));
 	}
 
 
 	public ProcessDistributedDistinct(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap,
-			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ForkJoinPool fjpool) {
+			Task tasktoprocess, List<RecipientRef> childpipes, int terminatingsize, ExecutorService es) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.tasktoprocess = tasktoprocess;
 		this.terminatingsize = terminatingsize;
 		this.childpipes = childpipes;
-		this.fjpool = fjpool;
+		this.es = es;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false, false, false, null,
@@ -92,7 +92,7 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 						diskspillset.addAll(dsl.getData());
 					}
 					return null;
-				}, fjpool).get();
+				}, es).get();
 				dsl.clear();
 			}
 			if (object.getTerminiatingclass() == DiskSpillingList.class || object.getTerminiatingclass() == Dummy.class) {
@@ -110,7 +110,7 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 					childpipes.stream().forEach(downstreampipe -> {
 						downstreampipe.tell(new OutputObject(diskspillset, false, false, DiskSpillingSet.class));
 					});
-					return null;}, fjpool).get();
+					return null;}, es).get();
 				}
 				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN
 						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);

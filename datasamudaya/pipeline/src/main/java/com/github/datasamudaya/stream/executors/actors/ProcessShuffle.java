@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -70,27 +70,27 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 	Map<Integer, Output> outputstream = new ConcurrentHashMap<>();
 	Kryo kryo = Utils.getKryo();
 	Semaphore lock = new Semaphore(1);
-	ForkJoinPool fjpool = null;
+	ExecutorService es = null;
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessShuffle-" + entityId);
 	}
 
 	public static Behavior<Command> create(String entityId, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			List<RecipientRef> childpipes, ForkJoinPool fjpool) {
+			List<RecipientRef> childpipes, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessShuffle(context,
 				jobidstageidtaskidcompletedmap,
-				tasktoprocess, childpipes, fjpool));
+				tasktoprocess, childpipes, es));
 	}
 
 	private ProcessShuffle(ActorContext<Command> context, Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			List<RecipientRef> childpipes,ForkJoinPool fjpool) {
+			List<RecipientRef> childpipes,ExecutorService es) {
 		super(context);
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
 		this.iscacheable = true;
 		this.tasktoprocess = tasktoprocess;
 		this.childpipes = childpipes;
 		this.terminatingsize = tasktoprocess.parentterminatingsize;
-		this.fjpool = fjpool;
+		this.es = es;
 	}
 
 	public static record BlocksLocationRecord(FileSystem hdfs, List<ActorSelection> pipeline) implements Serializable {
@@ -182,7 +182,7 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 				log.error(DataSamudayaConstants.EMPTY, ex);
 			}
 			return null;
-		}, fjpool).get();
+		}, es).get();
 		return this;
 
 	}

@@ -16,7 +16,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -90,7 +90,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	Map<Integer, EntityRef> pipeline;
 	Map<Integer, EntityRef> actorselections;
 	int diskspillpercentage;
-	ForkJoinPool fjpool;
+	ExecutorService es;
 	protected List getFunctions() {
 		logger.debug("Entered ProcessMapperByStream");
 		var tasks = jobstage.getStage().tasks;
@@ -109,15 +109,15 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	public static Behavior<Command> create(String entityId, JobStage js, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<RecipientRef> childpipes,
 			Map<Integer, FilePartitionId> shufflerectowrite, Map<Integer, EntityRef> pipeline,
-			int terminatingsize, ForkJoinPool fjpool) {
+			int terminatingsize, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessMapperByStream(context, js, hdfs,
-				cache, jobidstageidtaskidcompletedmap, tasktoprocess, childpipes, shufflerectowrite, pipeline, terminatingsize, fjpool));
+				cache, jobidstageidtaskidcompletedmap, tasktoprocess, childpipes, shufflerectowrite, pipeline, terminatingsize, es));
 	}
 
 	private ProcessMapperByStream(ActorContext<Command> context, JobStage js, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess, List<RecipientRef> childpipes,
 			Map<Integer, FilePartitionId> shufflerectowrite, Map<Integer, EntityRef> pipeline,
-			int terminatingsize, ForkJoinPool fjpool) {
+			int terminatingsize, ExecutorService es) {
 		super(context);
 		this.jobstage = js;
 		this.hdfs = hdfs;
@@ -128,7 +128,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 		this.childpipes = childpipes;
 		this.shufflerectowrite = shufflerectowrite;
 		this.terminatingsize = terminatingsize;
-		this.fjpool = fjpool;
+		this.es = es;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, true, false, false, null,
@@ -170,7 +170,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 							logger.error(DataSamudayaConstants.EMPTY, ex);	
 						}
 						return null;
-					}, fjpool).get();
+					}, es).get();
 				} else {
 					CompletableFuture.supplyAsync(() -> {
 					try {
@@ -183,7 +183,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 						logger.error(DataSamudayaConstants.EMPTY, ex);	
 					}
 					return null;
-				}, fjpool).get();
+				}, es).get();
 				}
 				dsl.clear();
 			} else if (object.getValue() instanceof DiskSpillingSet dss) {
@@ -198,7 +198,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 					logger.error(DataSamudayaConstants.EMPTY, ex);	
 				}
 				return null;
-			}, fjpool).get();
+			}, es).get();
 				dss.clear();
 			} else if (object.getValue() instanceof TreeSet treeset) {
 				diskspilllistinterm.addAll(treeset);
@@ -453,7 +453,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 						logger.error(DataSamudayaConstants.EMPTY, ex);
 					}
 					return null;
-				}, fjpool).get();
+				}, es).get();
 				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
 			}
 		}

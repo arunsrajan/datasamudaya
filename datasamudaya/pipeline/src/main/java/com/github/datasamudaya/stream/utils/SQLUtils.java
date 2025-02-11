@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -3946,7 +3946,7 @@ public class SQLUtils {
 			FileSystem hdfs, Cache inmemorycache, Map<String, Boolean> jobidstageidtaskidcompletedmap,
 			String hostport, akka.cluster.sharding.typed.javadsl.ClusterSharding clustersharding, String teid,
 			Map<String, EntityTypeKey> eref, Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap,
-			String shardid, ForkJoinPool fjpool) {
+			String shardid, ExecutorService fjpool) {
 		try {
 			if (obj instanceof GetTaskActor taskactor) {
 				String jobid = taskactor.getTask().getJobid();

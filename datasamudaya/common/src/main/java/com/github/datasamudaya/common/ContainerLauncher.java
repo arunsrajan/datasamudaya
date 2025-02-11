@@ -63,9 +63,9 @@ public class ContainerLauncher {
 			argumentsForSpawn
 					.add("-Djdk.virtualThreadScheduler.parallelism="+ cr.getCpu());
 			argumentsForSpawn
-			.add("-Djdk.virtualThreadScheduler.maxPoolSize="+ cr.getCpu());
+			.add("-Djdk.virtualThreadScheduler.maxPoolSize=256");
 			argumentsForSpawn
-			.add("-Djdk.virtualThreadScheduler.minRunnable="+ cr.getCpu());
+			.add("-Djdk.virtualThreadScheduler.minRunnable=256");
 			//Heap dump on out of memory error configuration
 			argumentsForSpawn.add("-XX:+HeapDumpOnOutOfMemoryError");
 			//Enable preview features

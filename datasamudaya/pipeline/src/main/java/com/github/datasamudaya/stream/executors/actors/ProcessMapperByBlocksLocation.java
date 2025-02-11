@@ -21,7 +21,7 @@ import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
@@ -103,7 +103,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap;
 	int diskspillpercentage;
-	ForkJoinPool fjpool;
+	ExecutorService es;
 	protected List getFunctions(JobStage jobstage) {
 		logger.debug("Entered ProcessMapperByBlocksLocation.getFunctions");
 		var tasks = jobstage.getStage().tasks;
@@ -121,14 +121,14 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 
 	public static Behavior<Command> create(String entityId, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap, ForkJoinPool fjpool) {
+			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap, ExecutorService es) {
 		return Behaviors.setup(context -> new ProcessMapperByBlocksLocation(context, entityId, hdfs, cache,
-				jobidstageidtaskidcompletedmap, tasktoprocess, blockspartitionfilterskipmap, fjpool));
+				jobidstageidtaskidcompletedmap, tasktoprocess, blockspartitionfilterskipmap, es));
 	}
 
 	private ProcessMapperByBlocksLocation(ActorContext<Command> context, String entityId, FileSystem hdfs, Cache cache,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Task tasktoprocess,
-			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap, ForkJoinPool fjpool) {
+			Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap, ExecutorService es) {
 		super(context);
 		this.hdfs = hdfs;
 		this.cache = cache;
@@ -136,7 +136,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 		this.blockspartitionfilterskipmap = blockspartitionfilterskipmap;
 		this.iscacheable = true;
 		this.tasktoprocess = tasktoprocess;
-		this.fjpool = fjpool;
+		this.es = es;
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 	}
@@ -362,7 +362,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 									Collectors.mapping(tup2 -> tup2,
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 													diskspillpercentage,
-													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, totalranges))))),fjpool).get();
+													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, totalranges))))),es).get();
 					results.entrySet().forEach(entry -> {
 						try {
 							if (entry.getValue().isSpilled()) {

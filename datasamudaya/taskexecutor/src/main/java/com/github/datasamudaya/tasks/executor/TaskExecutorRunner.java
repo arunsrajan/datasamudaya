@@ -29,10 +29,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.calcite.rex.RexNode;
@@ -125,7 +123,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 	static Tuple2<ServerSocket, ExecutorService> shuffleFileServer;
 	static Tuple2<ServerSocket, ExecutorService> sortServer;
 	static String shardId;
-	static ForkJoinPool fjpool;
+	static ExecutorService es;
 	public static void main(String[] args) throws Exception {
 		try (var zo = new ZookeeperOperations()) {
 			URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory());
@@ -166,8 +164,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					DataSamudayaProperties.get().getProperty(DataSamudayaConstants.CACHEDISKPATH,
 							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
-			int numberofprocessors = Runtime.getRuntime().availableProcessors();
-			fjpool = new ForkJoinPool(numberofprocessors);			
+			es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("TaskExecutorRunner-", 0).factory());
 			estask = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("Task-", 0).factory());
 			escompute = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("Compute-", 0).factory());
 			shuffleFileServer = Utils.startShuffleRecordsServer();
@@ -372,7 +369,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 								jobidstageidjobstagemap, hdfs,
 								inmemorycache, jobidstageidtaskidcompletedmap,
 								actorsystemurl, clussharding, jobid, jobidentitytypekeymap.get(gettaskactor.getTask().getJobid()),
-								blockspartitionskipmap, shardId, fjpool);
+								blockspartitionskipmap, shardId, es);
 					} else if (deserobj instanceof ExecuteTaskActor executetaskactor) {
 						if (isNull(jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()))) {
 							jobidentitytypekeymap.put(executetaskactor.getTask().getJobid(), new ConcurrentHashMap<String, EntityTypeKey>());
@@ -382,7 +379,7 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 									jobidstageidjobstagemap, hdfs,
 									inmemorycache, jobidstageidtaskidcompletedmap,
 									actorsystemurl, clussharding, jobid, jobidentitytypekeymap.get(executetaskactor.getTask().getJobid()),
-									blockspartitionskipmap, shardId, fjpool);
+									blockspartitionskipmap, shardId, es);
 						});
 						return escomputfuture.get();
 					} else if (deserobj instanceof CleanupTaskActors cleanupactors) {
