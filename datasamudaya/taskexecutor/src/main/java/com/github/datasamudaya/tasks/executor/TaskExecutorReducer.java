@@ -33,9 +33,6 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.ReducerValues;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingContext;
-import com.github.datasamudaya.common.utils.IteratorType;
-import com.github.datasamudaya.common.utils.RemoteIteratorClient;
-import com.github.datasamudaya.common.utils.RequestType;
 import com.github.datasamudaya.common.utils.Utils;
 
 /**
@@ -78,12 +75,8 @@ public class TaskExecutorReducer implements Callable<Context> {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Override
 	public Context call() {
-		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
-		var esresult = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		var es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("TaskExecutorReducerExecute-", 0).factory());
+		var esresult = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("TaskExecutorReducerExecuteResult-", 0).factory());
 		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
 			log.debug("Submitted Reducer:" + task.getJobid() + task.getTaskid());

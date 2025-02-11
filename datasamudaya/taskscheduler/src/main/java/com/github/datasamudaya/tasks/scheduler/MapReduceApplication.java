@@ -541,9 +541,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 		try {
 			var starttime = System.currentTimeMillis();
 			var containerscount = 0;
-			es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+			es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("MapReduceApplicationExecutor-", 0).factory());
 			cf = CuratorFrameworkFactory.newClient(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_HOSTPORT),
 					20000, 50000, new RetryForever(
 							Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.ZOOKEEPER_RETRYDELAY))));
@@ -695,9 +693,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 					}
 				});
 			}
-			esmap = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+			esmap = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("MapReduceApplicationMap-", 0).factory());
 			while (!completed && numexecute < taskexeccount) {
 				var mapperexecutors = new ArrayList<DefaultDexecutor>();
 				var cdl = new CountDownLatch(containermappermap.size());
@@ -1152,9 +1148,7 @@ public class MapReduceApplication implements Callable<List<DataCruncherContext>>
 	}
 
 	private ExecutorService newExecutor() {
-		return Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		return Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("MapReduceApplication-", 0).factory());
 	}
 
 	protected void destroyContainers(String appid) throws Exception {

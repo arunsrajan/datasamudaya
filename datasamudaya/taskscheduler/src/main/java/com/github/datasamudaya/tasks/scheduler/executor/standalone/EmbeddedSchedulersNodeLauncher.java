@@ -130,7 +130,7 @@ public class EmbeddedSchedulersNodeLauncher {
 							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.CACHEBLOCKS);
 			CacheUtils.initBlockMetadataCache(cacheid);
-			ExecutorService es = Executors.newFixedThreadPool(3, Thread.ofVirtual().factory());
+			ExecutorService es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("Launcher-", 0).factory());
 			es.execute(new Runnable() {
 				public void run() {
 					try {
@@ -187,9 +187,7 @@ public class EmbeddedSchedulersNodeLauncher {
 		try {
 			var port = Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.NODE_PORT));
 			var host = NetworkUtil.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
-			var escontainer = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+			var escontainer = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("ContainerLauncher-", 0).factory());
 			Resources resource = new Resources();
 			resource.setNodeport(host + DataSamudayaConstants.UNDERSCORE + port);
 			resource.setTotalmemory(Runtime.getRuntime().totalMemory());
@@ -301,10 +299,8 @@ public class EmbeddedSchedulersNodeLauncher {
 		});
 		log.debug("Streaming Scheduler Waiting to elect as a leader...");
 		cdlstream.await();
-		var esstream = Executors.newFixedThreadPool(1, Thread.ofVirtual().factory());
-		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		var esstream = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("EmbeddedTSStream-", 0).factory());
+		var es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("EmbeddedExecutor-", 0).factory());
 		var su = new ServerUtils();
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_WEB_PORT)),
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
@@ -452,12 +448,8 @@ public class EmbeddedSchedulersNodeLauncher {
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON);
 		su.start();
 		SQLServerMR.start();
-		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
-		var essingle = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		var es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("TaskScheduler-",0).factory());
+		var essingle = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("TaskSchedulerSingle-",0).factory());
 		var ss = new ServerSocket(
 				Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULER_PORT)));
 		essingle.execute(() -> {

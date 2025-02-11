@@ -73,7 +73,7 @@ public class TaskExecutorMapper implements Callable {
 	 * Executes the call method and returns context object.
 	 */
 	public Context call() {
-		var es = Executors.newSingleThreadExecutor(Thread.ofVirtual().factory());
+		var es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("TaskExecutorMapper-", 0).factory());
 
 		try {
 

@@ -52,11 +52,7 @@ public class SQLServer {
 	 */
 	public static void start() throws Exception {
 		ExecutorService executors = Executors
-				.newFixedThreadPool(
-						Integer.parseInt(
-								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-										DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)),
-						Thread.ofVirtual().factory());
+				.newThreadPerTaskExecutor(Thread.ofVirtual().name("SQLServer-", 0).factory());
 
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.SQLPORT, DataSamudayaConstants.SQLPORT_DEFAULT)));

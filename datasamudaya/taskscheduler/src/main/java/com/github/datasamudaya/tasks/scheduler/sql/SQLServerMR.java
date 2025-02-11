@@ -43,9 +43,7 @@ public class SQLServerMR {
 	 * @throws Exception
 	 */
 	public static void start() throws Exception {
-		ExecutorService executors = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		ExecutorService executors = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("SQLServerMR-", 0).factory());
 		serverSocket = new ServerSocket(Integer.valueOf(DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.SQLPORTMR, DataSamudayaConstants.SQLPORTMR_DEFAULT)));
 		executors.execute(() -> {

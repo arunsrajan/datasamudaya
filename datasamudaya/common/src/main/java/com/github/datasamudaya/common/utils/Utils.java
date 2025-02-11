@@ -3511,9 +3511,7 @@ public class Utils {
 		final ExecutorService executors;
 		final ServerSocket serverSocket;
 		try {
-			executors = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+			executors = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("ShuffleRecordsServer-", 0).factory());
 			serverSocket = new ServerSocket(0);
 			log.debug("Shuffle Server started at port. {}", serverSocket.getLocalPort());
 			executors.execute(() -> {

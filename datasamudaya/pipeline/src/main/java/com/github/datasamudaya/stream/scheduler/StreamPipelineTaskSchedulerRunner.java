@@ -1,7 +1,6 @@
 package com.github.datasamudaya.stream.scheduler;
 
 import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URL;
@@ -18,8 +17,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
-import org.apache.logging.log4j.core.config.ConfigurationSource;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.burningwave.core.assembler.StaticComponentContainer;
 import org.jgroups.JChannel;
 import org.slf4j.Logger;
@@ -33,6 +30,8 @@ import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Job;
 import com.github.datasamudaya.common.NetworkUtil;
 import com.github.datasamudaya.common.ServerUtils;
+import com.github.datasamudaya.common.SummaryWebServlet;
+import com.github.datasamudaya.common.TaskExecutorDestroyServlet;
 import com.github.datasamudaya.common.TaskSchedulerWebServlet;
 import com.github.datasamudaya.common.WebResourcesServlet;
 import com.github.datasamudaya.common.utils.JShellServer;
@@ -123,17 +122,19 @@ public class StreamPipelineTaskSchedulerRunner {
 		var lbq = new LinkedBlockingQueue<StreamPipelineTaskScheduler>(Integer.valueOf(DataSamudayaProperties
 				.get().getProperty(DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE, DataSamudayaConstants.DATASAMUDAYAJOBQUEUE_SIZE_DEFAULT)));
 
-		var esstream = Executors.newFixedThreadPool(1, Thread.ofVirtual().factory());
-		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		var esstream = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("StreamPipelineTaskSchedulerRunnerESSTREAM-", 0).factory());
+		var es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("StreamPipelineTaskSchedulerRunnerES-", 0).factory());
 		var su = new ServerUtils();
 		su.init(Integer.parseInt(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKSCHEDULERSTREAM_WEB_PORT)),
 				new TaskSchedulerWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
-				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES
-				+ DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+				new WebResourcesServlet(),
+				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.RESOURCES + DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.ASTERIX,
+				new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH, new SummaryWebServlet(),
+				DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.SUMMARY + DataSamudayaConstants.FORWARD_SLASH
+						+ DataSamudayaConstants.ASTERIX,
 				new WebResourcesServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.FAVICON,
-				new PipelineGraphWebServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.GRAPH);
+				new TaskExecutorDestroyServlet(), DataSamudayaConstants.FORWARD_SLASH + DataSamudayaConstants.KILL_EXECUTOR_URL + DataSamudayaConstants.FORWARD_SLASH
+				+ DataSamudayaConstants.ASTERIX);
 		su.start();
 
 		SQLServer.start();

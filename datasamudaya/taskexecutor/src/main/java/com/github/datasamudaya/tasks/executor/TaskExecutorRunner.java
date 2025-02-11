@@ -167,14 +167,9 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 							DataSamudayaConstants.CACHEDISKPATH_DEFAULT) + DataSamudayaConstants.FORWARD_SLASH
 							+ DataSamudayaConstants.CACHEBLOCKS + Utils.getCacheID());
 			int numberofprocessors = Runtime.getRuntime().availableProcessors();
-			fjpool = new ForkJoinPool(numberofprocessors);
-			ThreadFactory virtualThreadFactory = Thread.ofVirtual().factory();
-			estask = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), virtualThreadFactory);
-			escompute = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), virtualThreadFactory);
+			fjpool = new ForkJoinPool(numberofprocessors);			
+			estask = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("Task-", 0).factory());
+			escompute = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("Compute-", 0).factory());
 			shuffleFileServer = Utils.startShuffleRecordsServer();
 			int numberofexecutor = Integer.parseInt(args[4]);
 			var ter = new TaskExecutorRunner();

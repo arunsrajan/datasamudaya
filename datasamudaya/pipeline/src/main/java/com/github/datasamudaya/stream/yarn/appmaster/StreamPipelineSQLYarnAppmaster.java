@@ -145,7 +145,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	public void submitApplication() {
 		ExecutorService es = null;
 		try {
-			es = Executors.newFixedThreadPool(1, Thread.ofVirtual().factory());
+			es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("StreamPipelineSQLYarnAppmaster-", 0).factory());
 			teid = getEnvironment().get(DataSamudayaConstants.YARNDATASAMUDAYAJOBID);
 			isdriverrequired = Boolean.parseBoolean(getEnvironment().get(DataSamudayaConstants.ISDRIVERREQUIREDYARN));
 			containercount = Integer.parseInt(getParameters().getProperty("container-count"));
@@ -376,10 +376,8 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	 * @param numberoftasks
 	 * @return thread pool
 	 */
-	private ExecutorService newExecutor(int numberoftasks) {
-		return Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+	private ExecutorService newExecutor(String threadname) {
+		return Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name(threadname, 0).factory());
 	}
 
 	/**
@@ -391,14 +389,12 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 	public Graph<StreamPipelineTaskSubmitter, DAGEdge> parallelExecutionAkkaActors(
 			final Graph<StreamPipelineTaskSubmitter, DAGEdge> origgraph) throws Exception {
 		ExecutorService es = null;
-		ExecutorService esroot = null;
 		var lineagegraph = origgraph;
 		try {
 			var completed = false;
 			var numexecute = 0;
 			var executioncount = 1;
 			List<ExecutionResult<StreamPipelineTaskSubmitter, Boolean>> successresult = null;
-			es = newExecutor(Runtime.getRuntime().availableProcessors());
 			ExecutionResults<StreamPipelineTaskSubmitter, Boolean> executionresultscomplete = null;
 			int batchsize = 0;
 
@@ -410,7 +406,7 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 				batchsize += cpu;
 				semaphores.put(te, new Semaphore(cpu));
 			}
-			es = newExecutor(batchsize);
+			es = newExecutor("StreamPipelineSQLYarnAppmaster");
 			while (!completed && numexecute < executioncount) {
 				var shouldcontinueprocessing = new AtomicBoolean(true);
 
@@ -494,10 +490,6 @@ public class StreamPipelineSQLYarnAppmaster extends StaticEventingAppmaster impl
 			if (!Objects.isNull(es)) {
 				es.shutdownNow();
 				es.awaitTermination(1, TimeUnit.SECONDS);
-			}
-			if (!Objects.isNull(esroot)) {
-				esroot.shutdownNow();
-				esroot.awaitTermination(1, TimeUnit.SECONDS);
 			}
 		}
 		return lineagegraph;

@@ -109,7 +109,7 @@ public class StreamPipelineYarnAppmaster extends StaticEventingAppmaster impleme
 	public void submitApplication() {
 		ExecutorService es = null;
 		try {
-			es = Executors.newFixedThreadPool(1, Thread.ofVirtual().factory());
+			es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("StreamPipelineYarnAppmaster-",0).factory());
 			es.execute(() -> pollQueue());
 			var prop = new Properties();
 			DataSamudayaProperties.put(prop);

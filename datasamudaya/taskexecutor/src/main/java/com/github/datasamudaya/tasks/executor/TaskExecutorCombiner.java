@@ -75,12 +75,8 @@ public class TaskExecutorCombiner implements Callable<Context> {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Override
 	public Context call() {
-		var es = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
-		var esresult = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		var es = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("TaskExecutorCombinerES-", 0).factory());
+		var esresult = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("TaskExecutorCombinerESRESULT-", 0).factory());
 		final var lock = new Semaphore(Runtime.getRuntime().availableProcessors());
 		try {
 			log.debug("Submitted Combiner:" + task.getJobid() + task.getTaskid());

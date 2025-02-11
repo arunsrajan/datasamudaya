@@ -228,11 +228,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 				var ctx = (Context) cachemr.get(mrresult.cachekey);
 				dccctx.add(ctx);
 			}
-			var executorser = Executors.newFixedThreadPool(
-					Integer.parseInt(
-							DataSamudayaProperties.get().getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-									DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)),
-					Thread.ofVirtual().factory());
+			var executorser = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("MapReduceApplicationIgnite-", 0).factory());
 			var ctxes = new ArrayList<Future<Context>>();
 			var result = new ArrayList<DataCruncherContext>();
 			kryo.writeClassAndObject(redostream, reducers.get(0));
@@ -291,11 +287,7 @@ public class MapReduceApplicationIgnite implements Callable<List<DataCruncherCon
 
 	private ExecutorService newExecutor() {
 		return Executors
-				.newFixedThreadPool(
-						Integer.parseInt(
-								DataSamudayaProperties.get().getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-										DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)),
-						Thread.ofVirtual().factory());
+				.newThreadPerTaskExecutor(Thread.ofVirtual().name("MapReduceApplicationIgniteExecutor-", batchsize).factory());
 	}
 
 	Semaphore resultsemaphore = new Semaphore(1);

@@ -72,9 +72,7 @@ public class StreamPipelineYarnContainer extends AbstractIntegrationYarnContaine
 		JobRequest request;
 		byte[] job = null;
 		var containerid = getEnvironment().get(DataSamudayaConstants.SHDP_CONTAINERID);
-		executor = Executors.newFixedThreadPool(Integer.parseInt(DataSamudayaProperties.get()
-				.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-						DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT)), Thread.ofVirtual().factory());
+		executor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("StreamPipelineYarnContainer-", 0).factory());
 		Semaphore lock = new Semaphore(2);
 		try {
 			log.debug("Initializing Container Properties");
