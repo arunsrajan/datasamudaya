@@ -32,6 +32,7 @@ import com.github.datasamudaya.common.Job.JOBTYPE;
 import com.github.datasamudaya.common.exceptions.RpcRegistryException;
 import com.github.datasamudaya.common.utils.DataSamudayaMetricsExporter;
 import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.common.utils.sql.SQLFunctionsList;
 
 public class SQLServer {
 	static Logger log = LoggerFactory.getLogger(SQLServer.class);
@@ -465,12 +466,14 @@ public class SQLServer {
 			handleDrop(out, inputLine, user, dbdefault.get());
 		} else if (inputLine.startsWith("show")) {
 			String tableordatabases = StringUtils.normalizeSpace(inputLine);
-			String tableordb = tableordatabases.split(" ")[1];
-			tableordb = tableordb.replaceAll(DataSamudayaConstants.COLON, DataSamudayaConstants.EMPTY);
-			if(tableordb.equalsIgnoreCase("tables")) {
+			String tableordborfunctions = tableordatabases.split(" ")[1];
+			tableordborfunctions = tableordborfunctions.replaceAll(DataSamudayaConstants.COLON, DataSamudayaConstants.EMPTY);
+			if(tableordborfunctions.equalsIgnoreCase("tables")) {
 				Utils.printTableOrError(TableCreator.showTables(user, dbdefault.get(), inputLine), out, JOBTYPE.NORMAL);
-			} else if(tableordb.equalsIgnoreCase("databases")) {
+			} else if(tableordborfunctions.equalsIgnoreCase("databases")) {
 				Utils.printTableOrError(TableCreator.showDatabases(user), out, JOBTYPE.NORMAL);	
+			} else if(tableordborfunctions.equalsIgnoreCase("functions")) {
+				Utils.printTableOrError(SQLFunctionsList.getSupportedSQLFunctions(), out, JOBTYPE.NORMAL);	
 			} else {
 				List<String> databases = TableCreator.showDatabases(user);
 				Utils.printTableOrError(databases, out, JOBTYPE.NORMAL);
@@ -485,10 +488,18 @@ public class SQLServer {
 		} else if (inputLine.startsWith("explain")) {
 			SelectQueryExecutor.explain(user, dbdefault.get(), inputLine.replaceFirst("explain", ""), out);
 		} else if (inputLine.startsWith("describe")) {
-			var columns = new ArrayList<ColumnMetadata>();
-			TableCreator.getColumnMetadataFromTable(user, dbdefault.get(), inputLine.split(" ")[1], columns);
-			for (ColumnMetadata colmetadata : columns) {
-				out.println(colmetadata);
+			String functionortable = StringUtils.normalizeSpace(inputLine);
+			String[] tokens = functionortable.split(" ");
+			if(tokens[1].equalsIgnoreCase("table")) {
+				var columns = new ArrayList<ColumnMetadata>();
+				TableCreator.getColumnMetadataFromTable(user, dbdefault.get(), tokens[2], columns);
+				for (ColumnMetadata colmetadata : columns) {
+					out.println(colmetadata);
+				}
+			} else if(tokens[1].equalsIgnoreCase("function")){
+				out.println(SQLFunctionsList.describeFunction(tokens[2]));
+			} else {
+				out.println("Unknown describe command.");
 			}
 		} else if (inputLine.startsWith("select")) {
 			handleSelect(out, inputLine, user, dbdefault.get(), tejobid,
