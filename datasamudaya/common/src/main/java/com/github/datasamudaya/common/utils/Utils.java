@@ -4179,6 +4179,8 @@ public class Utils {
 		conf.set("hive.metastore.dbtype", "derby");
 		conf.set("hive.metastore.local", "true");
 		conf.set("hive.metastore.schema.verification", "false");
+		conf.set("hive.metastore.try.direct.sql", "false");
+		conf.set("hive.metastore.fastpath", "true");
 		conf.set("javax.jdo.option.ConnectionURL",
 				"jdbc:derby:;databaseName=" + scratchDir
 						+ File.separatorChar + user
