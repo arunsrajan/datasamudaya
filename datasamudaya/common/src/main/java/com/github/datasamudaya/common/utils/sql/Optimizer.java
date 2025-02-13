@@ -98,9 +98,9 @@ public class Optimizer {
 		SqlStdOperatorTable sqlStdOperatorTable = SqlStdOperatorTable.instance();
 		List<SqlFunction> sqlFunctions = Functions.getAllSqlFunctions();
 
-		SqlOperatorTable customSqlOperatorTable = SqlOperatorTables.of(sqlFunctions);
+		
+		SqlOperatorTable customSqlOperatorTable = SqlOperatorTables.of(sqlFunctions.toArray(new SqlFunction[0]));
 		SqlOperatorTable operatorTable = new SqlFunctionsChainedOperatorTable(Arrays.asList(sqlStdOperatorTable, customSqlOperatorTable));
-
 
 		SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
 				.withLenientOperatorLookup(config.lenientOperatorLookup())

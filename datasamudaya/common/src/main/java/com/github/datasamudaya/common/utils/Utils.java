@@ -4165,23 +4165,23 @@ public class Utils {
 		// also set the permissions manually since Hive doesn't do it...
 		scratchDirFile.setWritable(true, false);
 		String storeid = "1234";
-		conf.set("hive.metastore.warehouse.dir", scratchDir + DataSamudayaConstants.SLASH + user
+		conf.set("hive.metastore.warehouse.dir", scratchDir + File.separatorChar + user
 				+ DataSamudayaProperties.get()
 				.getProperty(DataSamudayaConstants.WAREHOUSE_DIR_PATH,
 						DataSamudayaConstants.WAREHOUSE_DIR_PATH_DEFAULT) + storeid);
 		conf.set("hive.metastore.metadb.dir",
-				scratchDir + DataSamudayaConstants.SLASH + user
+				scratchDir + File.separatorChar + user
 						+ DataSamudayaProperties.get()
 						.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH,
 								DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid);
-		conf.set("hive.exec.scratchdir", scratchDir + DataSamudayaConstants.SLASH + user);
+		conf.set("hive.exec.scratchdir", scratchDir + File.separatorChar + user);
 		conf.set("fs.permissions.umask-mode", "022");
 		conf.set("hive.metastore.dbtype", "derby");
 		conf.set("hive.metastore.local", "true");
 		conf.set("hive.metastore.schema.verification", "false");
 		conf.set("javax.jdo.option.ConnectionURL",
 				"jdbc:derby:;databaseName=" + scratchDir
-						+ DataSamudayaConstants.SLASH + user
+						+ File.separatorChar + user
 						+ DataSamudayaProperties.get()
 						.getProperty(DataSamudayaConstants.METASTORE_DIR_PATH,
 								DataSamudayaConstants.METASTORE_DIR_PATH_DEFAULT) + storeid + ";create=true");

@@ -8,7 +8,9 @@
  */
 package com.github.datasamudaya.common;
 
+import java.io.File;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import org.apache.commons.io.IOUtils;
@@ -47,11 +49,16 @@ public class ContainerLauncher {
 			// Java home from task scheduler with java executable path 
 			argumentsForSpawn.add(System.getProperty("java.home").replace("\\", "/") + "/bin/java");
 			//Java Class path
-			argumentsForSpawn.add("-cp");
-			String uniquefilename = String.format(DataSamudayaConstants.CLASSPATHFILE, System.currentTimeMillis());
-			Utils.gatherClasspathDependenciesToFile(System.getProperty(DataSamudayaConstants.TMPDIR), uniquefilename);
-			argumentsForSpawn.add("\"" + DataSamudayaConstants.AT + System.getProperty(DataSamudayaConstants.TMPDIR)+
-					uniquefilename+ "\"");
+			argumentsForSpawn.add("-classpath");			
+			if(File.separatorChar == '\\') {
+				String uniquefilename = String.format(DataSamudayaConstants.CLASSPATHFILE, System.currentTimeMillis());
+				Utils.gatherClasspathDependenciesToFile(System.getProperty(DataSamudayaConstants.TMPDIR), uniquefilename);
+				argumentsForSpawn.add("\"" + DataSamudayaConstants.AT + Paths.get(System.getProperty(DataSamudayaConstants.TMPDIR),
+						uniquefilename).toString() + "\"");
+			} else {
+				argumentsForSpawn.add("\"" + System.getProperty("java.class.path") + "\"");
+			}
+			
 			//Minimum memory 256MB
 			argumentsForSpawn.add("-Xms" + cr.getMinmemory());
 			//Maximum heap to launch container.
@@ -87,12 +94,11 @@ public class ContainerLauncher {
 			argumentsForSpawn.add(DataSamudayaConstants.EMPTY + numberofexecutors);
 			log.debug("Launching Container Daemon Process: " + argumentsForSpawn);
 			//Spawning the process for running task executor
-			Process process = Runtime.getRuntime()
-					.exec(argumentsForSpawn.toArray(new String[argumentsForSpawn.size()]));
+			ProcessBuilder builder = new ProcessBuilder(argumentsForSpawn);
+		    Process process = builder.inheritIO().start();
 			if(!process.isAlive()) {
 				log.debug("Process {} started", IOUtils.toString(process.getErrorStream(), Charset.defaultCharset()));	
 			}
-			
 			return process;
 
 
