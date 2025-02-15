@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,9 +29,11 @@ import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.NodeIndexKey;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.functions.MapFunction;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.NodeIndexKeyComparator;
+import com.github.datasamudaya.common.utils.ObjectArrayComparator;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
@@ -126,6 +129,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 							DiskSpillingSet<NodeIndexKey> diskspillset = new DiskSpillingSet(tasktoprocess,
 									diskspillpercentage, null, false, false, false, null, null, 1, true,
 									new NodeIndexKeyComparator());
+							List<Stream<?>> datastreamlist = new ArrayList<>();
 							for (Object diskspill : ldiskspill) {
 								Stream<?> datastream = null;
 								if (diskspill instanceof DiskSpillingList dsl) {
@@ -135,30 +139,35 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 								} else if (diskspill instanceof TreeSet<?> ts) {
 									datastream = ts.stream();
 								}
-								try {
-									AtomicInteger index = new AtomicInteger(0);
-									if (nonNull(datastream)) {
-										datastream.forEach(obj -> {
-											if (obj instanceof NodeIndexKey nik) {
-												nik.setIndex(index.getAndIncrement());
-												diskspillset.add(nik);
-											} else {
-												diskspillset.add(new NodeIndexKey(tasktoprocess.getHostport(),
-														index.getAndIncrement(), null, obj, null, null, null,
-														tasktoprocess));
+								datastreamlist.add(datastream);
+							}
+							try {
+								AtomicInteger index = new AtomicInteger(0);
+								if (CollectionUtils.isNotEmpty(datastreamlist)) {
+									datastreamlist.stream()
+									.flatMap(stream -> stream).map(obj->{
+											if (obj instanceof NodeIndexKey nik) {												
+												return (Object[])nik.getValue();
 											}
+											return (Object[])obj;
+									}).map(new MapFunction<Object[], List<Object>>(){
+										private static final long serialVersionUID = -8710155646864668081L;
 
-										});
-									}
+										@Override
+										public List<Object> apply(Object[] obj) {
+											return Arrays.asList(obj);
+										}
+									}).distinct().map(lst->lst.toArray())
+									.sorted(new ObjectArrayComparator())
+									.forEach(obj -> {										
+										diskspillset.add(new NodeIndexKey(tasktoprocess.getHostport(),
+											index.getAndIncrement(), null, obj, null, null, null,
+											tasktoprocess));
+									});
+								}
 
-								} catch (Exception ex) {
-									log.error(DataSamudayaConstants.EMPTY, ex);
-								}
-								if (diskspill instanceof DiskSpillingList dsl) {
-									dsl.clear();
-								} else if (diskspill instanceof DiskSpillingSet dss) {
-									dss.clear();
-								}
+							} catch (Exception ex) {
+								log.error(DataSamudayaConstants.EMPTY, ex);
 							}
 							if (diskspillset.isSpilled()) {
 								diskspillset.close();
