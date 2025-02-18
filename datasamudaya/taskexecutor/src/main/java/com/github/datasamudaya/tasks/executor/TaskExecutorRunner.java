@@ -339,6 +339,10 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 			actorsystemurl = cluster.selfMember().address().getHost().get() + DataSamudayaConstants.COLON + cluster.selfMember().address().getPort().get();
 			log.debug("Initializing Sharding ...");
 			log.debug("Actor System Url {}" + actorsystemurl);
+			var host = NetworkUtil
+					.getNetworkAddress(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST));
+			zo.createAkkaActorNodeTaskExecutorNode(jobid, actorsystemurl, (host+DataSamudayaConstants.UNDERSCORE+port).getBytes());
+			zo.watchAkkaActorNodeTaskExecutorNode(jobid);
 		} else {
 			actorsystemurl = "";
 			cluster = null;

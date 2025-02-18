@@ -25,6 +25,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Command;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -40,6 +41,7 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 
+import akka.actor.Address;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -76,6 +78,8 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 	DiskSpillingList diskspilllistinterm;
 	int diskspillpercentage;
 	ExecutorService es;
+	EntityTypeKey<Command> entitytypekey;
+	
 	protected List getFunctions() {
 		log.debug("Entered ProcessReduce");
 		var tasks = jobstage.getStage().tasks;
@@ -111,6 +115,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 		this.childpipes = childpipes;
 		this.terminatingsize = terminatingsize;
 		this.es = es;
+		this.entitytypekey =  createTypeKey(tasktoprocess.getJobid()+tasktoprocess.getStageid()+tasktoprocess.getTaskid());
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage,
@@ -170,11 +175,17 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 				log.debug("ProcessReduce::InitialShuffleSize {} , Terminating Size {}", initialshufflesize, terminatingsize);
 			}
 			if (dummysize == terminatingsize || initialshufflesize == terminatingsize) {
+				Address address = getContext().getSystem().address();
+				String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+				String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+				if(!diskspilllistinterm.getTask().getHostport().equals(tehp)) {
+					diskspilllistinterm.getTask().setHostport(tehp);
+				}
 				if (diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
 				CompletableFuture.supplyAsync(() -> {
-					try {
+					try {						
 						if (CollectionUtils.isEmpty(childpipes)) {
 							Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
 									? (Stream<Tuple2>) Utils.getStreamData(diskspilllistinterm)
@@ -196,6 +207,9 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 							log.debug("Reduce Started {}", tasktoprocess);
 							diskspilllist = new DiskSpillingList(tasktoprocess, diskspillpercentage,
 									DataSamudayaConstants.EMPTY, false, false, false, null, null, 0);
+							if(!diskspilllist.getTask().getHostport().equals(tehp)) {
+								diskspilllist.getTask().setHostport(tehp);
+							}
 							try {
 								Stream<Tuple2> datastream = diskspilllistinterm.isSpilled()
 										? (Stream<Tuple2>) Utils.getStreamData(diskspilllistinterm)

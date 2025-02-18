@@ -90,6 +90,7 @@ import com.github.datasamudaya.common.ByteBufferOutputStream;
 import com.github.datasamudaya.common.CleanupTaskActors;
 import com.github.datasamudaya.common.CloseStagesGraphExecutor;
 import com.github.datasamudaya.common.DAGEdge;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaCache;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaConstants.STORAGE;
@@ -394,6 +395,8 @@ public class StreamJobScheduler {
 					final String actorsystemurl = cluster.selfMember().address().getHost().get() + DataSamudayaConstants.COLON
 							+ cluster.selfMember().address().getPort().get();
 					shardid = UUID.randomUUID().toString();
+					DataSamudayaAkkaNodesTaskExecutor.put(new ConcurrentHashMap<>());
+					DataSamudayaAkkaNodesTaskExecutor.get().put(actorsystemurl, DataSamudayaConstants.DUMMYTASKEXECUTORHOSTPORTLOCAL);
 					parallelExecutionAkkaActorsLocal(system, actorsystemurl, graph);
 				} else {
 					parallelExecutionPhaseDExecutorLocalMode(graph,
@@ -1033,9 +1036,10 @@ public class StreamJobScheduler {
 				List<StreamPipelineTaskSubmitter> sptss = new ArrayList<>();
 				while (iterator.hasNext()) {
 					StreamPipelineTaskSubmitter sptsreverse = iterator.next();
+					sptsreverse.getTask().setHostport(DataSamudayaConstants.DUMMYTASKEXECUTORHOSTPORTLOCAL);
 					var predecessors = Graphs.predecessorListOf(graphreversed, sptsreverse);
 					var successors = Graphs.successorListOf(graphreversed, sptsreverse);
-					if (CollectionUtils.isEmpty(predecessors)) {
+					if (CollectionUtils.isEmpty(predecessors)) {						
 						GetTaskActor gettaskactor = new GetTaskActor(sptsreverse.getTask(), null, successors.size(), false);
 						Task task = (Task) SQLUtils.getAkkaActor(system, gettaskactor, jsidjsmap, hdfs, cache,
 								jobidstageidtaskidcompletedmap, actorsystemurl, sharding, null, actorrefs,

@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.Command;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -34,6 +35,7 @@ import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
+import akka.actor.Address;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -57,6 +59,8 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 	int diskspillpercentage;
 	List ldiskspill;
 	ExecutorService es;
+	EntityTypeKey<Command> entitytypekey;
+	
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessIntersection-" + entityId);
 	}
@@ -78,6 +82,7 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 		this.cache = cache;
 		this.js = js;
 		this.es = es;
+		this.entitytypekey =  createTypeKey(tasktoprocess.getJobid()+tasktoprocess.getStageid()+tasktoprocess.getTaskid());
 		this.btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
@@ -225,6 +230,12 @@ public class ProcessIntersection extends AbstractBehavior<Command> {
 					}
 					log.debug("Object To be sent to downstream pipeline size {}", diskspillsetresult.size());
 					DiskSpillingSet<NodeIndexKey> diskspillsetresultfinal = diskspillsetresult;
+					Address address = getContext().getSystem().address();
+					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+					if(!diskspillsetresultfinal.getTask().getHostport().equals(tehp)) {
+						diskspillsetresultfinal.getTask().setHostport(tehp);
+					}	
 					if(diskspillsetresultfinal.isSpilled()) {
 						diskspillsetresultfinal.close();
 					}

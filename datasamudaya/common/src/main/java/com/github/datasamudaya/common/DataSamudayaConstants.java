@@ -562,6 +562,7 @@ public class DataSamudayaConstants {
 	public static final String LEADERSCHEDULERSTREAMZK = "/schedulerstream";
 	public static final String NODESZK = "/nodes";
 	public static final String TASKEXECUTORSZK = "/taskexecutors";
+	public static final String AKKAACTORSZK = "/akkaactorsnode";
 	public static final String DRIVERSZK = "/drivers";
 	public static final String TASKSZK = "/tasks";
 	public static final String ZK_DEFAULT = "127.0.0.1:2181";
@@ -684,4 +685,6 @@ public class DataSamudayaConstants {
 	public static final String CLASSPATHFOLDER_DEFAULT = "./target";
 	public static final String AT = "@";
 	public static final String CLASSPATHFILE = "classpath-%s.txt";
+	
+	public static final String DUMMYTASKEXECUTORHOSTPORTLOCAL = "127.0.0.1_12345";
 }

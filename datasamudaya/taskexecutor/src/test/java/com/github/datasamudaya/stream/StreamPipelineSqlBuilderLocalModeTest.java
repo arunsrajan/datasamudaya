@@ -4549,6 +4549,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 				assertEquals(2l, rec.length);
 			}
 		}
+		assertEquals(12, totalrecords);
 		log.info("In testRequiredColumnsUnion() method Exit");
 	}
 

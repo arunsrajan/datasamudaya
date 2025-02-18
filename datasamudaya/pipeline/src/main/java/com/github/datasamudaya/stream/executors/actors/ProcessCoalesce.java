@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,6 +27,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Command;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -39,6 +39,7 @@ import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
+import akka.actor.Address;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -74,6 +75,8 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 	DiskSpillingList diskspilllist;
 	DiskSpillingList<Tuple2> diskspilllistinterm;
 	ExecutorService es;
+	EntityTypeKey<Command> entitytypekey;
+	
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessCoalesce-" + entityId);
 	}
@@ -95,6 +98,7 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 		this.cache = cache;
 		this.task = task;
 		this.es = es;
+		this.entitytypekey = createTypeKey(task.getJobid()+task.getStageid()+task.getTaskid());
 		int diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(task, diskspillpercentage, null, true, false, false, null, null, 0);
@@ -117,7 +121,16 @@ public class ProcessCoalesce extends AbstractBehavior<Command> implements Serial
 		if (Objects.nonNull(object) && Objects.nonNull(object.getValue())) {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				CompletableFuture.supplyAsync(() -> {
-				if (dsl.isSpilled()) {
+				Address address = getContext().getSystem().address();
+				String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+				String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+				if(!diskspilllistinterm.getTask().getHostport().equals(tehp)) {
+					diskspilllistinterm.getTask().setHostport(tehp);
+				}
+				if(!diskspilllist.getTask().getHostport().equals(tehp)) {
+					diskspilllist.getTask().setHostport(tehp);
+				}
+				if (dsl.isSpilled()) {					
 					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistinterm);
 				} else {
 					diskspilllistinterm.addAll(dsl.getData());

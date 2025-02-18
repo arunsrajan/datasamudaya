@@ -45,6 +45,7 @@ import org.xerial.snappy.SnappyOutputStream;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.BlocksLocation;
 import com.github.datasamudaya.common.Command;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -65,6 +66,7 @@ import com.github.datasamudaya.stream.utils.SQLUtils;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 import com.google.common.collect.Maps;
 
+import akka.actor.Address;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -104,6 +106,8 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 	Map<String, Map<RexNode, AtomicBoolean>> blockspartitionfilterskipmap;
 	int diskspillpercentage;
 	ExecutorService es;
+	EntityTypeKey<Command> entitytypekey;
+	
 	protected List getFunctions(JobStage jobstage) {
 		logger.debug("Entered ProcessMapperByBlocksLocation.getFunctions");
 		var tasks = jobstage.getStage().tasks;
@@ -137,6 +141,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 		this.iscacheable = true;
 		this.tasktoprocess = tasktoprocess;
 		this.es = es;
+		this.entitytypekey =  createTypeKey(tasktoprocess.getJobid()+tasktoprocess.getStageid()+tasktoprocess.getTaskid());
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 	}
@@ -363,8 +368,14 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 											Collectors.toCollection(() -> new DiskSpillingList(tasktoprocess,
 													diskspillpercentage,
 													Utils.getUUID().toString(), false, left, right, blr.filespartitions, blr.pipeline, totalranges))))),es).get();
+					Address address = getContext().getSystem().address();
+					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
 					results.entrySet().forEach(entry -> {
 						try {
+							if(!entry.getValue().getTask().getHostport().equals(tehp)) {
+								entry.getValue().getTask().setHostport(tehp);
+							}
 							if (entry.getValue().isSpilled()) {
 								entry.getValue().close();
 							}
@@ -381,9 +392,15 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 						blr.pipeline.get(val).tell(new OutputObject(new Dummy(), left, right, Dummy.class));
 					});
 				} else if (CollectionUtils.isNotEmpty(blr.childactors)) {
+					Address address = getContext().getSystem().address();
+					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
 					logger.debug("Child Actors pipeline Process Started with actors {} with left {} right {} Task {}..." + blr.getChildactors() + left + right + getIntermediateDataFSFilePath(tasktoprocess));
 					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
 							diskspillpercentage, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
+					if(!diskspilllist.getTask().getHostport().equals(tehp)) {
+						diskspilllist.getTask().setHostport(tehp);
+					}
 					((Stream) streammap).forEach(diskspilllist::add);
 					if (diskspilllist.isSpilled()) {
 						diskspilllist.close();
@@ -399,6 +416,12 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 							diskspillpercentage, null, false, left, right, null, null, numfileperexec);
 					((Stream) streammap).forEach(diskspilllist::add);
 					logger.debug("Processing Mapper Disk Spill Close ...");
+					Address address = getContext().getSystem().address();
+					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+					if(!diskspilllist.getTask().getHostport().equals(tehp)) {
+						diskspilllist.getTask().setHostport(tehp);
+					}
 					diskspilllist.close();
 					logger.debug("Writing To Cache Started with spilled? {}... " + diskspilllist.isSpilled());
 					Stream datastream = diskspilllist.isSpilled()

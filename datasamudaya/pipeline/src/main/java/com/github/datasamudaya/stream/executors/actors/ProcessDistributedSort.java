@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.Command;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -36,6 +37,7 @@ import com.github.datasamudaya.common.utils.DiskSpillingSet;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
+import akka.actor.Address;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -58,9 +60,10 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 	private final boolean iscacheable = true;
 	int btreesize;
 	int diskspillpercentage;
-	DiskSpillingList diskspilllistinterm;
 	List ldiskspill;
 	ExecutorService es;
+	EntityTypeKey<Command> entitytypekey;
+	
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessDistributedSort-" + entityId);
 	}
@@ -82,13 +85,12 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 		this.cache = cache;
 		this.js = js;
 		this.es = es;
+		this.entitytypekey = createTypeKey(tasktoprocess.getJobid()+tasktoprocess.getStageid()+tasktoprocess.getTaskid());
 		this.btreesize = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.BTREEELEMENTSNUMBER, DataSamudayaConstants.BTREEELEMENTSNUMBER_DEFAULT));
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
-		ldiskspill = new ArrayList<>();
-		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, true, false, false, null,
-				null, 0);
+		ldiskspill = new ArrayList<>();	
 	}
 
 	@Override
@@ -122,9 +124,6 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 			if (initialsize == terminatingsize) {
 				log.debug("processDistributedSort::Started InitialSize {} , Terminating Size {}", initialsize,
 						terminatingsize);
-				if (diskspilllistinterm.isSpilled()) {
-					diskspilllistinterm.close();
-				}
 				List<Task> predecessors = tasktoprocess.getTaskspredecessor();
 				List<FieldCollationDirection> fcsc = (List<FieldCollationDirection>) tasktoprocess.getFcsc();				
 				NodeIndexKey root = null;
@@ -159,6 +158,12 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 				if (CollectionUtils.isNotEmpty(childpipes)) {
 					DiskSpillingList rootniks = new DiskSpillingList<>(tasktoprocess, diskspillpercentage, null, false,
 							false, false, null, null, 0);
+					Address address = getContext().getSystem().address();
+					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+					if(!rootniks.getTask().getHostport().equals(tehp)) {
+						rootniks.getTask().setHostport(tehp);
+					}	
 					btree.traverse(rootniks);
 					try {
 						if (rootniks.isSpilled()) {

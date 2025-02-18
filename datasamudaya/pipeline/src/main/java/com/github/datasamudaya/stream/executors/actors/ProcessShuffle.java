@@ -71,6 +71,8 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 	Kryo kryo = Utils.getKryo();
 	Semaphore lock = new Semaphore(1);
 	ExecutorService es = null;
+	EntityTypeKey<Command> entitytypekey;
+	
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessShuffle-" + entityId);
 	}
@@ -91,6 +93,7 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 		this.childpipes = childpipes;
 		this.terminatingsize = tasktoprocess.parentterminatingsize;
 		this.es = es;
+		this.entitytypekey =  createTypeKey(tasktoprocess.getJobid()+tasktoprocess.getStageid()+tasktoprocess.getTaskid());
 	}
 
 	public static record BlocksLocationRecord(FileSystem hdfs, List<ActorSelection> pipeline) implements Serializable {

@@ -31,6 +31,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Command;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -51,6 +52,7 @@ import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.utils.StreamUtils;
 
+import akka.actor.Address;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -91,6 +93,8 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 	Map<Integer, EntityRef> actorselections;
 	int diskspillpercentage;
 	ExecutorService es;
+	EntityTypeKey<Command> entitytypekey;
+	
 	protected List getFunctions() {
 		logger.debug("Entered ProcessMapperByStream");
 		var tasks = jobstage.getStage().tasks;
@@ -129,6 +133,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 		this.shufflerectowrite = shufflerectowrite;
 		this.terminatingsize = terminatingsize;
 		this.es = es;
+		this.entitytypekey =  createTypeKey(tasktoprocess.getJobid()+tasktoprocess.getStageid()+tasktoprocess.getTaskid());
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllistinterm = new DiskSpillingList(tasktoprocess, diskspillpercentage, null, true, false, false, null,
@@ -212,6 +217,12 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 				initialsize++;
 			}
 			if (initialsize == terminatingsize) {
+				Address address = getContext().getSystem().address();
+				String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+				String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+				if(!diskspilllistinterm.getTask().getHostport().equals(tehp)) {
+					diskspilllistinterm.getTask().setHostport(tehp);
+				}
 				if (diskspilllistinterm.isSpilled()) {
 					diskspilllistinterm.close();
 				}
@@ -219,6 +230,9 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 						terminatingsize, object.getTerminiatingclass());
 				CompletableFuture.supplyAsync(() -> {
 					try {
+						if(!diskspilllist.getTask().getHostport().equals(tehp)) {
+							diskspilllist.getTask().setHostport(tehp);
+						}
 						if (object.getTerminiatingclass() == NodeIndexKey.class) {
 							logger.debug("Is Terminating Class NodeIndexKey Shuffle Records {} isEmpty {}",
 									shufflerectowrite, MapUtils.isNotEmpty(shufflerectowrite));

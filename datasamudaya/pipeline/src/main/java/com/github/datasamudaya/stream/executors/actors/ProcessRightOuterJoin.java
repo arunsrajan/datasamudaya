@@ -24,6 +24,7 @@ import org.xerial.snappy.SnappyOutputStream;
 
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.Command;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -35,6 +36,7 @@ import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
 
+import akka.actor.Address;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -76,6 +78,8 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
 	ExecutorService es;
+	EntityTypeKey<Command> entitytypekey;
+	
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessRightOuterJoin-" + entityId);
 	}
@@ -96,6 +100,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 		this.cache = cache;
 		this.task = task;
 		this.es = es;
+		this.entitytypekey =  createTypeKey(task.getJobid()+task.getStageid()+task.getTaskid());
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspilllist = new DiskSpillingList(task, diskspillpercentage, null, false, false, false, null, null, 0);
@@ -117,9 +122,15 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 	private Behavior<Command> processRightOuterJoin(OutputObject oo) throws Exception {
 		CompletableFuture.supplyAsync(() -> {
 			if (oo.isLeft()) {
-				if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
+				if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {					
 					diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false,
 							null, null, 0);
+					Address address = getContext().getSystem().address();
+					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);					
+					if(!diskspilllistintermleft.getTask().getHostport().equals(tehp)) {
+						diskspilllistintermleft.getTask().setHostport(tehp);
+					}
 					if (dsl.isSpilled()) {
 						Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
 					} else {
@@ -130,6 +141,12 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 				if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 					diskspilllistintermright = new DiskSpillingList(task, diskspillpercentage, null, true, false, true,
 							null, null, 0);
+					Address address = getContext().getSystem().address();
+					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+					if(!diskspilllistintermright.getTask().getHostport().equals(tehp)) {
+						diskspilllistintermright.getTask().setHostport(tehp);
+					}
 					if (dsl.isSpilled()) {
 						Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
 					} else {
@@ -164,6 +181,12 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 									Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
 											diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
 							: diskspilllistintermright.getData().stream();
+					Address address = getContext().getSystem().address();
+					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+					if(!diskspilllistinterm.getTask().getHostport().equals(tehp)) {
+						diskspilllistinterm.getTask().setHostport(tehp);
+					}
 					try (var seq1 = Seq.seq(datastreamleft);
 							var seq2 = Seq.seq(datastreamright);
 							var join = seq1.rightOuterJoin(seq2, rojp)) {
@@ -195,6 +218,9 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 							}
 							return maprec;
 						}).forEach(diskspilllist::add);
+						if(!diskspilllist.getTask().getHostport().equals(tehp)) {
+							diskspilllist.getTask().setHostport(tehp);
+						}
 						if (diskspilllist.isSpilled()) {
 							diskspilllist.close();
 						}

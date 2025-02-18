@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
@@ -177,6 +178,82 @@ public class ZookeeperOperations implements AutoCloseable {
 		}
 	}
 
+	
+	/**
+	 * Creates Akka Actors Node with Task Executor Node Data
+	 * @param jobid
+	 * @param taskexecutor
+	 * @param data
+	 * @throws ZookeeperException
+	 */
+	public void createAkkaActorNodeTaskExecutorNode(String jobid, String akkaactorsnode, byte[] data) throws ZookeeperException {
+		try {
+			if (curator.checkExists()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKAACTORSZK
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+							+ akkaactorsnode) == null) {
+				curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
+						.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
+						.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKAACTORSZK
+								+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+								+ akkaactorsnode, data);
+			}
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
+	/**
+	 * The method watches the changes in the akka actors node
+	 * @param jobid
+	 * @throws ZookeeperException
+	 */
+	public void watchAkkaActorNodeTaskExecutorNode(String jobid) throws ZookeeperException {
+		try {
+			CuratorCache cache = CuratorCache.build(curator,
+					DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.AKKAACTORSZK
+					+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+			cache.start();
+			cache.listenable().addListener((type, oldData, data)-> {
+				try {
+					switch (type) {
+						case NODE_CREATED:
+							byte[] changeddata = data.getData();
+							String resourcetoadd = new String(changeddata);
+							if(!resourcetoadd.equals(DataSamudayaConstants.EMPTY)){								
+								String[] nodeadded = data.getPath().split("/");
+								if (isNull(DataSamudayaAkkaNodesTaskExecutor.get())) {
+									DataSamudayaAkkaNodesTaskExecutor.put(new ConcurrentHashMap<>());
+								}
+								String currentnode = nodeadded[nodeadded.length - 1];								
+								DataSamudayaAkkaNodesTaskExecutor.get().put(currentnode, resourcetoadd);								
+							}
+							log.debug("Akka node added: {}", data.getPath());
+							break;
+						case NODE_DELETED:
+							String nodetobedeleted = nonNull(oldData)?oldData.getPath():DataSamudayaConstants.EMPTY;
+							if(!nodetobedeleted.equals(DataSamudayaConstants.EMPTY)){
+								String[] nodetoberemovedarr = nodetobedeleted.split("/");
+								if (isNull(DataSamudayaAkkaNodesTaskExecutor.get())) {
+									DataSamudayaAkkaNodesTaskExecutor.put(new ConcurrentHashMap<>());
+								}
+								String nodetoremove = nodetoberemovedarr[nodetoberemovedarr.length - 1];
+								DataSamudayaAkkaNodesTaskExecutor.get().remove(nodetoremove);								
+								log.debug("Akka node removed: {}",oldData.getPath());
+							}							
+							break;
+						default:
+							break;
+					}
+				} catch (Exception ex) {
+					log.error(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+				}
+				});
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
 	/**
 	 * Creates Akka Seed nodes for a given jobid in zookeeper
 	 * @param jobid

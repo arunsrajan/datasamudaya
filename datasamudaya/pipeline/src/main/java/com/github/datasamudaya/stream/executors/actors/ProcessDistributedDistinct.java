@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.datasamudaya.common.Command;
+import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Dummy;
@@ -23,6 +24,7 @@ import com.github.datasamudaya.common.utils.ObjectArrayComparator;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.PipelineException;
 
+import akka.actor.Address;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.RecipientRef;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -43,6 +45,8 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 	int diskspillpercentage;
 	DiskSpillingSet diskspillset;
 	ExecutorService es;
+	EntityTypeKey<Command> entitytypekey;
+	
 	public static EntityTypeKey<Command> createTypeKey(String entityId) {
 		return EntityTypeKey.create(Command.class, "ProcessDistributedDistinct-" + entityId);
 	}
@@ -63,6 +67,7 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 		this.terminatingsize = terminatingsize;
 		this.childpipes = childpipes;
 		this.es = es;
+		this.entitytypekey = createTypeKey(tasktoprocess.getJobid()+tasktoprocess.getStageid()+tasktoprocess.getTaskid());
 		diskspillpercentage = Integer.valueOf(DataSamudayaProperties.get().getProperty(
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE, DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT));
 		diskspillset = new DiskSpillingSet(tasktoprocess, diskspillpercentage, null, false, false, false, null,
@@ -86,6 +91,12 @@ public class ProcessDistributedDistinct extends AbstractBehavior<Command> {
 			if (object.getValue() instanceof DiskSpillingList dsl) {
 				log.debug("In Distributed Distinct {} {} {} {} {}", object, dsl.size(), dsl.isSpilled(), dsl.getTask(), terminatingsize);
 				CompletableFuture.supplyAsync(() -> {
+					Address address = getContext().getSystem().address();
+					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+					if(!diskspillset.getTask().getHostport().equals(tehp)) {
+						diskspillset.getTask().setHostport(tehp);
+					}					
 					if (dsl.isSpilled()) {
 						Utils.copySpilledDataSourceToDestination(dsl, diskspillset);
 					} else {
