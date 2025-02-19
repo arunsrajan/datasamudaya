@@ -66,9 +66,11 @@ public class ContainerLauncher {
 			//Set the Stack size to 128 mb
 			argumentsForSpawn.add("-Xss128m");
 			//Maximum number of cpu power to restrict execution thread
-			argumentsForSpawn.add("-XX:ActiveProcessorCount=" + cr.getCpu());
+			int cpuallocated = cr.getCpu();
+			int totalcpuforioandprocessing = cpuallocated * 2 + cpuallocated;
+			argumentsForSpawn.add("-XX:ActiveProcessorCount=" + totalcpuforioandprocessing);
 			argumentsForSpawn
-					.add("-Djdk.virtualThreadScheduler.parallelism="+ cr.getCpu());
+					.add("-Djdk.virtualThreadScheduler.parallelism="+ totalcpuforioandprocessing);
 			argumentsForSpawn
 			.add("-Djdk.virtualThreadScheduler.maxPoolSize=256");
 			argumentsForSpawn

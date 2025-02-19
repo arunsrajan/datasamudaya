@@ -1202,13 +1202,9 @@ public class StreamJobScheduler {
 				});
 			}
 			var semaphores = new ConcurrentHashMap<String, Semaphore>();
-			var numoftasks = Integer.parseInt(DataSamudayaProperties.get()
-					.getProperty(DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE,
-							DataSamudayaConstants.VIRTUALTHREADSPOOLSIZE_DEFAULT));
-			numoftasks = numoftasks / chpcres.entrySet().size();
 			for (var cr : chpcres.entrySet()) {
-				batchsize += cr.getValue().getCpu();
-				semaphores.put(cr.getKey(), new Semaphore(numoftasks));
+				batchsize = cr.getValue().getCpu() * 2 + cr.getValue().getCpu();
+				semaphores.put(cr.getKey(), new Semaphore(batchsize));
 			}
 			es = newExecutor("ParallelExecutionAkkaActors");
 			while (!completed && numexecute < executioncount) {
