@@ -176,6 +176,7 @@ public class ProcessShuffle extends AbstractBehavior<Command> implements Seriali
 									.tell(new OutputObject(fileblockpath, leftvalue, rightvalue, Map.class)));
 							jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess),
 									true);
+							Utils.updateZookeeperTasksData(tasktoprocess, true);
 							log.debug("Shuffle Completed");
 							shufflecompleted = true;
 						}

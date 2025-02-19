@@ -469,6 +469,7 @@ public class ProcessMapperByStream extends AbstractBehavior<Command> implements 
 					return null;
 				}, es).get();
 				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
+				Utils.updateZookeeperTasksData(tasktoprocess, true);
 			}
 		}
 		return this;

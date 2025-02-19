@@ -264,6 +264,7 @@ public class ProcessFullOuterJoin extends AbstractBehavior<Command> implements S
 				}, es).get();
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
+				Utils.updateZookeeperTasksData(task, true);
 				return this;
 			} catch (Exception ex) {
 				log.error(DataSamudayaConstants.EMPTY, ex);

@@ -191,6 +191,7 @@ public class ProcessDistributedSort extends AbstractBehavior<Command> {
 				}
 				jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN
 						+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(), true);
+				Utils.updateZookeeperTasksData(tasktoprocess, true);
 			}
 		}
 		return this;

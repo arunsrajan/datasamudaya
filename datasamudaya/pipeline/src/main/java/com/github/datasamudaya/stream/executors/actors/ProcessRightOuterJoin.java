@@ -255,6 +255,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 						}
 						jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN
 								+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
+						Utils.updateZookeeperTasksData(task, true);
 						return this;
 					}
 				}

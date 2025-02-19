@@ -2551,7 +2551,6 @@ public class StreamJobScheduler {
 							|| !ishdfs) {
 						Task task = spts.getTask();
 						RemoteDataFetch rdf = new RemoteDataFetch();
-						rdf.setHp(task.hostport);
 						rdf.setJobid(task.jobid);
 						rdf.setStageid(task.stageid);
 						rdf.setTaskid(task.taskid);
@@ -2562,12 +2561,14 @@ public class StreamJobScheduler {
 						}
 						boolean isJGroups = Boolean.parseBoolean(pipelineconfig.getJgroups());
 						rdf.setMode(isJGroups ? DataSamudayaConstants.JGROUPS : DataSamudayaConstants.STANDALONE);
-						RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
+						var zookeepertasksdata = zo.getZookeeperTasksDataForJobNode(task.jobid, task.taskid);
 						outer: 
-						while(isNull(rdf.getData())) {
+						while(!zookeepertasksdata.getIsresultavailable() || zookeepertasksdata.getIsresultavailable() && isNull(rdf.getData())) {
 							Thread.sleep(1000);
-							for(String te:job.getTaskexecutors()) {
-								rdf.setHp(te);
+							zookeepertasksdata = zo.getZookeeperTasksDataForJobNode(task.jobid, task.taskid);
+							if(zookeepertasksdata.getIsresultavailable()) {
+								List<String> hostports = zookeepertasksdata.getResultshardhostports();
+								rdf.setHp(hostports.get(hostports.size()-1));
 								RemoteDataFetcher.remoteInMemoryDataFetch(rdf);
 								if(nonNull(rdf.getData())) {
 									break outer;
@@ -2939,7 +2940,7 @@ public class StreamJobScheduler {
 			}
 			var spts = new StreamPipelineTaskSubmitter(task, hp, job.getPipelineconfig());
 			task.hostport = hp;
-			zo.createTasksForJobNode(jobid, task, event -> {
+			zo.createTasksForJobNode(task, false, event -> {
 				var taskid = task.taskid;
 				log.debug("Task {} created in zookeeper", taskid);
 			});

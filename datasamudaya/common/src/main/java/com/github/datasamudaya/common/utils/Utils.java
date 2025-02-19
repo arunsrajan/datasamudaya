@@ -4272,4 +4272,21 @@ public class Utils {
 		is.close();
 		fsdos.close();
 	}
+	
+	/**
+	 * The function updates zookeeper tasks from akka actors
+	 * @param task
+	 * @param isresultavailable
+	 */
+	public static void updateZookeeperTasksData(Task task, boolean isresultavailable) {
+		try (ZookeeperOperations zo = new ZookeeperOperations()){
+			zo.connect();
+			zo.updateTasksForJobNode(task, isresultavailable);
+		} catch (ZookeeperException e) {
+			log.error(DataSamudayaConstants.EMPTY, e);
+		} catch (Exception e) {
+			log.error(DataSamudayaConstants.EMPTY, e);
+		}
+	}
+	
 }

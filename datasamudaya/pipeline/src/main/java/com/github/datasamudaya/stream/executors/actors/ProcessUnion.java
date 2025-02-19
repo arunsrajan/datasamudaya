@@ -203,6 +203,7 @@ public class ProcessUnion extends AbstractBehavior<Command> {
 						jobidstageidtaskidcompletedmap.put(tasktoprocess.getJobid() + DataSamudayaConstants.HYPHEN
 								+ tasktoprocess.getStageid() + DataSamudayaConstants.HYPHEN + tasktoprocess.getTaskid(),
 								true);
+						Utils.updateZookeeperTasksData(tasktoprocess, true);
 					}
 				} catch (Exception ex) {
 					log.error(DataSamudayaConstants.EMPTY, ex);

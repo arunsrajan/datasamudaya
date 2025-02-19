@@ -223,6 +223,7 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 				}, es).get();
 				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
 						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
+				Utils.updateZookeeperTasksData(task, true);
 				return this;
 			}
 		}

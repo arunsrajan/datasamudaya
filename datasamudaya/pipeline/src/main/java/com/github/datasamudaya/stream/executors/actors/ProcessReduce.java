@@ -230,6 +230,7 @@ public class ProcessReduce extends AbstractBehavior<Command> implements Serializ
 									.tell(new OutputObject(diskspilllist, false, false, DiskSpillingList.class)));
 							jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess),
 									true);
+							Utils.updateZookeeperTasksData(tasktoprocess, true);
 							log.debug("Reduce Completed {}", tasktoprocess);
 						}
 					} catch (Exception ex) {

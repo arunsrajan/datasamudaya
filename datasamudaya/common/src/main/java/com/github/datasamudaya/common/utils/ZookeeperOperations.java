@@ -39,6 +39,7 @@ import com.github.datasamudaya.common.DataSamudayaNodesResources;
 import com.github.datasamudaya.common.DataSamudayaProperties;
 import com.github.datasamudaya.common.Resources;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.ZookeeperTasksData;
 import com.github.datasamudaya.common.exceptions.ZookeeperException;
 
 /**
@@ -352,16 +353,71 @@ public class ZookeeperOperations implements AutoCloseable {
 		 @param watcher
 		 @throws Exception
 		*/
-	public void createTasksForJobNode(String jobid, Task task, Watcher watcher) throws ZookeeperException {
+	public void createTasksForJobNode(Task task, boolean isresultavailable, Watcher watcher) throws ZookeeperException {
 		try {
-			byte[] taskbytes = objectMapper.writeValueAsBytes(task);
+			var zookeepertasksdata = new ZookeeperTasksData();
+			zookeepertasksdata.setPrimaryhostport(task.getHostport());
+			zookeepertasksdata.setIsresultavailable(isresultavailable);
+			byte[] taskbytes = objectMapper.writeValueAsBytes(zookeepertasksdata);
 			curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
 					.withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE)
 					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
-							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+							+ DataSamudayaConstants.FORWARD_SLASH + task.getJobid() + DataSamudayaConstants.FORWARD_SLASH
 							+ task.getTaskid(), taskbytes);
 			curator.getChildren().usingWatcher(watcher).forPath(DataSamudayaConstants.ROOTZNODEZK
-					+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+					+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + task.getJobid());
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
+	/**
+	 * Update Tasks Data for given Job.
+	 * @param jobid
+	 * @param task
+	 * @param isresultavailable
+	 * @throws ZookeeperException
+	 */
+	public void updateTasksForJobNode(Task task, boolean isresultavailable) throws ZookeeperException {
+		try {
+			if (curator.checkExists()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
+							+ DataSamudayaConstants.FORWARD_SLASH + task.getJobid() + DataSamudayaConstants.FORWARD_SLASH
+							+ task.getTaskid()) == null) {
+				createTasksForJobNode(task,isresultavailable, event -> {
+					var taskid = task.taskid;
+					log.debug("Task {} created in zookeeper", taskid);
+				});
+			} else {
+				byte[] zookeepertasksdatajson = getData(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
+								+ DataSamudayaConstants.FORWARD_SLASH + task.getJobid() + DataSamudayaConstants.FORWARD_SLASH
+								+ task.getTaskid());
+				var zookeepertasksdata = objectMapper.readValue(zookeepertasksdatajson, ZookeeperTasksData.class); 
+				zookeepertasksdata.getResultshardhostports().add(task.getHostport());			
+				zookeepertasksdata.setIsresultavailable(isresultavailable);
+				setData(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
+						+ DataSamudayaConstants.FORWARD_SLASH + task.getJobid() + DataSamudayaConstants.FORWARD_SLASH
+						+ task.getTaskid(), objectMapper.writeValueAsBytes(zookeepertasksdata));
+			}
+		} catch (Exception ex) {
+			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
+		}
+	}
+	
+	/**
+	 * The function returs tasks data from zookeeper
+	 * @param jobid
+	 * @param taskid
+	 * @return taskdata
+	 * @throws ZookeeperException
+	 */
+	public ZookeeperTasksData getZookeeperTasksDataForJobNode(String jobid, String taskid) throws ZookeeperException {
+		try {
+			byte[] zookeepertasksdatajson = getData(DataSamudayaConstants.ROOTZNODEZK + DataSamudayaConstants.TASKSZK
+							+ DataSamudayaConstants.FORWARD_SLASH + jobid + DataSamudayaConstants.FORWARD_SLASH
+							+ taskid);
+			var zookeepertasksdata = objectMapper.readValue(zookeepertasksdatajson, ZookeeperTasksData.class); 
+			return zookeepertasksdata;
 		} catch (Exception ex) {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}

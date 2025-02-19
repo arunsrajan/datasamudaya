@@ -440,6 +440,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 					 toskipartition.set(true);
 				}
 				jobidstageidtaskidcompletedmap.put(Utils.getIntermediateInputStreamTask(tasktoprocess), true);
+				Utils.updateZookeeperTasksData(tasktoprocess, true);
 				logger.debug("Exiting ProcessMapperByBlocksLocation.processBlocksLocationRecord");
 				var timetaken = (System.currentTimeMillis() - starttime) / 1000.0;
 				logger.debug("Time taken to compute the Map Task is " + timetaken + " seconds");
