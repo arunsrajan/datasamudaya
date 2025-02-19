@@ -371,7 +371,9 @@ public class DataSamudayaConstants {
 
 	public static final String G1GC = "-XX:+UseG1GC";
 	public static final String ZGC = "-XX:+UseZGC";
-
+	public static final String SOFTHEAPXGCPERCENT = "gc.maxpercent";
+	public static final String SOFTHEAPXGCPERCENT_DEFAULT = "80";
+	
 	public static final String PROPLOADERCONFIGFOLDER = "1";
 	public static final String PROPLOADERCLASSPATH = "2";
 	public static final long GB = 1073741824;

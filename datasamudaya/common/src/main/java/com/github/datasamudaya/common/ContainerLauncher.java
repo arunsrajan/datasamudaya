@@ -83,6 +83,16 @@ public class ContainerLauncher {
 			argumentsForSpawn.add("-Djava.net.preferIPv4Stack=true");
 			//GC XGC or G1GC
 			argumentsForSpawn.add(cr.getGctype());
+			if(cr.getGctype().equals(DataSamudayaConstants.ZGC)) {
+				float maxpercent = Float.parseFloat(
+						DataSamudayaProperties.get()
+						.getProperty(DataSamudayaConstants.SOFTHEAPXGCPERCENT, 
+						DataSamudayaConstants.SOFTHEAPXGCPERCENT_DEFAULT))/100.0f;
+				argumentsForSpawn.add("-XX:SoftMaxHeapSize="+ (long)(cr.getMaxmemory()*maxpercent));
+				argumentsForSpawn.add("-XX:ZAllocationSpikeTolerance=1");
+				argumentsForSpawn.add("-XX:ZCollectionInterval=20");
+			}
+			
 			argumentsForSpawn.add("-D" + DataSamudayaConstants.TASKEXECUTOR_HOST + "=" + host);
 			argumentsForSpawn.add("-D" + DataSamudayaConstants.TASKEXECUTOR_PORT + "=" + port);
 			argumentsForSpawn.add("-D" + DataSamudayaConstants.CACHEDISKPATH + "=" + diskcache);
