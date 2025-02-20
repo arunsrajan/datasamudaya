@@ -613,10 +613,18 @@ public class ZookeeperOperations implements AutoCloseable {
 	public void deleteJob(String jobid) throws ZookeeperException {
 		try {
 			// Delete the node for the specified path
-			curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
+			if(curator.checkExists()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK
+							+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid) != null) {
+				curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.TASKEXECUTORSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
-			curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
+			}
+			if(curator.checkExists()
+					.forPath(DataSamudayaConstants.ROOTZNODEZK
+							+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid) != null) {
+				curator.delete().guaranteed().deletingChildrenIfNeeded().forPath(DataSamudayaConstants.ROOTZNODEZK
 					+ DataSamudayaConstants.TASKSZK + DataSamudayaConstants.FORWARD_SLASH + jobid);
+			}
 		} catch (Exception ex) {
 			throw new ZookeeperException(ZookeeperException.ZKEXCEPTION_MESSAGE, ex);
 		}

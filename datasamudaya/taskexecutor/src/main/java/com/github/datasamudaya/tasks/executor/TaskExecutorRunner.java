@@ -389,6 +389,12 @@ public class TaskExecutorRunner implements TaskExecutorRunnerMBean {
 					} else if (deserobj instanceof CleanupTaskActors cleanupactors) {
 						if (jobidentitytypekeymap.containsKey(cleanupactors.getJobid())) {
 							Utils.cleanupTaskActorFromSystem(actsystem, jobidentitytypekeymap.remove(cleanupactors.getJobid()), cleanupactors.getJobid());
+							for(String stageids:cleanupactors.getStageids()) {
+								jobidstageidjobstagemap.remove(cleanupactors.getJobid()+stageids);
+							}
+							for(String stageidtaskid:cleanupactors.getStageidtasks()) {
+								jobidstageidtaskidcompletedmap.remove(jobid+stageidtaskid);
+							}
 						}
 						return true;
 					} else if (deserobj instanceof Job job) {

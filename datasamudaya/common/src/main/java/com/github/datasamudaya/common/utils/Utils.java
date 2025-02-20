@@ -3721,7 +3721,7 @@ public class Utils {
 			String[] hpshardentitykey = extractAkkaActorHostPortShardIdEntityTypeKey(entity.getKey());
 			final EntityRef entityRef = ClusterSharding.get(actorsystem)
 					.entityRefFor(entity.getValue(), hpshardentitykey[2]);
-			entityRef.tell(EntityRefStop.STOP);;
+			entityRef.tell(EntityRefStop.STOP);
 		}
 		deleteJobDir(jobid);
 		actors.clear();
@@ -3744,7 +3744,7 @@ public class Utils {
 	 */
 	public static void deleteJobDir(String jobid) throws Exception {
 		File deletefolder = new File(System.getProperty(DataSamudayaConstants.TMPDIR)
-				+ DataSamudayaConstants.FORWARD_SLASH + jobid);
+				+ File.separatorChar + jobid);
 		if (deletefolder.exists()) {
 			FileUtils.deleteDirectory(deletefolder);
 		}

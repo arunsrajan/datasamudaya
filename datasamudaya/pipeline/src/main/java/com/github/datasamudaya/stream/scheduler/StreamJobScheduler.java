@@ -597,10 +597,7 @@ public class StreamJobScheduler {
 						&& job.getPipelineconfig().getStorage() != STORAGE.COLUMNARSQL) {
 					Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
 				}
-			}
-			if (zo != null) {
-				zo.close();
-			}
+			}			
 			if (!Objects.isNull(job.getAllstageshostport())) {
 				job.getAllstageshostport().clear();
 			}
@@ -609,20 +606,38 @@ public class StreamJobScheduler {
 			}
 			istaskcancelled.set(true);
 			jobping.shutdownNow();
-			if (nonNull(system)) {
-				system.terminate();
+			if (nonNull(system)) {				
 				Utils.cleanupTaskActorFromSystem(system, actorrefs, job.getId());
+				system.terminate();
 			}
 			if (pipelineconfig.getStorage() == STORAGE.COLUMNARSQL && CollectionUtils.isNotEmpty(taskexecutors)) {
-				for (String tehost :taskexecutors) {
-					Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId()), pipelineconfig.getTejobid());
+				List<String> stageids = new ArrayList<>();
+				List<String> stageidtaskids = new ArrayList<>();				
+				for(Stage stage:job.getTopostages()) {
+					stageids.add(stage.getId());
+				}
+				for(StreamPipelineTaskSubmitter spts:graph.vertexSet()) {
+					Task task = spts.getTask();
+					stageidtaskids.add(task.getStageid()+task.getTaskid());
+				}
+				for (String tehost :taskexecutors) {					
+					Utils.getResultObjectByInput(tehost, new CleanupTaskActors(job.getId(), stageids, stageidtaskids), pipelineconfig.getTejobid());
 				}
 				if (!pipelineconfig.getUseglobaltaskexecutors()) {
 					Utils.destroyContainers(job.getPipelineconfig().getUser(), job.getPipelineconfig().getTejobid());
 				}
+				zo.deleteJob(job.getId());
 			}
 			if(Boolean.TRUE.equals(isyarn) && nonNull(pipelineconfig.getTejobid()) && nonNull(pipelineconfig.getJar())) {
 				Utils.shutDownYARNContainer(pipelineconfig.getTejobid());
+			}
+			if(Boolean.TRUE.equals(islocal)) {
+				jobidstageidtaskidcompletedmap.clear();
+				jsidjsmap.clear();
+				zo.deleteJob(job.getId());
+			}
+			if (zo != null) {
+				zo.close();
 			}
 		}
 
