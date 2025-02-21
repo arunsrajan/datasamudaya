@@ -1,6 +1,8 @@
 package com.github.datasamudaya.common;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,4 +23,6 @@ public class CleanupTaskActors implements Serializable {
 	private static final long serialVersionUID = -5451274023710227938L;
 
 	private String jobid;
+	private List<String> stageids = new ArrayList<>();
+	private List<String> stageidtasks = new ArrayList<>();
 }
