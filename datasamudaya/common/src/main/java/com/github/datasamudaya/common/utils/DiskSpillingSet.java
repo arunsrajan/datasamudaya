@@ -229,7 +229,9 @@ public class DiskSpillingSet<T> extends AbstractSet<T> implements Serializable,A
 
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if ((isspilled || Utils.isMemoryUsageHigh(spillpercentage))
+			if ((isspilled 
+					|| Utils.isMemoryUsageLimitExceedsGraphLayoutSize(dataSet, spillpercentage)
+					|| Utils.isMemoryUsageHigh(spillpercentage))
 					&& CollectionUtils.isNotEmpty(dataSet)) {
 				filelock.acquire();
 				if (isNull(ostream)) {

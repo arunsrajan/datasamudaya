@@ -162,7 +162,9 @@ public class DiskSpillingContext<T, U> implements Context<T, U>, Serializable,Au
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
 			lock.acquire();
-			if ((isspilled || Utils.isMemoryUsageHigh(spillpercentage))
+			if ((isspilled 
+					|| Utils.isMemoryUsageLimitExceedsGraphLayoutSize(context, spillpercentage)
+					|| Utils.isMemoryUsageHigh(spillpercentage))
 					&& context.valuesSize() > 0) {
 				if (isNull(ostream)) {
 					ostream = new FileOutputStream(new File(diskfilepath), true);

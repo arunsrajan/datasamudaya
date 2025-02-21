@@ -148,6 +148,7 @@ import org.jooq.lambda.tuple.Tuple7;
 import org.jooq.lambda.tuple.Tuple8;
 import org.jooq.lambda.tuple.Tuple9;
 import org.objenesis.strategy.StdInstantiatorStrategy;
+import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.ollama.OllamaChatClient;
@@ -308,6 +309,20 @@ public class Utils {
         long maxMemory = runtime.maxMemory();
         double usagePercentage = (double) usedMemory / maxMemory;
         return usagePercentage > spillexceedthreshold; // 80% threshold
+    }
+	
+	/**
+	 * The function true when graph layout size exceeds memory usage threshold
+	 * @param objecttoinspect
+	 * @param spillexceedthreshold
+	 * @return true if graph layout size exceeds memory usage threshold else false
+	 */
+	public static boolean isMemoryUsageLimitExceedsGraphLayoutSize(Object objecttoinspect, double spillexceedthreshold) {
+		Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        long totalsizeobject = GraphLayout.parseInstance(objecttoinspect).totalSize();
+        double usagePercentage = (double) totalsizeobject / maxMemory;
+        return usagePercentage >= spillexceedthreshold;
     }
 
 	/**

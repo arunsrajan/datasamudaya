@@ -219,7 +219,10 @@ public class DiskSpillingList<T> extends AbstractList<T> implements Serializable
 
 	protected void spillToDiskIntermediate(boolean isfstoclose) {
 		try {
-			if ((isspilled || Utils.isMemoryUsageHigh(spillpercentage))
+			if ((isspilled 
+					|| Utils.isMemoryUsageLimitExceedsGraphLayoutSize(dataList, spillpercentage)
+					|| Utils.isMemoryUsageHigh(spillpercentage)
+					)
 					&& CollectionUtils.isNotEmpty(dataList)) {
 				filelock.acquire();
 				if (isNull(ostream)) {
