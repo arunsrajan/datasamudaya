@@ -192,7 +192,7 @@ public class SelectQueryExecutor {
 			AtomicBoolean isdistinct = new AtomicBoolean(false);
 			RelNode relnode = SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, selectquery, dbdefault,
 					isdistinct);
-			traverseRelNode(relnode, 0, out);
+			SQLUtils.traverseRelNode(relnode, 0, out);
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
@@ -205,57 +205,6 @@ public class SelectQueryExecutor {
 			}
 			out.println("Error in Query: " + selectquery);
 		}
-	}
-
-	/**
-	 * The method which traverses the optimized plan
-	 * @param relNode
-	 * @param depth
-	 */
-	public static void traverseRelNode(RelNode relNode, int depth, PrintWriter out) {
-		// Print information about the current node
-		printNodeInfo(relNode, depth, out);
-
-		// Traverse child nodes
-		List<RelNode> childNodes = relNode.getInputs();
-		for (RelNode child : childNodes) {
-			traverseRelNode(child, depth + 1, out);
-		}
-	}
-
-	/**
-	 * Prints the RelNode information with indent
-	 * @param relNode
-	 * @param depth
-	 * @param out
-	 */
-	private static void printNodeInfo(RelNode relNode, int depth, PrintWriter out) {
-		// Print information about the current node
-		out.println(getIndent(depth) + "Node ID: " + relNode.getId());
-		out.println(getIndent(depth) + "Node Description: " + getDescription(relNode));
-	}
-
-	/**
-	 * The function provides the indented plan based on depth
-	 * @param depth
-	 * @return indented plan based on depth
-	 */
-	private static String getIndent(int depth) {
-		// Create an indentation string based on the depth
-		StringBuilder indent = new StringBuilder();
-		for (int i = 0;i < depth;i++) {
-			indent.append("  ");
-		}
-		return indent.toString();
-	}
-
-	/**
-	 * The function returns the description of RelNode
-	 * @param relNode
-	 * @return description of relnode
-	 */
-	private static String getDescription(RelNode relNode) {
-		return relNode.toString();
 	}
 
 	/**

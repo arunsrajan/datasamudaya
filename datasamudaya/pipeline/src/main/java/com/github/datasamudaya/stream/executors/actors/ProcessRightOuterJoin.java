@@ -32,6 +32,7 @@ import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.functions.RightJoin;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
@@ -64,7 +65,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 	Task task;
 	boolean iscacheable;
 	ExecutorService executor;
-	RightOuterJoinPredicate rojp;
+	RightJoin rightjoin;
 	int terminatingsize;
 	int initialsize;
 	List<RecipientRef> pipelines;
@@ -84,16 +85,16 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 		return EntityTypeKey.create(Command.class, "ProcessRightOuterJoin-" + entityId);
 	}
 
-	public static Behavior<Command> create(String entityId, RightOuterJoinPredicate rojp, List<RecipientRef> pipelines, int terminatingsize,
+	public static Behavior<Command> create(String entityId, RightJoin rightjoin, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
-		return Behaviors.setup(context -> new ProcessRightOuterJoin(context, rojp, pipelines, terminatingsize,
+		return Behaviors.setup(context -> new ProcessRightOuterJoin(context, rightjoin, pipelines, terminatingsize,
 				jobidstageidtaskidcompletedmap, cache, task, es));
 	}
 
-	private ProcessRightOuterJoin(ActorContext<Command> context, RightOuterJoinPredicate rojp, List<RecipientRef> pipelines, int terminatingsize,
+	private ProcessRightOuterJoin(ActorContext<Command> context, RightJoin rightjoin, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
 		super(context);
-		this.rojp = rojp;
+		this.rightjoin = rightjoin;
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -189,7 +190,7 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 					}
 					try (var seq1 = Seq.seq(datastreamleft);
 							var seq2 = Seq.seq(datastreamright);
-							var join = seq1.rightOuterJoin(seq2, rojp)) {
+							var join = seq1.rightOuterJoin(seq2, rightjoin.getRojp())) {
 						join.forEach(diskspilllistinterm::add);
 						Stream datastreamleftfirstelem = diskspilllistintermleft.isSpilled()
 								? (Stream<Tuple2>) Utils.getStreamData(new FileInputStream(

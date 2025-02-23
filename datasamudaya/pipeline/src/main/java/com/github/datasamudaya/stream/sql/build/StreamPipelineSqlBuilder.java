@@ -12,7 +12,6 @@ import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 import org.apache.calcite.adapter.enumerable.EnumerableAggregate;
 import org.apache.calcite.adapter.enumerable.EnumerableAggregateBase;
@@ -27,6 +26,7 @@ import org.apache.calcite.adapter.enumerable.EnumerableTableScan;
 import org.apache.calcite.adapter.enumerable.EnumerableUnion;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -49,6 +49,7 @@ import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.utils.FieldCollatedSortedComparator;
 import com.github.datasamudaya.common.utils.ObjectArrayComparator;
+import com.github.datasamudaya.common.utils.sql.JoinKeysSQL;
 import com.github.datasamudaya.stream.PipelineException;
 import com.github.datasamudaya.stream.StreamPipeline;
 import com.github.datasamudaya.stream.sql.RequiredColumnsExtractor;
@@ -180,6 +181,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 		}
 
 		RelNode relnode = SQLUtils.validateSql(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
+		traverseRelNodeGatherJoin(relnode, 0);
 		RelNode optrelnodewithfilter = SQLUtils.getSQLFilter(tablecolumnsmap, tablecolumntypesmap, sql, db, isDistinct);
 		traverseRelNodeGatherFilter(optrelnodewithfilter, 0);
 		descendants.put(relnode, false);
@@ -193,8 +195,55 @@ public class StreamPipelineSqlBuilder implements Serializable {
 	private Map<String, Set<String>> requiredcolumnindex;
 
 	private final Stack<EnumerableFilter> enumerablefilterstack = new Stack<>();
+	private final Map<RelNode, Join> relnodejoinmap = new ConcurrentHashMap<>();
 	private final Map<String, EnumerableFilter> tablefiltermap = new ConcurrentHashMap<>();
+	private final Map<String, Join> tablejoinmap = new ConcurrentHashMap<>();
+	private final Map<RelNode, String> leftrightmap = new ConcurrentHashMap<>();
+	private final Map<String, String> leftrighttsmap = new ConcurrentHashMap<>();
+	private final Map<RelNode, List<Integer>> joinoutputkeysmap = new ConcurrentHashMap<>();
 
+	
+	protected void traverseRelNodeGatherJoin(RelNode child, int depth) {
+		// Traverse child nodes
+		if (child instanceof Join join) {
+			relnodejoinmap.put(join.getLeft(), join);
+			leftrightmap.put(join.getLeft(), "left");
+			if(join.getLeft() instanceof Join joininput) {
+				JoinKeysSQL joinkeys = SQLUtils.extractJoinKeys(join.getCondition(), join.getLeft().getRowType().getFieldCount());
+				joinoutputkeysmap.put(joininput, joinkeys.getLeftKeys());
+			}
+			relnodejoinmap.put(join.getRight(), join);
+			leftrightmap.put(join.getRight(), "right");
+			if(join.getRight() instanceof Join joininput) {
+				JoinKeysSQL joinkeys = SQLUtils.extractJoinKeys(join.getCondition(), join.getLeft().getRowType().getFieldCount());
+				joinoutputkeysmap.put(joininput, joinkeys.getRightKeys());
+			}
+		} else if (child instanceof EnumerableTableScan ets) {
+			if (CollectionUtils.isNotEmpty(enumerablefilterstack)) {
+				tablefiltermap.put(ets.getTable().getQualifiedName().get(1), enumerablefilterstack.pop());
+			}
+			if(nonNull(relnodejoinmap.get(ets))) {
+				tablejoinmap.put(ets.getTable().getQualifiedName().get(1), relnodejoinmap.get(ets));
+			}
+			if(nonNull(leftrightmap.get(child))) {
+				leftrighttsmap.put(ets.getTable().getQualifiedName().get(1), leftrightmap.get(child));
+			}
+		} else {
+			for(RelNode childs : child.getInputs()) {
+				if(nonNull(relnodejoinmap.get(child))) {
+					relnodejoinmap.put(childs, relnodejoinmap.get(child));
+				}
+				if(nonNull(leftrightmap.get(child))) {
+					leftrightmap.put(childs, leftrightmap.get(child));
+				}
+			}				
+		}
+		List<RelNode> childNodes = child.getInputs();
+		for (RelNode childNode : childNodes) {			
+			traverseRelNodeGatherJoin(childNode, depth + 1);
+		}
+	}
+	
 	/**
 	 * The method traverses RelNode and Obtain the 
 	 * @param relNode
@@ -250,10 +299,21 @@ public class StreamPipelineSqlBuilder implements Serializable {
 		if (relNode instanceof EnumerableTableScan ets) {
 			String table = ets.getTable().getQualifiedName().get(1);
 			EnumerableFilter filter = tablefiltermap.get(table);
+			Join join = tablejoinmap.get(table);
+			String leftorright = leftrighttsmap.get(table);
+			List<Integer> joinkeystable = null;
+			if(nonNull(join)) {
+				JoinKeysSQL joinkeys = SQLUtils.extractJoinKeys(join.getCondition(), join.getLeft().getRowType().getFieldCount());
+				if(leftorright.equals("left")) {
+					joinkeystable = joinkeys.getLeftKeys();
+				} else if(leftorright.equals("right")) {
+					joinkeystable = joinkeys.getRightKeys();
+				}
+			}
 			return fileformat.equals(DataSamudayaConstants.CSV) ? StreamPipeline.newCsvStreamHDFSSQL(hdfs, tablefoldermap.get(table), this.pc,
 					tablecolumnsmap.get(table).toArray(new String[0]),
 					tablecolumntypesmap.get(table), nonNull(requiredcolumnindex.get(table)) ? new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>(),
-					nonNull(filter) ? filter.getCondition() : null)
+					nonNull(filter) ? filter.getCondition() : null, joinkeystable)
 					: StreamPipeline.newJsonStreamHDFSSQL(hdfs, tablefoldermap.get(table), this.pc,
 					tablecolumnsmap.get(table).toArray(new String[0]),
 					tablecolumntypesmap.get(table), nonNull(requiredcolumnindex.get(table)) ? new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>());
@@ -293,17 +353,16 @@ public class StreamPipelineSqlBuilder implements Serializable {
 			StreamPipeline<Object[]> spjoin = (StreamPipeline<Object[]>) buildJoinPredicate((StreamPipeline<Object[]>) sp.get(0)
 			, (StreamPipeline<Object[]>) sp.get(1)
 			, ehj.getJoinType(),
-					ehj.getCondition()).map(new MapFunction<Tuple2<Object[], Object[]>, Object[]>() {
+					ehj.getCondition(), joinoutputkeysmap.get(ehj)).map(new MapFunction<Tuple2<Object[], Object[]>, Object[]>() {
 				private static final long serialVersionUID = -132962119666155193L;
 
 				@Override
 				public Object[] apply(Tuple2<Object[], Object[]> tup2) {
 
-					return new Object[]{concatenate(((Object[]) tup2.v1()[0]), ((Object[]) tup2.v2()[0])),
-							concatenate(((Object[]) tup2.v1()[1]), ((Object[]) tup2.v2()[1]))};
+					return new Object[]{SQLUtils.concatenate(((Object[]) tup2.v1()[0]), ((Object[]) tup2.v2()[0])),
+							SQLUtils.concatenate(((Object[]) tup2.v1()[1]), ((Object[]) tup2.v2()[1]))};
 				}
 			});
-			;
 			if (!SQLUtils.hasDescendants(relNode, descendants)) {
 				return spjoin.map(new MapFunction<Object[], Object[]>(){
 					private static final long serialVersionUID = 15264560692156277L;
@@ -318,14 +377,14 @@ public class StreamPipelineSqlBuilder implements Serializable {
 			StreamPipeline<Object[]> spjoin = (StreamPipeline<Object[]>) buildJoinPredicate((StreamPipeline<Object[]>) sp.get(0)
 			, (StreamPipeline<Object[]>) sp.get(1)
 			, enlj.getJoinType(),
-					enlj.getCondition()).map(new MapFunction<Tuple2<Object[], Object[]>, Object[]>() {
+					enlj.getCondition(), joinoutputkeysmap.get(enlj)).map(new MapFunction<Tuple2<Object[], Object[]>, Object[]>() {
 				private static final long serialVersionUID = 7234029084423998495L;
 
 				@Override
 				public Object[] apply(Tuple2<Object[], Object[]> tup2) {
 
-					return new Object[]{concatenate(((Object[]) tup2.v1()[0]), ((Object[]) tup2.v2()[0])),
-							concatenate(((Object[]) tup2.v1()[1]), ((Object[]) tup2.v2()[1]))};
+					return new Object[]{SQLUtils.concatenate(((Object[]) tup2.v1()[0]), ((Object[]) tup2.v2()[0])),
+							SQLUtils.concatenate(((Object[]) tup2.v1()[1]), ((Object[]) tup2.v2()[1]))};
 				}
 			});
 			;
@@ -652,19 +711,7 @@ public class StreamPipelineSqlBuilder implements Serializable {
 	}
 
 
-	/**
-	 * Merges two object array in to single
-	 * @param <T>
-	 * @param a
-	 * @param b
-	 * @return merged object
-	 */
-	public static <T> Object[] concatenate(T[] a, T[] b)
-	{
-		return Stream.of(a, b)
-				.flatMap(Stream::of)
-				.toArray();
-	}
+	
 
 	/**
 	 * Join for left, right and inner.
@@ -680,37 +727,44 @@ public class StreamPipelineSqlBuilder implements Serializable {
 	public static StreamPipeline<Tuple2<Object[], Object[]>> buildJoinPredicate(
 			StreamPipeline<Object[]> pipeline1, StreamPipeline<Object[]> pipeline2,
 			JoinRelType jointype,
-			RexNode expression
+			RexNode expression,
+			List<Integer> outputkeys
 	) throws PipelineException {
 		if (jointype == JoinRelType.INNER) {
-			return pipeline1.join(pipeline2, new JoinPredicate<Object[], Object[]>() {
+			JoinPredicate<Object[], Object[]> jp = new JoinPredicate<Object[], Object[]>() {
 				private static final long serialVersionUID = -1432723151946554217L;
 				RexNode expr = expression;
 
 				public boolean test(Object[] rowleft, Object[] rowright) {
 					return SQLUtils.evaluateExpression(expr, ((Object[]) rowleft[0]), ((Object[]) rowright[0]));
 				}
-			});
+			};
+			com.github.datasamudaya.common.functions.Join join = new com.github.datasamudaya.common.functions.Join(outputkeys, jp);
+			return pipeline1.join(pipeline2, join);
 		} else if (jointype == JoinRelType.LEFT) {
+			LeftOuterJoinPredicate<Object[], Object[]> lojp = new LeftOuterJoinPredicate<Object[], Object[]>() {
+				private static final long serialVersionUID = -9071237179844212655L;
+				RexNode expr = expression;
+
+				public boolean test(Object[] rowleft, Object[] rowright) {
+					return SQLUtils.evaluateExpression(expr, ((Object[]) rowleft[0]), ((Object[]) rowright[0]));
+				}
+			};
+			com.github.datasamudaya.common.functions.LeftJoin leftjoin = new com.github.datasamudaya.common.functions.LeftJoin(outputkeys, lojp);
 			return pipeline1.leftOuterjoin(pipeline2,
-					new LeftOuterJoinPredicate<Object[], Object[]>() {
-						private static final long serialVersionUID = -9071237179844212655L;
-						RexNode expr = expression;
-
-						public boolean test(Object[] rowleft, Object[] rowright) {
-							return SQLUtils.evaluateExpression(expr, ((Object[]) rowleft[0]), ((Object[]) rowright[0]));
-						}
-					});
+					leftjoin);
 		} else if (jointype == JoinRelType.RIGHT) {
-			return pipeline1.rightOuterjoin(pipeline2,
-					new RightOuterJoinPredicate<Object[], Object[]>() {
-						private static final long serialVersionUID = 7097332223096552391L;
-						RexNode expr = expression;
+			RightOuterJoinPredicate<Object[], Object[]> rojp = new RightOuterJoinPredicate<Object[], Object[]>() {
+				private static final long serialVersionUID = 7097332223096552391L;
+				RexNode expr = expression;
 
-						public boolean test(Object[] rowleft, Object[] rowright) {
-							return SQLUtils.evaluateExpression(expr, ((Object[]) rowleft[0]), ((Object[]) rowright[0]));
-						}
-					});
+				public boolean test(Object[] rowleft, Object[] rowright) {
+					return SQLUtils.evaluateExpression(expr, ((Object[]) rowleft[0]), ((Object[]) rowright[0]));
+				}
+			};
+			com.github.datasamudaya.common.functions.RightJoin rightjoin = new com.github.datasamudaya.common.functions.RightJoin(outputkeys, rojp);
+			return pipeline1.rightOuterjoin(pipeline2,
+					rightjoin);
 		} else if (jointype == JoinRelType.FULL) {
 			return pipeline1.fullJoin(pipeline2);
 		}

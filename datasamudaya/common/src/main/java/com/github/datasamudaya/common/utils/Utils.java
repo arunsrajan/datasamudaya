@@ -4303,5 +4303,145 @@ public class Utils {
 			log.error(DataSamudayaConstants.EMPTY, e);
 		}
 	}
+
+	/**
+	 * The function returns stream of entries.
+	 * @param diskspillmap
+	 * @return stream of entries
+	 */
+	public static Stream<Entry<List<Object>, List<Object[]>>> getStreamData(
+			DiskSpillingMap<List<Object>, Object[]> diskspillmap) {
+
+		try {
+			return StreamSupport.stream(new Spliterators.AbstractSpliterator<Entry<List<Object>, List<Object[]>>>(Long.MAX_VALUE,
+					Spliterator.IMMUTABLE | Spliterator.ORDERED | Spliterator.NONNULL) {
+				InputStream istream;
+				SnappyInputStream sisinternal;
+				Input inputinternal;
+				Collection<Entry<List<Object>, List<Object[]>>> intermdata = null;
+				Iterator<Entry<List<Object>, List<Object[]>>> iterator = null;
+				RemoteIteratorClient client = null;
+
+				public boolean tryAdvance(Consumer<? super Entry<List<Object>, List<Object[]>>> action) {
+					try {
+						if (diskspillmap.isSpilled()) {
+							if (isNull(diskspillmap.getTask().getHostport())
+									|| diskspillmap.getTask().getHostport().split(DataSamudayaConstants.UNDERSCORE)[0]
+									.equals(DataSamudayaProperties.get()
+											.getProperty(DataSamudayaConstants.TASKEXECUTOR_HOST))) {
+								if (isNull(istream)) {
+									istream = new FileInputStream(Utils.getLocalFilePathForTask(diskspillmap.getTask(),
+											diskspillmap.getAppendwithpath(), false,
+											false, false));
+									sisinternal = new SnappyInputStream(istream);
+									inputinternal = new Input(sisinternal);
+								}
+								if (isNull(intermdata) && inputinternal.available() > 0
+										|| inputinternal.available() > 0 && !iterator.hasNext()) {
+									intermdata = (Collection<Entry<List<Object>, List<Object[]>>>) Utils.getKryoInstance().readClassAndObject(inputinternal);
+									iterator = intermdata.iterator();
+								}
+
+							} else {
+								if (isNull(client)) {
+									client = new RemoteIteratorClient(diskspillmap.getTask(), diskspillmap.getAppendwithpath(),
+											false,
+											false,
+											false, null,
+											RequestType.MAP, IteratorType.DISKSPILLITERATOR, false, null);
+								}
+								if (isNull(iterator) && client.hasNext() || client.hasNext() && nonNull(iterator)
+										&& !iterator.hasNext()) {
+									List records = (List) Utils.convertBytesToObjectCompressed((byte[]) client.next(),
+											null);
+									iterator = records.iterator();
+								}
+							}
+						} else if (isNull(iterator)) {
+							if (CollectionUtils.isNotEmpty(diskspillmap.entrySet())) {
+								iterator = diskspillmap.entrySet().iterator();
+							} else {
+								iterator = new ConcurrentHashMap<List<Object>, List<Object[]>>().entrySet().iterator();
+							}
+						}
+						if (nonNull(iterator) && iterator.hasNext()) {
+							action.accept(iterator.next());
+						}
+						if (nonNull(inputinternal) && inputinternal.available() > 0 || nonNull(iterator) && iterator.hasNext()) {
+							return true;
+						}
+						log.debug("Stream Close {} {} {} {}", inputinternal, sisinternal, istream, client);
+						if (nonNull(inputinternal)) {
+							try {
+								inputinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if (nonNull(sisinternal)) {
+							try {
+								sisinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if (nonNull(istream)) {
+							try {
+								istream.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if (nonNull(client)) {
+							try {
+								client.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						log.debug("Stream Close {}", Utils.getLocalFilePathForTask(diskspillmap.getTask(),
+								diskspillmap.getAppendwithpath(), false,
+								false, false));
+						return false;
+					} catch (Throwable ex) {
+						log.error(DataSamudayaConstants.EMPTY, ex);
+						if (nonNull(inputinternal)) {
+							try {
+								inputinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if (nonNull(sisinternal)) {
+							try {
+								sisinternal.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if (nonNull(istream)) {
+							try {
+								istream.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+						if (nonNull(client)) {
+							try {
+								client.close();
+							} catch (Exception e) {
+								log.error(DataSamudayaConstants.EMPTY, e);
+							}
+						}
+					}
+					return false;
+				}
+			}, false);
+		} catch (Exception ex) {
+			log.error(DataSamudayaConstants.EMPTY, ex);
+		}
+		return null;
+	
+	}
 	
 }

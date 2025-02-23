@@ -7,12 +7,14 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.LinkedHashSet;
@@ -54,6 +56,7 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -121,12 +124,15 @@ import com.github.datasamudaya.common.functions.DistributedDistinct;
 import com.github.datasamudaya.common.functions.FullOuterJoin;
 import com.github.datasamudaya.common.functions.IntersectionFunction;
 import com.github.datasamudaya.common.functions.JoinPredicate;
+import com.github.datasamudaya.common.functions.LeftJoin;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
+import com.github.datasamudaya.common.functions.RightJoin;
 import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.UnionFunction;
 import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.common.utils.sql.JoinKeysSQL;
 import com.github.datasamudaya.common.utils.sql.Optimizer;
 import com.github.datasamudaya.common.utils.sql.SimpleSchema;
 import com.github.datasamudaya.common.utils.sql.SimpleTable;
@@ -2261,14 +2267,21 @@ public class SQLUtils {
 		}
 		RelNode relTree = optimizer.convert(sqlTree);
 		RuleSet rules = RuleSets.ofList(CoreRules.FILTER_TO_CALC, CoreRules.PROJECT_TO_CALC, CoreRules.FILTER_MERGE,
-				CoreRules.FILTER_CALC_MERGE, CoreRules.PROJECT_CALC_MERGE, CoreRules.FILTER_INTO_JOIN,
-				CoreRules.PROJECT_FILTER_VALUES_MERGE, EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
+				CoreRules.FILTER_CALC_MERGE, CoreRules.PROJECT_CALC_MERGE, CoreRules.AGGREGATE_PROJECT_MERGE,
+				CoreRules.AGGREGATE_JOIN_TRANSPOSE, CoreRules.AGGREGATE_PROJECT_MERGE,
+				CoreRules.PROJECT_AGGREGATE_MERGE, CoreRules.PROJECT_MERGE, CoreRules.FILTER_INTO_JOIN,
+				CoreRules.FILTER_PROJECT_TRANSPOSE, 
+				CoreRules.PROJECT_JOIN_TRANSPOSE,
+				CoreRules.JOIN_PROJECT_BOTH_TRANSPOSE,
+				EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
 				EnumerableRules.ENUMERABLE_PROJECT_RULE, EnumerableRules.ENUMERABLE_FILTER_RULE,
 				EnumerableRules.ENUMERABLE_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_SORT_RULE,
 				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_JOIN_RULE,
 				EnumerableRules.ENUMERABLE_UNION_RULE, EnumerableRules.ENUMERABLE_INTERSECT_RULE);
 
-		return optimizer.optimize(relTree, relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		RelNode relnode = optimizer.optimize(relTree, relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
+		traverseRelNode(relnode, 0, new PrintWriter(System.out, true));
+		return relnode;
 	}
 
 	/**
@@ -4149,7 +4162,7 @@ public class SQLUtils {
 					}
 					taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
-				} else if (js.getStage().getTasks().get(0) instanceof JoinPredicate joinpred) {
+				} else if (js.getStage().getTasks().get(0) instanceof com.github.datasamudaya.common.functions.Join join) {
 					EntityTypeKey<Command> entityKey = ProcessInnerJoin
 							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
 					if(taskactor.isTostartdummy()) {
@@ -4162,7 +4175,7 @@ public class SQLUtils {
 							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
 							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
 									.of(entityKey,
-											ctx -> ProcessInnerJoin.create(ctx.getEntityId(), joinpred, childactors,
+											ctx -> ProcessInnerJoin.create(ctx.getEntityId(), join, childactors,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
@@ -4171,7 +4184,7 @@ public class SQLUtils {
 						} else {
 							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
 									.of(entityKey,
-											ctx -> ProcessInnerJoin.create(ctx.getEntityId(), joinpred, null,
+											ctx -> ProcessInnerJoin.create(ctx.getEntityId(), join, null,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
@@ -4181,7 +4194,7 @@ public class SQLUtils {
 					}
 					taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
-				} else if (js.getStage().getTasks().get(0) instanceof RightOuterJoinPredicate rojoinpred) {
+				} else if (js.getStage().getTasks().get(0) instanceof RightJoin rightjoin) {
 					EntityTypeKey<Command> entityKey = ProcessRightOuterJoin
 							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
 					if(taskactor.isTostartdummy()) {
@@ -4194,7 +4207,7 @@ public class SQLUtils {
 							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
 							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
 									.of(entityKey,
-											ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rojoinpred, childactors,
+											ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rightjoin, childactors,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
@@ -4204,7 +4217,7 @@ public class SQLUtils {
 							log.debug("Creating Actor for task {} using system {}", taskactor.getTask(), system);
 							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
 									.of(entityKey,
-											ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rojoinpred, null,
+											ctx -> ProcessRightOuterJoin.create(ctx.getEntityId(), rightjoin, null,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
@@ -4214,7 +4227,7 @@ public class SQLUtils {
 					}
 					taskactor.getTask().setActorselection(getEntityUrl(hostport, shardid, entityKey.name()));
 					return taskactor.getTask();
-				} else if (js.getStage().getTasks().get(0) instanceof LeftOuterJoinPredicate lojoinpred) {
+				} else if (js.getStage().getTasks().get(0) instanceof LeftJoin leftjoin) {
 					EntityTypeKey<Command> entityKey = ProcessLeftOuterJoin
 							.createTypeKey(jobstageid + taskactor.getTask().getTaskid());					
 					if(taskactor.isTostartdummy()) {
@@ -4227,7 +4240,7 @@ public class SQLUtils {
 							getChildActors(system, clustersharding, childactors, eref, taskactor.getChildtaskactors(), hostport, shardid);
 							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
 									.of(entityKey,
-											ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), lojoinpred, childactors,
+											ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), leftjoin, childactors,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
@@ -4236,7 +4249,7 @@ public class SQLUtils {
 						} else {
 							ActorRef<ShardingEnvelope<Command>> shardRegion = ClusterSharding.get(system).init(Entity
 									.of(entityKey,
-											ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), lojoinpred, null,
+											ctx -> ProcessLeftOuterJoin.create(ctx.getEntityId(), leftjoin, null,
 													taskactor.getTerminatingparentcount(), jobidstageidtaskidcompletedmap,
 													inmemorycache, taskactor.getTask(), fjpool))
 									.withAllocationStrategy(
@@ -4491,4 +4504,122 @@ public class SQLUtils {
 		client.setShardLocation(shardid, new Address(DataSamudayaConstants.AKKA_URL_SCHEME,
 				DataSamudayaConstants.ACTORUSERNAME, hp[0], Integer.parseInt(hp[1])));
 	}
+	
+	/**
+	 * The function extracts join keys for left and right table for join condition
+	 * @param condition
+	 * @param leftFieldCount
+	 * @return JoinKeysSQL object 
+	 */
+	public static JoinKeysSQL extractJoinKeys(RexNode condition, int leftFieldCount) {
+		JoinKeysSQL joinKeys = new JoinKeysSQL();
+        condition.accept(new RexVisitorImpl<Void>(true) {
+            @Override
+            public Void visitCall(RexCall call) {
+                if (call.getKind() == SqlKind.EQUALS) {
+                    // Check if the equality condition is between two input references
+                    RexNode leftOperand = call.getOperands().get(0);
+                    RexNode rightOperand = call.getOperands().get(1);
+
+                    if (leftOperand instanceof RexInputRef && rightOperand instanceof RexInputRef) {
+                        int leftIndex = ((RexInputRef) leftOperand).getIndex();
+                        int rightIndex = ((RexInputRef) rightOperand).getIndex();
+
+                        // Determine if the left and right indices belong to the left and right inputs
+                        if (leftIndex < leftFieldCount && rightIndex >= leftFieldCount) {
+                            // Left key is from the left input, right key is from the right input
+                            joinKeys.getLeftKeys().add(leftIndex);
+                            joinKeys.getRightKeys().add(rightIndex - leftFieldCount);
+                        } else if (rightIndex < leftFieldCount && leftIndex >= leftFieldCount) {
+                            // Left key is from the right input, right key is from the left input
+                            joinKeys.getLeftKeys().add(rightIndex);
+                            joinKeys.getRightKeys().add(leftIndex - leftFieldCount);
+                        }
+                    }
+                }
+                return super.visitCall(call);
+            }
+        });        
+        return joinKeys;
+    }
+	
+	/**
+	 * The function returns value of join keys from object array
+	 * @param objarr
+	 * @param joinkey
+	 * @return the value of join keys
+	 */
+	public static Object[] extractMapKeysFromJoinKeys(Object[] objarr, List<Integer> joinkey) {		
+		Object[] joinKeysArray = new Object[joinkey.size()];
+		for (int i = 0; i < joinkey.size(); i++) {
+			joinKeysArray[i] = objarr[joinkey.get(i)];
+		}
+		return joinKeysArray;
+	}
+	
+	/**
+	 * Merges two object array in to single
+	 * @param <T>
+	 * @param a
+	 * @param b
+	 * @return merged object
+	 */
+	public static <T> Object[] concatenate(T[] a, T[] b)
+	{
+		return Stream.of(a, b)
+				.flatMap(Stream::of)
+				.toArray();
+	}
+	
+	/**
+	 * The method which traverses the optimized plan
+	 * @param relNode
+	 * @param depth
+	 */
+	public static void traverseRelNode(RelNode relNode, int depth, PrintWriter out) {
+		// Print information about the current node
+		printNodeInfo(relNode, depth, out);
+
+		// Traverse child nodes
+		List<RelNode> childNodes = relNode.getInputs();
+		for (RelNode child : childNodes) {
+			traverseRelNode(child, depth + 1, out);
+		}
+	}
+	
+	/**
+	 * Prints the RelNode information with indent
+	 * @param relNode
+	 * @param depth
+	 * @param out
+	 */
+	private static void printNodeInfo(RelNode relNode, int depth, PrintWriter out) {
+		// Print information about the current node
+		out.println(getIndent(depth) + "Node ID: " + relNode.getId());
+		out.println(getIndent(depth) + "Node Description: " + getDescription(relNode));
+	}
+	
+	/**
+	 * The function provides the indented plan based on depth
+	 * @param depth
+	 * @return indented plan based on depth
+	 */
+	private static String getIndent(int depth) {
+		// Create an indentation string based on the depth
+		StringBuilder indent = new StringBuilder();
+		for (int i = 0;i < depth;i++) {
+			indent.append("  ");
+		}
+		return indent.toString();
+	}
+
+	/**
+	 * The function returns the description of RelNode
+	 * @param relNode
+	 * @return description of relnode
+	 */
+	private static String getDescription(RelNode relNode) {
+		return relNode.toString();
+	}
+	
 }

@@ -3252,11 +3252,12 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 		String statement = """
 				SELECT ijres.DayofMonth,ijres.MonthOfYear,ijres.UniqueCarrier,ijres.Code FROM (SELECT airline.DayofMonth,airline.MonthOfYear,airline.UniqueCarrier,carriers.Code \
 				FROM airline inner join carriers on airline.UniqueCarrier = carriers.Code WHERE 8 = airline.DayofMonth and 12= airline.MonthOfYear) ijres inner \
-				join carriers on ijres.UniqueCarrier = carriers.Code\
+				join carriers1 on ijres.UniqueCarrier = carriers1.Code\
 				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
 				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
+				.add(carriers, "carriers1", carrierheader, carrierheadertypes).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		long totalrecords = 0;
@@ -3562,7 +3563,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 				 inner join airports on airports.iata = airline.Origin \
 				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
-				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+				.add(airline1987, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -3575,7 +3576,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 				log.info(Arrays.toString(rec));
 			}
 		}
-		assertEquals(46360, recordcount);
+		assertEquals(500, recordcount);
 		log.info("In testRequiredColumnsJoinTwoTables() method Exit");
 	}
 
@@ -3758,7 +3759,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 				 inner join airports on airports.iata = airline.Origin \
 				""";
 		StreamPipelineSql spsql = StreamPipelineSqlBuilder.newBuilder()
-				.add(airlinesamplesql, "airline", airlineheader, airlineheadertypes)
+				.add(airline1987, "airline", airlineheader, airlineheadertypes)
 				.add(carriers, "carriers", carrierheader, carrierheadertypes)
 				.add(airportssample, "airports", airportsheader, airportstype).setHdfs(hdfsfilepath)
 				.setDb(DataSamudayaConstants.SQLMETASTORE_DB).setPipelineConfig(pipelineconfig)
@@ -3771,7 +3772,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 				log.info(Arrays.toString(rec));
 			}
 		}
-		assertEquals(46360, recordcount);
+		assertEquals(500, recordcount);
 		log.info("In testRequiredColumnsJoinTwoTablesCount() method Exit");
 	}
 

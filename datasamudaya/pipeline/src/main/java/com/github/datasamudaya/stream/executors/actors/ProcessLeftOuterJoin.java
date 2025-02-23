@@ -32,6 +32,7 @@ import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
+import com.github.datasamudaya.common.functions.LeftJoin;
 import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
 import com.github.datasamudaya.common.utils.Utils;
@@ -63,7 +64,7 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 	Task task;
 	boolean iscacheable;
 	ExecutorService executor;
-	LeftOuterJoinPredicate lojp;
+	LeftJoin leftjoin;
 	int terminatingsize;
 	int initialsize;
 	List<RecipientRef> pipelines;
@@ -83,16 +84,16 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 		return EntityTypeKey.create(Command.class, "ProcessLeftOuterJoin-" + entityId);
 	}
 
-	public static Behavior<Command> create(String entityId, LeftOuterJoinPredicate lojp, List<RecipientRef> pipelines, int terminatingsize,
+	public static Behavior<Command> create(String entityId, LeftJoin leftjoin, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
-		return Behaviors.setup(context -> new ProcessLeftOuterJoin(context, lojp, pipelines, terminatingsize,
+		return Behaviors.setup(context -> new ProcessLeftOuterJoin(context, leftjoin, pipelines, terminatingsize,
 				jobidstageidtaskidcompletedmap, cache, task, es));
 	}
 
-	private ProcessLeftOuterJoin(ActorContext<Command> context, LeftOuterJoinPredicate lojp, List<RecipientRef> pipelines, int terminatingsize,
+	private ProcessLeftOuterJoin(ActorContext<Command> context, LeftJoin leftjoin, List<RecipientRef> pipelines, int terminatingsize,
 			Map<String, Boolean> jobidstageidtaskidcompletedmap, Cache cache, Task task, ExecutorService es) {
 		super(context);
-		this.lojp = lojp;
+		this.leftjoin = leftjoin;
 		this.pipelines = pipelines;
 		this.terminatingsize = terminatingsize;
 		this.jobidstageidtaskidcompletedmap = jobidstageidtaskidcompletedmap;
@@ -182,7 +183,7 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 			CompletableFuture.supplyAsync(() -> {
 				try (var seq1 = Seq.seq(datastreamleft);
 						var seq2 = Seq.seq(datastreamright);
-						var join = seq1.leftOuterJoin(seq2, lojp)) {
+						var join = seq1.leftOuterJoin(seq2, leftjoin.getLojp())) {
 					Address address = getContext().getSystem().address();
 					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
 					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);

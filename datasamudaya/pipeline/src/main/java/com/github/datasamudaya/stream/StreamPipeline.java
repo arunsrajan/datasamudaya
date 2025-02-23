@@ -185,11 +185,11 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 
 	public static CsvStream<Map<String, Object>> newCsvStreamHDFSSQL(String hdfspath, String folder,
 			PipelineConfig pipelineconfig, String[] header, List<SqlTypeName> types, List<String> requiredcolumns,
-			RexNode filter) throws PipelineException {
+			RexNode filter, List<Integer> joinkeys) throws PipelineException {
 		pipelineconfig.setStorage(STORAGE.COLUMNARSQL);
 		StreamPipeline<String> pipeline = new StreamPipeline<String>(hdfspath, folder, pipelineconfig);
 		pipeline.tasks.add(new Dummy());
-		return pipeline.csvWithHeader(header, types, requiredcolumns, filter);
+		return pipeline.csvWithHeader(header, types, requiredcolumns, filter, joinkeys);
 
 	}
 
@@ -245,8 +245,8 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @return CsvStream object.
 	 */
 	private CsvStream<Map<String, Object>> csvWithHeader(String[] header, List<SqlTypeName> columntypes,
-			List<String> columns, RexNode filter) {
-		return new CsvStream<>(this, new CsvOptionsSQL(header, columntypes, columns, filter));
+			List<String> columns, RexNode filter, List<Integer> joinkeys) {
+		return new CsvStream<>(this, new CsvOptionsSQL(header, columntypes, columns, filter, joinkeys));
 	}
 
 	/**
@@ -428,6 +428,26 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		var sp = new StreamPipeline(this, mappair, conditionrightouterjoin);
 		return sp;
 	}
+	
+	/**
+	 * StreamPipeline accepts the right outer join function.
+	 * @param <I2>
+	 * @param mappair
+	 * @param rightjoin
+	 * @return  StreamPipeline object.
+	 * @throws PipelineException
+	 */
+	public <I2> StreamPipeline<Tuple2<I1, I2>> rightOuterjoin(StreamPipeline<? extends I2> mappair,
+			RightJoin rightjoin) throws PipelineException {
+		if (Objects.isNull(mappair)) {
+			throw new PipelineException(PipelineConstants.RIGHTOUTERJOIN);
+		}
+		if (Objects.isNull(rightjoin)) {
+			throw new PipelineException(PipelineConstants.RIGHTOUTERJOINCONDITION);
+		}
+		var sp = new StreamPipeline(this, mappair, rightjoin);
+		return sp;
+	}
 
 	/**
 	 * StreamPipeline accepts the left outer join function.
@@ -448,6 +468,26 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 		StreamPipeline<Tuple2<I1, I2>> sp = new StreamPipeline(this, mappair, conditionleftouterjoin);
 		return sp;
 	}
+	
+	/**
+	 * StreamPipeline accepts the left outer join function.
+	 * @param <I2>
+	 * @param mappair
+	 * @param loj
+	 * @return StreamPipeline object.
+	 * @throws PipelineException
+	 */
+	public <I2> StreamPipeline<Tuple2<I1, I2>> leftOuterjoin(StreamPipeline<I2> mappair,
+			LeftJoin loj) throws PipelineException {
+		if (Objects.isNull(mappair)) {
+			throw new PipelineException(PipelineConstants.LEFTOUTERJOIN);
+		}
+		if (Objects.isNull(loj)) {
+			throw new PipelineException(PipelineConstants.LEFTOUTERJOINCONDITION);
+		}
+		StreamPipeline<Tuple2<I1, I2>> sp = new StreamPipeline(this, mappair, loj);
+		return sp;
+	}
 
 	/**
 	 * StreamPipeline accepts the inner join function.
@@ -458,6 +498,26 @@ public sealed class StreamPipeline<I1> extends AbstractPipeline permits CsvStrea
 	 * @throws PipelineException
 	 */
 	public <I2> StreamPipeline<Tuple2<I1, I2>> join(StreamPipeline<I2> mappair, JoinPredicate<I1, I2> innerjoin)
+			throws PipelineException {
+		if (Objects.isNull(mappair)) {
+			throw new PipelineException(PipelineConstants.INNERJOIN);
+		}
+		if (Objects.isNull(innerjoin)) {
+			throw new PipelineException(PipelineConstants.INNERJOINCONDITION);
+		}
+		StreamPipeline<Tuple2<I1, I2>> sp = new StreamPipeline(this, mappair, innerjoin);
+		return sp;
+	}
+	
+	/**
+	 * StreamPipeline accepts the inner join function.
+	 * @param <I2>
+	 * @param mappair
+	 * @param innerjoin
+	 * @return streampipeline object
+	 * @throws PipelineException
+	 */
+	public <I2> StreamPipeline<Tuple2<I1, I2>> join(StreamPipeline<I2> mappair, Join innerjoin)
 			throws PipelineException {
 		if (Objects.isNull(mappair)) {
 			throw new PipelineException(PipelineConstants.INNERJOIN);

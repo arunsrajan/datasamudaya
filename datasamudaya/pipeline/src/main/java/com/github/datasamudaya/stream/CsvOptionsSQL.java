@@ -14,13 +14,15 @@ import lombok.Setter;
 public class CsvOptionsSQL extends CsvOptions {
 	private static final long serialVersionUID = -5592994943064203479L;
 
-	public CsvOptionsSQL(String[] header, List<SqlTypeName> types, List<String> requiredcolumns, RexNode filter) {
+	public CsvOptionsSQL(String[] header, List<SqlTypeName> types, List<String> requiredcolumns, RexNode filter, List<Integer> joinkeys) {
 		super(header);
 		this.types.addAll(types);
 		this.requiredcolumns.addAll(requiredcolumns);
 		this.filter = filter;
+		this.joinkeys = joinkeys;
 	}
 	List<SqlTypeName> types = new ArrayList<>();
 	List<String> requiredcolumns = new ArrayList<>();
 	RexNode filter;
+	private final List<Integer> joinkeys;
 }

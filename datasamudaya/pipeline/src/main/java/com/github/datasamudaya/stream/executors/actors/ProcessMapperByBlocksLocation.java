@@ -21,7 +21,6 @@ import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
@@ -34,7 +33,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Logger;
 import org.ehcache.Cache;
 import org.jooq.lambda.tuple.Tuple2;
 import org.json.simple.JSONObject;
@@ -58,6 +56,7 @@ import com.github.datasamudaya.common.PipelineConstants;
 import com.github.datasamudaya.common.ShuffleBlock;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
+import com.github.datasamudaya.common.utils.DiskSpillingMap;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
 import com.github.datasamudaya.stream.JsonSQL;
@@ -190,6 +189,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 		final AtomicBoolean isfilterexist = new AtomicBoolean(false);
 		final AtomicBoolean toskipartition;
 		RexNode filter;
+		final List<Integer> joinkeys;
 		final boolean left = isNull(tasktoprocess.joinpos) ? false
 				: nonNull(tasktoprocess.joinpos) && "left".equals(tasktoprocess.joinpos) ? true : false;
 		final boolean right = isNull(tasktoprocess.joinpos) ? false
@@ -208,6 +208,7 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 						headers = cosql.getHeader();
 						iscsv = true;
 						filter = cosql.getFilter();
+						joinkeys = cosql.getJoinkeys();
 						String blkey = Utils.getBlocksLocation(blockslocation);
 						var toskippartitionoptional = nonNull(filter) && nonNull(blockspartitionfilterskipmap.get(blkey)) ? blockspartitionfilterskipmap
 								.get(blkey)
@@ -241,11 +242,13 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 						toskipartition = new AtomicBoolean(false);
 						isfilterexist.set(true);
 						filter = null;
+						joinkeys = null;
 					} else {
 						headers = null;
 						toskipartition = new AtomicBoolean(false);
 						isfilterexist.set(true);
 						filter = null;
+						joinkeys = null;
 					}
 					byte[] yosegibytes = new byte[1];
 					final List<Integer> oco = originalcolsorder.parallelStream().map(Integer::parseInt).sorted()
@@ -395,20 +398,35 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 					Address address = getContext().getSystem().address();
 					String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
 					String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
-					logger.debug("Child Actors pipeline Process Started with actors {} with left {} right {} Task {}..." + blr.getChildactors() + left + right + getIntermediateDataFSFilePath(tasktoprocess));
-					DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
-							diskspillpercentage, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
-					if(!diskspilllist.getTask().getHostport().equals(tehp)) {
-						diskspilllist.getTask().setHostport(tehp);
+					if(nonNull(joinkeys)) {
+						DiskSpillingMap<List<Object>, List<Object[]>> results = (DiskSpillingMap) ((Stream<Object[]>) streammap).collect(Collectors.groupingBy(
+								(Object[] objarr) -> 
+								Arrays.asList(SQLUtils.extractMapKeysFromJoinKeys((Object[])objarr[0], joinkeys)), ()->new DiskSpillingMap<>(tasktoprocess, ""),
+								Collectors.mapping(objarr -> objarr,Collectors.toCollection(Vector::new))));
+						if(results.isSpilled()) {
+							results.close();
+						}
+						blr.getChildactors().stream().forEach(
+								action -> action.tell(new OutputObject(results, left, right, DiskSpillingMap.class)));
+						logger.debug("Results For Join {}" + results);
 					}
-					((Stream) streammap).forEach(diskspilllist::add);
-					if (diskspilllist.isSpilled()) {
-						diskspilllist.close();
+					else {
+						logger.debug("Child Actors pipeline Process Started with actors {} with left {} right {} Task {}..." + blr.getChildactors() + left + right + getIntermediateDataFSFilePath(tasktoprocess));
+						DiskSpillingList diskspilllist = new DiskSpillingList(tasktoprocess,
+								diskspillpercentage, DataSamudayaConstants.EMPTY, false, left, right, null, null, 0);
+						if(!diskspilllist.getTask().getHostport().equals(tehp)) {
+							diskspilllist.getTask().setHostport(tehp);
+						}
+						((Stream) streammap).forEach(diskspilllist::add);
+						if (diskspilllist.isSpilled()) {
+							diskspilllist.close();
+						}
+						blr.getChildactors().stream().forEach(
+								action -> action.tell(new OutputObject(diskspilllist, left, right, null)));
+						blr.getChildactors().stream().forEach(
+								action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class)));
 					}
-					blr.getChildactors().stream().forEach(
-							action -> action.tell(new OutputObject(diskspilllist, left, right, null)));
-					blr.getChildactors().stream().forEach(
-							action -> action.tell(new OutputObject(new Dummy(), left, right, Dummy.class)));
+					
 					logger.debug("Child Actors pipeline Process Ended ...");
 				} else {
 					logger.debug("Processing Mapper Task In Writing To Cache Started ...");

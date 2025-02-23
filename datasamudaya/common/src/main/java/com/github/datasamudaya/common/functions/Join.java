@@ -16,9 +16,22 @@
 package com.github.datasamudaya.common.functions;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Join implements Serializable {
 
 	private static final long serialVersionUID = 6211485298329706929L;
-
+	private List<Integer> joinkeys = new ArrayList<>();
+	private JoinPredicate jp;
+	
 }

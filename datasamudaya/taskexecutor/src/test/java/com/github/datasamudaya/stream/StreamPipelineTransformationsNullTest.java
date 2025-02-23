@@ -24,6 +24,9 @@ import org.junit.Test;
 
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.PipelineConstants;
+import com.github.datasamudaya.common.functions.JoinPredicate;
+import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 
 public class StreamPipelineTransformationsNullTest extends StreamPipelineBaseTestCommon {
 
@@ -215,7 +218,7 @@ public class StreamPipelineTransformationsNullTest extends StreamPipelineBaseTes
 		try {
 			StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesample,
 					pipelineconfig);
-			datastream1.leftOuterjoin(datastream1, null).collect(toexecute, null);
+			datastream1.leftOuterjoin(datastream1, (LeftOuterJoinPredicate)null).collect(toexecute, null);
 		} catch (Exception ex) {
 			assertEquals(PipelineConstants.LEFTOUTERJOINCONDITION, ex.getMessage());
 		}
@@ -249,7 +252,7 @@ public class StreamPipelineTransformationsNullTest extends StreamPipelineBaseTes
 		try {
 			StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
 					pipelineconfig);
-			datastream1.join(datastream1, null).collect(toexecute, null);
+			datastream1.join(datastream1, (JoinPredicate)null).collect(toexecute, null);
 		} catch (Exception ex) {
 			assertEquals(PipelineConstants.INNERJOINCONDITION, ex.getMessage());
 		}
@@ -283,7 +286,7 @@ public class StreamPipelineTransformationsNullTest extends StreamPipelineBaseTes
 		try {
 			StreamPipeline<String> datastream1 = StreamPipeline.newStreamHDFS(hdfsfilepath, airlinesamplejoin,
 					pipelineconfig);
-			datastream1.rightOuterjoin(datastream1, null).collect(toexecute, null);
+			datastream1.rightOuterjoin(datastream1, (RightOuterJoinPredicate)null).collect(toexecute, null);
 		} catch (Exception ex) {
 			assertEquals(PipelineConstants.RIGHTOUTERJOINCONDITION, ex.getMessage());
 		}
