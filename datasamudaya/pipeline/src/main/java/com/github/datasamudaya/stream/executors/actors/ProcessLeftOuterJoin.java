@@ -6,12 +6,17 @@ import static java.util.Objects.nonNull;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -28,14 +33,17 @@ import com.github.datasamudaya.common.Command;
 import com.github.datasamudaya.common.DataSamudayaAkkaNodesTaskExecutor;
 import com.github.datasamudaya.common.DataSamudayaConstants;
 import com.github.datasamudaya.common.DataSamudayaProperties;
+import com.github.datasamudaya.common.Dummy;
 import com.github.datasamudaya.common.EntityRefStop;
 import com.github.datasamudaya.common.JobStage;
 import com.github.datasamudaya.common.OutputObject;
 import com.github.datasamudaya.common.Task;
 import com.github.datasamudaya.common.functions.LeftJoin;
-import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
+import com.github.datasamudaya.common.functions.MapFunction;
 import com.github.datasamudaya.common.utils.DiskSpillingList;
+import com.github.datasamudaya.common.utils.DiskSpillingMap;
 import com.github.datasamudaya.common.utils.Utils;
+import com.github.datasamudaya.stream.utils.SQLUtils;
 
 import akka.actor.Address;
 import akka.actor.typed.Behavior;
@@ -44,7 +52,6 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
-import akka.cluster.sharding.typed.javadsl.EntityRef;
 import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 
 /**
@@ -73,6 +80,9 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 	OutputObject left;
 	OutputObject right;
 	DiskSpillingList diskspilllist;
+	DiskSpillingMap diskspillmapinterm;
+	DiskSpillingMap<List<Object>,Object[]> diskspillmapintermleft;
+	DiskSpillingMap<List<Object>,Object[]> diskspillmapintermright;
 	DiskSpillingList diskspilllistinterm;
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;
@@ -122,7 +132,9 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 	private Behavior<Command> processLeftOuterJoin(OutputObject oo) throws Exception {
 		log.debug("ProcessLeftOuterJoin {} {} {}", oo.getValue().getClass(), oo.isLeft(), oo.isRight());
 		if (oo.isLeft()) {
-			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
+			if (nonNull(oo.getValue()) && (oo.getValue() instanceof DiskSpillingMap dsm)) {
+				this.diskspillmapintermleft = dsm;
+			} else if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
 				Address address = getContext().getSystem().address();
 				String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
@@ -139,7 +151,9 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 				return null;}, es).get();
 			}
 		} else if (oo.isRight()) {
-			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
+			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingMap dsm) {
+				this.diskspillmapintermright = dsm;
+			} else if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
 				diskspilllistintermright = new DiskSpillingList(task, diskspillpercentage, null, true, false, true, null, null, 0);
 				Address address = getContext().getSystem().address();
 				String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
@@ -273,6 +287,139 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 				}
 				return null;
 			}, es).get();
+		}
+		else if (nonNull(diskspillmapintermleft) && nonNull(diskspillmapintermright)
+				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
+				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
+			log.debug("Left Outer Join Task {} from hostport {}", task, task.hostport);
+			final boolean leftvalue = isNull(task.joinpos) ? false
+					: nonNull(task.joinpos) && "left".equals(task.joinpos) ? true : false;
+			final boolean rightvalue = isNull(task.joinpos) ? false
+					: nonNull(task.joinpos) && "right".equals(task.joinpos) ? true : false;			
+			try {
+				Address address = getContext().getSystem().address();
+				String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+				String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+				if(!diskspilllist.getTask().getHostport().equals(tehp)) {
+					diskspilllist.getTask().setHostport(tehp);
+				}
+				CompletableFuture.supplyAsync(() -> {
+					try {						
+						Stream<Tuple2<Object[], Object[]>> streamresult = null;
+						Stream datastreamrightfirstelem = diskspillmapintermright.isSpilled()
+								? (Stream) Utils.getStreamData(diskspillmapintermright)
+								: diskspillmapintermright.entrySet().stream();
+						Optional optionalfirstelement = datastreamrightfirstelem.findFirst();
+						Object[][] nullobjarr;
+						if (optionalfirstelement.isPresent()) {
+							Entry<List<Object>, List<Object[]>> origobjarray = (Entry<List<Object>, List<Object[]>>) optionalfirstelement.get();
+							nullobjarr = new Object[2][((Object[]) origobjarray.getValue().get(0)[0]).length];
+							for (int numvalues = 0; numvalues < nullobjarr[0].length; numvalues++) {
+								nullobjarr[1][numvalues] = true;
+							}
+						} else {
+							nullobjarr = new Object[2][1];
+							for (int numvalues = 0; numvalues < nullobjarr[0].length; numvalues++) {
+								nullobjarr[1][numvalues] = true;
+							}
+						}
+						datastreamrightfirstelem.close();
+						streamresult = diskspillmapintermleft.entrySet().stream()
+			            .flatMap(entryleft -> {
+			                List<Object[]> objectsright = diskspillmapintermright.getOrDefault(entryleft.getKey(), Collections.emptyList());
+			                if(CollectionUtils.isNotEmpty(objectsright)) {
+			                	List<Object[]> leftvalueobjarr = (List<Object[]>) entryleft.getValue();
+								Seq seq1 = Seq.seq(leftvalueobjarr.stream());
+								Seq seq2 = Seq.seq(objectsright.stream());
+								Seq leftjoinseq = seq1.leftOuterJoin(seq2, leftjoin.getLojp());
+								return leftjoinseq.stream();
+			                }
+			                Seq seq1 = Seq.seq(entryleft.getValue().stream());
+							Seq seq2 = Seq.seq(objectsright.stream());
+							Seq leftjoinseq = seq1.leftOuterJoin(seq2, leftjoin.getLojp());
+							return leftjoinseq.stream();
+			            });			            
+						final DiskSpillingMap mapdownstream;
+						if(CollectionUtils.isNotEmpty(leftjoin.getJoinkeys())) {
+							mapdownstream = streamresult.map(new MapFunction<Tuple2<Object[], Object[]>, Object[]>() {
+								private static final long serialVersionUID = 7259968444353464945L;
+
+								@Override
+								public Object[] apply(Tuple2<Object[], Object[]> tup2) {
+									Object[] rec1 = (Object[]) tup2.v1;
+									Object[] rec2 = (Object[]) tup2.v2;
+									if (rec2 == null) {
+										return new Object[]{SQLUtils.concatenate(((Object[]) tup2.v1()[0]), nullobjarr[0]),
+												SQLUtils.concatenate(((Object[]) tup2.v1()[1]), nullobjarr[1])};
+									}
+									return new Object[]{SQLUtils.concatenate(((Object[]) tup2.v1()[0]), ((Object[]) tup2.v2()[0])),
+											SQLUtils.concatenate(((Object[]) tup2.v1()[1]), ((Object[]) tup2.v2()[1]))};
+								}
+							}).collect(
+									Collectors.groupingBy(
+									(Object[] objarr) -> 
+									Arrays.asList(SQLUtils.extractMapKeysFromJoinKeys((Object[])objarr[0], leftjoin.getJoinkeys())), ()->new DiskSpillingMap<>(task, "interm"),
+									Collectors.mapping(objarr -> objarr,Collectors.toCollection(Vector::new))));
+						} else {
+							mapdownstream = null;
+							streamresult.filter(val -> val instanceof Tuple2).map(value -> {
+								Tuple2 maprec = (Tuple2) value;
+								Object[] rec1 = (Object[]) maprec.v1;
+								Object[] rec2 = (Object[]) maprec.v2;
+								if (rec2 == null) {
+									return new Tuple2(rec1, nullobjarr);
+								}
+								return maprec;
+							}).forEach(
+							result -> diskspilllist.add(result));
+							if (diskspilllist.isSpilled()) {
+								diskspilllist.close();
+							}
+						}						
+						if (Objects.nonNull(pipelines)) {
+							pipelines.forEach(downstreampipe -> {
+								try {
+									if(nonNull(mapdownstream)) {
+										downstreampipe
+										.tell(new OutputObject(mapdownstream, leftvalue, rightvalue, DiskSpillingMap.class));
+									} else {
+										downstreampipe
+											.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class));
+									}
+								} catch (Exception ex) {
+									log.error(DataSamudayaConstants.EMPTY, ex);
+								}
+							});
+						} else {
+							Stream<Tuple2> datastream = diskspilllist.isSpilled()
+									? (Stream<Tuple2>) Utils.getStreamData(
+											new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(),
+													null, true, diskspilllist.getLeft(), diskspilllist.getRight())))
+									: diskspilllist.getData().stream();
+							try (var fsdos = new ByteArrayOutputStream();
+									var sos = new SnappyOutputStream(fsdos);
+									var output = new Output(sos);) {
+								Utils.getKryo().writeClassAndObject(output, datastream.toList());
+								output.flush();
+								task.setNumbytesgenerated(fsdos.toByteArray().length);
+								byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();
+								cache.put(getIntermediateDataFSFilePath(task), bt);
+							} catch (Exception ex) {
+								log.error("Error in putting output in cache", ex);
+							}
+						}
+					}
+				catch(Exception ex) {
+					log.error("Error in putting output in cache", ex);
+				}
+				return null;
+				}, es).get();
+				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
+						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
+				Utils.updateZookeeperTasksData(task, true);
+			}catch(Exception ex) {
+				log.error("Error in putting output in cache", ex);
+			}
 		}
 		return this;
 	}

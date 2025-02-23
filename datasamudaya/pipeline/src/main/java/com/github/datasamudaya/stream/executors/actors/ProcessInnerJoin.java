@@ -79,8 +79,6 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 	DiskSpillingList diskspilllist;
 	DiskSpillingMap<List<Object>,Object[]> diskspilllistintermleft;
 	DiskSpillingMap<List<Object>,Object[]> diskspilllistintermright;
-	Map<List<Object>,List<Object[]>> mapleft;
-	Map<List<Object>,List<Object[]>> mapright;
 	int diskspillpercentage;
 	ExecutorService es;
 	EntityTypeKey<Command> entitytypekey;
