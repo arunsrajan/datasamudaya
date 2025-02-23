@@ -134,7 +134,7 @@ public class SelectQueryExecutorMR {
 			AtomicBoolean isdistinct = new AtomicBoolean(false);
 			RelNode relnode = Utils.validateSql(tablecolumnsmap, tablecolumntypesmap, selectquery, dbdefault,
 					isdistinct);
-			SelectQueryExecutor.traverseRelNode(relnode, 0, out);
+			SQLUtils.traverseRelNode(relnode, 0, out);
 		} catch (Exception ex) {
 			List errors = new ArrayList<>();
 			List error = new ArrayList<>();
