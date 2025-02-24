@@ -81,8 +81,8 @@ public class ProcessRightOuterJoin extends AbstractBehavior<Command> implements 
 	OutputObject left;
 	OutputObject right;
 	DiskSpillingList diskspilllist;
-	DiskSpillingMap<List<Object>,Object[]> diskspilllistintermleft;
-	DiskSpillingMap<List<Object>,Object[]> diskspilllistintermright;
+	DiskSpillingMap<List<Object>, List<Object[]>> diskspilllistintermleft;
+	DiskSpillingMap<List<Object>, List<Object[]>> diskspilllistintermright;
 	int diskspillpercentage;
 	ExecutorService es;
 	EntityTypeKey<Command> entitytypekey;

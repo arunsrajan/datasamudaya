@@ -402,7 +402,9 @@ public class ProcessMapperByBlocksLocation extends AbstractBehavior<Command> imp
 						DiskSpillingMap<List<Object>, List<Object[]>> results = (DiskSpillingMap) ((Stream<Object[]>) streammap).collect(Collectors.groupingBy(
 								(Object[] objarr) -> 
 								Arrays.asList(SQLUtils.extractMapKeysFromJoinKeys((Object[])objarr[0], joinkeys)), ()->new DiskSpillingMap<>(tasktoprocess, ""),
-								Collectors.mapping(objarr -> objarr,Collectors.toCollection(Vector::new))));
+								Collectors.mapping(
+										objarr -> objarr,
+										Collectors.toCollection(Vector::new))));
 						if(results.isSpilled()) {
 							results.close();
 						}

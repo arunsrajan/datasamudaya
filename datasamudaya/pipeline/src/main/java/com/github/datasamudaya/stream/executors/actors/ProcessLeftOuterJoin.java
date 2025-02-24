@@ -81,8 +81,8 @@ public class ProcessLeftOuterJoin extends AbstractBehavior<Command> implements S
 	OutputObject right;
 	DiskSpillingList diskspilllist;
 	DiskSpillingMap diskspillmapinterm;
-	DiskSpillingMap<List<Object>,Object[]> diskspillmapintermleft;
-	DiskSpillingMap<List<Object>,Object[]> diskspillmapintermright;
+	DiskSpillingMap<List<Object>, List<Object[]>> diskspillmapintermleft;
+	DiskSpillingMap<List<Object>, List<Object[]>> diskspillmapintermright;
 	DiskSpillingList diskspilllistinterm;
 	DiskSpillingList diskspilllistintermleft;
 	DiskSpillingList diskspilllistintermright;

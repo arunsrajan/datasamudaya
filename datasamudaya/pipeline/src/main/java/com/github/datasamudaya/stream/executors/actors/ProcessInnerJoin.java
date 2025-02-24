@@ -77,8 +77,8 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
-	DiskSpillingMap<List<Object>,Object[]> diskspilllistintermleft;
-	DiskSpillingMap<List<Object>,Object[]> diskspilllistintermright;
+	DiskSpillingMap<List<Object>,List<Object[]>> diskspilllistintermleft;
+	DiskSpillingMap<List<Object>,List<Object[]>> diskspilllistintermright;
 	int diskspillpercentage;
 	ExecutorService es;
 	EntityTypeKey<Command> entitytypekey;
@@ -150,71 +150,30 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 					try {						
 						Stream<Tuple2<Object[], Object[]>> streamresult = null; 
 						if (diskspilllistintermleft.size() <= diskspilllistintermright.size()) {
-							Stream<Entry<List<Object>, List<Object[]>>> datastreamleft = diskspilllistintermleft
-									.isSpilled()
-											? (Stream<Entry<List<Object>, List<Object[]>>>) Utils
-													.getStreamData(diskspilllistintermleft)
-											: diskspilllistintermleft.entrySet().stream();
+							Stream<Entry<List<Object>, List<Object[]>>> datastreamleft = diskspilllistintermleft.entrySet().stream();
 							streamresult = datastreamleft.flatMap(entryleft -> {
-								Optional<Stream> intermopt = null;
-								if (diskspilllistintermright.isSpilled()) {
-									Stream<Entry<List<Object>, List<Object[]>>> datastreamright = (Stream<Entry<List<Object>, List<Object[]>>>) Utils
-											.getStreamData(diskspilllistintermright);
-									return datastreamright.map(entryright -> {
-										if (entryleft.getKey().equals(entryright.getKey())) {
-											List<Object[]> leftvalueobjarr = (List<Object[]>) entryleft.getValue();
-											Seq seq1 = Seq.seq(leftvalueobjarr.stream());
-											Seq seq2 = Seq.seq(entryright.getValue().stream());
-											Seq innerjoin = seq1.innerJoin(seq2, join.getJp());
-											return innerjoin.stream();
-										}
-										return Arrays.asList().stream();
-									}).findFirst().get();
-								} else {
-									List<Object[]> rightvalues = diskspilllistintermright.get(entryleft.getKey());
-									if (nonNull(rightvalues)) {
-										Seq seq1 = Seq.seq(entryleft.getValue().stream());
-										Seq seq2 = Seq.seq(rightvalues.stream());
-										Seq innerjoin = seq1.innerJoin(seq2, join.getJp());
-										return innerjoin.stream();
-									}
-									return Arrays.asList().stream();
-								}
+								List<Object[]> rightvalues = diskspilllistintermright.get(entryleft.getKey());
+								if (CollectionUtils.isNotEmpty(rightvalues)) {
+									Seq seq1 = Seq.seq(entryleft.getValue().stream());
+									Seq seq2 = Seq.seq(rightvalues.stream());
+									Seq innerjoin = seq1.innerJoin(seq2, join.getJp());
+									return innerjoin.stream();
+								} 
+								return Arrays.asList().stream();
 							});
 						} else {
-
-							Stream<Entry<List<Object>, List<Object[]>>> datastreamleft = diskspilllistintermright
-									.isSpilled()
-											? (Stream<Entry<List<Object>, List<Object[]>>>) Utils
-													.getStreamData(diskspilllistintermright)
-											: diskspilllistintermright.entrySet().stream();
+							Stream<Entry<List<Object>, List<Object[]>>> datastreamleft = diskspilllistintermright.entrySet().stream();
 							streamresult = datastreamleft.flatMap(entryright -> {
-								Optional<Stream> intermopt = null;
-								if (diskspilllistintermleft.isSpilled()) {
-									Stream<Entry<List<Object>, List<Object[]>>> datastreamright = (Stream<Entry<List<Object>, List<Object[]>>>) Utils
-											.getStreamData(diskspilllistintermleft);
-									return datastreamright.map(entryleft -> {
-										if (entryleft.getKey().equals(entryright.getKey())) {
-											List<Object[]> leftvalueobjarr = (List<Object[]>) entryleft.getValue();
-											Seq seq1 = Seq.seq(leftvalueobjarr.stream());
-											Seq seq2 = Seq.seq(entryright.getValue().stream());
-											Seq innerjoin = seq1.innerJoin(seq2, join.getJp());
-											return innerjoin.stream();
-										}
-										return Arrays.asList().stream();
-									}).findFirst().get();
-								} else {
 									List<Object[]> leftvalues = diskspilllistintermleft.get(entryright.getKey());
-									if (nonNull(leftvalues)) {
+									if (CollectionUtils.isNotEmpty(leftvalues)) {
 										Seq seq1 = Seq.seq(leftvalues.stream());
 										Seq seq2 = Seq.seq(entryright.getValue().stream());
 										Seq innerjoin = seq1.innerJoin(seq2, join.getJp());
 										return innerjoin.stream();
 									}
 									return Arrays.asList().stream();
-								}
+								
 							});
-						
 						}
 						final DiskSpillingMap mapdownstream;
 						if(CollectionUtils.isNotEmpty(join.getJoinkeys())) {
