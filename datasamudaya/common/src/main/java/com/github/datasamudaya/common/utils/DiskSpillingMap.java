@@ -49,10 +49,8 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
 	private Task task;
 	private String diskfilepathindex;
 	private boolean isclosed;
-	private Kryo kryo;
 	
     public DiskSpillingMap(Task task, String appendtopath) {
-    	kryo = Utils.getKryoInstance();
     	this.spillpercentage = (Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
 				DataSamudayaConstants.SPILLTODISK_PERCENTAGE_DEFAULT))) / 100.0;
     	this.appendwithpath = appendtopath;
@@ -173,7 +171,7 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
         try (FileOutputStream ostream = new FileOutputStream(new File(filePath), true);
         		SnappyOutputStream sos = new SnappyOutputStream(ostream);
         		Output op = new Output(sos);) {
-            kryo.writeClassAndObject(op, value);
+        	Utils.getKryoInstance().writeClassAndObject(op, value);
 			op.flush();
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to write to disk", e);
@@ -184,7 +182,7 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
         try (FileInputStream ostream = new FileInputStream(new File(filePath));
         		SnappyInputStream sos = new SnappyInputStream(ostream);
         		Input ip = new Input(sos);) {
-            return (V) kryo.readClassAndObject(ip);
+            return (V) Utils.getKryoInstance().readClassAndObject(ip);
         } catch (IOException e) {
             throw new RuntimeException("Failed to read from disk", e);
         }

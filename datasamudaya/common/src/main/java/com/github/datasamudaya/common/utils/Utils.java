@@ -551,6 +551,8 @@ public class Utils {
 				new CompatibleFieldSerializer<DiskSpillingList>(kryo, DiskSpillingList.class));
 		kryo.register(DiskSpillingSet.class,
 				new CompatibleFieldSerializer<DiskSpillingSet>(kryo, DiskSpillingSet.class));
+		kryo.register(DiskSpillingMap.class,
+				new CompatibleFieldSerializer<DiskSpillingMap>(kryo, DiskSpillingMap.class));
 		kryo.register(ArrayList.class);
 		kryo.register(HashMap.class);
 		kryo.register(ConcurrentHashMap.class);
@@ -657,6 +659,8 @@ public class Utils {
 				new CompatibleFieldSerializer<DiskSpillingList>(kryo, DiskSpillingList.class));
 		kryo.register(DiskSpillingSet.class,
 				new CompatibleFieldSerializer<DiskSpillingSet>(kryo, DiskSpillingSet.class));
+		kryo.register(DiskSpillingMap.class,
+				new CompatibleFieldSerializer<DiskSpillingMap>(kryo, DiskSpillingMap.class));
 		kryo.register(ArrayList.class);
 		kryo.register(HashMap.class);
 		kryo.register(ConcurrentHashMap.class);

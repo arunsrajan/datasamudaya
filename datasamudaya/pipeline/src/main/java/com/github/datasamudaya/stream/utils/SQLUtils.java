@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -50,7 +51,12 @@ import org.apache.arrow.vector.util.Text;
 import org.apache.calcite.adapter.enumerable.EnumerableAggregateBase;
 import org.apache.calcite.adapter.enumerable.EnumerableConvention;
 import org.apache.calcite.adapter.enumerable.EnumerableRules;
+import org.apache.calcite.linq4j.Ord;
+import org.apache.calcite.plan.RelOptSchema;
+import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
@@ -64,9 +70,13 @@ import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.fun.SqlFloorFunction;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql2rel.RelFieldTrimmer;
+import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.RangeSets;
+import org.apache.calcite.util.Sarg;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
@@ -150,6 +160,7 @@ import com.github.datasamudaya.stream.executors.actors.ProcessReduce;
 import com.github.datasamudaya.stream.executors.actors.ProcessRightOuterJoin;
 import com.github.datasamudaya.stream.executors.actors.ProcessShuffle;
 import com.github.datasamudaya.stream.executors.actors.ProcessUnion;
+import com.google.common.collect.Range;
 
 import akka.actor.Address;
 import akka.actor.typed.ActorRef;
@@ -2267,23 +2278,47 @@ public class SQLUtils {
 		}
 		RelNode relTree = optimizer.convert(sqlTree);
 		RuleSet rules = RuleSets.ofList(CoreRules.FILTER_TO_CALC, CoreRules.PROJECT_TO_CALC, CoreRules.FILTER_MERGE,
-				CoreRules.FILTER_CALC_MERGE, CoreRules.PROJECT_CALC_MERGE, CoreRules.AGGREGATE_PROJECT_MERGE,
-				CoreRules.AGGREGATE_JOIN_TRANSPOSE, CoreRules.AGGREGATE_PROJECT_MERGE,
-				CoreRules.PROJECT_AGGREGATE_MERGE, CoreRules.PROJECT_MERGE, CoreRules.FILTER_INTO_JOIN,
-				CoreRules.FILTER_PROJECT_TRANSPOSE, 
-				CoreRules.PROJECT_JOIN_TRANSPOSE,
+				CoreRules.FILTER_CALC_MERGE, CoreRules.PROJECT_CALC_MERGE,
+				CoreRules.AGGREGATE_JOIN_TRANSPOSE,
+				CoreRules.PROJECT_MERGE,
+				CoreRules.FILTER_INTO_JOIN,
+				CoreRules.AGGREGATE_JOIN_TRANSPOSE_EXTENDED,
+				CoreRules.AGGREGATE_PROJECT_MERGE,
+				CoreRules.PROJECT_FILTER_VALUES_MERGE,
+				CoreRules.PROJECT_FILTER_TRANSPOSE,
 				CoreRules.JOIN_PROJECT_BOTH_TRANSPOSE,
 				EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
 				EnumerableRules.ENUMERABLE_PROJECT_RULE, EnumerableRules.ENUMERABLE_FILTER_RULE,
 				EnumerableRules.ENUMERABLE_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_SORT_RULE,
 				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_JOIN_RULE,
 				EnumerableRules.ENUMERABLE_UNION_RULE, EnumerableRules.ENUMERABLE_INTERSECT_RULE);
-
+		
+		relTree = trimUnusedFields(relTree);
+		
 		RelNode relnode = optimizer.optimize(relTree, relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
 		traverseRelNode(relnode, 0, new PrintWriter(System.out, true));
 		return relnode;
 	}
-
+	
+	/**
+	 * The functions returns relationship node trimming unused fields
+	 * @param relNode
+	 * @return relnode with unused fields
+	 */
+	public static RelNode trimUnusedFields(RelNode relNode) {
+	    final List<RelOptTable> relOptTables = RelOptUtil.findAllTables(relNode);
+	    RelOptSchema relOptSchema = null;
+	    if (relOptTables.size() != 0) {
+	      relOptSchema = relOptTables.get(0).getRelOptSchema();
+	    }
+	    final RelBuilder relBuilder = RelFactories.LOGICAL_BUILDER.create(
+	        relNode.getCluster(), relOptSchema);
+	    final RelFieldTrimmer relFieldTrimmer = new RelFieldTrimmer(null, relBuilder);
+	    final RelNode rel = relFieldTrimmer.trim(relNode);
+	    return rel;
+	  
+	}
+	
 	/**
 	 * The function returns Optimized RelNode Filter Into TableScan
 	 * 
@@ -2821,11 +2856,64 @@ public class SQLUtils {
 			Object value1 = getValueObject(call.operands.get(0), values);
 			Object value2 = getValueObject(call.operands.get(1), values);
 			return value1.equals(value2);
+		} else if (node.isA(SqlKind.SEARCH)) {
+			// For EQUALS nodes, evaluate left and right children
+			RexCall call = (RexCall) node;
+			Object value1 = getValueObject(call.operands.get(0), values);
+			Sarg value2 = (Sarg) getValueObject(call.operands.get(1), values);
+			Set searchvalues = new LinkedHashSet<>();
+			if(CollectionUtils.isNotEmpty(value2.rangeSet.asRanges()) && value2.rangeSet.asRanges().size()==1) {
+				Set range = value2.rangeSet.asRanges();
+				Range r = (Range) range.iterator().next();
+				Object valuelowendpoint = getSearchValue(value1, r.lowerEndpoint());
+				Object valueupperendpoint = getSearchValue(value1, r.upperEndpoint());
+				if(valuelowendpoint != valueupperendpoint) {
+					return evaluatePredicate(value1, valuelowendpoint, ">=") && evaluatePredicate(value1, valueupperendpoint, "<=");
+				}
+				return evaluatePredicate(value1, valuelowendpoint, "=");
+				
+			} else {
+				Ord.forEach(value2.rangeSet.asRanges(), (r, i) -> {
+					Object valuelowendpoint = ((Range) r).lowerEndpoint();
+					searchvalues.add(getSearchValue(value1, valuelowendpoint));
+				});
+				return searchvalues.contains(value1);
+			}			
 		} else {
 			return false;
 		}
 	}
 
+	/**
+	 * Converts Search value1 to corresponding types of value2 
+	 * @param value1
+	 * @param value2
+	 * @return converted value
+	 */
+	public static Object getSearchValue(Object value1,Object value2) {
+		if(value2 instanceof BigDecimal bdecimal) {
+			if(value1 instanceof Long) {
+				return (bdecimal.longValue());
+			} else if(value1 instanceof Float) {
+				return (bdecimal.floatValue());
+			} else if(value1 instanceof Double) {
+				return (bdecimal.doubleValue());
+			} else if(value1 instanceof Integer) {
+				return (bdecimal.intValue());
+			}
+		} else if(value2 instanceof Long lvalue) {
+			return (lvalue);
+		} else if(value1 instanceof Float flvalue) {
+			return (flvalue);
+		} else if(value1 instanceof Double dvalue) {
+			return (dvalue);
+		} else if(value1 instanceof Integer ivalue) {
+			return (ivalue);
+		}
+		return value2;
+	}
+	
+	
 	/**
 	 * Evaluate whether to consider for aggregate
 	 * 
@@ -2904,6 +2992,9 @@ public class SQLUtils {
 		} else if (node.isA(SqlKind.LITERAL)) {
 			// For literals, return their value
 			RexLiteral literal = (RexLiteral) node;
+			if(literal.getTypeName() == SqlTypeName.SARG) {
+				return getValue(literal, literal.getTypeName());
+			}
 			return getValue(literal, literal.getType().getSqlTypeName());
 		} else if (node.isA(SqlKind.FUNCTION)) {
 			// For functions, return their value
@@ -2918,7 +3009,10 @@ public class SQLUtils {
 
 	public static Object getValue(RexLiteral value, SqlTypeName type) {
 		try {
-			if (type == SqlTypeName.INTEGER) {
+			
+			if (type == SqlTypeName.SARG) {
+				return value.getValueAs(Sarg.class);
+			} else if (type == SqlTypeName.INTEGER) {
 				return value.getValueAs(Integer.class);
 			} else if (type == SqlTypeName.BIGINT) {
 				return value.getValueAs(Long.class);
@@ -3016,11 +3110,11 @@ public class SQLUtils {
 	 * @return evaluated values
 	 */
 	public static Object evaluateFunction(String functionname, Object leftValue, Object rightValue) {
-		if (functionname.startsWith("count") || functionname.startsWith("sum") || functionname.startsWith("avg")) {
+		if (functionname.toLowerCase().contains("count") || functionname.toLowerCase().contains("sum") || functionname.toLowerCase().contains("avg")) {
 			return evaluateValuesByOperator(leftValue, rightValue, "+");
-		} else if (functionname.startsWith("min")) {
+		} else if (functionname.toLowerCase().contains("min")) {
 			return SQLUtils.evaluateValuesByFunctionMin(leftValue, rightValue);
-		} else if (functionname.startsWith("max")) {
+		} else if (functionname.toLowerCase().contains("max")) {
 			return SQLUtils.evaluateValuesByFunctionMax(leftValue, rightValue);
 		}
 		return null;

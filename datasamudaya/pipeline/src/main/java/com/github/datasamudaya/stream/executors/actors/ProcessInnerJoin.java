@@ -77,8 +77,10 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 	Cache cache;
 	Map<String, Boolean> jobidstageidtaskidcompletedmap;
 	DiskSpillingList diskspilllist;
-	DiskSpillingMap<List<Object>,List<Object[]>> diskspilllistintermleft;
-	DiskSpillingMap<List<Object>,List<Object[]>> diskspilllistintermright;
+	DiskSpillingMap<List<Object>,List<Object[]>> diskspillmapintermleft;
+	DiskSpillingMap<List<Object>,List<Object[]>> diskspillmapintermright;
+	DiskSpillingList diskspilllistintermleft;
+	DiskSpillingList diskspilllistintermright;
 	int diskspillpercentage;
 	ExecutorService es;
 	EntityTypeKey<Command> entitytypekey;
@@ -125,14 +127,122 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 	private Behavior<Command> processInnerJoin(OutputObject oo) throws Exception {
 		if (oo.isLeft()) {
 			if (nonNull(oo.getValue()) && (oo.getValue() instanceof DiskSpillingMap dsm)) {
-				this.diskspilllistintermleft = dsm;
+				this.diskspillmapintermleft = dsm;
+			} else if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
+				log.debug("In process Inner Join Left {} {}", oo.isLeft(), getIntermediateDataFSFilePath(task));
+				diskspilllistintermleft = new DiskSpillingList(task, diskspillpercentage, null, true, true, false, null, null, 0);
+				Address address = getContext().getSystem().address();
+				String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+				String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+				if(!diskspilllistintermleft.getTask().getHostport().equals(tehp)) {
+					diskspilllistintermleft.getTask().setHostport(tehp);
+				}	
+				CompletableFuture.supplyAsync(() -> {
+				if (dsl.isSpilled()) {
+					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermleft);
+				} else {
+					diskspilllistintermleft.addAll(dsl.getData());
+				}
+				return null;}, es).get();
 			}
 		} else if (oo.isRight()) {
 			if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingMap dsm) {
-				this.diskspilllistintermright = dsm;
+				this.diskspillmapintermright = dsm;
+			} else if (nonNull(oo.getValue()) && oo.getValue() instanceof DiskSpillingList dsl) {
+				log.debug("In process Inner Join Right {} {}", oo.isRight(), getIntermediateDataFSFilePath(task));
+				diskspilllistintermright = new DiskSpillingList(task, diskspillpercentage, null, true, false, true, null, null, 0);
+				Address address = getContext().getSystem().address();
+				String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+				String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+				if(!diskspilllistintermright.getTask().getHostport().equals(tehp)) {
+					diskspilllistintermright.getTask().setHostport(tehp);
+				}	
+				CompletableFuture.supplyAsync(() -> {
+				if (dsl.isSpilled()) {
+					Utils.copySpilledDataSourceToDestination(dsl, diskspilllistintermright);
+				} else {
+					diskspilllistintermright.addAll(dsl.getData());
+				}
+				return null;}, es).get();
 			}
 		}
 		if (nonNull(diskspilllistintermleft) && nonNull(diskspilllistintermright)
+				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
+				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
+			if (diskspilllistintermleft.isSpilled()) {
+				diskspilllistintermleft.close();
+			}
+			if (diskspilllistintermright.isSpilled()) {
+				diskspilllistintermright.close();
+			}
+			final boolean leftvalue = isNull(task.joinpos) ? false
+					: nonNull(task.joinpos) && "left".equals(task.joinpos) ? true : false;
+			final boolean rightvalue = isNull(task.joinpos) ? false
+					: nonNull(task.joinpos) && "right".equals(task.joinpos) ? true : false;
+			Stream<Tuple2> datastreamleft = diskspilllistintermleft.isSpilled()
+					? (Stream<Tuple2>) Utils.getStreamData(
+					new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermleft.getTask(), null, true,
+							diskspilllistintermleft.getLeft(), diskspilllistintermleft.getRight())))
+					: diskspilllistintermleft.getData().stream();
+			Stream<Tuple2> datastreamright = diskspilllistintermright.isSpilled()
+					? (Stream<Tuple2>) Utils.getStreamData(
+					new FileInputStream(Utils.getLocalFilePathForTask(diskspilllistintermright.getTask(), null, true,
+							diskspilllistintermright.getLeft(), diskspilllistintermright.getRight())))
+					: diskspilllistintermright.getData().stream();			
+			try (var seq1 = Seq.seq(datastreamleft);
+					var seq2 = Seq.seq(datastreamright);
+					var joinseq = seq1.innerJoin(seq2, join.getJp());) {
+				Address address = getContext().getSystem().address();
+				String hostportactorsystem = address.getHost().get() + DataSamudayaConstants.COLON + address.getPort().get();
+				String tehp = DataSamudayaAkkaNodesTaskExecutor.get().get(hostportactorsystem);
+				if(!diskspilllist.getTask().getHostport().equals(tehp)) {
+					diskspilllist.getTask().setHostport(tehp);
+				}	
+				CompletableFuture.supplyAsync(() -> {
+					try {
+						joinseq.forEach(diskspilllist::add);
+						if (diskspilllist.isSpilled()) {
+							diskspilllist.close();
+						}
+						if (Objects.nonNull(pipelines)) {
+							pipelines.forEach(downstreampipe -> {
+								try {
+									downstreampipe
+											.tell(new OutputObject(diskspilllist, leftvalue, rightvalue, Dummy.class));
+								} catch (Exception ex) {
+									log.error(DataSamudayaConstants.EMPTY, ex);
+								}
+							});
+						} else {
+							Stream<Tuple2> datastream = diskspilllist.isSpilled()
+									? (Stream<Tuple2>) Utils.getStreamData(
+											new FileInputStream(Utils.getLocalFilePathForTask(diskspilllist.getTask(),
+													null, true, diskspilllist.getLeft(), diskspilllist.getRight())))
+									: diskspilllist.getData().stream();
+							try (var fsdos = new ByteArrayOutputStream();
+									var sos = new SnappyOutputStream(fsdos);
+									var output = new Output(sos);) {
+								Utils.getKryo().writeClassAndObject(output, datastream.toList());
+								output.flush();
+								task.setNumbytesgenerated(fsdos.toByteArray().length);
+								byte[] bt = ((ByteArrayOutputStream) fsdos).toByteArray();
+								cache.put(getIntermediateDataFSFilePath(task), bt);
+							} catch (Exception ex) {
+								log.error("Error in putting output in cache", ex);
+							}
+						}
+					}
+				catch(Exception ex) {
+					log.error("Error in putting output in cache", ex);
+				}
+				return null;
+				}, es).get();
+				jobidstageidtaskidcompletedmap.put(task.getJobid() + DataSamudayaConstants.HYPHEN + task.getStageid()
+						+ DataSamudayaConstants.HYPHEN + task.getTaskid(), true);
+				Utils.updateZookeeperTasksData(task, true);
+				return this;
+			}
+		} else if (nonNull(diskspillmapintermleft) && nonNull(diskspillmapintermright)
 				&& isNull(jobidstageidtaskidcompletedmap.get(task.getJobid() + DataSamudayaConstants.HYPHEN
 				+ task.getStageid() + DataSamudayaConstants.HYPHEN + task.getTaskid()))) {
 			final boolean leftvalue = isNull(task.joinpos) ? false
@@ -149,10 +259,10 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 				CompletableFuture.supplyAsync(() -> {
 					try {						
 						Stream<Tuple2<Object[], Object[]>> streamresult = null; 
-						if (diskspilllistintermleft.size() <= diskspilllistintermright.size()) {
-							Stream<Entry<List<Object>, List<Object[]>>> datastreamleft = diskspilllistintermleft.entrySet().stream();
+						if (diskspillmapintermleft.size() <= diskspillmapintermright.size()) {
+							Stream<Entry<List<Object>, List<Object[]>>> datastreamleft = diskspillmapintermleft.entrySet().stream();
 							streamresult = datastreamleft.flatMap(entryleft -> {
-								List<Object[]> rightvalues = diskspilllistintermright.get(entryleft.getKey());
+								List<Object[]> rightvalues = diskspillmapintermright.get(entryleft.getKey());
 								if (CollectionUtils.isNotEmpty(rightvalues)) {
 									Seq seq1 = Seq.seq(entryleft.getValue().stream());
 									Seq seq2 = Seq.seq(rightvalues.stream());
@@ -162,9 +272,9 @@ public class ProcessInnerJoin extends AbstractBehavior<Command> implements Seria
 								return Arrays.asList().stream();
 							});
 						} else {
-							Stream<Entry<List<Object>, List<Object[]>>> datastreamleft = diskspilllistintermright.entrySet().stream();
+							Stream<Entry<List<Object>, List<Object[]>>> datastreamleft = diskspillmapintermright.entrySet().stream();
 							streamresult = datastreamleft.flatMap(entryright -> {
-									List<Object[]> leftvalues = diskspilllistintermleft.get(entryright.getKey());
+									List<Object[]> leftvalues = diskspillmapintermleft.get(entryright.getKey());
 									if (CollectionUtils.isNotEmpty(leftvalues)) {
 										Seq seq1 = Seq.seq(leftvalues.stream());
 										Seq seq2 = Seq.seq(entryright.getValue().stream());
