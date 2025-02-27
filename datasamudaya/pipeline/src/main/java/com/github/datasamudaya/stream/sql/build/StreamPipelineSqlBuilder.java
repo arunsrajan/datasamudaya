@@ -272,7 +272,6 @@ public class StreamPipelineSqlBuilder implements Serializable {
 	 * @throws Exception
 	 */
 	protected StreamPipeline<?> execute(RelNode relNode, int depth) throws Exception {
-
 		List<RelNode> inputs = relNode.getInputs();
 		if (CollectionUtils.isNotEmpty(inputs)) {
 			StreamPipeline<?> sp = null;
@@ -284,7 +283,6 @@ public class StreamPipelineSqlBuilder implements Serializable {
 			}
 			return buildStreamPipeline(childs, relNode);
 		}
-		descendants.put(relNode, true);
 		return buildStreamPipeline(null, relNode);
 	}
 
@@ -310,13 +308,23 @@ public class StreamPipelineSqlBuilder implements Serializable {
 					joinkeystable = joinkeys.getRightKeys();
 				}
 			}
-			return fileformat.equals(DataSamudayaConstants.CSV) ? StreamPipeline.newCsvStreamHDFSSQL(hdfs, tablefoldermap.get(table), this.pc,
+			StreamPipeline<Object[]>  sptablescan = (StreamPipeline) (fileformat.equals(DataSamudayaConstants.CSV) ? StreamPipeline.newCsvStreamHDFSSQL(hdfs, tablefoldermap.get(table), this.pc,
 					tablecolumnsmap.get(table).toArray(new String[0]),
 					tablecolumntypesmap.get(table), nonNull(requiredcolumnindex.get(table)) ? new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>(),
 					nonNull(filter) ? filter.getCondition() : null, joinkeystable)
 					: StreamPipeline.newJsonStreamHDFSSQL(hdfs, tablefoldermap.get(table), this.pc,
 					tablecolumnsmap.get(table).toArray(new String[0]),
-					tablecolumntypesmap.get(table), nonNull(requiredcolumnindex.get(table)) ? new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>());
+					tablecolumntypesmap.get(table), nonNull(requiredcolumnindex.get(table)) ? new ArrayList<>(requiredcolumnindex.get(table)) : new ArrayList<>()));
+			if (!SQLUtils.hasDescendants(relNode, descendants)) {
+				return sptablescan.map(new MapFunction<Object[], Object[]>(){
+					private static final long serialVersionUID = -845508728567687427L;
+
+					public Object[] apply(Object[] values) {
+						return values[0].getClass() == Object[].class ? (Object[]) values[0] : values;
+					}
+				});
+			}
+			return sptablescan;
 		} else if (relNode instanceof EnumerableFilter ef) {
 			RexNode condit = ef.getCondition();
 			StreamPipeline<Object[]> spfilter = sp.get(0).filter(new PredicateSerializable<Object[]>() {

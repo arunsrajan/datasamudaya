@@ -3788,10 +3788,14 @@ public class Utils {
 	 * @throws Exception
 	 */
 	public static void deleteJobDir(String jobid) throws Exception {
-		File deletefolder = new File(System.getProperty(DataSamudayaConstants.TMPDIR)
-				+ File.separatorChar + jobid);
-		if (deletefolder.exists()) {
-			FileUtils.deleteDirectory(deletefolder);
+		try {
+			File deletefolder = new File(System.getProperty(DataSamudayaConstants.TMPDIR)
+					+ File.separatorChar + jobid);
+			if (deletefolder.exists()) {
+				FileUtils.deleteDirectory(deletefolder);
+			}
+		} catch(Exception ex) {
+			log.error("Unable To Delete Directory", ex);
 		}
 	}
 

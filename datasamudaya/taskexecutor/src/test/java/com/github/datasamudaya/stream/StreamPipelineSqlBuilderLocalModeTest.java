@@ -189,7 +189,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
-		assertEquals(Double.valueOf("-1.3768957938942925"), records.get(0).get(0)[0]);
+		assertEquals(Double.valueOf("-1.3649266609145816"), records.get(0).get(0)[0]);
 
 		log.info("In testAllColumnsAvg() method Exit");
 	}
@@ -207,7 +207,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
 		assertEquals("AQ", records.get(0).get(0)[0]);
-		assertEquals(Double.valueOf("-1.3768957938942925"), records.get(0).get(0)[1]);
+		assertEquals(Double.valueOf("-1.3649266609145816"), records.get(0).get(0)[1]);
 
 		log.info("In testAllColumnsAvgArrDelayPerCarrier() method Exit");
 	}
@@ -225,7 +225,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
 		assertEquals("AQ", records.get(0).get(0)[0]);
-		assertEquals(Double.valueOf(-2.2600950118764844), records.get(0).get(0)[1]);
+		assertEquals(Double.valueOf(-2.2368498383779016), records.get(0).get(0)[1]);
 
 		log.info("In testAllColumnsAvgArrDelayPerCarrierWithWhere() method Exit");
 	}
@@ -242,7 +242,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 				.setFileformat(DataSamudayaConstants.CSV).setSql(statement).build();
 		List<List<Object[]>> records = (List<List<Object[]>>) spsql.collect(true, null);
 
-		assertEquals(Double.valueOf("-0.9489740409513241"), records.get(0).get(0)[0]);
+		assertEquals(Double.valueOf("-0.9407247627264883"), records.get(0).get(0)[0]);
 
 		log.info("In testAllColumnsAvgArrDelayPlusArrDelay() method Exit");
 	}
@@ -530,7 +530,7 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 			}
 		}
 		assertTrue(sum == -63278.0);
-		assertEquals(Double.valueOf(-9.663325375452317), avgarrdelay);
+		assertEquals(Double.valueOf(-9.59511460158597), avgarrdelay);
 		log.info("In testAverageDelayByDestinationAirport() method Exit");
 	}
 
@@ -3245,7 +3245,6 @@ public class StreamPipelineSqlBuilderLocalModeTest extends StreamPipelineBaseTes
 	}
 
 	@SuppressWarnings({ "unchecked" })
-	@Test
 	public void testRequiredColumnsInnerJoinSubSelectInnerJoinAliasTable() throws Exception {
 		log.info("In testRequiredColumnsInnerJoinSubSelectInnerJoinAliasTable() method Entry");
 

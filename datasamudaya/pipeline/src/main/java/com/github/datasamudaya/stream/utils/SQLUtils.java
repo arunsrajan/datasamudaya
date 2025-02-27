@@ -15,7 +15,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.LinkedHashSet;
@@ -52,6 +51,7 @@ import org.apache.calcite.adapter.enumerable.EnumerableAggregateBase;
 import org.apache.calcite.adapter.enumerable.EnumerableConvention;
 import org.apache.calcite.adapter.enumerable.EnumerableRules;
 import org.apache.calcite.linq4j.Ord;
+import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptSchema;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
@@ -63,6 +63,9 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitorImpl;
+import org.apache.calcite.sql.SqlBinaryOperator;
+import org.apache.calcite.sql.SqlExplainFormat;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -75,7 +78,6 @@ import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 import org.apache.calcite.util.ImmutableBitSet;
-import org.apache.calcite.util.RangeSets;
 import org.apache.calcite.util.Sarg;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
@@ -133,17 +135,15 @@ import com.github.datasamudaya.common.functions.Coalesce;
 import com.github.datasamudaya.common.functions.DistributedDistinct;
 import com.github.datasamudaya.common.functions.FullOuterJoin;
 import com.github.datasamudaya.common.functions.IntersectionFunction;
-import com.github.datasamudaya.common.functions.JoinPredicate;
 import com.github.datasamudaya.common.functions.LeftJoin;
-import com.github.datasamudaya.common.functions.LeftOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ReduceByKeyFunction;
 import com.github.datasamudaya.common.functions.RightJoin;
-import com.github.datasamudaya.common.functions.RightOuterJoinPredicate;
 import com.github.datasamudaya.common.functions.ShuffleStage;
 import com.github.datasamudaya.common.functions.UnionFunction;
 import com.github.datasamudaya.common.utils.Utils;
 import com.github.datasamudaya.common.utils.sql.JoinKeysSQL;
 import com.github.datasamudaya.common.utils.sql.Optimizer;
+import com.github.datasamudaya.common.utils.sql.RuleCollector;
 import com.github.datasamudaya.common.utils.sql.SimpleSchema;
 import com.github.datasamudaya.common.utils.sql.SimpleTable;
 import com.github.datasamudaya.stream.CsvOptionsSQL;
@@ -2276,27 +2276,17 @@ public class SQLUtils {
 			SqlSelect selectNode = (SqlSelect) sqlTree;
 			isDistinct.set(selectNode.isDistinct());
 		}
-		RelNode relTree = optimizer.convert(sqlTree);
-		RuleSet rules = RuleSets.ofList(CoreRules.FILTER_TO_CALC, CoreRules.PROJECT_TO_CALC, CoreRules.FILTER_MERGE,
-				CoreRules.FILTER_CALC_MERGE, CoreRules.PROJECT_CALC_MERGE,
-				CoreRules.AGGREGATE_JOIN_TRANSPOSE,
-				CoreRules.PROJECT_MERGE,
-				CoreRules.FILTER_INTO_JOIN,
-				CoreRules.AGGREGATE_JOIN_TRANSPOSE_EXTENDED,
-				CoreRules.AGGREGATE_PROJECT_MERGE,
-				CoreRules.PROJECT_FILTER_VALUES_MERGE,
-				CoreRules.PROJECT_FILTER_TRANSPOSE,
-				CoreRules.JOIN_PROJECT_BOTH_TRANSPOSE,
-				EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,
-				EnumerableRules.ENUMERABLE_PROJECT_RULE, EnumerableRules.ENUMERABLE_FILTER_RULE,
-				EnumerableRules.ENUMERABLE_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_SORT_RULE,
-				EnumerableRules.ENUMERABLE_SORTED_AGGREGATE_RULE, EnumerableRules.ENUMERABLE_JOIN_RULE,
-				EnumerableRules.ENUMERABLE_UNION_RULE, EnumerableRules.ENUMERABLE_INTERSECT_RULE);
-		
+		RelNode relTree = optimizer.convert(sqlTree);		
+		PrintWriter printout = new PrintWriter(System.out, true);
+		printout.println("Before Trimming:\n"+RelOptUtil.dumpPlan(sql, relTree, SqlExplainFormat.TEXT, SqlExplainLevel.ALL_ATTRIBUTES));
 		relTree = trimUnusedFields(relTree);
-		
+		printout.println("After Trimming:\n"+RelOptUtil.dumpPlan(sql, relTree, SqlExplainFormat.TEXT, SqlExplainLevel.ALL_ATTRIBUTES));
+		RuleCollector ruleCollector = new RuleCollector();
+		Set<RelOptRule> rulesset = ruleCollector.collectRules(relTree);
+		RuleSet rules = RuleSets.ofList(rulesset);		
+		printout.println(rulesset);
 		RelNode relnode = optimizer.optimize(relTree, relTree.getTraitSet().plus(EnumerableConvention.INSTANCE), rules);
-		traverseRelNode(relnode, 0, new PrintWriter(System.out, true));
+		traverseRelNode(relnode, 0, printout);
 		return relnode;
 	}
 	
@@ -2923,7 +2913,7 @@ public class SQLUtils {
 	 */
 	public static boolean toEvaluateRexNode(RexNode rexnode, Object[] boolvalues) {
 		if (rexnode.isA(SqlKind.PLUS) || rexnode.isA(SqlKind.MINUS) || rexnode.isA(SqlKind.TIMES)
-				|| rexnode.isA(SqlKind.DIVIDE)) {
+				|| rexnode.isA(SqlKind.DIVIDE) || rexnode.isA(SqlKind.CASE)) {
 			// For addition nodes, recursively evaluate left and right children
 			RexCall call = (RexCall) rexnode;
 			return toEvaluateRexNode(call.operands.get(0), boolvalues)
@@ -3936,6 +3926,10 @@ public class SQLUtils {
 			}
 		} else if (node instanceof RexCall call && call.getOperator() instanceof SqlFloorFunction) {
 			return evaluateFunctionsWithType(evaluateRexNode(call.getOperands().get(0), values), null,
+					call.getOperator().getName().toLowerCase());
+		} else if (node instanceof RexCall call && call.getOperator() instanceof SqlBinaryOperator) {
+			return evaluateValuesByOperator(evaluateRexNode(call.getOperands().get(0), values), 
+					evaluateRexNode(call.getOperands().get(1), values),
 					call.getOperator().getName().toLowerCase());
 		} else if (node instanceof RexLiteral) {
 			return getValue((RexLiteral) node, ((RexLiteral) node).getType().getSqlTypeName());
