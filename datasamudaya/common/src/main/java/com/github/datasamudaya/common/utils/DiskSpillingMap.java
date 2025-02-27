@@ -1,11 +1,14 @@
 package com.github.datasamudaya.common.utils;
 
+import static java.util.Objects.isNull;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,14 +17,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.commons.collections4.MapUtils;
+import org.jooq.lambda.tuple.Tuple;
+import org.jooq.lambda.tuple.Tuple4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
-import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.github.datasamudaya.common.DataSamudayaConstants;
@@ -41,6 +48,7 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
     private static final long serialVersionUID = 1L;
     private Map<K, V> inMemoryMap;
     private Map<K, String> keyIndexMap; // Maps keys to file paths
+    private Map<K, Tuple4<OutputStream, SnappyOutputStream, Output, AtomicInteger>> openFileStreamMap; // Maps open file stream to key
     private File indexFile;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 	private double spillpercentage;
@@ -49,6 +57,12 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
 	private Task task;
 	private String diskfilepathindex;
 	private boolean isclosed;
+	private transient OutputStream ostream;
+	private transient Output op;
+	private transient SnappyOutputStream sos;
+	private Integer batchsize;
+	private boolean isfstoclose;
+	private int totalsize = 0;
 	
     public DiskSpillingMap(Task task, String appendtopath) {
     	this.spillpercentage = (Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.SPILLTODISK_PERCENTAGE,
@@ -56,17 +70,20 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
     	this.appendwithpath = appendtopath;
     	diskfilepathindex = Utils.getLocalFilePathForTaskJoin(task, "diskSpillIndex.idx", false, false, false);
     	this.task = task;
-        inMemoryMap = new HashMap<>();
-        keyIndexMap = new HashMap<>();
+        inMemoryMap = new ConcurrentHashMap<>();
+        keyIndexMap = new ConcurrentHashMap<>();
         indexFile = new File(diskfilepathindex);
-		loadIndex(); // Load existing index from disk       
+        openFileStreamMap = new ConcurrentHashMap<>();
+		loadIndex(); // Load existing index from disk  
+		this.batchsize = Integer.valueOf(DataSamudayaProperties.get().getProperty(DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE,
+				DataSamudayaConstants.DISKSPILLDOWNSTREAMBATCHSIZE_DEFAULT));
     }
 
     @Override
     public int size() {
         lock.readLock().lock();
         try {
-            return inMemoryMap.size() + keyIndexMap.size();
+            return totalsize;
         } finally {
             lock.readLock().unlock();
         }
@@ -118,7 +135,7 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
                 return inMemoryMap.get(key);
             } else if (keyIndexMap.containsKey(key)) {
                 String filePath = keyIndexMap.get(key);
-                return readFromDisk(filePath);
+                return (V) readFromDisk(filePath);
             }
             return null;
         } finally {
@@ -130,11 +147,10 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
     public V put(K key, V value) {
         lock.writeLock().lock();
         try {
-            if ((isspilled 
-					|| Utils.
-					isMemoryUsageLimitExceedsGraphLayoutSize(inMemoryMap, spillpercentage))					
+            if ((Utils.
+        			isMemoryUsageHigh(spillpercentage))					
 					&& inMemoryMap.size() > 0) {
-                spillToDisk(key, value);
+                spillToDisk(inMemoryMap);
                 return null;
             } else {
             	if(value instanceof List && inMemoryMap.containsKey(key)) {
@@ -150,15 +166,42 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
         }
     }
 
-    private void spillToDisk(K key, V value) {
-    	try {
-    		isspilled = true;
-	        String filePath = createDataFile(key);
-	        writeToDisk(filePath, value);
-	        keyIndexMap.put(key, filePath);
-	        saveIndex(); // Update the index file
-    	} catch (IOException e) {
-			throw new RuntimeException("Failed to spill to disk", e);
+    private void spillToDisk(Map<K, V> inMemoryMap) {
+		try {
+			lock.readLock().lock();
+			if (MapUtils.isNotEmpty(inMemoryMap)) {
+				inMemoryMap.entrySet().stream().forEach(entry -> {
+					if (isNull(openFileStreamMap.get(entry.getKey()))) {
+						isspilled = true;
+						try {
+							if (!keyIndexMap.containsKey(entry.getKey())) {
+								String filePath = createDataFile(entry.getKey());
+								keyIndexMap.put(entry.getKey(), filePath);
+								saveIndex(); // Update the index file
+								ostream = new FileOutputStream(new File(filePath), true);
+								sos = new SnappyOutputStream(ostream);
+								op = new Output(sos);
+								Tuple4<OutputStream, SnappyOutputStream, Output, AtomicInteger> tuple = Tuple
+										.tuple(ostream, sos, op, new AtomicInteger(0));
+								openFileStreamMap.put(entry.getKey(), tuple);
+							}
+						} catch (IOException e) {
+							throw new RuntimeException("Failed to spill to disk", e);
+						}
+					}
+					Tuple4<OutputStream, SnappyOutputStream, Output, AtomicInteger> stream = (Tuple4<OutputStream, SnappyOutputStream, Output, AtomicInteger>) openFileStreamMap
+							.get(entry.getKey());
+					if (entry.getValue() instanceof List valuesl) {
+						totalsize += valuesl.size();
+						stream.v4.set(stream.v4.get() + valuesl.size());
+					}					
+					Utils.getKryoInstance().writeClassAndObject(op, inMemoryMap.get(entry.getKey()));
+					op.flush();
+				});
+				inMemoryMap.clear();
+			}
+		} finally {
+			 lock.readLock().unlock();
 		}
     }
 
@@ -167,25 +210,18 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
         return dataFile.getAbsolutePath();
     }
 
-    private void writeToDisk(String filePath, V value) throws IOException {
-        try (FileOutputStream ostream = new FileOutputStream(new File(filePath), true);
-        		SnappyOutputStream sos = new SnappyOutputStream(ostream);
-        		Output op = new Output(sos);) {
-        	Utils.getKryoInstance().writeClassAndObject(op, value);
-			op.flush();
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to write to disk", e);
-        }
-    }
-
-    private V readFromDisk(String filePath) {
+    private List<V> readFromDisk(String filePath) {
+    	List values = new ArrayList<V>(); 
         try (FileInputStream ostream = new FileInputStream(new File(filePath));
         		SnappyInputStream sos = new SnappyInputStream(ostream);
         		Input ip = new Input(sos);) {
-            return (V) Utils.getKryoInstance().readClassAndObject(ip);
+        	while(ip.available() > 0) {
+        		values.addAll((Collection<? extends V>) Utils.getKryoInstance().readClassAndObject(ip));
+        	}
         } catch (IOException e) {
             throw new RuntimeException("Failed to read from disk", e);
         }
+        return values;
     }
 
     @Override
@@ -255,7 +291,7 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
         try {
             List<V> values = new ArrayList<>(inMemoryMap.values());
             for (String filePath : keyIndexMap.values()) {
-                values.add(readFromDisk(filePath));
+                values.addAll(readFromDisk(filePath));
             }
             return values;
         } finally {
@@ -304,6 +340,7 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
     protected void finalize() throws Throwable {
         try {
             saveIndex(); // Ensure the index is saved before the object is garbage collected
+            close();
         } finally {
             super.finalize();
         }
@@ -326,9 +363,19 @@ public class DiskSpillingMap<K, V> implements Map<K, V>, Serializable, AutoClose
 		try {
 			if (isspilled) {
 				if (inMemoryMap.values().size() > 0) {
-					inMemoryMap.keySet().stream().forEach(key -> spillToDisk(key, inMemoryMap.get(key)));					
+					isfstoclose = true;
+					spillToDisk(inMemoryMap);
 				}
-				log.debug("Closing Stream For Task {}", task);								
+				log.debug("Closing Stream For Task {}", task);
+				if(isfstoclose) {
+					for(Entry<K, Tuple4<OutputStream, SnappyOutputStream, Output, AtomicInteger>> filetoclose: openFileStreamMap.entrySet()) {
+						Tuple4<OutputStream, SnappyOutputStream, Output, AtomicInteger> stream = openFileStreamMap.get(filetoclose.getKey());
+						stream.v3.close();
+						stream.v2.close();
+						stream.v1.close();
+					}
+					openFileStreamMap.clear();
+				}
 			}
 			this.isclosed = true;
 		} catch (Exception ex) {
